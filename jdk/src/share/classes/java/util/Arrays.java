@@ -50,7 +50,7 @@ import java.util.stream.StreamSupport;
  * if the specified array reference is null, except where noted.
  *
  * <p>The documentation for the methods contained in this class includes
- * briefs description of the <i>implementations</i>. Such descriptions should
+ * brief descriptions of the <i>implementations</i>. Such descriptions should
  * be regarded as <i>implementation notes</i>, rather than parts of the
  * <i>specification</i>. Implementors should feel free to substitute other
  * algorithms, so long as the specification itself is adhered to. (For

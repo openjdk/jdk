@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6887710
- * @summary Verify the impact of sun.misc.JarIndex.metaInfFilenames on Service loaders
+ * @summary Verify the impact of sun.misc.JarIndex.metaInfFilenames on ServiceLoader
  * @run main/othervm Basic
  */
 
@@ -48,9 +48,8 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * Verifies the impact of sun.misc.JarIndex.metaInfFilenames on service loaders
- * (sun.misc.Service & java.util.ServiceLoader), as well as finding resources
- * through Class.getResouce.
+ * Verifies the impact of sun.misc.JarIndex.metaInfFilenames on ServiceLoader
+ * and on finding resources via Class.getResource.
  *
  * 1) Compile the test sources:
  *   jarA:
@@ -214,23 +213,13 @@ public class Basic {
 
         int failed = 0;
 
-        // Tests using sun.misc.Service
-        if (!sunMiscServiceTest(baseURL, messageService, true, false, true)) {
-            System.out.println("Test: sun.misc.Service looking for " + messageService + ", failed");
-            failed++;
-        }
-        if (!sunMiscServiceTest(baseURL, unknownService, false, false, false)) {
-            System.out.println("Test: sun.misc.Service looking for " + unknownService + " failed");
-            failed++;
-        }
-
         // Tests using java.util.SerivceLoader
         if (!javaUtilServiceLoaderTest(baseURL, messageService, true, false, true)) {
-            System.out.println("Test: sun.misc.Service looking for " + messageService + ", failed");
+            System.out.println("Test: ServiceLoader looking for " + messageService + ", failed");
             failed++;
         }
         if (!javaUtilServiceLoaderTest(baseURL, unknownService, false, false, false)) {
-            System.out.println("Test: sun.misc.Service looking for " + unknownService + " failed");
+            System.out.println("Test: ServiceLoader looking for " + unknownService + " failed");
             failed++;
         }
 
@@ -246,48 +235,6 @@ public class Basic {
 
         if (failed > 0)
             throw new RuntimeException("Failed: " + failed + " tests");
-    }
-
-    static boolean sunMiscServiceTest(URL baseURL,
-                                      String serviceClass,
-                                      boolean expectToFind,
-                                      boolean expectbDotJar,
-                                      boolean expectcDotJar) throws IOException {
-        debug("----------------------------------");
-        debug("Running test with sun.misc.Service looking for " + serviceClass);
-        URLClassLoader loader = getLoader(baseURL);
-        httpServer.reset();
-
-        Class<?> messageServiceClass = null;
-        try {
-            messageServiceClass = loader.loadClass(serviceClass);
-        } catch (ClassNotFoundException cnfe) {
-            System.err.println(cnfe);
-            throw new RuntimeException("Error in test: " + cnfe);
-        }
-
-        Iterator<?> iterator = sun.misc.Service.providers(messageServiceClass, loader);
-        if (expectToFind && !iterator.hasNext()) {
-            debug(messageServiceClass + " NOT found.");
-            return false;
-        }
-
-        while (iterator.hasNext()) {
-            debug("found " + iterator.next() + " " + messageService);
-        }
-
-        debug("HttpServer: " + httpServer);
-
-        if (!expectbDotJar && httpServer.bDotJar > 0) {
-            debug("Unexpeced request sent to the httpserver for b.jar");
-            return false;
-        }
-        if (!expectcDotJar && httpServer.cDotJar > 0) {
-            debug("Unexpeced request sent to the httpserver for c.jar");
-            return false;
-        }
-
-        return true;
     }
 
     static boolean javaUtilServiceLoaderTest(URL baseURL,

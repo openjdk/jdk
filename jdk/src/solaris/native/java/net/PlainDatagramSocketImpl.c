@@ -166,9 +166,8 @@ Java_java_net_PlainDatagramSocketImpl_init(JNIEnv *env, jclass cls) {
     IO_fd_fdID = NET_GetFileDescriptorID(env);
     CHECK_NULL(IO_fd_fdID);
 
-    Java_java_net_InetAddress_init(env, 0);
-    Java_java_net_Inet4Address_init(env, 0);
-    Java_java_net_Inet6Address_init(env, 0);
+    initInetAddressIDs(env);
+    JNU_CHECK_EXCEPTION(env);
     Java_java_net_NetworkInterface_init(env, 0);
 
 }
@@ -507,6 +506,7 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
     }
     if (IS_NULL(addressObj)) {
         JNU_ThrowNullPointerException(env, "Null address in peek()");
+        return -1;
     }
     if (timeout) {
         int ret = NET_Timeout(fd, timeout);
@@ -1420,7 +1420,7 @@ Java_java_net_PlainDatagramSocketImpl_socketSetOption(JNIEnv *env,
         default :
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "Socket option not supported by PlainDatagramSocketImp");
-            break;
+            return;
 
     }
 
@@ -1834,6 +1834,7 @@ Java_java_net_PlainDatagramSocketImpl_setTimeToLive(JNIEnv *env, jobject this,
 #ifdef AF_INET6
 #ifdef __linux__
     setTTL(env, fd, ttl);
+    JNU_CHECK_EXCEPTION(env);
     if (ipv6_available()) {
         setHopLimit(env, fd, ttl);
     }
@@ -2121,6 +2122,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
                     else
                         NET_ThrowCurrent(env, "setsockopt IP_DROP_MEMBERSHIP failed");
                 }
+                return;
             }
         }
 
@@ -2157,7 +2159,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
             caddr[14] = ((address >> 8) & 0xff);
             caddr[15] = (address & 0xff);
         } else {
-            getInet6Address_ipaddress(env, iaObj, caddr);
+            getInet6Address_ipaddress(env, iaObj, (char*)caddr);
         }
 
         memcpy((void *)&(mname6.ipv6mr_multiaddr), caddr, sizeof(struct in6_addr));

@@ -140,7 +140,7 @@ jdiAssertionFailed(char *fileName, int lineNumber, char *msg)
 const char *
 jvmtiErrorText(jvmtiError error)
 {
-    switch (error) {
+    switch ((int)error) {
         CASE_RETURN_TEXT(JVMTI_ERROR_NONE)
         CASE_RETURN_TEXT(JVMTI_ERROR_INVALID_THREAD)
         CASE_RETURN_TEXT(JVMTI_ERROR_INVALID_THREAD_GROUP)
