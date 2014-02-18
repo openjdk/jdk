@@ -77,51 +77,6 @@
 
 #ifdef DTRACE_ENABLED
 
-#ifndef USDT2
-
-HS_DTRACE_PROBE_DECL4(hotspot, class__initialization__required,
-  char*, intptr_t, oop, intptr_t);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__recursive,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__concurrent,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__erroneous,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__super__failed,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__clinit,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__error,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
-  char*, intptr_t, oop, intptr_t, int);
-
-#define DTRACE_CLASSINIT_PROBE(type, clss, thread_type)          \
-  {                                                              \
-    char* data = NULL;                                           \
-    int len = 0;                                                 \
-    Symbol* name = (clss)->name();                               \
-    if (name != NULL) {                                          \
-      data = (char*)name->bytes();                               \
-      len = name->utf8_length();                                 \
-    }                                                            \
-    HS_DTRACE_PROBE4(hotspot, class__initialization__##type,     \
-      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type);           \
-  }
-
-#define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
-  {                                                              \
-    char* data = NULL;                                           \
-    int len = 0;                                                 \
-    Symbol* name = (clss)->name();                               \
-    if (name != NULL) {                                          \
-      data = (char*)name->bytes();                               \
-      len = name->utf8_length();                                 \
-    }                                                            \
-    HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
-      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type, wait);     \
-  }
-#else /* USDT2 */
 
 #define HOTSPOT_CLASS_INITIALIZATION_required HOTSPOT_CLASS_INITIALIZATION_REQUIRED
 #define HOTSPOT_CLASS_INITIALIZATION_recursive HOTSPOT_CLASS_INITIALIZATION_RECURSIVE
@@ -156,7 +111,6 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
     HOTSPOT_CLASS_INITIALIZATION_##type(                         \
       data, len, (clss)->class_loader(), thread_type, wait);     \
   }
-#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 

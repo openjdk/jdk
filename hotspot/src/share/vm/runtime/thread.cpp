@@ -112,29 +112,6 @@
 
 // Only bother with this argument setup if dtrace is available
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL(hotspot, vm__init__begin);
-HS_DTRACE_PROBE_DECL(hotspot, vm__init__end);
-HS_DTRACE_PROBE_DECL5(hotspot, thread__start, char*, intptr_t,
-  intptr_t, intptr_t, bool);
-HS_DTRACE_PROBE_DECL5(hotspot, thread__stop, char*, intptr_t,
-  intptr_t, intptr_t, bool);
-
-#define DTRACE_THREAD_PROBE(probe, javathread)                             \
-  {                                                                        \
-    ResourceMark rm(this);                                                 \
-    int len = 0;                                                           \
-    const char* name = (javathread)->get_thread_name();                    \
-    len = strlen(name);                                                    \
-    HS_DTRACE_PROBE5(hotspot, thread__##probe,                             \
-      name, len,                                                           \
-      java_lang_Thread::thread_id((javathread)->threadObj()),              \
-      (javathread)->osthread()->thread_id(),                               \
-      java_lang_Thread::is_daemon((javathread)->threadObj()));             \
-  }
-
-#else /* USDT2 */
-
 #define HOTSPOT_THREAD_PROBE_start HOTSPOT_THREAD_START
 #define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_STOP
 
@@ -150,8 +127,6 @@ HS_DTRACE_PROBE_DECL5(hotspot, thread__stop, char*, intptr_t,
       (uintptr_t) (javathread)->osthread()->thread_id(),                               \
       java_lang_Thread::is_daemon((javathread)->threadObj()));             \
   }
-
-#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -3391,11 +3366,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     os::pause();
   }
 
-#ifndef USDT2
-  HS_DTRACE_PROBE(hotspot, vm__init__begin);
-#else /* USDT2 */
   HOTSPOT_VM_INIT_BEGIN();
-#endif /* USDT2 */
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -3557,11 +3528,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
 
-#ifndef USDT2
-  HS_DTRACE_PROBE(hotspot, vm__init__end);
-#else /* USDT2 */
   HOTSPOT_VM_INIT_END();
-#endif /* USDT2 */
 
   // record VM initialization completion time
 #if INCLUDE_MANAGEMENT
