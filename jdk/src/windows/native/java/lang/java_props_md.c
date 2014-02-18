@@ -28,6 +28,9 @@
 #define _WIN32_WINNT 0x0601
 #endif
 
+#include "jni.h"
+#include "jni_util.h"
+
 #include <windows.h>
 #include <shlobj.h>
 #include <objidl.h>
@@ -51,7 +54,7 @@
 #endif
 
 typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
-static void SetupI18nProps(LCID lcid, char** language, char** script, char** country,
+static boolean SetupI18nProps(LCID lcid, char** language, char** script, char** country,
                char** variant, char** encoding);
 
 #define PROPSIZE 9      // eight-letter + null terminator
@@ -60,8 +63,11 @@ static void SetupI18nProps(LCID lcid, char** language, char** script, char** cou
 static char *
 getEncodingInternal(LCID lcid)
 {
-    char * ret = malloc(16);
     int codepage;
+    char * ret = malloc(16);
+    if (ret == NULL) {
+        return NULL;
+    }
 
     if (GetLocaleInfo(lcid,
                       LOCALE_IDEFAULTANSICODEPAGE,
@@ -132,7 +138,11 @@ getEncodingInternal(LCID lcid)
 static char* getConsoleEncoding()
 {
     char* buf = malloc(16);
-    int cp = GetConsoleCP();
+    int cp;
+    if (buf == NULL) {
+        return NULL;
+    }
+    cp = GetConsoleCP();
     if (cp >= 874 && cp <= 950)
         sprintf(buf, "ms%d", cp);
     else
@@ -152,25 +162,33 @@ DllExport const char *
 getJavaIDFromLangID(LANGID langID)
 {
     char * elems[5]; // lang, script, ctry, variant, encoding
-    char * ret = malloc(SNAMESIZE);
+    char * ret;
     int index;
 
-    SetupI18nProps(MAKELCID(langID, SORT_DEFAULT),
-                   &(elems[0]), &(elems[1]), &(elems[2]), &(elems[3]), &(elems[4]));
-
-    // there always is the "language" tag
-    strcpy(ret, elems[0]);
-
-    // append other elements, if any
-    for (index = 1; index < 4; index++) {
-        if ((elems[index])[0] != '\0') {
-            strcat(ret, "-");
-            strcat(ret, elems[index]);
-        }
+    ret = malloc(SNAMESIZE);
+    if (ret == NULL) {
+        return NULL;
     }
 
-    for (index = 0; index < 5; index++) {
-        free(elems[index]);
+    if (SetupI18nProps(MAKELCID(langID, SORT_DEFAULT),
+                   &(elems[0]), &(elems[1]), &(elems[2]), &(elems[3]), &(elems[4]))) {
+
+        // there always is the "language" tag
+        strcpy(ret, elems[0]);
+
+        // append other elements, if any
+        for (index = 1; index < 4; index++) {
+            if ((elems[index])[0] != '\0') {
+                strcat(ret, "-");
+                strcat(ret, elems[index]);
+            }
+        }
+
+        for (index = 0; index < 5; index++) {
+            free(elems[index]);
+        }
+    } else {
+        ret = NULL;
     }
 
     return ret;
@@ -259,12 +277,15 @@ cpu_isalist(void)
     return NULL;
 }
 
-static void
+static boolean
 SetupI18nProps(LCID lcid, char** language, char** script, char** country,
                char** variant, char** encoding) {
     /* script */
     char tmp[SNAMESIZE];
     *script = malloc(PROPSIZE);
+    if (*script == NULL) {
+        return FALSE;
+    }
     if (GetLocaleInfo(lcid,
                       LOCALE_SNAME, tmp, SNAMESIZE) == 0 ||
         sscanf(tmp, "%*[a-z\\-]%1[A-Z]%[a-z]", *script, &((*script)[1])) == 0 ||
@@ -274,6 +295,9 @@ SetupI18nProps(LCID lcid, char** language, char** script, char** country,
 
     /* country */
     *country = malloc(PROPSIZE);
+    if (*country == NULL) {
+        return FALSE;
+    }
     if (GetLocaleInfo(lcid,
                       LOCALE_SISO3166CTRYNAME, *country, PROPSIZE) == 0 &&
         GetLocaleInfo(lcid,
@@ -283,6 +307,9 @@ SetupI18nProps(LCID lcid, char** language, char** script, char** country,
 
     /* language */
     *language = malloc(PROPSIZE);
+    if (*language == NULL) {
+        return FALSE;
+    }
     if (GetLocaleInfo(lcid,
                       LOCALE_SISO639LANGNAME, *language, PROPSIZE) == 0 &&
         GetLocaleInfo(lcid,
@@ -294,6 +321,9 @@ SetupI18nProps(LCID lcid, char** language, char** script, char** country,
 
     /* variant */
     *variant = malloc(PROPSIZE);
+    if (*variant == NULL) {
+        return FALSE;
+    }
     (*variant)[0] = '\0';
 
     /* handling for Norwegian */
@@ -308,6 +338,10 @@ SetupI18nProps(LCID lcid, char** language, char** script, char** country,
 
     /* encoding */
     *encoding = getEncodingInternal(lcid);
+    if (*encoding == NULL) {
+        return FALSE;
+    }
+    return TRUE;
 }
 
 java_props_t *

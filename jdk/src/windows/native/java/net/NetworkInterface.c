@@ -65,13 +65,6 @@ jfieldID ni_bindsID;        /* NetworkInterface.bindings */
 jfieldID ni_nameID;         /* NetworkInterface.name */
 jfieldID ni_displayNameID;  /* NetworkInterface.displayName */
 jfieldID ni_childsID;       /* NetworkInterface.childs */
-jclass ni_iacls;            /* InetAddress */
-
-jclass ni_ia4cls;           /* Inet4Address */
-jmethodID ni_ia4Ctor;       /* Inet4Address() */
-
-jclass ni_ia6cls;           /* Inet6Address */
-jmethodID ni_ia6ctrID;      /* Inet6Address() */
 
 jclass ni_ibcls;            /* InterfaceAddress */
 jmethodID ni_ibctrID;       /* InterfaceAddress() */
@@ -515,26 +508,6 @@ Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls)
     CHECK_NULL(ni_childsID);
     ni_ctor = (*env)->GetMethodID(env, ni_class, "<init>", "()V");
     CHECK_NULL(ni_ctor);
-
-    ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
-    CHECK_NULL(ni_iacls);
-    ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
-    CHECK_NULL(ni_iacls);
-
-    ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
-    CHECK_NULL(ni_ia4cls);
-    ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
-    CHECK_NULL(ni_ia4cls);
-    ni_ia4Ctor = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
-    CHECK_NULL(ni_ia4Ctor);
-
-    ni_ia6cls = (*env)->FindClass(env, "java/net/Inet6Address");
-    CHECK_NULL(ni_ia6cls);
-    ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
-    CHECK_NULL(ni_ia6cls);
-    ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
-    CHECK_NULL(ni_ia6ctrID);
-
     ni_ibcls = (*env)->FindClass(env, "java/net/InterfaceAddress");
     CHECK_NULL(ni_ibcls);
     ni_ibcls = (*env)->NewGlobalRef(env, ni_ibcls);
@@ -546,6 +519,9 @@ Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls)
     ni_ibbroadcastID = (*env)->GetFieldID(env, ni_ibcls, "broadcast", "Ljava/net/Inet4Address;");
     CHECK_NULL(ni_ibbroadcastID);
     ni_ibmaskID = (*env)->GetFieldID(env, ni_ibcls, "maskLength", "S");
+    CHECK_NULL(ni_ibmaskID);
+
+    initInetAddressIDs(env);
 }
 
 /*
@@ -591,7 +567,7 @@ jobject createNetworkInterface
             return NULL;
         }
     }
-    addrArr = (*env)->NewObjectArray(env, netaddrCount, ni_iacls, NULL);
+    addrArr = (*env)->NewObjectArray(env, netaddrCount, ia_class, NULL);
     if (addrArr == NULL) {
         free_netaddr(netaddrP);
         return NULL;
@@ -609,7 +585,7 @@ jobject createNetworkInterface
         jobject iaObj, ia2Obj;
         jobject ibObj = NULL;
         if (addrs->addr.him.sa_family == AF_INET) {
-            iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4Ctor);
+            iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
             if (iaObj == NULL) {
                 free_netaddr(netaddrP);
                 return NULL;
@@ -624,7 +600,7 @@ jobject createNetworkInterface
                 return NULL;
               }
               (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
-              ia2Obj = (*env)->NewObject(env, ni_ia4cls, ni_ia4Ctor);
+              ia2Obj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
               if (ia2Obj == NULL) {
                 free_netaddr(netaddrP);
                 return NULL;
@@ -636,9 +612,9 @@ jobject createNetworkInterface
             }
         } else /* AF_INET6 */ {
             int scope;
-            iaObj = (*env)->NewObject(env, ni_ia6cls, ni_ia6ctrID);
+            iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
             if (iaObj) {
-                int ret = setInet6Address_ipaddress(env, iaObj,  (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+                jboolean ret = setInet6Address_ipaddress(env, iaObj,  (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
                 if (ret == JNI_FALSE) {
                     return NULL;
                 }

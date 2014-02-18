@@ -279,14 +279,37 @@ JNU_NotifyAll(JNIEnv *env, jobject object);
 #define JNU_IsNull(env,obj) ((obj) == NULL)
 
 /************************************************************************
- * Miscellaneous utilities used by the class libraries to check for exceptions
+ * Miscellaneous utilities used by the class libraries to return from
+ * a function if a value is NULL or an exception is pending.
  */
 
-#define CHECK_NULL(x) if ((x) == NULL) return;
-#define CHECK_NULL_RETURN(x, y) if ((x) == NULL) return (y);
+#define CHECK_NULL(x)                           \
+    do {                                        \
+        if ((x) == NULL) {                      \
+            return;                             \
+        }                                       \
+    } while (0)                                 \
 
-#define CHECK_EXCEPTION(env) if ((*env)->ExceptionCheck(env)) return;
-#define CHECK_EXCEPTION_RETURN(env, y) if ((*env)->ExceptionCheck(env)) return (y);
+#define CHECK_NULL_RETURN(x, y)                 \
+    do {                                        \
+        if ((x) == NULL) {                      \
+            return (y);                         \
+        }                                       \
+    } while (0)                                 \
+
+#define JNU_CHECK_EXCEPTION(env)                \
+    do {                                        \
+        if ((*env)->ExceptionCheck(env)) {      \
+            return;                             \
+        }                                       \
+    } while (0)                                 \
+
+#define JNU_CHECK_EXCEPTION_RETURN(env, y)      \
+    do {                                        \
+        if ((*env)->ExceptionCheck(env)) {      \
+            return (y);                         \
+        }                                       \
+    } while (0)
 
 /************************************************************************
  * Debugging utilities
@@ -339,10 +362,6 @@ enum {
     FAST_CP1252,                /* MS-DOS Cp1252 */
     FAST_646_US                 /* US-ASCII : ISO646-US */
 };
-
-jstring nativeNewStringPlatform(JNIEnv *env, const char *str);
-
-char* nativeGetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
 
 int getFastEncoding();
 

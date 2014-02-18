@@ -1646,6 +1646,7 @@ static int getIndexFromIf (JNIEnv *env, jobject nif) {
 }
 
 static int isAdapterIpv6Enabled(JNIEnv *env, int index) {
+  extern int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP);
   netif *ifList, *curr;
   int ipv6Enabled = 0;
   if (getAllInterfacesAndAddresses (env, &ifList) < 0) {

@@ -226,6 +226,13 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                         String.format("Invalid receiver type %s; not a subtype of implementation type %s",
                                       receiverClass, implDefiningClass));
             }
+
+           Class<?> implReceiverClass = implMethod.type().parameterType(0);
+           if (implReceiverClass != implDefiningClass && !implReceiverClass.isAssignableFrom(receiverClass)) {
+               throw new LambdaConversionException(
+                       String.format("Invalid receiver type %s; not a subtype of implementation receiver type %s",
+                                     receiverClass, implReceiverClass));
+             }
         } else {
             // no receiver
             capturedStart = 0;

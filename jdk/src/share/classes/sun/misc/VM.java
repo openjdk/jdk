@@ -367,6 +367,11 @@ public class VM {
      */
     public static native ClassLoader latestUserDefinedLoader();
 
+    /**
+     * Returns {@code true} if we are in a set UID program.
+     */
+    public static native boolean isSetUID();
+
     static {
         initialize();
     }

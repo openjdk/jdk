@@ -1045,6 +1045,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * @author  Alan Kaminsky
      */
     public static class URL extends DocFlavor {
+        private static final long serialVersionUID = 2936725788144902062L;
 
         /**
          * Constructs a new doc flavor with the given MIME type and a print

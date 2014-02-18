@@ -29,7 +29,7 @@
 # @summary Unit test for ProcessAttachingConnector
 #
 # @build ProcessAttachDebugger ProcessAttachDebuggee ShutdownDebuggee
-# @run shell ProcessAttachTest.sh
+# @run shell/timeout=120 ProcessAttachTest.sh
 
 if [ "${TESTJAVA}" = "" ]
 then
@@ -69,8 +69,8 @@ esac
 
 startDebuggee()
 {
-  OUTPUTFILE=${TESTCLASSES}/Debuggee.out
-  ${JAVA} "$@" > ${OUTPUTFILE} &
+  rm -f ${OUTPUTFILE}
+  ${JAVA} "$@" > ${OUTPUTFILE} 2>&1 &
   startpid="$!"
   pid="${startpid}"
                                                                                                      
@@ -93,11 +93,11 @@ startDebuggee()
   echo "Waiting for Debuggee to initialize..."
   attempts=0
   while true; do
-    sleep 1
     out=`tail -1 ${OUTPUTFILE}`
     if [ ! -z "$out" ]; then
       break
     fi
+    sleep 1
     attempts=`expr $attempts + 1`
     echo "Waiting $attempts second(s) ..."
   done
@@ -107,9 +107,23 @@ startDebuggee()
 
 stopDebuggee()
 {
-  $JAVA -classpath "${TESTCLASSES}" ShutdownDebuggee $1
+  # We have to make sure the debuggee has written the portfile before
+  # trying to read it.
+
+  echo "Waiting for port file to be written..."
+  attempts=0
+  while true; do
+    attempts=`expr $attempts + 1`
+    if [ -f  ${PORTFILE} ]; then
+      break
+    fi
+    sleep 1
+    echo "Waiting $attempts second(s) ..."
+  done
+
+  $JAVA -classpath "${TESTCLASSES}" ShutdownDebuggee $1 2>&1
   if [ $? != 0 ] ; then
-    echo "Error: ShutdownDebuggee failed"
+    echo "Error: ShutdownDebuggee failed: $?"
     failures=`expr $failures + 1`
     kill -9 ${startpid}
   fi
@@ -120,7 +134,8 @@ failures=0
 #########################################################
 echo "Test 1: Debuggee start with suspend=n"
 
-PORTFILE="${TESTCLASSES}"/shutdown1.port
+PORTFILE=shutdown1.port
+OUTPUTFILE=Debuggee1.out
 
 DEBUGGEEFLAGS=
 if [ -r $TESTCLASSES/@debuggeeVMOptions ] ; then
@@ -136,17 +151,27 @@ startDebuggee \
 
 $JAVA -classpath "${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar" \
   ProcessAttachDebugger $pid 2>&1
-if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
+  
+if [ $? != 0 ]; then 
+  echo "Error: ProcessAttachDebugger failed: $?"
+  failures=`expr $failures + 1`
+fi
 
 # Note that when the debugger disconnects, the debuggee picks another
 # port and outputs another 'Listening for transport ... ' msg.
 
 stopDebuggee "${PORTFILE}"
 
+echo "${OUTPUTFILE}:"
+cat $OUTPUTFILE
+echo "-----"
+
 #########################################################
 echo "\nTest 2: Debuggee start with suspend=y"
 
-PORTFILE="${TESTCLASSES}"/shutdown2.port
+PORTFILE=shutdown2.port
+OUTPUTFILE=Debuggee2.out
+
 startDebuggee \
   $DEBUGGEEFLAGS \
   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y \
@@ -155,27 +180,20 @@ startDebuggee \
 $JAVA -classpath "${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar" \
   ProcessAttachDebugger $pid 2>&1
 
-# The debuggee is suspended and doesn't run until the debugger
-# disconnects.  We have to give it time to write the port number
-# to ${PORTFILE}
+if [ $? != 0 ]; then 
+  echo "Error: ProcessAttachDebugger failed: $?"
+  failures=`expr $failures + 1`
+fi
 
-echo "Waiting for port file to be written..."
-attempts=0
-while true; do
-  sleep 1
-  attempts=`expr $attempts + 1`
-  if [ -f  ${PORTFILE} ]; then
-    break
-  fi
-  echo "Waiting $attempts second(s) ..."
-done
-
-if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 stopDebuggee "${PORTFILE}"
+
+echo $OUTPUTFILE :
+cat $OUTPUTFILE
+echo -----
 
 ### 
 if [ $failures = 0 ];
   then echo "All tests passed.";
-  else echo "$failures test(s) failed:"; cat ${OUTPUTFILE};
+  else echo "$failures test(s) failed."
 fi
 exit $failures

@@ -504,7 +504,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
         }
     }
 
-    addrArr = (*env)->NewObjectArray(env, netaddrCount, ni_iacls, NULL);
+    addrArr = (*env)->NewObjectArray(env, netaddrCount, ia_class, NULL);
     if (addrArr == NULL) {
         return NULL;
     }
@@ -522,7 +522,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
         jobject iaObj, ia2Obj;
         jobject ibObj = NULL;
         if (addrs->addr.him.sa_family == AF_INET) {
-            iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4Ctor);
+            iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
             if (iaObj == NULL) {
                 return NULL;
             }
@@ -536,7 +536,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
               return NULL;
             }
             (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
-            ia2Obj = (*env)->NewObject(env, ni_ia4cls, ni_ia4Ctor);
+            ia2Obj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
             if (ia2Obj == NULL) {
               free_netaddr(netaddrP);
               return NULL;
@@ -547,9 +547,9 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
         } else /* AF_INET6 */ {
             int scope;
-            iaObj = (*env)->NewObject(env, ni_ia6cls, ni_ia6ctrID);
+            iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
             if (iaObj) {
-                int ret = setInet6Address_ipaddress(env, iaObj, (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+                jboolean ret = setInet6Address_ipaddress(env, iaObj, (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
                 if (ret == JNI_FALSE) {
                     return NULL;
                 }
