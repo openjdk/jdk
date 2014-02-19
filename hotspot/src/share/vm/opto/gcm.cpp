@@ -50,9 +50,13 @@
 #ifdef TARGET_ARCH_MODEL_arm
 # include "adfiles/ad_arm.hpp"
 #endif
-#ifdef TARGET_ARCH_MODEL_ppc
-# include "adfiles/ad_ppc.hpp"
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "adfiles/ad_ppc_32.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_ppc_64
+# include "adfiles/ad_ppc_64.hpp"
+#endif
+
 
 // Portions of code courtesy of Clifford Click
 
@@ -1326,15 +1330,6 @@ void PhaseCFG::global_code_motion() {
   // with suitable memory ops nearby.  Use the memory op to do the NULL check.
   // I can generate a memory op if there is not one nearby.
   if (C->is_method_compilation()) {
-    // Don't do it for natives, adapters, or runtime stubs
-    int allowed_reasons = 0;
-    // ...and don't do it when there have been too many traps, globally.
-    for (int reason = (int)Deoptimization::Reason_none+1;
-         reason < Compile::trapHistLength; reason++) {
-      assert(reason < BitsPerInt, "recode bit map");
-      if (!C->too_many_traps((Deoptimization::DeoptReason) reason))
-        allowed_reasons |= nth_bit(reason);
-    }
     // By reversing the loop direction we get a very minor gain on mpegaudio.
     // Feel free to revert to a forward loop for clarity.
     // for( int i=0; i < (int)matcher._null_check_tests.size(); i+=2 ) {
@@ -1342,7 +1337,7 @@ void PhaseCFG::global_code_motion() {
       Node* proj = _matcher._null_check_tests[i];
       Node* val  = _matcher._null_check_tests[i + 1];
       Block* block = get_block_for_node(proj);
-      implicit_null_check(block, proj, val, allowed_reasons);
+      implicit_null_check(block, proj, val, C->allowed_deopt_reasons());
       // The implicit_null_check will only perform the transformation
       // if the null branch is truly uncommon, *and* it leads to an
       // uncommon trap.  Combined with the too_many_traps guards

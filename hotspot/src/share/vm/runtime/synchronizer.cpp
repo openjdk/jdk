@@ -53,7 +53,7 @@
 # include "os_bsd.inline.hpp"
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(PPC64)
   // Need to inhibit inlining for older versions of GCC to avoid build-time failures
   #define ATTR __attribute__((noinline))
 #else

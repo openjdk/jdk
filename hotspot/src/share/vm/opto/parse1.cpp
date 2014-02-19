@@ -106,24 +106,24 @@ Node *Parse::fetch_interpreter_state(int index,
   // Very similar to LoadNode::make, except we handle un-aligned longs and
   // doubles on Sparc.  Intel can handle them just fine directly.
   Node *l;
-  switch( bt ) {                // Signature is flattened
-  case T_INT:     l = new (C) LoadINode( ctl, mem, adr, TypeRawPtr::BOTTOM ); break;
-  case T_FLOAT:   l = new (C) LoadFNode( ctl, mem, adr, TypeRawPtr::BOTTOM ); break;
-  case T_ADDRESS: l = new (C) LoadPNode( ctl, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM  ); break;
-  case T_OBJECT:  l = new (C) LoadPNode( ctl, mem, adr, TypeRawPtr::BOTTOM, TypeInstPtr::BOTTOM ); break;
+  switch (bt) {                // Signature is flattened
+  case T_INT:     l = new (C) LoadINode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeInt::INT,        MemNode::unordered); break;
+  case T_FLOAT:   l = new (C) LoadFNode(ctl, mem, adr, TypeRawPtr::BOTTOM, Type::FLOAT,         MemNode::unordered); break;
+  case T_ADDRESS: l = new (C) LoadPNode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM,  MemNode::unordered); break;
+  case T_OBJECT:  l = new (C) LoadPNode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeInstPtr::BOTTOM, MemNode::unordered); break;
   case T_LONG:
   case T_DOUBLE: {
     // Since arguments are in reverse order, the argument address 'adr'
     // refers to the back half of the long/double.  Recompute adr.
-    adr = basic_plus_adr( local_addrs_base, local_addrs, -(index+1)*wordSize );
-    if( Matcher::misaligned_doubles_ok ) {
+    adr = basic_plus_adr(local_addrs_base, local_addrs, -(index+1)*wordSize);
+    if (Matcher::misaligned_doubles_ok) {
       l = (bt == T_DOUBLE)
-        ? (Node*)new (C) LoadDNode( ctl, mem, adr, TypeRawPtr::BOTTOM )
-        : (Node*)new (C) LoadLNode( ctl, mem, adr, TypeRawPtr::BOTTOM );
+        ? (Node*)new (C) LoadDNode(ctl, mem, adr, TypeRawPtr::BOTTOM, Type::DOUBLE, MemNode::unordered)
+        : (Node*)new (C) LoadLNode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeLong::LONG, MemNode::unordered);
     } else {
       l = (bt == T_DOUBLE)
-        ? (Node*)new (C) LoadD_unalignedNode( ctl, mem, adr, TypeRawPtr::BOTTOM )
-        : (Node*)new (C) LoadL_unalignedNode( ctl, mem, adr, TypeRawPtr::BOTTOM );
+        ? (Node*)new (C) LoadD_unalignedNode(ctl, mem, adr, TypeRawPtr::BOTTOM, MemNode::unordered)
+        : (Node*)new (C) LoadL_unalignedNode(ctl, mem, adr, TypeRawPtr::BOTTOM, MemNode::unordered);
     }
     break;
   }
@@ -229,7 +229,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     Node *displaced_hdr = fetch_interpreter_state((index*2) + 1, T_ADDRESS, monitors_addr, osr_buf);
 
 
-    store_to_memory(control(), box, displaced_hdr, T_ADDRESS, Compile::AliasIdxRaw);
+    store_to_memory(control(), box, displaced_hdr, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
 
     // Build a bogus FastLockNode (no code will be generated) and push the
     // monitor into our debug info.
@@ -390,6 +390,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Pars
   _expected_uses = expected_uses;
   _depth = 1 + (caller->has_method() ? caller->depth() : 0);
   _wrote_final = false;
+  _wrote_volatile = false;
   _alloc_with_final = NULL;
   _entry_bci = InvocationEntryBci;
   _tf = NULL;
@@ -907,7 +908,13 @@ void Parse::do_exits() {
   Node* iophi = _exits.i_o();
   _exits.set_i_o(gvn().transform(iophi));
 
-  if (wrote_final()) {
+  // On PPC64, also add MemBarRelease for constructors which write
+  // volatile fields. As support_IRIW_for_not_multiple_copy_atomic_cpu
+  // is set on PPC64, no sync instruction is issued after volatile
+  // stores. We want to quarantee the same behaviour as on platforms
+  // with total store order, although this is not required by the Java
+  // memory model. So as with finals, we add a barrier here.
+  if (wrote_final() PPC64_ONLY(|| (wrote_volatile() && method()->is_initializer()))) {
     // This method (which must be a constructor by the rules of Java)
     // wrote a final.  The effects of all initializations must be
     // committed to memory before any code after the constructor
@@ -1649,7 +1656,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           assert(bt1 != Type::BOTTOM, "should not be building conflict phis");
           map()->set_req(j, _gvn.transform_no_reclaim(phi));
           debug_only(const Type* bt2 = phi->bottom_type());
-          assert(bt2->higher_equal(bt1), "must be consistent with type-flow");
+          assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
         }
       }
@@ -1931,7 +1938,7 @@ void Parse::call_register_finalizer() {
   Node* klass = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), klass_addr, TypeInstPtr::KLASS) );
 
   Node* access_flags_addr = basic_plus_adr(klass, klass, in_bytes(Klass::access_flags_offset()));
-  Node* access_flags = make_load(NULL, access_flags_addr, TypeInt::INT, T_INT);
+  Node* access_flags = make_load(NULL, access_flags_addr, TypeInt::INT, T_INT, MemNode::unordered);
 
   Node* mask  = _gvn.transform(new (C) AndINode(access_flags, intcon(JVM_ACC_HAS_FINALIZER)));
   Node* check = _gvn.transform(new (C) CmpINode(mask, intcon(0)));
@@ -2022,7 +2029,7 @@ void Parse::return_current(Node* value) {
           !tp->klass()->is_interface()) {
         // sharpen the type eagerly; this eases certain assert checking
         if (tp->higher_equal(TypeInstPtr::NOTNULL))
-          tr = tr->join(TypeInstPtr::NOTNULL)->is_instptr();
+          tr = tr->join_speculative(TypeInstPtr::NOTNULL)->is_instptr();
         value = _gvn.transform(new (C) CheckCastPPNode(0,value,tr));
       }
     }
