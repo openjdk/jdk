@@ -50,7 +50,7 @@ void Parse::array_load(BasicType elem_type) {
   if (stopped())  return;     // guaranteed null or range check
   dec_sp(2);                  // Pop array and index
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(elem_type);
-  Node* ld = make_load(control(), adr, elem, elem_type, adr_type);
+  Node* ld = make_load(control(), adr, elem, elem_type, adr_type, MemNode::unordered);
   push(ld);
 }
 
@@ -62,7 +62,7 @@ void Parse::array_store(BasicType elem_type) {
   Node* val = pop();
   dec_sp(2);                  // Pop array and index
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(elem_type);
-  store_to_memory(control(), adr, val, elem_type, adr_type);
+  store_to_memory(control(), adr, val, elem_type, adr_type, StoreNode::release_if_reference(elem_type));
 }
 
 
@@ -88,7 +88,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
       if (toop->klass()->as_instance_klass()->unique_concrete_subklass()) {
         // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
         const Type* subklass = Type::get_const_type(toop->klass());
-        elemtype = subklass->join(el);
+        elemtype = subklass->join_speculative(el);
       }
     }
   }
@@ -1278,7 +1278,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
        //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
        // or the narrowOop equivalent.
        const Type* obj_type = _gvn.type(obj);
-       const TypeOopPtr* tboth = obj_type->join(con_type)->isa_oopptr();
+       const TypeOopPtr* tboth = obj_type->join_speculative(con_type)->isa_oopptr();
        if (tboth != NULL && tboth->klass_is_exact() && tboth != obj_type &&
            tboth->higher_equal(obj_type)) {
           // obj has to be of the exact type Foo if the CmpP succeeds.
@@ -1288,7 +1288,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
               (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
             TypeNode* ccast = new (C) CheckCastPPNode(control(), obj, tboth);
             const Type* tcc = ccast->as_Type()->type();
-            assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
+            assert(tcc != obj_type && tcc->higher_equal_speculative(obj_type), "must improve");
             // Delay transform() call to allow recovery of pre-cast value
             // at the control merge.
             _gvn.set_type_bottom(ccast);
@@ -1318,7 +1318,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
   switch (btest) {
   case BoolTest::eq:                    // Constant test?
     {
-      const Type* tboth = tcon->join(tval);
+      const Type* tboth = tcon->join_speculative(tval);
       if (tboth == tval)  break;        // Nothing to gain.
       if (tcon->isa_int()) {
         ccast = new (C) CastIINode(val, tboth);
@@ -1352,7 +1352,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
 
   if (ccast != NULL) {
     const Type* tcc = ccast->as_Type()->type();
-    assert(tcc != tval && tcc->higher_equal(tval), "must improve");
+    assert(tcc != tval && tcc->higher_equal_speculative(tval), "must improve");
     // Delay transform() call to allow recovery of pre-cast value
     // at the control merge.
     ccast->set_req(0, control());
@@ -1720,14 +1720,14 @@ void Parse::do_one_bytecode() {
     a = array_addressing(T_LONG, 0);
     if (stopped())  return;     // guaranteed null or range check
     dec_sp(2);                  // Pop array and index
-    push_pair(make_load(control(), a, TypeLong::LONG, T_LONG, TypeAryPtr::LONGS));
+    push_pair(make_load(control(), a, TypeLong::LONG, T_LONG, TypeAryPtr::LONGS, MemNode::unordered));
     break;
   }
   case Bytecodes::_daload: {
     a = array_addressing(T_DOUBLE, 0);
     if (stopped())  return;     // guaranteed null or range check
     dec_sp(2);                  // Pop array and index
-    push_pair(make_load(control(), a, Type::DOUBLE, T_DOUBLE, TypeAryPtr::DOUBLES));
+    push_pair(make_load(control(), a, Type::DOUBLE, T_DOUBLE, TypeAryPtr::DOUBLES, MemNode::unordered));
     break;
   }
   case Bytecodes::_bastore: array_store(T_BYTE);  break;
@@ -1744,7 +1744,7 @@ void Parse::do_one_bytecode() {
     a = pop();                  // the array itself
     const TypeOopPtr* elemtype  = _gvn.type(a)->is_aryptr()->elem()->make_oopptr();
     const TypeAryPtr* adr_type = TypeAryPtr::OOPS;
-    Node* store = store_oop_to_array(control(), a, d, adr_type, c, elemtype, T_OBJECT);
+    Node* store = store_oop_to_array(control(), a, d, adr_type, c, elemtype, T_OBJECT, MemNode::release);
     break;
   }
   case Bytecodes::_lastore: {
@@ -1752,7 +1752,7 @@ void Parse::do_one_bytecode() {
     if (stopped())  return;     // guaranteed null or range check
     c = pop_pair();
     dec_sp(2);                  // Pop array and index
-    store_to_memory(control(), a, c, T_LONG, TypeAryPtr::LONGS);
+    store_to_memory(control(), a, c, T_LONG, TypeAryPtr::LONGS, MemNode::unordered);
     break;
   }
   case Bytecodes::_dastore: {
@@ -1761,7 +1761,7 @@ void Parse::do_one_bytecode() {
     c = pop_pair();
     dec_sp(2);                  // Pop array and index
     c = dstore_rounding(c);
-    store_to_memory(control(), a, c, T_DOUBLE, TypeAryPtr::DOUBLES);
+    store_to_memory(control(), a, c, T_DOUBLE, TypeAryPtr::DOUBLES, MemNode::unordered);
     break;
   }
   case Bytecodes::_getfield:

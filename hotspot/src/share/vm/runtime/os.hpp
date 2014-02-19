@@ -41,6 +41,10 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "jvm_windows.h"
 #endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "jvm_aix.h"
+# include <setjmp.h>
+#endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "jvm_bsd.h"
 # include <setjmp.h>
@@ -772,6 +776,10 @@ class os: AllStatic {
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "os_aix.hpp"
+# include "os_posix.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "os_posix.hpp"
 # include "os_bsd.hpp"
@@ -799,6 +807,9 @@ class os: AllStatic {
 #endif
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "os_linux_ppc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_aix_ppc
+# include "os_aix_ppc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "os_bsd_x86.hpp"
