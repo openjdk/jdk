@@ -510,7 +510,7 @@ Java_sun_java2d_x11_X11SurfaceData_initSurface(JNIEnv *env, jclass xsd,
     xsdo->cData = xsdo->configData->color_data;
 
     XShared_initSurface(env, xsdo, depth, width, height, drawable);
-    xsdo->xrPic = NULL;
+    xsdo->xrPic = None;
 #endif /* !HEADLESS */
 }
 
