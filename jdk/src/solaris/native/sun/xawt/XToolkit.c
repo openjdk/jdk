@@ -699,7 +699,7 @@ performPoll(JNIEnv *env, jlong nextTaskTime) {
     if (pollFds[0].revents) {
         // Events in X pipe
         update_poll_timeout(TIMEOUT_EVENTS);
-        PRINT2("performPoll(): TIMEOUT_EVENTS curPollTimeout = %ld \n", curPollTimeout);
+        PRINT2("performPoll(): TIMEOUT_EVENTS curPollTimeout = %d \n", curPollTimeout);
     }
     return;
 

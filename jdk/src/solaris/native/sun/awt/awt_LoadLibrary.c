@@ -227,7 +227,7 @@ Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jargv)
 
 
 #define REFLECT_VOID_FUNCTION(name, arglist, paramlist)                 \
-typedef name##_type arglist;                                            \
+typedef void name##_type arglist;                                       \
 void name arglist                                                       \
 {                                                                       \
     static name##_type *name##_ptr = NULL;                              \

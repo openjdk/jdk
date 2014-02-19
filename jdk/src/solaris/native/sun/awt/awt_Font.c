@@ -452,6 +452,7 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
         int32_t i, size;
         char *fontsetname = NULL;
         char *nativename = NULL;
+        Boolean doFree = FALSE;
         jobjectArray componentFonts = NULL;
         jobject peer = NULL;
         jobject fontDescriptor = NULL;
@@ -491,8 +492,10 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
 
             if (!JNU_IsNull(env, fontDescriptorName)) {
                 nativename = (char *) JNU_GetStringPlatformChars(env, fontDescriptorName, NULL);
+                doFree = TRUE;
             } else {
                 nativename = "";
+                doFree = FALSE;
             }
 
             fdata->flist[i].xlfd = malloc(strlen(nativename)
@@ -500,7 +503,7 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
             jio_snprintf(fdata->flist[i].xlfd, strlen(nativename) + 10,
                          nativename, size * 10);
 
-            if (nativename != NULL && nativename != "")
+            if (nativename != NULL && doFree)
                 JNU_ReleaseStringPlatformChars(env, fontDescriptorName, (const char *) nativename);
 
             /*
