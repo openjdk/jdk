@@ -128,7 +128,6 @@ class ArrayPrefixHelpers {
             this.lo = lo; this.hi = hi;
         }
 
-        @SuppressWarnings("unchecked")
         public final void compute() {
             final BinaryOperator<T> fn;
             final T[] a;
@@ -142,9 +141,9 @@ class ArrayPrefixHelpers {
                     if (lt == null) {                // first pass
                         int mid = (l + h) >>> 1;
                         f = rt = t.right =
-                                new CumulateTask<>(t, fn, a, org, fnc, th, mid, h);
+                                new CumulateTask<T>(t, fn, a, org, fnc, th, mid, h);
                         t = lt = t.left  =
-                                new CumulateTask<>(t, fn, a, org, fnc, th, l, mid);
+                                new CumulateTask<T>(t, fn, a, org, fnc, th, l, mid);
                     }
                     else {                           // possibly refork
                         T pin = t.in;
@@ -213,7 +212,9 @@ class ArrayPrefixHelpers {
                         sum = t.in;
                     t.out = sum;
                     for (CumulateTask<T> par;;) {             // propagate
-                        if ((par = (CumulateTask<T>)t.getCompleter()) == null) {
+                        @SuppressWarnings("unchecked") CumulateTask<T> partmp
+                            = (CumulateTask<T>)t.getCompleter();
+                        if ((par = partmp) == null) {
                             if ((state & FINISHED) != 0)      // enable join
                                 t.quietlyComplete();
                             break outer;
@@ -245,6 +246,7 @@ class ArrayPrefixHelpers {
                 }
             }
         }
+        private static final long serialVersionUID = 5293554502939613543L;
     }
 
     static final class LongCumulateTask extends CountedCompleter<Void> {
@@ -394,6 +396,7 @@ class ArrayPrefixHelpers {
                 }
             }
         }
+        private static final long serialVersionUID = -5074099945909284273L;
     }
 
     static final class DoubleCumulateTask extends CountedCompleter<Void> {
@@ -543,6 +546,7 @@ class ArrayPrefixHelpers {
                 }
             }
         }
+        private static final long serialVersionUID = -586947823794232033L;
     }
 
     static final class IntCumulateTask extends CountedCompleter<Void> {
@@ -692,5 +696,6 @@ class ArrayPrefixHelpers {
                 }
             }
         }
+        private static final long serialVersionUID = 3731755594596840961L;
     }
 }
