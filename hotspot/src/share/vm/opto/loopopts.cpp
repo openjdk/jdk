@@ -1115,8 +1115,8 @@ BoolNode *PhaseIdealLoop::clone_iff( PhiNode *phi, IdealLoopTree *loop ) {
     Node *n2 = phi->in(i)->in(1)->in(2);
     phi1->set_req( i, n1 );
     phi2->set_req( i, n2 );
-    phi1->set_type( phi1->type()->meet(n1->bottom_type()) );
-    phi2->set_type( phi2->type()->meet(n2->bottom_type()) );
+    phi1->set_type( phi1->type()->meet_speculative(n1->bottom_type()));
+    phi2->set_type( phi2->type()->meet_speculative(n2->bottom_type()));
   }
   // See if these Phis have been made before.
   // Register with optimizer
@@ -1189,8 +1189,8 @@ CmpNode *PhaseIdealLoop::clone_bool( PhiNode *phi, IdealLoopTree *loop ) {
     }
     phi1->set_req( j, n1 );
     phi2->set_req( j, n2 );
-    phi1->set_type( phi1->type()->meet(n1->bottom_type()) );
-    phi2->set_type( phi2->type()->meet(n2->bottom_type()) );
+    phi1->set_type(phi1->type()->meet_speculative(n1->bottom_type()));
+    phi2->set_type(phi2->type()->meet_speculative(n2->bottom_type()));
   }
 
   // See if these Phis have been made before.

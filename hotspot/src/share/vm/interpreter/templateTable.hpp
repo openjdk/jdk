@@ -40,8 +40,11 @@
 #ifdef TARGET_ARCH_MODEL_arm
 # include "interp_masm_arm.hpp"
 #endif
-#ifdef TARGET_ARCH_MODEL_ppc
-# include "interp_masm_ppc.hpp"
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "interp_masm_ppc_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc_64
+# include "interp_masm_ppc_64.hpp"
 #endif
 
 #ifndef CC_INTERP
@@ -370,8 +373,8 @@ class TemplateTable: AllStatic {
 #ifdef TARGET_ARCH_MODEL_arm
 # include "templateTable_arm.hpp"
 #endif
-#ifdef TARGET_ARCH_MODEL_ppc
-# include "templateTable_ppc.hpp"
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "templateTable_ppc_32.hpp"
 #endif
 
 };

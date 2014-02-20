@@ -57,6 +57,11 @@
 # include "atomic_windows_x86.inline.hpp"
 #endif
 
+// AIX
+#ifdef TARGET_OS_ARCH_aix_ppc
+# include "atomic_aix_ppc.inline.hpp"
+#endif
+
 // BSD
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "atomic_bsd_x86.inline.hpp"
