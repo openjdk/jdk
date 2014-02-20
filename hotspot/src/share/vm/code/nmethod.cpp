@@ -597,7 +597,7 @@ nmethod* nmethod::new_nmethod(methodHandle method,
         InstanceKlass::cast(klass)->add_dependent_nmethod(nm);
       }
       NOT_PRODUCT(nmethod_stats.note_nmethod(nm));
-      if (PrintAssembly) {
+      if (PrintAssembly || CompilerOracle::has_option_string(method, "PrintAssembly")) {
         Disassembler::decode(nm);
       }
     }

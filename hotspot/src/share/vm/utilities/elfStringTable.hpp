@@ -70,6 +70,6 @@ class ElfStringTable: CHeapObj<mtInternal> {
   NullDecoder::decoder_status  m_status;
 };
 
-#endif // _WINDOWS and _APPLE
+#endif // !_WINDOWS && !__APPLE__
 
 #endif // SHARE_VM_UTILITIES_ELF_STRING_TABLE_HPP

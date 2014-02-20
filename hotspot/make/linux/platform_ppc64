@@ -1,0 +1,17 @@
+os_family = linux
+
+arch = ppc
+
+arch_model = ppc_64
+
+os_arch = linux_ppc
+
+os_arch_model = linux_ppc_64
+
+lib_arch = ppc64
+
+compiler = gcc
+
+gnu_dis_arch = ppc64
+
+sysdefs = -DLINUX -D_GNU_SOURCE -DPPC64

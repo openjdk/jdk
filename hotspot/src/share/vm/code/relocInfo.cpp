@@ -582,6 +582,18 @@ void static_stub_Relocation::unpack_data() {
   _static_call = address_from_scaled_offset(unpack_1_int(), base);
 }
 
+void trampoline_stub_Relocation::pack_data_to(CodeSection* dest ) {
+  short* p = (short*) dest->locs_end();
+  CodeSection* insts = dest->outer()->insts();
+  normalize_address(_owner, insts);
+  p = pack_1_int_to(p, scaled_offset(_owner, insts->start()));
+  dest->set_locs_end((relocInfo*) p);
+}
+
+void trampoline_stub_Relocation::unpack_data() {
+  address base = binding()->section_start(CodeBuffer::SECT_INSTS);
+  _owner = address_from_scaled_offset(unpack_1_int(), base);
+}
 
 void external_word_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
@@ -811,6 +823,25 @@ address static_call_Relocation::static_stub() {
   return NULL;
 }
 
+// Finds the trampoline address for a call. If no trampoline stub is
+// found NULL is returned which can be handled by the caller.
+address trampoline_stub_Relocation::get_trampoline_for(address call, nmethod* code) {
+  // There are no relocations available when the code gets relocated
+  // because of CodeBuffer expansion.
+  if (code->relocation_size() == 0)
+    return NULL;
+
+  RelocIterator iter(code, call);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::trampoline_stub_type) {
+      if (iter.trampoline_stub_reloc()->owner() == call) {
+        return iter.addr();
+      }
+    }
+  }
+
+  return NULL;
+}
 
 void static_stub_Relocation::clear_inline_cache() {
   // Call stub is only used when calling the interpreted code.
@@ -973,6 +1004,12 @@ void RelocIterator::print_current() {
     {
       static_stub_Relocation* r = (static_stub_Relocation*) reloc();
       tty->print(" | [static_call=" INTPTR_FORMAT "]", r->static_call());
+      break;
+    }
+  case relocInfo::trampoline_stub_type:
+    {
+      trampoline_stub_Relocation* r = (trampoline_stub_Relocation*) reloc();
+      tty->print(" | [trampoline owner=" INTPTR_FORMAT "]", r->owner());
       break;
     }
   }
