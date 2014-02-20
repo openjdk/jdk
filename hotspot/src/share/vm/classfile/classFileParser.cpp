@@ -2777,6 +2777,11 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(u4 attribute_b
                      "Short length on BootstrapMethods in class file %s",
                      CHECK);
 
+  guarantee_property(attribute_byte_length > sizeof(u2),
+                     "Invalid BootstrapMethods attribute length %u in class file %s",
+                     attribute_byte_length,
+                     CHECK);
+
   // The attribute contains a counted array of counted tuples of shorts,
   // represending bootstrap specifiers:
   //    length*{bootstrap_method_index, argument_count*{argument_index}}
