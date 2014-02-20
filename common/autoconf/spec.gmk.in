@@ -645,6 +645,15 @@ INSTALL_SHAREDSTATEDIR=@sharedstatedir@
 # Read-only single-machine data
 INSTALL_SYSCONFDIR=@sysconfdir@
 
+####################################################
+#
+# Libraries
+#
+
+USE_EXTERNAL_LIBPNG:=@USE_EXTERNAL_LIBPNG@
+PNG_LIBS:=@PNG_LIBS@
+PNG_CFLAGS:=@PNG_CFLAGS@
+
 
 ####################################################
 #
