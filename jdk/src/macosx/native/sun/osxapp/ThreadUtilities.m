@@ -34,6 +34,7 @@
 JavaVM *jvm = NULL;
 static JNIEnv *appKitEnv = NULL;
 static jobject appkitThreadGroup = NULL;
+static BOOL awtEmbedded = NO;
 
 inline void attachCurrentThread(void** env) {
     if ([NSThread isMainThread]) {
@@ -85,6 +86,14 @@ AWT_ASSERT_APPKIT_THREAD;
     } else {
         [JNFRunLoop performOnMainThread:aSelector on:target withObject:arg waitUntilDone:wait];
     }
+}
+
++ (void)setAWTEmbedded:(BOOL)embedded {
+    awtEmbedded = embedded;
+}
+
++ (BOOL)isAWTEmbedded {
+    return awtEmbedded;
 }
 
 @end
