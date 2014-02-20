@@ -363,6 +363,7 @@ AWT_ASSERT_APPKIT_THREAD;
     //  AppKit Application.
     NSApplication *app = [NSApplicationAWT sharedApplication];
     isEmbedded = ![NSApp isKindOfClass:[NSApplicationAWT class]];
+    [ThreadUtilities setAWTEmbedded:isEmbedded];
 
     if (!isEmbedded) {
         // Install run loop observers and set the AppKit Java thread name
