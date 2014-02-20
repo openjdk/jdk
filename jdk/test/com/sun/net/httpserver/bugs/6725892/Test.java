@@ -68,7 +68,7 @@ public class Test {
 
         try {
             InetSocketAddress addr = new InetSocketAddress (0);
-            s1 = HttpServer.create (addr, 0);
+            s1 = HttpServer.create (addr, 100);
             HttpHandler h = new Handler ();
             HttpContext c1 = s1.createContext ("/", h);
             s1.setExecutor(exec);
