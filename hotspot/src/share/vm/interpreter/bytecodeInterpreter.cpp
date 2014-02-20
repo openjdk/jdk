@@ -415,10 +415,10 @@
  * On some architectures/platforms it should be possible to do this implicitly
  */
 #undef CHECK_NULL
-#define CHECK_NULL(obj_)                                                                       \
-        if ((obj_) == NULL) {                                                                  \
-          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), "", note_nullCheck_trap); \
-        }                                                                                      \
+#define CHECK_NULL(obj_)                                                                         \
+        if ((obj_) == NULL) {                                                                    \
+          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), NULL, note_nullCheck_trap); \
+        }                                                                                        \
         VERIFY_OOP(obj_)
 
 #define VMdoubleConstZero() 0.0
