@@ -654,6 +654,46 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
 
   ###############################################################################
   #
+  # Check for the png library
+  #
+
+  AC_ARG_WITH(libpng, [AS_HELP_STRING([--with-libpng],
+     [use libpng from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
+
+
+  AC_MSG_CHECKING([for which libpng to use])
+
+  # default is bundled
+  DEFAULT_LIBPNG=bundled
+
+  #
+  # if user didn't specify, use DEFAULT_LIBPNG
+  #
+  if test "x${with_libpng}" = "x"; then
+      with_libpng=${DEFAULT_LIBPNG}
+  fi
+
+  if test "x${with_libpng}" = "xbundled"; then
+      USE_EXTERNAL_LIBPNG=false
+      AC_MSG_RESULT([bundled])
+  elif test "x${with_libpng}" = "xsystem"; then
+      PKG_CHECK_MODULES(PNG, libpng,
+                   [ LIBPNG_FOUND=yes ],
+                   [ LIBPNG_FOUND=no ])
+      if test "x${LIBPNG_FOUND}" = "xyes"; then
+          USE_EXTERNAL_LIBPNG=true
+          AC_MSG_RESULT([system])
+      else
+          AC_MSG_RESULT([system not found])
+          AC_MSG_ERROR([--with-libpng=system specified, but no libpng found!])
+      fi
+  else
+      AC_MSG_ERROR([Invalid value of --with-libpng: ${with_libpng}, use 'system' or 'bundled'])
+  fi
+  AC_SUBST(USE_EXTERNAL_LIBPNG)
+
+  ###############################################################################
+  #
   # Check for the zlib library
   #
 

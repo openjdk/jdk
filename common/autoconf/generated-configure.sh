@@ -646,6 +646,9 @@ LIBDL
 LIBM
 LIBZIP_CAN_USE_MMAP
 USE_EXTERNAL_LIBZ
+USE_EXTERNAL_LIBPNG
+PNG_LIBS
+PNG_CFLAGS
 USE_EXTERNAL_LIBGIF
 USE_EXTERNAL_LIBJPEG
 ALSA_LIBS
@@ -1070,6 +1073,7 @@ with_alsa
 with_alsa_include
 with_alsa_lib
 with_giflib
+with_libpng
 with_zlib
 with_stdc__lib
 with_num_cores
@@ -1178,6 +1182,8 @@ FREETYPE_CFLAGS
 FREETYPE_LIBS
 ALSA_CFLAGS
 ALSA_LIBS
+PNG_CFLAGS
+PNG_LIBS
 LIBFFI_CFLAGS
 LIBFFI_LIBS
 CCACHE'
@@ -1921,6 +1927,8 @@ Optional Packages:
   --with-alsa-lib         specify directory for the alsa library
   --with-giflib           use giflib from build system or OpenJDK source
                           (system, bundled) [bundled]
+  --with-libpng           use libpng from build system or OpenJDK source
+                          (system, bundled) [bundled]
   --with-zlib             use zlib from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-stdc++lib=<static>,<dynamic>,<default>
@@ -2037,6 +2045,8 @@ Some influential environment variables:
               linker flags for FREETYPE, overriding pkg-config
   ALSA_CFLAGS C compiler flags for ALSA, overriding pkg-config
   ALSA_LIBS   linker flags for ALSA, overriding pkg-config
+  PNG_CFLAGS  C compiler flags for PNG, overriding pkg-config
+  PNG_LIBS    linker flags for PNG, overriding pkg-config
   LIBFFI_CFLAGS
               C compiler flags for LIBFFI, overriding pkg-config
   LIBFFI_LIBS linker flags for LIBFFI, overriding pkg-config
@@ -4092,7 +4102,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1392111785
+DATE_WHEN_GENERATED=1392907541
 
 ###############################################################################
 #
@@ -47211,6 +47221,118 @@ fi
     USE_EXTERNAL_LIBGIF=true
   else
     as_fn_error $? "Invalid value of --with-giflib: ${with_giflib}, use 'system' or 'bundled'" "$LINENO" 5
+  fi
+
+
+  ###############################################################################
+  #
+  # Check for the png library
+  #
+
+
+# Check whether --with-libpng was given.
+if test "${with_libpng+set}" = set; then :
+  withval=$with_libpng;
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which libpng to use" >&5
+$as_echo_n "checking for which libpng to use... " >&6; }
+
+  # default is bundled
+  DEFAULT_LIBPNG=bundled
+
+  #
+  # if user didn't specify, use DEFAULT_LIBPNG
+  #
+  if test "x${with_libpng}" = "x"; then
+      with_libpng=${DEFAULT_LIBPNG}
+  fi
+
+  if test "x${with_libpng}" = "xbundled"; then
+      USE_EXTERNAL_LIBPNG=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
+$as_echo "bundled" >&6; }
+  elif test "x${with_libpng}" = "xsystem"; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PNG" >&5
+$as_echo_n "checking for PNG... " >&6; }
+
+if test -n "$PNG_CFLAGS"; then
+    pkg_cv_PNG_CFLAGS="$PNG_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpng\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpng") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PNG_CFLAGS=`$PKG_CONFIG --cflags "libpng" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PNG_LIBS"; then
+    pkg_cv_PNG_LIBS="$PNG_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpng\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpng") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PNG_LIBS=`$PKG_CONFIG --libs "libpng" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PNG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libpng" 2>&1`
+        else
+	        PNG_PKG_ERRORS=`$PKG_CONFIG --print-errors "libpng" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PNG_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                 LIBPNG_FOUND=no
+elif test $pkg_failed = untried; then
+	 LIBPNG_FOUND=no
+else
+	PNG_CFLAGS=$pkg_cv_PNG_CFLAGS
+	PNG_LIBS=$pkg_cv_PNG_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	 LIBPNG_FOUND=yes
+fi
+      if test "x${LIBPNG_FOUND}" = "xyes"; then
+          USE_EXTERNAL_LIBPNG=true
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: system" >&5
+$as_echo "system" >&6; }
+      else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: system not found" >&5
+$as_echo "system not found" >&6; }
+          as_fn_error $? "--with-libpng=system specified, but no libpng found!" "$LINENO" 5
+      fi
+  else
+      as_fn_error $? "Invalid value of --with-libpng: ${with_libpng}, use 'system' or 'bundled'" "$LINENO" 5
   fi
 
 
