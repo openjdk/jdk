@@ -45,7 +45,7 @@
 // the do_it() method of a ThreadRootsMarkingTask is executed, it
 // starts marking from the thread's roots.
 //
-// The enqueuing of the MarkFromRootsTask and ThreadRootsMarkingTask
+// The enqueueing of the MarkFromRootsTask and ThreadRootsMarkingTask
 // do little more than create the task and put it on a queue.  The
 // queue is a GCTaskQueue and threads steal tasks from this GCTaskQueue.
 //

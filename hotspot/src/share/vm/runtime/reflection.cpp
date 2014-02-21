@@ -482,7 +482,7 @@ static bool under_host_klass(InstanceKlass* ik, Klass* host_klass) {
     ik = InstanceKlass::cast(hc);
 
     // There's no way to make a host class loop short of patching memory.
-    // Therefore there cannot be a loop here unles there's another bug.
+    // Therefore there cannot be a loop here unless there's another bug.
     // Still, let's check for it.
     assert(--inf_loop_check > 0, "no host_klass loop");
   }

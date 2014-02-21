@@ -28,7 +28,7 @@
  *
  * @library ../testlibrary
  * @build TestLibrary
- * @run main LookupNameWithColon
+ * @run main/othervm LookupNameWithColon
  */
 
 import java.rmi.Naming;

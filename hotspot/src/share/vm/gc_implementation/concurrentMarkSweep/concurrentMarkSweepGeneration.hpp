@@ -171,19 +171,19 @@ class CMSBitMap VALUE_OBJ_CLASS_SPEC {
 // Ideally this should be GrowableArray<> just like MSC's marking stack(s).
 class CMSMarkStack: public CHeapObj<mtGC>  {
   //
-  friend class CMSCollector;   // to get at expasion stats further below
+  friend class CMSCollector;   // To get at expansion stats further below.
   //
 
-  VirtualSpace _virtual_space;  // space for the stack
-  oop*   _base;      // bottom of stack
-  size_t _index;     // one more than last occupied index
-  size_t _capacity;  // max #elements
-  Mutex  _par_lock;  // an advisory lock used in case of parallel access
-  NOT_PRODUCT(size_t _max_depth;)  // max depth plumbed during run
+  VirtualSpace _virtual_space;  // Space for the stack
+  oop*   _base;      // Bottom of stack
+  size_t _index;     // One more than last occupied index
+  size_t _capacity;  // Max #elements
+  Mutex  _par_lock;  // An advisory lock used in case of parallel access
+  NOT_PRODUCT(size_t _max_depth;)  // Max depth plumbed during run
 
  protected:
-  size_t _hit_limit;      // we hit max stack size limit
-  size_t _failed_double;  // we failed expansion before hitting limit
+  size_t _hit_limit;      // We hit max stack size limit
+  size_t _failed_double;  // We failed expansion before hitting limit
 
  public:
   CMSMarkStack():
@@ -238,7 +238,7 @@ class CMSMarkStack: public CHeapObj<mtGC>  {
     _index = 0;
   }
 
-  // Expand the stack, typically in response to an overflow condition
+  // Expand the stack, typically in response to an overflow condition.
   void expand();
 
   // Compute the least valued stack element.
@@ -250,7 +250,7 @@ class CMSMarkStack: public CHeapObj<mtGC>  {
      return least;
   }
 
-  // Exposed here to allow stack expansion in || case
+  // Exposed here to allow stack expansion in || case.
   Mutex* par_lock() { return &_par_lock; }
 };
 
@@ -557,7 +557,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Manipulated with CAS in the parallel/multi-threaded case.
   oop _overflow_list;
   // The following array-pair keeps track of mark words
-  // displaced for accomodating overflow list above.
+  // displaced for accommodating overflow list above.
   // This code will likely be revisited under RFE#4922830.
   Stack<oop, mtGC>     _preserved_oop_stack;
   Stack<markOop, mtGC> _preserved_mark_stack;
@@ -599,7 +599,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   void verify_after_remark_work_1();
   void verify_after_remark_work_2();
 
-  // true if any verification flag is on.
+  // True if any verification flag is on.
   bool _verifying;
   bool verifying() const { return _verifying; }
   void set_verifying(bool v) { _verifying = v; }
@@ -611,9 +611,9 @@ class CMSCollector: public CHeapObj<mtGC> {
   void set_did_compact(bool v);
 
   // XXX Move these to CMSStats ??? FIX ME !!!
-  elapsedTimer _inter_sweep_timer;   // time between sweeps
-  elapsedTimer _intra_sweep_timer;   // time _in_ sweeps
-  // padded decaying average estimates of the above
+  elapsedTimer _inter_sweep_timer;   // Time between sweeps
+  elapsedTimer _intra_sweep_timer;   // Time _in_ sweeps
+  // Padded decaying average estimates of the above
   AdaptivePaddedAverage _inter_sweep_estimate;
   AdaptivePaddedAverage _intra_sweep_estimate;
 
@@ -632,16 +632,16 @@ class CMSCollector: public CHeapObj<mtGC> {
   void report_heap_summary(GCWhen::Type when);
 
  protected:
-  ConcurrentMarkSweepGeneration* _cmsGen;  // old gen (CMS)
-  MemRegion                      _span;    // span covering above two
-  CardTableRS*                   _ct;      // card table
+  ConcurrentMarkSweepGeneration* _cmsGen;  // Old gen (CMS)
+  MemRegion                      _span;    // Span covering above two
+  CardTableRS*                   _ct;      // Card table
 
   // CMS marking support structures
   CMSBitMap     _markBitMap;
   CMSBitMap     _modUnionTable;
   CMSMarkStack  _markStack;
 
-  HeapWord*     _restart_addr; // in support of marking stack overflow
+  HeapWord*     _restart_addr; // In support of marking stack overflow
   void          lower_restart_addr(HeapWord* low);
 
   // Counters in support of marking stack / work queue overflow handling:
@@ -656,12 +656,12 @@ class CMSCollector: public CHeapObj<mtGC> {
   size_t        _par_kac_ovflw;
   NOT_PRODUCT(ssize_t _num_par_pushes;)
 
-  // ("Weak") Reference processing support
+  // ("Weak") Reference processing support.
   ReferenceProcessor*            _ref_processor;
   CMSIsAliveClosure              _is_alive_closure;
-      // keep this textually after _markBitMap and _span; c'tor dependency
+  // Keep this textually after _markBitMap and _span; c'tor dependency.
 
-  ConcurrentMarkSweepThread*     _cmsThread;   // the thread doing the work
+  ConcurrentMarkSweepThread*     _cmsThread;   // The thread doing the work
   ModUnionClosure    _modUnionClosure;
   ModUnionClosurePar _modUnionClosurePar;
 
@@ -697,7 +697,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   // State related to prologue/epilogue invocation for my generations
   bool _between_prologue_and_epilogue;
 
-  // Signalling/State related to coordination between fore- and backgroud GC
+  // Signaling/State related to coordination between fore- and background GC
   // Note: When the baton has been passed from background GC to foreground GC,
   // _foregroundGCIsActive is true and _foregroundGCShouldWait is false.
   static bool _foregroundGCIsActive;    // true iff foreground collector is active or
@@ -712,13 +712,13 @@ class CMSCollector: public CHeapObj<mtGC> {
   int    _numYields;
   size_t _numDirtyCards;
   size_t _sweep_count;
-  // number of full gc's since the last concurrent gc.
+  // Number of full gc's since the last concurrent gc.
   uint   _full_gcs_since_conc_gc;
 
-  // occupancy used for bootstrapping stats
+  // Occupancy used for bootstrapping stats
   double _bootstrap_occupancy;
 
-  // timer
+  // Timer
   elapsedTimer _timer;
 
   // Timing, allocation and promotion statistics, used for scheduling.
@@ -770,7 +770,7 @@ class CMSCollector: public CHeapObj<mtGC> {
                                    int no_of_gc_threads);
   void push_on_overflow_list(oop p);
   void par_push_on_overflow_list(oop p);
-  // the following is, obviously, not, in general, "MT-stable"
+  // The following is, obviously, not, in general, "MT-stable"
   bool overflow_list_is_empty() const;
 
   void preserve_mark_if_necessary(oop p);
@@ -778,24 +778,24 @@ class CMSCollector: public CHeapObj<mtGC> {
   void preserve_mark_work(oop p, markOop m);
   void restore_preserved_marks_if_any();
   NOT_PRODUCT(bool no_preserved_marks() const;)
-  // in support of testing overflow code
+  // In support of testing overflow code
   NOT_PRODUCT(int _overflow_counter;)
-  NOT_PRODUCT(bool simulate_overflow();)       // sequential
+  NOT_PRODUCT(bool simulate_overflow();)       // Sequential
   NOT_PRODUCT(bool par_simulate_overflow();)   // MT version
 
   // CMS work methods
-  void checkpointRootsInitialWork(bool asynch); // initial checkpoint work
+  void checkpointRootsInitialWork(bool asynch); // Initial checkpoint work
 
-  // a return value of false indicates failure due to stack overflow
-  bool markFromRootsWork(bool asynch);  // concurrent marking work
+  // A return value of false indicates failure due to stack overflow
+  bool markFromRootsWork(bool asynch);  // Concurrent marking work
 
  public:   // FIX ME!!! only for testing
-  bool do_marking_st(bool asynch);      // single-threaded marking
-  bool do_marking_mt(bool asynch);      // multi-threaded  marking
+  bool do_marking_st(bool asynch);      // Single-threaded marking
+  bool do_marking_mt(bool asynch);      // Multi-threaded  marking
 
  private:
 
-  // concurrent precleaning work
+  // Concurrent precleaning work
   size_t preclean_mod_union_table(ConcurrentMarkSweepGeneration* gen,
                                   ScanMarkedObjectsAgainCarefullyClosure* cl);
   size_t preclean_card_table(ConcurrentMarkSweepGeneration* gen,
@@ -811,26 +811,26 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Resets (i.e. clears) the per-thread plab sample vectors
   void reset_survivor_plab_arrays();
 
-  // final (second) checkpoint work
+  // Final (second) checkpoint work
   void checkpointRootsFinalWork(bool asynch, bool clear_all_soft_refs,
                                 bool init_mark_was_synchronous);
-  // work routine for parallel version of remark
+  // Work routine for parallel version of remark
   void do_remark_parallel();
-  // work routine for non-parallel version of remark
+  // Work routine for non-parallel version of remark
   void do_remark_non_parallel();
-  // reference processing work routine (during second checkpoint)
+  // Reference processing work routine (during second checkpoint)
   void refProcessingWork(bool asynch, bool clear_all_soft_refs);
 
-  // concurrent sweeping work
+  // Concurrent sweeping work
   void sweepWork(ConcurrentMarkSweepGeneration* gen, bool asynch);
 
-  // (concurrent) resetting of support data structures
+  // (Concurrent) resetting of support data structures
   void reset(bool asynch);
 
   // Clear _expansion_cause fields of constituent generations
   void clear_expansion_cause();
 
-  // An auxilliary method used to record the ends of
+  // An auxiliary method used to record the ends of
   // used regions of each generation to limit the extent of sweep
   void save_sweep_limits();
 
@@ -854,7 +854,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   bool is_external_interruption();
   void report_concurrent_mode_interruption();
 
-  // If the backgrould GC is active, acquire control from the background
+  // If the background GC is active, acquire control from the background
   // GC and do the collection.
   void acquire_control_and_collect(bool   full, bool clear_all_soft_refs);
 
@@ -893,7 +893,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   ConcurrentMarkSweepGeneration* cmsGen() { return _cmsGen; }
 
-  // locking checks
+  // Locking checks
   NOT_PRODUCT(static bool have_cms_token();)
 
   // XXXPERM bool should_collect(bool full, size_t size, bool tlab);
@@ -958,7 +958,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   CMSBitMap* markBitMap()  { return &_markBitMap; }
   void directAllocated(HeapWord* start, size_t size);
 
-  // main CMS steps and related support
+  // Main CMS steps and related support
   void checkpointRootsInitial(bool asynch);
   bool markFromRoots(bool asynch);  // a return value of false indicates failure
                                     // due to stack overflow
@@ -977,7 +977,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Performance Counter Support
   CollectorCounters* counters()    { return _gc_counters; }
 
-  // timer stuff
+  // Timer stuff
   void    startTimer() { assert(!_timer.is_active(), "Error"); _timer.start();   }
   void    stopTimer()  { assert( _timer.is_active(), "Error"); _timer.stop();    }
   void    resetTimer() { assert(!_timer.is_active(), "Error"); _timer.reset();   }
@@ -1014,18 +1014,18 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   static void print_on_error(outputStream* st);
 
-  // debugging
+  // Debugging
   void verify();
   bool verify_after_remark(bool silent = VerifySilently);
   void verify_ok_to_terminate() const PRODUCT_RETURN;
   void verify_work_stacks_empty() const PRODUCT_RETURN;
   void verify_overflow_empty() const PRODUCT_RETURN;
 
-  // convenience methods in support of debugging
+  // Convenience methods in support of debugging
   static const size_t skip_header_HeapWords() PRODUCT_RETURN0;
   HeapWord* block_start(const void* p) const PRODUCT_RETURN0;
 
-  // accessors
+  // Accessors
   CMSMarkStack* verification_mark_stack() { return &_markStack; }
   CMSBitMap*    verification_mark_bm()    { return &_verification_mark_bm; }
 
@@ -1109,7 +1109,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   CollectionTypes _debug_collection_type;
 
-  // True if a compactiing collection was done.
+  // True if a compacting collection was done.
   bool _did_compact;
   bool did_compact() { return _did_compact; }
 
@@ -1203,7 +1203,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // Support for compaction
   CompactibleSpace* first_compaction_space() const;
-  // Adjust quantites in the generation affected by
+  // Adjust quantities in the generation affected by
   // the compaction.
   void reset_after_compaction();
 
@@ -1301,7 +1301,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void setNearLargestChunk();
   bool isNearLargestChunk(HeapWord* addr);
 
-  // Get the chunk at the end of the space.  Delagates to
+  // Get the chunk at the end of the space.  Delegates to
   // the space.
   FreeChunk* find_chunk_at_end();
 
@@ -1422,7 +1422,6 @@ class MarkFromRootsClosure: public BitMapClosure {
 // marking from the roots following the first checkpoint.
 // XXX This should really be a subclass of The serial version
 // above, but i have not had the time to refactor things cleanly.
-// That willbe done for Dolphin.
 class Par_MarkFromRootsClosure: public BitMapClosure {
   CMSCollector*  _collector;
   MemRegion      _whole_span;
@@ -1780,7 +1779,7 @@ class SweepClosure: public BlkClosureCareful {
   void do_already_free_chunk(FreeChunk *fc);
   // Work method called when processing an already free or a
   // freshly garbage chunk to do a lookahead and possibly a
-  // premptive flush if crossing over _limit.
+  // preemptive flush if crossing over _limit.
   void lookahead_and_flush(FreeChunk* fc, size_t chunkSize);
   // Process a garbage chunk during sweeping.
   size_t do_garbage_chunk(FreeChunk *fc);
@@ -1879,7 +1878,7 @@ class CMSParDrainMarkingStackClosure: public VoidClosure {
 };
 
 // Allow yielding or short-circuiting of reference list
-// prelceaning work.
+// precleaning work.
 class CMSPrecleanRefsYieldClosure: public YieldClosure {
   CMSCollector* _collector;
   void do_yield_work();

@@ -126,7 +126,7 @@ jint GenCollectedHeap::initialize() {
                         (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
   // It is important to do this in a way such that concurrent readers can't
-  // temporarily think somethings in the heap.  (Seen this happen in asserts.)
+  // temporarily think something is in the heap.  (Seen this happen in asserts.)
   _reserved.set_word_size(0);
   _reserved.set_start((HeapWord*)heap_rs.base());
   size_t actual_heap_size = heap_rs.size();
@@ -592,7 +592,6 @@ void GenCollectedHeap::
 gen_process_strong_roots(int level,
                          bool younger_gens_as_roots,
                          bool activate_scope,
-                         bool is_scavenging,
                          SharedHeap::ScanningOption so,
                          OopsInGenClosure* not_older_gens,
                          bool do_code_roots,
@@ -601,12 +600,12 @@ gen_process_strong_roots(int level,
   // General strong roots.
 
   if (!do_code_roots) {
-    SharedHeap::process_strong_roots(activate_scope, is_scavenging, so,
+    SharedHeap::process_strong_roots(activate_scope, so,
                                      not_older_gens, NULL, klass_closure);
   } else {
     bool do_code_marking = (activate_scope || nmethod::oops_do_marking_is_active());
     CodeBlobToOopClosure code_roots(not_older_gens, /*do_marking=*/ do_code_marking);
-    SharedHeap::process_strong_roots(activate_scope, is_scavenging, so,
+    SharedHeap::process_strong_roots(activate_scope, so,
                                      not_older_gens, &code_roots, klass_closure);
   }
 
@@ -928,6 +927,16 @@ size_t GenCollectedHeap::tlab_capacity(Thread* thr) const {
   for (int i = 0; i < _n_gens; i += 1) {
     if (_gens[i]->supports_tlab_allocation()) {
       result += _gens[i]->tlab_capacity();
+    }
+  }
+  return result;
+}
+
+size_t GenCollectedHeap::tlab_used(Thread* thr) const {
+  size_t result = 0;
+  for (int i = 0; i < _n_gens; i += 1) {
+    if (_gens[i]->supports_tlab_allocation()) {
+      result += _gens[i]->tlab_used();
     }
   }
   return result;
@@ -1263,7 +1272,7 @@ class GenTimeOfLastGCClosure: public GenCollectedHeap::GenClosure {
 };
 
 jlong GenCollectedHeap::millis_since_last_gc() {
-  // We need a monotonically non-deccreasing time in ms but
+  // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   GenTimeOfLastGCClosure tolgc_cl(now);

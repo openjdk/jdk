@@ -66,6 +66,9 @@ isAsciiDigit(char c)
 #define FD_DIR "/dev/fd"
 #define dirent64 dirent
 #define readdir64 readdir
+#elif defined(_AIX)
+/* AIX does not understand '/proc/self' - it requires the real process ID */
+#define FD_DIR aix_fd_dir
 #else
 #define FD_DIR "/proc/self/fd"
 #endif
@@ -86,6 +89,12 @@ closeDescriptors(void)
 
     close(from_fd);          /* for possible use by opendir() */
     close(from_fd + 1);      /* another one for good luck */
+
+#if defined(_AIX)
+    /* AIX does not understand '/proc/self' - it requires the real process ID */
+    char aix_fd_dir[32];     /* the pid has at most 19 digits */
+    snprintf(aix_fd_dir, 32, "/proc/%d/fd", getpid());
+#endif
 
     if ((dp = opendir(FD_DIR)) == NULL)
         return 0;

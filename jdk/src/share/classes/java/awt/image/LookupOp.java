@@ -1,5 +1,6 @@
+
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,11 +374,11 @@ public class LookupOp implements BufferedImageOp, RasterOp {
                 int trans        = cm.getTransparency();
                 int[] nbits = null;
                 if (ltable instanceof ByteLookupTable) {
-                    if (db.getDataType() == db.TYPE_USHORT) {
+                    if (db.getDataType() == DataBuffer.TYPE_USHORT) {
                         // Dst raster should be of type byte
                         if (hasAlpha) {
                             nbits = new int[2];
-                            if (trans == cm.BITMASK) {
+                            if (trans == java.awt.Transparency.BITMASK) {
                                 nbits[1] = 1;
                             }
                             else {
@@ -393,10 +394,10 @@ public class LookupOp implements BufferedImageOp, RasterOp {
                 }
                 else if (ltable instanceof ShortLookupTable) {
                     transferType = DataBuffer.TYPE_USHORT;
-                    if (db.getDataType() == db.TYPE_BYTE) {
+                    if (db.getDataType() == DataBuffer.TYPE_BYTE) {
                         if (hasAlpha) {
                             nbits = new int[2];
-                            if (trans == cm.BITMASK) {
+                            if (trans == java.awt.Transparency.BITMASK) {
                                 nbits[1] = 1;
                             }
                             else {

@@ -52,8 +52,6 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -92,8 +90,6 @@ http://www.freetype.org/
 If you put the resulting build in \"C:\Program Files\GnuWin32\", it will be found automatically."
       fi
       ;;
-    * )
-      break ;;
   esac
 }
 
@@ -119,8 +115,6 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
-    * )
-      break ;;
   esac
 }
 
@@ -142,8 +136,6 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo yum install ccache" ;;
-    * )
-      break ;;
   esac
 }
 
@@ -162,22 +154,6 @@ pkgadd_help() {
 AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 [
   # Finally output some useful information to the user
-
-  if test "x$CCACHE_FOUND" != x; then
-    if  test "x$HAS_GOOD_CCACHE" = x; then
-      CCACHE_STATUS="installed, but disabled (version older than 3.1.4)"
-      CCACHE_HELP_MSG="You have ccache installed, but it is a version prior to 3.1.4. Try upgrading."
-    else
-      CCACHE_STATUS="installed and in use"
-    fi
-  else
-    if test "x$GCC" = xyes; then
-      CCACHE_STATUS="not installed (consider installing)"
-      CCACHE_HELP_MSG="You do not have ccache installed. Try installing it."
-    else
-      CCACHE_STATUS="not available for your system"
-    fi
-  fi
 
   printf "\n"
   printf "====================================================\n"
@@ -209,16 +185,10 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "Build performance summary:\n"
   printf "* Cores to use:   $JOBS\n"
   printf "* Memory limit:   $MEMORY_SIZE MB\n"
-  printf "* ccache status:  $CCACHE_STATUS\n"
-  printf "\n"
-
-  if test "x$CCACHE_HELP_MSG" != x && test "x$HIDE_PERFORMANCE_HINTS" = "xno"; then
-    printf "Build performance tip: ccache gives a tremendous speedup for C++ recompilations.\n"
-    printf "$CCACHE_HELP_MSG\n"
-    HELP_MSG_MISSING_DEPENDENCY([ccache])
-    printf "$HELP_MSG\n"
-    printf "\n"
+  if test "x$CCACHE_STATUS" != "x"; then
+    printf "* ccache status:  $CCACHE_STATUS\n"
   fi
+  printf "\n"
 
   if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xyes"; then
     printf "NOTE: You have requested to build more than one version of the JVM, which\n"

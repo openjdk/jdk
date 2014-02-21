@@ -576,8 +576,8 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   bool allocated_on_res_area() const { return get_allocation_type() == RESOURCE_AREA; }
   bool allocated_on_C_heap()   const { return get_allocation_type() == C_HEAP; }
   bool allocated_on_arena()    const { return get_allocation_type() == ARENA; }
-  ResourceObj(); // default construtor
-  ResourceObj(const ResourceObj& r); // default copy construtor
+  ResourceObj(); // default constructor
+  ResourceObj(const ResourceObj& r); // default copy constructor
   ResourceObj& operator=(const ResourceObj& r); // default copy assignment
   ~ResourceObj();
 #endif // ASSERT

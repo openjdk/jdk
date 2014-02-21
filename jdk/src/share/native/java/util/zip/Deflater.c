@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,21 @@ JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_initIDs(JNIEnv *env, jclass cls)
 {
     levelID = (*env)->GetFieldID(env, cls, "level", "I");
+    CHECK_NULL(levelID);
     strategyID = (*env)->GetFieldID(env, cls, "strategy", "I");
+    CHECK_NULL(strategyID);
     setParamsID = (*env)->GetFieldID(env, cls, "setParams", "Z");
+    CHECK_NULL(setParamsID);
     finishID = (*env)->GetFieldID(env, cls, "finish", "Z");
+    CHECK_NULL(finishID);
     finishedID = (*env)->GetFieldID(env, cls, "finished", "Z");
+    CHECK_NULL(finishedID);
     bufID = (*env)->GetFieldID(env, cls, "buf", "[B");
+    CHECK_NULL(bufID);
     offID = (*env)->GetFieldID(env, cls, "off", "I");
+    CHECK_NULL(offID);
     lenID = (*env)->GetFieldID(env, cls, "len", "I");
+    CHECK_NULL(lenID);
 }
 
 JNIEXPORT jlong JNICALL
@@ -132,14 +140,14 @@ Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this, jlong addr,
         in_buf = (*env)->GetPrimitiveArrayCritical(env, this_buf, 0);
         if (in_buf == NULL) {
             // Throw OOME only when length is not zero
-            if (this_len != 0)
+            if (this_len != 0 && (*env)->ExceptionOccurred(env) == NULL)
                 JNU_ThrowOutOfMemoryError(env, 0);
             return 0;
         }
         out_buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
         if (out_buf == NULL) {
             (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
-            if (len != 0)
+            if (len != 0 && (*env)->ExceptionOccurred(env) == NULL)
                 JNU_ThrowOutOfMemoryError(env, 0);
             return 0;
         }
@@ -158,7 +166,7 @@ Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this, jlong addr,
             this_off += this_len - strm->avail_in;
             (*env)->SetIntField(env, this, offID, this_off);
             (*env)->SetIntField(env, this, lenID, strm->avail_in);
-            return len - strm->avail_out;
+            return (jint) (len - strm->avail_out);
         case Z_BUF_ERROR:
             (*env)->SetBooleanField(env, this, setParamsID, JNI_FALSE);
             return 0;
