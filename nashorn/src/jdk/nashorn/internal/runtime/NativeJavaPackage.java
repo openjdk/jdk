@@ -85,6 +85,8 @@ public final class NativeJavaPackage extends ScriptObject {
      */
     public NativeJavaPackage(final String name, final ScriptObject proto) {
         super(proto, null);
+        // defense-in-path, check here for sensitive packages
+        Context.checkPackageAccess(name);
         this.name = name;
     }
 

@@ -466,7 +466,7 @@ void CMSAdaptiveSizePolicy::checkpoint_roots_initial_end(
 void CMSAdaptiveSizePolicy::checkpoint_roots_final_begin() {
   _STW_timer.stop();
   _latest_cms_initial_mark_end_to_remark_start_secs = _STW_timer.seconds();
-  // Start accumumlating time for the remark in the STW timer.
+  // Start accumulating time for the remark in the STW timer.
   _STW_timer.reset();
   _STW_timer.start();
 }
@@ -537,8 +537,8 @@ void CMSAdaptiveSizePolicy::msc_collection_end(GCCause::Cause gc_cause) {
       avg_msc_pause()->sample(msc_pause_in_seconds);
       double mutator_time_in_seconds = 0.0;
       if (_latest_cms_collection_end_to_collection_start_secs == 0.0) {
-        // This assertion may fail because of time stamp gradularity.
-        // Comment it out and investiage it at a later time.  The large
+        // This assertion may fail because of time stamp granularity.
+        // Comment it out and investigate it at a later time.  The large
         // time stamp granularity occurs on some older linux systems.
 #ifndef CLOCK_GRANULARITY_TOO_LARGE
         assert((_latest_cms_concurrent_marking_time_secs == 0.0) &&
@@ -836,7 +836,7 @@ double CMSAdaptiveSizePolicy::cms_gc_cost() const {
 
 void CMSAdaptiveSizePolicy::ms_collection_marking_begin() {
   _STW_timer.stop();
-  // Start accumumlating time for the marking in the STW timer.
+  // Start accumulating time for the marking in the STW timer.
   _STW_timer.reset();
   _STW_timer.start();
 }
@@ -1227,7 +1227,7 @@ uint CMSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
     // We use the tenuring threshold to equalize the cost of major
     // and minor collections.
     // ThresholdTolerance is used to indicate how sensitive the
-    // tenuring threshold is to differences in cost betweent the
+    // tenuring threshold is to differences in cost between the
     // collection types.
 
     // Get the times of interest. This involves a little work, so

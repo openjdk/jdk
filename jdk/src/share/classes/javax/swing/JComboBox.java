@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ import javax.accessibility.*;
  * @author Arnaud Weber
  * @author Mark Davidson
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JComboBox<E> extends JComponent
 implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     /**
@@ -1612,6 +1613,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJComboBox extends AccessibleJComponent
     implements AccessibleAction, AccessibleSelection {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@ import com.oracle.java.testlibrary.*;
 
 public class ConfigFileWarning {
     public static void main(String[] args) throws Exception {
-        String vmVersion = System.getProperty("java.vm.version");
-        if (vmVersion.toLowerCase().contains("debug") || vmVersion.toLowerCase().contains("jvmg")) {
+        if (Platform.isDebugBuild()) {
             System.out.println("Skip on debug builds since we'll always read the file there");
             return;
         }

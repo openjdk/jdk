@@ -169,7 +169,7 @@ void G1CardCounts::clear_region(HeapRegion* hr) {
 
     // We use the last address in hr as hr could be the
     // last region in the heap. In which case trying to find
-    // the card for hr->end() will be an OOB accesss to the
+    // the card for hr->end() will be an OOB access to the
     // card table.
     HeapWord* last = hr->end() - 1;
     assert(_g1h->g1_committed().contains(last),

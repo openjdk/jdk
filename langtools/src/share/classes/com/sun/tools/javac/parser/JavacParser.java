@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3648,12 +3648,20 @@ public class JavacParser implements Parser {
                 params.append(lastParam);
             }
             this.allowThisIdent = false;
-            while ((lastParam.mods.flags & Flags.VARARGS) == 0 && token.kind == COMMA) {
+            while (token.kind == COMMA) {
+                if ((lastParam.mods.flags & Flags.VARARGS) != 0) {
+                    error(lastParam, "varargs.must.be.last");
+                }
                 nextToken();
                 params.append(lastParam = formalParameter(lambdaParameters));
             }
         }
-        accept(RPAREN);
+        if (token.kind == RPAREN) {
+            nextToken();
+        } else {
+            setErrorEndPos(token.pos);
+            reportSyntaxError(S.prevToken().endPos, "expected3", COMMA, RPAREN, LBRACKET);
+        }
         return params.toList();
     }
 

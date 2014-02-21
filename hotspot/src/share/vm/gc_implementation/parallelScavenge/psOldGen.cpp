@@ -280,7 +280,7 @@ bool PSOldGen::expand_by(size_t bytes) {
         "Should be true before post_resize()");
       MemRegion mangle_region(object_space()->end(), virtual_space_high);
       // Note that the object space has not yet been updated to
-      // coincede with the new underlying virtual space.
+      // coincide with the new underlying virtual space.
       SpaceMangler::mangle_region(mangle_region);
     }
     post_resize();

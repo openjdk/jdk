@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,7 +318,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 insets_corrected = true;
                 return;
             }
-            Component t = (Component)target;
+            Component t = target;
             if (getDecorations() == XWindowAttributesData.AWT_DECOR_NONE) {
                 setReparented(true);
                 insets_corrected = true;
@@ -428,7 +428,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     public void handleMoved(WindowDimensions dims) {
         Point loc = dims.getLocation();
-        AWTAccessor.getComponentAccessor().setLocation((Component)target, loc.x, loc.y);
+        AWTAccessor.getComponentAccessor().setLocation(target, loc.x, loc.y);
         postEvent(new ComponentEvent(target, ComponentEvent.COMPONENT_MOVED));
     }
 
@@ -536,8 +536,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 // its location changes.
                 Point oldLocation = getLocation();
 
-                Point newLocation = new Point(AWTAccessor.getComponentAccessor().getX((Component)target),
-                                              AWTAccessor.getComponentAccessor().getY((Component)target));
+                Point newLocation = new Point(AWTAccessor.getComponentAccessor().getX(target),
+                                              AWTAccessor.getComponentAccessor().getY(target));
 
                 if (!newLocation.equals(oldLocation)) {
                     handleMoved(newDimensions);
@@ -738,7 +738,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         updateChildrenSizes();
 
         // Bounds of the window
-        Rectangle targetBounds = AWTAccessor.getComponentAccessor().getBounds((Component)target);
+        Rectangle targetBounds = AWTAccessor.getComponentAccessor().getBounds(target);
 
         Point newLocation = getNewLocation(xe, currentInsets.left, currentInsets.top);
 
@@ -1052,10 +1052,10 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     final void dumpTarget() {
         AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
-        int getWidth = compAccessor.getWidth((Component)target);
-        int getHeight = compAccessor.getHeight((Component)target);
-        int getTargetX = compAccessor.getX((Component)target);
-        int getTargetY = compAccessor.getY((Component)target);
+        int getWidth = compAccessor.getWidth(target);
+        int getHeight = compAccessor.getHeight(target);
+        int getTargetX = compAccessor.getX(target);
+        int getTargetY = compAccessor.getY(target);
         System.err.println(">>> Target: " + getTargetX + ", " + getTargetY + ", " + getWidth + ", " + getHeight);
     }
 

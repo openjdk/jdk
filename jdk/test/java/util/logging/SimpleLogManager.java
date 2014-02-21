@@ -98,16 +98,14 @@ public class SimpleLogManager extends CustomLogManager {
             return false;
         }
         CustomLogger newLogger = new CustomLogger(logger);
-        super.addLogger(newLogger);
-        return true;
+        return super.addLogger(newLogger);
     }
 
     public class CustomLogger extends Logger {
+        final Logger keepRef; // keep a strong reference to avoid GC.
         CustomLogger(Logger logger) {
             super(logger.getName(), logger.getResourceBundleName());
-        }
-        CustomLogger(String name) {
-            super(name, null);
+            keepRef = logger;
         }
     }
 }

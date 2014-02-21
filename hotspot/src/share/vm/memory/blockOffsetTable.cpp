@@ -590,7 +590,7 @@ HeapWord* BlockOffsetArrayNonContigSpace::block_start_careful(
 
   // Otherwise, find the block start using the table, but taking
   // care (cf block_start_unsafe() above) not to parse any objects/blocks
-  // on the cards themsleves.
+  // on the cards themselves.
   size_t index = _array->index_for(addr);
   assert(_array->address_for_index(index) == addr,
          "arg should be start of card");

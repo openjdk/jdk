@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,6 +516,7 @@ public interface ComponentPeer {
 
     /**
      * Applies the shape to the native component window.
+     * @param shape the shape to apply
      * @since 1.7
      *
      * @see Component#applyCompoundShape
@@ -525,12 +526,13 @@ public interface ComponentPeer {
     /**
      * Lowers this component at the bottom of the above HW peer. If the above parameter
      * is null then the method places this component at the top of the Z-order.
+     * @param above the peer to lower this component with respect to
      */
     void setZOrder(ComponentPeer above);
 
     /**
      * Updates internal data structures related to the component's GC.
-     *
+     * @param gc the reference graphics configuration
      * @return if the peer needs to be recreated for the changes to take effect
      * @since 1.7
      */

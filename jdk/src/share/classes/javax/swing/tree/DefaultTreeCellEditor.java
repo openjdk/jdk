@@ -60,6 +60,7 @@ import java.util.Vector;
  *
  * @author Scott Violet
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
             TreeSelectionListener {
     /** Editor handling the editing. */

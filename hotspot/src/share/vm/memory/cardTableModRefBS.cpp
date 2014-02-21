@@ -98,7 +98,7 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
                                   "card marking array");
   }
 
-  // The assember store_check code will do an unsigned shift of the oop,
+  // The assembler store_check code will do an unsigned shift of the oop,
   // then add it to byte_map_base, i.e.
   //
   //   _byte_map = byte_map_base + (uintptr_t(low_bound) >> card_shift)
@@ -243,7 +243,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
   if (new_region.word_size() != old_region.word_size()) {
     // Commit new or uncommit old pages, if necessary.
     MemRegion cur_committed = _committed[ind];
-    // Extend the end of this _commited region
+    // Extend the end of this _committed region
     // to cover the end of any lower _committed regions.
     // This forms overlapping regions, but never interior regions.
     HeapWord* const max_prev_end = largest_prev_committed_end(ind);
@@ -448,7 +448,7 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
     // off parallelism is used, then active_workers can be used in
     // place of n_par_threads.
     //  This is an example of a path where n_par_threads is
-    // set to 0 to turn off parallism.
+    // set to 0 to turn off parallelism.
     //  [7] CardTableModRefBS::non_clean_card_iterate()
     //  [8] CardTableRS::younger_refs_in_space_iterate()
     //  [9] Generation::younger_refs_in_space_iterate()

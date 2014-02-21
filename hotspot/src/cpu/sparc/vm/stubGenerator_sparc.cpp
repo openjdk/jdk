@@ -3304,6 +3304,775 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
+  address generate_aescrypt_encryptBlock() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "aesencryptBlock");
+    Label L_doLast128bit, L_storeOutput;
+    address start = __ pc();
+    Register from = O0; // source byte array
+    Register to = O1;   // destination byte array
+    Register key = O2;  // expanded key array
+    const Register keylen = O4; //reg for storing expanded key array length
+
+    // read expanded key length
+    __ ldsw(Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)), keylen, 0);
+
+    // load input into F54-F56; F30-F31 used as temp
+    __ ldf(FloatRegisterImpl::S, from, 0, F30);
+    __ ldf(FloatRegisterImpl::S, from, 4, F31);
+    __ fmov(FloatRegisterImpl::D, F30, F54);
+    __ ldf(FloatRegisterImpl::S, from, 8, F30);
+    __ ldf(FloatRegisterImpl::S, from, 12, F31);
+    __ fmov(FloatRegisterImpl::D, F30, F56);
+
+    // load expanded key
+    for ( int i = 0;  i <= 38; i += 2 ) {
+      __ ldf(FloatRegisterImpl::D, key, i*4, as_FloatRegister(i));
+    }
+
+    // perform cipher transformation
+    __ fxor(FloatRegisterImpl::D, F0, F54, F54);
+    __ fxor(FloatRegisterImpl::D, F2, F56, F56);
+    // rounds 1 through 8
+    for ( int i = 4;  i <= 28; i += 8 ) {
+      __ aes_eround01(as_FloatRegister(i), F54, F56, F58);
+      __ aes_eround23(as_FloatRegister(i+2), F54, F56, F60);
+      __ aes_eround01(as_FloatRegister(i+4), F58, F60, F54);
+      __ aes_eround23(as_FloatRegister(i+6), F58, F60, F56);
+    }
+    __ aes_eround01(F36, F54, F56, F58); //round 9
+    __ aes_eround23(F38, F54, F56, F60);
+
+    // 128-bit original key size
+    __ cmp_and_brx_short(keylen, 44, Assembler::equal, Assembler::pt, L_doLast128bit);
+
+    for ( int i = 40;  i <= 50; i += 2 ) {
+      __ ldf(FloatRegisterImpl::D, key, i*4, as_FloatRegister(i) );
+    }
+    __ aes_eround01(F40, F58, F60, F54); //round 10
+    __ aes_eround23(F42, F58, F60, F56);
+    __ aes_eround01(F44, F54, F56, F58); //round 11
+    __ aes_eround23(F46, F54, F56, F60);
+
+    // 192-bit original key size
+    __ cmp_and_brx_short(keylen, 52, Assembler::equal, Assembler::pt, L_storeOutput);
+
+    __ ldf(FloatRegisterImpl::D, key, 208, F52);
+    __ aes_eround01(F48, F58, F60, F54); //round 12
+    __ aes_eround23(F50, F58, F60, F56);
+    __ ldf(FloatRegisterImpl::D, key, 216, F46);
+    __ ldf(FloatRegisterImpl::D, key, 224, F48);
+    __ ldf(FloatRegisterImpl::D, key, 232, F50);
+    __ aes_eround01(F52, F54, F56, F58); //round 13
+    __ aes_eround23(F46, F54, F56, F60);
+    __ br(Assembler::always, false, Assembler::pt, L_storeOutput);
+    __ delayed()->nop();
+
+    __ BIND(L_doLast128bit);
+    __ ldf(FloatRegisterImpl::D, key, 160, F48);
+    __ ldf(FloatRegisterImpl::D, key, 168, F50);
+
+    __ BIND(L_storeOutput);
+    // perform last round of encryption common for all key sizes
+    __ aes_eround01_l(F48, F58, F60, F54); //last round
+    __ aes_eround23_l(F50, F58, F60, F56);
+
+    // store output into the destination array, F0-F1 used as temp
+    __ fmov(FloatRegisterImpl::D, F54, F0);
+    __ stf(FloatRegisterImpl::S, F0, to, 0);
+    __ stf(FloatRegisterImpl::S, F1, to, 4);
+    __ fmov(FloatRegisterImpl::D, F56, F0);
+    __ stf(FloatRegisterImpl::S, F0, to, 8);
+    __ retl();
+    __ delayed()->stf(FloatRegisterImpl::S, F1, to, 12);
+
+    return start;
+  }
+
+  address generate_aescrypt_decryptBlock() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "aesdecryptBlock");
+    address start = __ pc();
+    Label L_expand192bit, L_expand256bit, L_common_transform;
+    Register from = O0; // source byte array
+    Register to = O1;   // destination byte array
+    Register key = O2;  // expanded key array
+    Register original_key = O3;  // original key array only required during decryption
+    const Register keylen = O4;  // reg for storing expanded key array length
+
+    // read expanded key array length
+    __ ldsw(Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)), keylen, 0);
+
+    // load input into F52-F54; F30,F31 used as temp
+    __ ldf(FloatRegisterImpl::S, from, 0, F30);
+    __ ldf(FloatRegisterImpl::S, from, 4, F31);
+    __ fmov(FloatRegisterImpl::D, F30, F52);
+    __ ldf(FloatRegisterImpl::S, from, 8, F30);
+    __ ldf(FloatRegisterImpl::S, from, 12, F31);
+    __ fmov(FloatRegisterImpl::D, F30, F54);
+
+    // load original key from SunJCE expanded decryption key
+    for ( int i = 0;  i <= 3; i++ ) {
+      __ ldf(FloatRegisterImpl::S, original_key, i*4, as_FloatRegister(i));
+    }
+
+    // 256-bit original key size
+    __ cmp_and_brx_short(keylen, 60, Assembler::equal, Assembler::pn, L_expand256bit);
+
+    // 192-bit original key size
+    __ cmp_and_brx_short(keylen, 52, Assembler::equal, Assembler::pn, L_expand192bit);
+
+    // 128-bit original key size
+    // perform key expansion since SunJCE decryption-key expansion is not compatible with SPARC crypto instructions
+    for ( int i = 0;  i <= 36; i += 4 ) {
+      __ aes_kexpand1(as_FloatRegister(i), as_FloatRegister(i+2), i/4, as_FloatRegister(i+4));
+      __ aes_kexpand2(as_FloatRegister(i+2), as_FloatRegister(i+4), as_FloatRegister(i+6));
+    }
+
+    // perform 128-bit key specific inverse cipher transformation
+    __ fxor(FloatRegisterImpl::D, F42, F54, F54);
+    __ fxor(FloatRegisterImpl::D, F40, F52, F52);
+    __ br(Assembler::always, false, Assembler::pt, L_common_transform);
+    __ delayed()->nop();
+
+    __ BIND(L_expand192bit);
+
+    // start loading rest of the 192-bit key
+    __ ldf(FloatRegisterImpl::S, original_key, 16, F4);
+    __ ldf(FloatRegisterImpl::S, original_key, 20, F5);
+
+    // perform key expansion since SunJCE decryption-key expansion is not compatible with SPARC crypto instructions
+    for ( int i = 0;  i <= 36; i += 6 ) {
+      __ aes_kexpand1(as_FloatRegister(i), as_FloatRegister(i+4), i/6, as_FloatRegister(i+6));
+      __ aes_kexpand2(as_FloatRegister(i+2), as_FloatRegister(i+6), as_FloatRegister(i+8));
+      __ aes_kexpand2(as_FloatRegister(i+4), as_FloatRegister(i+8), as_FloatRegister(i+10));
+    }
+    __ aes_kexpand1(F42, F46, 7, F48);
+    __ aes_kexpand2(F44, F48, F50);
+
+    // perform 192-bit key specific inverse cipher transformation
+    __ fxor(FloatRegisterImpl::D, F50, F54, F54);
+    __ fxor(FloatRegisterImpl::D, F48, F52, F52);
+    __ aes_dround23(F46, F52, F54, F58);
+    __ aes_dround01(F44, F52, F54, F56);
+    __ aes_dround23(F42, F56, F58, F54);
+    __ aes_dround01(F40, F56, F58, F52);
+    __ br(Assembler::always, false, Assembler::pt, L_common_transform);
+    __ delayed()->nop();
+
+    __ BIND(L_expand256bit);
+
+    // load rest of the 256-bit key
+    for ( int i = 4;  i <= 7; i++ ) {
+      __ ldf(FloatRegisterImpl::S, original_key, i*4, as_FloatRegister(i));
+    }
+
+    // perform key expansion since SunJCE decryption-key expansion is not compatible with SPARC crypto instructions
+    for ( int i = 0;  i <= 40; i += 8 ) {
+      __ aes_kexpand1(as_FloatRegister(i), as_FloatRegister(i+6), i/8, as_FloatRegister(i+8));
+      __ aes_kexpand2(as_FloatRegister(i+2), as_FloatRegister(i+8), as_FloatRegister(i+10));
+      __ aes_kexpand0(as_FloatRegister(i+4), as_FloatRegister(i+10), as_FloatRegister(i+12));
+      __ aes_kexpand2(as_FloatRegister(i+6), as_FloatRegister(i+12), as_FloatRegister(i+14));
+    }
+    __ aes_kexpand1(F48, F54, 6, F56);
+    __ aes_kexpand2(F50, F56, F58);
+
+    for ( int i = 0;  i <= 6; i += 2 ) {
+      __ fmov(FloatRegisterImpl::D, as_FloatRegister(58-i), as_FloatRegister(i));
+    }
+
+    // load input into F52-F54
+    __ ldf(FloatRegisterImpl::D, from, 0, F52);
+    __ ldf(FloatRegisterImpl::D, from, 8, F54);
+
+    // perform 256-bit key specific inverse cipher transformation
+    __ fxor(FloatRegisterImpl::D, F0, F54, F54);
+    __ fxor(FloatRegisterImpl::D, F2, F52, F52);
+    __ aes_dround23(F4, F52, F54, F58);
+    __ aes_dround01(F6, F52, F54, F56);
+    __ aes_dround23(F50, F56, F58, F54);
+    __ aes_dround01(F48, F56, F58, F52);
+    __ aes_dround23(F46, F52, F54, F58);
+    __ aes_dround01(F44, F52, F54, F56);
+    __ aes_dround23(F42, F56, F58, F54);
+    __ aes_dround01(F40, F56, F58, F52);
+
+    for ( int i = 0;  i <= 7; i++ ) {
+      __ ldf(FloatRegisterImpl::S, original_key, i*4, as_FloatRegister(i));
+    }
+
+    // perform inverse cipher transformations common for all key sizes
+    __ BIND(L_common_transform);
+    for ( int i = 38;  i >= 6; i -= 8 ) {
+      __ aes_dround23(as_FloatRegister(i), F52, F54, F58);
+      __ aes_dround01(as_FloatRegister(i-2), F52, F54, F56);
+      if ( i != 6) {
+        __ aes_dround23(as_FloatRegister(i-4), F56, F58, F54);
+        __ aes_dround01(as_FloatRegister(i-6), F56, F58, F52);
+      } else {
+        __ aes_dround23_l(as_FloatRegister(i-4), F56, F58, F54);
+        __ aes_dround01_l(as_FloatRegister(i-6), F56, F58, F52);
+      }
+    }
+
+    // store output to destination array, F0-F1 used as temp
+    __ fmov(FloatRegisterImpl::D, F52, F0);
+    __ stf(FloatRegisterImpl::S, F0, to, 0);
+    __ stf(FloatRegisterImpl::S, F1, to, 4);
+    __ fmov(FloatRegisterImpl::D, F54, F0);
+    __ stf(FloatRegisterImpl::S, F0, to, 8);
+    __ retl();
+    __ delayed()->stf(FloatRegisterImpl::S, F1, to, 12);
+
+    return start;
+  }
+
+  address generate_cipherBlockChaining_encryptAESCrypt() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_encryptAESCrypt");
+    Label L_cbcenc128, L_cbcenc192, L_cbcenc256;
+    address start = __ pc();
+    Register from = O0; // source byte array
+    Register to = O1;   // destination byte array
+    Register key = O2;  // expanded key array
+    Register rvec = O3; // init vector
+    const Register len_reg = O4; // cipher length
+    const Register keylen = O5;  // reg for storing expanded key array length
+
+    // save cipher len to return in the end
+    __ mov(len_reg, L1);
+
+    // read expanded key length
+    __ ldsw(Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)), keylen, 0);
+
+    // load init vector
+    __ ldf(FloatRegisterImpl::D, rvec, 0, F60);
+    __ ldf(FloatRegisterImpl::D, rvec, 8, F62);
+    __ ldx(key,0,G1);
+    __ ldx(key,8,G2);
+
+    // start loading expanded key
+    for ( int i = 0, j = 16;  i <= 38; i += 2, j += 8 ) {
+      __ ldf(FloatRegisterImpl::D, key, j, as_FloatRegister(i));
+    }
+
+    // 128-bit original key size
+    __ cmp_and_brx_short(keylen, 44, Assembler::equal, Assembler::pt, L_cbcenc128);
+
+    for ( int i = 40, j = 176;  i <= 46; i += 2, j += 8 ) {
+      __ ldf(FloatRegisterImpl::D, key, j, as_FloatRegister(i));
+    }
+
+    // 192-bit original key size
+    __ cmp_and_brx_short(keylen, 52, Assembler::equal, Assembler::pt, L_cbcenc192);
+
+    for ( int i = 48, j = 208;  i <= 54; i += 2, j += 8 ) {
+      __ ldf(FloatRegisterImpl::D, key, j, as_FloatRegister(i));
+    }
+
+    // 256-bit original key size
+    __ br(Assembler::always, false, Assembler::pt, L_cbcenc256);
+    __ delayed()->nop();
+
+    __ align(OptoLoopAlignment);
+    __ BIND(L_cbcenc128);
+    __ ldx(from,0,G3);
+    __ ldx(from,8,G4);
+    __ xor3(G1,G3,G3);
+    __ xor3(G2,G4,G4);
+    __ movxtod(G3,F56);
+    __ movxtod(G4,F58);
+    __ fxor(FloatRegisterImpl::D, F60, F56, F60);
+    __ fxor(FloatRegisterImpl::D, F62, F58, F62);
+
+    // TEN_EROUNDS
+    for ( int i = 0;  i <= 32; i += 8 ) {
+      __ aes_eround01(as_FloatRegister(i), F60, F62, F56);
+      __ aes_eround23(as_FloatRegister(i+2), F60, F62, F58);
+      if (i != 32 ) {
+        __ aes_eround01(as_FloatRegister(i+4), F56, F58, F60);
+        __ aes_eround23(as_FloatRegister(i+6), F56, F58, F62);
+      } else {
+        __ aes_eround01_l(as_FloatRegister(i+4), F56, F58, F60);
+        __ aes_eround23_l(as_FloatRegister(i+6), F56, F58, F62);
+      }
+    }
+
+    __ stf(FloatRegisterImpl::D, F60, to, 0);
+    __ stf(FloatRegisterImpl::D, F62, to, 8);
+    __ add(from, 16, from);
+    __ add(to, 16, to);
+    __ subcc(len_reg, 16, len_reg);
+    __ br(Assembler::notEqual, false, Assembler::pt, L_cbcenc128);
+    __ delayed()->nop();
+    __ stf(FloatRegisterImpl::D, F60, rvec, 0);
+    __ stf(FloatRegisterImpl::D, F62, rvec, 8);
+    __ retl();
+    __ delayed()->mov(L1, O0);
+
+    __ align(OptoLoopAlignment);
+    __ BIND(L_cbcenc192);
+    __ ldx(from,0,G3);
+    __ ldx(from,8,G4);
+    __ xor3(G1,G3,G3);
+    __ xor3(G2,G4,G4);
+    __ movxtod(G3,F56);
+    __ movxtod(G4,F58);
+    __ fxor(FloatRegisterImpl::D, F60, F56, F60);
+    __ fxor(FloatRegisterImpl::D, F62, F58, F62);
+
+    // TWELEVE_EROUNDS
+    for ( int i = 0;  i <= 40; i += 8 ) {
+      __ aes_eround01(as_FloatRegister(i), F60, F62, F56);
+      __ aes_eround23(as_FloatRegister(i+2), F60, F62, F58);
+      if (i != 40 ) {
+        __ aes_eround01(as_FloatRegister(i+4), F56, F58, F60);
+        __ aes_eround23(as_FloatRegister(i+6), F56, F58, F62);
+      } else {
+        __ aes_eround01_l(as_FloatRegister(i+4), F56, F58, F60);
+        __ aes_eround23_l(as_FloatRegister(i+6), F56, F58, F62);
+      }
+    }
+
+    __ stf(FloatRegisterImpl::D, F60, to, 0);
+    __ stf(FloatRegisterImpl::D, F62, to, 8);
+    __ add(from, 16, from);
+    __ subcc(len_reg, 16, len_reg);
+    __ add(to, 16, to);
+    __ br(Assembler::notEqual, false, Assembler::pt, L_cbcenc192);
+    __ delayed()->nop();
+    __ stf(FloatRegisterImpl::D, F60, rvec, 0);
+    __ stf(FloatRegisterImpl::D, F62, rvec, 8);
+    __ retl();
+    __ delayed()->mov(L1, O0);
+
+    __ align(OptoLoopAlignment);
+    __ BIND(L_cbcenc256);
+    __ ldx(from,0,G3);
+    __ ldx(from,8,G4);
+    __ xor3(G1,G3,G3);
+    __ xor3(G2,G4,G4);
+    __ movxtod(G3,F56);
+    __ movxtod(G4,F58);
+    __ fxor(FloatRegisterImpl::D, F60, F56, F60);
+    __ fxor(FloatRegisterImpl::D, F62, F58, F62);
+
+    // FOURTEEN_EROUNDS
+    for ( int i = 0;  i <= 48; i += 8 ) {
+      __ aes_eround01(as_FloatRegister(i), F60, F62, F56);
+      __ aes_eround23(as_FloatRegister(i+2), F60, F62, F58);
+      if (i != 48 ) {
+        __ aes_eround01(as_FloatRegister(i+4), F56, F58, F60);
+        __ aes_eround23(as_FloatRegister(i+6), F56, F58, F62);
+      } else {
+        __ aes_eround01_l(as_FloatRegister(i+4), F56, F58, F60);
+        __ aes_eround23_l(as_FloatRegister(i+6), F56, F58, F62);
+      }
+    }
+
+    __ stf(FloatRegisterImpl::D, F60, to, 0);
+    __ stf(FloatRegisterImpl::D, F62, to, 8);
+    __ add(from, 16, from);
+    __ subcc(len_reg, 16, len_reg);
+    __ add(to, 16, to);
+    __ br(Assembler::notEqual, false, Assembler::pt, L_cbcenc256);
+    __ delayed()->nop();
+    __ stf(FloatRegisterImpl::D, F60, rvec, 0);
+    __ stf(FloatRegisterImpl::D, F62, rvec, 8);
+    __ retl();
+    __ delayed()->mov(L1, O0);
+
+    return start;
+  }
+
+  address generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
+    Label L_cbcdec_end, L_expand192bit, L_expand256bit, L_dec_first_block_start;
+    Label L_dec_first_block128, L_dec_first_block192, L_dec_next2_blocks128, L_dec_next2_blocks192, L_dec_next2_blocks256;
+    address start = __ pc();
+    Register from = I0; // source byte array
+    Register to = I1;   // destination byte array
+    Register key = I2;  // expanded key array
+    Register rvec = I3; // init vector
+    const Register len_reg = I4; // cipher length
+    const Register original_key = I5;  // original key array only required during decryption
+    const Register keylen = L6;  // reg for storing expanded key array length
+
+    // save cipher len before save_frame, to return in the end
+    __ mov(O4, L0);
+    __ save_frame(0); //args are read from I* registers since we save the frame in the beginning
+
+    // load original key from SunJCE expanded decryption key
+    for ( int i = 0;  i <= 3; i++ ) {
+      __ ldf(FloatRegisterImpl::S, original_key, i*4, as_FloatRegister(i));
+    }
+
+    // load initial vector
+    __ ldx(rvec,0,L0);
+    __ ldx(rvec,8,L1);
+
+    // read expanded key array length
+    __ ldsw(Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)), keylen, 0);
+
+    // 256-bit original key size
+    __ cmp_and_brx_short(keylen, 60, Assembler::equal, Assembler::pn, L_expand256bit);
+
+    // 192-bit original key size
+    __ cmp_and_brx_short(keylen, 52, Assembler::equal, Assembler::pn, L_expand192bit);
+
+    // 128-bit original key size
+    // perform key expansion since SunJCE decryption-key expansion is not compatible with SPARC crypto instructions
+    for ( int i = 0;  i <= 36; i += 4 ) {
+      __ aes_kexpand1(as_FloatRegister(i), as_FloatRegister(i+2), i/4, as_FloatRegister(i+4));
+      __ aes_kexpand2(as_FloatRegister(i+2), as_FloatRegister(i+4), as_FloatRegister(i+6));
+    }
+
+    // load expanded key[last-1] and key[last] elements
+    __ movdtox(F40,L2);
+    __ movdtox(F42,L3);
+
+    __ and3(len_reg, 16, L4);
+    __ br_null(L4, false, Assembler::pt, L_dec_next2_blocks128);
+    __ delayed()->nop();
+
+    __ br(Assembler::always, false, Assembler::pt, L_dec_first_block_start);
+    __ delayed()->nop();
+
+    __ BIND(L_expand192bit);
+    // load rest of the 192-bit key
+    __ ldf(FloatRegisterImpl::S, original_key, 16, F4);
+    __ ldf(FloatRegisterImpl::S, original_key, 20, F5);
+
+    // perform key expansion since SunJCE decryption-key expansion is not compatible with SPARC crypto instructions
+    for ( int i = 0;  i <= 36; i += 6 ) {
+      __ aes_kexpand1(as_FloatRegister(i), as_FloatRegister(i+4), i/6, as_FloatRegister(i+6));
+      __ aes_kexpand2(as_FloatRegister(i+2), as_FloatRegister(i+6), as_FloatRegister(i+8));
+      __ aes_kexpand2(as_FloatRegister(i+4), as_FloatRegister(i+8), as_FloatRegister(i+10));
+    }
+    __ aes_kexpand1(F42, F46, 7, F48);
+    __ aes_kexpand2(F44, F48, F50);
+
+    // load expanded key[last-1] and key[last] elements
+    __ movdtox(F48,L2);
+    __ movdtox(F50,L3);
+
+    __ and3(len_reg, 16, L4);
+    __ br_null(L4, false, Assembler::pt, L_dec_next2_blocks192);
+    __ delayed()->nop();
+
+    __ br(Assembler::always, false, Assembler::pt, L_dec_first_block_start);
+    __ delayed()->nop();
+
+    __ BIND(L_expand256bit);
+    // load rest of the 256-bit key
+    for ( int i = 4;  i <= 7; i++ ) {
+      __ ldf(FloatRegisterImpl::S, original_key, i*4, as_FloatRegister(i));
+    }
+
+    // perform key expansion since SunJCE decryption-key expansion is not compatible with SPARC crypto instructions
+    for ( int i = 0;  i <= 40; i += 8 ) {
+      __ aes_kexpand1(as_FloatRegister(i), as_FloatRegister(i+6), i/8, as_FloatRegister(i+8));
+      __ aes_kexpand2(as_FloatRegister(i+2), as_FloatRegister(i+8), as_FloatRegister(i+10));
+      __ aes_kexpand0(as_FloatRegister(i+4), as_FloatRegister(i+10), as_FloatRegister(i+12));
+      __ aes_kexpand2(as_FloatRegister(i+6), as_FloatRegister(i+12), as_FloatRegister(i+14));
+    }
+    __ aes_kexpand1(F48, F54, 6, F56);
+    __ aes_kexpand2(F50, F56, F58);
+
+    // load expanded key[last-1] and key[last] elements
+    __ movdtox(F56,L2);
+    __ movdtox(F58,L3);
+
+    __ and3(len_reg, 16, L4);
+    __ br_null(L4, false, Assembler::pt, L_dec_next2_blocks256);
+    __ delayed()->nop();
+
+    __ BIND(L_dec_first_block_start);
+    __ ldx(from,0,L4);
+    __ ldx(from,8,L5);
+    __ xor3(L2,L4,G1);
+    __ movxtod(G1,F60);
+    __ xor3(L3,L5,G1);
+    __ movxtod(G1,F62);
+
+    // 128-bit original key size
+    __ cmp_and_brx_short(keylen, 44, Assembler::equal, Assembler::pn, L_dec_first_block128);
+
+    // 192-bit original key size
+    __ cmp_and_brx_short(keylen, 52, Assembler::equal, Assembler::pn, L_dec_first_block192);
+
+    __ aes_dround23(F54, F60, F62, F58);
+    __ aes_dround01(F52, F60, F62, F56);
+    __ aes_dround23(F50, F56, F58, F62);
+    __ aes_dround01(F48, F56, F58, F60);
+
+    __ BIND(L_dec_first_block192);
+    __ aes_dround23(F46, F60, F62, F58);
+    __ aes_dround01(F44, F60, F62, F56);
+    __ aes_dround23(F42, F56, F58, F62);
+    __ aes_dround01(F40, F56, F58, F60);
+
+    __ BIND(L_dec_first_block128);
+    for ( int i = 38;  i >= 6; i -= 8 ) {
+      __ aes_dround23(as_FloatRegister(i), F60, F62, F58);
+      __ aes_dround01(as_FloatRegister(i-2), F60, F62, F56);
+      if ( i != 6) {
+        __ aes_dround23(as_FloatRegister(i-4), F56, F58, F62);
+        __ aes_dround01(as_FloatRegister(i-6), F56, F58, F60);
+      } else {
+        __ aes_dround23_l(as_FloatRegister(i-4), F56, F58, F62);
+        __ aes_dround01_l(as_FloatRegister(i-6), F56, F58, F60);
+      }
+    }
+
+    __ movxtod(L0,F56);
+    __ movxtod(L1,F58);
+    __ mov(L4,L0);
+    __ mov(L5,L1);
+    __ fxor(FloatRegisterImpl::D, F56, F60, F60);
+    __ fxor(FloatRegisterImpl::D, F58, F62, F62);
+
+    __ stf(FloatRegisterImpl::D, F60, to, 0);
+    __ stf(FloatRegisterImpl::D, F62, to, 8);
+
+    __ add(from, 16, from);
+    __ add(to, 16, to);
+    __ subcc(len_reg, 16, len_reg);
+    __ br(Assembler::equal, false, Assembler::pt, L_cbcdec_end);
+    __ delayed()->nop();
+
+    // 256-bit original key size
+    __ cmp_and_brx_short(keylen, 60, Assembler::equal, Assembler::pn, L_dec_next2_blocks256);
+
+    // 192-bit original key size
+    __ cmp_and_brx_short(keylen, 52, Assembler::equal, Assembler::pn, L_dec_next2_blocks192);
+
+    __ align(OptoLoopAlignment);
+    __ BIND(L_dec_next2_blocks128);
+    __ nop();
+
+    // F40:F42 used for first 16-bytes
+    __ ldx(from,0,G4);
+    __ ldx(from,8,G5);
+    __ xor3(L2,G4,G1);
+    __ movxtod(G1,F40);
+    __ xor3(L3,G5,G1);
+    __ movxtod(G1,F42);
+
+    // F60:F62 used for next 16-bytes
+    __ ldx(from,16,L4);
+    __ ldx(from,24,L5);
+    __ xor3(L2,L4,G1);
+    __ movxtod(G1,F60);
+    __ xor3(L3,L5,G1);
+    __ movxtod(G1,F62);
+
+    for ( int i = 38;  i >= 6; i -= 8 ) {
+      __ aes_dround23(as_FloatRegister(i), F40, F42, F44);
+      __ aes_dround01(as_FloatRegister(i-2), F40, F42, F46);
+      __ aes_dround23(as_FloatRegister(i), F60, F62, F58);
+      __ aes_dround01(as_FloatRegister(i-2), F60, F62, F56);
+      if (i != 6 ) {
+        __ aes_dround23(as_FloatRegister(i-4), F46, F44, F42);
+        __ aes_dround01(as_FloatRegister(i-6), F46, F44, F40);
+        __ aes_dround23(as_FloatRegister(i-4), F56, F58, F62);
+        __ aes_dround01(as_FloatRegister(i-6), F56, F58, F60);
+      } else {
+        __ aes_dround23_l(as_FloatRegister(i-4), F46, F44, F42);
+        __ aes_dround01_l(as_FloatRegister(i-6), F46, F44, F40);
+        __ aes_dround23_l(as_FloatRegister(i-4), F56, F58, F62);
+        __ aes_dround01_l(as_FloatRegister(i-6), F56, F58, F60);
+      }
+    }
+
+    __ movxtod(L0,F46);
+    __ movxtod(L1,F44);
+    __ fxor(FloatRegisterImpl::D, F46, F40, F40);
+    __ fxor(FloatRegisterImpl::D, F44, F42, F42);
+
+    __ stf(FloatRegisterImpl::D, F40, to, 0);
+    __ stf(FloatRegisterImpl::D, F42, to, 8);
+
+    __ movxtod(G4,F56);
+    __ movxtod(G5,F58);
+    __ mov(L4,L0);
+    __ mov(L5,L1);
+    __ fxor(FloatRegisterImpl::D, F56, F60, F60);
+    __ fxor(FloatRegisterImpl::D, F58, F62, F62);
+
+    __ stf(FloatRegisterImpl::D, F60, to, 16);
+    __ stf(FloatRegisterImpl::D, F62, to, 24);
+
+    __ add(from, 32, from);
+    __ add(to, 32, to);
+    __ subcc(len_reg, 32, len_reg);
+    __ br(Assembler::notEqual, false, Assembler::pt, L_dec_next2_blocks128);
+    __ delayed()->nop();
+    __ br(Assembler::always, false, Assembler::pt, L_cbcdec_end);
+    __ delayed()->nop();
+
+    __ align(OptoLoopAlignment);
+    __ BIND(L_dec_next2_blocks192);
+    __ nop();
+
+    // F48:F50 used for first 16-bytes
+    __ ldx(from,0,G4);
+    __ ldx(from,8,G5);
+    __ xor3(L2,G4,G1);
+    __ movxtod(G1,F48);
+    __ xor3(L3,G5,G1);
+    __ movxtod(G1,F50);
+
+    // F60:F62 used for next 16-bytes
+    __ ldx(from,16,L4);
+    __ ldx(from,24,L5);
+    __ xor3(L2,L4,G1);
+    __ movxtod(G1,F60);
+    __ xor3(L3,L5,G1);
+    __ movxtod(G1,F62);
+
+    for ( int i = 46;  i >= 6; i -= 8 ) {
+      __ aes_dround23(as_FloatRegister(i), F48, F50, F52);
+      __ aes_dround01(as_FloatRegister(i-2), F48, F50, F54);
+      __ aes_dround23(as_FloatRegister(i), F60, F62, F58);
+      __ aes_dround01(as_FloatRegister(i-2), F60, F62, F56);
+      if (i != 6 ) {
+        __ aes_dround23(as_FloatRegister(i-4), F54, F52, F50);
+        __ aes_dround01(as_FloatRegister(i-6), F54, F52, F48);
+        __ aes_dround23(as_FloatRegister(i-4), F56, F58, F62);
+        __ aes_dround01(as_FloatRegister(i-6), F56, F58, F60);
+      } else {
+        __ aes_dround23_l(as_FloatRegister(i-4), F54, F52, F50);
+        __ aes_dround01_l(as_FloatRegister(i-6), F54, F52, F48);
+        __ aes_dround23_l(as_FloatRegister(i-4), F56, F58, F62);
+        __ aes_dround01_l(as_FloatRegister(i-6), F56, F58, F60);
+      }
+    }
+
+    __ movxtod(L0,F54);
+    __ movxtod(L1,F52);
+    __ fxor(FloatRegisterImpl::D, F54, F48, F48);
+    __ fxor(FloatRegisterImpl::D, F52, F50, F50);
+
+    __ stf(FloatRegisterImpl::D, F48, to, 0);
+    __ stf(FloatRegisterImpl::D, F50, to, 8);
+
+    __ movxtod(G4,F56);
+    __ movxtod(G5,F58);
+    __ mov(L4,L0);
+    __ mov(L5,L1);
+    __ fxor(FloatRegisterImpl::D, F56, F60, F60);
+    __ fxor(FloatRegisterImpl::D, F58, F62, F62);
+
+    __ stf(FloatRegisterImpl::D, F60, to, 16);
+    __ stf(FloatRegisterImpl::D, F62, to, 24);
+
+    __ add(from, 32, from);
+    __ add(to, 32, to);
+    __ subcc(len_reg, 32, len_reg);
+    __ br(Assembler::notEqual, false, Assembler::pt, L_dec_next2_blocks192);
+    __ delayed()->nop();
+    __ br(Assembler::always, false, Assembler::pt, L_cbcdec_end);
+    __ delayed()->nop();
+
+    __ align(OptoLoopAlignment);
+    __ BIND(L_dec_next2_blocks256);
+    __ nop();
+
+    // F0:F2 used for first 16-bytes
+    __ ldx(from,0,G4);
+    __ ldx(from,8,G5);
+    __ xor3(L2,G4,G1);
+    __ movxtod(G1,F0);
+    __ xor3(L3,G5,G1);
+    __ movxtod(G1,F2);
+
+    // F60:F62 used for next 16-bytes
+    __ ldx(from,16,L4);
+    __ ldx(from,24,L5);
+    __ xor3(L2,L4,G1);
+    __ movxtod(G1,F60);
+    __ xor3(L3,L5,G1);
+    __ movxtod(G1,F62);
+
+    __ aes_dround23(F54, F0, F2, F4);
+    __ aes_dround01(F52, F0, F2, F6);
+    __ aes_dround23(F54, F60, F62, F58);
+    __ aes_dround01(F52, F60, F62, F56);
+    __ aes_dround23(F50, F6, F4, F2);
+    __ aes_dround01(F48, F6, F4, F0);
+    __ aes_dround23(F50, F56, F58, F62);
+    __ aes_dround01(F48, F56, F58, F60);
+    // save F48:F54 in temp registers
+    __ movdtox(F54,G2);
+    __ movdtox(F52,G3);
+    __ movdtox(F50,G6);
+    __ movdtox(F48,G1);
+    for ( int i = 46;  i >= 14; i -= 8 ) {
+      __ aes_dround23(as_FloatRegister(i), F0, F2, F4);
+      __ aes_dround01(as_FloatRegister(i-2), F0, F2, F6);
+      __ aes_dround23(as_FloatRegister(i), F60, F62, F58);
+      __ aes_dround01(as_FloatRegister(i-2), F60, F62, F56);
+      __ aes_dround23(as_FloatRegister(i-4), F6, F4, F2);
+      __ aes_dround01(as_FloatRegister(i-6), F6, F4, F0);
+      __ aes_dround23(as_FloatRegister(i-4), F56, F58, F62);
+      __ aes_dround01(as_FloatRegister(i-6), F56, F58, F60);
+    }
+    // init F48:F54 with F0:F6 values (original key)
+    __ ldf(FloatRegisterImpl::D, original_key, 0, F48);
+    __ ldf(FloatRegisterImpl::D, original_key, 8, F50);
+    __ ldf(FloatRegisterImpl::D, original_key, 16, F52);
+    __ ldf(FloatRegisterImpl::D, original_key, 24, F54);
+    __ aes_dround23(F54, F0, F2, F4);
+    __ aes_dround01(F52, F0, F2, F6);
+    __ aes_dround23(F54, F60, F62, F58);
+    __ aes_dround01(F52, F60, F62, F56);
+    __ aes_dround23_l(F50, F6, F4, F2);
+    __ aes_dround01_l(F48, F6, F4, F0);
+    __ aes_dround23_l(F50, F56, F58, F62);
+    __ aes_dround01_l(F48, F56, F58, F60);
+    // re-init F48:F54 with their original values
+    __ movxtod(G2,F54);
+    __ movxtod(G3,F52);
+    __ movxtod(G6,F50);
+    __ movxtod(G1,F48);
+
+    __ movxtod(L0,F6);
+    __ movxtod(L1,F4);
+    __ fxor(FloatRegisterImpl::D, F6, F0, F0);
+    __ fxor(FloatRegisterImpl::D, F4, F2, F2);
+
+    __ stf(FloatRegisterImpl::D, F0, to, 0);
+    __ stf(FloatRegisterImpl::D, F2, to, 8);
+
+    __ movxtod(G4,F56);
+    __ movxtod(G5,F58);
+    __ mov(L4,L0);
+    __ mov(L5,L1);
+    __ fxor(FloatRegisterImpl::D, F56, F60, F60);
+    __ fxor(FloatRegisterImpl::D, F58, F62, F62);
+
+    __ stf(FloatRegisterImpl::D, F60, to, 16);
+    __ stf(FloatRegisterImpl::D, F62, to, 24);
+
+    __ add(from, 32, from);
+    __ add(to, 32, to);
+    __ subcc(len_reg, 32, len_reg);
+    __ br(Assembler::notEqual, false, Assembler::pt, L_dec_next2_blocks256);
+    __ delayed()->nop();
+
+    __ BIND(L_cbcdec_end);
+    __ stx(L0, rvec, 0);
+    __ stx(L1, rvec, 8);
+    __ restore();
+    __ mov(L0, O0);
+    __ retl();
+    __ delayed()->nop();
+
+    return start;
+  }
+
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
@@ -3368,6 +4137,14 @@ class StubGenerator: public StubCodeGenerator {
     generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
                                                        &StubRoutines::_safefetchN_fault_pc,
                                                        &StubRoutines::_safefetchN_continuation_pc);
+
+    // generate AES intrinsics code
+    if (UseAESIntrinsics) {
+      StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
+      StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+      StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
+      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
+    }
   }
 
 
