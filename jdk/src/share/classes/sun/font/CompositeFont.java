@@ -447,8 +447,7 @@ public final class CompositeFont extends Font2D {
     }
 
     public String toString() {
-        String ls = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("line.separator"));
+        String ls = System.lineSeparator();
         String componentsStr = "";
         for (int i=0; i<numSlots; i++) {
             componentsStr += "    Slot["+i+"]="+getSlotFont(i)+ls;
