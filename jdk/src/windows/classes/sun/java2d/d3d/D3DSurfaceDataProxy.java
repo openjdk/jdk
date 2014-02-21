@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class D3DSurfaceDataProxy extends SurfaceDataProxy {
             try {
                 cachedData = d3dgc.createManagedSurface(w, h, transparency);
             } catch (InvalidPipeException e) {
-                if (!d3dgc.getD3DDevice().isD3DAvailable()) {
+                if (!D3DGraphicsDevice.isD3DAvailable()) {
                     invalidate();
                     flush();
                     return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ package java.awt.print;
  */
 
 public class PrinterException extends Exception {
+    private static final long serialVersionUID = -3757589981158265819L;
 
     /**
      * Constructs a new <code>PrinterException</code> object

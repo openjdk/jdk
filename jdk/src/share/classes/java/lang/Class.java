@@ -1488,10 +1488,9 @@ public final class Class<T> implements java.io.Serializable,
                     List<Class<?>> list = new ArrayList<>();
                     Class<?> currentClass = Class.this;
                     while (currentClass != null) {
-                        Class<?>[] members = currentClass.getDeclaredClasses();
-                        for (int i = 0; i < members.length; i++) {
-                            if (Modifier.isPublic(members[i].getModifiers())) {
-                                list.add(members[i]);
+                        for (Class<?> m : currentClass.getDeclaredClasses()) {
+                            if (Modifier.isPublic(m.getModifiers())) {
+                                list.add(m);
                             }
                         }
                         currentClass = currentClass.getSuperclass();
@@ -2626,8 +2625,8 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     private static void addAll(Collection<Field> c, Field[] o) {
-        for (int i = 0; i < o.length; i++) {
-            c.add(o[i]);
+        for (Field f : o) {
+            c.add(f);
         }
     }
 
@@ -2713,8 +2712,8 @@ public final class Class<T> implements java.io.Serializable,
         }
 
         void addAll(Method[] ma) {
-            for (int i = 0; i < ma.length; i++) {
-                add(ma[i]);
+            for (Method m : ma) {
+                add(m);
             }
         }
 
@@ -2819,9 +2818,8 @@ public final class Class<T> implements java.io.Serializable,
         // out concrete implementations inherited from superclasses at
         // the end.
         MethodArray inheritedMethods = new MethodArray();
-        Class<?>[] interfaces = getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            inheritedMethods.addAllNonStatic(interfaces[i].privateGetPublicMethods());
+        for (Class<?> i : getInterfaces()) {
+            inheritedMethods.addAllNonStatic(i.privateGetPublicMethods());
         }
         if (!isInterface()) {
             Class<?> c = getSuperclass();
@@ -2864,9 +2862,9 @@ public final class Class<T> implements java.io.Serializable,
 
     private static Field searchFields(Field[] fields, String name) {
         String internedName = name.intern();
-        for (int i = 0; i < fields.length; i++) {
-            if (fields[i].getName() == internedName) {
-                return getReflectionFactory().copyField(fields[i]);
+        for (Field field : fields) {
+            if (field.getName() == internedName) {
+                return getReflectionFactory().copyField(field);
             }
         }
         return null;
@@ -2887,8 +2885,7 @@ public final class Class<T> implements java.io.Serializable,
         }
         // Direct superinterfaces, recursively
         Class<?>[] interfaces = getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            Class<?> c = interfaces[i];
+        for (Class<?> c : interfaces) {
             if ((res = c.getField0(name)) != null) {
                 return res;
             }
@@ -2911,8 +2908,7 @@ public final class Class<T> implements java.io.Serializable,
     {
         Method res = null;
         String internedName = name.intern();
-        for (int i = 0; i < methods.length; i++) {
-            Method m = methods[i];
+        for (Method m : methods) {
             if (m.getName() == internedName
                 && arrayContentsEq(parameterTypes, m.getParameterTypes())
                 && (res == null

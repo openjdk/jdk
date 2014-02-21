@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -709,7 +709,7 @@ public class TrueTypeFont extends FileFont {
 
         if (FontUtilities.isWindows) {
             defaultCodePage =
-                (String)java.security.AccessController.doPrivileged(
+                java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction("file.encoding"));
         } else {
             if (languages.length != codePages.length) {
@@ -1504,7 +1504,7 @@ public class TrueTypeFont extends FileFont {
 
         String key = locale.toString();
         while (!"".equals(key)) {
-            Short lcidObject = (Short) lcidMap.get(key);
+            Short lcidObject = lcidMap.get(key);
             if (lcidObject != null) {
                 return lcidObject.shortValue();
             }

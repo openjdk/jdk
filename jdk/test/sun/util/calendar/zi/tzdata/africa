@@ -500,14 +500,13 @@ Rule	Libya	1997	only	-	Apr	 4	0:00	1:00	S
 Rule	Libya	1997	only	-	Oct	 4	0:00	0	-
 Rule	Libya	2013	only	-	Mar	lastFri	1:00	1:00	S
 Rule	Libya	2013	only	-	Oct	lastFri	2:00	0	-
-
-# The 1996 and 1997 entries are from Shanks & Pottenger;
-# the IATA SSIM data contain some obvious errors.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 			1:00	Libya	CE%sT	1959
 			2:00	-	EET	1982
 			1:00	Libya	CE%sT	1990 May  4
+# The 1996 and 1997 entries are from Shanks & Pottenger;
+# the IATA SSIM data contain some obvious errors.
 			2:00	-	EET	1996 Sep 30
 			1:00	Libya	CE%sT	1997 Oct  4
 			2:00	-	EET	2012 Nov 10 2:00
