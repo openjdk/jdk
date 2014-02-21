@@ -48,6 +48,9 @@ define NEWLINE
 
 endef
 
+# The command line given to configure.
+CONFIGURE_COMMAND_LINE:=@CONFIGURE_COMMAND_LINE@
+
 # A self-referential reference to this file.
 SPEC:=@SPEC@
 
@@ -146,9 +149,6 @@ JAXWS_TOPDIR:=@JAXWS_TOPDIR@
 HOTSPOT_TOPDIR:=@HOTSPOT_TOPDIR@
 NASHORN_TOPDIR:=@NASHORN_TOPDIR@
 COPYRIGHT_YEAR:=@COPYRIGHT_YEAR@
-
-# Location where build customization files may be found
-CUSTOM_MAKE_DIR:=@CUSTOM_MAKE_DIR@
 
 # Information gathered from the version.numbers file.
 JDK_MAJOR_VERSION:=@JDK_MAJOR_VERSION@
@@ -685,6 +685,15 @@ JDK_BUNDLE_SUBDIR=j2sdk-bundle/jdk$(JDK_VERSION).jdk/Contents
 JRE_BUNDLE_SUBDIR=j2re-bundle/jre$(JDK_VERSION).jre/Contents
 JDK_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_BUNDLE_SUBDIR)
 JRE_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_BUNDLE_SUBDIR)
+
+# This macro is called to allow inclusion of closed source counterparts.
+# Unless overridden in closed sources, it expands to nothing.
+# Usage: This function is called in an open makefile, with the following 
+# arguments:
+# $1 the name of the repo, or empty if the top-level repo.
+# $2 the name of the makefile
+define IncludeCustomExtension
+endef
 
 # Include the custom-spec.gmk file if it exists
 -include $(dir @SPEC@)/custom-spec.gmk
