@@ -39,16 +39,38 @@ import jdk.nashorn.internal.runtime.Context;
  * Check java reflection permission for java reflective and java.lang.invoke access from scripts
  */
 final class ReflectionCheckLinker implements TypeBasedGuardingDynamicLinker{
+    private static final Class<?> STATEMENT_CLASS  = getBeanClass("Statement");
+    private static final Class<?> XMLENCODER_CLASS = getBeanClass("XMLEncoder");
+    private static final Class<?> XMLDECODER_CLASS = getBeanClass("XMLDecoder");
+
+    private static Class<?> getBeanClass(final String name) {
+        try {
+            return Class.forName("java.beans." + name);
+        } catch (final ClassNotFoundException cnfe) {
+            // Possible to miss this class in other profiles.
+            return null;
+        }
+    }
+
     @Override
     public boolean canLinkType(final Class<?> type) {
         return isReflectionClass(type);
     }
 
     private static boolean isReflectionClass(final Class<?> type) {
+        // Class or ClassLoader subclasses
         if (type == Class.class || ClassLoader.class.isAssignableFrom(type)) {
             return true;
         }
 
+        // check for bean reflection
+        if ((STATEMENT_CLASS != null && STATEMENT_CLASS.isAssignableFrom(type)) ||
+            (XMLENCODER_CLASS != null && XMLENCODER_CLASS.isAssignableFrom(type)) ||
+            (XMLDECODER_CLASS != null && XMLDECODER_CLASS.isAssignableFrom(type))) {
+            return true;
+        }
+
+        // package name check
         final String name = type.getName();
         return name.startsWith("java.lang.reflect.") || name.startsWith("java.lang.invoke.");
     }
