@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
@@ -104,7 +105,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     private volatile Property         contextProperty;
 
     // default options passed to Nashorn Options object
-    private static final String[] DEFAULT_OPTIONS = new String[] { "-scripting", "-doe" };
+    private static final String[] DEFAULT_OPTIONS = new String[] { "-doe" };
 
     // Nashorn script engine error message management
     private static final String MESSAGES_RESOURCE = "jdk.nashorn.api.scripting.resources.Messages";
@@ -355,7 +356,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 if (! isInterfaceImplemented(clazz, realSelf)) {
                     return null;
                 }
-                return clazz.cast(JavaAdapterFactory.getConstructor(realSelf.getClass(), clazz).invoke(realSelf));
+                return clazz.cast(JavaAdapterFactory.getConstructor(realSelf.getClass(), clazz,
+                        MethodHandles.publicLookup()).invoke(realSelf));
             } finally {
                 if (globalChanged) {
                     Context.setGlobal(oldGlobal);

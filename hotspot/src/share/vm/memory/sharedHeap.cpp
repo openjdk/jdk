@@ -137,7 +137,6 @@ SharedHeap::StrongRootsScope::~StrongRootsScope() {
 }
 
 void SharedHeap::process_strong_roots(bool activate_scope,
-                                      bool is_scavenging,
                                       ScanningOption so,
                                       OopClosure* roots,
                                       CodeBlobClosure* code_roots,
@@ -157,9 +156,11 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   if (!_process_strong_tasks->is_task_claimed(SH_PS_JNIHandles_oops_do))
     JNIHandles::oops_do(roots);
 
-  // All threads execute this; the individual threads are task groups.
   CLDToOopClosure roots_from_clds(roots);
-  CLDToOopClosure* roots_from_clds_p = (is_scavenging ? NULL : &roots_from_clds);
+  // If we limit class scanning to SO_SystemClasses we need to apply a CLD closure to
+  // CLDs which are strongly reachable from the thread stacks.
+  CLDToOopClosure* roots_from_clds_p = ((so & SO_SystemClasses) ? &roots_from_clds : NULL);
+  // All threads execute this; the individual threads are task groups.
   if (CollectedHeap::use_parallel_gc_threads()) {
     Threads::possibly_parallel_oops_do(roots, roots_from_clds_p, code_roots);
   } else {
@@ -187,9 +188,9 @@ void SharedHeap::process_strong_roots(bool activate_scope,
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_ClassLoaderDataGraph_oops_do)) {
     if (so & SO_AllClasses) {
-      ClassLoaderDataGraph::oops_do(roots, klass_closure, !is_scavenging);
+      ClassLoaderDataGraph::oops_do(roots, klass_closure, /* must_claim */ false);
     } else if (so & SO_SystemClasses) {
-      ClassLoaderDataGraph::always_strong_oops_do(roots, klass_closure, !is_scavenging);
+      ClassLoaderDataGraph::always_strong_oops_do(roots, klass_closure, /* must_claim */ true);
     }
   }
 
@@ -204,17 +205,18 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   }
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_CodeCache_oops_do)) {
-    if (so & SO_CodeCache) {
+    if (so & SO_ScavengeCodeCache) {
       assert(code_roots != NULL, "must supply closure for code cache");
 
-      if (is_scavenging) {
-        // We only visit parts of the CodeCache when scavenging.
-        CodeCache::scavenge_root_nmethods_do(code_roots);
-      } else {
-        // CMSCollector uses this to do intermediate-strength collections.
-        // We scan the entire code cache, since CodeCache::do_unloading is not called.
-        CodeCache::blobs_do(code_roots);
-      }
+      // We only visit parts of the CodeCache when scavenging.
+      CodeCache::scavenge_root_nmethods_do(code_roots);
+    }
+    if (so & SO_AllCodeCache) {
+      assert(code_roots != NULL, "must supply closure for code cache");
+
+      // CMSCollector uses this to do intermediate-strength collections.
+      // We scan the entire code cache, since CodeCache::do_unloading is not called.
+      CodeCache::blobs_do(code_roots);
     }
     // Verify that the code cache contents are not subject to
     // movement by a scavenging collection.

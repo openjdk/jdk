@@ -356,7 +356,7 @@ class CMSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   void concurrent_sweeping_begin();
   void concurrent_sweeping_end();
   // Similar to the above (e.g., concurrent_marking_end()) and
-  // is used for both the precleaning an abortable precleaing
+  // is used for both the precleaning an abortable precleaning
   // phases.
   void concurrent_precleaning_begin();
   void concurrent_precleaning_end();

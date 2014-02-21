@@ -78,7 +78,7 @@ class PSPromotionLAB : public CHeapObj<mtGC> {
   // Returns a subregion containing all objects in this space.
   MemRegion used_region()            { return MemRegion(bottom(), top()); }
 
-  // Boolean querries.
+  // Boolean queries.
   bool is_empty() const              { return used() == 0; }
   bool not_empty() const             { return used() > 0; }
   bool contains(const void* p) const { return _bottom <= p && p < _end; }
