@@ -395,15 +395,15 @@ public abstract class IIOMetadata {
             throw new IllegalArgumentException("Unsupported format name");
         }
         try {
-            Class cls = null;
+            Class<?> cls = null;
             final Object o = this;
 
             // firstly we try to use classloader used for loading
             // the IIOMetadata implemantation for this plugin.
-            ClassLoader loader = (ClassLoader)
+            ClassLoader loader =
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                            public Object run() {
+                    new java.security.PrivilegedAction<ClassLoader>() {
+                            public ClassLoader run() {
                                 return o.getClass().getClassLoader();
                             }
                         });
@@ -415,10 +415,10 @@ public abstract class IIOMetadata {
                 // we failed to load IIOMetadataFormat class by
                 // using IIOMetadata classloader.Next try is to
                 // use thread context classloader.
-                loader = (ClassLoader)
+                loader =
                     java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedAction() {
-                                public Object run() {
+                        new java.security.PrivilegedAction<ClassLoader>() {
+                                public ClassLoader run() {
                                     return Thread.currentThread().getContextClassLoader();
                                 }
                         });
