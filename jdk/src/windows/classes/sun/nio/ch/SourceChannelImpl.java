@@ -77,17 +77,16 @@ class SourceChannelImpl
         int oldOps = sk.nioReadyOps();
         int newOps = initialOps;
 
-        if ((ops & PollArrayWrapper.POLLNVAL) != 0)
+        if ((ops & Net.POLLNVAL) != 0)
             throw new Error("POLLNVAL detected");
 
-        if ((ops & (PollArrayWrapper.POLLERR
-                    | PollArrayWrapper.POLLHUP)) != 0) {
+        if ((ops & (Net.POLLERR | Net.POLLHUP)) != 0) {
             newOps = intOps;
             sk.nioReadyOps(newOps);
             return (newOps & ~oldOps) != 0;
         }
 
-        if (((ops & PollArrayWrapper.POLLIN) != 0) &&
+        if (((ops & Net.POLLIN) != 0) &&
             ((intOps & SelectionKey.OP_READ) != 0))
             newOps |= SelectionKey.OP_READ;
 
@@ -105,7 +104,7 @@ class SourceChannelImpl
 
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         if ((ops & SelectionKey.OP_READ) != 0)
-            ops = PollArrayWrapper.POLLIN;
+            ops = Net.POLLIN;
         sk.selector.putEventOps(sk, ops);
     }
 

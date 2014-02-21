@@ -78,17 +78,16 @@ class SinkChannelImpl
         int oldOps = sk.nioReadyOps();
         int newOps = initialOps;
 
-        if ((ops & PollArrayWrapper.POLLNVAL) != 0)
+        if ((ops & Net.POLLNVAL) != 0)
             throw new Error("POLLNVAL detected");
 
-        if ((ops & (PollArrayWrapper.POLLERR
-                    | PollArrayWrapper.POLLHUP)) != 0) {
+        if ((ops & (Net.POLLERR | Net.POLLHUP)) != 0) {
             newOps = intOps;
             sk.nioReadyOps(newOps);
             return (newOps & ~oldOps) != 0;
         }
 
-        if (((ops & PollArrayWrapper.POLLOUT) != 0) &&
+        if (((ops & Net.POLLOUT) != 0) &&
             ((intOps & SelectionKey.OP_WRITE) != 0))
             newOps |= SelectionKey.OP_WRITE;
 
@@ -106,7 +105,7 @@ class SinkChannelImpl
 
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
         if ((ops & SelectionKey.OP_WRITE) != 0)
-            ops = PollArrayWrapper.POLLOUT;
+            ops = Net.POLLOUT;
         sk.selector.putEventOps(sk, ops);
     }
 

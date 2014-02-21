@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,7 +433,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
                         if (objects.length == 1
                             && ((File)objects[0]).isDirectory()
                             && chooser.isTraversable(((File)objects[0]))
-                            && (chooser.getFileSelectionMode() != chooser.DIRECTORIES_ONLY
+                            && (chooser.getFileSelectionMode() != JFileChooser.DIRECTORIES_ONLY
                                 || !chooser.getFileSystemView().isFileSystem(((File)objects[0])))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
@@ -458,7 +458,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
                     if (file != null
                         && file.isDirectory()
                         && chooser.isTraversable(file)
-                        && (chooser.getFileSelectionMode() == chooser.FILES_ONLY
+                        && (chooser.getFileSelectionMode() == JFileChooser.FILES_ONLY
                             || !chooser.getFileSystemView().isFileSystem(file))) {
 
                         setDirectorySelected(true);

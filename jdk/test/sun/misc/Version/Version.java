@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,10 +116,16 @@ public class Version {
             } else if (Character.isDigit(cs.charAt(0)) &&
                        Character.isDigit(cs.charAt(1)) && cs.charAt(2) == '.' &&
                        Character.isDigit(cs.charAt(3))) {
-                // HSX has nn.n (major.minor) version
+                // HSX has nn.n[n] (major.minor) version
                 major = Integer.valueOf(version.substring(0, 2)).intValue();
-                minor = Character.digit(cs.charAt(3), 10);
-                cs = cs.subSequence(4, cs.length());
+                if (Character.isDigit(cs.charAt(4))) {
+                    minor = Integer.valueOf(version.substring(3, 5)).intValue();
+                    cs = cs.subSequence(5, cs.length());
+                }
+                else {
+                    minor = Character.digit(cs.charAt(3), 10);
+                    cs = cs.subSequence(4, cs.length());
+                }
             }
             if (cs.charAt(0) == '_' && cs.length() >= 3 &&
                 Character.isDigit(cs.charAt(1)) &&

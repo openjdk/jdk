@@ -27,11 +27,14 @@ package jdk.nashorn.api.scripting;
 
 import static org.testng.Assert.fail;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.util.Objects;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
-import javax.script.ScriptException;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import org.testng.annotations.Test;
 
 /**
@@ -127,6 +130,23 @@ public class ScriptEngineSecurityTest {
         }
     }
 
+
+    @Test
+    public void securitySystemExitFromFinalizerThread() throws ScriptException {
+        if (System.getSecurityManager() == null) {
+            // pass vacuously
+            return;
+        }
+
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        e.eval("var o = Java.extend(Java.type('javax.imageio.spi.ServiceRegistry'), { deregisterAll: this.exit.bind(null, 1234)});\n" +
+                "new o(new java.util.ArrayList().iterator())");
+        System.gc();
+        System.runFinalization();
+        // NOTE: this test just exits the VM if it fails.
+    }
+
     @Test
     public void securitySystemLoadLibrary() {
         if (System.getSecurityManager() == null) {
@@ -177,6 +197,100 @@ public class ScriptEngineSecurityTest {
         try {
             log(Objects.toString(((Invocable)e).getInterface((Class<?>)PropertyAccessClass)));
             fail("should have thrown SecurityException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof SecurityException)) {
+                fail("SecurityException expected, got " + exp);
+            }
+        }
+    }
+
+    // @bug 8032948: Nashorn linkages awry
+    public static class FakeProxy extends Proxy {
+        public FakeProxy(InvocationHandler ih) {
+            super(ih);
+        }
+
+        public static Class<?> makeProxyClass(ClassLoader cl, Class<?>... ifaces) {
+            return Proxy.getProxyClass(cl, ifaces);
+        }
+    }
+
+    @Test
+    public void fakeProxySubclassAccessCheckTest() throws ScriptException {
+        if (System.getSecurityManager() == null) {
+            // pass vacuously
+            return;
+        }
+
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        e.put("name", ScriptEngineSecurityTest.class.getName());
+        e.put("cl", ScriptEngineSecurityTest.class.getClassLoader());
+        e.put("intfs", new Class[] { Runnable.class });
+
+        String getClass = "Java.type(name + '$FakeProxy').getProxyClass(cl, intfs);";
+
+        // Should not be able to call static methods of Proxy via fake subclass
+        try {
+            Class c = (Class)e.eval(getClass);
+            fail("should have thrown SecurityException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof SecurityException)) {
+                fail("SecurityException expected, got " + exp);
+            }
+        }
+    }
+
+    @Test
+    public void fakeProxySubclassAccessCheckTest2() throws ScriptException {
+        if (System.getSecurityManager() == null) {
+            // pass vacuously
+            return;
+        }
+
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        e.put("name", ScriptEngineSecurityTest.class.getName());
+        e.put("cl", ScriptEngineSecurityTest.class.getClassLoader());
+        e.put("intfs", new Class[] { Runnable.class });
+
+        String getClass = "Java.type(name + '$FakeProxy').makeProxyClass(cl, intfs);";
+
+        // Should not be able to call static methods of Proxy via fake subclass
+        try {
+            Class c = (Class)e.eval(getClass);
+            fail("should have thrown SecurityException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof SecurityException)) {
+                fail("SecurityException expected, got " + exp);
+            }
+        }
+    }
+
+    @Test
+    public static void proxyStaticAccessCheckTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Runnable r = (Runnable)Proxy.newProxyInstance(
+            ScriptEngineTest.class.getClassLoader(),
+            new Class[] { Runnable.class },
+            new InvocationHandler() {
+                @Override
+                public Object invoke(Object p, Method m, Object[] a) {
+                    return null;
+                }
+            });
+
+        e.put("rc", r.getClass());
+        e.put("cl", ScriptEngineSecurityTest.class.getClassLoader());
+        e.put("intfs", new Class[] { Runnable.class });
+
+        // make sure static methods of Proxy is not accessible via subclass
+        try {
+            e.eval("rc.static.getProxyClass(cl, intfs)");
+            fail("Should have thrown SecurityException");
         } catch (final Exception exp) {
             if (! (exp instanceof SecurityException)) {
                 fail("SecurityException expected, got " + exp);

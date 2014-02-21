@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,14 @@ public interface InputMethodContext extends InputMethodRequests {
      * Creates an input method event from the arguments given
      * and dispatches it to the client component. For arguments,
      * see {@link java.awt.event.InputMethodEvent#InputMethodEvent}.
+     * @param id the event type
+     * @param text the combined committed and composed text
+     * @param committedCharacterCount the number of committed characters in the text
+     * @param caret the caret (a.k.a. insertion point); null if
+     * there's no caret within current composed text
+     * @param visiblePosition the position that's most important to be
+     * visible; null if there's no recommendation for a visible
+     * position within current composed text
      */
     public void dispatchInputMethodEvent(int id,
                 AttributedCharacterIterator text, int committedCharacterCount,

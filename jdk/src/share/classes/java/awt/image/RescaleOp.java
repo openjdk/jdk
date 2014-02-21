@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      */
     final public float[] getScaleFactors (float scaleFactors[]) {
         if (scaleFactors == null) {
-            return (float[]) this.scaleFactors.clone();
+            return this.scaleFactors.clone();
         }
         System.arraycopy (this.scaleFactors, 0, scaleFactors, 0,
                           Math.min(this.scaleFactors.length,
@@ -162,7 +162,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      */
     final public float[] getOffsets(float offsets[]) {
         if (offsets == null) {
-            return (float[]) this.offsets.clone();
+            return this.offsets.clone();
         }
 
         System.arraycopy (this.offsets, 0, offsets, 0,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,15 @@ JNIEXPORT void JNICALL
 Java_java_util_zip_Inflater_initIDs(JNIEnv *env, jclass cls)
 {
     needDictID = (*env)->GetFieldID(env, cls, "needDict", "Z");
+    CHECK_NULL(needDictID);
     finishedID = (*env)->GetFieldID(env, cls, "finished", "Z");
+    CHECK_NULL(finishedID);
     bufID = (*env)->GetFieldID(env, cls, "buf", "[B");
+    CHECK_NULL(bufID);
     offID = (*env)->GetFieldID(env, cls, "off", "I");
+    CHECK_NULL(offID);
     lenID = (*env)->GetFieldID(env, cls, "len", "I");
+    CHECK_NULL(lenID);
 }
 
 JNIEXPORT jlong JNICALL
@@ -127,14 +132,14 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
 
     in_buf  = (*env)->GetPrimitiveArrayCritical(env, this_buf, 0);
     if (in_buf == NULL) {
-        if (this_len != 0)
+        if (this_len != 0 && (*env)->ExceptionOccurred(env) == NULL)
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0;
     }
     out_buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
     if (out_buf == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
-        if (len != 0)
+        if (len != 0 && (*env)->ExceptionOccurred(env) == NULL)
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0;
     }
@@ -154,7 +159,7 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
         this_off += this_len - strm->avail_in;
         (*env)->SetIntField(env, this, offID, this_off);
         (*env)->SetIntField(env, this, lenID, strm->avail_in);
-        return len - strm->avail_out;
+        return (jint) (len - strm->avail_out);
     case Z_NEED_DICT:
         (*env)->SetBooleanField(env, this, needDictID, JNI_TRUE);
         /* Might have consumed some input here! */

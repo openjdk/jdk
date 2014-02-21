@@ -32,6 +32,12 @@
 #include <string.h>
 #include <pwd.h>
 
+static void throwIllegalArgumentException(JNIEnv *env, const char *msg) {
+    jclass clazz = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
+    if (clazz != NULL)
+        (*env)->ThrowNew(env, clazz, msg);
+}
+
 JNIEXPORT void JNICALL
 Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
                                                 (JNIEnv *env, jobject obj) {
@@ -51,7 +57,7 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
 
     if (groups == NULL) {
         jclass cls = (*env)->FindClass(env,"java/lang/OutOfMemoryError");
-        if(cls != 0)
+        if (cls != NULL)
             (*env)->ThrowNew(env, cls, NULL);
         return;
     }
@@ -67,15 +73,14 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
          */
         fid = (*env)->GetFieldID(env, cls, "username", "Ljava/lang/String;");
         if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                /* Unable to find the new exception class, give up. */
-                return;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: username");
+            (*env)->ExceptionClear(env);
+            throwIllegalArgumentException(env, "invalid field: username");
+            goto cleanupAndReturn;
         }
         jstr = (*env)->NewStringUTF(env, pwd.pw_name);
+        if (jstr == NULL) {
+            goto cleanupAndReturn;
+        }
         (*env)->SetObjectField(env, obj, fid, jstr);
 
         /*
@@ -83,13 +88,9 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
          */
         fid = (*env)->GetFieldID(env, cls, "uid", "J");
         if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                /* Unable to find the new exception class, give up. */
-                return;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: username");
+            (*env)->ExceptionClear(env);
+            throwIllegalArgumentException(env, "invalid field: uid");
+            goto cleanupAndReturn;
         }
         (*env)->SetLongField(env, obj, fid, pwd.pw_uid);
 
@@ -98,13 +99,9 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
          */
         fid = (*env)->GetFieldID(env, cls, "gid", "J");
         if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                /* Unable to find the new exception class, give up. */
-                return;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: username");
+            (*env)->ExceptionClear(env);
+            throwIllegalArgumentException(env, "invalid field: gid");
+            goto cleanupAndReturn;
         }
         (*env)->SetLongField(env, obj, fid, pwd.pw_gid);
 
@@ -113,21 +110,26 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
          */
         fid = (*env)->GetFieldID(env, cls, "groups", "[J");
         if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                /* Unable to find the new exception class, give up. */
-                return;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: username");
+            (*env)->ExceptionClear(env);
+            throwIllegalArgumentException(env, "invalid field: groups");
+            goto cleanupAndReturn;
         }
 
         jgroups = (*env)->NewLongArray(env, numSuppGroups);
+        if (jgroups == NULL) {
+            goto cleanupAndReturn;
+        }
         jgroupsAsArray = (*env)->GetLongArrayElements(env, jgroups, 0);
+        if (jgroupsAsArray == NULL) {
+            goto cleanupAndReturn;
+        }
         for (i = 0; i < numSuppGroups; i++)
             jgroupsAsArray[i] = groups[i];
         (*env)->ReleaseLongArrayElements(env, jgroups, jgroupsAsArray, 0);
         (*env)->SetObjectField(env, obj, fid, jgroups);
     }
+cleanupAndReturn:
+    free(groups);
+
     return;
 }

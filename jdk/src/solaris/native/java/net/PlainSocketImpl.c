@@ -162,6 +162,9 @@ Java_java_net_PlainSocketImpl_initProto(JNIEnv *env, jclass cls) {
     IO_fd_fdID = NET_GetFileDescriptorID(env);
     CHECK_NULL(IO_fd_fdID);
 
+    initInetAddressIDs(env);
+    JNU_CHECK_EXCEPTION(env);
+
     /* Create the marker fd used for dup2 */
     marker_fd = getMarkerFD();
 }
@@ -963,7 +966,7 @@ Java_java_net_PlainSocketImpl_socketSetOption(JNIEnv *env, jobject this,
     }
 
     if (NET_SetSockOpt(fd, level, optname, (const void *)&optval, optlen) < 0) {
-#ifdef __solaris__
+#if defined(__solaris__) || defined(_AIX)
         if (errno == EINVAL) {
             // On Solaris setsockopt will set errno to EINVAL if the socket
             // is closed. The default error message is then confusing

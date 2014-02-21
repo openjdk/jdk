@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * @see     Document
  * @see     AbstractDocument
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class DefaultStyledDocument extends AbstractDocument implements StyledDocument {
 
     /**
@@ -1128,6 +1129,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class SectionElement extends BranchElement {
 
         /**
@@ -1159,6 +1161,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class ElementSpec {
 
         /**
@@ -1394,6 +1397,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public class ElementBuffer implements Serializable {
 
         /**
