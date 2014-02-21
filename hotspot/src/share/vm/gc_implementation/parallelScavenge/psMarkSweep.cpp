@@ -661,7 +661,7 @@ void PSMarkSweep::mark_sweep_phase4() {
 }
 
 jlong PSMarkSweep::millis_since_last_gc() {
-  // We need a monotonically non-deccreasing time in ms but
+  // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   jlong ret_val = now - _time_of_last_gc;
@@ -674,7 +674,7 @@ jlong PSMarkSweep::millis_since_last_gc() {
 }
 
 void PSMarkSweep::reset_millis_since_last_gc() {
-  // We need a monotonically non-deccreasing time in ms but
+  // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
   _time_of_last_gc = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
 }

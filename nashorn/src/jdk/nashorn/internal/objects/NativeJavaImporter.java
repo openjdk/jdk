@@ -33,6 +33,7 @@ import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -161,8 +162,9 @@ public final class NativeJavaImporter extends ScriptObject {
             } else if (obj instanceof NativeJavaPackage) {
                 final String pkgName  = ((NativeJavaPackage)obj).getName();
                 final String fullName = pkgName.isEmpty() ? name : (pkgName + "." + name);
+                final Context context = Global.instance().getContext();
                 try {
-                    return StaticClass.forClass(Class.forName(fullName));
+                    return StaticClass.forClass(context.findClass(fullName));
                 } catch (final ClassNotFoundException e) {
                     // IGNORE
                 }

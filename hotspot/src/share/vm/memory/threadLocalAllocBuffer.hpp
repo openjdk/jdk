@@ -45,7 +45,9 @@ private:
   HeapWord* _end;                                // allocation end (excluding alignment_reserve)
   size_t    _desired_size;                       // desired size   (including alignment_reserve)
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
+  size_t    _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
+  static size_t   _max_size;                     // maximum size of any TLAB
   static unsigned _target_refills;               // expected number of refills between GCs
 
   unsigned  _number_of_refills;
@@ -99,12 +101,13 @@ private:
   static GlobalTLABStats* global_stats() { return _global_stats; }
 
 public:
-  ThreadLocalAllocBuffer() : _allocation_fraction(TLABAllocationWeight) {
+  ThreadLocalAllocBuffer() : _allocation_fraction(TLABAllocationWeight), _allocated_before_last_gc(0) {
     // do nothing.  tlabs must be inited by initialize() calls
   }
 
   static const size_t min_size()                 { return align_object_size(MinTLABSize / HeapWordSize); }
-  static const size_t max_size();
+  static const size_t max_size()                 { assert(_max_size != 0, "max_size not set up"); return _max_size; }
+  static void set_max_size(size_t max_size)      { _max_size = max_size; }
 
   HeapWord* start() const                        { return _start; }
   HeapWord* end() const                          { return _end; }

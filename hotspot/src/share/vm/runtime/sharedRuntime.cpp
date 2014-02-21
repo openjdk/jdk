@@ -472,7 +472,7 @@ JRT_LEAF(jdouble, SharedRuntime::l2d(jlong x))
   return (jdouble)x;
 JRT_END
 
-// Exception handling accross interpreter/compiler boundaries
+// Exception handling across interpreter/compiler boundaries
 //
 // exception_handler_for_return_address(...) returns the continuation address.
 // The continuation address is the entry point of the exception handler of the
@@ -694,8 +694,8 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     // Allow abbreviated catch tables.  The idea is to allow a method
     // to materialize its exceptions without committing to the exact
     // routing of exceptions.  In particular this is needed for adding
-    // a synthethic handler to unlock monitors when inlining
-    // synchonized methods since the unlock path isn't represented in
+    // a synthetic handler to unlock monitors when inlining
+    // synchronized methods since the unlock path isn't represented in
     // the bytecodes.
     t = table.entry_for(catch_pco, -1, 0);
   }
@@ -819,7 +819,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           // Exception happened in CodeCache. Must be either:
           // 1. Inline-cache check in C2I handler blob,
           // 2. Inline-cache check in nmethod, or
-          // 3. Implict null exception in nmethod
+          // 3. Implicit null exception in nmethod
 
           if (!cb->is_nmethod()) {
             bool is_in_blob = cb->is_adapter_blob() || cb->is_method_handles_adapter_blob();
@@ -2850,7 +2850,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 // called from very start of a compiled OSR nmethod.  A temp array is
 // allocated to hold the interesting bits of the interpreter frame.  All
 // active locks are inflated to allow them to move.  The displaced headers and
-// active interpeter locals are copied into the temp buffer.  Then we return
+// active interpreter locals are copied into the temp buffer.  Then we return
 // back to the compiled code.  The compiled code then pops the current
 // interpreter frame off the stack and pushes a new compiled frame.  Then it
 // copies the interpreter locals and displaced headers where it wants.
