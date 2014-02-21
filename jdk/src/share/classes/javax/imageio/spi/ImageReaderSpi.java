@@ -81,14 +81,14 @@ public abstract class ImageReaderSpi extends ImageReaderWriterSpi {
      * the equivalent array <code>{ ImageInputStream.class }</code>.
      */
     @Deprecated
-    public static final Class[] STANDARD_INPUT_TYPE =
+    public static final Class<?>[] STANDARD_INPUT_TYPE =
         { ImageInputStream.class };
 
     /**
      * An array of <code>Class</code> objects to be returned from
      * <code>getInputTypes</code>, initially <code>null</code>.
      */
-    protected Class[] inputTypes = null;
+    protected Class<?>[] inputTypes = null;
 
     /**
      * An array of strings to be returned from
@@ -101,7 +101,7 @@ public abstract class ImageReaderSpi extends ImageReaderWriterSpi {
      * The <code>Class</code> of the reader, initially
      * <code>null</code>.
      */
-    private Class readerClass = null;
+    private Class<?> readerClass = null;
 
     /**
      * Constructs a blank <code>ImageReaderSpi</code>.  It is up to
@@ -197,7 +197,7 @@ public abstract class ImageReaderSpi extends ImageReaderWriterSpi {
                           String[] suffixes,
                           String[] MIMETypes,
                           String readerClassName,
-                          Class[] inputTypes,
+                          Class<?>[] inputTypes,
                           String[] writerSpiNames,
                           boolean supportsStandardStreamMetadataFormat,
                           String nativeStreamMetadataFormatName,
@@ -252,9 +252,9 @@ public abstract class ImageReaderSpi extends ImageReaderWriterSpi {
      * returned.
      *
      * @return a non-<code>null</code> array of
-     * <code>Class</code>objects of length at least 1.
+     * <code>Class</code> objects of length at least 1.
      */
-    public Class[] getInputTypes() {
+    public Class<?>[] getInputTypes() {
         return inputTypes.clone();
     }
 

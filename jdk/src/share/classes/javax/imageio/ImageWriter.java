@@ -205,7 +205,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         if (output != null) {
             ImageWriterSpi provider = getOriginatingProvider();
             if (provider != null) {
-                Class[] classes = provider.getOutputTypes();
+                Class<?>[] classes = provider.getOutputTypes();
                 boolean found = false;
                 for (int i = 0; i < classes.length; i++) {
                     if (classes[i].isInstance(output)) {
