@@ -40,5 +40,5 @@ fi
 
 $COMPILEJAVA/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
    ${TESTSRC}/NamingManager.java ${TESTSRC}/DNS.java
-$TESTJAVA/bin/java -Xbootclasspath/p:. DNS
+$TESTJAVA/bin/java ${TESTVMOPTS} -Xbootclasspath/p:. DNS
 

@@ -26,7 +26,7 @@
  * @summary Verify that ReliableLog.snapshotSize() returns correct snapshot
  *          file size even if LogHandler doesn't flush.
  *
- * @run main SnapshotSize
+ * @run main/othervm SnapshotSize
  */
 
 import java.io.ByteArrayOutputStream;

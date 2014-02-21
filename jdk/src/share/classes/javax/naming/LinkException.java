@@ -26,11 +26,11 @@
 package javax.naming;
 
 /**
- * This exception is used to describe problems encounter while resolving links.
- * Addition information is added to the base NamingException for pinpointing
+ * This exception is used to describe problems encountered while resolving links.
+ * Additional information is added to the base NamingException for pinpointing
  * the problem with the link.
  *<p>
- * Analogous to how NamingException captures name resolution information,
+ * Analogously to how NamingException captures name resolution information,
  * LinkException captures "link"-name resolution information pinpointing
  * the problem encountered while resolving a link. All these fields may
  * be null.
@@ -111,7 +111,7 @@ public class LinkException extends NamingException {
     protected String linkExplanation;
 
     /**
-      * Constructs a new instance of LinkException with an explanation
+      * Constructs a new instance of LinkException with an explanation.
       * All the other fields are initialized to null.
       * @param  explanation     A possibly null string containing additional
       *                         detail about this exception.
@@ -176,7 +176,7 @@ public class LinkException extends NamingException {
     }
 
     /**
-      * Retrieves the explanation associated with the problem encounter
+      * Retrieves the explanation associated with the problem encountered
       * when resolving a link.
       *
       * @return The possibly null detail string explaining more about the problem
@@ -190,7 +190,7 @@ public class LinkException extends NamingException {
     }
 
     /**
-      * Sets the explanation associated with the problem encounter
+      * Sets the explanation associated with the problem encountered
       * when resolving a link.
       *
       * @param msg The possibly null detail string explaining more about the problem
@@ -211,7 +211,7 @@ public class LinkException extends NamingException {
      * invoke this method using the resulting composite name.
      *<p>
      * A copy of <code>name</code> is made and stored.
-     * Subsequent changes to <code>name</code> does not
+     * Subsequent changes to <code>name</code> do not
      * affect the copy in this NamingException and vice versa.
      *
      *
@@ -237,7 +237,7 @@ public class LinkException extends NamingException {
      * invoke this method using the resulting composite name.
      *<p>
      * A copy of <code>name</code> is made and stored.
-     * Subsequent changes to <code>name</code> does not
+     * Subsequent changes to <code>name</code> do not
      * affect the copy in this NamingException and vice versa.
      *
      * @param name The name to set remaining link name to. This can be null.

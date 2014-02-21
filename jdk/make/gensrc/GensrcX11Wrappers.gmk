@@ -42,7 +42,7 @@ GENSRC_X11WRAPPERS_TMP := $(JDK_OUTPUTDIR)/gensrc_x11wrappers
 GENSRC_X11WRAPPERS_DST := $(JDK_OUTPUTDIR)/gensrc/sun/awt/X11
 
 # The pre-calculated offset file are stored here:
-GENSRC_SIZER_DIR := $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator
+GENSRC_SIZER_DIR := $(JDK_TOPDIR)/make/data/x11wrappergen
 
 # Normal case is to generate only according to target bits
 GENSRC_X11_VERSION := $(OPENJDK_TARGET_CPU_BITS)

@@ -24,7 +24,9 @@
 /*
  * @test
  * @bug 4105900
- * @summary MarshalledObject with null throws NullPointerException
+ * @summary MarshalledObject with null throws NullPointerException.
+ *          This test does not affect VM global state, so othervm
+ *          is not required.
  * @author Ken Arnold
  *
  * @run main NullReference
