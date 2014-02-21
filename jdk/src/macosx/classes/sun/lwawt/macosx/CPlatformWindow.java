@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,7 +583,12 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     // setVisible could have changed the native maximized state
                     deliverZoom(true);
                 } else {
-                    switch (((Frame)target).getExtendedState()) {
+                    int frameState = ((Frame)target).getExtendedState();
+                    if ((frameState & Frame.ICONIFIED) != 0) {
+                        // Treat all state bit masks with ICONIFIED bit as ICONIFIED state.
+                        frameState = Frame.ICONIFIED;
+                    }
+                    switch (frameState) {
                         case Frame.ICONIFIED:
                             CWrapper.NSWindow.miniaturize(nsWindowPtr);
                             break;
@@ -784,6 +789,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         if (prevWindowState == windowState) return;
 
         final long nsWindowPtr = getNSWindowPtr();
+        if ((windowState & Frame.ICONIFIED) != 0) {
+            // Treat all state bit masks with ICONIFIED bit as ICONIFIED state.
+            windowState = Frame.ICONIFIED;
+        }
         switch (windowState) {
             case Frame.ICONIFIED:
                 if (prevWindowState == Frame.MAXIMIZED_BOTH) {
