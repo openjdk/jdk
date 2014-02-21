@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6346249 6392177
+ * @bug 6346249 6392177 6411385
  * @summary new Trees API
  */
 
@@ -51,6 +51,9 @@ public class TestTrees extends AbstractProcessor {
     @Anno
     int annoField;
 
+    @Anno
+    public TestTrees() {
+    }
 
     static final String testSrcDir = System.getProperty("test.src");
     static final String testClassDir = System.getProperty("test.classes");
@@ -75,7 +78,7 @@ public class TestTrees extends AbstractProcessor {
         Iterable<? extends JavaFileObject> files =
             fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir, self + ".java")));
 
-        Iterable<String> opts = Arrays.asList("-d", ".");
+        Iterable<String> opts = Arrays.asList("-d", ".", "-XDcompilePolicy=simple");
 
         System.err.println("simple compilation, no processing");
         JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
@@ -83,7 +86,8 @@ public class TestTrees extends AbstractProcessor {
         if (!task.call())
             throw new AssertionError("compilation failed");
 
-        opts =  Arrays.asList("-d", ".", "-processorpath", testClassDir, "-processor", self);
+        opts =  Arrays.asList("-d", ".", "-processorpath", testClassDir, "-processor", self,
+            "-XDcompilePolicy=simple");
 
         System.err.println();
         System.err.println("compilation with processing");
@@ -138,12 +142,42 @@ public class TestTrees extends AbstractProcessor {
         System.err.println("testAnnotation: " + e + " " + a);
         Tree tree = trees.getTree(e, a);
 
-        if (tree.getKind() != Tree.Kind.ANNOTATION)
+        if (tree.getKind() != Tree.Kind.ANNOTATION && tree.getKind() != Tree.Kind.TYPE_ANNOTATION)
             error("bad result from getTree");
 
         TreePath path = trees.getPath(e, a);
         if (path.getLeaf() != tree)
             error("bad result from getPath");
+    }
+
+    void testAllDeclarations(Trees trees, CompilationUnitTree cut) {
+        new TreePathScanner<Void, Void>() {
+            @Override public Void scan(Tree tree, Void p) {
+                if (tree == null) return null;
+                switch (tree.getKind()) {
+                    case METHOD: case CLASS: case VARIABLE: case TYPE_PARAMETER:
+                        TreePath path = new TreePath(getCurrentPath(), tree);
+                        Element el = trees.getElement(path);
+                        if (el == null) {
+                            error("null element");
+                        } else {
+                            TreePath inferred = trees.getPath(el);
+                            if (inferred == null) {
+                                error("null path");
+                            } else {
+                                if (inferred.getLeaf() != path.getLeaf())
+                                    error("bad result from getPath");
+                            }
+                            if (trees.getTree(el) != path.getLeaf())
+                                error("bad result from getTree");
+                            for (AnnotationMirror m: el.getAnnotationMirrors()) {
+                                testAnnotation(trees, el, m);
+                            }
+                        }
+                }
+                return super.scan(tree, p);
+            }
+        }.scan(cut, null);
     }
 
     void error(String msg) {
@@ -202,6 +236,7 @@ public class TestTrees extends AbstractProcessor {
             switch (e.getKind()) {
             case ANALYZE:
                 testElement(Trees.instance(task), e.getTypeElement());
+                testAllDeclarations(Trees.instance(task), e.getCompilationUnit());
                 break;
             }
         }
@@ -209,8 +244,19 @@ public class TestTrees extends AbstractProcessor {
         private final JavacTask task;
     }
 
+    public static class TestTypeParams<@Anno T extends CharSequence> {
+        public <@Anno T extends Object> TestTypeParams(T param) { }
+        public <@Anno T extends Number> void m(T param) {
+            int local;
+            try {
+                new String();
+            } catch (Exception exc) { }
+        }
+    }
 }
 
 @Retention(RetentionPolicy.SOURCE)
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE_PARAMETER,
+         ElementType.FIELD, ElementType.LOCAL_VARIABLE})
 @interface Anno {
 }
