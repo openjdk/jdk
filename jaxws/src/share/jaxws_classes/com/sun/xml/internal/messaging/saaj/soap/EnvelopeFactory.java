@@ -25,7 +25,14 @@
 
 package com.sun.xml.internal.messaging.saaj.soap;
 
-import java.util.logging.Logger;
+import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
+import com.sun.xml.internal.messaging.saaj.util.JAXMStreamSource;
+import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
+import com.sun.xml.internal.messaging.saaj.util.ParserPool;
+import com.sun.xml.internal.messaging.saaj.util.RejectDoctypeSaxFilter;
+import com.sun.xml.internal.messaging.saaj.util.transform.EfficientStreamingTransformer;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.soap.SOAPException;
@@ -39,13 +46,10 @@ import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 
-import org.xml.sax.InputSource;
-import org.xml.sax.XMLReader;
-
 import com.sun.xml.internal.messaging.saaj.LazyEnvelopeSource;
-import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
-import com.sun.xml.internal.messaging.saaj.util.*;
 import com.sun.xml.internal.messaging.saaj.util.transform.EfficientStreamingTransformer;
+
+import java.util.logging.Logger;
 
 /**
  * EnvelopeFactory creates SOAP Envelope objects using different
@@ -54,10 +58,16 @@ import com.sun.xml.internal.messaging.saaj.util.transform.EfficientStreamingTran
 public class EnvelopeFactory {
 
     protected static final Logger
-        log = Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
-        "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
+            log = Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
+            "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 
-    private static ParserPool parserPool = new ParserPool(5);
+    private static ContextClassloaderLocal<ParserPool> parserPool =
+            new ContextClassloaderLocal<ParserPool>() {
+                @Override
+                protected ParserPool initialValue() throws Exception {
+                    return new ParserPool(5);
+                }
+            };
 
     public static Envelope createEnvelope(Source src, SOAPPartImpl soapPart)
         throws SOAPException
@@ -130,15 +140,15 @@ public class EnvelopeFactory {
         SAXParser saxParser = null;
         if (src instanceof StreamSource) {
             try {
-                saxParser = parserPool.get();
+                saxParser = parserPool.get().get();
             } catch (Exception e) {
                 log.severe("SAAJ0601.util.newSAXParser.exception");
                 throw new SOAPExceptionImpl(
-                    "Couldn't get a SAX parser while constructing a envelope",
-                    e);
+                        "Couldn't get a SAX parser while constructing a envelope",
+                        e);
             }
             InputSource is = SAXSource.sourceToInputSource(src);
-            if (is.getEncoding()== null && soapPart.getSourceCharsetEncoding() != null) {
+            if (is.getEncoding() == null && soapPart.getSourceCharsetEncoding() != null) {
                 is.setEncoding(soapPart.getSourceCharsetEncoding());
             }
             XMLReader rejectFilter;
@@ -147,15 +157,15 @@ public class EnvelopeFactory {
             } catch (Exception ex) {
                 log.severe("SAAJ0510.soap.cannot.create.envelope");
                 throw new SOAPExceptionImpl(
-                    "Unable to create envelope from given source: ",
-                    ex);
+                        "Unable to create envelope from given source: ",
+                        ex);
             }
             src = new SAXSource(rejectFilter, is);
         }
 
         try {
             Transformer transformer =
-                EfficientStreamingTransformer.newTransformer();
+                    EfficientStreamingTransformer.newTransformer();
             DOMResult result = new DOMResult(soapPart);
             transformer.transform(src, result);
 
@@ -167,11 +177,11 @@ public class EnvelopeFactory {
             }
             log.severe("SAAJ0511.soap.cannot.create.envelope");
             throw new SOAPExceptionImpl(
-                "Unable to create envelope from given source: ",
-                ex);
+                    "Unable to create envelope from given source: ",
+                    ex);
         } finally {
             if (saxParser != null) {
-                parserPool.returnParser(saxParser);
+                parserPool.get().returnParser(saxParser);
             }
         }
     }
