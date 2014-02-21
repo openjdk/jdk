@@ -291,7 +291,7 @@ public abstract class ImageReader {
         if (input != null) {
             boolean found = false;
             if (originatingProvider != null) {
-                Class[] classes = originatingProvider.getInputTypes();
+                Class<?>[] classes = originatingProvider.getInputTypes();
                 for (int i = 0; i < classes.length; i++) {
                     if (classes[i].isInstance(input)) {
                         found = true;
