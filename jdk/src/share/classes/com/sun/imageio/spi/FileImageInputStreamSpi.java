@@ -37,7 +37,7 @@ public class FileImageInputStreamSpi extends ImageInputStreamSpi {
 
     private static final String version = "1.0";
 
-    private static final Class inputClass = File.class;
+    private static final Class<?> inputClass = File.class;
 
     public FileImageInputStreamSpi() {
         super(vendorName, version, inputClass);

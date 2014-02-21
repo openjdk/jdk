@@ -56,7 +56,7 @@ public class BMPImageWriterSpi extends ImageWriterSpi {
               entensions,
               mimeType,
               "com.sun.imageio.plugins.bmp.BMPImageWriter",
-              new Class[] { ImageOutputStream.class },
+              new Class<?>[] { ImageOutputStream.class },
               readerSpiNames,
               false,
               null, null, null, null,

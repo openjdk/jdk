@@ -55,7 +55,7 @@ public class WBMPImageReaderSpi extends ImageReaderSpi {
               entensions,
               mimeType,
               "com.sun.imageio.plugins.wbmp.WBMPImageReader",
-              new Class[] { ImageInputStream.class },
+              new Class<?>[] { ImageInputStream.class },
               writerSpiNames,
               true,
               null, null, null, null,

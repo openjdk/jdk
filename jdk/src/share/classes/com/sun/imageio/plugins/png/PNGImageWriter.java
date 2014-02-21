@@ -656,16 +656,16 @@ public class PNGImageWriter extends ImageWriter {
     }
 
     private void write_tEXt() throws IOException {
-        Iterator keywordIter = metadata.tEXt_keyword.iterator();
-        Iterator textIter = metadata.tEXt_text.iterator();
+        Iterator<String> keywordIter = metadata.tEXt_keyword.iterator();
+        Iterator<String> textIter = metadata.tEXt_text.iterator();
 
         while (keywordIter.hasNext()) {
             ChunkStream cs = new ChunkStream(PNGImageReader.tEXt_TYPE, stream);
-            String keyword = (String)keywordIter.next();
+            String keyword = keywordIter.next();
             cs.writeBytes(keyword);
             cs.writeByte(0);
 
-            String text = (String)textIter.next();
+            String text = textIter.next();
             cs.writeBytes(text);
             cs.finish();
         }
@@ -717,33 +717,33 @@ public class PNGImageWriter extends ImageWriter {
     }
 
     private void write_zTXt() throws IOException {
-        Iterator keywordIter = metadata.zTXt_keyword.iterator();
-        Iterator methodIter = metadata.zTXt_compressionMethod.iterator();
-        Iterator textIter = metadata.zTXt_text.iterator();
+        Iterator<String> keywordIter = metadata.zTXt_keyword.iterator();
+        Iterator<Integer> methodIter = metadata.zTXt_compressionMethod.iterator();
+        Iterator<String> textIter = metadata.zTXt_text.iterator();
 
         while (keywordIter.hasNext()) {
             ChunkStream cs = new ChunkStream(PNGImageReader.zTXt_TYPE, stream);
-            String keyword = (String)keywordIter.next();
+            String keyword = keywordIter.next();
             cs.writeBytes(keyword);
             cs.writeByte(0);
 
-            int compressionMethod = ((Integer)methodIter.next()).intValue();
+            int compressionMethod = (methodIter.next()).intValue();
             cs.writeByte(compressionMethod);
 
-            String text = (String)textIter.next();
+            String text = textIter.next();
             cs.write(deflate(text.getBytes("ISO-8859-1")));
             cs.finish();
         }
     }
 
     private void writeUnknownChunks() throws IOException {
-        Iterator typeIter = metadata.unknownChunkType.iterator();
-        Iterator dataIter = metadata.unknownChunkData.iterator();
+        Iterator<String> typeIter = metadata.unknownChunkType.iterator();
+        Iterator<byte[]> dataIter = metadata.unknownChunkData.iterator();
 
         while (typeIter.hasNext() && dataIter.hasNext()) {
-            String type = (String)typeIter.next();
+            String type = typeIter.next();
             ChunkStream cs = new ChunkStream(chunkType(type), stream);
-            byte[] data = (byte[])dataIter.next();
+            byte[] data = dataIter.next();
             cs.write(data);
             cs.finish();
         }

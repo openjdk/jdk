@@ -42,7 +42,7 @@ public class StandardMetadataFormat extends IIOMetadataFormatImpl {
 
     public StandardMetadataFormat() {
         super(standardMetadataFormatName, CHILD_POLICY_SOME);
-        List values;
+        List<String> values;
 
         // root -> Chroma
         addElement("Chroma", standardMetadataFormatName,
@@ -52,7 +52,7 @@ public class StandardMetadataFormat extends IIOMetadataFormatImpl {
         addElement("ColorSpaceType", "Chroma",
                    CHILD_POLICY_EMPTY);
 
-        values = new ArrayList();
+        values = new ArrayList<>();
         values.add("XYZ");
         values.add("Lab");
         values.add("Luv");
@@ -164,7 +164,7 @@ public class StandardMetadataFormat extends IIOMetadataFormatImpl {
         // root -> Data -> PlanarConfiguration
         addElement("PlanarConfiguration", "Data", CHILD_POLICY_EMPTY);
 
-        values = new ArrayList();
+        values = new ArrayList<>();
         values.add("PixelInterleaved");
         values.add("PlaneInterleaved");
         values.add("LineInterleaved");
@@ -178,7 +178,7 @@ public class StandardMetadataFormat extends IIOMetadataFormatImpl {
         // root -> Data -> SampleFormat
         addElement("SampleFormat", "Data", CHILD_POLICY_EMPTY);
 
-        values = new ArrayList();
+        values = new ArrayList<>();
         values.add("SignedIntegral");
         values.add("UnsignedIntegral");
         values.add("Real");
@@ -225,7 +225,7 @@ public class StandardMetadataFormat extends IIOMetadataFormatImpl {
         addElement("ImageOrientation", "Dimension",
                    CHILD_POLICY_EMPTY);
 
-        values = new ArrayList();
+        values = new ArrayList<>();
         values.add("Normal");
         values.add("Rotate90");
         values.add("Rotate180");
@@ -306,7 +306,7 @@ public class StandardMetadataFormat extends IIOMetadataFormatImpl {
         // root -> Document -> SubimageInterpretation
         addElement("SubimageInterpretation", "Document",
                    CHILD_POLICY_EMPTY);
-        values = new ArrayList();
+        values = new ArrayList<>();
         values.add("Standalone");
         values.add("SinglePage");
         values.add("FullResolution");
@@ -418,7 +418,7 @@ public class StandardMetadataFormat extends IIOMetadataFormatImpl {
                      false,
                      null);
 
-        values = new ArrayList();
+        values = new ArrayList<>();
         values.add("none");
         values.add("lzw");
         values.add("zip");
@@ -437,7 +437,7 @@ public class StandardMetadataFormat extends IIOMetadataFormatImpl {
         // root -> Transparency -> Alpha
         addElement("Alpha", "Transparency", CHILD_POLICY_EMPTY);
 
-        values = new ArrayList();
+        values = new ArrayList<>();
         values.add("none");
         values.add("premultiplied");
         values.add("nonpremultiplied");

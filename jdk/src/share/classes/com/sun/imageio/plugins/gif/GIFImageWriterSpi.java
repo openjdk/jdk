@@ -60,7 +60,7 @@ public class GIFImageWriterSpi extends ImageWriterSpi {
               suffixes,
               MIMETypes,
               writerClassName,
-              new Class[] { ImageOutputStream.class },
+              new Class<?>[] { ImageOutputStream.class },
               readerSpiNames,
               true,
               GIFWritableStreamMetadata.NATIVE_FORMAT_NAME,

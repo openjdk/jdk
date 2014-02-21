@@ -91,10 +91,6 @@ public class BMPMetadata extends IIOMetadata implements BMPConstants {
     public int green;
     public int blue;
 
-    // Fields from CommentExtension
-    // List of byte[]
-    public List comments = null; // new ArrayList();
-
     public BMPMetadata() {
         super(true,
               nativeMetadataFormatName,

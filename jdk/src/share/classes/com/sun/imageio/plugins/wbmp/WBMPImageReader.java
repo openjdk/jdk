@@ -152,14 +152,14 @@ public class WBMPImageReader extends ImageReader {
         gotHeader = true;
     }
 
-    public Iterator getImageTypes(int imageIndex)
+    public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex)
         throws IOException {
         checkIndex(imageIndex);
         readHeader();
 
         BufferedImage bi =
             new BufferedImage(1, 1, BufferedImage.TYPE_BYTE_BINARY);
-        ArrayList list = new ArrayList(1);
+        ArrayList<ImageTypeSpecifier> list = new ArrayList<>(1);
         list.add(new ImageTypeSpecifier(bi));
         return list.iterator();
     }

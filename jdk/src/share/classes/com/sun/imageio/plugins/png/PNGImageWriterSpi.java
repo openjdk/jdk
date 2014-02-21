@@ -62,7 +62,7 @@ public class PNGImageWriterSpi extends ImageWriterSpi {
                 suffixes,
                 MIMETypes,
                 writerClassName,
-                new Class[] { ImageOutputStream.class },
+                new Class<?>[] { ImageOutputStream.class },
                 readerSpiNames,
                 false,
                 null, null,
