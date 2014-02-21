@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ typedef struct _XRadialGradient {
 
 #include <dlfcn.h>
 
-#ifdef __solaris__
-/* Solaris 10 will not have these symbols at runtime */
+#if defined(__solaris__) || defined(_AIX)
+/* Solaris 10 and AIX will not have these symbols at runtime */
 
 typedef Picture (*XRenderCreateLinearGradientFuncType)
                                      (Display *dpy,
@@ -147,7 +147,7 @@ static jboolean IsXRenderAvailable(jboolean verbose, jboolean ignoreLinuxVersion
         return JNI_FALSE;
     }
 
-#ifdef __solaris__
+#if defined(__solaris__) || defined(_AIX)
     xrenderlib = dlopen("libXrender.so",RTLD_GLOBAL|RTLD_LAZY);
     if (xrenderlib != NULL) {
 

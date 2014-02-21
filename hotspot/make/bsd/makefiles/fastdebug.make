@@ -57,6 +57,9 @@ CFLAGS$(HOTSPARC_GENERIC) += $(OPT_CFLAGS/BYFILE)
 
 # Linker mapfile
 MAPFILE = $(GAMMADIR)/make/bsd/makefiles/mapfile-vers-debug
+ifeq ($(OS_VENDOR), Darwin)
+MAPFILE = $(GAMMADIR)/make/bsd/makefiles/mapfile-vers-darwin-debug
+endif
 
 VERSION = fastdebug
 SYSDEFS += -DASSERT -DCHECK_UNHANDLED_OOPS

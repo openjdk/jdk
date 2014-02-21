@@ -187,7 +187,7 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   void space_invariants() PRODUCT_RETURN;
 
-  // Performace Counter support
+  // Performance Counter support
   void update_counters();
 
   // Printing support

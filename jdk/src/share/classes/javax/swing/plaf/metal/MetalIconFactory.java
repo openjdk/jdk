@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import sun.swing.CachedPainter;
  *
  * @author Michael C. Albers
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class MetalIconFactory implements Serializable {
 
     // List of code-drawn Icons
@@ -1554,6 +1555,7 @@ public class MetalIconFactory implements Serializable {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class FolderIcon16 implements Icon, Serializable {
 
         ImageCacher imageCacher;
@@ -1636,6 +1638,7 @@ public class MetalIconFactory implements Serializable {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class TreeFolderIcon extends FolderIcon16 {
         public int getShift() { return -1; }
         public int getAdditionalHeight() { return 2; }
@@ -1655,6 +1658,7 @@ public class MetalIconFactory implements Serializable {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class FileIcon16 implements Icon, Serializable {
 
         ImageCacher imageCacher;
@@ -1740,6 +1744,7 @@ public class MetalIconFactory implements Serializable {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class TreeControlIcon implements Icon, Serializable {
         // This data member should not have been exposed.  It's called
         // isLight, but now it really means isCollapsed.  Since we can't change

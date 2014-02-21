@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -711,7 +711,7 @@ public class ProxyClient implements JConsoleContext {
                 memoryPoolProxies = new ArrayList<MemoryPoolProxy>();
                 Iterator<ObjectName> iterator = mbeans.iterator();
                 while (iterator.hasNext()) {
-                    ObjectName objName = (ObjectName) iterator.next();
+                    ObjectName objName = iterator.next();
                     MemoryPoolProxy p = new MemoryPoolProxy(this, objName);
                     memoryPoolProxies.add(p);
                 }
@@ -737,7 +737,7 @@ public class ProxyClient implements JConsoleContext {
                 garbageCollectorMBeans = new ArrayList<GarbageCollectorMXBean>();
                 Iterator<ObjectName> iterator = mbeans.iterator();
                 while (iterator.hasNext()) {
-                    ObjectName on = (ObjectName) iterator.next();
+                    ObjectName on = iterator.next();
                     String name = GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE +
                         ",name=" + on.getKeyProperty("name");
 

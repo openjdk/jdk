@@ -72,7 +72,7 @@ void MutableNUMASpace::check_mangled_unused_area_complete() {
 #endif  // NOT_PRODUCT
 
 // There may be unallocated holes in the middle chunks
-// that should be filled with dead objects to ensure parseability.
+// that should be filled with dead objects to ensure parsability.
 void MutableNUMASpace::ensure_parsability() {
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
@@ -172,6 +172,26 @@ size_t MutableNUMASpace::tlab_capacity(Thread *thr) const {
   }
   return lgrp_spaces()->at(i)->space()->capacity_in_bytes();
 }
+
+size_t MutableNUMASpace::tlab_used(Thread *thr) const {
+  // Please see the comments for tlab_capacity().
+  guarantee(thr != NULL, "No thread");
+  int lgrp_id = thr->lgrp_id();
+  if (lgrp_id == -1) {
+    if (lgrp_spaces()->length() > 0) {
+      return (used_in_bytes()) / lgrp_spaces()->length();
+    } else {
+      assert(false, "There should be at least one locality group");
+      return 0;
+    }
+  }
+  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
+  if (i == -1) {
+    return 0;
+  }
+  return lgrp_spaces()->at(i)->space()->used_in_bytes();
+}
+
 
 size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
   // Please see the comments for tlab_capacity().
@@ -880,8 +900,8 @@ void MutableNUMASpace::print_on(outputStream* st) const {
 }
 
 void MutableNUMASpace::verify() {
-  // This can be called after setting an arbitary value to the space's top,
-  // so an object can cross the chunk boundary. We ensure the parsablity
+  // This can be called after setting an arbitrary value to the space's top,
+  // so an object can cross the chunk boundary. We ensure the parsability
   // of the space and just walk the objects in linear fashion.
   ensure_parsability();
   MutableSpace::verify();

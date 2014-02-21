@@ -196,7 +196,7 @@ protected:
 // leveraging existing data structures if we simply create a way to manage this one
 // special need for a ResourceMark. If ResourceMark simply inherited from CHeapObj
 // then existing ResourceMarks would work fine since no one use new to allocate them
-// and they would be stack allocated. This leaves open the possibilty of accidental
+// and they would be stack allocated. This leaves open the possibility of accidental
 // misuse so we simple duplicate the ResourceMark functionality here.
 
 class DeoptResourceMark: public CHeapObj<mtInternal> {

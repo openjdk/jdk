@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class XEmbedHelper {
     }
     void sendMessage(long window, int message, long detail, long data1, long data2) {
         XClientMessageEvent msg = new XClientMessageEvent();
-        msg.set_type((int)XConstants.ClientMessage);
+        msg.set_type(XConstants.ClientMessage);
         msg.set_window(window);
         msg.set_message_type(XEmbed.getAtom());
         msg.set_format(32);

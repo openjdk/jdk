@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
 
         // If length == 0, leave it null
         if (readerSpiNames != null && readerSpiNames.length > 0) {
-            this.readerSpiNames = (String[])readerSpiNames.clone();
+            this.readerSpiNames = readerSpiNames.clone();
         }
     }
 
@@ -268,7 +268,7 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      * <code>Class</code>objects of length at least 1.
      */
     public Class[] getOutputTypes() {
-        return (Class[])outputTypes.clone();
+        return outputTypes.clone();
     }
 
     /**
@@ -435,6 +435,6 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      */
     public String[] getImageReaderSpiNames() {
         return readerSpiNames == null ?
-            null : (String[])readerSpiNames.clone();
+            null : readerSpiNames.clone();
     }
 }

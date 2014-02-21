@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@ public interface InputMethodDescriptor {
      * Returns whether the list of available locales can change
      * at runtime. This may be the case, for example, for adapters
      * that access real input methods over the network.
+     * @return whether the list of available locales can change at
+     * runtime
      */
     boolean hasDynamicLocaleList();
 
@@ -92,6 +94,9 @@ public interface InputMethodDescriptor {
      *
      * @param inputLocale the locale for which text input is supported, or null
      * @param displayLanguage the language in which the name will be displayed
+     * @return the user-visible name of the corresponding input method
+     * for the given input locale in the language in which the name
+     * will be displayed
      */
     String getInputMethodDisplayName(Locale inputLocale, Locale displayLanguage);
 

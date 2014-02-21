@@ -105,6 +105,7 @@ SUNWprivate_1.1 {
 		NET_MapSocketOption;
 		NET_Wait;
                 ipv6_available;
+                initInetAddressIDs;
 
 	local:
 		*;
