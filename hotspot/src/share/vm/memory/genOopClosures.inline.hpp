@@ -45,7 +45,6 @@ inline void OopsInGenClosure::set_generation(Generation* gen) {
   // Barrier set for the heap, must be set after heap is initialized
   if (_rs == NULL) {
     GenRemSet* rs = SharedHeap::heap()->rem_set();
-    assert(rs->rs_kind() == GenRemSet::CardTable, "Wrong rem set kind");
     _rs = (CardTableRS*)rs;
   }
 }

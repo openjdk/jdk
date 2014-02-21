@@ -424,7 +424,7 @@ class BlockOffsetArrayNonContigSpace: public BlockOffsetArray {
     BlockOffsetArray(array, mr, false),
     _unallocated_block(_bottom) { }
 
-  // accessor
+  // Accessor
   HeapWord* unallocated_block() const {
     assert(BlockOffsetArrayUseUnallocatedBlock,
            "_unallocated_block is not being maintained");

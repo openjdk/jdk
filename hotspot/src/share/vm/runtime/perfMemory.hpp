@@ -55,7 +55,7 @@
  * of the fields must be changed along with their counterparts in the
  * PerfDataBuffer Java class. The first four bytes of this structure
  * should never change, or compatibility problems between the monitoring
- * applications and Hotspot VMs will result. The reserved fields are
+ * applications and HotSpot VMs will result. The reserved fields are
  * available for future enhancements.
  */
 typedef struct {

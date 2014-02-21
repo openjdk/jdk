@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ import javax.swing.JFormattedTextField;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class DefaultFormatterFactory extends JFormattedTextField.AbstractFormatterFactory implements Serializable {
     /**
      * Default <code>AbstractFormatter</code> to use if a more specific one has

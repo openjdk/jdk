@@ -92,7 +92,7 @@ class KlassClosure;
 //  0 is a "special" value in set_n_threads() which translates to
 //  setting _n_threads to 1.
 //
-//  Some code uses _n_terminiation to decide if work should be done in
+//  Some code uses _n_termination to decide if work should be done in
 //  parallel.  The notorious possibly_parallel_oops_do() in threads.cpp
 //  is an example of such code.  Look for variable "is_par" for other
 //  examples.
@@ -221,7 +221,8 @@ public:
     SO_AllClasses          = 0x1,
     SO_SystemClasses       = 0x2,
     SO_Strings             = 0x4,
-    SO_CodeCache           = 0x8
+    SO_AllCodeCache        = 0x8,
+    SO_ScavengeCodeCache   = 0x10
   };
 
   FlexibleWorkGang* workers() const { return _workers; }
@@ -232,9 +233,9 @@ public:
   // "SO_AllClasses" applies the closure to all entries in the SystemDictionary;
   // "SO_SystemClasses" to all the "system" classes and loaders;
   // "SO_Strings" applies the closure to all entries in StringTable;
-  // "SO_CodeCache" applies the closure to all elements of the CodeCache.
+  // "SO_AllCodeCache" applies the closure to all elements of the CodeCache.
+  // "SO_ScavengeCodeCache" applies the closure to elements on the scavenge root list in the CodeCache.
   void process_strong_roots(bool activate_scope,
-                            bool is_scavenging,
                             ScanningOption so,
                             OopClosure* roots,
                             CodeBlobClosure* code_roots,

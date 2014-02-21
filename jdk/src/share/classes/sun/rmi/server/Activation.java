@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,7 +299,7 @@ public class Activation implements Serializable {
 
         private static final String NAME = ActivationSystem.class.getName();
         private static final long serialVersionUID = 4877330021609408794L;
-        private final ActivationSystem systemStub;
+        private ActivationSystem systemStub = null;
 
         SystemRegistryImpl(int port,
                            RMIClientSocketFactory csf,
@@ -308,7 +308,39 @@ public class Activation implements Serializable {
             throws RemoteException
         {
             super(port, csf, ssf);
-            this.systemStub = systemStub;
+            assert systemStub != null;
+            synchronized (this) {
+                this.systemStub = systemStub;
+                notifyAll();
+            }
+        }
+
+        /**
+         * Waits for systemStub to be initialized and returns its
+         * initialized value. Any remote call that uses systemStub must
+         * call this method to get it instead of using direct field
+         * access. This is necessary because the super() call in the
+         * constructor exports this object before systemStub is initialized
+         * (see JDK-8023541), allowing remote calls to come in during this
+         * time. We can't use checkShutdown() like other nested classes
+         * because this is a static class.
+         */
+        private synchronized ActivationSystem getSystemStub() {
+            boolean interrupted = false;
+
+            while (systemStub == null) {
+                try {
+                    wait();
+                } catch (InterruptedException ie) {
+                    interrupted = true;
+                }
+            }
+
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+
+            return systemStub;
         }
 
         /**
@@ -321,7 +353,7 @@ public class Activation implements Serializable {
             throws RemoteException, NotBoundException
         {
             if (name.equals(NAME)) {
-                return systemStub;
+                return getSystemStub();
             } else {
                 return super.lookup(name);
             }
