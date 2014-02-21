@@ -83,35 +83,37 @@ private:
   const char    *_cisc_reg_mask_name;
   InstructForm  *_short_branch_form;
   bool           _is_short_branch;
-  bool           _is_mach_constant;   // true if Node is a MachConstantNode
+  bool           _is_mach_constant;    // True if Node is a MachConstantNode.
+  bool           _needs_constant_base; // True if Node needs the mach_constant_base input.
   uint           _alignment;
 
 public:
   // Public Data
-  const char    *_ident;           // Name of this instruction
-  NameList       _parameters;      // Locally defined names
-  FormDict       _localNames;      // Table of operands & their types
-  MatchRule     *_matrule;         // Matching rule for this instruction
-  Opcode        *_opcode;          // Encoding of the opcode for instruction
-  char          *_size;            // Size of instruction
-  InsEncode     *_insencode;       // Encoding class instruction belongs to
-  InsEncode     *_constant;        // Encoding class constant value belongs to
-  Attribute     *_attribs;         // List of Attribute rules
-  Predicate     *_predicate;       // Predicate test for this instruction
-  FormDict       _effects;         // Dictionary of effect rules
-  ExpandRule    *_exprule;         // Expand rule for this instruction
-  RewriteRule   *_rewrule;         // Rewrite rule for this instruction
-  FormatRule    *_format;          // Format for assembly generation
-  Peephole      *_peephole;        // List of peephole rules for instruction
-  const char    *_ins_pipe;        // Instruction Scheduling description class
+  const char    *_ident;               // Name of this instruction
+  NameList       _parameters;          // Locally defined names
+  FormDict       _localNames;          // Table of operands & their types
+  MatchRule     *_matrule;             // Matching rule for this instruction
+  Opcode        *_opcode;              // Encoding of the opcode for instruction
+  char          *_size;                // Size of instruction
+  InsEncode     *_insencode;           // Encoding class instruction belongs to
+  InsEncode     *_constant;            // Encoding class constant value belongs to
+  bool           _is_postalloc_expand; // Indicates that encoding just does a lateExpand.
+  Attribute     *_attribs;             // List of Attribute rules
+  Predicate     *_predicate;           // Predicate test for this instruction
+  FormDict       _effects;             // Dictionary of effect rules
+  ExpandRule    *_exprule;             // Expand rule for this instruction
+  RewriteRule   *_rewrule;             // Rewrite rule for this instruction
+  FormatRule    *_format;              // Format for assembly generation
+  Peephole      *_peephole;            // List of peephole rules for instruction
+  const char    *_ins_pipe;            // Instruction Scheduling description class
 
-  uint          *_uniq_idx;        // Indexes of unique operands
-  uint           _uniq_idx_length; // Length of _uniq_idx array
-  uint           _num_uniq;        // Number  of unique operands
-  ComponentList  _components;      // List of Components matches MachNode's
-                                   // operand structure
+  uint          *_uniq_idx;            // Indexes of unique operands
+  uint           _uniq_idx_length;     // Length of _uniq_idx array
+  uint           _num_uniq;            // Number  of unique operands
+  ComponentList  _components;          // List of Components matches MachNode's
+                                       // operand structure
 
-  bool           _has_call;        // contain a call and caller save registers should be saved?
+  bool           _has_call;            // contain a call and caller save registers should be saved?
 
   // Public Methods
   InstructForm(const char *id, bool ideal_only = false);
@@ -133,6 +135,8 @@ public:
   virtual uint        num_defs_or_kills();
   // This instruction has an expand rule?
   virtual bool        expands() const ;
+  // This instruction has a late expand rule?
+  virtual bool        postalloc_expands() const;
   // Return this instruction's first peephole rule, or NULL
   virtual Peephole   *peepholes() const;
   // Add a peephole rule to this instruction
@@ -259,6 +263,8 @@ public:
 
   bool                    is_mach_constant() const { return _is_mach_constant;     }
   void                set_is_mach_constant(bool x) {        _is_mach_constant = x; }
+  bool                    needs_constant_base() const { return _needs_constant_base;     }
+  void                set_needs_constant_base(bool x) {        _needs_constant_base = x; }
 
   InstructForm       *short_branch_form() { return _short_branch_form; }
   bool                has_short_branch_form() { return _short_branch_form != NULL; }

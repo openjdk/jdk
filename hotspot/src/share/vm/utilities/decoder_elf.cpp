@@ -73,4 +73,4 @@ ElfFile* ElfDecoder::get_elf_file(const char* filepath) {
 
   return file;
 }
-#endif
+#endif // !_WINDOWS && !__APPLE__

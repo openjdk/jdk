@@ -121,6 +121,12 @@ private:
   // to access [stack_pointer + offset]
   OperandForm  *_cisc_spill_operand;
 
+  // If a Call node uses $constanttablebase, it gets MachConstantBaseNode
+  // by the matcher and the matcher will modify the jvms. If so, jvm states
+  // always have to be cloned when a node is cloned.  Adlc generates
+  // Compile::needs_clone_jvms() accordingly.
+  bool _needs_clone_jvms;
+
   // Methods for outputting the DFA
   void gen_match(FILE *fp, MatchList &mlist, ProductionState &status, Dict &operands_chained_from);
   void chain_rule(FILE *fp, const char *indent, const char *ideal,
@@ -289,6 +295,7 @@ public:
   void addPreHeaderBlocks(FILE *fp_hpp);
   void addHeaderBlocks(FILE *fp_hpp);
   void addSourceBlocks(FILE *fp_cpp);
+  void generate_needs_clone_jvms(FILE *fp_cpp);
   void generate_adlc_verification(FILE *fp_cpp);
 
   // output declaration of class State
@@ -311,6 +318,8 @@ public:
   void defineEvalConstant(FILE *fp, InstructForm &node);
   // Generator for Emit methods for instructions
   void defineEmit        (FILE *fp, InstructForm &node);
+  // Generator for postalloc_expand methods for instructions.
+  void define_postalloc_expand(FILE *fp, InstructForm &node);
 
   // Define a MachOper encode method
   void define_oper_interface(FILE *fp, OperandForm &oper, FormDict &globals,

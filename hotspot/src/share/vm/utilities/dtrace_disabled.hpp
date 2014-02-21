@@ -32,8 +32,6 @@
  */
 #if !defined(DTRACE_ENABLED)
 
-#ifdef USDT2
-
 /* hotspot provider probes */
 #define HOTSPOT_CLASS_LOADED(arg0, arg1, arg2, arg3)
 #define HOTSPOT_CLASS_LOADED_ENABLED()  0
@@ -107,7 +105,7 @@
 #define HOTSPOT_THREAD_PARK_BEGIN_ENABLED() 0
 #define HOTSPOT_THREAD_PARK_END(arg0)
 #define HOTSPOT_THREAD_PARK_END_ENABLED() 0
-#define HOTSPOT_THREAD_UNPARK()
+#define HOTSPOT_THREAD_UNPARK(arg0)
 #define HOTSPOT_THREAD_UNPARK_ENABLED() 0
 #define HOTSPOT_VM_INIT_BEGIN()
 #define HOTSPOT_VM_INIT_BEGIN_ENABLED() 0
@@ -1086,12 +1084,8 @@
 #define HOTSPOT_JNI_UNREGISTERNATIVES_RETURN(arg0)
 #define HOTSPOT_JNI_UNREGISTERNATIVES_RETURN_ENABLED()  0
 
-#else /* USDT2 */
-#error This file should only be included for USDT2
-#endif /* USDT2 */
-
 #else /* !defined(DTRACE_ENABLED) */
 #error This file should only be included when dtrace is not enabled
-#end /* !defined(DTRACE_ENABLED) */
+#endif /* !defined(DTRACE_ENABLED) */
 
 #endif // SHARE_VM_UTILITIES_DTRACE_USDT2_DISABLED_HPP

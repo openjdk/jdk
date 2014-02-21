@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,8 +356,12 @@ public:
   }
   VMOp_Type type() const { return VMOp_GetOwnedMonitorInfo; }
   void doit() {
-    ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread, _java_thread,
-                                                         _owned_monitors_list);
+    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+    if (Threads::includes(_java_thread) && !_java_thread->is_exiting()
+                                        && _java_thread->threadObj() != NULL) {
+      _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread, _java_thread,
+                                                            _owned_monitors_list);
+    }
   }
   jvmtiError result() { return _result; }
 };
@@ -439,9 +443,13 @@ public:
   jvmtiError result() { return _result; }
   VMOp_Type type() const { return VMOp_GetStackTrace; }
   void doit() {
-    _result = ((JvmtiEnvBase *)_env)->get_stack_trace(_java_thread,
-                                                      _start_depth, _max_count,
-                                                      _frame_buffer, _count_ptr);
+    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+    if (Threads::includes(_java_thread) && !_java_thread->is_exiting()
+                                        && _java_thread->threadObj() != NULL) {
+      _result = ((JvmtiEnvBase *)_env)->get_stack_trace(_java_thread,
+                                                        _start_depth, _max_count,
+                                                        _frame_buffer, _count_ptr);
+    }
   }
 };
 
