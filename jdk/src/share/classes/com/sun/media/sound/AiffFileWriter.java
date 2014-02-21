@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,18 +239,18 @@ public final class AiffFileWriter extends SunFileWriter {
         while( (bytesRead = fileStream.read( buffer )) >= 0 ) {
             if (maxLength>0) {
                 if( bytesRead < maxLength ) {
-                    out.write( buffer, 0, (int)bytesRead );
+                    out.write( buffer, 0, bytesRead );
                     bytesWritten += bytesRead;
                     maxLength -= bytesRead;
                 } else {
-                    out.write( buffer, 0, (int)maxLength );
+                    out.write( buffer, 0, maxLength );
                     bytesWritten += maxLength;
                     maxLength = 0;
                     break;
                 }
 
             } else {
-                out.write( buffer, 0, (int)bytesRead );
+                out.write( buffer, 0, bytesRead );
                 bytesWritten += bytesRead;
             }
         }

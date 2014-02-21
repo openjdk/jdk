@@ -1469,26 +1469,46 @@ public class ClassReader {
         if (!TargetType.isValidTargetTypeValue(tag))
             throw this.badClassFile("bad.type.annotation.value", String.format("0x%02X", tag));
 
-        TypeAnnotationPosition position = new TypeAnnotationPosition();
         TargetType type = TargetType.fromTargetTypeValue(tag);
-
-        position.type = type;
 
         switch (type) {
         // instanceof
-        case INSTANCEOF:
+        case INSTANCEOF: {
+            final int offset = nextChar();
+            final TypeAnnotationPosition position =
+                TypeAnnotationPosition.instanceOf(readTypePath());
+            position.offset = offset;
+            return position;
+        }
         // new expression
-        case NEW:
+        case NEW: {
+            final int offset = nextChar();
+            final TypeAnnotationPosition position =
+                TypeAnnotationPosition.newObj(readTypePath());
+            position.offset = offset;
+            return position;
+        }
         // constructor/method reference receiver
-        case CONSTRUCTOR_REFERENCE:
-        case METHOD_REFERENCE:
-            position.offset = nextChar();
-            break;
+        case CONSTRUCTOR_REFERENCE: {
+            final int offset = nextChar();
+            final TypeAnnotationPosition position =
+                TypeAnnotationPosition.constructorRef(readTypePath());
+            position.offset = offset;
+            return position;
+        }
+        case METHOD_REFERENCE: {
+            final int offset = nextChar();
+            final TypeAnnotationPosition position =
+                TypeAnnotationPosition.methodRef(readTypePath());
+            position.offset = offset;
+            return position;
+        }
         // local variable
-        case LOCAL_VARIABLE:
-        // resource variable
-        case RESOURCE_VARIABLE:
-            int table_length = nextChar();
+        case LOCAL_VARIABLE: {
+            final int table_length = nextChar();
+            final TypeAnnotationPosition position =
+                TypeAnnotationPosition.localVariable(readTypePath());
+
             position.lvarOffset = new int[table_length];
             position.lvarLength = new int[table_length];
             position.lvarIndex = new int[table_length];
@@ -1498,67 +1518,142 @@ public class ClassReader {
                 position.lvarLength[i] = nextChar();
                 position.lvarIndex[i] = nextChar();
             }
-            break;
+            return position;
+        }
+        // resource variable
+        case RESOURCE_VARIABLE: {
+            final int table_length = nextChar();
+            final TypeAnnotationPosition position =
+                TypeAnnotationPosition.resourceVariable(readTypePath());
+
+            position.lvarOffset = new int[table_length];
+            position.lvarLength = new int[table_length];
+            position.lvarIndex = new int[table_length];
+
+            for (int i = 0; i < table_length; ++i) {
+                position.lvarOffset[i] = nextChar();
+                position.lvarLength[i] = nextChar();
+                position.lvarIndex[i] = nextChar();
+            }
+            return position;
+        }
         // exception parameter
-        case EXCEPTION_PARAMETER:
-            position.exception_index = nextChar();
-            break;
+        case EXCEPTION_PARAMETER: {
+            final int exception_index = nextChar();
+            final TypeAnnotationPosition position =
+                TypeAnnotationPosition.exceptionParameter(readTypePath());
+            position.exception_index = exception_index;
+            return position;
+        }
         // method receiver
         case METHOD_RECEIVER:
-            // Do nothing
-            break;
+            return TypeAnnotationPosition.methodReceiver(readTypePath());
         // type parameter
-        case CLASS_TYPE_PARAMETER:
-        case METHOD_TYPE_PARAMETER:
-            position.parameter_index = nextByte();
-            break;
+        case CLASS_TYPE_PARAMETER: {
+            final int parameter_index = nextByte();
+            return TypeAnnotationPosition
+                .typeParameter(readTypePath(), parameter_index);
+        }
+        case METHOD_TYPE_PARAMETER: {
+            final int parameter_index = nextByte();
+            return TypeAnnotationPosition
+                .methodTypeParameter(readTypePath(), parameter_index);
+        }
         // type parameter bound
-        case CLASS_TYPE_PARAMETER_BOUND:
-        case METHOD_TYPE_PARAMETER_BOUND:
-            position.parameter_index = nextByte();
-            position.bound_index = nextByte();
-            break;
+        case CLASS_TYPE_PARAMETER_BOUND: {
+            final int parameter_index = nextByte();
+            final int bound_index = nextByte();
+            return TypeAnnotationPosition
+                .typeParameterBound(readTypePath(), parameter_index,
+                                    bound_index);
+        }
+        case METHOD_TYPE_PARAMETER_BOUND: {
+            final int parameter_index = nextByte();
+            final int bound_index = nextByte();
+            return TypeAnnotationPosition
+                .methodTypeParameterBound(readTypePath(), parameter_index,
+                                          bound_index);
+        }
         // class extends or implements clause
-        case CLASS_EXTENDS:
-            position.type_index = nextChar();
-            break;
+        case CLASS_EXTENDS: {
+            final int type_index = nextChar();
+            return TypeAnnotationPosition.classExtends(readTypePath(),
+                                                       type_index);
+        }
         // throws
-        case THROWS:
-            position.type_index = nextChar();
-            break;
+        case THROWS: {
+            final int type_index = nextChar();
+            return TypeAnnotationPosition.methodThrows(readTypePath(),
+                                                       type_index);
+        }
         // method parameter
-        case METHOD_FORMAL_PARAMETER:
-            position.parameter_index = nextByte();
-            break;
+        case METHOD_FORMAL_PARAMETER: {
+            final int parameter_index = nextByte();
+            return TypeAnnotationPosition.methodParameter(readTypePath(),
+                                                          parameter_index);
+        }
         // type cast
-        case CAST:
+        case CAST: {
+            final int offset = nextChar();
+            final int type_index = nextByte();
+            final TypeAnnotationPosition position =
+                TypeAnnotationPosition.typeCast(readTypePath(), type_index);
+            position.offset = offset;
+            return position;
+        }
         // method/constructor/reference type argument
-        case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
-        case METHOD_INVOCATION_TYPE_ARGUMENT:
-        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
-        case METHOD_REFERENCE_TYPE_ARGUMENT:
-            position.offset = nextChar();
-            position.type_index = nextByte();
-            break;
+        case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT: {
+            final int offset = nextChar();
+            final int type_index = nextByte();
+            final TypeAnnotationPosition position = TypeAnnotationPosition
+                .constructorInvocationTypeArg(readTypePath(), type_index);
+            position.offset = offset;
+            return position;
+        }
+        case METHOD_INVOCATION_TYPE_ARGUMENT: {
+            final int offset = nextChar();
+            final int type_index = nextByte();
+            final TypeAnnotationPosition position = TypeAnnotationPosition
+                .methodInvocationTypeArg(readTypePath(), type_index);
+            position.offset = offset;
+            return position;
+        }
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT: {
+            final int offset = nextChar();
+            final int type_index = nextByte();
+            final TypeAnnotationPosition position = TypeAnnotationPosition
+                .constructorRefTypeArg(readTypePath(), type_index);
+            position.offset = offset;
+            return position;
+        }
+        case METHOD_REFERENCE_TYPE_ARGUMENT: {
+            final int offset = nextChar();
+            final int type_index = nextByte();
+            final TypeAnnotationPosition position = TypeAnnotationPosition
+                .methodRefTypeArg(readTypePath(), type_index);
+            position.offset = offset;
+            return position;
+        }
         // We don't need to worry about these
         case METHOD_RETURN:
+            return TypeAnnotationPosition.methodReturn(readTypePath());
         case FIELD:
-            break;
+            return TypeAnnotationPosition.field(readTypePath());
         case UNKNOWN:
             throw new AssertionError("jvm.ClassReader: UNKNOWN target type should never occur!");
         default:
-            throw new AssertionError("jvm.ClassReader: Unknown target type for position: " + position);
+            throw new AssertionError("jvm.ClassReader: Unknown target type for position: " + type);
         }
+    }
 
-        { // See whether there is location info and read it
-            int len = nextByte();
-            ListBuffer<Integer> loc = new ListBuffer<>();
-            for (int i = 0; i < len * TypeAnnotationPosition.TypePathEntry.bytesPerEntry; ++i)
-                loc = loc.append(nextByte());
-            position.location = TypeAnnotationPosition.getTypePathFromBinary(loc.toList());
-        }
+    List<TypeAnnotationPosition.TypePathEntry> readTypePath() {
+        int len = nextByte();
+        ListBuffer<Integer> loc = new ListBuffer<>();
+        for (int i = 0; i < len * TypeAnnotationPosition.TypePathEntry.bytesPerEntry; ++i)
+            loc = loc.append(nextByte());
 
-        return position;
+        return TypeAnnotationPosition.getTypePathFromBinary(loc.toList());
+
     }
 
     Attribute readAttributeValue() {

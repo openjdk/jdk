@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,11 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssGetLibraryHandle
 {
     const char *libName = (*env)->GetStringUTFChars(env, jLibName, NULL);
     // look up existing handle only, do not load
+#if defined(AIX)
+    void *hModule = dlopen(libName, RTLD_LAZY);
+#else
     void *hModule = dlopen(libName, RTLD_NOLOAD);
+#endif
     dprintf2("-handle for %s: %u\n", libName, hModule);
     (*env)->ReleaseStringUTFChars(env, jLibName, libName);
     return ptr_to_jlong(hModule);

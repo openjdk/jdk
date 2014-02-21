@@ -119,13 +119,20 @@ public class TypeAnnotationPosition {
         }
     }
 
-    public TargetType type = TargetType.UNKNOWN;
+    public static final List<TypePathEntry> emptyPath = List.nil();
+
+    // NOTE: All of these will be converted to final fields eventually.
+
+    public final TargetType type;
 
     // For generic/array types.
-    public List<TypePathEntry> location = List.nil();
+
+    // This field is in the process of being made final.  Do not
+    // introduce new mutations.
+    public List<TypePathEntry> location;
 
     // Tree position.
-    public int pos = -1;
+    public final int pos;
 
     // For type casts, type tests, new, locals (as start_pc),
     // and method and constructor reference type arguments.
@@ -138,13 +145,17 @@ public class TypeAnnotationPosition {
     public int[] lvarIndex = null;
 
     // For type parameter bound
-    public int bound_index = Integer.MIN_VALUE;
+    public final int bound_index;
 
     // For type parameter and method parameter
-    public int parameter_index = Integer.MIN_VALUE;
+    public final int parameter_index;
 
     // For class extends, implements, and throws clauses
-    public int type_index = Integer.MIN_VALUE;
+
+    // This field is effectively final.  However, it needs to be
+    // modified by Gen for the time being.  Do not introduce new
+    // mutations.
+    public int type_index;
 
     // For exception parameters, index into exception table.
     // In com.sun.tools.javac.jvm.Gen.genCatch we first set the type_index
@@ -156,9 +167,10 @@ public class TypeAnnotationPosition {
     // If this type annotation is within a lambda expression,
     // store a pointer to the lambda expression tree in order
     // to allow a later translation to the right method.
-    public JCLambda onLambda = null;
+    public final JCLambda onLambda;
 
-    public TypeAnnotationPosition() {}
+    // NOTE: This constructor will eventually go away, and be replaced
+    // by static builder methods.
 
     @Override
     public String toString() {
@@ -323,4 +335,847 @@ public class TypeAnnotationPosition {
         }
         return loc.toList();
     }
+
+    // These methods are the new preferred way to create
+    // TypeAnnotationPositions
+
+    // Never make this a public constructor without creating a builder.
+    private TypeAnnotationPosition(final TargetType ttype,
+                                   final int pos,
+                                   final int parameter_index,
+                                   final JCLambda onLambda,
+                                   final int type_index,
+                                   final int bound_index,
+                                   final List<TypePathEntry> location) {
+        Assert.checkNonNull(location);
+        this.type = ttype;
+        this.pos = pos;
+        this.parameter_index = parameter_index;
+        this.onLambda = onLambda;
+        this.type_index = type_index;
+        this.bound_index = bound_index;
+        this.location = location;
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method return.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodReturn(final List<TypePathEntry> location,
+                     final JCLambda onLambda,
+                     final int pos) {
+        return new TypeAnnotationPosition(TargetType.METHOD_RETURN, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method return.
+     *
+     * @param location The type path.
+     */
+    public static TypeAnnotationPosition
+        methodReturn(final List<TypePathEntry> location) {
+        return methodReturn(location, null, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method return.
+     *
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition methodReturn(final int pos) {
+        return methodReturn(emptyPath, null, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method receiver.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodReceiver(final List<TypePathEntry> location,
+                     final JCLambda onLambda,
+                     final int pos) {
+        return new TypeAnnotationPosition(TargetType.METHOD_RECEIVER, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method receiver.
+     *
+     * @param location The type path.
+     */
+    public static TypeAnnotationPosition
+        methodReceiver(final List<TypePathEntry> location) {
+        return methodReceiver(location, null, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method receiver.
+     *
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition methodReceiver(final int pos) {
+        return methodReceiver(emptyPath, null, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method formal parameter.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this parameter.
+     * @param index The index of the parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodParameter(final List<TypePathEntry> location,
+                        final JCLambda onLambda,
+                        final int parameter_index,
+                        final int pos) {
+        return new TypeAnnotationPosition(TargetType.METHOD_FORMAL_PARAMETER,
+                                          pos, parameter_index, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method formal parameter.
+     *
+     * @param onLambda The lambda for this parameter.
+     * @param index The index of the parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodParameter(final JCLambda onLambda,
+                        final int parameter_index,
+                        final int pos) {
+        return methodParameter(emptyPath, onLambda,
+                               parameter_index, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method formal parameter.
+     *
+     * @param index The index of the parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodParameter(final int parameter_index,
+                        final int pos) {
+        return methodParameter(null, parameter_index, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method formal parameter.
+     *
+     * @param location The type path.
+     * @param index The index of the parameter.
+     */
+    public static TypeAnnotationPosition
+        methodParameter(final List<TypePathEntry> location,
+                        final int parameter_index) {
+        return methodParameter(location, null, parameter_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method reference.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this method reference.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodRef(final List<TypePathEntry> location,
+                  final JCLambda onLambda,
+                  final int pos) {
+        return new TypeAnnotationPosition(TargetType.METHOD_REFERENCE, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method reference.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this method reference.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodRef(final List<TypePathEntry> location) {
+        return methodRef(location, null, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a constructor reference.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this constructor reference.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        constructorRef(final List<TypePathEntry> location,
+                       final JCLambda onLambda,
+                       final int pos) {
+        return new TypeAnnotationPosition(TargetType.CONSTRUCTOR_REFERENCE, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a constructor reference.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this constructor reference.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        constructorRef(final List<TypePathEntry> location) {
+        return constructorRef(location, null, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a field.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        field(final List<TypePathEntry> location,
+              final JCLambda onLambda,
+              final int pos) {
+        return new TypeAnnotationPosition(TargetType.FIELD, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a field.
+     *
+     * @param location The type path.
+     */
+    public static TypeAnnotationPosition
+        field(final List<TypePathEntry> location) {
+        return field(location, null, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a field.
+     *
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition field(final int pos) {
+        return field(emptyPath, null, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a local variable.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        localVariable(final List<TypePathEntry> location,
+                      final JCLambda onLambda,
+                      final int pos) {
+        return new TypeAnnotationPosition(TargetType.LOCAL_VARIABLE, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a local variable.
+     *
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        localVariable(final JCLambda onLambda,
+                      final int pos) {
+        return localVariable(emptyPath, onLambda, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a local variable.
+     *
+     * @param location The type path.
+     */
+    public static TypeAnnotationPosition
+        localVariable(final List<TypePathEntry> location) {
+        return localVariable(location, null, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for an exception parameter.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        exceptionParameter(final List<TypePathEntry> location,
+                           final JCLambda onLambda,
+                           final int pos) {
+        return new TypeAnnotationPosition(TargetType.EXCEPTION_PARAMETER, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for an exception parameter.
+     *
+     * @param onLambda The lambda for this parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        exceptionParameter(final JCLambda onLambda,
+                           final int pos) {
+        return exceptionParameter(emptyPath, onLambda, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for an exception parameter.
+     *
+     * @param location The type path.
+     */
+    public static TypeAnnotationPosition
+        exceptionParameter(final List<TypePathEntry> location) {
+        return exceptionParameter(location, null, -1);
+    }
+
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a resource variable.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        resourceVariable(final List<TypePathEntry> location,
+                         final JCLambda onLambda,
+                         final int pos) {
+        return new TypeAnnotationPosition(TargetType.RESOURCE_VARIABLE, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a resource variable.
+     *
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        resourceVariable(final JCLambda onLambda,
+                         final int pos) {
+        return resourceVariable(emptyPath, onLambda, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a resource variable.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        resourceVariable(final List<TypePathEntry> location) {
+        return resourceVariable(location, null, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a new.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        newObj(final List<TypePathEntry> location,
+               final JCLambda onLambda,
+               final int pos) {
+        return new TypeAnnotationPosition(TargetType.NEW, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a new.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition newObj(final int pos) {
+        return newObj(emptyPath, null, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a new.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        newObj(final List<TypePathEntry> location) {
+        return newObj(location, null, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a class extension.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param type_index The index of the interface.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        classExtends(final List<TypePathEntry> location,
+                     final JCLambda onLambda,
+                     final int type_index,
+                     final int pos) {
+        return new TypeAnnotationPosition(TargetType.CLASS_EXTENDS, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          type_index, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a class extension.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param type_index The index of the interface.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        classExtends(final List<TypePathEntry> location,
+                     final JCLambda onLambda,
+                     final int pos) {
+        return classExtends(location, onLambda, -1, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a class extension.
+     *
+     * @param location The type path.
+     * @param type_index The index of the interface.
+     */
+    public static TypeAnnotationPosition
+        classExtends(final List<TypePathEntry> location,
+                     final int type_index) {
+        return classExtends(location, null, type_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a class extension.
+     *
+     * @param type_index The index of the interface.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition classExtends(final int type_index,
+                                                      final int pos) {
+        return classExtends(emptyPath, null, type_index, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a class extension.
+     *
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition classExtends(final int pos) {
+        return classExtends(-1, pos);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for an instanceof.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        instanceOf(final List<TypePathEntry> location,
+                   final JCLambda onLambda,
+                   final int pos) {
+        return new TypeAnnotationPosition(TargetType.INSTANCEOF, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+    /**
+     * Create a {@code TypeAnnotationPosition} for an instanceof.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        instanceOf(final List<TypePathEntry> location) {
+        return instanceOf(location, null, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a type cast.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param type_index The index into an intersection type.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        typeCast(final List<TypePathEntry> location,
+                 final JCLambda onLambda,
+                 final int type_index,
+                 final int pos) {
+        return new TypeAnnotationPosition(TargetType.CAST, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          type_index, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a type cast.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param type_index The index into an intersection type.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        typeCast(final List<TypePathEntry> location,
+                 final int type_index) {
+        return typeCast(location, null, type_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method
+     * invocation type argument.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param type_index The index of the type argument.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodInvocationTypeArg(final List<TypePathEntry> location,
+                                final JCLambda onLambda,
+                                final int type_index,
+                                final int pos) {
+        return new TypeAnnotationPosition(TargetType.METHOD_INVOCATION_TYPE_ARGUMENT,
+                                          pos, Integer.MIN_VALUE, onLambda,
+                                          type_index, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method
+     * invocation type argument.
+     *
+     * @param location The type path.
+     * @param type_index The index of the type argument.
+     */
+    public static TypeAnnotationPosition
+        methodInvocationTypeArg(final List<TypePathEntry> location,
+                                final int type_index) {
+        return methodInvocationTypeArg(location, null, type_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a constructor
+     * invocation type argument.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param type_index The index of the type argument.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        constructorInvocationTypeArg(final List<TypePathEntry> location,
+                                     final JCLambda onLambda,
+                                     final int type_index,
+                                     final int pos) {
+        return new TypeAnnotationPosition(TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT,
+                                          pos, Integer.MIN_VALUE, onLambda,
+                                          type_index, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a constructor
+     * invocation type argument.
+     *
+     * @param location The type path.
+     * @param type_index The index of the type argument.
+     */
+    public static TypeAnnotationPosition
+        constructorInvocationTypeArg(final List<TypePathEntry> location,
+                                     final int type_index) {
+        return constructorInvocationTypeArg(location, null, type_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a type parameter.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param parameter_index The index of the type parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        typeParameter(final List<TypePathEntry> location,
+                      final JCLambda onLambda,
+                      final int parameter_index,
+                      final int pos) {
+        return new TypeAnnotationPosition(TargetType.CLASS_TYPE_PARAMETER, pos,
+                                          parameter_index, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a type parameter.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param parameter_index The index of the type parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        typeParameter(final List<TypePathEntry> location,
+                      final int parameter_index) {
+        return typeParameter(location, null, parameter_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method type parameter.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param parameter_index The index of the type parameter.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodTypeParameter(final List<TypePathEntry> location,
+                            final JCLambda onLambda,
+                            final int parameter_index,
+                            final int pos) {
+        return new TypeAnnotationPosition(TargetType.METHOD_TYPE_PARAMETER,
+                                          pos, parameter_index, onLambda,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method type parameter.
+     *
+     * @param location The type path.
+     * @param parameter_index The index of the type parameter.
+     */
+    public static TypeAnnotationPosition
+        methodTypeParameter(final List<TypePathEntry> location,
+                            final int parameter_index) {
+        return methodTypeParameter(location, null, parameter_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a throws clause.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param type_index The index of the exception.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodThrows(final List<TypePathEntry> location,
+                     final JCLambda onLambda,
+                     final int type_index,
+                     final int pos) {
+        return new TypeAnnotationPosition(TargetType.THROWS, pos,
+                                          Integer.MIN_VALUE, onLambda,
+                                          type_index, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a throws clause.
+     *
+     * @param location The type path.
+     * @param type_index The index of the exception.
+     */
+    public static TypeAnnotationPosition
+        methodThrows(final List<TypePathEntry> location,
+                     final int type_index) {
+        return methodThrows(location, null, type_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method reference
+     * type argument.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param parameter_index The index of the type argument.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodRefTypeArg(final List<TypePathEntry> location,
+                         final JCLambda onLambda,
+                         final int type_index,
+                         final int pos) {
+        return new TypeAnnotationPosition(TargetType.METHOD_REFERENCE_TYPE_ARGUMENT,
+                                          pos, Integer.MIN_VALUE, onLambda,
+                                          type_index, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method reference
+     * type argument.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param parameter_index The index of the type argument.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodRefTypeArg(final List<TypePathEntry> location,
+                         final int type_index) {
+        return methodRefTypeArg(location, null, type_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a constructor reference
+     * type argument.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param parameter_index The index of the type argument.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        constructorRefTypeArg(final List<TypePathEntry> location,
+                              final JCLambda onLambda,
+                              final int type_index,
+                              final int pos) {
+        return new TypeAnnotationPosition(TargetType.CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT,
+                                          pos, Integer.MIN_VALUE, onLambda,
+                                          type_index, Integer.MIN_VALUE,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a constructor reference
+     * type argument.
+     *
+     * @param location The type path.
+     * @param parameter_index The index of the type argument.
+     */
+    public static TypeAnnotationPosition
+        constructorRefTypeArg(final List<TypePathEntry> location,
+                              final int type_index) {
+        return constructorRefTypeArg(location, null, type_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a type parameter bound.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param parameter_index The index of the type parameter.
+     * @param bound_index The index of the type parameter bound.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        typeParameterBound(final List<TypePathEntry> location,
+                           final JCLambda onLambda,
+                           final int parameter_index,
+                           final int bound_index,
+                           final int pos) {
+        return new TypeAnnotationPosition(TargetType.CLASS_TYPE_PARAMETER_BOUND,
+                                          pos, parameter_index, onLambda,
+                                          Integer.MIN_VALUE, bound_index,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a type parameter bound.
+     *
+     * @param location The type path.
+     * @param parameter_index The index of the type parameter.
+     * @param bound_index The index of the type parameter bound.
+     */
+    public static TypeAnnotationPosition
+        typeParameterBound(final List<TypePathEntry> location,
+                           final int parameter_index,
+                           final int bound_index) {
+        return typeParameterBound(location, null, parameter_index,
+                                  bound_index, -1);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method type
+     * parameter bound.
+     *
+     * @param location The type path.
+     * @param onLambda The lambda for this variable.
+     * @param parameter_index The index of the type parameter.
+     * @param bound_index The index of the type parameter bound.
+     * @param pos The position from the associated tree node.
+     */
+    public static TypeAnnotationPosition
+        methodTypeParameterBound(final List<TypePathEntry> location,
+                                 final JCLambda onLambda,
+                                 final int parameter_index,
+                                 final int bound_index,
+                                 final int pos) {
+        return new TypeAnnotationPosition(TargetType.METHOD_TYPE_PARAMETER_BOUND,
+                                          pos, parameter_index, onLambda,
+                                          Integer.MIN_VALUE, bound_index,
+                                          location);
+    }
+
+    /**
+     * Create a {@code TypeAnnotationPosition} for a method type
+     * parameter bound.
+     *
+     * @param location The type path.
+     * @param parameter_index The index of the type parameter.
+     * @param bound_index The index of the type parameter bound.
+     */
+    public static TypeAnnotationPosition
+        methodTypeParameterBound(final List<TypePathEntry> location,
+                                 final int parameter_index,
+                                 final int bound_index) {
+        return methodTypeParameterBound(location, null, parameter_index,
+                                        bound_index, -1);
+    }
+
+    // Consider this deprecated on arrival.  We eventually want to get
+    // rid of this value altogether.  Do not use it for anything new.
+    public static final TypeAnnotationPosition unknown =
+        new TypeAnnotationPosition(TargetType.UNKNOWN, -1,
+                                   Integer.MIN_VALUE, null,
+                                   Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                   emptyPath);
 }

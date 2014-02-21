@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,6 +331,7 @@ public class NativeFont extends PhysicalFont {
      * ie to request 12 pt Times New Roman italic font, use an XLFD like :
      * -monotype-times new roman-regular-i---*-120-72-72-p-*-iso8859-1
      */
+    @SuppressWarnings("cast")
     byte[] getPlatformNameBytes(int ptSize) {
         int[] hPos = new int[14];
         int hyphenCnt = 1;

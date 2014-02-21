@@ -608,6 +608,7 @@ void notify_vm_shutdown() {
   HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 #else /* USDT2 */
   HOTSPOT_VM_SHUTDOWN();
+  HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 #endif /* USDT2 */
 }
 

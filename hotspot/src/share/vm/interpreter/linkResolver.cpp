@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -649,16 +649,6 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
     }
   }
 
-  if (nostatics && resolved_method->is_static()) {
-    ResourceMark rm(THREAD);
-    char buf[200];
-    jio_snprintf(buf, sizeof(buf), "Expected instance not static method %s", Method::name_and_sig_as_C_string(resolved_klass(),
-                                                      resolved_method->name(),
-                                                      resolved_method->signature()));
-    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
-  }
-
-
   if (check_access) {
     // JDK8 adds non-public interface methods, and accessability check requirement
     assert(current_klass.not_null() , "current_klass should not be null");
@@ -700,6 +690,15 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
         THROW_MSG(vmSymbols::java_lang_LinkageError(), buf);
       }
     }
+  }
+
+  if (nostatics && resolved_method->is_static()) {
+    ResourceMark rm(THREAD);
+    char buf[200];
+    jio_snprintf(buf, sizeof(buf), "Expected instance not static method %s",
+                 Method::name_and_sig_as_C_string(resolved_klass(),
+                 resolved_method->name(), resolved_method->signature()));
+    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
   if (TraceItables && Verbose) {

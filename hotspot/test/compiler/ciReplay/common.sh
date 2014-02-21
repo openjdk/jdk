@@ -196,6 +196,11 @@ generate_replay() {
     then
         # enable core dump
         ulimit -c unlimited
+        new_ulimit=`ulimit -c`
+        if [ $new_ulimit != "unlimited" -a $new_ulimit != "-1" ]
+        then
+            test_fail 2 "CHECK :: ULIMIT" "Could not set 'ulimit -c unlimited'. 'ulimit -c' returns : $new_ulimit"
+        fi
 
         if [ $VM_OS = "solaris" ]
         then
@@ -228,7 +233,10 @@ generate_replay() {
     
     core_locations=`grep -i core crash.out | grep "location:" | \
             sed -e 's/.*location: //'`
+    echo CRASH OUTPUT:
+    cat crash.out    
     rm crash.out 
+    
     # processing core locations for *nix
     if [ $VM_OS != "windows" ]
     then

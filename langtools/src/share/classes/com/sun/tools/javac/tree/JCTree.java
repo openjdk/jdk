@@ -2299,6 +2299,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         // Attribute.Compound if tag is ANNOTATION
         // Attribute.TypeCompound if tag is TYPE_ANNOTATION
+        //
+        // NOTE: This field is slated for removal in the future.  Do
+        // not use it for anything new.
         public Attribute.Compound attribute;
 
         protected JCAnnotation(Tag tag, JCTree annotationType, List<JCExpression> args) {

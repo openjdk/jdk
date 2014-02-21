@@ -88,8 +88,7 @@ class CMSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   // of the tenured generation.
   PerfVariable* _avg_msc_pause_counter;
   // Average for the time between the most recent end of a
-  // MSC collection and the beginning of the next
-  // MSC collection.
+  // MSC collection and the beginning of the next MSC collection.
   PerfVariable* _avg_msc_interval_counter;
   // Average for the GC cost of a MSC collection based on
   // _avg_msc_pause_counter and _avg_msc_interval_counter.
@@ -99,8 +98,7 @@ class CMSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   // of the tenured generation.
   PerfVariable* _avg_ms_pause_counter;
   // Average for the time between the most recent end of a
-  // MS collection and the beginning of the next
-  // MS collection.
+  // MS collection and the beginning of the next MS collection.
   PerfVariable* _avg_ms_interval_counter;
   // Average for the GC cost of a MS collection based on
   // _avg_ms_pause_counter and _avg_ms_interval_counter.
@@ -108,9 +106,9 @@ class CMSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
 
   // Average of the bytes promoted per minor collection.
   PerfVariable* _promoted_avg_counter;
-  // Average of the deviation of the promoted average
+  // Average of the deviation of the promoted average.
   PerfVariable* _promoted_avg_dev_counter;
-  // Padded average of the bytes promoted per minor colleciton
+  // Padded average of the bytes promoted per minor collection.
   PerfVariable* _promoted_padded_avg_counter;
 
   // See description of the _change_young_gen_for_maj_pauses
