@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1514,13 +1514,13 @@ public class ComponentColorModel extends ColorModel {
                 intpixel[0] = (int) (red * factor * ((1<<nBits[0]) - 1) + 0.5f);
             }
             if (nBits[1] == precision) {
-                intpixel[1] = (int)(grn);
+                intpixel[1] = grn;
             }
             else {
                 intpixel[1] = (int) (grn * factor * ((1<<nBits[1]) - 1) + 0.5f);
             }
             if (nBits[2] == precision) {
-                intpixel[2] = (int)(blu);
+                intpixel[2] = blu;
             }
             else {
                 intpixel[2] = (int) (blu * factor * ((1<<nBits[2]) - 1) + 0.5f);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,7 +457,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
 
     protected boolean blitImage(SunGraphics2D sg2d, Image img, boolean fliph, boolean flipv, int sx, int sy, int sw, int sh, int dx, int dy, int dw, int dh, Color bgColor) {
         CPrinterSurfaceData surfaceData = (CPrinterSurfaceData)sg2d.getSurfaceData();
-        OSXOffScreenSurfaceData imgSurfaceData = (OSXOffScreenSurfaceData) OSXOffScreenSurfaceData.createNewSurface((BufferedImage)img);
+        OSXOffScreenSurfaceData imgSurfaceData = OSXOffScreenSurfaceData.createNewSurface((BufferedImage)img);
         surfaceData.blitImage(this, sg2d, imgSurfaceData, fliph, flipv, sx, sy, sw, sh, dx, dy, dw, dh, bgColor);
         return true;
     }

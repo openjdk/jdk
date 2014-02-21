@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public final class XContentWindow extends XWindow {
     // NOTE: This method may be called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     public void handleResize(Rectangle bounds) {
-        AWTAccessor.getComponentAccessor().setSize((Component)target, bounds.width, bounds.height);
+        AWTAccessor.getComponentAccessor().setSize(target, bounds.width, bounds.height);
         postEvent(new ComponentEvent(target, ComponentEvent.COMPONENT_RESIZED));
     }
 

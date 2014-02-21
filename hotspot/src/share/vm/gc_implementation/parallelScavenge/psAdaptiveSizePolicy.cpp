@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/psAdaptiveSizePolicy.hpp"
 #include "gc_implementation/parallelScavenge/psGCAdaptivePolicyCounters.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
@@ -74,6 +75,38 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
   _major_timer.start();
 
   _old_gen_policy_is_ready = false;
+}
+
+size_t PSAdaptiveSizePolicy::calculate_free_based_on_live(size_t live, uintx ratio_as_percentage) {
+  // We want to calculate how much free memory there can be based on the
+  // amount of live data currently in the old gen. Using the formula:
+  // ratio * (free + live) = free
+  // Some equation solving later we get:
+  // free = (live * ratio) / (1 - ratio)
+
+  const double ratio = ratio_as_percentage / 100.0;
+  const double ratio_inverse = 1.0 - ratio;
+  const double tmp = live * ratio;
+  size_t free = (size_t)(tmp / ratio_inverse);
+
+  return free;
+}
+
+size_t PSAdaptiveSizePolicy::calculated_old_free_size_in_bytes() const {
+  size_t free_size = (size_t)(_promo_size + avg_promoted()->padded_average());
+  size_t live = ParallelScavengeHeap::heap()->old_gen()->used_in_bytes();
+
+  if (MinHeapFreeRatio != 0) {
+    size_t min_free = calculate_free_based_on_live(live, MinHeapFreeRatio);
+    free_size = MAX2(free_size, min_free);
+  }
+
+  if (MaxHeapFreeRatio != 100) {
+    size_t max_free = calculate_free_based_on_live(live, MaxHeapFreeRatio);
+    free_size = MIN2(max_free, free_size);
+  }
+
+  return free_size;
 }
 
 void PSAdaptiveSizePolicy::major_collection_begin() {
@@ -482,7 +515,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
   //   adjust down the total heap size.  Adjust down the larger of the
   //   generations.
 
-  // Add some checks for a threshhold for a change.  For example,
+  // Add some checks for a threshold for a change.  For example,
   // a change less than the necessary alignment is probably not worth
   // attempting.
 
@@ -1161,7 +1194,7 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
     // We use the tenuring threshold to equalize the cost of major
     // and minor collections.
     // ThresholdTolerance is used to indicate how sensitive the
-    // tenuring threshold is to differences in cost betweent the
+    // tenuring threshold is to differences in cost between the
     // collection types.
 
     // Get the times of interest. This involves a little work, so
@@ -1292,3 +1325,18 @@ bool PSAdaptiveSizePolicy::print_adaptive_size_policy_on(outputStream* st)
                           st,
                           PSScavenge::tenuring_threshold());
 }
+
+#ifndef PRODUCT
+
+void TestOldFreeSpaceCalculation_test() {
+  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(100, 20) == 25, "Calculation of free memory failed");
+  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(100, 50) == 100, "Calculation of free memory failed");
+  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(100, 60) == 150, "Calculation of free memory failed");
+  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(100, 75) == 300, "Calculation of free memory failed");
+  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(400, 20) == 100, "Calculation of free memory failed");
+  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(400, 50) == 400, "Calculation of free memory failed");
+  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(400, 60) == 600, "Calculation of free memory failed");
+  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(400, 75) == 1200, "Calculation of free memory failed");
+}
+
+#endif /* !PRODUCT */

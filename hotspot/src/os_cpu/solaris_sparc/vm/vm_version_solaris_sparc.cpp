@@ -75,13 +75,19 @@ int VM_Version::platform_features(int features) {
     do_sysinfo(SI_ARCHITECTURE_64, "sparcv9", &features, generic_v9_m);
 
     // Extract valid instruction set extensions.
-    uint_t av;
-    uint_t avn = os::Solaris::getisax(&av, 1);
-    assert(avn == 1, "should only return one av");
+    uint_t avs[2];
+    uint_t avn = os::Solaris::getisax(avs, 2);
+    assert(avn <= 2, "should return two or less av's");
+    uint_t av = avs[0];
 
 #ifndef PRODUCT
-    if (PrintMiscellaneous && Verbose)
-      tty->print_cr("getisax(2) returned: " PTR32_FORMAT, av);
+    if (PrintMiscellaneous && Verbose) {
+      tty->print("getisax(2) returned: " PTR32_FORMAT, av);
+      if (avn > 1) {
+        tty->print(", " PTR32_FORMAT, avs[1]);
+      }
+      tty->cr();
+    }
 #endif
 
     if (av & AV_SPARC_MUL32)  features |= hardware_mul32_m;
@@ -91,6 +97,13 @@ int VM_Version::platform_features(int features) {
     if (av & AV_SPARC_POPC)   features |= hardware_popc_m;
     if (av & AV_SPARC_VIS)    features |= vis1_instructions_m;
     if (av & AV_SPARC_VIS2)   features |= vis2_instructions_m;
+    if (avn > 1) {
+      uint_t av2 = avs[1];
+#ifndef AV2_SPARC_SPARC5
+#define AV2_SPARC_SPARC5 0x00000008 /* The 29 new fp and sub instructions */
+#endif
+      if (av2 & AV2_SPARC_SPARC5)       features |= sparc5_instructions_m;
+    }
 
     // Next values are not defined before Solaris 10
     // but Solaris 8 is used for jdk6 update builds.
@@ -118,6 +131,11 @@ int VM_Version::platform_features(int features) {
 #define AV_SPARC_CBCOND 0x10000000  /* compare and branch instrs supported */
 #endif
     if (av & AV_SPARC_CBCOND)       features |= cbcond_instructions_m;
+
+#ifndef AV_SPARC_AES
+#define AV_SPARC_AES 0x00020000  /* aes instrs supported */
+#endif
+    if (av & AV_SPARC_AES)       features |= aes_instructions_m;
 
   } else {
     // getisax(2) failed, use the old legacy code.

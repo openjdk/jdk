@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
         return NULL;
     }
 
-#if defined(__linux__) || defined(MACOSX) || (defined(__solaris__) \
+#if defined(_AIX) || defined(__linux__) || defined(MACOSX) || (defined(__solaris__) \
     && (defined(_POSIX_PTHREAD_SEMANTICS) || defined(_LP64)))
     while (readdir_r(dirp, entry, &dp) == 0 && dp != NULL) {
 #else
@@ -615,6 +615,14 @@ getSolarisDefaultZoneID() {
 #endif /*__solaris__*/
 #endif /*__linux__*/
 
+#ifdef _AIX
+static char *
+getPlatformTimeZoneID()
+{
+    return NULL;
+}
+#endif
+
 /*
  * findJavaTZ_md() maps platform time zone ID to Java time zone ID
  * using <java_home>/lib/tzmappings. If the TZ value is not found, it
@@ -635,7 +643,7 @@ findJavaTZ_md(const char *java_home_dir, const char *country)
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
     if (tz == NULL) {
 #else
-#ifdef __solaris__
+#if defined (__solaris__) || defined(_AIX)
     if (tz == NULL || *tz == '\0') {
 #endif
 #endif

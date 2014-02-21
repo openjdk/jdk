@@ -1400,7 +1400,7 @@ public class CopyOnWriteArrayList<E>
             lock.lock();
             try {
                 checkForComodification();
-                if (fromIndex < 0 || toIndex > size)
+                if (fromIndex < 0 || toIndex > size || fromIndex > toIndex)
                     throw new IndexOutOfBoundsException();
                 return new COWSubList<E>(l, fromIndex + offset,
                                          toIndex + offset);

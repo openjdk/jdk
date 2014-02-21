@@ -34,6 +34,7 @@
 // Thread-Local Edens support
 
 // static member initialization
+size_t           ThreadLocalAllocBuffer::_max_size       = 0;
 unsigned         ThreadLocalAllocBuffer::_target_refills = 0;
 GlobalTLABStats* ThreadLocalAllocBuffer::_global_stats   = NULL;
 
@@ -45,7 +46,7 @@ void ThreadLocalAllocBuffer::clear_before_allocation() {
 void ThreadLocalAllocBuffer::accumulate_statistics_before_gc() {
   global_stats()->initialize();
 
-  for(JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
+  for (JavaThread *thread = Threads::first(); thread != NULL; thread = thread->next()) {
     thread->tlab().accumulate_statistics();
     thread->tlab().initialize_statistics();
   }
@@ -60,28 +61,32 @@ void ThreadLocalAllocBuffer::accumulate_statistics_before_gc() {
 }
 
 void ThreadLocalAllocBuffer::accumulate_statistics() {
-  size_t capacity = Universe::heap()->tlab_capacity(myThread()) / HeapWordSize;
-  size_t unused   = Universe::heap()->unsafe_max_tlab_alloc(myThread()) / HeapWordSize;
-  size_t used     = capacity - unused;
-
-  // Update allocation history if a reasonable amount of eden was allocated.
-  bool update_allocation_history = used > 0.5 * capacity;
+  Thread* thread = myThread();
+  size_t capacity = Universe::heap()->tlab_capacity(thread);
+  size_t used     = Universe::heap()->tlab_used(thread);
 
   _gc_waste += (unsigned)remaining();
+  size_t total_allocated = thread->allocated_bytes();
+  size_t allocated_since_last_gc = total_allocated - _allocated_before_last_gc;
+  _allocated_before_last_gc = total_allocated;
 
   if (PrintTLAB && (_number_of_refills > 0 || Verbose)) {
     print_stats("gc");
   }
 
   if (_number_of_refills > 0) {
+    // Update allocation history if a reasonable amount of eden was allocated.
+    bool update_allocation_history = used > 0.5 * capacity;
 
     if (update_allocation_history) {
       // Average the fraction of eden allocated in a tlab by this
       // thread for use in the next resize operation.
       // _gc_waste is not subtracted because it's included in
       // "used".
-      size_t allocation = _number_of_refills * desired_size();
-      double alloc_frac = allocation / (double) used;
+      // The result can be larger than 1.0 due to direct to old allocations.
+      // These allocations should ideally not be counted but since it is not possible
+      // to filter them out here we just cap the fraction to be at most 1.0.
+      double alloc_frac = MIN2(1.0, (double) allocated_since_last_gc / used);
       _allocation_fraction.sample(alloc_frac);
     }
     global_stats()->update_allocating_threads();
@@ -126,33 +131,32 @@ void ThreadLocalAllocBuffer::make_parsable(bool retire) {
 }
 
 void ThreadLocalAllocBuffer::resize_all_tlabs() {
-  for(JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
-    thread->tlab().resize();
+  if (ResizeTLAB) {
+    for (JavaThread *thread = Threads::first(); thread != NULL; thread = thread->next()) {
+      thread->tlab().resize();
+    }
   }
 }
 
 void ThreadLocalAllocBuffer::resize() {
+  // Compute the next tlab size using expected allocation amount
+  assert(ResizeTLAB, "Should not call this otherwise");
+  size_t alloc = (size_t)(_allocation_fraction.average() *
+                          (Universe::heap()->tlab_capacity(myThread()) / HeapWordSize));
+  size_t new_size = alloc / _target_refills;
 
-  if (ResizeTLAB) {
-    // Compute the next tlab size using expected allocation amount
-    size_t alloc = (size_t)(_allocation_fraction.average() *
-                            (Universe::heap()->tlab_capacity(myThread()) / HeapWordSize));
-    size_t new_size = alloc / _target_refills;
+  new_size = MIN2(MAX2(new_size, min_size()), max_size());
 
-    new_size = MIN2(MAX2(new_size, min_size()), max_size());
+  size_t aligned_new_size = align_object_size(new_size);
 
-    size_t aligned_new_size = align_object_size(new_size);
-
-    if (PrintTLAB && Verbose) {
-      gclog_or_tty->print("TLAB new size: thread: " INTPTR_FORMAT " [id: %2d]"
-                          " refills %d  alloc: %8.6f desired_size: " SIZE_FORMAT " -> " SIZE_FORMAT "\n",
-                          myThread(), myThread()->osthread()->thread_id(),
-                          _target_refills, _allocation_fraction.average(), desired_size(), aligned_new_size);
-    }
-    set_desired_size(aligned_new_size);
-
-    set_refill_waste_limit(initial_refill_waste_limit());
+  if (PrintTLAB && Verbose) {
+    gclog_or_tty->print("TLAB new size: thread: " INTPTR_FORMAT " [id: %2d]"
+                        " refills %d  alloc: %8.6f desired_size: " SIZE_FORMAT " -> " SIZE_FORMAT "\n",
+                        myThread(), myThread()->osthread()->thread_id(),
+                        _target_refills, _allocation_fraction.average(), desired_size(), aligned_new_size);
   }
+  set_desired_size(aligned_new_size);
+  set_refill_waste_limit(initial_refill_waste_limit());
 }
 
 void ThreadLocalAllocBuffer::initialize_statistics() {
@@ -248,31 +252,13 @@ size_t ThreadLocalAllocBuffer::initial_desired_size() {
   return init_sz;
 }
 
-const size_t ThreadLocalAllocBuffer::max_size() {
-
-  // TLABs can't be bigger than we can fill with a int[Integer.MAX_VALUE].
-  // This restriction could be removed by enabling filling with multiple arrays.
-  // If we compute that the reasonable way as
-  //    header_size + ((sizeof(jint) * max_jint) / HeapWordSize)
-  // we'll overflow on the multiply, so we do the divide first.
-  // We actually lose a little by dividing first,
-  // but that just makes the TLAB  somewhat smaller than the biggest array,
-  // which is fine, since we'll be able to fill that.
-
-  size_t unaligned_max_size = typeArrayOopDesc::header_size(T_INT) +
-                              sizeof(jint) *
-                              ((juint) max_jint / (size_t) HeapWordSize);
-  return align_size_down(unaligned_max_size, MinObjAlignment);
-}
-
 void ThreadLocalAllocBuffer::print_stats(const char* tag) {
   Thread* thrd = myThread();
   size_t waste = _gc_waste + _slow_refill_waste + _fast_refill_waste;
   size_t alloc = _number_of_refills * _desired_size;
   double waste_percent = alloc == 0 ? 0.0 :
                       100.0 * waste / alloc;
-  size_t tlab_used  = Universe::heap()->tlab_capacity(thrd) -
-                      Universe::heap()->unsafe_max_tlab_alloc(thrd);
+  size_t tlab_used  = Universe::heap()->tlab_used(thrd);
   gclog_or_tty->print("TLAB: %s thread: " INTPTR_FORMAT " [id: %2d]"
                       " desired_size: " SIZE_FORMAT "KB"
                       " slow allocs: %d  refill waste: " SIZE_FORMAT "B"

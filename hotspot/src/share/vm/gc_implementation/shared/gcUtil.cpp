@@ -159,7 +159,7 @@ double LinearLeastSquareFit::y(double x) {
 // that no calculation of the slope has yet been done.  Returning true
 // for a slope equal to 0 reflects the intuitive expectation of the
 // dependence on the slope.  Don't use the complement of these functions
-// since that untuitive expectation is not built into the complement.
+// since that intuitive expectation is not built into the complement.
 bool LinearLeastSquareFit::decrement_will_decrease() {
   return (_slope >= 0.00);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,7 +250,7 @@ public class XMenuWindow extends XBaseMenuWindow {
         }
         //Item rectangles
         for (int i = 0; i < itemCnt; i++) {
-            XMenuItemPeer item = (XMenuItemPeer)itemVector[i];
+            XMenuItemPeer item = itemVector[i];
             XMenuItemPeer.TextMetrics metrics = itemMetrics[i];
             Dimension dim = metrics.getTextDimension();
             if (dim != null) {

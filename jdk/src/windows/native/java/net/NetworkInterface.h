@@ -70,16 +70,6 @@ extern jfieldID ni_nameID;          /* NetworkInterface.name */
 extern jfieldID ni_displayNameID;   /* NetworkInterface.displayName */
 extern jfieldID ni_childsID;        /* NetworkInterface.childs */
 
-extern jclass ni_iacls;             /* InetAddress */
-
-extern jclass ni_ia4cls;            /* Inet4Address */
-extern jmethodID ni_ia4Ctor;        /* Inet4Address() */
-
-extern jclass ni_ia6cls;            /* Inet6Address */
-extern jmethodID ni_ia6ctrID;       /* Inet6Address() */
-extern jfieldID ni_ia6ipaddressID;
-extern jfieldID ni_ia6ipaddressID;
-
 extern jclass ni_ibcls;             /* InterfaceAddress */
 extern jmethodID ni_ibctrID;        /* InterfaceAddress() */
 extern jfieldID ni_ibaddressID;     /* InterfaceAddress.address */

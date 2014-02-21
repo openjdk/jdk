@@ -116,7 +116,7 @@ class TraceGen1TimeData : public CHeapObj<mtGC> {
 // If only -XX:NewRatio is set we should use the specified ratio of the heap
 // as both min and max. This will be interpreted as "fixed" just like the
 // NewSize==MaxNewSize case above. But we will update the min and max
-// everytime the heap size changes.
+// every time the heap size changes.
 //
 // NewSize and MaxNewSize override NewRatio. So, NewRatio is ignored if it is
 // combined with either NewSize or MaxNewSize. (A warning message is printed.)
@@ -523,9 +523,9 @@ private:
   // synchronize updates to this field.
   size_t _inc_cset_recorded_rs_lengths;
 
-  // A concurrent refinement thread periodcially samples the young
+  // A concurrent refinement thread periodically samples the young
   // region RSets and needs to update _inc_cset_recorded_rs_lengths as
-  // the RSets grow. Instead of having to syncronize updates to that
+  // the RSets grow. Instead of having to synchronize updates to that
   // field we accumulate them in this field and add it to
   // _inc_cset_recorded_rs_lengths_diffs at the start of a GC.
   ssize_t _inc_cset_recorded_rs_lengths_diffs;
@@ -604,7 +604,7 @@ private:
   // Calculate and return the maximum young list target length that
   // can fit into the pause time goal. The parameters are: rs_lengths
   // represent the prediction of how large the young RSet lengths will
-  // be, base_min_length is the alreay existing number of regions in
+  // be, base_min_length is the already existing number of regions in
   // the young list, min_length and max_length are the desired min and
   // max young list length according to the user's inputs.
   uint calculate_young_list_target_length(size_t rs_lengths,
@@ -819,6 +819,8 @@ public:
     }
     // do that for any other surv rate groups
   }
+
+  size_t young_list_target_length() const { return _young_list_target_length; }
 
   bool is_young_list_full() {
     uint young_list_length = _g1->young_list()->length();

@@ -286,6 +286,9 @@ public:
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();
 
+  // Should original key array reference be passed to AES stubs
+  static const bool pass_original_key_for_aes();
+
   // Used to determine a "low complexity" 64-bit constant.  (Zero is simple.)
   // The standard of comparison is one (StoreL ConL) vs. two (StoreI ConI).
   // Depends on the details of 64-bit constant generation on the CPU.

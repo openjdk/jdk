@@ -67,7 +67,7 @@ class StringCoding {
     }
 
     private static <T> void set(ThreadLocal<SoftReference<T>> tl, T ob) {
-        tl.set(new SoftReference<T>(ob));
+        tl.set(new SoftReference<>(ob));
     }
 
     // Trim the given byte array to the given length

@@ -649,7 +649,7 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
 #endif
 }
 
-// Return whether the frame is in the VM or os indicating a Hotspot problem.
+// Print whether the frame is in the VM or OS indicating a HotSpot problem.
 // Otherwise, it's likely a bug in the native library that the Java code calls,
 // hopefully indicating where to submit bugs.
 void frame::print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
@@ -928,7 +928,7 @@ void frame::oops_interpreted_do(OopClosure* f, CLDToOopClosure* cld_f,
     // klass, and the klass needs to be kept alive while executing. The GCs
     // don't trace through method pointers, so typically in similar situations
     // the mirror or the class loader of the klass are installed as a GC root.
-    // To minimze the overhead of doing that here, we ask the GC to pass down a
+    // To minimize the overhead of doing that here, we ask the GC to pass down a
     // closure that knows how to keep klasses alive given a ClassLoaderData.
     cld_f->do_cld(m->method_holder()->class_loader_data());
   }
