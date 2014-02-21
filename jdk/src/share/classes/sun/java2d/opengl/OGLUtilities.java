@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ class OGLUtilities {
         }
 
         SunGraphics2D sg2d = (SunGraphics2D)g;
-        SurfaceData sData = (SurfaceData)sg2d.surfaceData;
+        SurfaceData sData = sg2d.surfaceData;
 
         // this is the upper-left origin of the region to be painted,
         // relative to the upper-left origin of the surface
@@ -242,7 +242,7 @@ class OGLUtilities {
         }
 
         SunGraphics2D sg2d = (SunGraphics2D)g;
-        SurfaceData sData = (SurfaceData)sg2d.surfaceData;
+        SurfaceData sData = sg2d.surfaceData;
         Region r = sg2d.getCompClip();
         if (!r.isRectangular()) {
             // caller probably doesn't know how to handle shape clip

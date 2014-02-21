@@ -2146,6 +2146,10 @@ void* os::dll_lookup(void* handle, const char* name) {
   return dlsym(handle, name);
 }
 
+void* os::get_default_process_handle() {
+  return (void*)::dlopen(NULL, RTLD_LAZY);
+}
+
 int os::stat(const char *path, struct stat *sbuf) {
   char pathbuf[MAX_PATH];
   if (strlen(path) > MAX_PATH - 1) {
@@ -3536,9 +3540,14 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
   return os_sleep(millis, interruptible);
 }
 
-int os::naked_sleep() {
-  // %% make the sleep time an integer flag. for now use 1 millisec.
-  return os_sleep(1, false);
+void os::naked_short_sleep(jlong ms) {
+  assert(ms < 1000, "Un-interruptable sleep, short time use only");
+
+  // usleep is deprecated and removed from POSIX, in favour of nanosleep, but
+  // Solaris requires -lrt for this.
+  usleep((ms * 1000));
+
+  return;
 }
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION

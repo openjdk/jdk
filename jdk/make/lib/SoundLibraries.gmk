@@ -71,6 +71,10 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   LIBJSOUND_CFLAGS += -DX_PLATFORM=X_LINUX
 endif # OPENJDK_TARGET_OS linux
 
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_AIX
+endif # OPENJDK_TARGET_OS aix
+
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBJSOUND_LANG := C++
   LIBJSOUND_CFLAGS += -DX_PLATFORM=X_MACOSX \
@@ -130,6 +134,10 @@ else
 
   ifeq ($(OPENJDK_TARGET_CPU), ppc)
     LIBJSOUND_CFLAGS += -DX_ARCH=X_PPC
+  endif
+
+  ifeq ($(OPENJDK_TARGET_CPU), ppc64)
+       LIBJSOUND_CFLAGS += -DX_ARCH=X_PPC64
   endif
 endif
 

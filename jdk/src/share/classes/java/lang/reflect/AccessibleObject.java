@@ -93,8 +93,8 @@ public class AccessibleObject implements AnnotatedElement {
         throws SecurityException {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
-        for (int i = 0; i < array.length; i++) {
-            setAccessible0(array[i], flag);
+        for (AccessibleObject ao : array) {
+            setAccessible0(ao, flag);
         }
     }
 

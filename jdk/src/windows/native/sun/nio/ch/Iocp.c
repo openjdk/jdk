@@ -46,16 +46,15 @@ Java_sun_nio_ch_Iocp_initIDs(JNIEnv* env, jclass this)
     jclass clazz;
 
     clazz = (*env)->FindClass(env, "sun/nio/ch/Iocp$CompletionStatus");
-    if (clazz == NULL) {
-        return;
-    }
+    CHECK_NULL(clazz);
     completionStatus_error = (*env)->GetFieldID(env, clazz, "error", "I");
-    if (completionStatus_error == NULL) return;
+    CHECK_NULL(completionStatus_error);
     completionStatus_bytesTransferred = (*env)->GetFieldID(env, clazz, "bytesTransferred", "I");
-    if (completionStatus_bytesTransferred == NULL) return;
+    CHECK_NULL(completionStatus_bytesTransferred);
     completionStatus_completionKey = (*env)->GetFieldID(env, clazz, "completionKey", "I");
-    if (completionStatus_completionKey == NULL) return;
+    CHECK_NULL(completionStatus_completionKey);
     completionStatus_overlapped = (*env)->GetFieldID(env, clazz, "overlapped", "J");
+    CHECK_NULL(completionStatus_overlapped);
 }
 
 JNIEXPORT jint JNICALL

@@ -31,6 +31,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
@@ -75,13 +76,13 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
      * @return a conditional converter from source to target type
      */
     @Override
-    public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType) {
+    public GuardedTypeConversion convertToType(final Class<?> sourceType, final Class<?> targetType) {
         final MethodHandle mh = JavaArgumentConverters.getConverter(targetType);
         if (mh == null) {
             return null;
         }
 
-        return new GuardedInvocation(mh, canLinkTypeStatic(sourceType) ? null : GUARD_PRIMITIVE).asType(mh.type().changeParameterType(0, sourceType));
+        return new GuardedTypeConversion(new GuardedInvocation(mh, canLinkTypeStatic(sourceType) ? null : GUARD_PRIMITIVE).asType(mh.type().changeParameterType(0, sourceType)), true);
     }
 
     /**

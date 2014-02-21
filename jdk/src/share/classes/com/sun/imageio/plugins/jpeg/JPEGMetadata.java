@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -724,7 +724,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
             newGuy = (JPEGMetadata) super.clone();
         } catch (CloneNotSupportedException e) {} // won't happen
         if (markerSequence != null) {
-            newGuy.markerSequence = (List) cloneSequence();
+            newGuy.markerSequence = cloneSequence();
         }
         newGuy.resetSequence = null;
         return newGuy;
@@ -2016,14 +2016,14 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
         // First approximation
         int y = 1;
-        int x = (int) Math.round(value);
+        int x = Math.round(value);
 
         float ratio = (float) x;
         float delta = Math.abs(value - ratio);
         while (delta > epsilon) { // not close enough
             // Increment y and compute a new x
             y++;
-            x = (int) Math.round(y*value);
+            x = Math.round(y*value);
             ratio = (float)x/(float)y;
             delta = Math.abs(value - ratio);
         }

@@ -195,7 +195,7 @@ public:
     HeapRegionRemSetIterator iter(hrrs);
     size_t card_index;
 
-    // We claim cards in block so as to recude the contention. The block size is determined by
+    // We claim cards in block so as to reduce the contention. The block size is determined by
     // the G1RSetScanBlockSize parameter.
     size_t jump_to_card = hrrs->iter_claimed_next(_block_size);
     for (size_t current_card = 0; iter.has_next(card_index); current_card++) {
@@ -587,7 +587,7 @@ bool G1RemSet::refine_card(jbyte* card_ptr, int worker_i,
 
   // While we are processing RSet buffers during the collection, we
   // actually don't want to scan any cards on the collection set,
-  // since we don't want to update remebered sets with entries that
+  // since we don't want to update remembered sets with entries that
   // point into the collection set, given that live objects from the
   // collection set are about to move and such entries will be stale
   // very soon. This change also deals with a reliability issue which

@@ -213,7 +213,7 @@ process_chunk_boundaries(Space* sp,
       && sp->block_is_obj(first_block)      // first block is an object
       && !(oop(first_block)->is_objArray()  // first block is not an array (arrays are precisely dirtied)
            || oop(first_block)->is_typeArray())) {
-    // Find our least non-clean card, so that a left neighbour
+    // Find our least non-clean card, so that a left neighbor
     // does not scan an object straddling the mutual boundary
     // too far to the right, and attempt to scan a portion of
     // that object twice.
@@ -247,14 +247,14 @@ process_chunk_boundaries(Space* sp,
     } NOISY(else {
       tty->print_cr(" LNC: Found no dirty card in current chunk; leaving LNC entry NULL");
       // In the future, we could have this thread look for a non-NULL value to copy from its
-      // right neighbour (up to the end of the first object).
+      // right neighbor (up to the end of the first object).
       if (last_card_of_cur_chunk < last_card_of_first_obj) {
         tty->print_cr(" LNC: BEWARE!!! first obj straddles past right end of chunk:\n"
                       "   might be efficient to get value from right neighbour?");
       }
     })
   } else {
-    // In this case we can help our neighbour by just asking them
+    // In this case we can help our neighbor by just asking them
     // to stop at our first card (even though it may not be dirty).
     NOISY(tty->print_cr(" LNC: first block is not a non-array object; setting LNC to first card of current chunk");)
     assert(lowest_non_clean[cur_chunk_index] == NULL, "Write once : value should be stable hereafter");

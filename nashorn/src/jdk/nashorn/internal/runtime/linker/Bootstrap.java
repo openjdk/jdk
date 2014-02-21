@@ -278,9 +278,10 @@ public final class Bootstrap {
      * {@code java.lang.invoke} package, as well a {@link Class} and any subclass of {@link ClassLoader}) and there is
      * a security manager in the system, then it checks the {@code nashorn.JavaReflection} {@code RuntimePermission}.
      * @param clazz the class being tested
+     * @param isStatic is access checked for static members (or instance members)
      */
-    public static void checkReflectionAccess(Class<?> clazz) {
-        ReflectionCheckLinker.checkReflectionAccess(clazz);
+    public static void checkReflectionAccess(Class<?> clazz, boolean isStatic) {
+        ReflectionCheckLinker.checkReflectionAccess(clazz, isStatic);
     }
 
     /**

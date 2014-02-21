@@ -195,7 +195,7 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
 
   // Update all the counters that can be updated from the size policy.
   // This should be called after all policy changes have been made
-  // and reflected internall in the size policy.
+  // and reflected internally in the size policy.
   void update_counters_from_policy();
 
   // Update counters that can be updated from fields internal to the
