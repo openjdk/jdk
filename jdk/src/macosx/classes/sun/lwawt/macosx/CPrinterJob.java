@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -640,7 +640,7 @@ public class CPrinterJob extends RasterPrinterJob {
         if (onEventThread) {
             try { EventQueue.invokeAndWait(r);
             } catch (java.lang.reflect.InvocationTargetException ite) {
-                Throwable te = (Throwable)ite.getTargetException();
+                Throwable te = ite.getTargetException();
                 if (te instanceof PrinterException) throw (PrinterException)te;
                 else te.printStackTrace();
             } catch (Exception e) { e.printStackTrace(); }

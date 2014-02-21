@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.awt.image;
 
+@SuppressWarnings("serial") // JDK-implementation class
 public class BadDepthException extends Exception {
     public BadDepthException() {
     }

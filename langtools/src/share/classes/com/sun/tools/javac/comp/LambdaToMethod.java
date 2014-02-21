@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,9 @@ public class LambdaToMethod extends TreeTranslator {
     /** dump statistics about lambda code generation */
     private boolean dumpLambdaToMethodStats;
 
+    /** force serializable representation, for stress testing **/
+    private final boolean forceSerializable;
+
     /** Flag for alternate metafactories indicating the lambda object is intended to be serializable */
     public static final int FLAG_SERIALIZABLE = 1 << 0;
 
@@ -130,6 +133,7 @@ public class LambdaToMethod extends TreeTranslator {
         Options options = Options.instance(context);
         dumpLambdaToMethodStats = options.isSet("dumpLambdaToMethodStats");
         attr = Attr.instance(context);
+        forceSerializable = options.isSet("forceSerializable");
     }
     // </editor-fold>
 
@@ -1692,6 +1696,9 @@ public class LambdaToMethod extends TreeTranslator {
 
             /** does this functional expression require serialization support? */
             boolean isSerializable() {
+                if (forceSerializable) {
+                    return true;
+                }
                 for (Type target : tree.targets) {
                     if (types.asSuper(target, syms.serializableType.tsym) != null) {
                         return true;

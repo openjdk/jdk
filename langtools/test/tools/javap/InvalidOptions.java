@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8027411
- * @summary test invalid options -h and -b
+ * @bug 8027411 8032869
+ * @summary test an invalid option
  */
 
 import java.io.*;
@@ -39,7 +39,6 @@ public class InvalidOptions {
     }
 
     void run() throws Exception {
-        test(2, "-h", "Error: -h is no longer available - use the javah program");
         test(2, "-b", "Error: unknown option: -b",
                       "Usage: javap <options> <classes>",
                       "use -help for a list of possible options");

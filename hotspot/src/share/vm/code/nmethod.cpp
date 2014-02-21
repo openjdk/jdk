@@ -2161,16 +2161,41 @@ PcDesc* nmethod::find_pc_desc_internal(address pc, bool approximate) {
 }
 
 
-bool nmethod::check_all_dependencies() {
-  bool found_check = false;
-  // wholesale check of all dependencies
-  for (Dependencies::DepStream deps(this); deps.next(); ) {
-    if (deps.check_dependency() != NULL) {
-      found_check = true;
-      NOT_DEBUG(break);
+void nmethod::check_all_dependencies(DepChange& changes) {
+  // Checked dependencies are allocated into this ResourceMark
+  ResourceMark rm;
+
+  // Turn off dependency tracing while actually testing dependencies.
+  NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
+
+  // 'dep_signature_buffers' caches already checked dependencies.
+  DependencySignatureBuffer dep_signature_buffers;
+
+  // Iterate over live nmethods and check dependencies of all nmethods that are not
+  // marked for deoptimization. A particular dependency is only checked once.
+  for(nmethod* nm = CodeCache::alive_nmethod(CodeCache::first()); nm != NULL; nm = CodeCache::alive_nmethod(CodeCache::next(nm))) {
+    if (!nm->is_marked_for_deoptimization()) {
+      for (Dependencies::DepStream deps(nm); deps.next(); ) {
+        // Construct abstraction of a dependency.
+        const DependencySignature* current_sig = new DependencySignature(deps);
+        // Determine if 'deps' is already checked. If it is not checked,
+        // 'add_if_missing()' adds the dependency signature and returns
+        // false.
+        if (!dep_signature_buffers.add_if_missing(*current_sig)) {
+          if (deps.check_dependency() != NULL) {
+            // Dependency checking failed. Print out information about the failed
+            // dependency and finally fail with an assert. We can fail here, since
+            // dependency checking is never done in a product build.
+            ResourceMark rm;
+            changes.print();
+            nm->print();
+            nm->print_dependencies();
+            assert(false, "Should have been marked for deoptimization");
+          }
+        }
+      }
     }
   }
-  return found_check;  // tell caller if we found anything
 }
 
 bool nmethod::check_dependency_on(DepChange& changes) {

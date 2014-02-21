@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             return SynthFileChooserUIImpl.this.getNewFolderAction();
         }
 
-        public MouseListener createDoubleClickListener(JList list) {
+        public MouseListener createDoubleClickListener(JList<?> list) {
             return SynthFileChooserUIImpl.this.createDoubleClickListener(getFileChooser(),
                                                                      list);
         }
@@ -190,6 +190,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         readOnly = UIManager.getBoolean("FileChooser.readOnly");
     }
 
+    @SuppressWarnings("serial") // anonymous classes inside
     public void installComponents(JFileChooser fc) {
         super.installComponents(fc);
 
@@ -562,7 +563,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         if (currentDirectory != null) {
             JComponent cb = getDirectoryComboBox();
             if (cb instanceof JComboBox) {
-                ComboBoxModel model = ((JComboBox)cb).getModel();
+                ComboBoxModel<?> model = ((JComboBox)cb).getModel();
                 if (model instanceof DirectoryComboBoxModel) {
                     ((DirectoryComboBoxModel)model).addItem(currentDirectory);
                 }
@@ -734,6 +735,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     protected class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
         Vector<File> directories = new Vector<File>();
         int[] depths = null;
@@ -863,6 +865,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     /**
      * Acts when DirectoryComboBox has changed the selected item.
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     protected class DirectoryComboBoxAction extends AbstractAction {
         protected DirectoryComboBoxAction() {
             super("DirectoryComboBoxAction");
@@ -923,6 +926,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     protected class FilterComboBoxModel extends AbstractFilterComboBoxModel {
         protected JFileChooser getFileChooser() {
             return SynthFileChooserUIImpl.this.getFileChooser();
@@ -1012,6 +1016,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     private class AlignedLabel extends JLabel {
         private AlignedLabel[] group;
         private int maxWidth = 0;

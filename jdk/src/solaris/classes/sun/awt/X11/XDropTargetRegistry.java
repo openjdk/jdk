@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,8 +328,7 @@ final class XDropTargetRegistry {
         Long lToplevel = Long.valueOf(embedder);
         boolean isXEmbedServer = false;
         synchronized (this) {
-            EmbeddedDropSiteEntry entry =
-                (EmbeddedDropSiteEntry)embeddedDropSiteRegistry.get(lToplevel);
+            EmbeddedDropSiteEntry entry = embeddedDropSiteRegistry.get(lToplevel);
             if (entry == null) {
                 return;
             }
@@ -430,8 +429,7 @@ final class XDropTargetRegistry {
         Long lToplevel = Long.valueOf(toplevel);
         EmbeddedDropSiteEntry entry = null;
         synchronized (this) {
-            entry =
-                (EmbeddedDropSiteEntry)embeddedDropSiteRegistry.get(lToplevel);
+            entry = embeddedDropSiteRegistry.get(lToplevel);
             if (entry == null) {
                 if (peer != null) {
                     // Toplevel is an XEmbed server within this VM.
@@ -495,8 +493,7 @@ final class XDropTargetRegistry {
         Long lToplevel = Long.valueOf(toplevel);
         EmbeddedDropSiteEntry entry = null;
         synchronized (this) {
-            entry =
-                (EmbeddedDropSiteEntry)embeddedDropSiteRegistry.get(lToplevel);
+            entry = embeddedDropSiteRegistry.get(lToplevel);
             if (entry == null) {
                 return;
             }
@@ -526,8 +523,7 @@ final class XDropTargetRegistry {
      */
     public long getEmbeddedDropSite(long embedder, int x, int y) {
         Long lToplevel = Long.valueOf(embedder);
-        EmbeddedDropSiteEntry entry =
-            (EmbeddedDropSiteEntry)embeddedDropSiteRegistry.get(lToplevel);
+        EmbeddedDropSiteEntry entry = embeddedDropSiteRegistry.get(lToplevel);
         if (entry == null) {
             return 0;
         }

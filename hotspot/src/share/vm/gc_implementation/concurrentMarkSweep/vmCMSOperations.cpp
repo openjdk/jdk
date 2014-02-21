@@ -141,8 +141,7 @@ void VM_CMS_Initial_Mark::doit() {
 #ifndef USDT2
   HS_DTRACE_PROBE(hs_private, cms__initmark__begin);
 #else /* USDT2 */
-  HS_PRIVATE_CMS_INITMARK_BEGIN(
-                                );
+  HS_PRIVATE_CMS_INITMARK_BEGIN();
 #endif /* USDT2 */
 
   _collector->_gc_timer_cm->register_gc_pause_start("Initial Mark");
@@ -162,8 +161,7 @@ void VM_CMS_Initial_Mark::doit() {
 #ifndef USDT2
   HS_DTRACE_PROBE(hs_private, cms__initmark__end);
 #else /* USDT2 */
-  HS_PRIVATE_CMS_INITMARK_END(
-                                );
+  HS_PRIVATE_CMS_INITMARK_END();
 #endif /* USDT2 */
 }
 
@@ -178,8 +176,7 @@ void VM_CMS_Final_Remark::doit() {
 #ifndef USDT2
   HS_DTRACE_PROBE(hs_private, cms__remark__begin);
 #else /* USDT2 */
-  HS_PRIVATE_CMS_REMARK_BEGIN(
-                                );
+  HS_PRIVATE_CMS_REMARK_BEGIN();
 #endif /* USDT2 */
 
   _collector->_gc_timer_cm->register_gc_pause_start("Final Mark");
@@ -200,8 +197,7 @@ void VM_CMS_Final_Remark::doit() {
 #ifndef USDT2
   HS_DTRACE_PROBE(hs_private, cms__remark__end);
 #else /* USDT2 */
-  HS_PRIVATE_CMS_REMARK_END(
-                                );
+  HS_PRIVATE_CMS_REMARK_END();
 #endif /* USDT2 */
 }
 

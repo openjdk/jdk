@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,9 +344,9 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                 IHDR_colorType = PNGImageReader.PNG_COLOR_PALETTE;
                 PLTE_present = true;
                 PLTE_order = null;
-                PLTE_red = (byte[])reds.clone();
-                PLTE_green = (byte[])greens.clone();
-                PLTE_blue = (byte[])blues.clone();
+                PLTE_red = reds.clone();
+                PLTE_green = greens.clone();
+                PLTE_blue = blues.clone();
 
                 if (hasAlpha) {
                     tRNS_present = true;
@@ -430,7 +430,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         } else {
             ArrayList<byte[]> list = new ArrayList<byte[]>(in.size());
             for (byte[] b: in) {
-                list.add((b == null) ? null : (byte[])b.clone());
+                list.add((b == null) ? null : b.clone());
             }
             return list;
         }
@@ -703,8 +703,8 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             IIOMetadataNode tEXt_parent = new IIOMetadataNode("tEXt");
             for (int i = 0; i < tEXt_keyword.size(); i++) {
                 IIOMetadataNode tEXt_node = new IIOMetadataNode("tEXtEntry");
-                tEXt_node.setAttribute("keyword" , (String)tEXt_keyword.get(i));
-                tEXt_node.setAttribute("value" , (String)tEXt_text.get(i));
+                tEXt_node.setAttribute("keyword" , tEXt_keyword.get(i));
+                tEXt_node.setAttribute("value" , tEXt_text.get(i));
 
                 tEXt_parent.appendChild(tEXt_node);
             }
@@ -759,13 +759,13 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             IIOMetadataNode zTXt_parent = new IIOMetadataNode("zTXt");
             for (int i = 0; i < zTXt_keyword.size(); i++) {
                 IIOMetadataNode zTXt_node = new IIOMetadataNode("zTXtEntry");
-                zTXt_node.setAttribute("keyword", (String)zTXt_keyword.get(i));
+                zTXt_node.setAttribute("keyword", zTXt_keyword.get(i));
 
-                int cm = ((Integer)zTXt_compressionMethod.get(i)).intValue();
+                int cm = (zTXt_compressionMethod.get(i)).intValue();
                 zTXt_node.setAttribute("compressionMethod",
                                        zTXt_compressionMethodNames[cm]);
 
-                zTXt_node.setAttribute("text", (String)zTXt_text.get(i));
+                zTXt_node.setAttribute("text", zTXt_text.get(i));
 
                 zTXt_parent.appendChild(zTXt_node);
             }
@@ -781,8 +781,8 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                 IIOMetadataNode unknown_node =
                     new IIOMetadataNode("UnknownChunk");
                 unknown_node.setAttribute("type",
-                                          (String)unknownChunkType.get(i));
-                unknown_node.setUserObject((byte[])unknownChunkData.get(i));
+                                          unknownChunkType.get(i));
+                unknown_node.setUserObject(unknownChunkData.get(i));
 
                 unknown_parent.appendChild(unknown_node);
             }
@@ -1016,8 +1016,8 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
 
         for (int i = 0; i < tEXt_keyword.size(); i++) {
             node = new IIOMetadataNode("TextEntry");
-            node.setAttribute("keyword", (String)tEXt_keyword.get(i));
-            node.setAttribute("value", (String)tEXt_text.get(i));
+            node.setAttribute("keyword", tEXt_keyword.get(i));
+            node.setAttribute("value", tEXt_text.get(i));
             node.setAttribute("encoding", "ISO-8859-1");
             node.setAttribute("compression", "none");
 
@@ -1041,8 +1041,8 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
 
         for (int i = 0; i < zTXt_keyword.size(); i++) {
             node = new IIOMetadataNode("TextEntry");
-            node.setAttribute("keyword", (String)zTXt_keyword.get(i));
-            node.setAttribute("value", (String)zTXt_text.get(i));
+            node.setAttribute("keyword", zTXt_keyword.get(i));
+            node.setAttribute("value", zTXt_text.get(i));
             node.setAttribute("compression", "zip");
 
             text_node.appendChild(node);
@@ -1400,8 +1400,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                     fatal(node, "User object not a byte array!");
                 }
 
-                iCCP_compressedProfile =
-                    (byte[])((byte[])compressedProfile).clone();
+                iCCP_compressedProfile = ((byte[])compressedProfile).clone();
 
                 iCCP_present = true;
             } else if (name.equals("iTXt")) {

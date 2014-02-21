@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import java.io.IOException;
  *
  * @author Jeff Dinkins
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JCheckBox extends JToggleButton implements Accessible {
 
     /** Identifies a change to the flat property. */
@@ -334,6 +335,7 @@ public class JCheckBox extends JToggleButton implements Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJCheckBox extends AccessibleJToggleButton {
 
         /**

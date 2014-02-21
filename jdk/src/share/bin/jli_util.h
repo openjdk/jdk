@@ -85,6 +85,9 @@ void JLI_CmdToArgs(char *cmdline);
 #ifdef MACOSX
 #define JLI_Lseek                       lseek
 #endif
+#ifdef _AIX
+#define JLI_Lseek                       lseek
+#endif
 #endif /* _WIN32 */
 
 /*

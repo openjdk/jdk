@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.swing.plaf.UIResource;
  * Sorting icon.
  *
  */
+@SuppressWarnings("serial") // JDK-implementation class
 public class SortArrowIcon implements Icon, UIResource, Serializable {
     // Height of the arrow, the width is ARROW_HEIGHT
     private static final int ARROW_HEIGHT = 5;

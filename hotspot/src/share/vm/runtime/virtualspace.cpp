@@ -551,10 +551,10 @@ bool VirtualSpace::expand_by(size_t bytes, bool pre_touch) {
 
   // Determine which regions need to grow in this expand_by call.
   // If you are growing in the lower region, high() must be in that
-  // region so calcuate the size based on high().  For the middle and
+  // region so calculate the size based on high().  For the middle and
   // upper regions, determine the starting point of growth based on the
   // location of high().  By getting the MAX of the region's low address
-  // (or the prevoius region's high address) and high(), we can tell if it
+  // (or the previous region's high address) and high(), we can tell if it
   // is an intra or inter region growth.
   size_t lower_needs = 0;
   if (aligned_lower_new_high > lower_high()) {

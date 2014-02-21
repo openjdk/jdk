@@ -36,6 +36,8 @@ dtraceCheck:
 
 else
 
+DtraceOutDir = $(GENERATED)/dtracefiles
+
 JVM_DB = libjvm_db
 LIBJVM_DB = libjvm_db.so
 
@@ -325,6 +327,22 @@ $(DTRACE.o): $(DTRACE).d $(JVMOFFS).h $(JVMOFFS)Index.h $(DTraced_Files)
 	$(QUIETLY) if [ -f lib$(GENOFFS).so ]; then touch lib$(GENOFFS).so; fi
 	$(QUIETLY) if [ -f $(GENOFFS) ]; then touch $(GENOFFS); fi
 	$(QUIETLY) if [ -f $(JVMOFFS.o) ]; then touch $(JVMOFFS.o); fi
+
+
+$(DtraceOutDir):
+	mkdir $(DtraceOutDir)
+
+$(DtraceOutDir)/hotspot.h: $(DTRACE_SRCDIR)/hotspot.d | $(DtraceOutDir)
+	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_SRCDIR)/hotspot.d
+
+$(DtraceOutDir)/hotspot_jni.h: $(DTRACE_SRCDIR)/hotspot_jni.d | $(DtraceOutDir)
+	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_SRCDIR)/hotspot_jni.d
+
+$(DtraceOutDir)/hs_private.h: $(DTRACE_SRCDIR)/hs_private.d | $(DtraceOutDir)
+	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_SRCDIR)/hs_private.d
+
+dtrace_gen_headers: $(DtraceOutDir)/hotspot.h $(DtraceOutDir)/hotspot_jni.h $(DtraceOutDir)/hs_private.h
+
 
 .PHONY: dtraceCheck
 

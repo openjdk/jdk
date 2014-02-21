@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ class ImageFetcher extends Thread {
             // the fetcher was interrupted, as we used to,
             // because there may be other images waiting
             // to be fetched (see 4789067)
-            me.interrupted();
+            Thread.interrupted();
             me.setPriority(HIGH_PRIORITY);
             ImageFetchable src = nextImage();
             if (src == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,10 +227,7 @@ public class AttributeWriter extends BasicWriter
     }
 
     public Void visitConstantValue(ConstantValue_attribute attr, Void ignore) {
-        if (options.compat) // BUG 6622216 javap names some attributes incorrectly
-            print("Constant value: ");
-        else
-            print("ConstantValue: ");
+        print("ConstantValue: ");
         constantWriter.write(attr.constantvalue_index);
         println();
         return null;
@@ -291,20 +288,10 @@ public class AttributeWriter extends BasicWriter
 
     public Void visitInnerClasses(InnerClasses_attribute attr, Void ignore) {
         boolean first = true;
-        if (options.compat) {
-            writeInnerClassHeader();
-            first = false;
-        }
         for (int i = 0 ; i < attr.classes.length; i++) {
             InnerClasses_attribute.Info info = attr.classes[i];
             //access
             AccessFlags access_flags = info.inner_class_access_flags;
-            if (options.compat) {
-                // BUG 6622215: javap ignores certain relevant access flags
-                access_flags = access_flags.ignore(ACC_STATIC | ACC_PROTECTED | ACC_PRIVATE | ACC_INTERFACE | ACC_SYNTHETIC | ACC_ENUM);
-                // BUG 6622232: javap gets whitespace confused
-                print("   ");
-            }
             if (options.checkAccess(access_flags)) {
                 if (first) {
                     writeInnerClassHeader();
@@ -346,11 +333,7 @@ public class AttributeWriter extends BasicWriter
     }
 
     private void writeInnerClassHeader() {
-        if (options.compat) // BUG 6622216: javap names some attributes incorrectly
-            print("InnerClass");
-        else
-            print("InnerClasses");
-        println(":");
+        println("InnerClasses:");
         indent(+1);
     }
 
@@ -711,10 +694,7 @@ public class AttributeWriter extends BasicWriter
     }
 
     String toHex(byte b, int w) {
-        if (options.compat) // BUG 6622260: javap prints negative bytes incorrectly in hex
-            return toHex((int) b, w);
-        else
-            return toHex(b & 0xff, w);
+        return toHex(b & 0xff, w);
     }
 
     static String toHex(int i) {

@@ -33,6 +33,7 @@
 
 #include "nio.h"
 #include "nio_util.h"
+#include "net_util.h"
 #include "sun_nio_ch_IOUtil.h"
 
 /* field id for jlong 'handle' in java.io.FileDescriptor used for file fds */
@@ -52,9 +53,10 @@ Java_sun_security_provider_NativeSeedGenerator_nativeGenerateSeed
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_IOUtil_initIDs(JNIEnv *env, jclass clazz)
 {
-    clazz = (*env)->FindClass(env, "java/io/FileDescriptor");
-    fd_fdID = (*env)->GetFieldID(env, clazz, "fd", "I");
-    handle_fdID = (*env)->GetFieldID(env, clazz, "handle", "J");
+    CHECK_NULL(clazz = (*env)->FindClass(env, "java/io/FileDescriptor"));
+    CHECK_NULL(fd_fdID = (*env)->GetFieldID(env, clazz, "fd", "I"));
+    CHECK_NULL(handle_fdID = (*env)->GetFieldID(env, clazz, "handle", "J"));
+    initInetAddressIDs(env);
 }
 
 /**************************************************************

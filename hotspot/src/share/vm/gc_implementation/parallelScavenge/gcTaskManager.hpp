@@ -303,7 +303,7 @@ protected:
 // load balancing (i.e., over partitioning).  The last task to be
 // executed by a GC thread in a job is a work stealing task.  A
 // GC  thread that gets a work stealing task continues to execute
-// that task until the job is done.  In the static number of GC theads
+// that task until the job is done.  In the static number of GC threads
 // case, tasks are added to a queue (FIFO).  The work stealing tasks are
 // the last to be added.  Once the tasks are added, the GC threads grab
 // a task and go.  A single thread can do all the non-work stealing tasks

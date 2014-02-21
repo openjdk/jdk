@@ -147,6 +147,19 @@ Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
     if (md == JNI_FALSE) {
         result = fdatasync(fd);
     } else {
+#ifdef _AIX
+        /* On AIX, calling fsync on a file descriptor that is opened only for
+         * reading results in an error ("EBADF: The FileDescriptor parameter is
+         * not a valid file descriptor open for writing.").
+         * However, at this point it is not possibly anymore to read the
+         * 'writable' attribute of the corresponding file channel so we have to
+         * use 'fcntl'.
+         */
+        int getfl = fcntl(fd, F_GETFL);
+        if (getfl >= 0 && (getfl & O_ACCMODE) == O_RDONLY) {
+            return 0;
+        }
+#endif
         result = fsync(fd);
     }
     return handle(env, result, "Force failed");
