@@ -90,7 +90,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
     private String rootName;
 
     // Element name (String) -> Element
-    private HashMap elementMap = new HashMap();
+    private HashMap<String, Element> elementMap = new HashMap<>();
 
     class Element {
         String elementName;
@@ -100,17 +100,17 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         int maxChildren = 0;
 
         // Child names (Strings)
-        List childList = new ArrayList();
+        List<String> childList = new ArrayList<>();
 
         // Parent names (Strings)
-        List parentList = new ArrayList();
+        List<String> parentList = new ArrayList<>();
 
         // List of attribute names in the order they were added
-        List attrList = new ArrayList();
+        List<String> attrList = new ArrayList<>();
         // Attr name (String) -> Attribute
-        Map attrMap = new HashMap();
+        Map<String, Attribute> attrMap = new HashMap<>();
 
-        ObjectValue objectValue;
+        ObjectValue<?> objectValue;
     }
 
     class Attribute {
@@ -122,7 +122,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         String defaultValue = null;
 
         // enumeration
-        List enumeratedValues;
+        List<String> enumeratedValues;
 
         // range
         String minValue;
@@ -133,17 +133,18 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         int listMaxLength;
     }
 
-    class ObjectValue {
+    class ObjectValue<T> {
         int valueType = VALUE_NONE;
-        Class classType = null;
-        Object defaultValue = null;
+        // ? extends T So that ObjectValue<Object> can take Class<?>
+        Class<? extends T> classType = null;
+        T defaultValue = null;
 
         // Meaningful only if valueType == VALUE_ENUMERATION
-        List enumeratedValues = null;
+        List<? extends T> enumeratedValues = null;
 
         // Meaningful only if valueType == VALUE_RANGE
-        Comparable minValue = null;
-        Comparable maxValue = null;
+        Comparable<? super T> minValue = null;
+        Comparable<? super T> maxValue = null;
 
         // Meaningful only if valueType == VALUE_LIST
         int arrayMinLength = 0;
@@ -272,7 +273,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         if (mustAppear && (elementName == null)) {
             throw new IllegalArgumentException("element name is null!");
         }
-        Element element = (Element)elementMap.get(elementName);
+        Element element = elementMap.get(elementName);
         if (mustAppear && (element == null)) {
             throw new IllegalArgumentException("No such element: " +
                                                elementName);
@@ -287,7 +288,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
     // Utility method for locating an attribute
     private Attribute getAttribute(String elementName, String attrName) {
         Element element = getElement(elementName);
-        Attribute attr = (Attribute)element.attrMap.get(attrName);
+        Attribute attr = element.attrMap.get(attrName);
         if (attr == null) {
             throw new IllegalArgumentException("No such attribute \"" +
                                                attrName + "\"!");
@@ -408,9 +409,9 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
     protected void removeElement(String elementName) {
         Element element = getElement(elementName, false);
         if (element != null) {
-            Iterator iter = element.parentList.iterator();
+            Iterator<String> iter = element.parentList.iterator();
             while (iter.hasNext()) {
-                String parentName = (String)iter.next();
+                String parentName = iter.next();
                 Element parent = getElement(parentName, false);
                 if (parent != null) {
                     parent.childList.remove(elementName);
@@ -514,7 +515,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         if (enumeratedValues.size() == 0) {
             throw new IllegalArgumentException("enumeratedValues is empty!");
         }
-        Iterator iter = enumeratedValues.iterator();
+        Iterator<String> iter = enumeratedValues.iterator();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (o == null) {
@@ -681,7 +682,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
                                        String attrName,
                                        boolean hasDefaultValue,
                                        boolean defaultValue) {
-        List values = new ArrayList();
+        List<String> values = new ArrayList<>();
         values.add("TRUE");
         values.add("FALSE");
 
@@ -740,7 +741,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
                                       T defaultValue)
     {
         Element element = getElement(elementName);
-        ObjectValue obj = new ObjectValue();
+        ObjectValue<T> obj = new ObjectValue<>();
         obj.valueType = VALUE_ARBITRARY;
         obj.classType = classType;
         obj.defaultValue = defaultValue;
@@ -793,7 +794,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         if (enumeratedValues.size() == 0) {
             throw new IllegalArgumentException("enumeratedValues is empty!");
         }
-        Iterator iter = enumeratedValues.iterator();
+        Iterator<? extends T> iter = enumeratedValues.iterator();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (o == null) {
@@ -804,7 +805,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
             }
         }
 
-        ObjectValue obj = new ObjectValue();
+        ObjectValue<T> obj = new ObjectValue<>();
         obj.valueType = VALUE_ENUMERATION;
         obj.classType = classType;
         obj.defaultValue = defaultValue;
@@ -854,7 +855,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
                        boolean maxInclusive)
     {
         Element element = getElement(elementName);
-        ObjectValue obj = new ObjectValue();
+        ObjectValue<T> obj = new ObjectValue<>();
         obj.valueType = VALUE_RANGE;
         if (minInclusive) {
             obj.valueType |= VALUE_RANGE_MIN_INCLUSIVE_MASK;
@@ -895,7 +896,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
                                   int arrayMinLength,
                                   int arrayMaxLength) {
         Element element = getElement(elementName);
-        ObjectValue obj = new ObjectValue();
+        ObjectValue<Object> obj = new ObjectValue<>();
         obj.valueType = VALUE_LIST;
         obj.classType = classType;
         obj.arrayMinLength = arrayMinLength;
@@ -962,10 +963,10 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
          * If that throws MissingResourceException, then try the
          * system class loader.
          */
-        ClassLoader loader = (ClassLoader)
+        ClassLoader loader =
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                   public Object run() {
+                new java.security.PrivilegedAction<ClassLoader>() {
+                   public ClassLoader run() {
                        return Thread.currentThread().getContextClassLoader();
                    }
             });
@@ -1037,17 +1038,17 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         if (element.childPolicy == CHILD_POLICY_EMPTY) {
             return null;
         }
-        return (String[])element.childList.toArray(new String[0]);
+        return element.childList.toArray(new String[0]);
     }
 
     // Attributes
 
     public String[] getAttributeNames(String elementName) {
         Element element = getElement(elementName);
-        List names = element.attrList;
+        List<String> names = element.attrList;
 
         String[] result = new String[names.size()];
-        return (String[])names.toArray(result);
+        return names.toArray(result);
     }
 
     public int getAttributeValueType(String elementName, String attrName) {
@@ -1079,10 +1080,9 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
                 ("Attribute not an enumeration!");
         }
 
-        List values = attr.enumeratedValues;
-        Iterator iter = values.iterator();
+        List<String> values = attr.enumeratedValues;
         String[] result = new String[values.size()];
-        return (String[])values.toArray(result);
+        return values.toArray(result);
     }
 
     public String getAttributeMinValue(String elementName, String attrName) {
@@ -1170,7 +1170,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         if (attrName == null) {
             throw new IllegalArgumentException("attrName == null!");
         }
-        Attribute attr = (Attribute)element.attrMap.get(attrName);
+        Attribute attr = element.attrMap.get(attrName);
         if (attr == null) {
             throw new IllegalArgumentException("No such attribute!");
         }
@@ -1179,9 +1179,9 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         return getResource(key, locale);
     }
 
-    private ObjectValue getObjectValue(String elementName) {
+    private ObjectValue<?> getObjectValue(String elementName) {
         Element element = getElement(elementName);
-        ObjectValue objv = element.objectValue;
+        ObjectValue<?> objv = element.objectValue;
         if (objv == null) {
             throw new IllegalArgumentException("No object within element " +
                                                elementName + "!");
@@ -1191,7 +1191,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
 
     public int getObjectValueType(String elementName) {
         Element element = getElement(elementName);
-        ObjectValue objv = element.objectValue;
+        ObjectValue<?> objv = element.objectValue;
         if (objv == null) {
             return VALUE_NONE;
         }
@@ -1199,27 +1199,27 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
     }
 
     public Class<?> getObjectClass(String elementName) {
-        ObjectValue objv = getObjectValue(elementName);
+        ObjectValue<?> objv = getObjectValue(elementName);
         return objv.classType;
     }
 
     public Object getObjectDefaultValue(String elementName) {
-        ObjectValue objv = getObjectValue(elementName);
+        ObjectValue<?> objv = getObjectValue(elementName);
         return objv.defaultValue;
     }
 
     public Object[] getObjectEnumerations(String elementName) {
-        ObjectValue objv = getObjectValue(elementName);
+        ObjectValue<?> objv = getObjectValue(elementName);
         if (objv.valueType != VALUE_ENUMERATION) {
             throw new IllegalArgumentException("Not an enumeration!");
         }
-        List vlist = objv.enumeratedValues;
+        List<?> vlist = objv.enumeratedValues;
         Object[] values = new Object[vlist.size()];
         return vlist.toArray(values);
     }
 
     public Comparable<?> getObjectMinValue(String elementName) {
-        ObjectValue objv = getObjectValue(elementName);
+        ObjectValue<?> objv = getObjectValue(elementName);
         if ((objv.valueType & VALUE_RANGE) != VALUE_RANGE) {
             throw new IllegalArgumentException("Not a range!");
         }
@@ -1227,7 +1227,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
     }
 
     public Comparable<?> getObjectMaxValue(String elementName) {
-        ObjectValue objv = getObjectValue(elementName);
+        ObjectValue<?> objv = getObjectValue(elementName);
         if ((objv.valueType & VALUE_RANGE) != VALUE_RANGE) {
             throw new IllegalArgumentException("Not a range!");
         }
@@ -1235,7 +1235,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
     }
 
     public int getObjectArrayMinLength(String elementName) {
-        ObjectValue objv = getObjectValue(elementName);
+        ObjectValue<?> objv = getObjectValue(elementName);
         if (objv.valueType != VALUE_LIST) {
             throw new IllegalArgumentException("Not a list!");
         }
@@ -1243,7 +1243,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
     }
 
     public int getObjectArrayMaxLength(String elementName) {
-        ObjectValue objv = getObjectValue(elementName);
+        ObjectValue<?> objv = getObjectValue(elementName);
         if (objv.valueType != VALUE_LIST) {
             throw new IllegalArgumentException("Not a list!");
         }
