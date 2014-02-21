@@ -221,8 +221,9 @@ public abstract class XMLOutputFactory {
    * <li>
    *   If {@code factoryId} is "javax.xml.stream.XMLOutputFactory",
    *   use the service-provider loading facilities, defined by the
-   *   {@link java.util.ServiceLoader} class, to attempt to locate and load an
-   *   implementation of the service using the specified {@code ClassLoader}.
+   *   {@link java.util.ServiceLoader} class, to attempt to {@linkplain
+   *   java.util.ServiceLoader#load(java.lang.Class, java.lang.ClassLoader) locate and load}
+   *   an implementation of the service using the specified {@code ClassLoader}.
    *   If {@code classLoader} is null, the {@linkplain
    *   java.util.ServiceLoader#load(java.lang.Class) default loading mechanism} will apply:
    *   That is, the service-provider loading facility will use the {@linkplain

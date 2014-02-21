@@ -53,8 +53,8 @@ endif
 # The EN locales
 EN_LOCALES := en%
 
-# ja-JP-JP and th-TH-TH need to be manually added, as they don't have any resource files.
-ALL_NON_EN_LOCALES := ja-JP-JP th-TH-TH
+# Locales that don't have any resource files should be included here.
+ALL_NON_EN_LOCALES := ja-JP-JP nb-NO nn-NO th-TH-TH
 
 SED_ARGS := -e 's|$(HASH)warn This file is preprocessed before being compiled|// -- This file was mechanically generated: Do not edit! -- //|g'
 

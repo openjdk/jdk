@@ -258,10 +258,10 @@ class MarkRefsIntoAndScanClosure: public CMSOopsInGenClosure {
   bool take_from_overflow_list();
 };
 
-// Tn this, the parallel avatar of MarkRefsIntoAndScanClosure, the revisit
+// In this, the parallel avatar of MarkRefsIntoAndScanClosure, the revisit
 // stack and the bitMap are shared, so access needs to be suitably
-// sycnhronized. An OopTaskQueue structure, supporting efficient
-// workstealing, replaces a CMSMarkStack for storing grey objects.
+// synchronized. An OopTaskQueue structure, supporting efficient
+// work stealing, replaces a CMSMarkStack for storing grey objects.
 class Par_MarkRefsIntoAndScanClosure: public CMSOopsInGenClosure {
  private:
   MemRegion              _span;

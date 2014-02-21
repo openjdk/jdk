@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.swing.plaf.ColorUIResource;
  * @author Shannon Hickey
  *
  */
+@SuppressWarnings("serial") // JDK-implementation class
 public class PrintColorUIResource extends ColorUIResource {
 
     /** The color to use during printing */

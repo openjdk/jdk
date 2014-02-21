@@ -149,7 +149,7 @@ const int LogHeapWordsPerLong = LogBytesPerLong - LogHeapWordSize;
 // The larger HeapWordSize for 64bit requires larger heaps
 // for the same application running in 64bit.  See bug 4967770.
 // The minimum alignment to a heap word size is done.  Other
-// parts of the memory system may required additional alignment
+// parts of the memory system may require additional alignment
 // and are responsible for those alignments.
 #ifdef _LP64
 #define ScaleForWordSize(x) align_size_down_((x) * 13 / 10, HeapWordSize)

@@ -480,6 +480,9 @@ class Dependencies: public ResourceObj {
     bool next();
 
     DepType type()               { return _type; }
+    bool has_oop_argument()      { return type() == call_site_target_value; }
+    uintptr_t get_identifier(int i);
+
     int argument_count()         { return dep_args(type()); }
     int argument_index(int i)    { assert(0 <= i && i < argument_count(), "oob");
                                    return _xi[i]; }
@@ -522,6 +525,38 @@ class Dependencies: public ResourceObj {
   static void print_statistics() PRODUCT_RETURN;
 };
 
+
+class DependencySignature : public ResourceObj {
+ private:
+  int                   _args_count;
+  uintptr_t             _argument_hash[Dependencies::max_arg_count];
+  Dependencies::DepType _type;
+
+
+ public:
+  DependencySignature(Dependencies::DepStream& dep) {
+    _args_count = dep.argument_count();
+    _type = dep.type();
+    for (int i = 0; i < _args_count; i++) {
+      _argument_hash[i] = dep.get_identifier(i);
+    }
+  }
+
+  bool equals(const DependencySignature& sig) const;
+
+  int args_count()             const { return _args_count; }
+  uintptr_t arg(int idx)       const { return _argument_hash[idx]; }
+  Dependencies::DepType type() const { return _type; }
+};
+
+class DependencySignatureBuffer : public StackObj {
+ private:
+  GrowableArray<DependencySignature*>**  _signatures;
+
+ public:
+  DependencySignatureBuffer();
+  bool add_if_missing(const DependencySignature& sig);
+};
 
 // Every particular DepChange is a sub-class of this class.
 class DepChange : public StackObj {

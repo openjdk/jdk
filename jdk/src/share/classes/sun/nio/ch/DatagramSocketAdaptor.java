@@ -187,9 +187,9 @@ public class DatagramSocketAdaptor
                 if (!dc.isOpen())
                      throw new ClosedChannelException();
                 long st = System.currentTimeMillis();
-                int result = dc.poll(PollArrayWrapper.POLLIN, to);
+                int result = dc.poll(Net.POLLIN, to);
                 if (result > 0 &&
-                        ((result & PollArrayWrapper.POLLIN) != 0)) {
+                        ((result & Net.POLLIN) != 0)) {
                     if ((sender = dc.receive(bb)) != null)
                         return sender;
                 }
