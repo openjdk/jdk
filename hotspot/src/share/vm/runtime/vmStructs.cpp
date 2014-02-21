@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,6 @@ typedef TwoOopHashtable<Klass*, mtClass>      KlassTwoOopHashtable;
 typedef Hashtable<Klass*, mtClass>            KlassHashtable;
 typedef HashtableEntry<Klass*, mtClass>       KlassHashtableEntry;
 typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
-typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
@@ -1287,11 +1286,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   volatile_nonstatic_field(FreeChunk,          _size,                                        size_t)                                 \
   nonstatic_field(FreeChunk,                   _next,                                        FreeChunk*)                             \
   nonstatic_field(FreeChunk,                   _prev,                                        FreeChunk*)                             \
-  nonstatic_field(FreeList<FreeChunk>,         _size,                                        size_t)                                 \
-  nonstatic_field(FreeList<Metablock>,         _size,                                        size_t)                                 \
-  nonstatic_field(FreeList<FreeChunk>,         _count,                                       ssize_t)                                \
-  nonstatic_field(FreeList<Metablock>,         _count,                                       ssize_t)                                \
-  nonstatic_field(MetablockTreeDictionary,     _total_size,                                  size_t)
+  nonstatic_field(AdaptiveFreeList<FreeChunk>, _size,                                        size_t)                                 \
+  nonstatic_field(AdaptiveFreeList<FreeChunk>, _count,                                       ssize_t)
 
 
 //--------------------------------------------------------------------------------
@@ -2163,14 +2159,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
                                                                           \
   /* freelist */                                                          \
   declare_toplevel_type(FreeChunk*)                                       \
-  declare_toplevel_type(Metablock*)                                       \
-  declare_toplevel_type(FreeBlockDictionary<FreeChunk>*)                  \
-  declare_toplevel_type(FreeList<FreeChunk>*)                             \
-  declare_toplevel_type(FreeList<FreeChunk>)                              \
-  declare_toplevel_type(FreeBlockDictionary<Metablock>*)                  \
-  declare_toplevel_type(FreeList<Metablock>*)                             \
-  declare_toplevel_type(FreeList<Metablock>)                              \
-  declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
+  declare_toplevel_type(AdaptiveFreeList<FreeChunk>*)                     \
+  declare_toplevel_type(AdaptiveFreeList<FreeChunk>)
 
 
 //--------------------------------------------------------------------------------

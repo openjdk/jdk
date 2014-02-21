@@ -3394,13 +3394,12 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
 
     if (!silent) { gclog_or_tty->print("Roots "); }
     VerifyRootsClosure rootsCl(vo);
-    G1VerifyCodeRootOopClosure codeRootsCl(this, &rootsCl, vo);
-    G1VerifyCodeRootBlobClosure blobsCl(&codeRootsCl);
     VerifyKlassClosure klassCl(this, &rootsCl);
 
     // We apply the relevant closures to all the oops in the
-    // system dictionary, the string table and the code cache.
-    const int so = SO_AllClasses | SO_Strings | SO_AllCodeCache;
+    // system dictionary, class loader data graph and the string table.
+    // Don't verify the code cache here, since it's verified below.
+    const int so = SO_AllClasses | SO_Strings;
 
     // Need cleared claim bits for the strong roots processing
     ClassLoaderDataGraph::clear_claimed_marks();
@@ -3408,9 +3407,13 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
     process_strong_roots(true,      // activate StrongRootsScope
                          ScanningOption(so),  // roots scanning options
                          &rootsCl,
-                         &blobsCl,
                          &klassCl
                          );
+
+    // Verify the nmethods in the code cache.
+    G1VerifyCodeRootOopClosure codeRootsCl(this, &rootsCl, vo);
+    G1VerifyCodeRootBlobClosure blobsCl(&codeRootsCl);
+    CodeCache::blobs_do(&blobsCl);
 
     bool failures = rootsCl.failures() || codeRootsCl.failures();
 
@@ -5115,12 +5118,9 @@ g1_process_strong_roots(bool is_scavenging,
 
   BufferingOopClosure buf_scan_non_heap_roots(scan_non_heap_roots);
 
-  CodeBlobToOopClosure scan_code_roots(&buf_scan_non_heap_roots, true /* do_marking */);
-
   process_strong_roots(false, // no scoping; this is parallel code
                        so,
                        &buf_scan_non_heap_roots,
-                       &scan_code_roots,
                        scan_klasses
                        );
 
@@ -5178,12 +5178,6 @@ g1_process_strong_roots(bool is_scavenging,
   g1_rem_set()->oops_into_collection_set_do(scan_rs, &eager_scan_code_roots, worker_i);
 
   _process_strong_tasks->all_tasks_completed();
-}
-
-void
-G1CollectedHeap::g1_process_weak_roots(OopClosure* root_closure) {
-  CodeBlobToOopClosure roots_in_blobs(root_closure, /*do_marking=*/ false);
-  SharedHeap::process_weak_roots(root_closure, &roots_in_blobs);
 }
 
 class G1StringSymbolTableUnlinkTask : public AbstractGangTask {

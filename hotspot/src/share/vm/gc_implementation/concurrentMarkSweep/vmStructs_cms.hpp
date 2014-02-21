@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
   nonstatic_field(LinearAllocBlock,            _word_size,                                    size_t)                                \
   nonstatic_field(AFLBinaryTreeDictionary,     _total_size,                                   size_t)                                \
   nonstatic_field(CompactibleFreeListSpace,    _dictionary,                                   AFLBinaryTreeDictionary*)              \
-  nonstatic_field(CompactibleFreeListSpace,    _indexedFreeList[0],                           FreeList<FreeChunk>)                   \
+  nonstatic_field(CompactibleFreeListSpace,    _indexedFreeList[0],                           AdaptiveFreeList<FreeChunk>)           \
   nonstatic_field(CompactibleFreeListSpace,    _smallLinearAllocBlock,                        LinearAllocBlock)
 
 
