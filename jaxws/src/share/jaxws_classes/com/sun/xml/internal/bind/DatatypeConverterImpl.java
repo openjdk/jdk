@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,14 @@ package com.sun.xml.internal.bind;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.WeakHashMap;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.DatatypeConverterInterface;
@@ -356,7 +361,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
 
     public static GregorianCalendar _parseDateTime(CharSequence s) {
         String val = WhiteSpaceProcessor.trim(s).toString();
-        return datatypeFactory.newXMLGregorianCalendar(val).toGregorianCalendar();
+        return getDatatypeFactory().newXMLGregorianCalendar(val).toGregorianCalendar();
     }
 
     public static String _printDateTime(Calendar val) {
@@ -722,14 +727,30 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
         }
         return false;
     }
-    private static final DatatypeFactory datatypeFactory;
 
-    static {
-        try {
-            datatypeFactory = DatatypeFactory.newInstance();
-        } catch (DatatypeConfigurationException e) {
-            throw new Error(e);
+    private static final Map<ClassLoader, DatatypeFactory> DF_CACHE = Collections.synchronizedMap(new WeakHashMap<ClassLoader, DatatypeFactory>());
+
+    public static DatatypeFactory getDatatypeFactory() {
+        ClassLoader tccl = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            public ClassLoader run() {
+                return Thread.currentThread().getContextClassLoader();
+            }
+        });
+        DatatypeFactory df = DF_CACHE.get(tccl);
+        if (df == null) {
+            synchronized (DatatypeConverterImpl.class) {
+                df = DF_CACHE.get(tccl);
+                if (df == null) { // to prevent multiple initialization
+                    try {
+                        df = DatatypeFactory.newInstance();
+                    } catch (DatatypeConfigurationException e) {
+                        throw new Error(Messages.FAILED_TO_INITIALE_DATATYPE_FACTORY.format(),e);
+                    }
+                    DF_CACHE.put(tccl, df);
+                }
+            }
         }
+        return df;
     }
 
     private static final class CalendarFormatter {
@@ -1045,7 +1066,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
 
     @Deprecated
     public Calendar parseTime(String lexicalXSDTime) {
-        return datatypeFactory.newXMLGregorianCalendar(lexicalXSDTime).toGregorianCalendar();
+        return getDatatypeFactory().newXMLGregorianCalendar(lexicalXSDTime).toGregorianCalendar();
     }
 
     @Deprecated
@@ -1055,7 +1076,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
 
     @Deprecated
     public Calendar parseDate(String lexicalXSDDate) {
-        return datatypeFactory.newXMLGregorianCalendar(lexicalXSDDate).toGregorianCalendar();
+        return getDatatypeFactory().newXMLGregorianCalendar(lexicalXSDDate).toGregorianCalendar();
     }
 
     @Deprecated
