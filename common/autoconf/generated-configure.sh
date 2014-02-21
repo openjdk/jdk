@@ -971,7 +971,6 @@ BASH
 BASENAME
 DATE_WHEN_CONFIGURED
 CONFIGURE_COMMAND_LINE
-CUSTOM_MAKE_DIR
 target_alias
 host_alias
 build_alias
@@ -1013,12 +1012,12 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_custom_make_dir
 with_target_bits
 with_sys_root
 with_tools_dir
 with_devkit
 enable_openjdk_only
+with_custom_make_dir
 with_jdk_variant
 with_jvm_interpreter
 with_jvm_variants
@@ -1839,7 +1838,6 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-custom-make-dir  use this directory for custom build/make files
   --with-target-bits      build 32-bit or 64-bit binaries (for platforms that
                           support it), e.g. --with-target-bits=32 [guessed]
   --with-sys-root         pass this sys-root to the compilers and tools (for
@@ -1848,6 +1846,8 @@ Optional Packages:
                           cross-compiling)
   --with-devkit           use this directory as base for tools-dir and
                           sys-root (for cross-compiling)
+  --with-custom-make-dir  Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-jdk-variant      JDK variant to build (normal) [normal]
   --with-jvm-interpreter  JVM interpreter to build (template, cpp) [template]
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
@@ -1869,7 +1869,7 @@ Optional Packages:
   --with-update-version   Set update version value for build [b00]
   --with-user-release-suffix
                           Add a custom string to the version string if build
-                          number isn't set.[username_builddateb00]
+                          number is not set.[username_builddateb00]
   --with-build-number     Set build number value for build [b00]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
   --with-boot-jdk-jvmargs specify JVM arguments to be passed to all
@@ -3790,7 +3790,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3838,18 +3838,6 @@ pkgadd_help() {
 
 
 
-
-
-
-# Support for customization of the build process. Some build files
-# will include counterparts from this location, if they exist. This allows
-# for a degree of customization of the build targets and the rules/recipes
-# to create them
-
-# Check whether --with-custom-make-dir was given.
-if test "${with_custom_make_dir+set}" = set; then :
-  withval=$with_custom_make_dir; CUSTOM_MAKE_DIR=$with_custom_make_dir
-fi
 
 
 
@@ -14317,6 +14305,18 @@ $as_echo "$as_me: WARNING: No closed source present, --enable-openjdk-only makes
 
 
 
+  # custom-make-dir is deprecated. Please use your custom-hook.m4 to override
+  # the IncludeCustomExtension macro.
+
+
+# Check whether --with-custom-make-dir was given.
+if test "${with_custom_make_dir+set}" = set; then :
+  withval=$with_custom_make_dir; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-custom-make-dir is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-custom-make-dir is deprecated and will be ignored." >&2;}
+fi
+
+
+
 
 # These are needed to be able to create a configuration name (and thus the output directory)
 
@@ -14834,9 +14834,6 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
   # which will look for generated configurations
   ac_config_files="$ac_config_files $OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in"
 
-
-  # Save the arguments given to us
-  echo "$CONFIGURE_COMMAND_LINE" > $OUTPUT_ROOT/configure-arguments
 
 
 # Must be done before we can call HELP_MSG_MISSING_DEPENDENCY.
@@ -41884,7 +41881,8 @@ fi
   #
   case $COMPILER_NAME in
     gcc )
-      CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -W -Wall -Wno-unused -Wno-parentheses \
+      # these options are used for both C and C++ compiles
+      CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -Wall -Wno-parentheses -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
       -pipe \
       -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
       case $OPENJDK_TARGET_CPU_ARCH in
@@ -50032,8 +50030,19 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
 
   printf "\n"
   printf "====================================================\n"
-  printf "A new configuration has been successfully created in\n"
-  printf "$OUTPUT_ROOT\n"
+  if test "x$no_create" != "xyes"; then
+    if test "x$IS_RECONFIGURE" != "xyes"; then
+      printf "A new configuration has been successfully created in\n %s\n" "$OUTPUT_ROOT"
+    else
+      printf "The existing configuration has been successfully updated in\n %s\n" "$OUTPUT_ROOT"
+    fi
+  else
+    if test "x$IS_RECONFIGURE" != "xyes"; then
+      printf "A configuration has been successfully checked but not created\n"
+    else
+      printf "The existing configuration has been successfully checked in\n %s\n" "$OUTPUT_ROOT"
+    fi
+  fi
   if test "x$CONFIGURE_COMMAND_LINE" != x; then
     printf "using configure arguments '$CONFIGURE_COMMAND_LINE'.\n"
   else
@@ -50087,10 +50096,16 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
     printf "\n"
   fi
 
-  if test "x$IS_RECONFIGURE" = "xyes"; then
+  if test "x$IS_RECONFIGURE" = "xyes" && test "x$no_create" != "xyes"; then
     printf "WARNING: The result of this configuration has overridden an older\n"
     printf "configuration. You *should* run 'make clean' to make sure you get a\n"
     printf "proper build. Failure to do so might result in strange build problems.\n"
+    printf "\n"
+  fi
+
+  if test "x$IS_RECONFIGURE" != "xyes" && test "x$no_create" = "xyes"; then
+    printf "WARNING: The result of this configuration was not saved.\n"
+    printf "You should run without '--no-create | -n' to create the configuration.\n"
     printf "\n"
   fi
 
