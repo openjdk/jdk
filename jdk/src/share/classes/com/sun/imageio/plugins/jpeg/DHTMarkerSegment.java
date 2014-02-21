@@ -43,7 +43,7 @@ import org.w3c.dom.NamedNodeMap;
  * A DHT (Define Huffman Table) marker segment.
  */
 class DHTMarkerSegment extends MarkerSegment {
-    List tables = new ArrayList();
+    List<Htable> tables = new ArrayList<>();
 
     DHTMarkerSegment(boolean needFour) {
         super(JPEG.DHT);
@@ -93,11 +93,11 @@ class DHTMarkerSegment extends MarkerSegment {
 
     protected Object clone() {
         DHTMarkerSegment newGuy = (DHTMarkerSegment) super.clone();
-        newGuy.tables = new ArrayList(tables.size());
-        Iterator iter = tables.iterator();
+        newGuy.tables = new ArrayList<>(tables.size());
+        Iterator<Htable> iter = tables.iterator();
         while (iter.hasNext()) {
-            Htable table = (Htable) iter.next();
-            newGuy.tables.add(table.clone());
+            Htable table = iter.next();
+            newGuy.tables.add((Htable) table.clone());
         }
         return newGuy;
     }
@@ -105,7 +105,7 @@ class DHTMarkerSegment extends MarkerSegment {
     IIOMetadataNode getNativeNode() {
         IIOMetadataNode node = new IIOMetadataNode("dht");
         for (int i= 0; i<tables.size(); i++) {
-            Htable table = (Htable) tables.get(i);
+            Htable table = tables.get(i);
             node.appendChild(table.getNativeNode());
         }
         return node;
@@ -124,7 +124,7 @@ class DHTMarkerSegment extends MarkerSegment {
         System.out.println("Num tables: "
                            + Integer.toString(tables.size()));
         for (int i= 0; i<tables.size(); i++) {
-            Htable table = (Htable) tables.get(i);
+            Htable table = tables.get(i);
             table.print();
         }
         System.out.println();

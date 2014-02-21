@@ -1204,9 +1204,9 @@ public class GIFImageWriter extends ImageWriter {
     private void writeApplicationExtension(GIFWritableImageMetadata im)
       throws IOException {
         if (im.applicationIDs != null) {
-            Iterator iterIDs = im.applicationIDs.iterator();
-            Iterator iterCodes = im.authenticationCodes.iterator();
-            Iterator iterData = im.applicationData.iterator();
+            Iterator<byte[]> iterIDs = im.applicationIDs.iterator();
+            Iterator<byte[]> iterCodes = im.authenticationCodes.iterator();
+            Iterator<byte[]> iterData = im.applicationData.iterator();
 
             while (iterIDs.hasNext()) {
                 try {
@@ -1214,10 +1214,10 @@ public class GIFImageWriter extends ImageWriter {
                     stream.write(0xff);
 
                     stream.write(11);
-                    stream.write((byte[])iterIDs.next(), 0, 8);
-                    stream.write((byte[])iterCodes.next(), 0, 3);
+                    stream.write(iterIDs.next(), 0, 8);
+                    stream.write(iterCodes.next(), 0, 3);
 
-                    writeBlocks((byte[])iterData.next());
+                    writeBlocks(iterData.next());
 
                     stream.write(0x00);
                 } catch (IOException e) {
@@ -1231,11 +1231,11 @@ public class GIFImageWriter extends ImageWriter {
       throws IOException {
         if (im.comments != null) {
             try {
-                Iterator iter = im.comments.iterator();
+                Iterator<byte[]> iter = im.comments.iterator();
                 while (iter.hasNext()) {
                     stream.write(0x21);
                     stream.write(0xfe);
-                    writeBlocks((byte[])iter.next());
+                    writeBlocks(iter.next());
                     stream.write(0x00);
                 }
             } catch (IOException e) {
