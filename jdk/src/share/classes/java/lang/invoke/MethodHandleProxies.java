@@ -303,7 +303,7 @@ public class MethodHandleProxies {
 
     private static
     Method[] getSingleNameMethods(Class<?> intfc) {
-        ArrayList<Method> methods = new ArrayList<Method>();
+        ArrayList<Method> methods = new ArrayList<>();
         String uniqueName = null;
         for (Method m : intfc.getMethods()) {
             if (isObjectMethod(m))  continue;

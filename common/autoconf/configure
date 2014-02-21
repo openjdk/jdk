@@ -121,15 +121,23 @@ do
   case $conf_option in
     --openjdk-target=*)
       conf_openjdk_target=`expr "X$conf_option" : '[^=]*=\(.*\)'`
-      continue ;;
+      ;;
     --debug-configure)
       if test "x$conf_debug_configure" != xrecursive; then
         conf_debug_configure=true
         export conf_debug_configure
       fi
-      continue ;;
+      ;;
+    [^-]*=*)
+      # Add name of variable to CONFIGURE_OVERRIDDEN_VARIABLES list inside !...!.
+      conf_env_var=`expr "x$conf_option" : 'x\([^=]*\)='`
+      CONFIGURE_OVERRIDDEN_VARIABLES="$CONFIGURE_OVERRIDDEN_VARIABLES!$conf_env_var!"
+      # ... and then process argument as usual
+      conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option")
+      ;;
     *)
-      conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option") ;;
+      conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option")
+      ;;
   esac
 
   case $conf_option in
@@ -212,6 +220,9 @@ Additional (non-autoconf) OpenJDK Options:
 
 Please be aware that, when cross-compiling, the OpenJDK configure script will
 generally use 'target' where autoconf traditionally uses 'host'.
+
+Also note that variables must be passed on the command line. Variables in the
+environment will generally be ignored, unlike traditional autoconf scripts.
 EOT
   fi
 else

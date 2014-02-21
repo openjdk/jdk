@@ -314,21 +314,20 @@ public class SctpServerChannelImpl extends SctpServerChannel
         int oldOps = sk.nioReadyOps();
         int newOps = initialOps;
 
-        if ((ops & PollArrayWrapper.POLLNVAL) != 0) {
+        if ((ops & Net.POLLNVAL) != 0) {
             /* This should only happen if this channel is pre-closed while a
              * selection operation is in progress
              * ## Throw an error if this channel has not been pre-closed */
             return false;
         }
 
-        if ((ops & (PollArrayWrapper.POLLERR
-                    | PollArrayWrapper.POLLHUP)) != 0) {
+        if ((ops & (Net.POLLERR | Net.POLLHUP)) != 0) {
             newOps = intOps;
             sk.nioReadyOps(newOps);
             return (newOps & ~oldOps) != 0;
         }
 
-        if (((ops & PollArrayWrapper.POLLIN) != 0) &&
+        if (((ops & Net.POLLIN) != 0) &&
             ((intOps & SelectionKey.OP_ACCEPT) != 0))
                 newOps |= SelectionKey.OP_ACCEPT;
 
@@ -352,7 +351,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
         /* Translate ops */
         if ((ops & SelectionKey.OP_ACCEPT) != 0)
-            newOps |= PollArrayWrapper.POLLIN;
+            newOps |= Net.POLLIN;
         /* Place ops into pollfd array */
         sk.selector.putEventOps(sk, newOps);
 

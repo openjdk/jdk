@@ -58,7 +58,7 @@ class LinearAllocBlock VALUE_OBJ_CLASS_SPEC {
   HeapWord* _ptr;
   size_t    _word_size;
   size_t    _refillSize;
-  size_t    _allocation_size_limit;  // largest size that will be allocated
+  size_t    _allocation_size_limit;  // Largest size that will be allocated
 
   void print_on(outputStream* st) const;
 };
@@ -116,14 +116,14 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   PromotionInfo _promoInfo;
 
-  // helps to impose a global total order on freelistLock ranks;
+  // Helps to impose a global total order on freelistLock ranks;
   // assumes that CFLSpace's are allocated in global total order
   static int   _lockRank;
 
-  // a lock protecting the free lists and free blocks;
+  // A lock protecting the free lists and free blocks;
   // mutable because of ubiquity of locking even for otherwise const methods
   mutable Mutex _freelistLock;
-  // locking verifier convenience function
+  // Locking verifier convenience function
   void assert_locked() const PRODUCT_RETURN;
   void assert_locked(const Mutex* lock) const PRODUCT_RETURN;
 
@@ -131,12 +131,13 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   LinearAllocBlock _smallLinearAllocBlock;
 
   FreeBlockDictionary<FreeChunk>::DictionaryChoice _dictionaryChoice;
-  AFLBinaryTreeDictionary* _dictionary;    // ptr to dictionary for large size blocks
+  AFLBinaryTreeDictionary* _dictionary;    // Pointer to dictionary for large size blocks
 
+  // Indexed array for small size blocks
   AdaptiveFreeList<FreeChunk> _indexedFreeList[IndexSetSize];
-                                       // indexed array for small size blocks
-  // allocation stategy
-  bool       _fitStrategy;      // Use best fit strategy.
+
+  // Allocation strategy
+  bool       _fitStrategy;        // Use best fit strategy
   bool       _adaptive_freelists; // Use adaptive freelists
 
   // This is an address close to the largest free chunk in the heap.
@@ -157,7 +158,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   // Extra stuff to manage promotion parallelism.
 
-  // a lock protecting the dictionary during par promotion allocation.
+  // A lock protecting the dictionary during par promotion allocation.
   mutable Mutex _parDictionaryAllocLock;
   Mutex* parDictionaryAllocLock() const { return &_parDictionaryAllocLock; }
 
@@ -275,26 +276,26 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   }
 
  protected:
-  // reset the indexed free list to its initial empty condition.
+  // Reset the indexed free list to its initial empty condition.
   void resetIndexedFreeListArray();
-  // reset to an initial state with a single free block described
+  // Reset to an initial state with a single free block described
   // by the MemRegion parameter.
   void reset(MemRegion mr);
   // Return the total number of words in the indexed free lists.
   size_t     totalSizeInIndexedFreeLists() const;
 
  public:
-  // Constructor...
+  // Constructor
   CompactibleFreeListSpace(BlockOffsetSharedArray* bs, MemRegion mr,
                            bool use_adaptive_freelists,
                            FreeBlockDictionary<FreeChunk>::DictionaryChoice);
-  // accessors
+  // Accessors
   bool bestFitFirst() { return _fitStrategy == FreeBlockBestFitFirst; }
   FreeBlockDictionary<FreeChunk>* dictionary() const { return _dictionary; }
   HeapWord* nearLargestChunk() const { return _nearLargestChunk; }
   void set_nearLargestChunk(HeapWord* v) { _nearLargestChunk = v; }
 
-  // Set CMS global values
+  // Set CMS global values.
   static void set_cms_values();
 
   // Return the free chunk at the end of the space.  If no such
@@ -305,7 +306,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   void set_collector(CMSCollector* collector) { _collector = collector; }
 
-  // Support for parallelization of rescan and marking
+  // Support for parallelization of rescan and marking.
   const size_t rescan_task_size()  const { return _rescan_task_size;  }
   const size_t marking_task_size() const { return _marking_task_size; }
   SequentialSubTasksDone* conc_par_seq_tasks() {return &_conc_par_seq_tasks; }
@@ -346,7 +347,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Resizing support
   void set_end(HeapWord* value);  // override
 
-  // mutual exclusion support
+  // Mutual exclusion support
   Mutex* freelistLock() const { return &_freelistLock; }
 
   // Iteration support
@@ -370,7 +371,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // If the iteration encounters an unparseable portion of the region,
   // terminate the iteration and return the address of the start of the
   // subregion that isn't done.  Return of "NULL" indicates that the
-  // interation completed.
+  // iteration completed.
   virtual HeapWord*
        object_iterate_careful_m(MemRegion mr,
                                 ObjectClosureCareful* cl);
@@ -393,11 +394,11 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   size_t block_size_nopar(const HeapWord* p) const;
   bool block_is_obj_nopar(const HeapWord* p) const;
 
-  // iteration support for promotion
+  // Iteration support for promotion
   void save_marks();
   bool no_allocs_since_save_marks();
 
-  // iteration support for sweeping
+  // Iteration support for sweeping
   void save_sweep_limit() {
     _sweep_limit = BlockOffsetArrayUseUnallocatedBlock ?
                    unallocated_block() : end();
@@ -457,7 +458,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   FreeChunk* allocateScratch(size_t size);
 
-  // returns true if either the small or large linear allocation buffer is empty.
+  // Returns true if either the small or large linear allocation buffer is empty.
   bool       linearAllocationWouldFail() const;
 
   // Adjust the chunk for the minimum size.  This version is called in
@@ -477,18 +478,18 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void      addChunkAndRepairOffsetTable(HeapWord* chunk, size_t size,
               bool coalesced);
 
-  // Support for decisions regarding concurrent collection policy
+  // Support for decisions regarding concurrent collection policy.
   bool should_concurrent_collect() const;
 
-  // Support for compaction
+  // Support for compaction.
   void prepare_for_compaction(CompactPoint* cp);
   void adjust_pointers();
   void compact();
-  // reset the space to reflect the fact that a compaction of the
+  // Reset the space to reflect the fact that a compaction of the
   // space has been done.
   virtual void reset_after_compaction();
 
-  // Debugging support
+  // Debugging support.
   void print()                            const;
   void print_on(outputStream* st)         const;
   void prepare_for_verify();
@@ -500,7 +501,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // i.e. either the binary tree dictionary, the indexed free lists
   // or the linear allocation block.
   bool verify_chunk_in_free_list(FreeChunk* fc) const;
-  // Verify that the given chunk is the linear allocation block
+  // Verify that the given chunk is the linear allocation block.
   bool verify_chunk_is_linear_alloc_block(FreeChunk* fc) const;
   // Do some basic checks on the the free lists.
   void check_free_list_consistency()      const PRODUCT_RETURN;
@@ -516,7 +517,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
     size_t sumIndexedFreeListArrayReturnedBytes();
     // Return the total number of chunks in the indexed free lists.
     size_t totalCountInIndexedFreeLists() const;
-    // Return the total numberof chunks in the space.
+    // Return the total number of chunks in the space.
     size_t totalCount();
   )
 

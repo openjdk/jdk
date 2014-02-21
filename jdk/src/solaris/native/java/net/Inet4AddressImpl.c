@@ -51,29 +51,6 @@
 #define HAS_GLIBC_GETHOSTBY_R   1
 #endif
 
-static jclass ni_iacls;
-static jclass ni_ia4cls;
-static jmethodID ni_ia4ctrID;
-
-static jboolean initializeInetClasses(JNIEnv *env)
-{
-    static int initialized = 0;
-    if (!initialized) {
-        ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
-        CHECK_NULL_RETURN(ni_iacls, JNI_FALSE);
-        ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
-        CHECK_NULL_RETURN(ni_iacls, JNI_FALSE);
-        ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
-        CHECK_NULL_RETURN(ni_ia4cls, JNI_FALSE);
-        ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
-        CHECK_NULL_RETURN(ni_ia4cls, JNI_FALSE);
-        ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
-        CHECK_NULL_RETURN(ni_ia4ctrID, JNI_FALSE);
-        initialized = 1;
-    }
-    return JNI_TRUE;
-}
-
 
 #if defined(_ALLBSD_SOURCE) && !defined(HAS_GLIBC_GETHOSTBY_R)
 extern jobjectArray lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6);
@@ -147,8 +124,8 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     int error=0;
     struct addrinfo hints, *res, *resNew = NULL;
 
-    if (!initializeInetClasses(env))
-        return NULL;
+    initInetAddressIDs(env);
+    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
 
     if (IS_NULL(host)) {
         JNU_ThrowNullPointerException(env, "host is null");
@@ -241,7 +218,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
           goto cleanupAndReturn;
         }
 
-        ret = (*env)->NewObjectArray(env, retLen, ni_iacls, NULL);
+        ret = (*env)->NewObjectArray(env, retLen, ia_class, NULL);
         if (IS_NULL(ret)) {
             /* we may have memory to free at the end of this */
             goto cleanupAndReturn;
@@ -251,7 +228,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
             /* We need 4 bytes to store ipv4 address; */
             int len = 4;
 
-            jobject iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4ctrID);
+            jobject iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
             if (IS_NULL(iaObj)) {
                 /* we may have memory to free at the end of this */
                 ret = NULL;
@@ -407,8 +384,8 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     int error = 0;
     struct addrinfo hints, *res, *resNew = NULL;
 
-    if (!initializeInetClasses(env))
-        return NULL;
+    initInetAddressIDs(env);
+    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
 
     if (IS_NULL(host)) {
         JNU_ThrowNullPointerException(env, "host is null");
@@ -486,7 +463,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         retLen = i;
         iterator = resNew;
 
-        ret = (*env)->NewObjectArray(env, retLen, ni_iacls, NULL);
+        ret = (*env)->NewObjectArray(env, retLen, ia_class, NULL);
 
         if (IS_NULL(ret)) {
             /* we may have memory to free at the end of this */
@@ -495,7 +472,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
         i = 0;
         while (iterator != NULL) {
-            jobject iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4ctrID);
+            jobject iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
             if (IS_NULL(iaObj)) {
                 ret = NULL;
                 goto cleanupAndReturn;

@@ -39,7 +39,7 @@ PerfDataList*   PerfDataManager::_sampled = NULL;
 PerfDataList*   PerfDataManager::_constants = NULL;
 
 /*
- * The jvmstat global and subsysem jvmstat counter name spaces. The top
+ * The jvmstat global and subsystem jvmstat counter name spaces. The top
  * level name spaces imply the interface stability level of the counter,
  * which generally follows the Java package, class, and property naming
  * conventions. The CounterNS enumeration values should be used to index

@@ -23,18 +23,19 @@
  * questions.
  */
 
+#include <stdlib.h>
 #include <jni.h>
 #include "management.h"
 #include "sun_management_DiagnosticCommandImpl.h"
 
 JNIEXPORT void JNICALL Java_sun_management_DiagnosticCommandImpl_setNotificationEnabled
 (JNIEnv *env, jobject dummy, jboolean enabled) {
-    if(jmm_version > JMM_VERSION_1_2_2) {
-        jmm_interface->SetDiagnosticFrameworkNotificationEnabled(env, enabled);
-    } else {
+    if (jmm_version <= JMM_VERSION_1_2_2) {
         JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
                         "JMX interface to diagnostic framework notifications is not supported by this VM");
+        return;
     }
+    jmm_interface->SetDiagnosticFrameworkNotificationEnabled(env, enabled);
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -56,7 +57,8 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
   jobject resultList;
 
   dcmd_arg_info_array = (dcmdArgInfo*) malloc(num_arg * sizeof(dcmdArgInfo));
-  if (dcmd_arg_info_array == NULL) {
+  /* According to ISO C it is perfectly legal for malloc to return zero if called with a zero argument */
+  if (dcmd_arg_info_array == NULL && num_arg != 0) {
     return NULL;
   }
   jmm_interface->GetDiagnosticCommandArgumentsInfo(env, command,
@@ -117,19 +119,24 @@ Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo
       return NULL;
   }
   num_commands = (*env)->GetArrayLength(env, commands);
-  dcmd_info_array = (dcmdInfo*) malloc(num_commands *
-                                       sizeof(dcmdInfo));
-  if (dcmd_info_array == NULL) {
-      JNU_ThrowOutOfMemoryError(env, NULL);
-  }
-  jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
   dcmdInfoCls = (*env)->FindClass(env,
                                   "sun/management/DiagnosticCommandInfo");
   result = (*env)->NewObjectArray(env, num_commands, dcmdInfoCls, NULL);
   if (result == NULL) {
-      free(dcmd_info_array);
       JNU_ThrowOutOfMemoryError(env, 0);
+      return NULL;
   }
+  if (num_commands == 0) {
+      /* Handle the 'zero commands' case specially to avoid calling 'malloc()' */
+      /* with a zero argument because that may legally return a NULL pointer.  */
+      return result;
+  }
+  dcmd_info_array = (dcmdInfo*) malloc(num_commands * sizeof(dcmdInfo));
+  if (dcmd_info_array == NULL) {
+      JNU_ThrowOutOfMemoryError(env, NULL);
+      return NULL;
+  }
+  jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
   for (i=0; i<num_commands; i++) {
       args = getDiagnosticCommandArgumentInfoArray(env,
                                                    (*env)->GetObjectArrayElement(env,commands,i),
@@ -137,6 +144,7 @@ Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo
       if (args == NULL) {
           free(dcmd_info_array);
           JNU_ThrowOutOfMemoryError(env, 0);
+          return NULL;
       }
       obj = JNU_NewObjectByName(env,
                                 "sun/management/DiagnosticCommandInfo",
@@ -152,6 +160,7 @@ Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo
       if (obj == NULL) {
           free(dcmd_info_array);
           JNU_ThrowOutOfMemoryError(env, 0);
+          return NULL;
       }
       (*env)->SetObjectArrayElement(env, result, i, obj);
   }

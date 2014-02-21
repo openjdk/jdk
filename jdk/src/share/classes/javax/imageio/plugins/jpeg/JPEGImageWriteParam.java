@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ public class JPEGImageWriteParam extends ImageWriteParam {
             (getCompressionType() == null)) {
             throw new IllegalStateException("No compression type set!");
         }
-        return (String[])qualityDescs.clone();
+        return qualityDescs.clone();
     }
 
     public float[] getCompressionQualityValues() {
@@ -179,7 +179,7 @@ public class JPEGImageWriteParam extends ImageWriteParam {
             (getCompressionType() == null)) {
             throw new IllegalStateException("No compression type set!");
         }
-        return (float[])qualityVals.clone();
+        return qualityVals.clone();
     }
     /**
      * Returns <code>true</code> if tables are currently set.
@@ -222,9 +222,9 @@ public class JPEGImageWriteParam extends ImageWriteParam {
             (DCHuffmanTables.length != ACHuffmanTables.length)) {
                 throw new IllegalArgumentException("Invalid JPEG table arrays");
         }
-        this.qTables = (JPEGQTable[])qTables.clone();
-        this.DCHuffmanTables = (JPEGHuffmanTable[])DCHuffmanTables.clone();
-        this.ACHuffmanTables = (JPEGHuffmanTable[])ACHuffmanTables.clone();
+        this.qTables = qTables.clone();
+        this.DCHuffmanTables = DCHuffmanTables.clone();
+        this.ACHuffmanTables = ACHuffmanTables.clone();
     }
 
     /**
@@ -250,7 +250,7 @@ public class JPEGImageWriteParam extends ImageWriteParam {
      * @see #setEncodeTables
      */
     public JPEGQTable[] getQTables() {
-        return (qTables != null) ? (JPEGQTable[])qTables.clone() : null;
+        return (qTables != null) ? qTables.clone() : null;
     }
 
     /**
@@ -265,7 +265,7 @@ public class JPEGImageWriteParam extends ImageWriteParam {
      */
     public JPEGHuffmanTable[] getDCHuffmanTables() {
         return (DCHuffmanTables != null)
-            ? (JPEGHuffmanTable[])DCHuffmanTables.clone()
+            ? DCHuffmanTables.clone()
             : null;
     }
 
@@ -281,7 +281,7 @@ public class JPEGImageWriteParam extends ImageWriteParam {
      */
     public JPEGHuffmanTable[] getACHuffmanTables() {
         return (ACHuffmanTables != null)
-            ? (JPEGHuffmanTable[])ACHuffmanTables.clone()
+            ? ACHuffmanTables.clone()
             : null;
     }
 

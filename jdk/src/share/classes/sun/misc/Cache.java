@@ -25,6 +25,7 @@
 
 package sun.misc;
 
+import java.lang.ref.SoftReference;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
@@ -32,12 +33,26 @@ import java.util.NoSuchElementException;
 /**
  * Caches the collision list.
  */
-class CacheEntry extends Ref {
+class CacheEntry {
     int hash;
     Object key;
     CacheEntry next;
-    public Object reconstitute() {
-        return null;
+    SoftReference<Object> value;
+
+    public CacheEntry() {
+        value = null;
+    }
+
+    public CacheEntry(Object o) {
+        value = new SoftReference<>(o);
+    }
+
+    public Object get() {
+        return value.get();
+    }
+
+    public void setThing(Object thing) {
+        value = new SoftReference<>(thing);
     }
 }
 
@@ -72,7 +87,6 @@ class CacheEntry extends Ref {
  *
  * @see java.lang.Object#hashCode
  * @see java.lang.Object#equals
- * @see sun.misc.Ref
  * @deprecated Consider {@link java.util.LinkedHashMap} for LRU caches.
  */
 @Deprecated
@@ -192,7 +206,7 @@ public
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (CacheEntry e = tab[index]; e != null; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
-                return e.check();
+                return e.get();
             }
         }
         return null;
@@ -220,7 +234,7 @@ public
             for (CacheEntry old = oldTable[i]; old != null;) {
                 CacheEntry e = old;
                 old = old.next;
-                if (e.check() != null) {
+                if (e.get() != null) {
                     int index = (e.hash & 0x7FFFFFFF) % newCapacity;
                     e.next = newTable[index];
                     newTable[index] = e;
@@ -253,10 +267,10 @@ public
         CacheEntry ne = null;
         for (CacheEntry e = tab[index]; e != null; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
-                Object old = e.check();
+                Object old = e.get();
                 e.setThing(value);
                 return old;
-            } else if (e.check() == null)
+            } else if (e.get() == null)
                 ne = e;         /* reuse old flushed value */
         }
 
@@ -296,7 +310,7 @@ public
                     tab[index] = e.next;
                 }
                 count--;
-                return e.check();
+                return e.get();
             }
         }
         return null;
@@ -322,7 +336,7 @@ class CacheEnumerator implements Enumeration<Object> {
     public boolean hasMoreElements() {
         while (index >= 0) {
             while (entry != null)
-                if (entry.check() != null)
+                if (entry.get() != null)
                     return true;
                 else
                     entry = entry.next;
@@ -338,8 +352,8 @@ class CacheEnumerator implements Enumeration<Object> {
             if (entry != null) {
                 CacheEntry e = entry;
                 entry = e.next;
-                if (e.check() != null)
-                    return keys ? e.key : e.check();
+                if (e.get() != null)
+                    return keys ? e.key : e.get();
             }
         }
         throw new NoSuchElementException("CacheEnumerator");

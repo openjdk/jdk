@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,11 +71,13 @@ ThrowZipException(JNIEnv *env, const char *msg)
     if (msg != NULL) {
         s = JNU_NewStringPlatform(env, msg);
     }
-    x = JNU_NewObjectByName(env,
+    if (s != NULL) {
+        x = JNU_NewObjectByName(env,
                             "java/util/zip/ZipException",
                             "(Ljava/lang/String;)V", s);
-    if (x != NULL) {
-        (*env)->Throw(env, x);
+        if (x != NULL) {
+            (*env)->Throw(env, x);
+        }
     }
 }
 
@@ -367,8 +369,10 @@ Java_java_util_jar_JarFile_getMetaInfEntryNames(JNIEnv *env, jobject obj)
 
     /* If some names were found then build array of java strings */
     if (count > 0) {
-        jclass cls = (*env)->FindClass(env, "java/lang/String");
+        jclass cls = JNU_ClassString(env);
+        CHECK_NULL_RETURN(cls, NULL);
         result = (*env)->NewObjectArray(env, count, cls, 0);
+        CHECK_NULL_RETURN(result, NULL);
         if (result != 0) {
             for (i = 0; i < count; i++) {
                 jstring str = (*env)->NewStringUTF(env, zip->metanames[i]);

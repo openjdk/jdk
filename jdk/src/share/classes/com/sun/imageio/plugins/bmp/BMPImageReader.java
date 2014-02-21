@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -806,14 +806,11 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         // the sampleModel can be null in case of embedded image
         if (sampleModel != null) {
             if (sampleModel.getDataType() == DataBuffer.TYPE_BYTE)
-                bdata = (byte[])
-                    ((DataBufferByte)raster.getDataBuffer()).getData();
+                bdata = ((DataBufferByte)raster.getDataBuffer()).getData();
             else if (sampleModel.getDataType() == DataBuffer.TYPE_USHORT)
-                sdata = (short[])
-                    ((DataBufferUShort)raster.getDataBuffer()).getData();
+                sdata = ((DataBufferUShort)raster.getDataBuffer()).getData();
             else if (sampleModel.getDataType() == DataBuffer.TYPE_INT)
-                idata = (int[])
-                    ((DataBufferInt)raster.getDataBuffer()).getData();
+                idata = ((DataBufferInt)raster.getDataBuffer()).getData();
         }
 
         // There should only be one tile.

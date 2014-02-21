@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,7 +316,7 @@ public final class AlawCodec extends SunCodec {
 
             // set the AudioInputStream length in frames if we know it
             if (stream instanceof AudioInputStream) {
-                frameLength = ((AudioInputStream)stream).getFrameLength();
+                frameLength = stream.getFrameLength();
             }
 
             // set framePos to zero
@@ -346,7 +346,7 @@ public final class AlawCodec extends SunCodec {
         public int read() throws IOException {
 
             byte[] b = new byte[1];
-            return (int)read(b, 0, b.length);
+            return read(b, 0, b.length);
         }
 
 
@@ -432,8 +432,8 @@ public final class AlawCodec extends SunCodec {
                 int readCount = super.read(b, readOffset, readLen);
 
                 for (i = off; i < (off + (readCount*2)); i+=2) {
-                    b[i]        = (byte)tabByte1[b[readOffset] & 0xFF];
-                    b[i+1]      = (byte)tabByte2[b[readOffset] & 0xFF];
+                    b[i]        = tabByte1[b[readOffset] & 0xFF];
+                    b[i+1]      = tabByte2[b[readOffset] & 0xFF];
                     readOffset++;
                 }
 

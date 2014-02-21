@@ -138,9 +138,9 @@ private:
   static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror, TRAPS);
 
 public:
-  // Method invokation through java.lang.reflect.Method
+  // Method invocation through java.lang.reflect.Method
   static oop      invoke_method(oop method_mirror, Handle receiver, objArrayHandle args, TRAPS);
-  // Method invokation through java.lang.reflect.Constructor
+  // Method invocation through java.lang.reflect.Constructor
   static oop      invoke_constructor(oop method_mirror, objArrayHandle args, TRAPS);
 
 };

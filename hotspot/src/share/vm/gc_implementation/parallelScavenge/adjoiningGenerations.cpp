@@ -118,8 +118,8 @@ size_t AdjoiningGenerations::reserved_byte_size() {
 
 
 // Make checks on the current sizes of the generations and
-// the contraints on the sizes of the generations.  Push
-// up the boundary within the contraints.  A partial
+// the constraints on the sizes of the generations.  Push
+// up the boundary within the constraints.  A partial
 // push can occur.
 void AdjoiningGenerations::request_old_gen_expansion(size_t expand_in_bytes) {
   assert(UseAdaptiveSizePolicy && UseAdaptiveGCBoundary, "runtime check");
