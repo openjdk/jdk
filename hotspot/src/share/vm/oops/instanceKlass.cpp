@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,51 +77,6 @@
 
 #ifdef DTRACE_ENABLED
 
-#ifndef USDT2
-
-HS_DTRACE_PROBE_DECL4(hotspot, class__initialization__required,
-  char*, intptr_t, oop, intptr_t);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__recursive,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__concurrent,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__erroneous,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__super__failed,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__clinit,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__error,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
-  char*, intptr_t, oop, intptr_t, int);
-
-#define DTRACE_CLASSINIT_PROBE(type, clss, thread_type)          \
-  {                                                              \
-    char* data = NULL;                                           \
-    int len = 0;                                                 \
-    Symbol* name = (clss)->name();                               \
-    if (name != NULL) {                                          \
-      data = (char*)name->bytes();                               \
-      len = name->utf8_length();                                 \
-    }                                                            \
-    HS_DTRACE_PROBE4(hotspot, class__initialization__##type,     \
-      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type);           \
-  }
-
-#define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
-  {                                                              \
-    char* data = NULL;                                           \
-    int len = 0;                                                 \
-    Symbol* name = (clss)->name();                               \
-    if (name != NULL) {                                          \
-      data = (char*)name->bytes();                               \
-      len = name->utf8_length();                                 \
-    }                                                            \
-    HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
-      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type, wait);     \
-  }
-#else /* USDT2 */
 
 #define HOTSPOT_CLASS_INITIALIZATION_required HOTSPOT_CLASS_INITIALIZATION_REQUIRED
 #define HOTSPOT_CLASS_INITIALIZATION_recursive HOTSPOT_CLASS_INITIALIZATION_RECURSIVE
@@ -156,7 +111,6 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
     HOTSPOT_CLASS_INITIALIZATION_##type(                         \
       data, len, (clss)->class_loader(), thread_type, wait);     \
   }
-#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -1203,7 +1157,11 @@ void InstanceKlass::mask_for(methodHandle method, int bci,
     MutexLocker x(OopMapCacheAlloc_lock);
     // First time use. Allocate a cache in C heap
     if (_oop_map_cache == NULL) {
-      _oop_map_cache = new OopMapCache();
+      // Release stores from OopMapCache constructor before assignment
+      // to _oop_map_cache. C++ compilers on ppc do not emit the
+      // required memory barrier only because of the volatile
+      // qualifier of _oop_map_cache.
+      OrderAccess::release_store_ptr(&_oop_map_cache, new OopMapCache());
     }
   }
   // _oop_map_cache is constant after init; lookup below does is own locking.
@@ -3180,7 +3138,7 @@ class VerifyFieldClosure: public OopClosure {
   virtual void do_oop(narrowOop* p) { VerifyFieldClosure::do_oop_work(p); }
 };
 
-void InstanceKlass::verify_on(outputStream* st, bool check_dictionary) {
+void InstanceKlass::verify_on(outputStream* st) {
 #ifndef PRODUCT
   // Avoid redundant verifies, this really should be in product.
   if (_verify_count == Universe::verify_count()) return;
@@ -3188,14 +3146,11 @@ void InstanceKlass::verify_on(outputStream* st, bool check_dictionary) {
 #endif
 
   // Verify Klass
-  Klass::verify_on(st, check_dictionary);
+  Klass::verify_on(st);
 
-  // Verify that klass is present in SystemDictionary if not already
-  // verifying the SystemDictionary.
-  if (is_loaded() && !is_anonymous() && check_dictionary) {
-    Symbol* h_name = name();
-    SystemDictionary::verify_obj_klass_present(h_name, class_loader_data());
-  }
+  // Verify that klass is present in ClassLoaderData
+  guarantee(class_loader_data()->contains_klass(this),
+            "this class isn't found in class loader data");
 
   // Verify vtables
   if (is_linked()) {

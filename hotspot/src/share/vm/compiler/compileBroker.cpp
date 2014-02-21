@@ -60,38 +60,6 @@
 
 // Only bother with this argument setup if dtrace is available
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL8(hotspot, method__compile__begin,
-  char*, intptr_t, char*, intptr_t, char*, intptr_t, char*, intptr_t);
-HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
-  char*, intptr_t, char*, intptr_t, char*, intptr_t, char*, intptr_t, bool);
-
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, comp_name)             \
-  {                                                                      \
-    Symbol* klass_name = (method)->klass_name();                         \
-    Symbol* name = (method)->name();                                     \
-    Symbol* signature = (method)->signature();                           \
-    HS_DTRACE_PROBE8(hotspot, method__compile__begin,                    \
-      comp_name, strlen(comp_name),                                      \
-      klass_name->bytes(), klass_name->utf8_length(),                    \
-      name->bytes(), name->utf8_length(),                                \
-      signature->bytes(), signature->utf8_length());                     \
-  }
-
-#define DTRACE_METHOD_COMPILE_END_PROBE(method, comp_name, success)      \
-  {                                                                      \
-    Symbol* klass_name = (method)->klass_name();                         \
-    Symbol* name = (method)->name();                                     \
-    Symbol* signature = (method)->signature();                           \
-    HS_DTRACE_PROBE9(hotspot, method__compile__end,                      \
-      comp_name, strlen(comp_name),                                      \
-      klass_name->bytes(), klass_name->utf8_length(),                    \
-      name->bytes(), name->utf8_length(),                                \
-      signature->bytes(), signature->utf8_length(), (success));          \
-  }
-
-#else /* USDT2 */
-
 #define DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, comp_name)             \
   {                                                                      \
     Symbol* klass_name = (method)->klass_name();                         \
@@ -115,7 +83,6 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
       (char *) name->bytes(), name->utf8_length(),                       \
       (char *) signature->bytes(), signature->utf8_length(), (success)); \
   }
-#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 

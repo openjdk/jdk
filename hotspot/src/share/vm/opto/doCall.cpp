@@ -161,19 +161,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
-      InlineTree* ilt;
-      if (UseOldInlining) {
-        ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      } else {
-        // Make a disembodied, stateless ILT.
-        // TO DO:  When UseOldInlining is removed, copy the ILT code elsewhere.
-        float site_invoke_ratio = prof_factor;
-        // Note:  ilt is for the root of this parse, not the present call site.
-        ilt = new InlineTree(this, jvms->method(), jvms->caller(), site_invoke_ratio, MaxInlineLevel);
-      }
+      InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
       WarmCallInfo scratch_ci;
-      if (!UseOldInlining)
-        scratch_ci.init(jvms, callee, profile, prof_factor);
       bool should_delay = false;
       WarmCallInfo* ci = ilt->ok_to_inline(callee, jvms, profile, &scratch_ci, should_delay);
       assert(ci != &scratch_ci, "do not let this pointer escape");

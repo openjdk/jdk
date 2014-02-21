@@ -35,14 +35,6 @@
 #include "utilities/dtrace.hpp"
 
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL(hs_private, cms__initmark__begin);
-HS_DTRACE_PROBE_DECL(hs_private, cms__initmark__end);
-
-HS_DTRACE_PROBE_DECL(hs_private, cms__remark__begin);
-HS_DTRACE_PROBE_DECL(hs_private, cms__remark__end);
-#endif /* !USDT2 */
-
 //////////////////////////////////////////////////////////
 // Methods in abstract class VM_CMS_Operation
 //////////////////////////////////////////////////////////
@@ -138,11 +130,7 @@ void VM_CMS_Initial_Mark::doit() {
     // Nothing to do.
     return;
   }
-#ifndef USDT2
-  HS_DTRACE_PROBE(hs_private, cms__initmark__begin);
-#else /* USDT2 */
   HS_PRIVATE_CMS_INITMARK_BEGIN();
-#endif /* USDT2 */
 
   _collector->_gc_timer_cm->register_gc_pause_start("Initial Mark");
 
@@ -158,11 +146,7 @@ void VM_CMS_Initial_Mark::doit() {
 
   _collector->_gc_timer_cm->register_gc_pause_end();
 
-#ifndef USDT2
-  HS_DTRACE_PROBE(hs_private, cms__initmark__end);
-#else /* USDT2 */
   HS_PRIVATE_CMS_INITMARK_END();
-#endif /* USDT2 */
 }
 
 //////////////////////////////////////////////////////////
@@ -173,11 +157,7 @@ void VM_CMS_Final_Remark::doit() {
     // Nothing to do.
     return;
   }
-#ifndef USDT2
-  HS_DTRACE_PROBE(hs_private, cms__remark__begin);
-#else /* USDT2 */
   HS_PRIVATE_CMS_REMARK_BEGIN();
-#endif /* USDT2 */
 
   _collector->_gc_timer_cm->register_gc_pause_start("Final Mark");
 
@@ -194,11 +174,7 @@ void VM_CMS_Final_Remark::doit() {
   _collector->save_heap_summary();
   _collector->_gc_timer_cm->register_gc_pause_end();
 
-#ifndef USDT2
-  HS_DTRACE_PROBE(hs_private, cms__remark__end);
-#else /* USDT2 */
   HS_PRIVATE_CMS_REMARK_END();
-#endif /* USDT2 */
 }
 
 // VM operation to invoke a concurrent collection of a

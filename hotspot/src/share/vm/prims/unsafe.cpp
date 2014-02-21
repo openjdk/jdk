@@ -44,11 +44,6 @@
  *      Implementation of class sun.misc.Unsafe
  */
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL3(hotspot, thread__park__begin, uintptr_t, int, long long);
-HS_DTRACE_PROBE_DECL1(hotspot, thread__park__end, uintptr_t);
-HS_DTRACE_PROBE_DECL1(hotspot, thread__unpark, uintptr_t);
-#endif /* !USDT2 */
 
 #define MAX_OBJECT_SIZE \
   ( arrayOopDesc::header_size(T_DOUBLE) * HeapWordSize \
@@ -162,6 +157,9 @@ jint Unsafe_invocation_key_to_method_slot(jint key) {
 
 #define GET_FIELD_VOLATILE(obj, offset, type_name, v) \
   oop p = JNIHandles::resolve(obj); \
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) { \
+    OrderAccess::fence(); \
+  } \
   volatile type_name v = OrderAccess::load_acquire((volatile type_name*)index_oop_from_field_offset_long(p, offset));
 
 #define SET_FIELD_VOLATILE(obj, offset, type_name, x) \
@@ -858,6 +856,11 @@ static inline void throw_new(JNIEnv *env, const char *ename) {
   strcpy(buf, "java/lang/");
   strcat(buf, ename);
   jclass cls = env->FindClass(buf);
+  if (env->ExceptionCheck()) {
+    env->ExceptionClear();
+    tty->print_cr("Unsafe: cannot throw %s because FindClass has failed", buf);
+    return;
+  }
   char* msg = NULL;
   env->ThrowNew(cls, msg);
 }
@@ -1206,20 +1209,12 @@ UNSAFE_END
 UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute, jlong time))
   UnsafeWrapper("Unsafe_Park");
   EventThreadPark event;
-#ifndef USDT2
-  HS_DTRACE_PROBE3(hotspot, thread__park__begin, thread->parker(), (int) isAbsolute, time);
-#else /* USDT2 */
-   HOTSPOT_THREAD_PARK_BEGIN(
-                             (uintptr_t) thread->parker(), (int) isAbsolute, time);
-#endif /* USDT2 */
+  HOTSPOT_THREAD_PARK_BEGIN((uintptr_t) thread->parker(), (int) isAbsolute, time);
+
   JavaThreadParkedState jtps(thread, time != 0);
   thread->parker()->park(isAbsolute != 0, time);
-#ifndef USDT2
-  HS_DTRACE_PROBE1(hotspot, thread__park__end, thread->parker());
-#else /* USDT2 */
-  HOTSPOT_THREAD_PARK_END(
-                          (uintptr_t) thread->parker());
-#endif /* USDT2 */
+
+  HOTSPOT_THREAD_PARK_END((uintptr_t) thread->parker());
   if (event.should_commit()) {
     oop obj = thread->current_park_blocker();
     event.set_klass((obj != NULL) ? obj->klass() : NULL);
@@ -1258,12 +1253,7 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread))
     }
   }
   if (p != NULL) {
-#ifndef USDT2
-    HS_DTRACE_PROBE1(hotspot, thread__unpark, p);
-#else /* USDT2 */
-    HOTSPOT_THREAD_UNPARK(
-                          (uintptr_t) p);
-#endif /* USDT2 */
+    HOTSPOT_THREAD_UNPARK((uintptr_t) p);
     p->unpark();
   }
 UNSAFE_END
