@@ -79,7 +79,7 @@ win32Error(JNIEnv *env, const WCHAR *functionName)
     /*Good suggestion about 2-bytes-per-symbol in localized error reports*/
     char  utf8_javaMessage[MESSAGE_LENGTH*2];
     const int errnum = (int)GetLastError();
-    int n = os_error_message(errnum, utf16_OSErrorMsg, ARRAY_SIZE(utf16_OSErrorMsg));
+    size_t n = os_error_message(errnum, utf16_OSErrorMsg, ARRAY_SIZE(utf16_OSErrorMsg));
     n = (n > 0)
         ? swprintf(utf16_javaMessage, MESSAGE_LENGTH, L"%s error=%d, %s", functionName, errnum, utf16_OSErrorMsg)
         : swprintf(utf16_javaMessage, MESSAGE_LENGTH, L"%s failed, error=%d", functionName, errnum);

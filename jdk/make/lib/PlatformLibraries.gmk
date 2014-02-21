@@ -63,7 +63,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
-          -I$(JDK_OUTPUTDIR)/gensrc/sun/osxapp \
+          -I$(JDK_OUTPUTDIR)/gensrc_headers_icons \
           -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
           -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \

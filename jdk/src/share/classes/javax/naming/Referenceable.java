@@ -33,7 +33,7 @@ package javax.naming;
   * objects which themselves are not directly bound to the naming system.
   * Such objects can implement the Referenceable interface as a way
   * for programs that use that object to determine what its Reference is.
-  * For example, when binding a object, if an object implements the
+  * For example, when binding an object, if an object implements the
   * Referenceable interface, getReference() can be invoked on the object to
   * get its Reference to use for binding.
   *

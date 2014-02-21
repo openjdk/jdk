@@ -100,8 +100,6 @@ ifneq ($(OPENJDK_TARGET_OS), solaris)
   EXCLUDES += com/oracle/security
 endif
 
-EXFILES += WrapperGenerator.java
-
 ifneq ($(OPENJDK_TARGET_OS), windows)
   # Exclude Window security related files in src/share/classes
   EXFILES += NTLoginModule.java \
@@ -238,11 +236,6 @@ ifeq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx aix))
   #
   EXFILES += sun/nio/fs/PollingWatchService.java
 endif
-
-# TODO: Fix when converting NIO
-# Exclude *-linux-arm.java and *-linux-ppc.java from closed.
-EXFILES += -linux-arm.java \
-    -linux-ppc.java
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   EXFILES += sun/nio/ch/AbstractPollSelectorImpl.java \

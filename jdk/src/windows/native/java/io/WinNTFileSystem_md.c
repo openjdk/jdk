@@ -360,7 +360,6 @@ Java_java_io_WinNTFileSystem_getBooleanAttributes(JNIEnv *env, jobject this,
                                                   jobject file)
 {
     jint rv = 0;
-    jint pathlen;
 
     WCHAR *pathbuf = fileToNTPath(env, file, ids.path);
     if (pathbuf == NULL)

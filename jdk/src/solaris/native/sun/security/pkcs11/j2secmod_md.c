@@ -32,6 +32,7 @@
 #include <jni_util.h>
 
 #include "j2secmod.h"
+#include "wrapper/pkcs11wrapper.h"
 
 void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     void *hModule = (void*)jlong_to_ptr(jHandle);

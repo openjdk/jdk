@@ -33,6 +33,7 @@
 #endif /* _WIN32 */
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "jni.h"
 #include "manifest_info.h"

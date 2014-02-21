@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,8 +309,8 @@ public interface Clob {
     void truncate(long len) throws SQLException;
 
     /**
-     * This method frees the <code>Clob</code> object and releases the resources the resources
-     * that it holds.  The object is invalid once the <code>free</code> method
+     * This method releases the resources that the <code>Clob</code> object
+     * holds.  The object is invalid once the <code>free</code> method
      * is called.
      * <p>
      * After <code>free</code> has been called, any attempt to invoke a
