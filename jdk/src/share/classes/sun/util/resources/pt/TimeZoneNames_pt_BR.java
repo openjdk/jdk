@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,7 +578,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Asia/Almaty", new String[] {"Fuso hor\u00e1rio de Alma-Ata", "ALMT",
                                           "Fuso hor\u00e1rio de ver\u00e3o de Alma-Ata", "ALMST",
                                           "Hor\u00E1rio de Alma-Ata", "ALMT"}},
-            {"Asia/Amman", ARAST},
+            {"Asia/Amman", EET},
             {"Asia/Anadyr", new String[] {"Fuso hor\u00e1rio de Anadyr", "ANAT",
                                           "Fuso hor\u00e1rio de ver\u00e3o de Anadyr", "ANAST",
                                           "Hor\u00E1rio de Anadyr", "ANAT"}},

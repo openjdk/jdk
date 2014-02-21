@@ -45,7 +45,7 @@ OS=`uname -s`
 # Need to determine the classpath separator and filepath separator based on the
 # operating system.
 case "$OS" in
-SunOS | Linux | Darwin )
+SunOS | Linux | Darwin | AIX )
   PS=":"  ;;
 Windows* | CYGWIN* )
   PS=";"  ;;

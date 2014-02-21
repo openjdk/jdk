@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,8 +223,8 @@ public class CardLayout implements LayoutManager2,
                 comp.setVisible(false);
             }
             for (int i=0; i < vector.size(); i++) {
-                if (((Card)vector.get(i)).name.equals(name)) {
-                    ((Card)vector.get(i)).comp = comp;
+                if ((vector.get(i)).name.equals(name)) {
+                    (vector.get(i)).comp = comp;
                     return;
                 }
             }
@@ -242,7 +242,7 @@ public class CardLayout implements LayoutManager2,
     public void removeLayoutComponent(Component comp) {
         synchronized (comp.getTreeLock()) {
             for (int i = 0; i < vector.size(); i++) {
-                if (((Card)vector.get(i)).comp == comp) {
+                if ((vector.get(i)).comp == comp) {
                     // if we remove current component we should show next one
                     if (comp.isVisible() && (comp.getParent() != null)) {
                         next(comp.getParent());
@@ -527,7 +527,7 @@ public class CardLayout implements LayoutManager2,
             Component next = null;
             int ncomponents = vector.size();
             for (int i = 0; i < ncomponents; i++) {
-                Card card = (Card)vector.get(i);
+                Card card = vector.get(i);
                 if (card.name.equals(name)) {
                     next = card.comp;
                     currentCard = i;
@@ -574,8 +574,8 @@ public class CardLayout implements LayoutManager2,
             vector = new Vector<>();
             if (tab != null && !tab.isEmpty()) {
                 for (Enumeration<String> e = tab.keys() ; e.hasMoreElements() ; ) {
-                    String key = (String)e.nextElement();
-                    Component comp = (Component)tab.get(key);
+                    String key = e.nextElement();
+                    Component comp = tab.get(key);
                     vector.add(new Card(key, comp));
                     if (comp.isVisible()) {
                         currentCard = vector.size() - 1;
@@ -597,7 +597,7 @@ public class CardLayout implements LayoutManager2,
         Hashtable<String, Component> tab = new Hashtable<>();
         int ncomponents = vector.size();
         for (int i = 0; i < ncomponents; i++) {
-            Card card = (Card)vector.get(i);
+            Card card = vector.get(i);
             tab.put(card.name, card.comp);
         }
 

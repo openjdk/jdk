@@ -715,7 +715,7 @@ public class X11FontManager extends SunFontManager {
         if (FontUtilities.isLinux) {
             fontConfigDirs.add(jreLibDirName+File.separator+"oblique-fonts");
         }
-        fontdirs = (String[])fontConfigDirs.toArray(new String[0]);
+        fontdirs = fontConfigDirs.toArray(new String[0]);
     }
 
     // Implements SunGraphicsEnvironment.createFontConfiguration.

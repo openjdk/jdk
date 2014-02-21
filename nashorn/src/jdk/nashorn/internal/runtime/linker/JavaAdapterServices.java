@@ -25,10 +25,28 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_FINAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
+import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.security.AccessController;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.Permissions;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
+import java.security.SecureClassLoader;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.Type;
+import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -40,6 +58,7 @@ import jdk.nashorn.internal.runtime.Undefined;
  */
 public final class JavaAdapterServices {
     private static final ThreadLocal<ScriptObject> classOverrides = new ThreadLocal<>();
+    private static final MethodHandle NO_PERMISSIONS_INVOKER = createNoPermissionsInvoker();
 
     private JavaAdapterServices() {
     }
@@ -55,7 +74,7 @@ public final class JavaAdapterServices {
      */
     public static MethodHandle getHandle(final ScriptFunction fn, final MethodType type) {
         // JS "this" will be global object or undefined depending on if 'fn' is strict or not
-        return adaptHandle(fn.getBoundInvokeHandle(fn.isStrict()? ScriptRuntime.UNDEFINED : Context.getGlobal()), type);
+        return bindAndAdaptHandle(fn, fn.isStrict()? ScriptRuntime.UNDEFINED : Context.getGlobal(), type);
     }
 
     /**
@@ -83,7 +102,7 @@ public final class JavaAdapterServices {
 
         final Object fnObj = sobj.get(name);
         if (fnObj instanceof ScriptFunction) {
-            return adaptHandle(((ScriptFunction)fnObj).getBoundInvokeHandle(sobj), type);
+            return bindAndAdaptHandle((ScriptFunction)fnObj, sobj, type);
         } else if(fnObj == null || fnObj instanceof Undefined) {
             return null;
         } else {
@@ -103,11 +122,67 @@ public final class JavaAdapterServices {
         return overrides;
     }
 
+    /**
+     * Takes a method handle and an argument to it, and invokes the method handle passing it the argument. Basically
+     * equivalent to {@code method.invokeExact(arg)}, except that the method handle will be invoked in a protection
+     * domain with absolutely no permissions.
+     * @param method the method handle to invoke. The handle must have the exact type of {@code void(Object)}.
+     * @param arg the argument to pass to the handle.
+     * @throws Throwable if anything goes wrong.
+     */
+    public static void invokeNoPermissions(final MethodHandle method, final Object arg) throws Throwable {
+        NO_PERMISSIONS_INVOKER.invokeExact(method, arg);
+    }
+
     static void setClassOverrides(ScriptObject overrides) {
         classOverrides.set(overrides);
     }
 
-    private static MethodHandle adaptHandle(final MethodHandle handle, final MethodType type) {
-        return Bootstrap.getLinkerServices().asType(ScriptObject.pairArguments(handle, type, false), type);
+    private static MethodHandle bindAndAdaptHandle(final ScriptFunction fn, final Object self, final MethodType type) {
+        return Bootstrap.getLinkerServices().asType(ScriptObject.pairArguments(fn.getBoundInvokeHandle(self), type, false), type);
+    }
+
+    private static MethodHandle createNoPermissionsInvoker() {
+        final String className = "NoPermissionsInvoker";
+
+        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        cw.visit(Opcodes.V1_7, ACC_PUBLIC | ACC_SUPER | ACC_FINAL, className, null, "java/lang/Object", null);
+        final Type objectType = Type.getType(Object.class);
+        final Type methodHandleType = Type.getType(MethodHandle.class);
+        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "invoke",
+                Type.getMethodDescriptor(Type.VOID_TYPE, methodHandleType, objectType), null, null));
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.invokevirtual(methodHandleType.getInternalName(), "invokeExact", Type.getMethodDescriptor(
+                Type.VOID_TYPE, objectType), false);
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+        cw.visitEnd();
+        final byte[] bytes = cw.toByteArray();
+
+        final ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return new SecureClassLoader(null) {
+                    @Override
+                    protected Class<?> findClass(String name) throws ClassNotFoundException {
+                        if(name.equals(className)) {
+                            return defineClass(name, bytes, 0, bytes.length, new ProtectionDomain(
+                                    new CodeSource(null, (CodeSigner[])null), new Permissions()));
+                        }
+                        throw new ClassNotFoundException(name);
+                    }
+                };
+            }
+        });
+
+        try {
+            return MethodHandles.lookup().findStatic(Class.forName(className, true, loader), "invoke",
+                    MethodType.methodType(void.class, MethodHandle.class, Object.class));
+        } catch(ReflectiveOperationException e) {
+            throw new AssertionError(e.getMessage(), e);
+        }
     }
 }

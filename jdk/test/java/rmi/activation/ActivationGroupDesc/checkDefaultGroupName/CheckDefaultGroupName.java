@@ -25,6 +25,8 @@
  * @test
  * @bug 4252236
  * @summary ActivationGroupDesc should not do early binding of default classname
+ *          This test doesn't need to run with othervm option as all it does is
+ *          create an ActivationGroupDesc instance, which has no side effects
  * @author Laird Dornin
  *
  * @library ../../../testlibrary

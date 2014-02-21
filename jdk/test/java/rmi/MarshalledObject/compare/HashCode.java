@@ -27,7 +27,7 @@
  * @summary MarshalledObject with null throws NullPointerException
  * @author Ken Arnold
  *
- * @run main HashCode 11 annotatedRef
+ * @run main/othervm HashCode 11 annotatedRef
  */
 
 import java.rmi.MarshalledObject;

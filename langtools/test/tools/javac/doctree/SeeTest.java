@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614
+ * @bug 7021614 8031212
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @build DocCommentTester
  * @run main DocCommentTester SeeTest.java
@@ -41,9 +41,9 @@ DocComment[DOC_COMMENT, pos:1
     Text[TEXT, pos:1, abc.]
   body: empty
   block tags: 1
-    Erroneous[ERRONEOUS, pos:7
-      code: compiler.err.dc.unexpected.content
-      body: @see_"String"
+    See[SEE, pos:7
+      reference: 1
+        Text[TEXT, pos:12, "String"]
     ]
 ]
 */
