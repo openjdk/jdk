@@ -344,10 +344,13 @@ public final class ValueRange implements Serializable {
     /**
      * Restore the state of an ValueRange from the stream.
      * Check that the values are valid.
+     *
+     * @param s the stream to read
      * @throws InvalidObjectException if
      *     the smallest minimum is greater than the smallest maximum,
      *  or the smallest maximum is greater than the largest maximum
      *  or the largest minimum is greater than the largest maximum
+     * @throws ClassNotFoundException if a class cannot be resolved
      */
     private void readObject(ObjectInputStream s)
          throws IOException, ClassNotFoundException, InvalidObjectException

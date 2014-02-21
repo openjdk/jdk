@@ -28,6 +28,7 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Deque;
@@ -463,12 +464,14 @@ public final class NativeJava {
      * </pre>
      * We can see several important concepts in the above example:
      * <ul>
-     * <li>Every specified list of Java types will have exactly one extender subclass in Nashorn - repeated invocations
-     * of {@code extend} for the same list of types will yield the same extender type. It's a generic adapter that
-     * delegates to whatever JavaScript functions its implementation object has on a per-instance basis.</li>
+     * <li>Every specified list of Java types will have one extender subclass in Nashorn per caller protection domain -
+     * repeated invocations of {@code extend} for the same list of types for scripts same protection domain will yield
+     * the same extender type. It's a generic adapter that delegates to whatever JavaScript functions its implementation
+     * object has on a per-instance basis.</li>
      * <li>If the Java method is overloaded (as in the above example {@code List.add()}), then your JavaScript adapter
      * must be prepared to deal with all overloads.</li>
-     * <li>You can't invoke {@code super.*()} from adapters for now.</li>
+     * <li>To invoke super methods from adapters, call them on the adapter instance prefixing them with {@code super$},
+     * or use the special {@link #_super(Object, Object) super-adapter}.</li>
      * <li>It is also possible to specify an ordinary JavaScript object as the last argument to {@code extend}. In that
      * case, it is treated as a class-level override. {@code extend} will return an extender class where all instances
      * will have the methods implemented by functions on that object, just as if that object were passed as the last
@@ -486,15 +489,18 @@ public final class NativeJava {
      * t.join()
      * </pre>
      * As you can see, you don't have to pass any object when you create a new instance of {@code R1} as its
-     * {@code run()} function was defined already when extending the class. Of course, you can still provide
-     * instance-level overrides on these objects. The order of precedence is instance-level method, class-level method,
-     * superclass method, or {@code UnsupportedOperationException} if the superclass method is abstract. If we continue
-     * our previous example:
+     * {@code run()} function was defined already when extending the class. If you also want to add instance-level
+     * overrides on these objects, you will have to repeatedly use {@code extend()} to subclass the class-level adapter.
+     * For such adapters, the order of precedence is instance-level method, class-level method, superclass method, or
+     * {@code UnsupportedOperationException} if the superclass method is abstract. If we continue our previous example:
      * <pre>
-     * var r2 = new R1(function() { print("r2.run() invoked!") })
+     * var R2 = Java.extend(R1);
+     * var r2 = new R2(function() { print("r2.run() invoked!") })
      * r2.run()
      * </pre>
      * We'll see it'll print {@code "r2.run() invoked!"}, thus overriding on instance-level the class-level behavior.
+     * Note that you must use {@code Java.extend} to explicitly create an instance-override adapter class from a
+     * class-override adapter class, as the class-override adapter class is no longer abstract.
      * </li>
      * </ul>
      * @param self not used
@@ -541,7 +547,18 @@ public final class NativeJava {
         } catch(final ClassCastException e) {
             throw typeError("extend.expects.java.types");
         }
-        return JavaAdapterFactory.getAdapterClassFor(stypes, classOverrides);
+        // Note that while the public API documentation claims self is not used, we actually use it.
+        // ScriptFunction.findCallMethod will bind the lookup object into it, and we can then use that lookup when
+        // requesting the adapter class. Note that if Java.extend is invoked with no lookup object, it'll pass the
+        // public lookup which'll result in generation of a no-permissions adapter. A typical situation this can happen
+        // is when the extend function is bound.
+        final MethodHandles.Lookup lookup;
+        if(self instanceof MethodHandles.Lookup) {
+            lookup = (MethodHandles.Lookup)self;
+        } else {
+            lookup = MethodHandles.publicLookup();
+        }
+        return JavaAdapterFactory.getAdapterClassFor(stypes, classOverrides, lookup);
     }
 
     /**

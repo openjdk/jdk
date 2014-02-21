@@ -49,7 +49,7 @@ class ObjectSynchronizer : AllStatic {
   // to use enter() and exit() in order to make sure user be ware
   // of the performance and semantics difference. They are normally
   // used by ObjectLocker etc. The interpreter and compiler use
-  // assembly copies of these routines. Please keep them synchornized.
+  // assembly copies of these routines. Please keep them synchronized.
   //
   // attempt_rebias flag is used by UseBiasedLocking implementation
   static void fast_enter  (Handle obj, BasicLock* lock, bool attempt_rebias, TRAPS);

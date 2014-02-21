@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -727,7 +727,7 @@ public class StandardGlyphVector extends GlyphVector {
             result.clearCaches();
 
             if (positions != null) {
-                result.positions = (float[])positions.clone();
+                result.positions = positions.clone();
             }
 
             if (gti != null) {
@@ -775,7 +775,7 @@ public class StandardGlyphVector extends GlyphVector {
             throw new IllegalArgumentException("srcPositions.length != " + requiredLength);
         }
 
-        positions = (float[])srcPositions.clone();
+        positions = srcPositions.clone();
 
         clearCaches();
         addFlags(FLAG_HAS_POSITION_ADJUSTMENTS);
@@ -1391,8 +1391,8 @@ public class StandardGlyphVector extends GlyphVector {
         GlyphTransformInfo(StandardGlyphVector sgv, GlyphTransformInfo rhs) {
             this.sgv = sgv;
 
-            this.indices = rhs.indices == null ? null : (int[])rhs.indices.clone();
-            this.transforms = rhs.transforms == null ? null : (double[])rhs.transforms.clone();
+            this.indices = rhs.indices == null ? null : rhs.indices.clone();
+            this.transforms = rhs.transforms == null ? null : rhs.transforms.clone();
             this.strikesRef = null; // can't share cache, so rather than clone, we just null out
         }
 

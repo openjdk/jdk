@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <string.h>
+
 #include "jni.h"
 #include "jni_util.h"
 #include "dlfcn.h"
@@ -40,7 +42,11 @@ void* getProcessHandle() {
     if (procHandle != NULL) {
         return procHandle;
     }
+#ifdef __APPLE__
+    procHandle = (void*)dlopen(NULL, RTLD_FIRST);
+#else
     procHandle = (void*)dlopen(NULL, RTLD_LAZY);
+#endif
     return procHandle;
 }
 

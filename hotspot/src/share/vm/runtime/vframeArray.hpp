@@ -53,7 +53,7 @@ class vframeArrayElement : public _ValueObj {
 
     frame _frame;                                                // the interpreter frame we will unpack into
     int  _bci;                                                   // raw bci for this vframe
-    bool _reexecute;                                             // whether sould we reexecute this bytecode
+    bool _reexecute;                                             // whether we should reexecute this bytecode
     Method*    _method;                                          // the method for this vframe
     MonitorChunk* _monitors;                                     // active monitors for this vframe
     StackValueCollection* _locals;
@@ -158,7 +158,7 @@ class vframeArray: public CHeapObj<mtCompiler> {
   // Tells whether index is within bounds.
   bool is_within_bounds(int index) const        { return 0 <= index && index < frames(); }
 
-  // Accessores for instance variable
+  // Accessories for instance variable
   int frames() const                            { return _frames;   }
 
   static vframeArray* allocate(JavaThread* thread, int frame_size, GrowableArray<compiledVFrame*>* chunk,

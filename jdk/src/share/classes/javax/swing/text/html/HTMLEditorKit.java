@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,7 +433,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @return the command list
      */
     public Action[] getActions() {
-        return TextAction.augmentList(super.getActions(), this.defaultActions);
+        return TextAction.augmentList(super.getActions(), defaultActions);
     }
 
     /**

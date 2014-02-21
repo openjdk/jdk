@@ -546,6 +546,9 @@ GetJavaProperties(JNIEnv *env)
     sprops.display_country = sprops.country;
     sprops.display_variant = sprops.variant;
 
+    /* ParseLocale failed with OOME */
+    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
+
 #ifdef MACOSX
     sprops.sun_jnu_encoding = "UTF-8";
 #else

@@ -38,7 +38,7 @@ class ReferenceProcessor;
 
 // A class that scans oops in a given heap region (much as OopsInGenClosure
 // scans oops in a generation.)
-class OopsInHeapRegionClosure: public OopsInGenClosure {
+class OopsInHeapRegionClosure: public ExtendedOopClosure {
 protected:
   HeapRegion* _from;
 public:
@@ -131,7 +131,7 @@ class G1ParCopyHelper : public G1ParClosureSuper {
   template <class T> void do_klass_barrier(T* p, oop new_obj);
 };
 
-template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+template <G1Barrier barrier, bool do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
   G1ParScanClosure _scanner;
   template <class T> void do_oop_work(T* p);
@@ -166,22 +166,16 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
 };
 
-typedef G1ParCopyClosure<false, G1BarrierNone, false> G1ParScanExtRootClosure;
-typedef G1ParCopyClosure<false, G1BarrierKlass, false> G1ParScanMetadataClosure;
+typedef G1ParCopyClosure<G1BarrierNone, false> G1ParScanExtRootClosure;
+typedef G1ParCopyClosure<G1BarrierKlass, false> G1ParScanMetadataClosure;
 
 
-typedef G1ParCopyClosure<false, G1BarrierNone, true> G1ParScanAndMarkExtRootClosure;
-typedef G1ParCopyClosure<true,  G1BarrierNone, true> G1ParScanAndMarkClosure;
-typedef G1ParCopyClosure<false, G1BarrierKlass, true> G1ParScanAndMarkMetadataClosure;
-
-// The following closure types are no longer used but are retained
-// for historical reasons:
-// typedef G1ParCopyClosure<false, G1BarrierRS,   false> G1ParScanHeapRSClosure;
-// typedef G1ParCopyClosure<false, G1BarrierRS,   true> G1ParScanAndMarkHeapRSClosure;
+typedef G1ParCopyClosure<G1BarrierNone, true> G1ParScanAndMarkExtRootClosure;
+typedef G1ParCopyClosure<G1BarrierKlass, true> G1ParScanAndMarkMetadataClosure;
 
 // The following closure type is defined in g1_specialized_oop_closures.hpp:
 //
-// typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacClosure;
+// typedef G1ParCopyClosure<G1BarrierEvac, false> G1ParScanHeapEvacClosure;
 
 // We use a separate closure to handle references during evacuation
 // failure processing.
@@ -189,7 +183,7 @@ typedef G1ParCopyClosure<false, G1BarrierKlass, true> G1ParScanAndMarkMetadataCl
 // (since that closure no longer assumes that the references it
 // handles point into the collection set).
 
-typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacFailureClosure;
+typedef G1ParCopyClosure<G1BarrierEvac, false> G1ParScanHeapEvacFailureClosure;
 
 class FilterIntoCSClosure: public ExtendedOopClosure {
   G1CollectedHeap* _g1;

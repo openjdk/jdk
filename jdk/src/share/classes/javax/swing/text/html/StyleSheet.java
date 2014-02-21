@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2079,8 +2079,8 @@ public class StyleSheet extends StyleContext {
                     // Parent view.
                     View v = childView.getParent();
                     HTMLDocument doc = (HTMLDocument)v.getDocument();
-                    if (doc.matchNameAttribute(v.getElement().getAttributes(),
-                                               HTML.Tag.OL)) {
+                    if (HTMLDocument.matchNameAttribute(v.getElement().getAttributes(),
+                                                        HTML.Tag.OL)) {
                         childtype = CSS.Value.DECIMAL;
                     } else {
                         childtype = CSS.Value.DISC;
@@ -2473,13 +2473,13 @@ public class StyleSheet extends StyleContext {
                     flags |= 4;
                 }
                 else if (pos.isHorizontalPositionRelativeToSize()) {
-                    hPosition *= css.getFontSize(a, 12, ss);
+                    hPosition *= CSS.getFontSize(a, 12, ss);
                 }
                 if (pos.isVerticalPositionRelativeToSize()) {
                     flags |= 8;
                 }
                 else if (pos.isVerticalPositionRelativeToFontSize()) {
-                    vPosition *= css.getFontSize(a, 12, ss);
+                    vPosition *= CSS.getFontSize(a, 12, ss);
                 }
             }
             // Determine any repeating values.

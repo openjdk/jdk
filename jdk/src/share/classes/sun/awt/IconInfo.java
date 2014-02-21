@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ public class IconInfo {
     private static long[] intArrayToLongArray(int[] intData) {
         long[] longData = new long[intData.length];
         for (int i = 0; i < intData.length; i++) {
-            longData[i] = (int)intData[i];
+            longData[i] = intData[i];
         }
         return longData;
     }

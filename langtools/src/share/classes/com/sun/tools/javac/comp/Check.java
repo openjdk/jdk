@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2778,7 +2778,7 @@ public class Check {
         validateDocumented(t.tsym, s, pos);
         validateInherited(t.tsym, s, pos);
         validateTarget(t.tsym, s, pos);
-        validateDefault(t.tsym, s, pos);
+        validateDefault(t.tsym, pos);
     }
 
     private void validateValue(TypeSymbol container, TypeSymbol contained, DiagnosticPosition pos) {
@@ -2897,7 +2897,9 @@ public class Check {
 
 
     /** Checks that s is a subset of t, with respect to ElementType
-     * semantics, specifically {ANNOTATION_TYPE} is a subset of {TYPE}
+     * semantics, specifically {ANNOTATION_TYPE} is a subset of {TYPE},
+     * and {TYPE_USE} covers the set {ANNOTATION_TYPE, TYPE, TYPE_USE,
+     * TYPE_PARAMETER}.
      */
     private boolean isTargetSubsetOf(Set<Name> s, Set<Name> t) {
         // Check that all elements in s are present in t
@@ -2910,6 +2912,12 @@ public class Check {
                 } else if (n1 == names.TYPE && n2 == names.ANNOTATION_TYPE) {
                     currentElementOk = true;
                     break;
+                } else if (n1 == names.TYPE_USE &&
+                        (n2 == names.TYPE ||
+                         n2 == names.ANNOTATION_TYPE ||
+                         n2 == names.TYPE_PARAMETER)) {
+                    currentElementOk = true;
+                    break;
                 }
             }
             if (!currentElementOk)
@@ -2918,7 +2926,7 @@ public class Check {
         return true;
     }
 
-    private void validateDefault(Symbol container, Symbol contained, DiagnosticPosition pos) {
+    private void validateDefault(Symbol container, DiagnosticPosition pos) {
         // validate that all other elements of containing type has defaults
         Scope scope = container.members();
         for(Symbol elm : scope.getElements()) {

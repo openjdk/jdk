@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public class GDIRenderer implements
         Path2D.Float p2df;
         int transX;
         int transY;
-        if (sg2d.transformState <= sg2d.TRANSFORM_INT_TRANSLATE) {
+        if (sg2d.transformState <= SunGraphics2D.TRANSFORM_INT_TRANSLATE) {
             if (s instanceof Path2D.Float) {
                 p2df = (Path2D.Float)s;
             } else {
@@ -308,9 +308,9 @@ public class GDIRenderer implements
     }
 
     public void draw(SunGraphics2D sg2d, Shape s) {
-        if (sg2d.strokeState == sg2d.STROKE_THIN) {
+        if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
             doShape(sg2d, s, false);
-        } else if (sg2d.strokeState < sg2d.STROKE_CUSTOM) {
+        } else if (sg2d.strokeState < SunGraphics2D.STROKE_CUSTOM) {
             ShapeSpanIterator si = LoopPipe.getStrokeSpans(sg2d, s);
             try {
                 doFillSpans(sg2d, si);

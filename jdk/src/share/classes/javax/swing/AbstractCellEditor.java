@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.io.Serializable;
  * @author Philip Milne
  * @since 1.3
  */
-
+@SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractCellEditor implements CellEditor, Serializable {
 
     protected EventListenerList listenerList = new EventListenerList();
