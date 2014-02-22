@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,11 +583,17 @@ public class Infer {
                     }
                 }
             }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() && uv.getBounds(InferenceBound.EQ).nonEmpty();
+            }
         },
         /**
          * Check consistency of equality constraints.
          */
         EQ_CHECK() {
+            @Override
             public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
                 Infer infer = inferenceContext.infer();
                 for (Type e : uv.getBounds(InferenceBound.EQ)) {
@@ -604,6 +610,11 @@ public class Infer {
                     }
                 }
             }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() && uv.getBounds(InferenceBound.EQ).nonEmpty();
+            }
         },
         /**
          * Given a bound set containing {@code alpha <: T} and {@code alpha :> S}
@@ -617,6 +628,13 @@ public class Infer {
                         isSubtype(inferenceContext.asFree(b2), inferenceContext.asFree(b1), warn , infer);
                     }
                 }
+            }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() &&
+                        uv.getBounds(InferenceBound.UPPER).nonEmpty() &&
+                        uv.getBounds(InferenceBound.LOWER).nonEmpty();
             }
         },
         /**
@@ -632,6 +650,13 @@ public class Infer {
                     }
                 }
             }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() &&
+                        uv.getBounds(InferenceBound.EQ).nonEmpty() &&
+                        uv.getBounds(InferenceBound.UPPER).nonEmpty();
+            }
         },
         /**
          * Given a bound set containing {@code alpha :> S} and {@code alpha == T}
@@ -645,6 +670,13 @@ public class Infer {
                         isSubtype(inferenceContext.asFree(b2), inferenceContext.asFree(b1), warn, infer);
                     }
                 }
+            }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() &&
+                        uv.getBounds(InferenceBound.EQ).nonEmpty() &&
+                        uv.getBounds(InferenceBound.LOWER).nonEmpty();
             }
         },
         /**
@@ -661,6 +693,12 @@ public class Infer {
                         }
                     }
                 }
+            }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() &&
+                        uv.getBounds(InferenceBound.EQ).nonEmpty();
             }
         },
         /**
@@ -688,6 +726,12 @@ public class Infer {
                     }
                 }
             }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() &&
+                        uv.getBounds(InferenceBound.UPPER).nonEmpty();
+            }
         },
         /**
          * Given a bound set containing {@code alpha :> beta} propagate lower bounds
@@ -713,6 +757,12 @@ public class Infer {
                         }
                     }
                 }
+            }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() &&
+                        uv.getBounds(InferenceBound.LOWER).nonEmpty();
             }
         },
         /**
@@ -747,6 +797,12 @@ public class Infer {
                         }
                     }
                 }
+            }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() &&
+                        uv.getBounds(InferenceBound.EQ).nonEmpty();
             }
         };
 
