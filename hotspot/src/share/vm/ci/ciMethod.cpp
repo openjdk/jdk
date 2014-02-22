@@ -412,7 +412,7 @@ MethodLivenessResult ciMethod::raw_liveness_at_bci(int bci) {
 // information.
 MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
   MethodLivenessResult result = raw_liveness_at_bci(bci);
-  if (CURRENT_ENV->jvmti_can_access_local_variables() || DeoptimizeALot || CompileTheWorld) {
+  if (CURRENT_ENV->should_retain_local_variables() || DeoptimizeALot || CompileTheWorld) {
     // Keep all locals live for the user's edification and amusement.
     result.at_put_range(0, result.size(), true);
   }
