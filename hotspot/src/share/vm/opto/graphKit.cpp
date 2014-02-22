@@ -863,7 +863,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     }
   }
 
-  if (env()->jvmti_can_access_local_variables()) {
+  if (env()->should_retain_local_variables()) {
     // At any safepoint, this method can get breakpointed, which would
     // then require an immediate deoptimization.
     can_prune_locals = false;  // do not prune locals

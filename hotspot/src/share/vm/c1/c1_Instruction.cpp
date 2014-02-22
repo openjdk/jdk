@@ -76,7 +76,7 @@ Instruction::Condition Instruction::negate(Condition cond) {
 
 void Instruction::update_exception_state(ValueStack* state) {
   if (state != NULL && (state->kind() == ValueStack::EmptyExceptionState || state->kind() == ValueStack::ExceptionState)) {
-    assert(state->kind() == ValueStack::EmptyExceptionState || Compilation::current()->env()->jvmti_can_access_local_variables(), "unexpected state kind");
+    assert(state->kind() == ValueStack::EmptyExceptionState || Compilation::current()->env()->should_retain_local_variables(), "unexpected state kind");
     _exception_state = state;
   } else {
     _exception_state = NULL;
