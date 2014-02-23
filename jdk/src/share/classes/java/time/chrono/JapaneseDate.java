@@ -716,6 +716,7 @@ public final class JapaneseDate
     /**
      * Defend against malicious streams.
      *
+     * @param s the stream to read
      * @throws InvalidObjectException always
      */
     private void readObject(ObjectInputStream s) throws InvalidObjectException {

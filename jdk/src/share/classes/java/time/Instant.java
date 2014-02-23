@@ -100,11 +100,6 @@ import java.util.Objects;
  * This class models a single instantaneous point on the time-line.
  * This might be used to record event time-stamps in the application.
  * <p>
- * For practicality, the instant is stored with some constraints.
- * The measurable time-line is restricted to the number of seconds that can be held
- * in a {@code long}. This is greater than the current estimated age of the universe.
- * The instant is stored to nanosecond resolution.
- * <p>
  * The range of an instant requires the storage of a number larger than a {@code long}.
  * To achieve this, the class stores a {@code long} representing epoch-seconds and an
  * {@code int} representing nanosecond-of-second, which will always be between 0 and 999,999,999.
@@ -1348,6 +1343,7 @@ public final class Instant
     /**
      * Defend against malicious streams.
      *
+     * @param s the stream to read
      * @throws InvalidObjectException always
      */
     private void readObject(ObjectInputStream s) throws InvalidObjectException {

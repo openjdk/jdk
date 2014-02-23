@@ -363,7 +363,7 @@ Method* ConstantPoolCacheEntry::method_if_resolved(constantPoolHandle cpool) {
   // Decode the action of set_method and set_interface_call
   Bytecodes::Code invoke_code = bytecode_1();
   if (invoke_code != (Bytecodes::Code)0) {
-    Metadata* f1 = (Metadata*)_f1;
+    Metadata* f1 = f1_ord();
     if (f1 != NULL) {
       switch (invoke_code) {
       case Bytecodes::_invokeinterface:

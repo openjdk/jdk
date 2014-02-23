@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XConstants.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndEnter.getAtom());
@@ -311,7 +311,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XConstants.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndPosition.getAtom());
@@ -335,7 +335,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XConstants.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndLeave.getAtom());
@@ -361,7 +361,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XConstants.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndDrop.getAtom());

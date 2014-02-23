@@ -26,6 +26,9 @@
 #define OS_WINDOWS_VM_OS_WINDOWS_HPP
 // Win32_OS defines the interface to windows operating systems
 
+// Information about the protection of the page at address '0' on this os.
+static bool zero_page_read_protected() { return true; }
+
 class win32 {
   friend class os;
 

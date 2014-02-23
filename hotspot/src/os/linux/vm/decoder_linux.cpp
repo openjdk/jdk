@@ -32,6 +32,12 @@ bool ElfDecoder::demangle(const char* symbol, char *buf, int buflen) {
   char* result;
   size_t size = (size_t)buflen;
 
+#ifdef PPC64
+  // On PPC64 ElfDecoder::decode() may return a dot (.) prefixed name
+  // (see elfFuncDescTable.hpp for details)
+  if (symbol && *symbol == '.') symbol += 1;
+#endif
+
   // Don't pass buf to __cxa_demangle. In case of the 'buf' is too small,
   // __cxa_demangle will call system "realloc" for additional memory, which
   // may use different malloc/realloc mechanism that allocates 'buf'.

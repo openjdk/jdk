@@ -143,7 +143,6 @@ class MarkSweep : AllStatic {
   // Public closures
   static IsAliveClosure       is_alive;
   static FollowRootClosure    follow_root_closure;
-  static CodeBlobToOopClosure follow_code_root_closure; // => follow_root_closure
   static MarkAndPushClosure   mark_and_push_closure;
   static FollowKlassClosure   follow_klass_closure;
   static FollowStackClosure   follow_stack_closure;

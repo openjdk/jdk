@@ -59,10 +59,12 @@ JNIEXPORT void JNICALL
 Java_java_io_WinNTFileSystem_initIDs(JNIEnv *env, jclass cls)
 {
     HMODULE handle;
-    jclass fileClass = (*env)->FindClass(env, "java/io/File");
-    if (!fileClass) return;
-    ids.path =
-             (*env)->GetFieldID(env, fileClass, "path", "Ljava/lang/String;");
+    jclass fileClass;
+
+    fileClass = (*env)->FindClass(env, "java/io/File");
+    CHECK_NULL(fileClass);
+    ids.path = (*env)->GetFieldID(env, fileClass, "path", "Ljava/lang/String;");
+    CHECK_NULL(ids.path);
 
     // GetFinalPathNameByHandle requires Windows Vista or newer
     if (GetModuleHandleExW((GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
@@ -243,8 +245,8 @@ Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
     WCHAR canonicalPath[MAX_PATH_LENGTH];
 
     WITH_UNICODE_STRING(env, pathname, path) {
-        /*we estimate the max length of memory needed as
-          "currentDir. length + pathname.length"
+        /* we estimate the max length of memory needed as
+           "currentDir. length + pathname.length"
          */
         int len = (int)wcslen(path);
         len += currentDirLength(path, len);
@@ -256,12 +258,11 @@ Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
                 }
                 free(cp);
             }
-        } else
-        if (wcanonicalize(path, canonicalPath, MAX_PATH_LENGTH) >= 0) {
+        } else if (wcanonicalize(path, canonicalPath, MAX_PATH_LENGTH) >= 0) {
             rv = (*env)->NewString(env, canonicalPath, (jsize)wcslen(canonicalPath));
         }
     } END_UNICODE_STRING(env, path);
-    if (rv == NULL) {
+    if (rv == NULL && !(*env)->ExceptionCheck(env)) {
         JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
     }
     return rv;
@@ -288,15 +289,14 @@ Java_java_io_WinNTFileSystem_canonicalizeWithPrefix0(JNIEnv *env, jobject this,
                     }
                     free(cp);
                 }
-            } else
-            if (wcanonicalizeWithPrefix(canonicalPrefix,
-                                        pathWithCanonicalPrefix,
-                                        canonicalPath, MAX_PATH_LENGTH) >= 0) {
+            } else if (wcanonicalizeWithPrefix(canonicalPrefix,
+                                               pathWithCanonicalPrefix,
+                                               canonicalPath, MAX_PATH_LENGTH) >= 0) {
                 rv = (*env)->NewString(env, canonicalPath, (jsize)wcslen(canonicalPath));
             }
         } END_UNICODE_STRING(env, pathWithCanonicalPrefix);
     } END_UNICODE_STRING(env, canonicalPrefix);
-    if (rv == NULL) {
+    if (rv == NULL && !(*env)->ExceptionCheck(env)) {
         JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
     }
     return rv;
@@ -616,8 +616,13 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
     jobjectArray rv, old;
     DWORD fattr;
     jstring name;
+    jclass str_class;
+    WCHAR *pathbuf;
 
-    WCHAR *pathbuf = fileToNTPath(env, file, ids.path);
+    str_class = JNU_ClassString(env);
+    CHECK_NULL_RETURN(str_class, NULL);
+
+    pathbuf = fileToNTPath(env, file, ids.path);
     if (pathbuf == NULL)
         return NULL;
     search_path = (WCHAR*)malloc(2*wcslen(pathbuf) + 6);
@@ -664,7 +669,7 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
             return NULL;
         } else {
             // No files found - return an empty array
-            rv = (*env)->NewObjectArray(env, 0, JNU_ClassString(env), NULL);
+            rv = (*env)->NewObjectArray(env, 0, str_class, NULL);
             return rv;
         }
     }
@@ -672,7 +677,7 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
     /* Allocate an initial String array */
     len = 0;
     maxlen = 16;
-    rv = (*env)->NewObjectArray(env, maxlen, JNU_ClassString(env), NULL);
+    rv = (*env)->NewObjectArray(env, maxlen, str_class, NULL);
     if (rv == NULL) // Couldn't allocate an array
         return NULL;
     /* Scan the directory */
@@ -686,10 +691,8 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
             return NULL; // error;
         if (len == maxlen) {
             old = rv;
-            rv = (*env)->NewObjectArray(env, maxlen <<= 1,
-                                            JNU_ClassString(env), NULL);
-            if ( rv == NULL
-                         || JNU_CopyObjectArray(env, rv, old, len) < 0)
+            rv = (*env)->NewObjectArray(env, maxlen <<= 1, str_class, NULL);
+            if (rv == NULL || JNU_CopyObjectArray(env, rv, old, len) < 0)
                 return NULL; // error
             (*env)->DeleteLocalRef(env, old);
         }
@@ -704,7 +707,7 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
 
     /* Copy the final results into an appropriately-sized array */
     old = rv;
-    rv = (*env)->NewObjectArray(env, len, JNU_ClassString(env), NULL);
+    rv = (*env)->NewObjectArray(env, len, str_class, NULL);
     if (rv == NULL)
         return NULL; /* error */
     if (JNU_CopyObjectArray(env, rv, old, len) < 0)

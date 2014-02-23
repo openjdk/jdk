@@ -32,9 +32,10 @@ var RunnableImpl1 = Java.extend(java.lang.Runnable, function() { print("I'm runn
 var RunnableImpl2 = Java.extend(java.lang.Runnable, function() { print("I'm runnable 2!") })
 var r1 = new RunnableImpl1()
 var r2 = new RunnableImpl2()
-var r3 = new RunnableImpl2(function() { print("I'm runnable 3!") })
+var RunnableImpl3 = Java.extend(RunnableImpl2);
+var r3 = new RunnableImpl3({ run: function() { print("I'm runnable 3!") }})
 r1.run()
 r2.run()
 r3.run()
-print("r1.class === r2.class: " + (r1.class === r2.class))
-print("r2.class === r3.class: " + (r2.class === r3.class))
+print("r1.class !== r2.class: " + (r1.class !== r2.class))
+print("r2.class !== r3.class: " + (r2.class !== r3.class))

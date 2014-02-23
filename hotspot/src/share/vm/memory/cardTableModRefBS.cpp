@@ -419,8 +419,8 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
 // Note that these versions are precise!  The scanning code has to handle the
 // fact that the write barrier may be either precise or imprecise.
 
-void CardTableModRefBS::write_ref_field_work(void* field, oop newVal) {
-  inline_write_ref_field(field, newVal);
+void CardTableModRefBS::write_ref_field_work(void* field, oop newVal, bool release) {
+  inline_write_ref_field(field, newVal, release);
 }
 
 
