@@ -274,8 +274,8 @@ public class MutableCallSite extends CallSite {
     public static void syncAll(MutableCallSite[] sites) {
         if (sites.length == 0)  return;
         STORE_BARRIER.lazySet(0);
-        for (int i = 0; i < sites.length; i++) {
-            sites[i].getClass();  // trigger NPE on first null
+        for (MutableCallSite site : sites) {
+            site.getClass();  // trigger NPE on first null
         }
         // FIXME: NYI
     }

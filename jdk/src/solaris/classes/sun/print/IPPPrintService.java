@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     private static final String FORCE_PIPE_PROP = "sun.print.ippdebug";
 
     static {
-        String debugStr =
-                (String)java.security.AccessController.doPrivileged(
+        String debugStr = java.security.AccessController.doPrivileged(
                   new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
 
         debugPrint = "true".equalsIgnoreCase(debugStr);
@@ -424,7 +423,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             }
 
             // use IPP to get all media,
-            Media[] allMedia = (Media[])getSupportedMedia();
+            Media[] allMedia = getSupportedMedia();
             ArrayList sizeList = new ArrayList();
             ArrayList trayList = new ArrayList();
             for (int i=0; i<allMedia.length; i++) {
@@ -934,8 +933,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             return null;
         }
         for (int i=0; i< customMediaSizeNames.length; i++) {
-            CustomMediaSizeName custom =
-                (CustomMediaSizeName)customMediaSizeNames[i];
+            CustomMediaSizeName custom = customMediaSizeNames[i];
             MediaSizeName msn = custom.getStandardMedia();
             if (media.equals(msn)) {
                 return customMediaSizeNames[i];

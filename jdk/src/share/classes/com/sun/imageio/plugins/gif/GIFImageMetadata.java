@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ public class GIFImageMetadata extends GIFMetadata {
                 appExtNode.setAttribute("authenticationCode",
                                         toISO8859(authenticationCode));
                 byte[] appData = (byte[])applicationData.get(i);
-                appExtNode.setUserObject((byte[])appData.clone());
+                appExtNode.setUserObject(appData.clone());
                 node.appendChild(appExtNode);
             }
 

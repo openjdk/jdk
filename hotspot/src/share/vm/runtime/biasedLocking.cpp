@@ -233,8 +233,10 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
     // Fix up highest lock to contain displaced header and point
     // object at it
     highest_lock->set_displaced_header(unbiased_prototype);
-    // Reset object header to point to displaced mark
-    obj->set_mark(markOopDesc::encode(highest_lock));
+    // Reset object header to point to displaced mark.
+    // Must release storing the lock address for platforms without TSO
+    // ordering (e.g. ppc).
+    obj->release_set_mark(markOopDesc::encode(highest_lock));
     assert(!obj->mark()->has_bias_pattern(), "illegal mark state: stack lock used bias bit");
     if (TraceBiasedLocking && (Verbose || !is_bulk)) {
       tty->print_cr("  Revoked bias of currently-locked object");

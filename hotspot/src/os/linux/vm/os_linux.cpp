@@ -139,7 +139,7 @@ static int clock_tics_per_sec = 100;
 
 // For diagnostics to print a message once. see run_periodic_checks
 static sigset_t check_signal_done;
-static bool check_signals = true;;
+static bool check_signals = true;
 
 static pid_t _initial_pid = 0;
 
@@ -257,8 +257,10 @@ static char cpu_arch[] = "i386";
 static char cpu_arch[] = "amd64";
 #elif defined(ARM)
 static char cpu_arch[] = "arm";
-#elif defined(PPC)
+#elif defined(PPC32)
 static char cpu_arch[] = "ppc";
+#elif defined(PPC64)
+static char cpu_arch[] = "ppc64";
 #elif defined(SPARC)
 #  ifdef _LP64
 static char cpu_arch[] = "sparcv9";
@@ -530,6 +532,9 @@ void os::Linux::signal_sets_init() {
   sigaddset(&unblocked_sigs, SIGSEGV);
   sigaddset(&unblocked_sigs, SIGBUS);
   sigaddset(&unblocked_sigs, SIGFPE);
+#if defined(PPC64)
+  sigaddset(&unblocked_sigs, SIGTRAP);
+#endif
   sigaddset(&unblocked_sigs, SR_signum);
 
   if (!ReduceSignalUsage) {
@@ -2260,58 +2265,12 @@ void os::pd_print_cpu_info(outputStream* st) {
   st->cr();
 }
 
-// Taken from /usr/include/bits/siginfo.h  Supposed to be architecture specific
-// but they're the same for all the linux arch that we support
-// and they're the same for solaris but there's no common place to put this.
-const char *ill_names[] = { "ILL0", "ILL_ILLOPC", "ILL_ILLOPN", "ILL_ILLADR",
-                          "ILL_ILLTRP", "ILL_PRVOPC", "ILL_PRVREG",
-                          "ILL_COPROC", "ILL_BADSTK" };
-
-const char *fpe_names[] = { "FPE0", "FPE_INTDIV", "FPE_INTOVF", "FPE_FLTDIV",
-                          "FPE_FLTOVF", "FPE_FLTUND", "FPE_FLTRES",
-                          "FPE_FLTINV", "FPE_FLTSUB", "FPE_FLTDEN" };
-
-const char *segv_names[] = { "SEGV0", "SEGV_MAPERR", "SEGV_ACCERR" };
-
-const char *bus_names[] = { "BUS0", "BUS_ADRALN", "BUS_ADRERR", "BUS_OBJERR" };
-
 void os::print_siginfo(outputStream* st, void* siginfo) {
-  st->print("siginfo:");
+  const siginfo_t* si = (const siginfo_t*)siginfo;
 
-  const int buflen = 100;
-  char buf[buflen];
-  siginfo_t *si = (siginfo_t*)siginfo;
-  st->print("si_signo=%s: ", os::exception_name(si->si_signo, buf, buflen));
-  if (si->si_errno != 0 && strerror_r(si->si_errno, buf, buflen) == 0) {
-    st->print("si_errno=%s", buf);
-  } else {
-    st->print("si_errno=%d", si->si_errno);
-  }
-  const int c = si->si_code;
-  assert(c > 0, "unexpected si_code");
-  switch (si->si_signo) {
-  case SIGILL:
-    st->print(", si_code=%d (%s)", c, c > 8 ? "" : ill_names[c]);
-    st->print(", si_addr=" PTR_FORMAT, si->si_addr);
-    break;
-  case SIGFPE:
-    st->print(", si_code=%d (%s)", c, c > 9 ? "" : fpe_names[c]);
-    st->print(", si_addr=" PTR_FORMAT, si->si_addr);
-    break;
-  case SIGSEGV:
-    st->print(", si_code=%d (%s)", c, c > 2 ? "" : segv_names[c]);
-    st->print(", si_addr=" PTR_FORMAT, si->si_addr);
-    break;
-  case SIGBUS:
-    st->print(", si_code=%d (%s)", c, c > 3 ? "" : bus_names[c]);
-    st->print(", si_addr=" PTR_FORMAT, si->si_addr);
-    break;
-  default:
-    st->print(", si_code=%d", si->si_code);
-    // no si_addr
-  }
+  os::Posix::print_siginfo_brief(st, si);
 
-  if ((si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
+  if (si && (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
       UseSharedSpaces) {
     FileMapInfo* mapinfo = FileMapInfo::current_info();
     if (mapinfo->is_in_shared_space(si->si_addr)) {
@@ -2341,6 +2300,9 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
   print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
   print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
+#if defined(PPC64)
+  print_signal_handler(st, SIGTRAP, buf, buflen);
+#endif
 }
 
 static char saved_jvm_path[MAXPATHLEN] = {0};
@@ -4374,6 +4336,9 @@ void os::Linux::install_signal_handlers() {
     set_signal_handler(SIGBUS, true);
     set_signal_handler(SIGILL, true);
     set_signal_handler(SIGFPE, true);
+#if defined(PPC64)
+    set_signal_handler(SIGTRAP, true);
+#endif
     set_signal_handler(SIGXFSZ, true);
 
     if (libjsig_is_loaded) {
@@ -4467,7 +4432,8 @@ static void print_signal_handler(outputStream* st, int sig,
     st->print("[%s]", get_signal_handler_name(handler, buf, buflen));
   }
 
-  st->print(", sa_mask[0]=" PTR32_FORMAT, *(uint32_t*)&sa.sa_mask);
+  st->print(", sa_mask[0]=");
+  os::Posix::print_signal_set_short(st, &sa.sa_mask);
 
   address rh = VMError::get_resetted_sighandler(sig);
   // May be, handler was resetted by VMError?
@@ -4476,7 +4442,8 @@ static void print_signal_handler(outputStream* st, int sig,
     sa.sa_flags = VMError::get_resetted_sigflags(sig) & SIGNIFICANT_SIGNAL_MASK;
   }
 
-  st->print(", sa_flags="   PTR32_FORMAT, sa.sa_flags);
+  st->print(", sa_flags=");
+  os::Posix::print_sa_flags(st, sa.sa_flags);
 
   // Check: is it our handler?
   if(handler == CAST_FROM_FN_PTR(address, (sa_sigaction_t)signalHandler) ||
@@ -4514,7 +4481,9 @@ void os::run_periodic_checks() {
   DO_SIGNAL_CHECK(SIGBUS);
   DO_SIGNAL_CHECK(SIGPIPE);
   DO_SIGNAL_CHECK(SIGXFSZ);
-
+#if defined(PPC64)
+  DO_SIGNAL_CHECK(SIGTRAP);
+#endif
 
   // ReduceSignalUsage allows the user to override these handlers
   // see comments at the very top and jvm_solaris.h
@@ -4836,7 +4805,7 @@ jint os::init_2(void)
     // the future if the appropriate cleanup code can be added to the
     // VM_Exit VMOperation's doit method.
     if (atexit(perfMemory_exit_helper) != 0) {
-      warning("os::init2 atexit(perfMemory_exit_helper) failed");
+      warning("os::init_2 atexit(perfMemory_exit_helper) failed");
     }
   }
 
@@ -4847,8 +4816,7 @@ jint os::init_2(void)
 }
 
 // this is called at the end of vm_initialization
-void os::init_3(void)
-{
+void os::init_3(void) {
 #ifdef JAVASE_EMBEDDED
   // Start the MemNotifyThread
   if (LowMemoryProtection) {

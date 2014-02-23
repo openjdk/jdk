@@ -238,14 +238,10 @@ public:
   void process_strong_roots(bool activate_scope,
                             ScanningOption so,
                             OopClosure* roots,
-                            CodeBlobClosure* code_roots,
                             KlassClosure* klass_closure);
 
-  // Apply "blk" to all the weak roots of the system.  These include
-  // JNI weak roots, the code cache, system dictionary, symbol table,
-  // string table.
-  void process_weak_roots(OopClosure* root_closure,
-                          CodeBlobClosure* code_roots);
+  // Apply "root_closure" to the JNI weak roots..
+  void process_weak_roots(OopClosure* root_closure);
 
   // The functions below are helper functions that a subclass of
   // "SharedHeap" can use in the implementation of its virtual
@@ -274,5 +270,9 @@ public:
                              size_t bytes_after,
                              size_t capacity);
 };
+
+inline SharedHeap::ScanningOption operator|(SharedHeap::ScanningOption so0, SharedHeap::ScanningOption so1) {
+  return static_cast<SharedHeap::ScanningOption>(static_cast<int>(so0) | static_cast<int>(so1));
+}
 
 #endif // SHARE_VM_MEMORY_SHAREDHEAP_HPP

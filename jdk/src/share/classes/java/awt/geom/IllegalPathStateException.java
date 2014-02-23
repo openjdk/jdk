@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ package java.awt.geom;
  */
 
 public class IllegalPathStateException extends RuntimeException {
+    private static final long serialVersionUID = -5158084205220481094L;
+
     /**
      * Constructs an <code>IllegalPathStateException</code> with no
      * detail message.

@@ -313,10 +313,12 @@ public:
   // Add an instruction to an existing block.  It must go after the head
   // instruction and before the end instruction.
   void add_inst( Node *n ) { insert_node(n, end_idx()); }
-  // Find node in block
+  // Find node in block. Fails if node not in block.
   uint find_node( const Node *n ) const;
   // Find and remove n from block list
   void find_remove( const Node *n );
+  // Check wether the node is in the block.
+  bool contains (const Node *n) const;
 
   // Return the empty status of a block
   enum { not_empty, empty_with_goto, completely_empty };
@@ -588,6 +590,7 @@ class PhaseCFG : public Phase {
 
   // Remove empty basic blocks
   void remove_empty_blocks();
+  Block *fixup_trap_based_check(Node *branch, Block *block, int block_pos, Block *bnext);
   void fixup_flow();
 
   // Insert a node into a block at index and map the node to the block
@@ -595,6 +598,9 @@ class PhaseCFG : public Phase {
     b->insert_node(n , idx);
     map_node_to_block(n, b);
   }
+
+  // Check all nodes and postalloc_expand them if necessary.
+  void postalloc_expand(PhaseRegAlloc* _ra);
 
 #ifndef PRODUCT
   bool trace_opto_pipelining() const { return _trace_opto_pipelining; }

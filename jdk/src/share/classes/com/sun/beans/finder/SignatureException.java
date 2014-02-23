@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package com.sun.beans.finder;
 
 final class SignatureException extends RuntimeException {
+    private static final long serialVersionUID = 4536098341586118473L;
+
     SignatureException(Throwable cause) {
         super(cause);
     }
