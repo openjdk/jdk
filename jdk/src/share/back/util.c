@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2122,7 +2122,7 @@ jvmti2EventIndex(jvmtiEvent kind)
 jdwpError
 map2jdwpError(jvmtiError error)
 {
-    switch ( error ) {
+    switch ( (int)error ) {
         case JVMTI_ERROR_NONE:
             return JDWP_ERROR(NONE);
         case AGENT_ERROR_INVALID_THREAD:

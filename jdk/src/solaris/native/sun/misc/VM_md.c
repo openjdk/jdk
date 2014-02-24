@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,16 @@
  * questions.
  */
 
-/*
- * Win32 specific code to support logging.
- */
-
+#include <unistd.h>
 #include "jni_util.h"
 
 
 JNIEXPORT jboolean JNICALL
-Java_java_util_logging_FileHandler_isSetUID(JNIEnv *env, jclass thisclass) {
+Java_sun_misc_VM_isSetUID(JNIEnv *env, jclass thisclass) {
 
-    /* There is no set UID on Windows. */
+    /* Return true if we are in a set UID or set GID process. */
+    if (getuid() != geteuid() || getgid() != getegid()) {
+        return JNI_TRUE;
+    }
     return JNI_FALSE;
 }

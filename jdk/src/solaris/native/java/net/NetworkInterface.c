@@ -677,7 +677,7 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
             int scope=0;
             iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
             if (iaObj) {
-                int ret = setInet6Address_ipaddress(env, iaObj, (char *)&(((struct sockaddr_in6*)addrP->addr)->sin6_addr));
+                jboolean ret = setInet6Address_ipaddress(env, iaObj, (char *)&(((struct sockaddr_in6*)addrP->addr)->sin6_addr));
                 if (ret == JNI_FALSE) {
                     return NULL;
                 }

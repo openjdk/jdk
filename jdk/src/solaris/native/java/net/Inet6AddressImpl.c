@@ -66,27 +66,27 @@
  */
 JNIEXPORT jstring JNICALL
 Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
+    int ret;
     char hostname[NI_MAXHOST+1];
 
     hostname[0] = '\0';
-    if (JVM_GetHostName(hostname, sizeof(hostname))) {
+    ret = JVM_GetHostName(hostname, sizeof(hostname));
+    if (ret) {
         /* Something went wrong, maybe networking is not setup? */
         strcpy(hostname, "localhost");
     } else {
         // ensure null-terminated
         hostname[NI_MAXHOST] = '\0';
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
-        /* On Linux/FreeBSD gethostname() says "host.domain.sun.com".  On
-         * Solaris gethostname() says "host", so extra work is needed.
-         */
-#else
+    }
+
+#if defined(__solaris__) && defined(AF_INET6)
+    if (ret == 0) {
         /* Solaris doesn't want to give us a fully qualified domain name.
          * We do a reverse lookup to try and get one.  This works
          * if DNS occurs before NIS in /etc/resolv.conf, but fails
          * if NIS comes first (it still gets only a partial name).
          * We use thread-safe system calls.
          */
-#ifdef AF_INET6
         struct addrinfo  hints, *res;
         int error;
 
@@ -111,9 +111,9 @@ Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
 
             freeaddrinfo(res);
         }
-#endif /* AF_INET6 */
-#endif /* __linux__ || _ALLBSD_SOURCE */
     }
+#endif
+
     return (*env)->NewStringUTF(env, hostname);
 }
 
@@ -402,7 +402,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         }
 
         while (iterator != NULL) {
-            int ret1;
+            jboolean ret1;
             if (iterator->ai_family == AF_INET) {
                 jobject iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
                 if (IS_NULL(iaObj)) {
@@ -422,7 +422,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                     goto cleanupAndReturn;
                 }
                 ret1 = setInet6Address_ipaddress(env, iaObj, (char *)&(((struct sockaddr_in6*)iterator->ai_addr)->sin6_addr));
-                if (!ret1) {
+                if (ret1 == JNI_FALSE) {
                     ret = NULL;
                     goto cleanupAndReturn;
                 }

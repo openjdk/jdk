@@ -62,7 +62,7 @@ Java_java_io_FileInputStream_open(JNIEnv *env, jobject this, jstring path) {
 }
 
 JNIEXPORT jint JNICALL
-Java_java_io_FileInputStream_read(JNIEnv *env, jobject this) {
+Java_java_io_FileInputStream_read0(JNIEnv *env, jobject this) {
     return readSingle(env, this, fis_fd);
 }
 

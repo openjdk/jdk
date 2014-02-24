@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,40 +23,12 @@
  * questions.
  */
 
-package sun.misc;
+#include "jni_util.h"
 
 
-/**
- * Error thrown when something goes wrong while looking up service providers.
- * In particular, this error will be thrown in the following situations:
- *
- *   <ul>
- *   <li> A concrete provider class cannot be found,
- *   <li> A concrete provider class cannot be instantiated,
- *   <li> The format of a provider-configuration file is illegal, or
- *   <li> An IOException occurs while reading a provider-configuration file.
- *   </ul>
- *
- * @author Mark Reinhold
- * @since 1.3
- */
+JNIEXPORT jboolean JNICALL
+Java_sun_misc_VM_isSetUID(JNIEnv *env, jclass thisclass) {
 
-public class ServiceConfigurationError extends Error {
-
-    static final long serialVersionUID = 8769866263384244465L;
-
-    /**
-     * Constructs a new instance with the specified detail string.
-     */
-    public ServiceConfigurationError(String msg) {
-        super(msg);
-    }
-
-    /**
-     * Constructs a new instance that wraps the specified throwable.
-     */
-    public ServiceConfigurationError(Throwable x) {
-        super(x);
-    }
-
+    /* There is no set UID on Windows. */
+    return JNI_FALSE;
 }
