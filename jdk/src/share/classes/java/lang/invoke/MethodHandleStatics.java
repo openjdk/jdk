@@ -65,6 +65,16 @@ import sun.misc.Unsafe;
         COMPILE_THRESHOLD         = (Integer) values[4];
     }
 
+    /** Tell if any of the debugging switches are turned on.
+     *  If this is the case, it is reasonable to perform extra checks or save extra information.
+     */
+    /*non-public*/ static boolean debugEnabled() {
+        return (DEBUG_METHOD_HANDLE_NAMES |
+                DUMP_CLASS_FILES |
+                TRACE_INTERPRETER |
+                TRACE_METHOD_LINKAGE);
+    }
+
     /*non-public*/ static String getNameString(MethodHandle target, MethodType type) {
         if (type == null)
             type = target.type();
@@ -93,6 +103,9 @@ import sun.misc.Unsafe;
     }
 
     // handy shared exception makers (they simplify the common case code)
+    /*non-public*/ static InternalError newInternalError(String message) {
+        return new InternalError(message);
+    }
     /*non-public*/ static InternalError newInternalError(String message, Throwable cause) {
         return new InternalError(message, cause);
     }

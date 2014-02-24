@@ -31,6 +31,7 @@ import java.util.Arrays;
 import sun.invoke.util.VerifyAccess;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.LambdaForm.*;
+import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodTypeForm.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import java.lang.ref.WeakReference;
@@ -125,11 +126,6 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     @Override
-    MethodHandle copyWith(MethodType mt, LambdaForm lf) {
-        return new DirectMethodHandle(mt, lf, member);
-    }
-
-    @Override
     String internalProperties() {
         return "/DMH="+member.toString();
     }
@@ -146,9 +142,9 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     @Override
-    MethodHandle bindArgument(int pos, char basicType, Object value) {
+    MethodHandle bindArgument(int pos, BasicType basicType, Object value) {
         // If the member needs dispatching, do so.
-        if (pos == 0 && basicType == 'L') {
+        if (pos == 0 && basicType == L_TYPE) {
             DirectMethodHandle concrete = maybeRebind(value);
             if (concrete != null)
                 return concrete.bindReceiver(value);
@@ -274,7 +270,7 @@ class DirectMethodHandle extends MethodHandle {
             result = NEW_OBJ;
         }
         names[LINKER_CALL] = new Name(linker, outArgs);
-        lambdaName += "_" + LambdaForm.basicTypeSignature(mtype);
+        lambdaName += "_" + shortenSignature(basicTypeSignature(mtype));
         LambdaForm lform = new LambdaForm(lambdaName, ARG_LIMIT, names, result);
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
         lform.compileToBytecode();
