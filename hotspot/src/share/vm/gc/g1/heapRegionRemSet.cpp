@@ -497,7 +497,15 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
       PerRegionTable* first_prt = _fine_grain_regions[ind];
       prt->set_collision_list_next(first_prt);
-      _fine_grain_regions[ind] = prt;
+      // The assignment into _fine_grain_regions allows the prt to
+      // start being used concurrently. In addition to
+      // collision_list_next which must be visible (else concurrent
+      // parsing of the list, if any, may fail to see other entries),
+      // the content of the prt must be visible (else for instance
+      // some mark bits may not yet seem cleared or a 'later' update
+      // performed by a concurrent thread could be undone when the
+      // zeroing becomes visible). This requires store ordering.
+      OrderAccess::release_store_ptr((volatile PerRegionTable*)&_fine_grain_regions[ind], prt);
       _n_fine_entries++;
 
       if (G1HRRSUseSparseTable) {
