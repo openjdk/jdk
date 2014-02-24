@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -565,7 +565,7 @@ class CommandLineFlags {
           "Force NUMA optimizations on single-node/UMA systems")            \
                                                                             \
   product(uintx, NUMAChunkResizeWeight, 20,                                 \
-          "Percentage (0-100) used to weigh the current sample when "       \
+          "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for "                   \
           "AdaptiveNUMAChunkSizing")                                        \
                                                                             \
@@ -1260,6 +1260,9 @@ class CommandLineFlags {
   develop(bool, TraceJNICalls, false,                                       \
           "Trace JNI calls")                                                \
                                                                             \
+  develop(bool, StressRewriter, false,                                      \
+          "Stress linktime bytecode rewriting")                             \
+                                                                            \
   notproduct(bool, TraceJVMCalls, false,                                    \
           "Trace JVM calls")                                                \
                                                                             \
@@ -1502,7 +1505,7 @@ class CommandLineFlags {
           "allocation")                                                     \
                                                                             \
   product(uintx, PLABWeight, 75,                                            \
-          "Percentage (0-100) used to weigh the current sample when "       \
+          "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for ResizePLAB")        \
                                                                             \
   product(bool, ResizePLAB, true,                                           \
@@ -1611,11 +1614,11 @@ class CommandLineFlags {
           "is shifted to the right within the period between young GCs")    \
                                                                             \
   product(uintx, CMSExpAvgFactor, 50,                                       \
-          "Percentage (0-100) used to weigh the current sample when "       \
+          "Percentage (0-100) used to weight the current sample when "      \
           "computing exponential averages for CMS statistics")              \
                                                                             \
   product(uintx, CMS_FLSWeight, 75,                                         \
-          "Percentage (0-100) used to weigh the current sample when "       \
+          "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying averages for CMS FLS "          \
           "statistics")                                                     \
                                                                             \
@@ -1727,19 +1730,15 @@ class CommandLineFlags {
           "to simulate overflow; a smaller number increases frequency")     \
                                                                             \
   product(uintx, CMSMaxAbortablePrecleanLoops, 0,                           \
-          "(Temporary, subject to experimentation) "                        \
           "Maximum number of abortable preclean iterations, if > 0")        \
                                                                             \
   product(intx, CMSMaxAbortablePrecleanTime, 5000,                          \
-          "(Temporary, subject to experimentation) "                        \
           "Maximum time in abortable preclean (in milliseconds)")           \
                                                                             \
   product(uintx, CMSAbortablePrecleanMinWorkPerIteration, 100,              \
-          "(Temporary, subject to experimentation) "                        \
           "Nominal minimum work per abortable preclean iteration")          \
                                                                             \
   manageable(intx, CMSAbortablePrecleanWaitMillis, 100,                     \
-          "(Temporary, subject to experimentation) "                        \
           "Time that we sleep between iterations when not given "           \
           "enough work per iteration")                                      \
                                                                             \
@@ -1955,13 +1954,13 @@ class CommandLineFlags {
           "(other young collectors)")                                       \
                                                                             \
   develop(uintx, PromotionFailureALotInterval, 5,                           \
-          "Total collections between promotion failures alot")              \
+          "Total collections between promotion failures a lot")             \
                                                                             \
   experimental(uintx, WorkStealingSleepMillis, 1,                           \
           "Sleep time when sleep is used for yields")                       \
                                                                             \
   experimental(uintx, WorkStealingYieldsBeforeSleep, 5000,                  \
-          "Number of yields before a sleep is done during workstealing")    \
+          "Number of yields before a sleep is done during work stealing")   \
                                                                             \
   experimental(uintx, WorkStealingHardSpins, 4096,                          \
           "Number of iterations in a spin loop between checks on "          \
@@ -2039,7 +2038,7 @@ class CommandLineFlags {
           "size; deprecated: to be renamed to MaxRAMFraction")              \
                                                                             \
   product(uintx, MinRAMFraction, 2,                                         \
-          "Minimum fraction (1/n) of real memory used for maxmimum heap "   \
+          "Minimum fraction (1/n) of real memory used for maximum heap "    \
           "size on systems with small physical memory size")                \
                                                                             \
   product(uintx, InitialRAMFraction, 64,                                    \

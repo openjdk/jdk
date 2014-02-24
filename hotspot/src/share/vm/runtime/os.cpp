@@ -362,7 +362,7 @@ void os::signal_init() {
       // exceptions anyway, check and abort if this fails.
       if (signal_thread == NULL || signal_thread->osthread() == NULL) {
         vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                      "unable to create new native thread");
+                                      os::native_thread_creation_failed_msg());
       }
 
       java_lang_Thread::set_thread(thread_oop(), signal_thread);
@@ -1197,7 +1197,7 @@ char* os::format_boot_path(const char* format_string,
                            char fileSep,
                            char pathSep) {
     assert((fileSep == '/' && pathSep == ':') ||
-           (fileSep == '\\' && pathSep == ';'), "unexpected seperator chars");
+           (fileSep == '\\' && pathSep == ';'), "unexpected separator chars");
 
     // Scan the format string to determine the length of the actual
     // boot classpath, and handle platform dependencies as well.

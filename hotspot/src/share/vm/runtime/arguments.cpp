@@ -101,7 +101,7 @@ bool   Arguments::_xdebug_mode                  = false;
 const char*  Arguments::_java_vendor_url_bug    = DEFAULT_VENDOR_URL_BUG;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 int    Arguments::_sun_java_launcher_pid        = -1;
-bool   Arguments::_created_by_gamma_launcher    = false;
+bool   Arguments::_sun_java_launcher_is_altjvm  = false;
 
 // These parameters are reset in method parse_vm_init_args(JavaVMInitArgs*)
 bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
@@ -151,7 +151,8 @@ static void logOption(const char* opt) {
 
 // Process java launcher properties.
 void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
-  // See if sun.java.launcher or sun.java.launcher.pid is defined.
+  // See if sun.java.launcher, sun.java.launcher.is_altjvm or
+  // sun.java.launcher.pid is defined.
   // Must do this before setting up other system properties,
   // as some of them may depend on launcher type.
   for (int index = 0; index < args->nOptions; index++) {
@@ -160,6 +161,12 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 
     if (match_option(option, "-Dsun.java.launcher=", &tail)) {
       process_java_launcher_argument(tail, option->extraInfo);
+      continue;
+    }
+    if (match_option(option, "-Dsun.java.launcher.is_altjvm=", &tail)) {
+      if (strcmp(tail, "true") == 0) {
+        _sun_java_launcher_is_altjvm = true;
+      }
       continue;
     }
     if (match_option(option, "-Dsun.java.launcher.pid=", &tail)) {
@@ -1013,9 +1020,10 @@ bool Arguments::add_property(const char* prop) {
     _java_command = value;
 
     // Record value in Arguments, but let it get passed to Java.
-  } else if (strcmp(key, "sun.java.launcher.pid") == 0) {
-    // launcher.pid property is private and is processed
-    // in process_sun_java_launcher_properties();
+  } else if (strcmp(key, "sun.java.launcher.is_altjvm") == 0 ||
+             strcmp(key, "sun.java.launcher.pid") == 0) {
+    // sun.java.launcher.is_altjvm and sun.java.launcher.pid property are
+    // private and are processed in process_sun_java_launcher_properties();
     // the sun.java.launcher property is passed on to the java application
     FreeHeap(key);
     if (eq != NULL) {
@@ -1810,9 +1818,6 @@ void Arguments::process_java_compiler_argument(char* arg) {
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
   _sun_java_launcher = strdup(launcher);
-  if (strcmp("gamma", _sun_java_launcher) == 0) {
-    _created_by_gamma_launcher = true;
-  }
 }
 
 bool Arguments::created_by_java_launcher() {
@@ -1820,8 +1825,8 @@ bool Arguments::created_by_java_launcher() {
   return strcmp(DEFAULT_JAVA_LAUNCHER, _sun_java_launcher) != 0;
 }
 
-bool Arguments::created_by_gamma_launcher() {
-  return _created_by_gamma_launcher;
+bool Arguments::sun_java_launcher_is_altjvm() {
+  return _sun_java_launcher_is_altjvm;
 }
 
 //===========================================================================================================
@@ -3809,32 +3814,28 @@ jint Arguments::apply_ergo() {
     }
   }
 
-  // set PauseAtExit if the gamma launcher was used and a debugger is attached
-  // but only if not already set on the commandline
-  if (Arguments::created_by_gamma_launcher() && os::is_debugger_attached()) {
-    bool set = false;
-    CommandLineFlags::wasSetOnCmdline("PauseAtExit", &set);
-    if (!set) {
-      FLAG_SET_DEFAULT(PauseAtExit, true);
-    }
-  }
-
   return JNI_OK;
 }
 
 jint Arguments::adjust_after_os() {
-#if INCLUDE_ALL_GCS
-  if (UseParallelGC || UseParallelOldGC) {
-    if (UseNUMA) {
+  if (UseNUMA) {
+    if (UseParallelGC || UseParallelOldGC) {
       if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
-        FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
+         FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
       }
-      // For those collectors or operating systems (eg, Windows) that do
-      // not support full UseNUMA, we will map to UseNUMAInterleaving for now
-      UseNUMAInterleaving = true;
+    }
+    // UseNUMAInterleaving is set to ON for all collectors and
+    // platforms when UseNUMA is set to ON. NUMA-aware collectors
+    // such as the parallel collector for Linux and Solaris will
+    // interleave old gen and survivor spaces on top of NUMA
+    // allocation policy for the eden space.
+    // Non NUMA-aware collectors such as CMS, G1 and Serial-GC on
+    // all platforms and ParallelGC on Windows will interleave all
+    // of the heap spaces across NUMA nodes.
+    if (FLAG_IS_DEFAULT(UseNUMAInterleaving)) {
+      FLAG_SET_ERGO(bool, UseNUMAInterleaving, true);
     }
   }
-#endif // INCLUDE_ALL_GCS
   return JNI_OK;
 }
 

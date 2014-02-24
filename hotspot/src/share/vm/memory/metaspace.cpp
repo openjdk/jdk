@@ -746,7 +746,7 @@ void VirtualSpaceNode::inc_container_count() {
   assert_lock_strong(SpaceManager::expand_lock());
   _container_count++;
   assert(_container_count == container_count_slow(),
-         err_msg("Inconsistency in countainer_count _container_count " SIZE_FORMAT
+         err_msg("Inconsistency in container_count _container_count " SIZE_FORMAT
                  " container_count_slow() " SIZE_FORMAT,
                  _container_count, container_count_slow()));
 }
@@ -759,7 +759,7 @@ void VirtualSpaceNode::dec_container_count() {
 #ifdef ASSERT
 void VirtualSpaceNode::verify_container_count() {
   assert(_container_count == container_count_slow(),
-    err_msg("Inconsistency in countainer_count _container_count " SIZE_FORMAT
+    err_msg("Inconsistency in container_count _container_count " SIZE_FORMAT
             " container_count_slow() " SIZE_FORMAT, _container_count, container_count_slow()));
 }
 #endif

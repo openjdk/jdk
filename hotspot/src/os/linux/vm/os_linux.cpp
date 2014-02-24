@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2371,13 +2371,14 @@ void os::jvm_path(char *buf, jint buflen) {
   if (rp == NULL)
     return;
 
-  if (Arguments::created_by_gamma_launcher()) {
-    // Support for the gamma launcher.  Typical value for buf is
-    // "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so".  If "/jre/lib/" appears at
-    // the right place in the string, then assume we are installed in a JDK and
-    // we're done.  Otherwise, check for a JAVA_HOME environment variable and fix
-    // up the path so it looks like libjvm.so is installed there (append a
-    // fake suffix hotspot/libjvm.so).
+  if (Arguments::sun_java_launcher_is_altjvm()) {
+    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
+    // value for buf is "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so".
+    // If "/jre/lib/" appears at the right place in the string, then
+    // assume we are installed in a JDK and we're done. Otherwise, check
+    // for a JAVA_HOME environment variable and fix up the path so it
+    // looks like libjvm.so is installed there (append a fake suffix
+    // hotspot/libjvm.so).
     const char *p = buf + strlen(buf) - 1;
     for (int count = 0; p > buf && count < 5; ++count) {
       for (--p; p > buf && *p != '/'; --p)
@@ -2999,7 +3000,9 @@ address get_stack_commited_bottom(address bottom, size_t size) {
 
   unsigned char vec[1];
   unsigned imin = 1, imax = pages + 1, imid;
-  int mincore_return_value;
+  int mincore_return_value = 0;
+
+  assert(imin <= imax, "Unexpected page size");
 
   while (imin < imax) {
     imid = (imax + imin) / 2;

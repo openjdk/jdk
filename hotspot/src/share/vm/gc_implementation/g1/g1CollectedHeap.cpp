@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2266,7 +2266,7 @@ void G1CollectedHeap::ref_processing_init() {
                                 // (for efficiency/performance)
                            false);
                                 // Setting next fields of discovered
-                                // lists requires a barrier.
+                                // lists does not require a barrier.
 }
 
 size_t G1CollectedHeap::capacity() const {
@@ -5115,15 +5115,12 @@ g1_process_strong_roots(bool is_scavenging,
 
   BufferingOopClosure buf_scan_non_heap_roots(scan_non_heap_roots);
 
-  assert(so & SO_AllCodeCache || scan_rs != NULL, "must scan code roots somehow");
-  // Walk the code cache/strong code roots w/o buffering, because StarTask
-  // cannot handle unaligned oop locations.
-  CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, true /* do_marking */);
+  CodeBlobToOopClosure scan_code_roots(&buf_scan_non_heap_roots, true /* do_marking */);
 
   process_strong_roots(false, // no scoping; this is parallel code
                        so,
                        &buf_scan_non_heap_roots,
-                       &eager_scan_code_roots,
+                       &scan_code_roots,
                        scan_klasses
                        );
 
@@ -5177,9 +5174,9 @@ g1_process_strong_roots(bool is_scavenging,
   g1_policy()->phase_times()->record_strong_code_root_mark_time(worker_i, mark_strong_code_roots_ms);
 
   // Now scan the complement of the collection set.
-  if (scan_rs != NULL) {
-    g1_rem_set()->oops_into_collection_set_do(scan_rs, &eager_scan_code_roots, worker_i);
-  }
+  CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, true /* do_marking */);
+  g1_rem_set()->oops_into_collection_set_do(scan_rs, &eager_scan_code_roots, worker_i);
+
   _process_strong_tasks->all_tasks_completed();
 }
 
@@ -5202,9 +5199,12 @@ private:
   bool  _process_symbols;
   int _symbols_processed;
   int _symbols_removed;
+
+  bool _do_in_parallel;
 public:
   G1StringSymbolTableUnlinkTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols) :
     AbstractGangTask("Par String/Symbol table unlink"), _is_alive(is_alive),
+    _do_in_parallel(G1CollectedHeap::use_parallel_gc_threads()),
     _process_strings(process_strings), _strings_processed(0), _strings_removed(0),
     _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0) {
 
@@ -5219,16 +5219,16 @@ public:
   }
 
   ~G1StringSymbolTableUnlinkTask() {
-    guarantee(!_process_strings || StringTable::parallel_claimed_index() >= _initial_string_table_size,
+    guarantee(!_process_strings || !_do_in_parallel || StringTable::parallel_claimed_index() >= _initial_string_table_size,
               err_msg("claim value "INT32_FORMAT" after unlink less than initial string table size "INT32_FORMAT,
                       StringTable::parallel_claimed_index(), _initial_string_table_size));
-    guarantee(!_process_strings || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
+    guarantee(!_process_symbols || !_do_in_parallel || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
               err_msg("claim value "INT32_FORMAT" after unlink less than initial symbol table size "INT32_FORMAT,
                       SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
   }
 
   void work(uint worker_id) {
-    if (G1CollectedHeap::use_parallel_gc_threads()) {
+    if (_do_in_parallel) {
       int strings_processed = 0;
       int strings_removed = 0;
       int symbols_processed = 0;
