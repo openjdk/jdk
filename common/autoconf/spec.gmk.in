@@ -297,11 +297,8 @@ OPENWIN_HOME:=@OPENWIN_HOME@
 # The lowest required version of macosx to enforce compatiblity for
 MACOSX_VERSION_MIN=@MACOSX_VERSION_MIN@
 
-# There are two types: CC or CL
-# CC is gcc and others behaving reasonably similar.
-# CL is cl.exe only.
-COMPILER_TYPE:=@COMPILER_TYPE@
-COMPILER_NAME:=@COMPILER_NAME@
+# Toolchain type: gcc, clang, solstudio, lxc, microsoft...
+TOOLCHAIN_TYPE:=@TOOLCHAIN_TYPE@
 
 # Option used to tell the compiler whether to create 32- or 64-bit executables
 COMPILER_TARGET_BITS_FLAG:=@COMPILER_TARGET_BITS_FLAG@

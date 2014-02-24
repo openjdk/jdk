@@ -263,6 +263,13 @@ Additional (non-autoconf) OpenJDK Options:
   --debug-configure       Run the configure script with additional debug
                           logging enabled.
 
+EOT
+
+    # Print list of toolchains. This must be done by the autoconf script.
+    ( CONFIGURE_PRINT_TOOLCHAIN_LIST=true . $conf_script_to_run PRINTF=printf )
+
+    cat <<EOT
+
 Please be aware that, when cross-compiling, the OpenJDK configure script will
 generally use 'target' where autoconf traditionally uses 'host'.
 
