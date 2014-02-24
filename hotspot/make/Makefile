@@ -557,11 +557,11 @@ $(JDK_IMAGE_DIR)/jre/lib/rt.jar:
 
 
 # Testing the built JVM
-RUN_JVM=JAVA_HOME=$(JDK_IMPORT_PATH) $(JDK_IMPORT_PATH)/bin/java -d$(ARCH_DATA_MODEL) -Dsun.java.launcher=gamma
+RUN_JVM=JAVA_HOME=$(JDK_IMPORT_PATH) $(JDK_IMPORT_PATH)/bin/java -d$(ARCH_DATA_MODEL) -XXaltjvm=$(ALTJVM_DIR) -Dsun.java.launcher.is_altjvm=true
 generic_test:
 	@$(ECHO) "Running with: $(ALTJVM_DIR)"
-	@$(RUN_JVM) -XXaltjvm=$(ALTJVM_DIR) -Xinternalversion
-	@$(RUN_JVM) -XXaltjvm=$(ALTJVM_DIR) -showversion -help
+	@$(RUN_JVM) -Xinternalversion
+	@$(RUN_JVM) -showversion -help
 
 # C2 test targets
 test_product test_optimized test_fastdebug test_debug:

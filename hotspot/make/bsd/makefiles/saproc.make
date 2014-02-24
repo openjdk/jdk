@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -153,13 +153,13 @@ endif
 install_saproc: $(BUILDLIBSAPROC)
 	@echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)"
 ifeq ($(OS_VENDOR), Darwin)
-	$(QUIETLY) test -d $(LIBSAPROC_DEBUGINFO) && \
+	$(QUIETLY) test ! -d $(LIBSAPROC_DEBUGINFO) || \
 	    cp -f -r $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO)
 else
-	$(QUIETLY) test -f $(LIBSAPROC_DEBUGINFO) && \
+	$(QUIETLY) test ! -f $(LIBSAPROC_DEBUGINFO) || \
 	    cp -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO)
 endif
-	$(QUIETLY) test -f $(LIBSAPROC_DIZ) && \
+	$(QUIETLY) test ! -f $(LIBSAPROC_DIZ) || \
 	    cp -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ)
 	$(QUIETLY) cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done"
 

@@ -1320,9 +1320,13 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       // interface call
       KlassHandle h_holder(THREAD, holder);
 
-      int itbl_index = m->itable_index();
-      Klass* k = h_recv->klass();
-      selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
+      if (call_type == JNI_VIRTUAL) {
+        int itbl_index = m->itable_index();
+        Klass* k = h_recv->klass();
+        selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
+      } else {
+        selected_method = m;
+      }
     }
   }
 
@@ -4950,8 +4954,10 @@ void TestMetaspaceAux_test();
 void TestMetachunk_test();
 void TestVirtualSpaceNode_test();
 void TestOldFreeSpaceCalculation_test();
+void TestNewSize_test();
 #if INCLUDE_ALL_GCS
 void TestG1BiasedArray_test();
+void TestBufferingOopClosure_test();
 #endif
 
 void execute_internal_vm_tests() {
@@ -4971,12 +4977,14 @@ void execute_internal_vm_tests() {
     run_unit_test(AltHashing::test_alt_hash());
     run_unit_test(test_loggc_filename());
     run_unit_test(TestOldFreeSpaceCalculation_test());
+    run_unit_test(TestNewSize_test());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif
 #if INCLUDE_ALL_GCS
     run_unit_test(TestG1BiasedArray_test());
     run_unit_test(HeapRegionRemSet::test_prt());
+    run_unit_test(TestBufferingOopClosure_test());
 #endif
     tty->print_cr("All internal VM tests passed");
   }

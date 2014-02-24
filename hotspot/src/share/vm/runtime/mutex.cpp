@@ -280,16 +280,6 @@ static inline jint MarsagliaXORV (jint x) {
   return x & 0x7FFFFFFF ;
 }
 
-static inline jint MarsagliaXOR (jint * const a) {
-  jint x = *a ;
-  if (x == 0) x = UNS(a)|1 ;
-  x ^= x << 6;
-  x ^= ((unsigned)x) >> 21;
-  x ^= x << 7 ;
-  *a = x ;
-  return x & 0x7FFFFFFF ;
-}
-
 static int Stall (int its) {
   static volatile jint rv = 1 ;
   volatile int OnFrame = 0 ;

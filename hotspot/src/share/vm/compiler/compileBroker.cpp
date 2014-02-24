@@ -955,7 +955,7 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
 
     if (compiler_thread == NULL || compiler_thread->osthread() == NULL){
       vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    "unable to create new native thread");
+                                    os::native_thread_creation_failed_msg());
     }
 
     java_lang_Thread::set_thread(thread_oop(), compiler_thread);
