@@ -296,7 +296,7 @@ public class SignatureAlgorithm extends Algorithm {
      * which is executed on the internal {@link java.security.Signature} object.
      *
      * @param signature
-     * @return true if if the signature is valid.
+     * @return true if the signature is valid.
      *
      * @throws XMLSignatureException
      */

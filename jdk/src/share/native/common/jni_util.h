@@ -363,10 +363,6 @@ enum {
     FAST_646_US                 /* US-ASCII : ISO646-US */
 };
 
-jstring nativeNewStringPlatform(JNIEnv *env, const char *str);
-
-char* nativeGetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
-
 int getFastEncoding();
 
 void initializeEncoding();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,17 @@
  * questions.
  */
 
-/*
- * Solaris/Linux specific code to support logging.
- */
+package sun.misc;
 
-#include <unistd.h>
-#include "jni_util.h"
+public interface JavaLangRefAccess {
 
-
-JNIEXPORT jboolean JNICALL
-Java_java_util_logging_FileHandler_isSetUID(JNIEnv *env, jclass thisclass) {
-
-    /* Return true if we are in a set UID or set GID process. */
-    if (getuid() != geteuid() || getgid() != getegid()) {
-        return JNI_TRUE;
-    }
-    return JNI_FALSE;
+    /**
+     * Help ReferenceHandler thread process next pending
+     * {@link java.lang.ref.Reference}
+     *
+     * @return {@code true} if there was a pending reference and it
+     *         was enqueue-ed or {@code false} if there was no
+     *         pending reference
+     */
+    boolean tryHandlePendingReference();
 }

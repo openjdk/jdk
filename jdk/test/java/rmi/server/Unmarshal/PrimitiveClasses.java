@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /* @test
  * @bug 4442373
  * @summary Verify that RMI can successfully unmarshal Class objects for
- *          primitive types.
+ *          primitive types. This test does not affect VM global state,
+ *          so othervm is not required.
  * @run main PrimitiveClasses
  */
 

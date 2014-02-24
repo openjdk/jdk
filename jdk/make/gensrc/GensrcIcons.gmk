@@ -109,17 +109,16 @@ $(foreach I, $(GENSRC_AWT_ICONS_SRC), $(eval $(call SetupGensrcAWTIcon,$(notdir 
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-  GENSRC_OSX_ICONS_TMP := $(JDK_OUTPUTDIR)/gensrc
-  GENSRC_OSX_ICONS_DST := $(GENSRC_OSX_ICONS_TMP)/sun/osxapp
+  GENSRC_OSX_ICONS_DST := $(JDK_OUTPUTDIR)/gensrc_headers_icons
   GENSRC_OSX_ICONS := $(GENSRC_OSX_ICONS_DST)/AWTIconData.h
 
   ifdef OPENJDK
-    GENSRC_OSX_ICONS_SRC := $(JDK_TOPDIR)/src/macosx/native/sun/osxapp/resource/icons/JavaApp.icns
+    GENSRC_OSX_ICONS_SRC := $(JDK_TOPDIR)/make/data/macosxicons/JavaApp.icns
   else
-    GENSRC_OSX_ICONS_SRC := $(JDK_TOPDIR)/src/closed/macosx/native/sun/osxapp/resource/icons/JavaApp.icns
+    GENSRC_OSX_ICONS_SRC := $(JDK_TOPDIR)/make/closed/data/macosxicons/JavaApp.icns
   endif
 
-  $(GENSRC_OSX_ICONS_DST)/AWTIconData.h: $(GENSRC_OSX_ICONS_SRC)
+  $(GENSRC_OSX_ICONS): $(GENSRC_OSX_ICONS_SRC)
 	$(RM) $@ $@.tmp
 	$(MKDIR) -p $(dir $@)
 	$(ECHO) "static unsigned char sAWTIconData[] = { " >> $@.tmp

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -575,7 +575,6 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
 {
     /* fields on this */
     jint port;
-    jint scope;
     jint timeout = (*env)->GetIntField(env, this, psi_timeoutID);
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
     jobject fd1Obj = (*env)->GetObjectField(env, this, psi_fd1ID);
@@ -750,7 +749,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             NET_SocketClose(fd);
             return;
         }
-        setInet6Address_ipaddress(env, socketAddressObj, (const char *)&him.him6.sin6_addr);
+        setInet6Address_ipaddress(env, socketAddressObj, (char *)&him.him6.sin6_addr);
         setInetAddress_family(env, socketAddressObj, IPv6);
         setInet6Address_scopeid(env, socketAddressObj, him.him6.sin6_scope_id);
 

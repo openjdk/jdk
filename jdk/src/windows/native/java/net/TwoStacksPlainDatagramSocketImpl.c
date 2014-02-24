@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1646,6 +1646,7 @@ static int getIndexFromIf (JNIEnv *env, jobject nif) {
 }
 
 static int isAdapterIpv6Enabled(JNIEnv *env, int index) {
+  extern int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP);
   netif *ifList, *curr;
   int ipv6Enabled = 0;
   if (getAllInterfacesAndAddresses (env, &ifList) < 0) {

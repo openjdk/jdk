@@ -47,7 +47,7 @@ ${TESTJAVA}/bin/javac -d ${TESTCLASSES} DeleteFont.java
 cd ${TESTCLASSES}
 
 numfiles0=`ls ${TESTCLASSES} | wc -l`
-${TESTJAVA}/bin/java -Djava.io.tmpdir=${TESTCLASSES} DeleteFont
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.io.tmpdir=${TESTCLASSES} DeleteFont
 
 if [ $? -ne 0 ]
     then

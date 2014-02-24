@@ -34,6 +34,7 @@ SUNWprivate_1.1 {
       Java_oracle_jrockit_jfr_VMJFR_getPeriod;
       Java_oracle_jrockit_jfr_VMJFR_descriptors;
       Java_oracle_jrockit_jfr_VMJFR_redefineClass0;
+      Java_oracle_jrockit_jfr_VMJFR_retransformClasses0;
       JNI_OnLoad;
   local:
       *;

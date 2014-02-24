@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2159,7 +2159,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
             caddr[14] = ((address >> 8) & 0xff);
             caddr[15] = (address & 0xff);
         } else {
-            getInet6Address_ipaddress(env, iaObj, caddr);
+            getInet6Address_ipaddress(env, iaObj, (char*)caddr);
         }
 
         memcpy((void *)&(mname6.ipv6mr_multiaddr), caddr, sizeof(struct in6_addr));

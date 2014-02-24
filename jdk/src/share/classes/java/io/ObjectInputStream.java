@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import static java.io.ObjectStreamClass.processQueue;
 import sun.reflect.misc.ReflectUtil;
 
@@ -534,7 +533,7 @@ public class ObjectInputStream
         if (ctx == null) {
             throw new NotActiveException("not in call to readObject");
         }
-        Object curObj = ctx.getObj();
+        ctx.checkAndSetUsed();
         ObjectStreamClass curDesc = ctx.getDesc();
         bin.setBlockDataMode(false);
         GetFieldImpl getField = new GetFieldImpl(curDesc);
@@ -1597,7 +1596,7 @@ public class ObjectInputStream
         int descHandle = handles.assign(unshared ? unsharedMarker : desc);
         passHandle = NULL_HANDLE;
 
-        ObjectStreamClass readDesc = null;
+        ObjectStreamClass readDesc;
         try {
             readDesc = readClassDescriptor();
         } catch (ClassNotFoundException ex) {
@@ -1976,29 +1975,34 @@ public class ObjectInputStream
         }
 
         int primDataSize = desc.getPrimDataSize();
-        if (primVals == null || primVals.length < primDataSize) {
-            primVals = new byte[primDataSize];
-        }
-        bin.readFully(primVals, 0, primDataSize, false);
-        if (obj != null) {
-            desc.setPrimFieldValues(obj, primVals);
-        }
-
-        int objHandle = passHandle;
-        ObjectStreamField[] fields = desc.getFields(false);
-        Object[] objVals = new Object[desc.getNumObjFields()];
-        int numPrimFields = fields.length - objVals.length;
-        for (int i = 0; i < objVals.length; i++) {
-            ObjectStreamField f = fields[numPrimFields + i];
-            objVals[i] = readObject0(f.isUnshared());
-            if (f.getField() != null) {
-                handles.markDependency(objHandle, passHandle);
+        if (primDataSize > 0) {
+            if (primVals == null || primVals.length < primDataSize) {
+                primVals = new byte[primDataSize];
+            }
+            bin.readFully(primVals, 0, primDataSize, false);
+            if (obj != null) {
+                desc.setPrimFieldValues(obj, primVals);
             }
         }
-        if (obj != null) {
-            desc.setObjFieldValues(obj, objVals);
+
+        int numObjFields = desc.getNumObjFields();
+        if (numObjFields > 0) {
+            int objHandle = passHandle;
+            ObjectStreamField[] fields = desc.getFields(false);
+            Object[] objVals = new Object[numObjFields];
+            int numPrimFields = fields.length - objVals.length;
+            for (int i = 0; i < objVals.length; i++) {
+                ObjectStreamField f = fields[numPrimFields + i];
+                objVals[i] = readObject0(f.isUnshared());
+                if (f.getField() != null) {
+                    handles.markDependency(objHandle, passHandle);
+                }
+            }
+            if (obj != null) {
+                desc.setObjFieldValues(obj, objVals);
+            }
+            passHandle = objHandle;
         }
-        passHandle = objHandle;
     }
 
     /**
