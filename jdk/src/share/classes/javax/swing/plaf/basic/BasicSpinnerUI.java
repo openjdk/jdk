@@ -997,21 +997,32 @@ public class BasicSpinnerUI extends SpinnerUI
                              "model".equals(propertyName)) {
                         ui.updateEnabledState();
                     }
-                else if ("font".equals(propertyName)) {
-                    JComponent editor = spinner.getEditor();
-                    if (editor!=null && editor instanceof JSpinner.DefaultEditor) {
-                        JTextField tf =
-                            ((JSpinner.DefaultEditor)editor).getTextField();
-                        if (tf != null) {
-                            if (tf.getFont() instanceof UIResource) {
-                                tf.setFont(spinner.getFont());
+                    else if ("font".equals(propertyName)) {
+                        JComponent editor = spinner.getEditor();
+                        if (editor!=null && editor instanceof JSpinner.DefaultEditor) {
+                            JTextField tf =
+                                ((JSpinner.DefaultEditor)editor).getTextField();
+                            if (tf != null) {
+                                if (tf.getFont() instanceof UIResource) {
+                                    tf.setFont(spinner.getFont());
+                                }
                             }
                         }
                     }
-                }
-                else if (JComponent.TOOL_TIP_TEXT_KEY.equals(propertyName)) {
-                    updateToolTipTextForChildren(spinner);
-                }
+                    else if (JComponent.TOOL_TIP_TEXT_KEY.equals(propertyName)) {
+                        updateToolTipTextForChildren(spinner);
+                    } else if ("componentOrientation".equals(propertyName)) {
+                        ComponentOrientation o
+                                = (ComponentOrientation) e.getNewValue();
+                        if (o != (ComponentOrientation) e.getOldValue()) {
+                            JComponent editor = spinner.getEditor();
+                            if (editor != null) {
+                                editor.applyComponentOrientation(o);
+                            }
+                            spinner.revalidate();
+                            spinner.repaint();
+                        }
+                    }
                 }
             } else if (e.getSource() instanceof JComponent) {
                 JComponent c = (JComponent)e.getSource();
