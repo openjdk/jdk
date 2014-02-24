@@ -82,7 +82,7 @@ inline void G1ParScanClosure::do_oop_nv(T* p) {
 
       _par_scan_state->push_on_queue(p);
     } else {
-      _par_scan_state->update_rs(_from, p, _par_scan_state->queue_num());
+      _par_scan_state->update_rs(_from, p, _worker_id);
     }
   }
 }

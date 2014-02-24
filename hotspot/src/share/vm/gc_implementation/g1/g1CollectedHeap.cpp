@@ -4653,14 +4653,10 @@ void G1ParScanThreadState::trim_queue() {
 
 G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1,
                                      G1ParScanThreadState* par_scan_state) :
-  _g1(g1), _g1_rem(_g1->g1_rem_set()), _cm(_g1->concurrent_mark()),
-  _par_scan_state(par_scan_state),
-  _worker_id(par_scan_state->queue_num()),
-  _during_initial_mark(_g1->g1_policy()->during_initial_mark_pause()),
-  _mark_in_progress(_g1->mark_in_progress()) { }
+  _g1(g1), _par_scan_state(par_scan_state),
+  _worker_id(par_scan_state->queue_num()) { }
 
-template <G1Barrier barrier, bool do_mark_object>
-void G1ParCopyClosure<barrier, do_mark_object>::mark_object(oop obj) {
+void G1ParCopyHelper::mark_object(oop obj) {
 #ifdef ASSERT
   HeapRegion* hr = _g1->heap_region_containing(obj);
   assert(hr != NULL, "sanity");
@@ -4671,9 +4667,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::mark_object(oop obj) {
   _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
 }
 
-template <G1Barrier barrier, bool do_mark_object>
-void G1ParCopyClosure<barrier, do_mark_object>
-  ::mark_forwarded_object(oop from_obj, oop to_obj) {
+void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
 #ifdef ASSERT
   assert(from_obj->is_forwarded(), "from obj should be forwarded");
   assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
@@ -4794,8 +4788,7 @@ void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {
 
 template <G1Barrier barrier, bool do_mark_object>
 template <class T>
-void G1ParCopyClosure<barrier, do_mark_object>
-::do_oop_work(T* p) {
+void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   oop obj = oopDesc::load_decode_heap_oop(p);
 
   assert(_worker_id == _par_scan_state->queue_num(), "sanity");
