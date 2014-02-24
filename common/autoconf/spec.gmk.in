@@ -70,8 +70,8 @@ ifeq (,$(findstring -R,$(MAKE)))
 endif
 
 # Specify where the common include directory for makefiles is.
-ifeq (,$(findstring -I @SRC_ROOT@/make/common,$(MAKE)))
-  MAKE:=$(MAKE) -I @SRC_ROOT@/make/common
+ifeq (,$(findstring -I @TOPDIR@/make/common,$(MAKE)))
+  MAKE:=$(MAKE) -I @TOPDIR@/make/common
 endif
 
 # The "human readable" name of this configuration
@@ -136,10 +136,13 @@ endif
 SYS_ROOT:=@SYS_ROOT@
 
 # Paths to the source code
-SRC_ROOT:=@SRC_ROOT@
 ADD_SRC_ROOT:=@ADD_SRC_ROOT@
 OVERRIDE_SRC_ROOT:=@OVERRIDE_SRC_ROOT@
-TOPDIR:=@SRC_ROOT@
+
+# The top-level directory of the forest (SRC_ROOT is a traditional alias)
+TOPDIR:=@TOPDIR@
+SRC_ROOT:=@TOPDIR@
+
 OUTPUT_ROOT:=@OUTPUT_ROOT@
 JDK_TOPDIR:=@JDK_TOPDIR@
 LANGTOOLS_TOPDIR:=@LANGTOOLS_TOPDIR@
