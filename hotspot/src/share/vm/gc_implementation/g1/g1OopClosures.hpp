@@ -151,21 +151,15 @@ protected:
 
 template <G1Barrier barrier, bool do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
-  G1ParScanClosure _scanner;
+private:
   template <class T> void do_oop_work(T* p);
-
-protected:
-  oop copy_to_survivor_space(oop obj);
 
 public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                    ReferenceProcessor* rp) :
-      _scanner(g1, par_scan_state, rp),
       G1ParCopyHelper(g1, par_scan_state) {
     assert(_ref_processor == NULL, "sanity");
   }
-
-  G1ParScanClosure* scanner() { return &_scanner; }
 
   template <class T> void do_oop_nv(T* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
