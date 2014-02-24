@@ -126,7 +126,7 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
       done
       IFS="$IFS_save"
     else
-      AC_MSG_NOTICE([Resolving $1 (as $path) failed, using $path directly.])
+      # This is an absolute path, we can use it without further modifications.
       new_path="$path"
     fi
 
