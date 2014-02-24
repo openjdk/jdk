@@ -1221,6 +1221,7 @@ public class JSpinner extends JComponent implements Accessible
             JFormattedTextField ftf = getTextField();
             ftf.setEditable(true);
             ftf.setFormatterFactory(factory);
+            // Change the text orientation for the NumberEditor
             ftf.setHorizontalAlignment(JTextField.RIGHT);
 
             /* TBD - initializing the column width of the text field
@@ -1263,6 +1264,16 @@ public class JSpinner extends JComponent implements Accessible
          */
         public SpinnerNumberModel getModel() {
             return (SpinnerNumberModel)(getSpinner().getModel());
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void setComponentOrientation(ComponentOrientation o) {
+            super.setComponentOrientation(o);
+            getTextField().setHorizontalAlignment(
+                    o.isLeftToRight() ? JTextField.RIGHT : JTextField.LEFT);
         }
     }
 
