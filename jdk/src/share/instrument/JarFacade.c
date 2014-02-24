@@ -23,17 +23,8 @@
  * questions.
  */
 
-#ifdef _WIN32
-/*
- * Win* needs this include. However, Linux and Solaris do not.
- * Having this include on Solaris SPARC breaks having non US-ASCII
- * characters in the value of the Premain-Class attribute.
- */
-#include <ctype.h>
-#endif /* _WIN32 */
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #include "jni.h"
 #include "manifest_info.h"
@@ -59,13 +50,13 @@ doAttribute(const char* name, const char* value, void* user_data) {
             size_t value_len;
 
             /* skip any leading white space */
-            while (isspace(*begin)) {
+            while (*begin == ' ') {
                 begin++;
             }
 
             /* skip any trailing white space */
             end = &begin[strlen(begin)];
-            while (end > begin && isspace(end[-1])) {
+            while (end > begin && end[-1] == ' ') {
                 end--;
             }
 
