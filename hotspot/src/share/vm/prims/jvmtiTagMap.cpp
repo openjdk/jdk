@@ -3081,6 +3081,23 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
               }
             }
           }
+
+          StackValueCollection* exprs = jvf->expressions();
+          for (int index=0; index < exprs->size(); index++) {
+            if (exprs->at(index)->type() == T_OBJECT) {
+              oop o = exprs->obj_at(index)();
+              if (o == NULL) {
+                continue;
+              }
+
+              // stack reference
+              if (!CallbackInvoker::report_stack_ref_root(thread_tag, tid, depth, method,
+                                                   bci, locals->size() + index, o)) {
+                return false;
+              }
+            }
+          }
+
         } else {
           blk->set_context(thread_tag, tid, depth, method);
           if (is_top_frame) {
