@@ -698,23 +698,20 @@ public:
   }
 
   // This is a fast test on whether a reference points into the
-  // collection set or not. It does not assume that the reference
-  // points into the heap; if it doesn't, it will return false.
+  // collection set or not. Assume that the reference
+  // points into the heap.
   bool in_cset_fast_test(oop obj) {
     assert(_in_cset_fast_test != NULL, "sanity");
-    if (_g1_committed.contains((HeapWord*) obj)) {
-      // no need to subtract the bottom of the heap from obj,
-      // _in_cset_fast_test is biased
-      uintx index = cast_from_oop<uintx>(obj) >> HeapRegion::LogOfHRGrainBytes;
-      bool ret = _in_cset_fast_test[index];
-      // let's make sure the result is consistent with what the slower
-      // test returns
-      assert( ret || !obj_in_cs(obj), "sanity");
-      assert(!ret ||  obj_in_cs(obj), "sanity");
-      return ret;
-    } else {
-      return false;
-    }
+    assert(_g1_committed.contains((HeapWord*) obj), err_msg("Given reference outside of heap, is "PTR_FORMAT, (HeapWord*)obj));
+    // no need to subtract the bottom of the heap from obj,
+    // _in_cset_fast_test is biased
+    uintx index = cast_from_oop<uintx>(obj) >> HeapRegion::LogOfHRGrainBytes;
+    bool ret = _in_cset_fast_test[index];
+    // let's make sure the result is consistent with what the slower
+    // test returns
+    assert( ret || !obj_in_cs(obj), "sanity");
+    assert(!ret ||  obj_in_cs(obj), "sanity");
+    return ret;
   }
 
   void clear_cset_fast_test() {
