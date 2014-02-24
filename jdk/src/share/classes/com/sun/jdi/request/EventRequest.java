@@ -103,7 +103,7 @@ public interface EventRequest extends Mirror {
      * has been deleted.
      * @throws IllegalThreadStateException if this is a StepRequest,
      * <code>val</code> is <code>true</code>, and the
-     * thread named in the request has died.
+     * thread named in the request has died or is not yet started.
      */
     void setEnabled(boolean val);
 
@@ -112,7 +112,7 @@ public interface EventRequest extends Mirror {
      * @throws InvalidRequestStateException if this request
      * has been deleted.
      * @throws IllegalThreadStateException if this is a StepRequest
-     * and the thread named in the request has died.
+     * and the thread named in the request has died or is not yet started.
      */
     void enable();
 
