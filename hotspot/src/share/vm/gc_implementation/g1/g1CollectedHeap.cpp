@@ -4789,11 +4789,16 @@ void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {
 template <G1Barrier barrier, bool do_mark_object>
 template <class T>
 void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
-  oop obj = oopDesc::load_decode_heap_oop(p);
+  T heap_oop = oopDesc::load_heap_oop(p);
+
+  if (oopDesc::is_null(heap_oop)) {
+    return;
+  }
+
+  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
 
   assert(_worker_id == _par_scan_state->queue_num(), "sanity");
 
-  // here the null check is implicit in the cset_fast_test() test
   if (_g1->in_cset_fast_test(obj)) {
     oop forwardee;
     if (obj->is_forwarded()) {
@@ -4816,12 +4821,12 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
     // The object is not in collection set. If we're a root scanning
     // closure during an initial mark pause (i.e. do_mark_object will
     // be true) then attempt to mark the object.
-    if (do_mark_object && _g1->is_in_g1_reserved(obj)) {
+    if (do_mark_object) {
       mark_object(obj);
     }
   }
 
-  if (barrier == G1BarrierEvac && obj != NULL) {
+  if (barrier == G1BarrierEvac) {
     _par_scan_state->update_rs(_from, p, _worker_id);
   }
 }
