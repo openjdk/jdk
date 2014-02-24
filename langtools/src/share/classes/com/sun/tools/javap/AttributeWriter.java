@@ -531,7 +531,6 @@ public class AttributeWriter extends BasicWriter
         for (StackMapTable_attribute.stack_map_frame entry : attr.entries) {
             w.write(entry);
         }
-        println();
         indent(-1);
         return null;
     }
@@ -543,7 +542,6 @@ public class AttributeWriter extends BasicWriter
         for (StackMapTable_attribute.stack_map_frame entry : attr.entries) {
             w.write(entry);
         }
-        println();
         indent(-1);
         return null;
     }
@@ -555,14 +553,12 @@ public class AttributeWriter extends BasicWriter
         }
 
         public Void visit_same_frame(StackMapTable_attribute.same_frame frame, Void p) {
-            printHeader(frame);
-            println(" /* same */");
+            printHeader(frame, "/* same */");
             return null;
         }
 
         public Void visit_same_locals_1_stack_item_frame(StackMapTable_attribute.same_locals_1_stack_item_frame frame, Void p) {
-            printHeader(frame);
-            println(" /* same_locals_1_stack_item */");
+            printHeader(frame, "/* same_locals_1_stack_item */");
             indent(+1);
             printMap("stack", frame.stack);
             indent(-1);
@@ -570,8 +566,7 @@ public class AttributeWriter extends BasicWriter
         }
 
         public Void visit_same_locals_1_stack_item_frame_extended(StackMapTable_attribute.same_locals_1_stack_item_frame_extended frame, Void p) {
-            printHeader(frame);
-            println(" /* same_locals_1_stack_item_frame_extended */");
+            printHeader(frame, "/* same_locals_1_stack_item_frame_extended */");
             indent(+1);
             println("offset_delta = " + frame.offset_delta);
             printMap("stack", frame.stack);
@@ -580,8 +575,7 @@ public class AttributeWriter extends BasicWriter
         }
 
         public Void visit_chop_frame(StackMapTable_attribute.chop_frame frame, Void p) {
-            printHeader(frame);
-            println(" /* chop */");
+            printHeader(frame, "/* chop */");
             indent(+1);
             println("offset_delta = " + frame.offset_delta);
             indent(-1);
@@ -589,8 +583,7 @@ public class AttributeWriter extends BasicWriter
         }
 
         public Void visit_same_frame_extended(StackMapTable_attribute.same_frame_extended frame, Void p) {
-            printHeader(frame);
-            println(" /* same_frame_extended */");
+            printHeader(frame, "/* same_frame_extended */");
             indent(+1);
             println("offset_delta = " + frame.offset_delta);
             indent(-1);
@@ -598,21 +591,20 @@ public class AttributeWriter extends BasicWriter
         }
 
         public Void visit_append_frame(StackMapTable_attribute.append_frame frame, Void p) {
-            printHeader(frame);
-            println(" /* append */");
+            printHeader(frame, "/* append */");
             indent(+1);
             println("offset_delta = " + frame.offset_delta);
             printMap("locals", frame.locals);
+            indent(-1);
             return null;
         }
 
         public Void visit_full_frame(StackMapTable_attribute.full_frame frame, Void p) {
-            printHeader(frame);
             if (frame instanceof StackMap_attribute.stack_map_frame) {
+                printHeader(frame, "offset = " + frame.offset_delta);
                 indent(+1);
-                println(" offset = " + frame.offset_delta);
             } else {
-                println(" /* full_frame */");
+                printHeader(frame, "/* full_frame */");
                 indent(+1);
                 println("offset_delta = " + frame.offset_delta);
             }
@@ -622,8 +614,9 @@ public class AttributeWriter extends BasicWriter
             return null;
         }
 
-        void printHeader(StackMapTable_attribute.stack_map_frame frame) {
-            print("   frame_type = " + frame.frame_type);
+        void printHeader(StackMapTable_attribute.stack_map_frame frame, String extra) {
+            print("frame_type = " + frame.frame_type + " ");
+            println(extra);
         }
 
         void printMap(String name, StackMapTable_attribute.verification_type_info[] map) {
