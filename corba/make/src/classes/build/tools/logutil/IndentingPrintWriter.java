@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.corba.se.logutil;
+package build.tools.logutil;
 
 import java.io.PrintWriter ;
 import java.io.Writer ;
