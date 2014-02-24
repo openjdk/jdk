@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,39 @@
  */
 
 /**
- * JDK-8026161: Don't narrow floating-point literals in the lexer
+ * JDK-8011964: need indexed access to externally-managed ByteBuffer
  *
  * @test
  * @run
  */
 
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1))
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1.0))
+
+var ByteBuffer = Java.type("java.nio.ByteBuffer");
+var buf = ByteBuffer.allocate(5);
+
+var obj = {}
+Object.setIndexedPropertiesToExternalArrayData(obj, buf);
+
+obj[0] = 'A'.charCodeAt(0);
+obj[1] = 'B'.charCodeAt(0);
+obj[2] = 'C'.charCodeAt(0);
+obj[3] = 'D'.charCodeAt(0);
+obj[4] = 'E'.charCodeAt(0);
+
+for (var i = 0; i < buf.capacity(); i++) {
+    print("obj[" + i + "] = " + obj[i]);
+    print("buf.get(" + i + ") = " + buf.get(i));
+}
+
+var arr = [];
+Object.setIndexedPropertiesToExternalArrayData(arr, buf);
+obj[0] = 'a'.charCodeAt(0);
+obj[1] = 'b'.charCodeAt(0);
+obj[2] = 'c'.charCodeAt(0);
+obj[3] = 'd'.charCodeAt(0);
+obj[4] = 'e'.charCodeAt(0);
+
+for (var i in arr) {
+    print("arr[" + i + "] = " + arr[i]);
+    print("buf.get(" + i + ") = " + buf.get(i));
+}

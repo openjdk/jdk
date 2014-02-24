@@ -25,6 +25,7 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -227,6 +228,29 @@ public class ScriptObjectMirrorTest {
         final ScriptObjectMirror e2obj = (ScriptObjectMirror)e2.eval("({ foo: func })");
         final Object newObj = ((ScriptObjectMirror)e2obj.getMember("foo")).newObject();
         assertTrue(newObj instanceof ScriptObjectMirror);
+    }
+
+    @Test
+    public void indexPropertiesExternalBufferTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptObjectMirror obj = (ScriptObjectMirror)e.eval("var obj = {}; obj");
+        final ByteBuffer buf = ByteBuffer.allocate(5);
+        int i;
+        for (i = 0; i < 5; i++) {
+            buf.put(i, (byte)(i+10));
+        }
+        obj.setIndexedPropertiesToExternalArrayData(buf);
+
+        for (i = 0; i < 5; i++) {
+            assertEquals((byte)(i+10), ((Number)e.eval("obj[" + i + "]")).byteValue());
+        }
+
+        e.eval("for (i = 0; i < 5; i++) obj[i] = 0");
+        for (i = 0; i < 5; i++) {
+            assertEquals((byte)0, ((Number)e.eval("obj[" + i + "]")).byteValue());
+            assertEquals((byte)0, buf.get(i));
+        }
     }
 
     @Test

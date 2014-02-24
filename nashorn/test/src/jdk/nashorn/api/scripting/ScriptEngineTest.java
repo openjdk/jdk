@@ -560,6 +560,47 @@ public class ScriptEngineTest {
         assertTrue(reached[0]);
     }
 
+    // properties that can be read by any code
+    private static String[] propNames = {
+        "java.version",
+        "java.vendor",
+        "java.vendor.url",
+        "java.class.version",
+        "os.name",
+        "os.version",
+        "os.arch",
+        "file.separator",
+        "path.separator",
+        "line.separator",
+        "java.specification.version",
+        "java.specification.vendor",
+        "java.specification.name",
+        "java.vm.specification.version",
+        "java.vm.specification.vendor",
+        "java.vm.specification.name",
+        "java.vm.version",
+        "java.vm.vendor",
+        "java.vm.name"
+    };
+
+    // @bug 8033924: Default permissions are not given for eval code
+    @Test
+    public void checkPropertyReadPermissions() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        for (final String name : propNames) {
+            checkProperty(e, name);
+        }
+    }
+
+    private static void checkProperty(final ScriptEngine e, final String name)
+        throws ScriptException {
+        String value = System.getProperty(name);
+        e.put("name", name);
+        assertEquals(value, e.eval("java.lang.System.getProperty(name)"));
+    }
+
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     // Returns String that would be the result of calling PrintWriter.println
