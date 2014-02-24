@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,35 @@
  */
 
 /**
- * JDK-8026161: Don't narrow floating-point literals in the lexer
- *
  * @test
- * @run
+ * @option -Dnashorn.debug=true
+ * @fork
  */
 
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1))
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1.0))
+load(__DIR__ + "maputil.js");
+
+// add/delete property to proto (direct/indirect) should
+// not affect the property map of the objects
+
+var proto2 = { foo: 334 }
+var proto  = Object.create(proto2);
+proto.bar = "hello";
+
+var obj1 = Object.create(proto);
+var obj2 = Object.create(proto);
+
+assertSameMap(obj1, obj2);
+
+proto.newX = 'world';
+assertSameMap(obj1, obj2);
+
+delete proto.newX;
+assertSameMap(obj1, obj2);
+
+proto2.newX = "foo";
+assertSameMap(obj1, obj2);
+
+delete proto2.newX;
+assertSameMap(obj1, obj2);
+
+

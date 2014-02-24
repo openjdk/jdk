@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,29 @@
  * questions.
  */
 
+
 /**
- * JDK-8026161: Don't narrow floating-point literals in the lexer
- *
- * @test
- * @run
+ * @subtest
  */
 
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1))
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1.0))
+function Point(x, y) {
+   this.x =x; this.y =y;
+}
+
+Point.prototype.toString = function() {
+    return "(" + this.x + "," + this.y + ")";
+}
+
+Point.prototype.modulus = function() {
+    return Math.sqrt(this.x*this.x + this.y*this.y);
+}
+
+Point.prototype.argument = function() {
+    return Math.atan2(this.y, this.x);
+}
+
+load(__DIR__ + "maputil.js");
+
+assertSameMap(new Point(2, 3), new Point(43, 23));
+assertSameMap(new Point(), new Point());
+assertSameMap(new Point(), new Point(3, 1));
