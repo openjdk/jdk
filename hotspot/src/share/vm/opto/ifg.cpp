@@ -439,8 +439,8 @@ void PhaseChaitin::lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* l
       }
     }
   }
-  assert(int_pressure._current_pressure == count_int_pressure(liveout), "the int pressure is incorrect");
-  assert(float_pressure._current_pressure == count_float_pressure(liveout), "the float pressure is incorrect");
+  assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
+  assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
 }
 
 /* Go to the first non-phi index in a block */
@@ -513,8 +513,8 @@ void PhaseChaitin::compute_initial_block_pressure(Block* b, IndexSet* liveout, P
     raise_pressure(b, lrg, int_pressure, float_pressure);
     lid = elements.next();
   }
-  assert(int_pressure._current_pressure == count_int_pressure(liveout), "the int pressure is incorrect");
-  assert(float_pressure._current_pressure == count_float_pressure(liveout), "the float pressure is incorrect");
+  assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
+  assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
 }
 
 /*
@@ -548,17 +548,7 @@ bool PhaseChaitin::remove_node_if_not_used(Block* b, uint location, Node* n, uin
 void PhaseChaitin::check_for_high_pressure_transition_at_fatproj(uint& block_reg_pressure, uint location, LRG& lrg, Pressure& pressure, const int op_regtype) {
   RegMask mask_tmp = lrg.mask();
   mask_tmp.AND(*Matcher::idealreg2regmask[op_regtype]);
-  // this pressure is only valid at this instruction, i.e. we don't need to lower
-  // the register pressure since the fat proj was never live before (going backwards)
-  uint new_pressure = pressure._current_pressure + mask_tmp.Size();
-  if (new_pressure > pressure._final_pressure) {
-    pressure._final_pressure = new_pressure;
-  }
-  // if we were at a low pressure and now at the fat proj is at high pressure, record the fat proj location
-  // as coming from a low to high (to low again)
-  if (pressure._current_pressure <= pressure._high_pressure_limit && new_pressure > pressure._high_pressure_limit) {
-    pressure._high_pressure_index = location;
-  }
+  pressure.check_pressure_at_fatproj(location, mask_tmp);
 }
 
 /*
@@ -700,8 +690,8 @@ void PhaseChaitin::add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, do
       // Newly live things assumed live from here to top of block
       lrg._area += cost;
       raise_pressure(b, lrg, int_pressure, float_pressure);
-      assert(int_pressure._current_pressure == count_int_pressure(liveout), "the int pressure is incorrect");
-      assert(float_pressure._current_pressure == count_float_pressure(liveout), "the float pressure is incorrect");
+      assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
+      assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
     }
     assert(!(lrg._area < 0.0), "negative spill area" );
   }
@@ -710,13 +700,13 @@ void PhaseChaitin::add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, do
 /*
  * If we run off the top of the block with high pressure just record that the
  * whole block is high pressure. (Even though we might have a transition
- * lower down in the block)
+ * later down in the block)
  */
 void PhaseChaitin::check_for_high_pressure_block(Pressure& pressure) {
   // current pressure now means the pressure before the first instruction in the block
   // (since we have stepped through all instructions backwards)
-  if (pressure._current_pressure > pressure._high_pressure_limit) {
-    pressure._high_pressure_index = 0;
+  if (pressure.current_pressure() > pressure.high_pressure_limit()) {
+    pressure.set_high_pressure_index_to_block_start();
   }
 }
 
@@ -725,7 +715,7 @@ void PhaseChaitin::check_for_high_pressure_block(Pressure& pressure) {
  * and set the high pressure index for the block
  */
 void PhaseChaitin::adjust_high_pressure_index(Block* b, uint& block_hrp_index, Pressure& pressure) {
-  uint i = pressure._high_pressure_index;
+  uint i = pressure.high_pressure_index();
   if (i < b->number_of_nodes() && i < b->end_idx() + 1) {
     Node* cur = b->get_node(i);
     while (cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch()) {
@@ -789,8 +779,8 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
 
         if (!liveout.member(lid) && n->Opcode() != Op_SafePoint) {
           if (remove_node_if_not_used(block, location, n, lid, &liveout)) {
-            float_pressure._high_pressure_index--;
-            int_pressure._high_pressure_index--;
+            float_pressure.lower_high_pressure_index();
+            int_pressure.lower_high_pressure_index();
             continue;
           }
           if (lrg._fat_proj) {
@@ -837,13 +827,13 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     adjust_high_pressure_index(block, block->_ihrp_index, int_pressure);
     adjust_high_pressure_index(block, block->_fhrp_index, float_pressure);
     // set the final_pressure as the register pressure for the block
-    block->_reg_pressure = int_pressure._final_pressure;
-    block->_freg_pressure = float_pressure._final_pressure;
+    block->_reg_pressure = int_pressure.final_pressure();
+    block->_freg_pressure = float_pressure.final_pressure();
 
 #ifndef PRODUCT
     // Gather Register Pressure Statistics
     if (PrintOptoStatistics) {
-      if (block->_reg_pressure > int_pressure._high_pressure_limit || block->_freg_pressure > float_pressure._high_pressure_limit) {
+      if (block->_reg_pressure > int_pressure.high_pressure_limit() || block->_freg_pressure > float_pressure.high_pressure_limit()) {
         _high_pressure++;
       } else {
         _low_pressure++;

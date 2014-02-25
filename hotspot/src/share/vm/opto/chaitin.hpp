@@ -501,8 +501,9 @@ private:
   // Used for aggressive coalescing.
   void build_ifg_virtual( );
 
+  // used when computing the register pressure for each block in the CFG. This
+  // is done during IFG creation.
   class Pressure {
-    public:
       // keeps track of the register pressure at the current
       // instruction (used when stepping backwards in the block)
       uint _current_pressure;
@@ -518,6 +519,7 @@ private:
 
       // number of live ranges that constitute high register pressure
       const uint _high_pressure_limit;
+    public:
 
       // lower the register pressure and look for a low to high pressure
       // transition
@@ -525,9 +527,6 @@ private:
         _current_pressure -= lrg.reg_pressure();
         if (_current_pressure == _high_pressure_limit) {
           _high_pressure_index = location;
-          if (_current_pressure > _final_pressure) {
-            _final_pressure = _current_pressure + 1;
-          }
         }
       }
 
@@ -537,6 +536,45 @@ private:
         _current_pressure += lrg.reg_pressure();
         if (_current_pressure > _final_pressure) {
           _final_pressure = _current_pressure;
+        }
+      }
+
+      uint high_pressure_index() const {
+        return _high_pressure_index;
+      }
+
+      uint final_pressure() const {
+        return _final_pressure;
+      }
+
+      uint current_pressure() const {
+        return _current_pressure;
+      }
+
+      uint high_pressure_limit() const {
+        return _high_pressure_limit;
+      }
+
+      void lower_high_pressure_index() {
+        _high_pressure_index--;
+      }
+
+      void set_high_pressure_index_to_block_start() {
+        _high_pressure_index = 0;
+      }
+
+      void check_pressure_at_fatproj(uint fatproj_location, RegMask& fatproj_mask) {
+        // this pressure is only valid at this instruction, i.e. we don't need to lower
+        // the register pressure since the fat proj was never live before (going backwards)
+        uint new_pressure = current_pressure() + fatproj_mask.Size();
+        if (new_pressure > final_pressure()) {
+          _final_pressure = new_pressure;
+        }
+
+        // if we were at a low pressure and now and the fat proj is at high pressure, record the fat proj location
+        // as coming from a low to high (to low again)
+        if (current_pressure() <= high_pressure_limit() && new_pressure > high_pressure_limit()) {
+          _high_pressure_index = fatproj_location;
         }
       }
 
