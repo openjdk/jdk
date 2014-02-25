@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
-
-
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +247,7 @@ public class XRDrawLine {
                     if (dx < 0) {
                         xsteps = -xsteps;
                     }
-                    x1 = ucX1 + (int) xsteps;
+                    x1 = ucX1 + xsteps;
                 } else if ((outcode1 & (OUTCODE_LEFT | OUTCODE_RIGHT)) != 0) {
                     if ((outcode1 & OUTCODE_LEFT) != 0) {
                         x1 = cxmin;
@@ -268,7 +266,7 @@ public class XRDrawLine {
                     if (dy < 0) {
                         ysteps = -ysteps;
                     }
-                    y1 = ucY1 + (int) ysteps;
+                    y1 = ucY1 + ysteps;
                 }
                 outcode1 = outcode(x1, y1, cxmin, cymin, cxmax, cymax);
             } else {
@@ -292,7 +290,7 @@ public class XRDrawLine {
                     if (dx > 0) {
                         xsteps = -xsteps;
                     }
-                    x2 = ucX2 + (int) xsteps;
+                    x2 = ucX2 + xsteps;
                 } else if ((outcode2 & (OUTCODE_LEFT | OUTCODE_RIGHT)) != 0) {
                     if ((outcode2 & OUTCODE_LEFT) != 0) {
                         x2 = cxmin;
@@ -313,7 +311,7 @@ public class XRDrawLine {
                     if (dy > 0) {
                         ysteps = -ysteps;
                     }
-                    y2 = ucY2 + (int) ysteps;
+                    y2 = ucY2 + ysteps;
                 }
                 outcode2 = outcode(x2, y2, cxmin, cymin, cxmax, cymax);
             }

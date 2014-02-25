@@ -75,7 +75,7 @@ public final class FontLineMetrics extends LineMetrics implements Cloneable {
     }
 
     public final float[] getBaselineOffsets() {
-        return (float[])cm.baselineOffsets.clone();
+        return cm.baselineOffsets.clone();
     }
 
     public final float getStrikethroughOffset() {

@@ -452,6 +452,10 @@ public:
   // aligned.
   static const bool misaligned_doubles_ok;
 
+  // Does the CPU require postalloc expand (see block.cpp for description of
+  // postalloc expand)?
+  static const bool require_postalloc_expand;
+
   // Perform a platform dependent implicit null fixup.  This is needed
   // on windows95 to take care of some unusual register constraints.
   void pd_implicit_null_fixup(MachNode *load, uint idx);
@@ -484,6 +488,8 @@ public:
   // retain the Node to act as a compiler ordering barrier.
   static bool post_store_load_barrier(const Node* mb);
 
+  // Does n lead to an uncommon trap that can cause deoptimization?
+  static bool branches_to_uncommon_trap(const Node *n);
 
 #ifdef ASSERT
   void dump_old2new_map();      // machine-independent to machine-dependent

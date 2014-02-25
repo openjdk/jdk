@@ -154,7 +154,7 @@ public final class ProcessTools {
 
     if (addTestVmOptions) {
       String vmopts = System.getProperty("test.vm.opts");
-      if (vmopts != null) {
+      if (vmopts != null && vmopts.length() > 0) {
         Collections.addAll(args, vmopts.split("\\s"));
       }
     }

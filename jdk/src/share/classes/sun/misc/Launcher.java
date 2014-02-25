@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ public class Launcher {
             throws IOException
         {
             final String s = System.getProperty("java.class.path");
-            final File[] path = (s == null) ? new File[0] : getClassPath(s);
+            final File[] path = (s == null) ? new File[0] : getClassPath(s, true);
 
             // Note: on bugid 4256530
             // Prior implementations of this doPrivileged() block supplied
@@ -322,7 +322,7 @@ public class Launcher {
          * This class loader supports dynamic additions to the class path
          * at runtime.
          *
-         * @see java.lang.instrument.Instrumentation#appendToSystemClassPathSearch
+         * @see java.lang.instrument.Instrumentation#appendToSystemClassLoaderSearch
          */
         private void appendToClassPathForInstrumentation(String path) {
             assert(Thread.holdsLock(this));
@@ -364,7 +364,8 @@ public class Launcher {
                 urls = AccessController.doPrivileged(
                     new PrivilegedAction<URL[]>() {
                         public URL[] run() {
-                            File[] classPath = getClassPath(bootClassPath);
+                            // Skip empty path in boot class path i.e. not default to use CWD
+                            File[] classPath = getClassPath(bootClassPath, false);
                             int len = classPath.length;
                             Set<File> seenDirs = new HashSet<File>();
                             for (int i = 0; i < len; i++) {
@@ -405,7 +406,7 @@ public class Launcher {
         return urls;
     }
 
-    private static File[] getClassPath(String cp) {
+    private static File[] getClassPath(String cp, boolean defaultToCwd) {
         File[] path;
         if (cp != null) {
             int count = 0, maxCount = 1;
@@ -419,9 +420,9 @@ public class Launcher {
             lastPos = pos = 0;
             // Now scan for each path component
             while ((pos = cp.indexOf(File.pathSeparator, lastPos)) != -1) {
-                if (pos - lastPos > 0) {
+                if (pos > lastPos) {
                     path[count++] = new File(cp.substring(lastPos, pos));
-                } else {
+                } else if (defaultToCwd) {
                     // empty path component translates to "."
                     path[count++] = new File(".");
                 }
@@ -430,7 +431,7 @@ public class Launcher {
             // Make sure we include the last path component
             if (lastPos < cp.length()) {
                 path[count++] = new File(cp.substring(lastPos));
-            } else {
+            } else if (defaultToCwd) {
                 path[count++] = new File(".");
             }
             // Trim array to correct size

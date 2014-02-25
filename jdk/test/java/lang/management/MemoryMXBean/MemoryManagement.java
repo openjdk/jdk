@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug     4530538
+ * @bug     4530538 6980984
  * @summary Basic unit test of memory management testing:
- *          1) setUsatgeThreshold() and getUsageThreshold()
+ *          1) setUsageThreshold() and getUsageThreshold()
  *          2) test low memory detection on the old generation.
  *
  * @author  Mandy Chung
@@ -40,16 +40,18 @@ import javax.management.*;
 import javax.management.openmbean.CompositeData;
 
 public class MemoryManagement {
-    private static MemoryMXBean mm = ManagementFactory.getMemoryMXBean();
-    private static List pools = ManagementFactory.getMemoryPoolMXBeans();
-    private static List managers = ManagementFactory.getMemoryManagerMXBeans();
-    private static MemoryPoolMXBean mpool = null;
-    private static boolean trace = false;
-    private static boolean testFailed = false;
+    private static final MemoryMXBean mm = ManagementFactory.getMemoryMXBean();
+    private static final List pools =
+            Collections.synchronizedList(ManagementFactory.getMemoryPoolMXBeans());
+    private static final List managers =
+            Collections.synchronizedList(ManagementFactory.getMemoryManagerMXBeans());
+    private static volatile MemoryPoolMXBean mpool = null;
+    private static volatile boolean trace = false;
+    private static volatile boolean testFailed = false;
     private static final int NUM_CHUNKS = 2;
-    private static long chunkSize;
+    private static volatile long chunkSize;
+    private static volatile int listenerInvoked = 0;
 
-    private static int listenerInvoked = 0;
     static class SensorListener implements NotificationListener {
         public void handleNotification(Notification notif, Object handback) {
             String type = notif.getType();
@@ -101,7 +103,13 @@ public class MemoryManagement {
 
         // Now set threshold
         MemoryUsage mu = mpool.getUsage();
-        chunkSize = (mu.getMax() - mu.getUsed()) / 20;
+        long max = mu.getMax();
+        if (max != -1) {
+            chunkSize = (max - mu.getUsed()) / 20;
+        } else { // 6980984
+            System.gc();
+            chunkSize = Runtime.getRuntime().freeMemory()/20;
+        }
         newThreshold = mu.getUsed() + (chunkSize * NUM_CHUNKS);
 
         System.out.println("Setting threshold for " + mpool.getName() +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ import java.security.*;
  * @author Jeff Dinkins
  * @author Lynn Monsanto
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class ImageIcon implements Icon, Serializable, Accessible {
     /* Keep references to the filename and location so that
      * alternate persistence schemes have the option to archive
@@ -572,6 +573,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * Please see {@link java.beans.XMLEncoder}.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleImageIcon extends AccessibleContext
         implements AccessibleIcon, Serializable {
 

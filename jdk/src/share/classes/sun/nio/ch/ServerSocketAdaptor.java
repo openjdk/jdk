@@ -113,7 +113,7 @@ public class ServerSocketAdaptor                        // package-private
                         if (!ssc.isOpen())
                             throw new ClosedChannelException();
                         long st = System.currentTimeMillis();
-                        int result = ssc.poll(PollArrayWrapper.POLLIN, to);
+                        int result = ssc.poll(Net.POLLIN, to);
                         if (result > 0 && ((sc = ssc.accept()) != null))
                             return sc.socket();
                         to -= System.currentTimeMillis() - st;

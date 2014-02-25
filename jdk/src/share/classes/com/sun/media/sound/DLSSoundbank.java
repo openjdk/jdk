@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -531,7 +531,7 @@ public final class DLSSoundbank implements Soundbank {
                     chunk.read(); // Read Reserved byte
 
                     instrument.bank = bank;
-                    instrument.preset = (int) id;
+                    instrument.preset = id;
                     instrument.druminstrument = (drumins & 128) > 0;
                     //System.out.println("bank="+bank+" drumkit="+drumkit
                     //        +" id="+id);

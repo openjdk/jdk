@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -526,6 +526,13 @@ void ClassLoaderData::verify() {
     k->verify();
     assert(k != k->next_link(), "no loops!");
   }
+}
+
+bool ClassLoaderData::contains_klass(Klass* klass) {
+  for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
+    if (k == klass) return true;
+  }
+  return false;
 }
 
 

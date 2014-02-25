@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ class ElfSymbolTable: public CHeapObj<mtInternal> {
   ~ElfSymbolTable();
 
   // search the symbol that is nearest to the specified address.
-  bool lookup(address addr, int* stringtableIndex, int* posIndex, int* offset);
+  bool lookup(address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable);
 
   NullDecoder::decoder_status get_status() { return m_status; };
 
@@ -65,6 +65,6 @@ class ElfSymbolTable: public CHeapObj<mtInternal> {
   NullDecoder::decoder_status  m_status;
 };
 
-#endif // _WINDOWS and _APPLE
+#endif // !_WINDOWS and !__APPLE__
 
 #endif // SHARE_VM_UTILITIES_ELF_SYMBOL_TABLE_HPP

@@ -913,7 +913,11 @@ class JavaThread: public Thread {
 
  private:
 
-  StackGuardState        _stack_guard_state;
+  StackGuardState  _stack_guard_state;
+
+  // Precompute the limit of the stack as used in stack overflow checks.
+  // We load it from here to simplify the stack overflow check in assembly.
+  address          _stack_overflow_limit;
 
   // Compiler exception handling (NOTE: The _exception_oop is *NOT* the same as _pending_exception. It is
   // used to temp. parsing values into and out of the runtime system during exception handling for compiled
@@ -1029,20 +1033,31 @@ class JavaThread: public Thread {
 
   // Last frame anchor routines
 
-  JavaFrameAnchor* frame_anchor(void)                { return &_anchor; }
+  JavaFrameAnchor* frame_anchor(void)            { return &_anchor; }
 
   // last_Java_sp
-  bool has_last_Java_frame() const                   { return _anchor.has_last_Java_frame(); }
-  intptr_t* last_Java_sp() const                     { return _anchor.last_Java_sp(); }
+  bool has_last_Java_frame() const               { return _anchor.has_last_Java_frame(); }
+  intptr_t* last_Java_sp() const                 { return _anchor.last_Java_sp(); }
 
   // last_Java_pc
 
-  address last_Java_pc(void)                         { return _anchor.last_Java_pc(); }
+  address last_Java_pc(void)                     { return _anchor.last_Java_pc(); }
 
   // Safepoint support
+#ifndef PPC64
   JavaThreadState thread_state() const           { return _thread_state; }
-  void set_thread_state(JavaThreadState s)       { _thread_state=s;      }
-  ThreadSafepointState *safepoint_state() const  { return _safepoint_state;  }
+  void set_thread_state(JavaThreadState s)       { _thread_state = s;    }
+#else
+  // Use membars when accessing volatile _thread_state. See
+  // Threads::create_vm() for size checks.
+  JavaThreadState thread_state() const           {
+    return (JavaThreadState) OrderAccess::load_acquire((volatile jint*)&_thread_state);
+  }
+  void set_thread_state(JavaThreadState s)       {
+    OrderAccess::release_store((volatile jint*)&_thread_state, (jint)s);
+  }
+#endif
+  ThreadSafepointState *safepoint_state() const  { return _safepoint_state; }
   void set_safepoint_state(ThreadSafepointState *state) { _safepoint_state = state; }
   bool is_at_poll_safepoint()                    { return _safepoint_state->is_at_poll_safepoint(); }
 
@@ -1319,6 +1334,14 @@ class JavaThread: public Thread {
   // and reguard if possible.
   bool reguard_stack(void);
 
+  address stack_overflow_limit() { return _stack_overflow_limit; }
+  void set_stack_overflow_limit() {
+    _stack_overflow_limit = _stack_base - _stack_size +
+                            ((StackShadowPages +
+                              StackYellowPages +
+                              StackRedPages) * os::vm_page_size());
+  }
+
   // Misc. accessors/mutators
   void set_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = true; }
   void clr_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = false; }
@@ -1353,6 +1376,7 @@ class JavaThread: public Thread {
   static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop       ); }
   static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc        ); }
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
+  static ByteSize stack_overflow_limit_offset()  { return byte_offset_of(JavaThread, _stack_overflow_limit); }
   static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
   static ByteSize stack_guard_state_offset()     { return byte_offset_of(JavaThread, _stack_guard_state   ); }
   static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags       ); }
@@ -1715,6 +1739,9 @@ public:
 #endif
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "thread_linux_ppc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_aix_ppc
+# include "thread_aix_ppc.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "thread_bsd_x86.hpp"

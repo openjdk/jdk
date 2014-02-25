@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,7 @@ import javax.swing.plaf.ProgressBarUI;
  * @author Michael C. Albers
  * @author Kathy Walrath
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JProgressBar extends JComponent implements SwingConstants, Accessible
 {
     /**
@@ -647,6 +648,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     private class ModelListener implements ChangeListener, Serializable {
         public void stateChanged(ChangeEvent e) {
             fireStateChanged();
@@ -1035,6 +1037,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJProgressBar extends AccessibleJComponent
         implements AccessibleValue {
 

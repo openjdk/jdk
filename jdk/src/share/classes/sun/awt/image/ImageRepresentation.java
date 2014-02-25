@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
 
         // Check to see if model is INT_RGB
         if (model instanceof IndexColorModel) {
-            if (model.getTransparency() == model.TRANSLUCENT) {
+            if (model.getTransparency() == Transparency.TRANSLUCENT) {
                 // REMIND:
                 // Probably need to composite anyway so force ARGB
                 cmodel = ColorModel.getRGBdefault();
@@ -586,8 +586,8 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                 }
             }
             else {
-                if (model.getTransparency() != model.OPAQUE &&
-                    cmodel.getTransparency() == cmodel.OPAQUE) {
+                if (model.getTransparency() != Transparency.OPAQUE &&
+                    cmodel.getTransparency() == Transparency.OPAQUE) {
                     convertToRGB();
                 }
 

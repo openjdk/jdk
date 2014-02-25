@@ -54,7 +54,7 @@
 # include "os_bsd.inline.hpp"
 #endif
 
-#if defined(__GNUC__) && !defined(IA64)
+#if defined(__GNUC__) && !defined(IA64) && !defined(PPC64)
   // Need to inhibit inlining for older versions of GCC to avoid build-time failures
   #define ATTR __attribute__((noinline))
 #else
@@ -77,39 +77,6 @@
     bytes = (char*)klassname->bytes();                                     \
     len = klassname->utf8_length();                                        \
   }
-
-#ifndef USDT2
-
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__notify,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__notifyAll,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__enter,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__entered,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__exit,
-  jlong, uintptr_t, char*, int);
-
-#define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)       \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                       \
-      HS_DTRACE_PROBE5(hotspot, monitor__wait, jtid,                       \
-                       (monitor), bytes, len, (millis));                   \
-    }                                                                      \
-  }
-
-#define DTRACE_MONITOR_PROBE(probe, monitor, obj, thread)             \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                       \
-      HS_DTRACE_PROBE4(hotspot, monitor__##probe, jtid,                    \
-                       (uintptr_t)(monitor), bytes, len);                  \
-    }                                                                      \
-  }
-
-#else /* USDT2 */
 
 #define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)            \
   {                                                                        \
@@ -135,7 +102,6 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__exit,
     }                                                                      \
   }
 
-#endif /* USDT2 */
 #else //  ndef DTRACE_ENABLED
 
 #define DTRACE_MONITOR_WAIT_PROBE(obj, thread, millis, mon)    {;}

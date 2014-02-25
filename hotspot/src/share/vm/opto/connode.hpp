@@ -36,7 +36,7 @@ class MachNode;
 // Simple constants
 class ConNode : public TypeNode {
 public:
-  ConNode( const Type *t ) : TypeNode(t,1) {
+  ConNode( const Type *t ) : TypeNode(t->remove_speculative(),1) {
     init_req(0, (Node*)Compile::current()->root());
     init_flags(Flag_is_Con);
   }

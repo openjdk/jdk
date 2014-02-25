@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class Win32ErrorMode {
      */
     public static void initialize() {
         if (!sun.misc.VM.isBooted()) {
-            String s = (String) System.getProperty("sun.io.allowCriticalErrorMessageBox");
+            String s = System.getProperty("sun.io.allowCriticalErrorMessageBox");
             if (s == null || s.equals(Boolean.FALSE.toString())) {
                 long mode = setErrorMode(0);
                 mode |= SEM_FAILCRITICALERRORS;
