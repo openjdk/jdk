@@ -165,7 +165,7 @@ NET_IsZeroAddr(jbyte* caddr);
 
 /* Socket operations
  *
- * These work just like the JVM_* procedures, except that they may do some
+ * These work just like the system calls, except that they may do some
  * platform-specific pre/post processing of the arguments and/or results.
  */
 

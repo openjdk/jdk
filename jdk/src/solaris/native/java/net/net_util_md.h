@@ -36,56 +36,24 @@
 #include <sys/poll.h>
 #endif
 
-
-/*
-   AIX needs a workaround for I/O cancellation, see:
-   http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/close.htm
-   ...
-   The close subroutine is blocked until all subroutines which use the file
-   descriptor return to usr space. For example, when a thread is calling close
-   and another thread is calling select with the same file descriptor, the
-   close subroutine does not return until the select call returns.
-   ...
-*/
-#if defined(__linux__) || defined(MACOSX) || defined (_AIX)
-extern int NET_Timeout(int s, long timeout);
-extern int NET_Read(int s, void* buf, size_t len);
-extern int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
-       struct sockaddr *from, int *fromlen);
-extern int NET_ReadV(int s, const struct iovec * vector, int count);
-extern int NET_Send(int s, void *msg, int len, unsigned int flags);
-extern int NET_SendTo(int s, const void *msg, int len,  unsigned  int
+int NET_Timeout(int s, long timeout);
+int NET_Read(int s, void* buf, size_t len);
+int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
+                 struct sockaddr *from, socklen_t *fromlen);
+int NET_ReadV(int s, const struct iovec * vector, int count);
+int NET_Send(int s, void *msg, int len, unsigned int flags);
+int NET_SendTo(int s, const void *msg, int len,  unsigned  int
        flags, const struct sockaddr *to, int tolen);
-extern int NET_Writev(int s, const struct iovec * vector, int count);
-extern int NET_Connect(int s, struct sockaddr *addr, int addrlen);
-extern int NET_Accept(int s, struct sockaddr *addr, int *addrlen);
-extern int NET_SocketClose(int s);
-extern int NET_Dup2(int oldfd, int newfd);
-
-#ifdef USE_SELECT
+int NET_Writev(int s, const struct iovec * vector, int count);
+int NET_Connect(int s, struct sockaddr *addr, int addrlen);
+int NET_Accept(int s, struct sockaddr *addr, socklen_t *addrlen);
+int NET_SocketClose(int s);
+int NET_Dup2(int oldfd, int newfd);
 extern int NET_Select(int s, fd_set *readfds, fd_set *writefds,
                fd_set *exceptfds, struct timeval *timeout);
-#else
 extern int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout);
-#endif
 
-#else
-
-#define NET_Timeout     JVM_Timeout
-#define NET_Read        JVM_Read
-#define NET_RecvFrom    JVM_RecvFrom
-#define NET_ReadV       readv
-#define NET_Send        JVM_Send
-#define NET_SendTo      JVM_SendTo
-#define NET_WriteV      writev
-#define NET_Connect     JVM_Connect
-#define NET_Accept      JVM_Accept
-#define NET_SocketClose JVM_SocketClose
-#define NET_Dup2        dup2
-#define NET_Select      select
-#define NET_Poll        poll
-
-#endif
+int NET_SocketAvailable(int s, jint *pbytes);
 
 #if defined(__linux__) && defined(AF_INET6)
 int getDefaultIPv6Interface(struct in6_addr *target_addr);

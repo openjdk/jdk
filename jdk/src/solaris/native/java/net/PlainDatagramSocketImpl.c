@@ -186,6 +186,7 @@ Java_java_net_PlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
     int fd;
     int len = 0;
     SOCKADDR him;
+    socklen_t slen = sizeof(him);
 
     if (IS_NULL(fdObj)) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
@@ -223,7 +224,7 @@ Java_java_net_PlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
         /* Now that we're a connected socket, let's extract the port number
          * that the system chose for us and store it in the Socket object.
          */
-        if (JVM_GetSockName(fd, (struct sockaddr *)&him, &len) == -1) {
+        if (getsockname(fd, (struct sockaddr *)&him, &slen) == -1) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                             "Error getting socket name");
             return;
@@ -271,7 +272,7 @@ Java_java_net_PlainDatagramSocketImpl_connect0(JNIEnv *env, jobject this,
 
     setDefaultScopeID(env, (struct sockaddr *)&rmtaddr);
 
-    if (JVM_Connect(fd, (struct sockaddr *)&rmtaddr, len) == -1) {
+    if (NET_Connect(fd, (struct sockaddr *)&rmtaddr, len) == -1) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
                         "Connect failed");
         return;
@@ -293,7 +294,7 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
     SOCKADDR addr;
-    int len;
+    socklen_t len;
 #endif
 
     if (IS_NULL(fdObj)) {
@@ -315,11 +316,11 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
             him4->sin_family = AF_UNSPEC;
             len = sizeof(struct sockaddr_in);
         }
-        JVM_Connect(fd, (struct sockaddr *)&addr, len);
+        NET_Connect(fd, (struct sockaddr *)&addr, len);
 
 #ifdef __linux__
         int localPort = 0;
-        if (JVM_GetSockName(fd, (struct sockaddr *)&addr, &len) == -1)
+        if (getsockname(fd, (struct sockaddr *)&addr, &len) == -1)
             return;
 
         localPort = NET_GetPortFromSockaddr((struct sockaddr *)&addr);
@@ -339,7 +340,7 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
 
 #endif
 #else
-    JVM_Connect(fd, 0, 0);
+    NET_Connect(fd, 0, 0);
 #endif
 }
 
@@ -456,20 +457,11 @@ Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
                      (struct sockaddr *)rmtaddrP, len);
 
     if (ret < 0) {
-        switch (ret) {
-            case JVM_IO_ERR :
-                if (errno == ECONNREFUSED) {
-                    JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException",
+        if (errno == ECONNREFUSED) {
+            JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException",
                             "ICMP Port Unreachable");
-                } else {
-                    NET_ThrowByNameWithLastError(env, "java/io/IOException", "sendto failed");
-                }
-                break;
-
-            case JVM_IO_INTR:
-                JNU_ThrowByName(env, "java/io/InterruptedIOException",
-                                "operation interrupted");
-                break;
+        } else {
+            NET_ThrowByNameWithLastError(env, "java/io/IOException", "sendto failed");
         }
     }
 
@@ -493,7 +485,7 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
     jint fd;
     ssize_t n;
     SOCKADDR remote_addr;
-    int len;
+    socklen_t slen = SOCKADDR_LEN;
     char buf[1];
     jint family;
     jobject iaObj;
@@ -514,25 +506,19 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                             "Peek timed out");
             return ret;
-        } else if (ret == JVM_IO_ERR) {
+        } else if (ret == -1) {
             if (errno == EBADF) {
                  JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
             } else {
                  NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Peek failed");
             }
             return ret;
-        } else if (ret == JVM_IO_INTR) {
-            JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                            "operation interrupted");
-            return ret; /* WARNING: SHOULD WE REALLY RETURN -2??? */
         }
     }
 
-    len = SOCKADDR_LEN;
-    n = NET_RecvFrom(fd, buf, 1, MSG_PEEK,
-                     (struct sockaddr *)&remote_addr, &len);
+    n = NET_RecvFrom(fd, buf, 1, MSG_PEEK, (struct sockaddr *)&remote_addr, &slen);
 
-    if (n == JVM_IO_ERR) {
+    if (n == -1) {
 
 #ifdef __solaris__
         if (errno == ECONNREFUSED) {
@@ -551,9 +537,6 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
                  NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Peek failed");
             }
         }
-        return 0;
-    } else if (n == JVM_IO_INTR) {
-        JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
         return 0;
     }
 
@@ -587,7 +570,7 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
 
     int n;
     SOCKADDR remote_addr;
-    int len;
+    socklen_t slen = SOCKADDR_LEN;
     int port;
 
     if (IS_NULL(fdObj)) {
@@ -616,7 +599,7 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                             "Receive timed out");
             return -1;
-        } else if (ret == JVM_IO_ERR) {
+        } else if (ret == -1) {
 #ifdef __linux__
             if (errno == EBADF) {
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
@@ -626,10 +609,6 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
 #else
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
 #endif
-            return -1;
-        } else if (ret == JVM_IO_INTR) {
-            JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                            "operation interrupted");
             return -1;
         }
     }
@@ -665,14 +644,13 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
         fullPacket = &(BUF[0]);
     }
 
-    len = SOCKADDR_LEN;
     n = NET_RecvFrom(fd, fullPacket, packetBufferLen, MSG_PEEK,
-                     (struct sockaddr *)&remote_addr, &len);
+                     (struct sockaddr *)&remote_addr, &slen);
     /* truncate the data if the packet's length is too small */
     if (n > packetBufferLen) {
         n = packetBufferLen;
     }
-    if (n == JVM_IO_ERR) {
+    if (n == -1) {
 
 #ifdef __solaris__
         if (errno == ECONNREFUSED) {
@@ -693,11 +671,6 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
                  NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
             }
         }
-    } else if (n == JVM_IO_INTR) {
-        (*env)->SetIntField(env, packet, dp_offsetID, 0);
-        (*env)->SetIntField(env, packet, dp_lengthID, 0);
-        JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                        "operation interrupted");
     } else {
         /*
          * success - fill in received address...
@@ -764,7 +737,7 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
 
     int n;
     SOCKADDR remote_addr;
-    int len;
+    socklen_t slen = SOCKADDR_LEN;
     jboolean retry;
 #ifdef __linux__
     jboolean connected = JNI_FALSE;
@@ -834,7 +807,7 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
                 if (ret == 0) {
                     JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                                     "Receive timed out");
-                } else if (ret == JVM_IO_ERR) {
+                } else if (ret == -1) {
 #ifdef __linux__
                     if (errno == EBADF) {
                          JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
@@ -844,9 +817,6 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
 #else
                      JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
 #endif
-                } else if (ret == JVM_IO_INTR) {
-                    JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                                    "operation interrupted");
                 }
 
                 if (mallocedPacket) {
@@ -857,14 +827,13 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
             }
         }
 
-        len = SOCKADDR_LEN;
         n = NET_RecvFrom(fd, fullPacket, packetBufferLen, 0,
-                         (struct sockaddr *)&remote_addr, &len);
+                         (struct sockaddr *)&remote_addr, &slen);
         /* truncate the data if the packet's length is too small */
         if (n > packetBufferLen) {
             n = packetBufferLen;
         }
-        if (n == JVM_IO_ERR) {
+        if (n == -1) {
             (*env)->SetIntField(env, packet, dp_offsetID, 0);
             (*env)->SetIntField(env, packet, dp_lengthID, 0);
             if (errno == ECONNREFUSED) {
@@ -877,11 +846,6 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
                      NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
                  }
             }
-        } else if (n == JVM_IO_INTR) {
-            (*env)->SetIntField(env, packet, dp_offsetID, 0);
-            (*env)->SetIntField(env, packet, dp_lengthID, 0);
-            JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                            "operation interrupted");
         } else {
             int port;
             jobject packetAddress;
@@ -950,7 +914,7 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
         return;
     }
 
-    if ((fd = JVM_Socket(domain, SOCK_DGRAM, 0)) == JVM_IO_ERR) {
+    if ((fd = socket(domain, SOCK_DGRAM, 0)) == -1) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                        "Error creating socket");
         return;
@@ -971,14 +935,14 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
 
 #ifdef __APPLE__
     arg = 65507;
-    if (JVM_SetSockOpt(fd, SOL_SOCKET, SO_SNDBUF,
-                       (char *)&arg, sizeof(arg)) < 0) {
+    if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF,
+                   (char *)&arg, sizeof(arg)) < 0) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         strerror(errno));
         return;
     }
-    if (JVM_SetSockOpt(fd, SOL_SOCKET, SO_RCVBUF,
-                       (char *)&arg, sizeof(arg)) < 0) {
+    if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF,
+                   (char *)&arg, sizeof(arg)) < 0) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         strerror(errno));
         return;
@@ -1084,8 +1048,8 @@ static void mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jobject val
         }
     }
 
-    if (JVM_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_IF,
-                       (const char*)&in, sizeof(in)) < 0) {
+    if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
+                   (const char*)&in, sizeof(in)) < 0) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                        "Error setting socket option");
     }
@@ -1108,8 +1072,8 @@ static void mcast_set_if_by_if_v6(JNIEnv *env, jobject this, int fd, jobject val
     }
     index = (*env)->GetIntField(env, value, ni_indexID);
 
-    if (JVM_SetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-                       (const char*)&index, sizeof(index)) < 0) {
+    if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                   (const char*)&index, sizeof(index)) < 0) {
         if (errno == EINVAL && index > 0) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "IPV6_MULTICAST_IF failed (interface has IPv4 "
@@ -1133,8 +1097,8 @@ static void mcast_set_if_by_addr_v4(JNIEnv *env, jobject this, int fd, jobject v
 
     in.s_addr = htonl( getInetAddress_addr(env, value) );
 
-    if (JVM_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_IF,
-                       (const char*)&in, sizeof(in)) < 0) {
+    if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
+                   (const char*)&in, sizeof(in)) < 0) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                          "Error setting socket option");
     }
@@ -1482,10 +1446,10 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
 
         struct in_addr in;
         struct in_addr *inP = &in;
-        int len = sizeof(struct in_addr);
+        socklen_t len = sizeof(struct in_addr);
 
-        if (JVM_GetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_IF,
-                           (char *)inP, &len) < 0) {
+        if (getsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
+                       (char *)inP, &len) < 0) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                              "Error getting socket option");
             return NULL;
@@ -1568,14 +1532,14 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
         static jmethodID ia_anyLocalAddressID;
 
         int index;
-        int len = sizeof(index);
+        socklen_t len = sizeof(index);
 
         jobjectArray addrArray;
         jobject addr;
         jobject ni;
 
-        if (JVM_GetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-                           (char*)&index, &len) < 0) {
+        if (getsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                       (char*)&index, &len) < 0) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                            "Error getting socket option");
             return NULL;
@@ -1789,8 +1753,8 @@ Java_java_net_PlainDatagramSocketImpl_setTTL(JNIEnv *env, jobject this,
  */
 static void setTTL(JNIEnv *env, int fd, jint ttl) {
     char ittl = (char)ttl;
-    if (JVM_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ittl,
-                       sizeof(ittl)) < 0) {
+    if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ittl,
+                   sizeof(ittl)) < 0) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                        "Error setting socket option");
     }
@@ -1802,8 +1766,8 @@ static void setTTL(JNIEnv *env, int fd, jint ttl) {
 #ifdef AF_INET6
 static void setHopLimit(JNIEnv *env, int fd, jint ttl) {
     int ittl = (int)ttl;
-    if (JVM_SetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
-                       (char*)&ittl, sizeof(ittl)) < 0) {
+    if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+                   (char*)&ittl, sizeof(ittl)) < 0) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                        "Error setting socket option");
     }
@@ -1883,22 +1847,22 @@ Java_java_net_PlainDatagramSocketImpl_getTimeToLive(JNIEnv *env, jobject this) {
 #ifdef AF_INET6
     if (ipv6_available()) {
         int ttl = 0;
-        int len = sizeof(ttl);
+        socklen_t len = sizeof(ttl);
 
-        if (JVM_GetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
-                               (char*)&ttl, &len) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                               "Error getting socket option");
-                return -1;
-            }
+        if (getsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+                       (char*)&ttl, &len) < 0) {
+            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                         "Error getting socket option");
+            return -1;
+        }
         return (jint)ttl;
     } else
 #endif /* AF_INET6 */
         {
             u_char ttl = 0;
-            int len = sizeof(ttl);
-            if (JVM_GetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_TTL,
-                               (char*)&ttl, &len) < 0) {
+            socklen_t len = sizeof(ttl);
+            if (getsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL,
+                           (char*)&ttl, &len) < 0) {
                 NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                                "Error getting socket option");
                 return -1;
@@ -2050,10 +2014,10 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
             if (ipv6_available()) {
 
                 int index;
-                int len = sizeof(index);
+                socklen_t len = sizeof(index);
 
-                if (JVM_GetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-                                   (char*)&index, &len) < 0) {
+                if (getsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                               (char*)&index, &len) < 0) {
                     NET_ThrowCurrent(env, "getsockopt IPV6_MULTICAST_IF failed");
                     return;
                 }
@@ -2089,8 +2053,8 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
         /*
          * Join the multicast group.
          */
-        if (JVM_SetSockOpt(fd, IPPROTO_IP, (join ? IP_ADD_MEMBERSHIP:IP_DROP_MEMBERSHIP),
-                           (char *) &mname, mname_len) < 0) {
+        if (setsockopt(fd, IPPROTO_IP, (join ? IP_ADD_MEMBERSHIP:IP_DROP_MEMBERSHIP),
+                       (char *) &mname, mname_len) < 0) {
 
             /*
              * If IP_ADD_MEMBERSHIP returns ENOPROTOOPT on Linux and we've got
@@ -2165,12 +2129,12 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
         memcpy((void *)&(mname6.ipv6mr_multiaddr), caddr, sizeof(struct in6_addr));
         if (IS_NULL(niObj)) {
             int index;
-            int len = sizeof(index);
+            socklen_t len = sizeof(index);
 
-            if (JVM_GetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-                             (char*)&index, &len) < 0) {
+            if (getsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                           (char*)&index, &len) < 0) {
                 NET_ThrowCurrent(env, "getsockopt IPV6_MULTICAST_IF failed");
-               return;
+                return;
             }
 
 #ifdef __linux__
@@ -2211,8 +2175,8 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
 #endif
 
         /* Join the multicast group */
-        if (JVM_SetSockOpt(fd, IPPROTO_IPV6, (join ? ADD_MEMBERSHIP : DRP_MEMBERSHIP),
-                           (char *) &mname6, sizeof (mname6)) < 0) {
+        if (setsockopt(fd, IPPROTO_IPV6, (join ? ADD_MEMBERSHIP : DRP_MEMBERSHIP),
+                       (char *) &mname6, sizeof (mname6)) < 0) {
 
             if (join) {
                 NET_ThrowCurrent(env, "setsockopt " S_ADD_MEMBERSHIP " failed");
