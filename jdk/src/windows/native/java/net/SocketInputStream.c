@@ -105,11 +105,8 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
                 if (ret == 0) {
                     JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                                     "Read timed out");
-                } else if (ret == JVM_IO_ERR) {
+                } else if (ret == -1) {
                     JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
-                } else if (ret == JVM_IO_INTR) {
-                    JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                                    "Operation interrupted");
                 }
                 if (bufP != BUF) {
                     free(bufP);

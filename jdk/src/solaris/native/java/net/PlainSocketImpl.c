@@ -111,8 +111,8 @@ static int getMarkerFD()
      * Finally shutdown sv[0] (any reads to this fd will get
      * EOF; any writes will get an error).
      */
-    JVM_SocketShutdown(sv[0], 2);
-    JVM_SocketClose(sv[1]);
+    shutdown(sv[0], 2);
+    close(sv[1]);
 
     return sv[0];
 }
@@ -205,7 +205,7 @@ Java_java_net_PlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
         return;
     }
 
-    if ((fd = JVM_Socket(domain, type, 0)) == JVM_IO_ERR) {
+    if ((fd = socket(domain, type, 0)) == -1) {
         /* note: if you run out of fds, you may not be able to load
          * the exception class, and get a NoClassDefFoundError
          * instead.
@@ -235,8 +235,8 @@ Java_java_net_PlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
     if (ssObj != NULL) {
         int arg = 1;
         SET_NONBLOCKING(fd);
-        if (JVM_SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,
-                           sizeof(arg)) < 0) {
+        if (NET_SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,
+                       sizeof(arg)) < 0) {
             NET_ThrowNew(env, errno, "cannot set SO_REUSEADDR");
             close(fd);
             return;
@@ -303,7 +303,7 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
     if (timeout <= 0) {
         connect_rv = NET_Connect(fd, (struct sockaddr *)&him, len);
 #ifdef __solaris__
-        if (connect_rv == JVM_IO_ERR && errno == EINPROGRESS ) {
+        if (connect_rv == -1 && errno == EINPROGRESS ) {
 
             /* This can happen if a blocking connect is interrupted by a signal.
              * See 6343810.
@@ -330,7 +330,7 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
                 }
 #endif
 
-                if (connect_rv == JVM_IO_ERR) {
+                if (connect_rv == -1) {
                     if (errno == EINTR) {
                         continue;
                     } else {
@@ -338,18 +338,18 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
                     }
                 }
                 if (connect_rv > 0) {
-                    int optlen;
+                    socklen_t optlen;
                     /* has connection been established */
                     optlen = sizeof(connect_rv);
-                    if (JVM_GetSockOpt(fd, SOL_SOCKET, SO_ERROR,
-                                        (void*)&connect_rv, &optlen) <0) {
+                    if (getsockopt(fd, SOL_SOCKET, SO_ERROR,
+                                   (void*)&connect_rv, &optlen) <0) {
                         connect_rv = errno;
                     }
 
                     if (connect_rv != 0) {
                         /* restore errno */
                         errno = connect_rv;
-                        connect_rv = JVM_IO_ERR;
+                        connect_rv = -1;
                     }
                     break;
                 }
@@ -369,7 +369,7 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
 
         /* connection not established immediately */
         if (connect_rv != 0) {
-            int optlen;
+            socklen_t optlen;
             jlong prevTime = JVM_CurrentTimeMillis(env, 0);
 
             if (errno != EINPROGRESS) {
@@ -446,14 +446,14 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
                  * shutdown input & output.
                  */
                 SET_BLOCKING(fd);
-                JVM_SocketShutdown(fd, 2);
+                shutdown(fd, 2);
                 return;
             }
 
             /* has connection been established */
             optlen = sizeof(connect_rv);
-            if (JVM_GetSockOpt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
-                               &optlen) <0) {
+            if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
+                           &optlen) <0) {
                 connect_rv = errno;
             }
         }
@@ -464,7 +464,7 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
         /* restore errno */
         if (connect_rv != 0) {
             errno = connect_rv;
-            connect_rv = JVM_IO_ERR;
+            connect_rv = -1;
         }
     }
 
@@ -482,21 +482,20 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
          * instead of EADDRNOTAVAIL. We handle this here so that
          * a more descriptive exception text is used.
          */
-        if (connect_rv == JVM_IO_ERR && errno == EINVAL) {
+        if (connect_rv == -1 && errno == EINVAL) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                 "Invalid argument or cannot assign requested address");
             return;
         }
 #endif
-        if (connect_rv == JVM_IO_INTR) {
-            JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                            "operation interrupted");
 #if defined(EPROTO)
-        } else if (errno == EPROTO) {
+        if (errno == EPROTO) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ProtocolException",
                            "Protocol error");
+            return;
+        }
 #endif
-        } else if (errno == ECONNREFUSED) {
+        if (errno == ECONNREFUSED) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
                            "Connection refused");
         } else if (errno == ETIMEDOUT) {
@@ -532,8 +531,8 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
         /* Now that we're a connected socket, let's extract the port number
          * that the system chose for us and store it in the Socket object.
          */
-        len = SOCKADDR_LEN;
-        if (JVM_GetSockName(fd, (struct sockaddr *)&him, &len) == -1) {
+        socklen_t slen = SOCKADDR_LEN;
+        if (getsockname(fd, (struct sockaddr *)&him, &slen) == -1) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                            "Error getting socket name");
         } else {
@@ -594,10 +593,11 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
 
     /* initialize the local port */
     if (localport == 0) {
+        socklen_t slen = sizeof(him);
         /* Now that we're a connected socket, let's extract the port number
          * that the system chose for us and store it in the Socket object.
          */
-        if (JVM_GetSockName(fd, (struct sockaddr *)&him, &len) == -1) {
+        if (getsockname(fd, (struct sockaddr *)&him, &slen) == -1) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                            "Error getting socket name");
             return;
@@ -638,7 +638,7 @@ Java_java_net_PlainSocketImpl_socketListen (JNIEnv *env, jobject this,
     if (count == 0x7fffffff)
         count -= 1;
 
-    if (JVM_Listen(fd, count) == JVM_IO_ERR) {
+    if (listen(fd, count) == -1) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                        "Listen failed");
     }
@@ -671,9 +671,7 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
     jint newfd;
 
     SOCKADDR him;
-    int len;
-
-    len = SOCKADDR_LEN;
+    socklen_t slen = SOCKADDR_LEN;
 
     if (IS_NULL(fdObj)) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
@@ -716,20 +714,16 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                             "Accept timed out");
             return;
-        } else if (ret == JVM_IO_ERR) {
+        } else if (ret == -1) {
             if (errno == EBADF) {
                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
             } else {
                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Accept failed");
             }
             return;
-        } else if (ret == JVM_IO_INTR) {
-            JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                            "operation interrupted");
-            return;
         }
 
-        newfd = NET_Accept(fd, (struct sockaddr *)&him, (jint*)&len);
+        newfd = NET_Accept(fd, (struct sockaddr *)&him, &slen);
 
         /* connection accepted */
         if (newfd >= 0) {
@@ -816,8 +810,8 @@ Java_java_net_PlainSocketImpl_socketAvailable(JNIEnv *env, jobject this) {
     } else {
         fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
     }
-    /* JVM_SocketAvailable returns 0 for failure, 1 for success */
-    if (!JVM_SocketAvailable(fd, &ret)){
+    /* NET_SocketAvailable returns 0 for failure, 1 for success */
+    if (NET_SocketAvailable(fd, &ret) == 0){
         if (errno == ECONNRESET) {
             JNU_ThrowByName(env, "sun/net/ConnectionResetException", "");
         } else {
@@ -881,7 +875,7 @@ Java_java_net_PlainSocketImpl_socketShutdown(JNIEnv *env, jobject this,
     } else {
         fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
     }
-    JVM_SocketShutdown(fd, howto);
+    shutdown(fd, howto);
 }
 
 
@@ -1101,13 +1095,8 @@ Java_java_net_PlainSocketImpl_socketSendUrgentData(JNIEnv *env, jobject this,
         }
 
     }
-    n = JVM_Send(fd, (char *)&d, 1, MSG_OOB);
-    if (n == JVM_IO_ERR) {
+    n = NET_Send(fd, (char *)&d, 1, MSG_OOB);
+    if (n == -1) {
         NET_ThrowByNameWithLastError(env, "java/io/IOException", "Write failed");
-        return;
-    }
-    if (n == JVM_IO_INTR) {
-        JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
-        return;
     }
 }
