@@ -210,7 +210,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher)
 {
   NOT_PRODUCT( Compile::TracePhase t3("ctorChaitin", &_t_ctorChaitin, TimeCompiler); )
 
-  _high_frequency_lrg = MIN2(float(OPTO_LRG_HIGH_FREQ), _cfg.get_outer_loop_frequency());
+  _high_frequency_lrg = MIN2(double(OPTO_LRG_HIGH_FREQ), _cfg.get_outer_loop_frequency());
 
   // Build a list of basic blocks, sorted by frequency
   _blks = NEW_RESOURCE_ARRAY(Block *, _cfg.number_of_blocks());
