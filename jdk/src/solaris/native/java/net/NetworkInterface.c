@@ -1014,7 +1014,7 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
 static int  openSocket(JNIEnv *env, int proto){
     int sock;
 
-    if ((sock = JVM_Socket(proto, SOCK_DGRAM, 0)) < 0) {
+    if ((sock = socket(proto, SOCK_DGRAM, 0)) < 0) {
         /*
          * If EPROTONOSUPPORT is returned it means we don't have
          * support  for this proto so don't throw an exception.
@@ -1040,9 +1040,9 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname){
     int sock;
     struct ifreq if2;
 
-     if ((sock = JVM_Socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
          if (errno == EPROTONOSUPPORT){
-              if ( (sock = JVM_Socket(AF_INET6, SOCK_DGRAM, 0)) < 0 ){
+              if ( (sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0 ){
                  NET_ThrowByNameWithLastError(env , JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
                  return -1;
               }
@@ -1468,9 +1468,9 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname){
     int sock, alreadyV6 = 0;
     struct lifreq if2;
 
-     if ((sock = JVM_Socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
          if (errno == EPROTONOSUPPORT){
-              if ( (sock = JVM_Socket(AF_INET6, SOCK_DGRAM, 0)) < 0 ){
+              if ( (sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0 ){
                  NET_ThrowByNameWithLastError(env , JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
                  return -1;
               }
@@ -1498,7 +1498,7 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname){
         strcpy(if2.lifr_name, ifname);
         if (ioctl(sock, SIOCGLIFNETMASK, (char *)&if2) < 0) {
                 close(sock);
-                if ( (sock = JVM_Socket(AF_INET6, SOCK_DGRAM, 0)) < 0 ){
+                if ( (sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0 ){
                       NET_ThrowByNameWithLastError(env , JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
                       return -1;
                 }
@@ -1854,9 +1854,9 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname){
     int sock;
     struct ifreq if2;
 
-     if ((sock = JVM_Socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
          if (errno == EPROTONOSUPPORT){
-              if ( (sock = JVM_Socket(AF_INET6, SOCK_DGRAM, 0)) < 0 ){
+              if ( (sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0 ){
                  NET_ThrowByNameWithLastError(env , JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
                  return -1;
               }
