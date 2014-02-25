@@ -4220,7 +4220,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1393244882
+DATE_WHEN_GENERATED=1393327380
 
 ###############################################################################
 #
@@ -26393,18 +26393,10 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   ORG_CXXFLAGS="$CXXFLAGS"
   ORG_OBJCFLAGS="$OBJCFLAGS"
 
-  # autoconf magic only relies on PATH, so update it if tools dir is specified
-  OLD_PATH="$PATH"
-
-  # For solaris we really need solaris tools, and not the GNU equivalent.
-  # The build tools on Solaris reside in /usr/ccs (C Compilation System),
-  # so add that to path before starting to probe.
-  # FIXME: This was originally only done for AS,NM,GNM,STRIP,MCS,OBJCOPY,OBJDUMP.
-  if test "x$OPENJDK_BUILD_OS" = xsolaris; then
-    PATH="/usr/ccs/bin:$PATH"
-  fi
-
   # On Windows, we need to detect the visual studio installation first.
+  # This will change the PATH, but we need to keep that new PATH even
+  # after toolchain detection is done, since the compiler (on x86) uses
+  # it for DLL resolution in runtime.
   if test "x$OPENJDK_BUILD_OS" = "xwindows" && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
 
   # Store path to cygwin link.exe to help excluding it when searching for
@@ -27213,6 +27205,17 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
+  fi
+
+  # autoconf magic only relies on PATH, so update it if tools dir is specified
+  OLD_PATH="$PATH"
+
+  # For solaris we really need solaris tools, and not the GNU equivalent.
+  # The build tools on Solaris reside in /usr/ccs (C Compilation System),
+  # so add that to path before starting to probe.
+  # FIXME: This was originally only done for AS,NM,GNM,STRIP,MCS,OBJCOPY,OBJDUMP.
+  if test "x$OPENJDK_BUILD_OS" = xsolaris; then
+    PATH="/usr/ccs/bin:$PATH"
   fi
 
   # Finally add TOOLS_DIR at the beginning, to allow --with-tools-dir to
