@@ -250,7 +250,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           CallGenerator* miss_cg;
           Deoptimization::DeoptReason reason = morphism == 2 ?
                                     Deoptimization::Reason_bimorphic :
-                                    Deoptimization::Reason_class_check;
+                                    (speculative_receiver_type == NULL ? Deoptimization::Reason_class_check : Deoptimization::Reason_speculate_class_check);
           if ((morphism == 1 || (morphism == 2 && next_hit_cg != NULL)) &&
               !too_many_traps(jvms->method(), jvms->bci(), reason)
              ) {

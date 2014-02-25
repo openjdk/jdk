@@ -612,9 +612,10 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   // Usual case:  Bail to interpreter.
   // Reserve the right to recompile if we haven't seen anything yet.
 
+  assert(!Deoptimization::reason_is_speculate(reason), "unsupported");
   Deoptimization::DeoptAction action = Deoptimization::Action_maybe_recompile;
   if (treat_throw_as_hot
-      && (method()->method_data()->trap_recompiled_at(bci())
+      && (method()->method_data()->trap_recompiled_at(bci(), NULL)
           || C->too_many_traps(reason))) {
     // We cannot afford to take more traps here.  Suffer in the interpreter.
     if (C->log() != NULL)
@@ -2145,7 +2146,7 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls) {
  *
  * @param n  receiver node
  *
- * @return           node with improved type
+ * @return   node with improved type
  */
 Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
   if (!UseTypeSpeculation) {
@@ -2739,12 +2740,14 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data) {
 // Subsequent type checks will always fold up.
 Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
                                              ciKlass* require_klass,
-                                            ciKlass* spec_klass,
+                                             ciKlass* spec_klass,
                                              bool safe_for_replace) {
   if (!UseTypeProfile || !TypeProfileCasts) return NULL;
 
+  Deoptimization::DeoptReason reason = spec_klass == NULL ? Deoptimization::Reason_class_check : Deoptimization::Reason_speculate_class_check;
+
   // Make sure we haven't already deoptimized from this tactic.
-  if (too_many_traps(Deoptimization::Reason_class_check))
+  if (too_many_traps(reason))
     return NULL;
 
   // (No, this isn't a call, but it's enough like a virtual call
@@ -2766,7 +2769,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
                                             &exact_obj);
       { PreserveJVMState pjvms(this);
         set_control(slow_ctl);
-        uncommon_trap(Deoptimization::Reason_class_check,
+        uncommon_trap(reason,
                       Deoptimization::Action_maybe_recompile);
       }
       if (safe_for_replace) {
@@ -2793,8 +2796,10 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
                                         bool not_null) {
   // type == NULL if profiling tells us this object is always null
   if (type != NULL) {
-    if (!too_many_traps(Deoptimization::Reason_null_check) &&
-        !too_many_traps(Deoptimization::Reason_class_check)) {
+    Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
+    Deoptimization::DeoptReason null_reason = Deoptimization::Reason_null_check;
+    if (!too_many_traps(null_reason) &&
+        !too_many_traps(class_reason)) {
       Node* not_null_obj = NULL;
       // not_null is true if we know the object is not null and
       // there's no need for a null check
@@ -2813,7 +2818,7 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
       {
         PreserveJVMState pjvms(this);
         set_control(slow_ctl);
-        uncommon_trap(Deoptimization::Reason_class_check,
+        uncommon_trap(class_reason,
                       Deoptimization::Action_maybe_recompile);
       }
       replace_in_map(not_null_obj, exact_obj);
@@ -2882,7 +2887,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   }
 
   if (known_statically && UseTypeSpeculation) {
-    // If we know the type check always succeed then we don't use the
+    // If we know the type check always succeeds then we don't use the
     // profiling data at this bytecode. Don't lose it, feed it to the
     // type system as a speculative type.
     not_null_obj = record_profiled_receiver_for_speculation(not_null_obj);

@@ -3249,7 +3249,8 @@ bool Compile::too_many_traps(ciMethod* method,
     // because of a transient condition during start-up in the interpreter.
     return false;
   }
-  if (md->has_trap_at(bci, reason) != 0) {
+  ciMethod* m = Deoptimization::reason_is_speculate(reason) ? this->method() : NULL;
+  if (md->has_trap_at(bci, m, reason) != 0) {
     // Assume PerBytecodeTrapLimit==0, for a more conservative heuristic.
     // Also, if there are multiple reasons, or if there is no per-BCI record,
     // assume the worst.
@@ -3267,7 +3268,7 @@ bool Compile::too_many_traps(ciMethod* method,
 // Less-accurate variant which does not require a method and bci.
 bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
                              ciMethodData* logmd) {
- if (trap_count(reason) >= (uint)PerMethodTrapLimit) {
+  if (trap_count(reason) >= Deoptimization::per_method_trap_limit(reason)) {
     // Too many traps globally.
     // Note that we use cumulative trap_count, not just md->trap_count.
     if (log()) {
@@ -3302,10 +3303,11 @@ bool Compile::too_many_recompiles(ciMethod* method,
   uint m_cutoff  = (uint) PerMethodRecompilationCutoff / 2 + 1;  // not zero
   Deoptimization::DeoptReason per_bc_reason
     = Deoptimization::reason_recorded_per_bytecode_if_any(reason);
+  ciMethod* m = Deoptimization::reason_is_speculate(reason) ? this->method() : NULL;
   if ((per_bc_reason == Deoptimization::Reason_none
-       || md->has_trap_at(bci, reason) != 0)
+       || md->has_trap_at(bci, m, reason) != 0)
       // The trap frequency measure we care about is the recompile count:
-      && md->trap_recompiled_at(bci)
+      && md->trap_recompiled_at(bci, m)
       && md->overflow_recompile_count() >= bc_cutoff) {
     // Do not emit a trap here if it has already caused recompilations.
     // Also, if there are multiple reasons, or if there is no per-BCI record,
