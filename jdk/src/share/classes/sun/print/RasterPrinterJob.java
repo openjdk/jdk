@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,8 +181,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * use a particular pipeline. Either the raster
          * pipeline or the pdl pipeline can be forced.
          */
-        String forceStr =
-           (String)java.security.AccessController.doPrivileged(
+        String forceStr = java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
 
         if (forceStr != null) {
@@ -193,8 +192,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             }
         }
 
-        String shapeTextStr =
-           (String)java.security.AccessController.doPrivileged(
+        String shapeTextStr =java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction(SHAPE_TEXT_PROP));
 
         if (shapeTextStr != null) {
@@ -512,12 +510,10 @@ public abstract class RasterPrinterJob extends PrinterJob {
         } else {
             // Check the list of services.  This service may have been
             // deleted already
-            PrinterState prnState = (PrinterState)service.getAttribute(
-                                                  PrinterState.class);
+            PrinterState prnState = service.getAttribute(PrinterState.class);
             if (prnState == PrinterState.STOPPED) {
                 PrinterStateReasons prnStateReasons =
-                    (PrinterStateReasons)service.getAttribute(
-                                                 PrinterStateReasons.class);
+                    service.getAttribute(PrinterStateReasons.class);
                 if ((prnStateReasons != null) &&
                     (prnStateReasons.containsKey(PrinterStateReason.SHUTDOWN)))
                 {
@@ -1353,12 +1349,10 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
         // Check the list of services.  This service may have been
         // deleted already
-        PrinterState prnState = (PrinterState)psvc.getAttribute(
-                                                  PrinterState.class);
+        PrinterState prnState = psvc.getAttribute(PrinterState.class);
         if (prnState == PrinterState.STOPPED) {
             PrinterStateReasons prnStateReasons =
-                    (PrinterStateReasons)psvc.getAttribute(
-                                                 PrinterStateReasons.class);
+                    psvc.getAttribute(PrinterStateReasons.class);
                 if ((prnStateReasons != null) &&
                     (prnStateReasons.containsKey(PrinterStateReason.SHUTDOWN)))
                 {
@@ -1366,8 +1360,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 }
         }
 
-        if ((PrinterIsAcceptingJobs)(psvc.getAttribute(
-                         PrinterIsAcceptingJobs.class)) ==
+        if ((psvc.getAttribute(PrinterIsAcceptingJobs.class)) ==
                          PrinterIsAcceptingJobs.NOT_ACCEPTING_JOBS) {
             throw new PrinterException("Printer is not accepting job.");
         }
@@ -2035,7 +2028,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * fact that we can only create 24 bit per pixel 3 byte BGR
          * BufferedImages. FIX.
          */
-        int bandHeight = (int)(MAX_BAND_SIZE / bandWidth / 3);
+        int bandHeight = (MAX_BAND_SIZE / bandWidth / 3);
 
         int deviceLeft = (int)Math.rint(paper.getImageableX() * xScale);
         int deviceTop  = (int)Math.rint(paper.getImageableY() * yScale);

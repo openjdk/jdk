@@ -1,0 +1,87 @@
+#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This must be the first rule
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
+
+include CommonCorba.gmk
+
+################################################################################
+
+$(eval $(call SetupJavaCompilation,BUILD_CORBA, \
+    SETUP := GENERATE_NEWBYTECODE, \
+    SRC := $(CORBA_TOPDIR)/src/share/classes $(CORBA_OUTPUTDIR)/gensrc, \
+    EXCLUDES := com/sun/corba/se/PortableActivationIDL \
+        com/sun/tools/corba/se/logutil, \
+    EXCLUDE_FILES := com/sun/corba/se/impl/presentation/rmi/JNDIStateFactoryImpl.java \
+        com/sun/corba/se/spi/presentation/rmi/StubWrapper.java \
+        com/sun/org/omg/CORBA/IDLTypeOperations.java \
+        com/sun/org/omg/CORBA/IRObjectOperations.java \
+        org/omg/PortableInterceptor/UNKNOWN.java \
+        com/sun/tools/corba/se/idl/ResourceBundleUtil.java \
+        com/sun/corba/se/impl/presentation/rmi/jndi.properties, \
+    COPY := .prp LogStrings.properties, \
+    BIN := $(CORBA_OUTPUTDIR)/classes, \
+    JAR := $(CORBA_OUTPUTDIR)/dist/lib/classes.jar))
+
+$(eval $(call SetupJavaCompilation,BUILD_INTERIM_CORBA, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(BUILD_CORBA_SRC), \
+    EXCLUDES := $(BUILD_CORBA_EXCLUDES), \
+    EXCLUDE_FILES := $(BUILD_CORBA_EXCLUDE_FILES), \
+    COPY := $(BUILD_CORBA_COPY), \
+    BIN := $(CORBA_OUTPUTDIR)/interim_classes, \
+    JAR := $(INTERIM_CORBA_JAR)))
+
+# Separate src.zip call to include sources that were excluded in the build to
+# mimic behavior in old build system.
+$(eval $(call SetupZipArchive,ARCHIVE_CORBA_SRC, \
+    SRC := $(CORBA_TOPDIR)/src/share/classes $(CORBA_OUTPUTDIR)/gensrc, \
+    ZIP := $(CORBA_OUTPUTDIR)/dist/lib/src.zip))
+    JAR := $(CORBA_OUTPUTDIR)/dist/lib/classes.jar))
+
+################################################################################
+# Create bin.zip containing the corba specific binaries: orb.idl, ir.idl
+BIN_FILES := $(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/orb.idl \
+    $(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/ir.idl
+
+$(CORBA_OUTPUTDIR)/dist/lib/bin.zip: $(BIN_FILES)
+	$(MKDIR) -p $(CORBA_OUTPUTDIR)/dist/lib
+	$(MKDIR) -p $(CORBA_OUTPUTDIR)/lib
+	$(RM) -f $@
+	$(ECHO) Creating `basename $@`
+	$(CP) $(BIN_FILES) $(CORBA_OUTPUTDIR)/lib
+	$(CHMOD) ug+w $(CORBA_OUTPUTDIR)/lib/*
+	(cd $(CORBA_OUTPUTDIR); $(ZIP) -q $@ lib/orb.idl lib/ir.idl)
+
+################################################################################
+
+
+all: $(BUILD_CORBA) $(BUILD_INTERIM_CORBA) $(ARCHIVE_CORBA_SRC) \
+    $(CORBA_OUTPUTDIR)/dist/lib/bin.zip

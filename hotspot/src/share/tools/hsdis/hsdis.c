@@ -307,7 +307,8 @@ static void setup_app_data(struct hsdis_app_data* app_data,
                                  app_data->printf_stream,
                                  app_data->printf_callback,
                                  native_bfd,
-                                 app_data->insn_options);
+                                 /* On PowerPC we get warnings, if we pass empty options */
+                                 (caller_options == NULL) ? NULL : app_data->insn_options);
 
   /* Finish linking together the various callback blocks. */
   app_data->dinfo.application_data = (void*) app_data;
@@ -458,6 +459,9 @@ static const char* native_arch_name() {
 #endif
 #ifdef LIBARCH_sparcv9
   res = "sparc:v9b";
+#endif
+#ifdef LIBARCH_ppc64
+  res = "powerpc:common64";
 #endif
   if (res == NULL)
     res = "architecture not set in Makefile!";

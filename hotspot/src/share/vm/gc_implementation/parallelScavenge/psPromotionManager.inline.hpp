@@ -28,6 +28,7 @@
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "oops/oop.psgc.inline.hpp"
 
 inline PSPromotionManager* PSPromotionManager::manager_array(int index) {
   assert(_manager_array != NULL, "access of NULL manager_array");

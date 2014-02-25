@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1909,7 +1909,7 @@ public abstract class KeyboardFocusManager
     static synchronized Component getMostRecentFocusOwner(Window window) {
         WeakReference<Component> weakValue =
             (WeakReference)mostRecentFocusOwners.get(window);
-        return weakValue == null ? null : (Component)weakValue.get();
+        return weakValue == null ? null : weakValue.get();
     }
 
     /**
@@ -2496,9 +2496,9 @@ public abstract class KeyboardFocusManager
                         HeavyweightFocusRequest.CLEAR_GLOBAL_FOCUS_OWNER)
                     {
                         int size = heavyweightRequests.size();
-                        hwFocusRequest = (HeavyweightFocusRequest)((size >= 2)
+                        hwFocusRequest = (size >= 2)
                             ? heavyweightRequests.get(size - 2)
-                            : null);
+                            : null;
                     }
                     if (focusedWindowChanged(heavyweight,
                                              (hwFocusRequest != null)

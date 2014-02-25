@@ -53,7 +53,7 @@
 # include "os_bsd.inline.hpp"
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(PPC64)
   // Need to inhibit inlining for older versions of GCC to avoid build-time failures
   #define ATTR __attribute__((noinline))
 #else
@@ -84,32 +84,6 @@
     len = klassname->utf8_length();                                        \
   }
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL5(hotspot, monitor__wait,
-  jlong, uintptr_t, char*, int, long);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__waited,
-  jlong, uintptr_t, char*, int);
-
-#define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)            \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
-      HS_DTRACE_PROBE5(hotspot, monitor__wait, jtid,                       \
-                       (monitor), bytes, len, (millis));                   \
-    }                                                                      \
-  }
-
-#define DTRACE_MONITOR_PROBE(probe, monitor, obj, thread)                  \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
-      HS_DTRACE_PROBE4(hotspot, monitor__##probe, jtid,                    \
-                       (uintptr_t)(monitor), bytes, len);                  \
-    }                                                                      \
-  }
-
-#else /* USDT2 */
-
 #define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)            \
   {                                                                        \
     if (DTraceMonitorProbes) {                                            \
@@ -130,7 +104,6 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__waited,
     }                                                                      \
   }
 
-#endif /* USDT2 */
 #else //  ndef DTRACE_ENABLED
 
 #define DTRACE_MONITOR_WAIT_PROBE(obj, thread, millis, mon)    {;}

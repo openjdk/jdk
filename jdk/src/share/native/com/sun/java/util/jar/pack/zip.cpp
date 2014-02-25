@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,9 @@ inline uint jar::get_crc32(uint c, uchar *ptr, uint len) { return crc32(c, ptr, 
     SWAP_BYTES(a & 0xFFFF)
 
 #define GET_INT_HI(a) \
-    SWAP_BYTES((a >> 16) & 0xFFFF);
+    SWAP_BYTES((a >> 16) & 0xFFFF)
 
+static const ushort jarmagic[2] = { SWAP_BYTES(0xCAFE), 0 };
 
 void jar::init(unpacker* u_) {
   BYTES_OF(*this).clear();
@@ -105,13 +106,14 @@ void jar::add_to_jar_directory(const char* fname, bool store, int modtime,
 
   header[0] = (ushort)SWAP_BYTES(0x4B50);
   header[1] = (ushort)SWAP_BYTES(0x0201);
-  header[2] = (ushort)SWAP_BYTES(0xA);
+  header[2] = (ushort)SWAP_BYTES(( store ) ? 0x0A : 0x14);
 
   // required version
-  header[3] = (ushort)SWAP_BYTES(0xA);
+  header[3] = (ushort)SWAP_BYTES(( store ) ? 0x0A : 0x14);
 
-  // flags 02 = maximum  sub-compression flag
-  header[4] = ( store ) ? 0x0 : SWAP_BYTES(0x2);
+  // Flags - UTF-8 compression and separating crc and sizes
+  // into separate headers for deflated file
+  header[4] = ( store ) ? SWAP_BYTES(0x0800) : 0x0808;
 
   // Compression method 8=deflate.
   header[5] = ( store ) ? 0x0 : SWAP_BYTES(0x08);
@@ -135,7 +137,8 @@ void jar::add_to_jar_directory(const char* fname, bool store, int modtime,
   // Filename length
   header[14] = (ushort)SWAP_BYTES(fname_length);
   // So called "extra field" length.
-  header[15] = 0;
+  // If it's the first record we must add JAR magic sequence
+  header[15] = ( central_directory_count ) ? 0 : (ushort)SWAP_BYTES(4);
   // So called "comment" length.
   header[16] = 0;
   // Disk number start
@@ -155,6 +158,11 @@ void jar::add_to_jar_directory(const char* fname, bool store, int modtime,
   // Copy the fname to the header.
   central_directory.append(fname, fname_length);
 
+  // Add jar magic for the first record
+  if (central_directory_count == 0) {
+    central_directory.append((void *)jarmagic, sizeof(jarmagic));
+  }
+
   central_directory_count++;
 }
 
@@ -170,10 +178,10 @@ void jar::write_jar_header(const char* fname, bool store, int modtime,
   header[1] = (ushort)SWAP_BYTES(0x0403);
 
   // Version
-  header[2] = (ushort)SWAP_BYTES(0xA);
+  header[2] = (ushort)SWAP_BYTES(( store ) ? 0x0A : 0x14);
 
-  // flags 02 = maximum  sub-compression flag
-  header[3] = ( store ) ? 0x0 : SWAP_BYTES(0x2);
+  // General purpose flags - same as in the Central Directory
+  header[3] = ( store ) ? SWAP_BYTES(0x0800) : 0x0808;
 
   // Compression method = deflate
   header[4] = ( store ) ? 0x0 : SWAP_BYTES(0x08);
@@ -182,28 +190,51 @@ void jar::write_jar_header(const char* fname, bool store, int modtime,
   header[5] = (ushort)GET_INT_LO(dostime);
   header[6] = (ushort)GET_INT_HI(dostime);
 
-  // CRC
-  header[7] = (ushort)GET_INT_LO(crc);
-  header[8] = (ushort)GET_INT_HI(crc);
+  // CRC, 0 if deflated, will come separately in extra header
+  header[7] = ( store ) ? (ushort)GET_INT_LO(crc) : 0;
+  header[8] = ( store ) ? (ushort)GET_INT_HI(crc) : 0;
 
-  // Compressed length:
-  header[9] = (ushort)GET_INT_LO(clen);
-  header[10] = (ushort)GET_INT_HI(clen);
+  // Compressed length, 0 if deflated
+  header[9] = ( store ) ? (ushort)GET_INT_LO(clen) : 0;
+  header[10] = ( store ) ? (ushort)GET_INT_HI(clen) : 0;
 
-  // Uncompressed length.
-  header[11] = (ushort)GET_INT_LO(len);
-  header[12] = (ushort)GET_INT_HI(len);
+  // Uncompressed length, 0 if deflated
+  header[11] = ( store ) ? (ushort)GET_INT_LO(len) : 0;
+  header[12] = ( store ) ? (ushort)GET_INT_HI(len) : 0;
 
   // Filename length
   header[13] = (ushort)SWAP_BYTES(fname_length);
   // So called "extra field" length.
-  header[14] = 0;
+  header[14] = ( central_directory_count - 1 ) ? 0 : (ushort)SWAP_BYTES(4);
 
   // Write the LOC header to the output file.
   write_data(header, (int)sizeof(header));
 
   // Copy the fname to the header.
   write_data((char*)fname, (int)fname_length);
+
+  if (central_directory_count == 1) {
+    // Write JAR magic sequence
+    write_data((void *)jarmagic, (int)sizeof(jarmagic));
+  }
+}
+
+void jar::write_jar_extra(int len, int clen, uint crc) {
+  ushort header[8];
+  // Extra field signature
+  header[0] = (ushort)SWAP_BYTES(0x4B50);
+  header[1] = (ushort)SWAP_BYTES(0x0807);
+  // CRC
+  header[2] = (ushort)GET_INT_LO(crc);
+  header[3] = (ushort)GET_INT_HI(crc);
+  // Compressed length
+  header[4] = (ushort)GET_INT_LO(clen);
+  header[5] = (ushort)GET_INT_HI(clen);
+  // Uncompressed length
+  header[6] = (ushort)GET_INT_LO(len);
+  header[7] = (ushort)GET_INT_HI(len);
+
+  write_data(header, sizeof(header));
 }
 
 static const char marker_comment[] = ZIP_ARCHIVE_MARKER_COMMENT;
@@ -212,6 +243,7 @@ void jar::write_central_directory() {
   bytes mc; mc.set(marker_comment);
 
   ushort header[11];
+  ushort header64[38];
 
   // Create the End of Central Directory structure.
   header[0] = (ushort)SWAP_BYTES(0x4B50);
@@ -220,8 +252,8 @@ void jar::write_central_directory() {
   header[2] = 0;
   header[3] = 0;
   // Number of entries in central directory.
-  header[4] = (ushort)SWAP_BYTES(central_directory_count);
-  header[5] = (ushort)SWAP_BYTES(central_directory_count);
+  header[4] = ( central_directory_count >= 0xffff ) ? 0xffff : (ushort)SWAP_BYTES(central_directory_count);
+  header[5] = ( central_directory_count >= 0xffff ) ? 0xffff : (ushort)SWAP_BYTES(central_directory_count);
   // Size of the central directory}
   header[6] = (ushort)GET_INT_LO((int)central_directory.size());
   header[7] = (ushort)GET_INT_HI((int)central_directory.size());
@@ -229,11 +261,70 @@ void jar::write_central_directory() {
   header[8] = (ushort)GET_INT_LO(output_file_offset);
   header[9] = (ushort)GET_INT_HI(output_file_offset);
   // zipfile comment length;
-  header [10] = (ushort)SWAP_BYTES((int)mc.len);
+  header[10] = (ushort)SWAP_BYTES((int)mc.len);
 
   // Write the central directory.
   PRINTCR((2, "Central directory at %d\n", output_file_offset));
   write_data(central_directory.b);
+
+  // If number of records exceeds the 0xFFFF we need to prepend extended
+  // Zip64 End of Central Directory record and its locator to the old
+  // style ECD record
+  if (central_directory_count > 0xFFFF) {
+    // Zip64 END signature
+    header64[0] = (ushort)SWAP_BYTES(0x4B50);
+    header64[1] = (ushort)0x0606;
+    // Size of header (long)
+    header64[2] = (ushort)SWAP_BYTES(44);;
+    header64[3] = 0;
+    header64[4] = 0;
+    header64[5] = 0;
+    // Version produced and required (short)
+    header64[6] = (ushort)SWAP_BYTES(45);
+    header64[7] = (ushort)SWAP_BYTES(45);
+    // Current disk number (int)
+    header64[8] = 0;
+    header64[9] = 0;
+    // Central directory start disk (int)
+    header64[10] = 0;
+    header64[11] = 0;
+    // Count of records on disk (long)
+    header64[12] = (ushort)GET_INT_LO(central_directory_count);
+    header64[13] = (ushort)GET_INT_HI(central_directory_count);
+    header64[14] = 0;
+    header64[15] = 0;
+    // Count of records totally (long)
+    header64[16] = (ushort)GET_INT_LO(central_directory_count);
+    header64[17] = (ushort)GET_INT_HI(central_directory_count);
+    header64[18] = 0;
+    header64[19] = 0;
+    // Length of the central directory (long)
+    header64[20] = header[6];
+    header64[21] = header[7];
+    header64[22] = 0;
+    header64[23] = 0;
+    // Offset of central directory (long)
+    header64[24] = header[8];
+    header64[25] = header[9];
+    header64[26] = 0;
+    header64[27] = 0;
+    // Zip64 end of central directory locator
+    // Locator signature
+    header64[28] = (ushort)SWAP_BYTES(0x4B50);
+    header64[29] = (ushort)SWAP_BYTES(0x0706);
+    // Start disk number (int)
+    header64[30] = 0;
+    header64[31] = 0;
+    // Offset of zip64 END record (long)
+    header64[32] = (ushort)GET_INT_LO(output_file_offset);
+    header64[33] = (ushort)GET_INT_HI(output_file_offset);
+    header64[34] = 0;
+    header64[35] = 0;
+    // Total number of disks (int)
+    header64[36] = (ushort)SWAP_BYTES(1);
+    header64[37] = 0;
+    write_data(header64, (int)sizeof(header64));
+  }
 
   // Write the End of Central Directory structure.
   PRINTCR((2, "end-of-directory at %d\n", output_file_offset));
@@ -286,6 +377,8 @@ void jar::addJarEntry(const char* fname,
 
   if (deflate) {
     write_data(deflated.b);
+    // Write deflated information in extra header
+    write_jar_extra(len, clen, crc);
   } else {
     write_data(head);
     write_data(tail);
@@ -368,7 +461,7 @@ bool jar::deflate_bytes(bytes& head, bytes& tail) {
   // NOTE: the window size should always be -MAX_WBITS normally -15.
   // unzip/zipup.c and java/Deflater.c
 
-  int error = deflateInit2(&zs, Z_BEST_COMPRESSION, Z_DEFLATED,
+  int error = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
                            -MAX_WBITS, 8, Z_DEFAULT_STRATEGY);
   if (error != Z_OK) {
     switch (error) {
@@ -414,7 +507,8 @@ bool jar::deflate_bytes(bytes& head, bytes& tail) {
     error = deflate(&zs, Z_FINISH);
   }
   if (error == Z_STREAM_END) {
-    if (len > (int)zs.total_out ) {
+    if ((int)zs.total_out > 0) {
+      // Even if compressed size is bigger than uncompressed, write it
       PRINTCR((2, "deflate compressed data %d -> %d\n", len, zs.total_out));
       deflated.b.len = zs.total_out;
       deflateEnd(&zs);

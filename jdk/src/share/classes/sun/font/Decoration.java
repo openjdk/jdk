@@ -157,8 +157,8 @@ public class Decoration {
                        Underline stdUnderline,
                        Underline imUnderline) {
 
-            fgPaint = (Paint) foreground;
-            bgPaint = (Paint) background;
+            fgPaint = foreground;
+            bgPaint = background;
 
             this.swapColors = swapColors;
             this.strikethrough = strikethrough;

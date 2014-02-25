@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,10 +211,10 @@ class DHTMarkerSegment extends MarkerSegment {
                 newGuy = (Htable) super.clone();
             } catch (CloneNotSupportedException e) {} // won't happen
             if (numCodes != null) {
-                newGuy.numCodes = (short []) numCodes.clone();
+                newGuy.numCodes = numCodes.clone();
             }
             if (values != null) {
-                newGuy.values = (short []) values.clone();
+                newGuy.values = values.clone();
             }
             return newGuy;
         }

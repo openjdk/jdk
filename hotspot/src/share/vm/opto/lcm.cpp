@@ -45,11 +45,51 @@
 #ifdef TARGET_ARCH_MODEL_arm
 # include "adfiles/ad_arm.hpp"
 #endif
-#ifdef TARGET_ARCH_MODEL_ppc
-# include "adfiles/ad_ppc.hpp"
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "adfiles/ad_ppc_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc_64
+# include "adfiles/ad_ppc_64.hpp"
 #endif
 
 // Optimization - Graph Style
+
+// Check whether val is not-null-decoded compressed oop,
+// i.e. will grab into the base of the heap if it represents NULL.
+static bool accesses_heap_base_zone(Node *val) {
+  if (Universe::narrow_oop_base() > 0) { // Implies UseCompressedOops.
+    if (val && val->is_Mach()) {
+      if (val->as_Mach()->ideal_Opcode() == Op_DecodeN) {
+        // This assumes all Decodes with TypePtr::NotNull are matched to nodes that
+        // decode NULL to point to the heap base (Decode_NN).
+        if (val->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull) {
+          return true;
+        }
+      }
+      // Must recognize load operation with Decode matched in memory operand.
+      // We should not reach here exept for PPC/AIX, as os::zero_page_read_protected()
+      // returns true everywhere else. On PPC, no such memory operands
+      // exist, therefore we did not yet implement a check for such operands.
+      NOT_AIX(Unimplemented());
+    }
+  }
+  return false;
+}
+
+static bool needs_explicit_null_check_for_read(Node *val) {
+  // On some OSes (AIX) the page at address 0 is only write protected.
+  // If so, only Store operations will trap.
+  if (os::zero_page_read_protected()) {
+    return false;  // Implicit null check will work.
+  }
+  // Also a read accessing the base of a heap-based compressed heap will trap.
+  if (accesses_heap_base_zone(val) &&                    // Hits the base zone page.
+      Universe::narrow_oop_use_implicit_null_checks()) { // Base zone page is protected.
+    return false;
+  }
+
+  return true;
+}
 
 //------------------------------implicit_null_check----------------------------
 // Detect implicit-null-check opportunities.  Basically, find NULL checks
@@ -206,6 +246,14 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       }
       break;
     }
+
+    // On some OSes (AIX) the page at address 0 is only write protected.
+    // If so, only Store operations will trap.
+    // But a read accessing the base of a heap-based compressed heap will trap.
+    if (!was_store && needs_explicit_null_check_for_read(val)) {
+      continue;
+    }
+
     // check if the offset is not too high for implicit exception
     {
       intptr_t offset = 0;

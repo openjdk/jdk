@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -695,8 +695,8 @@ class Klass : public Metadata {
   virtual const char* internal_name() const = 0;
 
   // Verification
-  virtual void verify_on(outputStream* st, bool check_dictionary);
-  void verify(bool check_dictionary = true) { verify_on(tty, check_dictionary); }
+  virtual void verify_on(outputStream* st);
+  void verify() { verify_on(tty); }
 
 #ifndef PRODUCT
   bool verify_vtable_index(int index);

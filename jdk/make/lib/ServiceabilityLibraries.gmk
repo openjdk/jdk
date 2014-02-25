@@ -33,11 +33,19 @@ endif
 ifneq ($(OPENJDK_TARGET_OS), macosx)
   LIBATTACH_EXCLUDE_FILES += BsdVirtualMachine.c
 endif
+ifneq ($(OPENJDK_TARGET_OS),aix)
+  LIBATTACH_EXCLUDE_FILES += AixVirtualMachine.c
+endif
+
+LIBATTACH_SRC_FILES := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/tools/attach
+ifeq ($(OPENJDK_TARGET_OS),aix)
+  LIBATTACH_SRC_FILES += $(JDK_TOPDIR)/src/aix/native/sun/tools/attach
+endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH, \
     LIBRARY := attach, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/tools/attach, \
+    SRC := $(LIBATTACH_SRC_FILES), \
     EXCLUDE_FILES := $(LIBATTACH_EXCLUDE_FILES), \
     LANG := C, \
     OPTIMIZATION := LOW, \
@@ -255,6 +263,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     LDFLAGS_SUFFIX_macosx := -liconv $(LIBZ), \
     LDFLAGS_SUFFIX_solaris := $(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL) -lc, \
     LDFLAGS_SUFFIX_linux := $(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL), \
+    LDFLAGS_SUFFIX_aix := $(LIBZ) -L$(JDK_OUTPUTDIR)/objs -ljli_static $(LIBDL),\
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=instrument.dll" \
@@ -263,7 +272,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     OBJECT_DIR := $(LIBINSTRUMENT_DIR), \
     DEBUG_SYMBOLS := true))
 
-ifneq (, $(findstring $(OPENJDK_TARGET_OS), macosx windows))
+ifneq (, $(findstring $(OPENJDK_TARGET_OS), macosx windows aix))
   $(BUILD_LIBINSTRUMENT): $(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)jli_static$(STATIC_LIBRARY_SUFFIX)
 else
   $(BUILD_LIBINSTRUMENT): $(INSTALL_LIBRARIES_HERE)/jli/$(LIBRARY_PREFIX)jli$(SHARED_LIBRARY_SUFFIX)
@@ -314,6 +323,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
     LDFLAGS_solaris := -lkstat, \
     LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX), \
     LDFLAGS_SUFFIX_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
+    LDFLAGS_SUFFIX_aix := -lperfstat,\
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=management.dll" \
@@ -333,6 +343,11 @@ BUILD_LIBHPROF_CFLAGS := -I$(JDK_TOPDIR)/src/share/demo/jvmti/hprof \
     -I$(JDK_TOPDIR)/src/share/npt \
     -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/npt \
     -I$(JDK_TOPDIR)/src/share/demo/jvmti/java_crw_demo
+
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  BUILD_LIBHPROF_SRC += $(JDK_TOPDIR)/src/aix/porting
+  BUILD_LIBHPROF_CFLAGS += -I$(JDK_TOPDIR)/src/aix/porting
+endif
 
 BUILD_LIBHPROF_LDFLAGS :=
 

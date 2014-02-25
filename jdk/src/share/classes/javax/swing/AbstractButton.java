@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ import java.util.*;
  *
  * @author Jeff Dinkins
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractButton extends JComponent implements ItemSelectable, SwingConstants {
 
     // *********************************
@@ -370,7 +371,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
         model.setPressed(true);
         paintImmediately(new Rectangle(0,0, size.width, size.height));
         try {
-            Thread.currentThread().sleep(pressTime);
+            Thread.sleep(pressTime);
         } catch(InterruptedException ie) {
         }
         model.setPressed(false);
@@ -2384,6 +2385,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * Please see {@link java.beans.XMLEncoder}.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected abstract class AccessibleAbstractButton
         extends AccessibleJComponent implements AccessibleAction,
         AccessibleValue, AccessibleText, AccessibleExtendedComponent {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -683,8 +683,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
          * no effect - this is typically the case only when using the Windows
          * L&F where these APIs would conflict with that L&F anyway.
          */
-        Font2D oldFont = (Font2D)
-            altNameCache.get(compositeName.toLowerCase(Locale.ENGLISH));
+        Font2D oldFont =altNameCache.get(compositeName.toLowerCase(Locale.ENGLISH));
         if (oldFont instanceof CompositeFont) {
             oldFont.handle.font2D = cf;
         }
@@ -1992,7 +1991,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         if (family == null || familyName == null) {
             return null;
         }
-        String [] fontList = (String[])family.toArray(STR_ARRAY);
+        String [] fontList = family.toArray(STR_ARRAY);
         if (fontList.length == 0) {
             return null;
         }
@@ -2085,7 +2084,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 (ConcurrentHashMap<String, Font2D>)
                 AppContext.getAppContext().get(CompositeFont.class);
             if (altNameCache != null) {
-                font = (Font2D)altNameCache.get(mapName);
+                font = altNameCache.get(mapName);
             } else {
                 font = null;
             }
@@ -2628,8 +2627,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         fullNameToFont.remove(oldFont.fullName.toLowerCase(Locale.ENGLISH));
         FontFamily.remove(oldFont);
         if (localeFullNamesToFont != null) {
-            Map.Entry[] mapEntries =
-                (Map.Entry[])localeFullNamesToFont.entrySet().
+            Map.Entry[] mapEntries = localeFullNamesToFont.entrySet().
                 toArray(new Map.Entry[0]);
             /* Should I be replacing these, or just I just remove
              * the names from the map?
@@ -3100,7 +3098,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         if (font == null) {
             return;
         }
-        String[] keys = (String[])(fontNameCache.keySet().toArray(STR_ARRAY));
+        String[] keys = fontNameCache.keySet().toArray(STR_ARRAY);
         for (int k=0; k<keys.length;k++) {
             if (fontNameCache.get(keys[k]) == font) {
                 fontNameCache.remove(keys[k]);
@@ -3785,7 +3783,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         String[] retval =  new String[familyNames.size()];
         Object [] keyNames = familyNames.keySet().toArray();
         for (int i=0; i < keyNames.length; i++) {
-            retval[i] = (String)familyNames.get(keyNames[i]);
+            retval[i] = familyNames.get(keyNames[i]);
         }
         if (requestedLocale.equals(Locale.getDefault())) {
             lastDefaultLocale = requestedLocale;

@@ -32,10 +32,15 @@ static jstring
 environmentBlock9x(JNIEnv *env)
 {
     int i;
-    jmethodID String_init_ID =
-        (*env)->GetMethodID(env, JNU_ClassString(env), "<init>", "([B)V");
+    jmethodID String_init_ID;
     jbyteArray bytes;
-    jbyte *blockA = (jbyte *) GetEnvironmentStringsA();
+    jbyte *blockA;
+
+    String_init_ID =
+        (*env)->GetMethodID(env, JNU_ClassString(env), "<init>", "([B)V");
+    CHECK_NULL_RETURN(String_init_ID, NULL);
+
+    blockA = (jbyte *) GetEnvironmentStringsA();
     if (blockA == NULL) {
         /* Both GetEnvironmentStringsW and GetEnvironmentStringsA
          * failed.  Out of memory is our best guess.  */
