@@ -774,7 +774,7 @@ public class Attr extends JCTree.Visitor {
             // to the symbol.
             // This prevents having multiple type annotations, just because of
             // lazy constant value evaluation.
-            memberEnter.typeAnnotate(variable.init, env, null, variable.pos());
+            annotate.typeAnnotate(variable.init, env, null, variable.pos());
             annotate.flush();
             Type itype = attribExpr(variable.init, env, type);
             if (itype.constValue() != null) {
@@ -1021,7 +1021,7 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 // Attribute all type annotations in the body
-                memberEnter.typeAnnotate(tree.body, localEnv, m, null);
+                annotate.typeAnnotate(tree.body, localEnv, m, null);
                 annotate.flush();
 
                 // Attribute method body.
@@ -1050,7 +1050,7 @@ public class Attr extends JCTree.Visitor {
         } else {
             if (tree.init != null) {
                 // Field initializer expression need to be entered.
-                memberEnter.typeAnnotate(tree.init, env, tree.sym, tree.pos());
+                annotate.typeAnnotate(tree.init, env, tree.sym, tree.pos());
                 annotate.flush();
             }
         }
@@ -1111,7 +1111,7 @@ public class Attr extends JCTree.Visitor {
             if ((tree.flags & STATIC) != 0) localEnv.info.staticLevel++;
 
             // Attribute all type annotations in the block
-            memberEnter.typeAnnotate(tree, localEnv, localEnv.info.scope.owner, null);
+            annotate.typeAnnotate(tree, localEnv, localEnv.info.scope.owner, null);
             annotate.flush();
 
             {
