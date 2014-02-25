@@ -34,10 +34,9 @@
 #include "opto/phase.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
+#include "opto/machnode.hpp"
 
 class LoopTree;
-class MachCallNode;
-class MachSafePointNode;
 class Matcher;
 class PhaseCFG;
 class PhaseLive;
@@ -424,8 +423,8 @@ class PhaseChaitin : public PhaseRegAlloc {
   uint _simplified;             // Linked list head of simplified LRGs
 
   // Helper functions for Split()
-  uint split_DEF( Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
-  uint split_USE( Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
+  uint split_DEF(Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
+  uint split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
 
   //------------------------------clone_projs------------------------------------
   // After cloning some rematerialized instruction, clone any MachProj's that
@@ -447,7 +446,7 @@ class PhaseChaitin : public PhaseRegAlloc {
                             int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru);
   // True if lidx is used before any real register is def'd in the block
   bool prompt_use( Block *b, uint lidx );
-  Node *get_spillcopy_wide( Node *def, Node *use, uint uidx );
+  Node *get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx );
   // Insert the spill at chosen location.  Skip over any intervening Proj's or
   // Phis.  Skip over a CatchNode and projs, inserting in the fall-through block
   // instead.  Update high-pressure indices.  Create a new live range.

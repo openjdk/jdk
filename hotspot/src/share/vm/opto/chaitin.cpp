@@ -1799,7 +1799,7 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
           Block *phi_block = _cfg.get_block_for_node(phi);
           if (_cfg.get_block_for_node(phi_block->pred(2)) == block) {
             const RegMask *mask = C->matcher()->idealreg2spillmask[Op_RegI];
-            Node *spill = new (C) MachSpillCopyNode( phi, *mask, *mask );
+            Node *spill = new (C) MachSpillCopyNode(MachSpillCopyNode::LoopPhiInput, phi, *mask, *mask);
             insert_proj( phi_block, 1, spill, maxlrg++ );
             n->set_req(1,spill);
             must_recompute_live = true;
