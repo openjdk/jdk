@@ -164,6 +164,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   ORG_CXXFLAGS="$CXXFLAGS"
   ORG_OBJCFLAGS="$OBJCFLAGS"
 
+  # On Windows, we need to detect the visual studio installation first.
+  # This will change the PATH, but we need to keep that new PATH even 
+  # after toolchain detection is done, since the compiler (on x86) uses
+  # it for DLL resolution in runtime.
+  if test "x$OPENJDK_BUILD_OS" = "xwindows" && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+    TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
+  fi
+
   # autoconf magic only relies on PATH, so update it if tools dir is specified
   OLD_PATH="$PATH"
 
@@ -173,11 +181,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # FIXME: This was originally only done for AS,NM,GNM,STRIP,MCS,OBJCOPY,OBJDUMP.
   if test "x$OPENJDK_BUILD_OS" = xsolaris; then
     PATH="/usr/ccs/bin:$PATH"
-  fi
-
-  # On Windows, we need to detect the visual studio installation first.
-  if test "x$OPENJDK_BUILD_OS" = "xwindows" && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
-    TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
   fi
 
   # Finally add TOOLS_DIR at the beginning, to allow --with-tools-dir to 
@@ -663,7 +666,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   # Check for extra potential brokenness.
   if test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # On Windows, double-check that we got the right compiler.
-    CC_VERSION_OUTPUT=`$CC 2>&1 | $HEAD -n 1 | $TR -d '\r'`    
+    CC_VERSION_OUTPUT=`$CC 2>&1 | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_CPU_TEST=`$ECHO $CC_VERSION_OUTPUT | $SED -n "s/^.* \(.*\)$/\1/p"`
     if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
       if test "x$COMPILER_CPU_TEST" != "x80x86"; then
