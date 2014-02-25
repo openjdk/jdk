@@ -520,12 +520,33 @@ public:
 // Machine SpillCopy Node.  Copies 1 or 2 words from any location to any
 // location (stack or register).
 class MachSpillCopyNode : public MachIdealNode {
+public:
+  enum SpillType {
+    TwoAddress,                        // Inserted when coalescing of a two-address-instruction node and its input fails
+    PhiInput,                          // Inserted when coalescing of a phi node and its input fails
+    DebugUse,                          // Inserted as debug info spills to safepoints in non-frequent blocks
+    LoopPhiInput,                      // Pre-split compares of loop-phis
+    Definition,                        // An lrg marked as spilled will be spilled to memory right after its definition,
+                                       // if in high pressure region or the lrg is bound
+    RegToReg,                          // A register to register move
+    RegToMem,                          // A register to memory move
+    MemToReg,                          // A memory to register move
+    PhiLocationDifferToInputLocation,  // When coalescing phi nodes in PhaseChaitin::Split(), a move spill is inserted if
+                                       // the phi and its input resides at different locations (i.e. reg or mem)
+    BasePointerToMem,                  // Spill base pointer to memory at safepoint
+    InputToRematerialization,          // When rematerializing a node we stretch the inputs live ranges, and they might be
+                                       // stretched beyond a new definition point, therefore we split out new copies instead
+    CallUse,                           // Spill use at a call
+    Bound                              // An lrg marked as spill that is bound and needs to be spilled at a use
+  };
+private:
   const RegMask *_in;           // RegMask for input
   const RegMask *_out;          // RegMask for output
   const Type *_type;
+  const SpillType _spill_type;
 public:
-  MachSpillCopyNode( Node *n, const RegMask &in, const RegMask &out ) :
-    MachIdealNode(), _in(&in), _out(&out), _type(n->bottom_type()) {
+  MachSpillCopyNode(SpillType spill_type, Node *n, const RegMask &in, const RegMask &out ) :
+    MachIdealNode(), _spill_type(spill_type), _in(&in), _out(&out), _type(n->bottom_type()) {
     init_class_id(Class_MachSpillCopy);
     init_flags(Flag_is_Copy);
     add_req(NULL);
@@ -544,8 +565,42 @@ public:
   virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
+
 #ifndef PRODUCT
-  virtual const char *Name() const { return "MachSpillCopy"; }
+  virtual const char *Name() const {
+    switch (_spill_type) {
+      case TwoAddress:
+        return "TwoAddressSpillCopy";
+      case PhiInput:
+        return "PhiInputSpillCopy";
+      case DebugUse:
+        return "DebugUseSpillCopy";
+      case LoopPhiInput:
+        return "LoopPhiInputSpillCopy";
+      case Definition:
+        return "DefinitionSpillCopy";
+      case RegToReg:
+        return "RegToRegSpillCopy";
+      case RegToMem:
+        return "RegToMemSpillCopy";
+      case MemToReg:
+        return "MemToRegSpillCopy";
+      case PhiLocationDifferToInputLocation:
+        return "PhiLocationDifferToInputLocationSpillCopy";
+      case BasePointerToMem:
+        return "BasePointerToMemSpillCopy";
+      case InputToRematerialization:
+        return "InputToRematerializationSpillCopy";
+      case CallUse:
+        return "CallUseSpillCopy";
+      case Bound:
+        return "BoundSpillCopy";
+      default:
+        assert(false, "Must have valid spill type");
+        return "MachSpillCopy";
+    }
+  }
+
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
 #endif
 };
