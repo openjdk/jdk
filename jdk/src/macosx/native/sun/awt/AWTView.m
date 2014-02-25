@@ -367,7 +367,7 @@ AWT_ASSERT_APPKIT_THREAD;
     // TODO: need consitent way for doing that both with global as well as with local coordinates.
     // The reason to do it here is one more native method for getting screen dimension otherwise.
 
-    NSRect screenRect = [[NSScreen mainScreen] frame];
+    NSRect screenRect = [[[NSScreen screens] objectAtIndex:0] frame];
     absP.y = screenRect.size.height - absP.y;
     jint clickCount;
 
