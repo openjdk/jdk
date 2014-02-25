@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@
 #include "java_io_FileDescriptor.h"
 #include "java_lang_Integer.h"
 
-#include "jvm.h"
 #include "net_util.h"
 #include "jni_util.h"
 
@@ -473,7 +472,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     }
 
     if (rv == -1) {
-        NET_ThrowCurrent(env, "JVM_Bind");
+        NET_ThrowCurrent(env, "NET_Bind");
         return;
     }
 
@@ -1162,12 +1161,8 @@ Java_java_net_TwoStacksPlainSocketImpl_socketSendUrgentData(JNIEnv *env, jobject
 
     }
     n = send(fd, (char *)&data, 1, MSG_OOB);
-    if (n == JVM_IO_ERR) {
+    if (n == -1) {
         NET_ThrowCurrent(env, "send");
-        return;
-    }
-    if (n == JVM_IO_INTR) {
-        JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
         return;
     }
 }

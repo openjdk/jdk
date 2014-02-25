@@ -661,7 +661,7 @@ public class JViewport extends JComponent implements Accessible
      * painting to originate from {@code JViewport}, or one of its
      * ancestors. Otherwise returns {@code false}.
      *
-     * @return true if if scroll mode is a {@code BACKINGSTORE_SCROLL_MODE}.
+     * @return true if scroll mode is a {@code BACKINGSTORE_SCROLL_MODE}.
      * @see JComponent#isPaintingOrigin()
      */
     protected boolean isPaintingOrigin() {

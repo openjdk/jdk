@@ -46,13 +46,10 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
     jstring s;
     jint preferIPv4Stack;
 
-    if ((*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_2) == JNI_OK) {
-        if (JVM_InitializeSocketLibrary() < 0) {
-            JNU_ThrowByName(env, "java/lang/UnsatisfiedLinkError",
-                            "failed to initialize net library.");
-            return JNI_VERSION_1_2;
-        }
+    if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_2) != JNI_OK) {
+        return JNI_EVERSION; /* JNI version not supported */
     }
+
     iCls = (*env)->FindClass(env, "java/lang/Boolean");
     CHECK_NULL_RETURN(iCls, JNI_VERSION_1_2);
     mid = (*env)->GetStaticMethodID(env, iCls, "getBoolean", "(Ljava/lang/String;)Z");

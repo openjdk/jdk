@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ NET_IsZeroAddr(jbyte* caddr);
 
 /* Socket operations
  *
- * These work just like the JVM_* procedures, except that they may do some
+ * These work just like the system calls, except that they may do some
  * platform-specific pre/post processing of the arguments and/or results.
  */
 
