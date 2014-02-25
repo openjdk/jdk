@@ -185,6 +185,18 @@ public final class AccessorPropertyDescriptor extends ScriptObject implements Pr
     }
 
     @Override
+    public boolean hasAndEquals(final PropertyDescriptor otherDesc) {
+        if (! (otherDesc instanceof AccessorPropertyDescriptor)) {
+            return false;
+        }
+        final AccessorPropertyDescriptor other = (AccessorPropertyDescriptor)otherDesc;
+        return (!has(CONFIGURABLE) || sameValue(configurable, other.configurable)) &&
+               (!has(ENUMERABLE) || sameValue(enumerable, other.enumerable)) &&
+               (!has(GET) || sameValue(get, other.get)) &&
+               (!has(SET) || sameValue(set, other.set));
+    }
+
+    @Override
     public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
