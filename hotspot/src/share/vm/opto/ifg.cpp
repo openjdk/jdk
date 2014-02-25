@@ -693,7 +693,7 @@ void PhaseChaitin::add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, do
       assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
       assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
     }
-    assert(!(lrg._area < 0.0), "negative spill area" );
+    assert(lrg._area >= 0.0, "negative spill area" );
   }
 }
 
@@ -762,7 +762,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
 
     int inst_count = last_inst - first_inst;
     double cost = (inst_count <= 0) ? 0.0 : block->_freq * double(inst_count);
-    assert(!(cost < 0.0), "negative spill cost" );
+    assert(cost >= 0.0, "negative spill cost" );
 
     compute_initial_block_pressure(block, &liveout, int_pressure, float_pressure, cost);
 
@@ -789,7 +789,11 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           }
         } else {
           // A live range ends at its definition, remove the remaining area.
-          lrg._area -= cost;
+          // If the cost is +Inf (which might happen in extreme cases), the lrg area will also be +Inf,
+          // and +Inf - +Inf = NaN. So let's not do that subtraction.
+          if (g_isfinite(cost)) {
+            lrg._area -= cost;
+          }
           assert(lrg._area >= 0.0, "negative spill area" );
 
           assign_high_score_to_immediate_copies(block, n, lrg, location + 1, last_inst);

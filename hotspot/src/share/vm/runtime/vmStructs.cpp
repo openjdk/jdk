@@ -1176,9 +1176,9 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   c2_nonstatic_field(Block,              _pre_order,               uint)                                                             \
   c2_nonstatic_field(Block,              _dom_depth,               uint)                                                             \
   c2_nonstatic_field(Block,              _idom,                    Block*)                                                           \
-  c2_nonstatic_field(Block,              _freq,                    jfloat)                                                           \
+  c2_nonstatic_field(Block,              _freq,                    jdouble)                                                          \
                                                                                                                                      \
-  c2_nonstatic_field(CFGElement,         _freq,                    jfloat)                                                           \
+  c2_nonstatic_field(CFGElement,         _freq,                    jdouble)                                                          \
                                                                                                                                      \
   c2_nonstatic_field(Block_List,         _cnt,                     uint)                                                             \
                                                                                                                                      \
