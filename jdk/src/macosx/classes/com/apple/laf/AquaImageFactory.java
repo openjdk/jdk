@@ -48,6 +48,7 @@ import com.apple.laf.AquaUtils.RecyclableObject;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import java.util.Arrays;
 import java.util.List;
+import sun.awt.image.MultiResolutionBufferedImage;
 import sun.awt.image.MultiResolutionImage;
 
 public class AquaImageFactory {
@@ -230,7 +231,7 @@ public class AquaImageFactory {
 
         @Override
         protected Image getInstance() {
-            return Toolkit.getDefaultToolkit().getImage("NSImage://" + namedImage);
+            return getNSIcon(namedImage);
         }
     }
 
@@ -294,11 +295,27 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuItemCheckIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(Toolkit.getDefaultToolkit().getImage("NSImage://NSMenuItemSelection"), 25));
+        return new InvertableImageIcon(AquaUtils.generateLightenedImage(
+                getNSIcon("NSMenuItemSelection"), 25));
     }
 
     public static Icon getMenuItemDashIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(Toolkit.getDefaultToolkit().getImage("NSImage://NSMenuMixedState"), 25));
+        return new InvertableImageIcon(AquaUtils.generateLightenedImage(
+                getNSIcon("NSMenuMixedState"), 25));
+    }
+
+    private static Image getNSIcon(String imageName) {
+        Image icon = Toolkit.getDefaultToolkit()
+                .getImage("NSImage://" + imageName);
+
+        if (icon instanceof MultiResolutionImage) {
+            return icon;
+        }
+
+        Image icon2x = AquaUtils.getCImageCreator().createImageFromName(
+                imageName, 2 * icon.getWidth(null), 2 * icon.getHeight(null));
+        return new MultiResolutionBufferedImage(
+                BufferedImage.TYPE_INT_ARGB_PRE, 0, icon, icon2x);
     }
 
     public static class NineSliceMetrics {
