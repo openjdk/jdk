@@ -469,7 +469,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return true;
         }
 
-        if (currentDesc.equals(newDesc)) {
+        if (newDesc.hasAndEquals(currentDesc)) {
             // every descriptor field of the new is same as the current
             return true;
         }
