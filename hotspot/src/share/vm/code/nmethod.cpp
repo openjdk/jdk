@@ -2135,25 +2135,21 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
 
-  // 'dep_signature_buffers' caches already checked dependencies.
-  DependencySignatureBuffer dep_signature_buffers;
-
+ GenericHashtable<DependencySignature, ResourceObj>* table = new GenericHashtable<DependencySignature, ResourceObj>(11027);
   // Iterate over live nmethods and check dependencies of all nmethods that are not
   // marked for deoptimization. A particular dependency is only checked once.
   for(nmethod* nm = CodeCache::alive_nmethod(CodeCache::first()); nm != NULL; nm = CodeCache::alive_nmethod(CodeCache::next(nm))) {
     if (!nm->is_marked_for_deoptimization()) {
       for (Dependencies::DepStream deps(nm); deps.next(); ) {
         // Construct abstraction of a dependency.
-        const DependencySignature* current_sig = new DependencySignature(deps);
-        // Determine if 'deps' is already checked. If it is not checked,
-        // 'add_if_missing()' adds the dependency signature and returns
-        // false.
-        if (!dep_signature_buffers.add_if_missing(*current_sig)) {
+        DependencySignature* current_sig = new DependencySignature(deps);
+        // Determine if 'deps' is already checked. table->add() returns
+        // 'true' if the dependency was added (i.e., was not in the hashtable).
+        if (table->add(current_sig)) {
           if (deps.check_dependency() != NULL) {
             // Dependency checking failed. Print out information about the failed
             // dependency and finally fail with an assert. We can fail here, since
             // dependency checking is never done in a product build.
-            ResourceMark rm;
             changes.print();
             nm->print();
             nm->print_dependencies();
