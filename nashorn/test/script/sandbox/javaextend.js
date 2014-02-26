@@ -51,6 +51,21 @@ try {
     print(e)
 }
 
+// Can't extend a class with explicit non-overridable finalizer
+try {
+    Java.extend(model("ClassWithFinalFinalizer"))
+} catch(e) {
+    print(e)
+}
+
+// Can't extend a class with inherited non-overridable finalizer
+try {
+    Java.extend(model("ClassWithInheritedFinalFinalizer"))
+} catch(e) {
+    print(e)
+}
+
+
 // Can't extend two classes
 try {
     Java.extend(java.lang.Thread,java.lang.Number)

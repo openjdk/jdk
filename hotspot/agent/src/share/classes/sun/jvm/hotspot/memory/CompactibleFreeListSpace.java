@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,29 @@
 
 package sun.jvm.hotspot.memory;
 
-import java.io.*;
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.utilities.*;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
+
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.Debugger;
+import sun.jvm.hotspot.oops.ObjectHeap;
+import sun.jvm.hotspot.oops.Oop;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.VMObjectFactory;
+import sun.jvm.hotspot.types.AddressField;
+import sun.jvm.hotspot.types.Type;
+import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.utilities.Assert;
 
 public class CompactibleFreeListSpace extends CompactibleSpace {
    private static AddressField collectorField;
-
-   // for free size, three fields
-   //       FreeBlockDictionary* _dictionary;        // ptr to dictionary for large size blocks
-   //       FreeList _indexedFreeList[IndexSetSize]; // indexed array for small size blocks
-   //       LinearAllocBlock _smallLinearAllocBlock; // small linear alloc in TLAB
    private static AddressField indexedFreeListField;
    private static AddressField dictionaryField;
    private static long         smallLinearAllocBlockFieldOffset;
-   private static long indexedFreeListSizeOf;
 
    private int    heapWordSize;     // 4 for 32bit, 8 for 64 bits
    private int    IndexSetStart;    // for small indexed list
@@ -109,11 +113,11 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
       // small chunks
       long size = 0;
       Address cur = addr.addOffsetTo( indexedFreeListField.getOffset() );
-      cur = cur.addOffsetTo(IndexSetStart*FreeList.sizeOf());
+      cur = cur.addOffsetTo(IndexSetStart*AdaptiveFreeList.sizeOf());
       for (int i=IndexSetStart; i<IndexSetSize; i += IndexSetStride) {
-         FreeList freeList = (FreeList) VMObjectFactory.newObject(FreeList.class, cur);
+         AdaptiveFreeList freeList = (AdaptiveFreeList) VMObjectFactory.newObject(AdaptiveFreeList.class, cur);
          size += i*freeList.count();
-         cur= cur.addOffsetTo(IndexSetStride*FreeList.sizeOf());
+         cur= cur.addOffsetTo(IndexSetStride*AdaptiveFreeList.sizeOf());
       }
 
       // large block

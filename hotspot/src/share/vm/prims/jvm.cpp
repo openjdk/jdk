@@ -85,12 +85,6 @@
 
 #include <errno.h>
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL1(hotspot, thread__sleep__begin, long long);
-HS_DTRACE_PROBE_DECL1(hotspot, thread__sleep__end, int);
-HS_DTRACE_PROBE_DECL0(hotspot, thread__yield);
-#endif /* !USDT2 */
-
 /*
   NOTE about use of any ctor or function call that can trigger a safepoint/GC:
   such ctors and calls MUST NOT come between an oop declaration/init and its
@@ -3011,11 +3005,8 @@ JVM_END
 JVM_ENTRY(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   JVMWrapper("JVM_Yield");
   if (os::dont_yield()) return;
-#ifndef USDT2
-  HS_DTRACE_PROBE0(hotspot, thread__yield);
-#else /* USDT2 */
   HOTSPOT_THREAD_YIELD();
-#endif /* USDT2 */
+
   // When ConvertYieldToSleep is off (default), this matches the classic VM use of yield.
   // Critical for similar threading behaviour
   if (ConvertYieldToSleep) {
@@ -3041,12 +3032,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
   // And set new thread state to SLEEPING.
   JavaThreadSleepState jtss(thread);
 
-#ifndef USDT2
-  HS_DTRACE_PROBE1(hotspot, thread__sleep__begin, millis);
-#else /* USDT2 */
-  HOTSPOT_THREAD_SLEEP_BEGIN(
-                             millis);
-#endif /* USDT2 */
+  HOTSPOT_THREAD_SLEEP_BEGIN(millis);
 
   EventThreadSleep event;
 
@@ -3074,12 +3060,8 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
           event.set_time(millis);
           event.commit();
         }
-#ifndef USDT2
-        HS_DTRACE_PROBE1(hotspot, thread__sleep__end,1);
-#else /* USDT2 */
-        HOTSPOT_THREAD_SLEEP_END(
-                                 1);
-#endif /* USDT2 */
+        HOTSPOT_THREAD_SLEEP_END(1);
+
         // TODO-FIXME: THROW_MSG returns which means we will not call set_state()
         // to properly restore the thread state.  That's likely wrong.
         THROW_MSG(vmSymbols::java_lang_InterruptedException(), "sleep interrupted");
@@ -3091,12 +3073,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
     event.set_time(millis);
     event.commit();
   }
-#ifndef USDT2
-  HS_DTRACE_PROBE1(hotspot, thread__sleep__end,0);
-#else /* USDT2 */
-  HOTSPOT_THREAD_SLEEP_END(
-                           0);
-#endif /* USDT2 */
+  HOTSPOT_THREAD_SLEEP_END(0);
 JVM_END
 
 JVM_ENTRY(jobject, JVM_CurrentThread(JNIEnv* env, jclass threadClass))

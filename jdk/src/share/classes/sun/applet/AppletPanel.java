@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1215,8 +1215,8 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
         synchronized(appletClass)  {
             // Determine if the JDK level of an applet has been
             // checked before.
-            Boolean jdk11Target = (Boolean) loader.isJDK11Target(appletClass);
-            Boolean jdk12Target = (Boolean) loader.isJDK12Target(appletClass);
+            Boolean jdk11Target = loader.isJDK11Target(appletClass);
+            Boolean jdk12Target = loader.isJDK12Target(appletClass);
 
             // if applet JDK level has been checked before, retrieve
             // value and return.

@@ -535,7 +535,7 @@ public final class DOMXMLSignature extends DOMStructure
         }
 
         public byte[] getValue() {
-            return (value == null) ? null : (byte[])value.clone();
+            return (value == null) ? null : value.clone();
         }
 
         public boolean validate(XMLValidateContext validateContext)

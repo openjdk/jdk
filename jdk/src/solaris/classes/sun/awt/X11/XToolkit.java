@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -655,8 +655,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 XWindowAttributes pattr = new XWindowAttributes();
                 try {
                     XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), pattr.pData);
-                    screenWidth  = (int) pattr.get_width();
-                    screenHeight = (int) pattr.get_height();
+                    screenWidth  = pattr.get_width();
+                    screenHeight = pattr.get_height();
                 } finally {
                     pattr.dispose();
                 }
@@ -1542,7 +1542,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                  */
                 if (desktopProperties.get(SunToolkit.DESKTOPFONTHINTS) == null) {
                     if (XWM.isKDE2()) {
-                        Object hint = fcManager.getFontConfigAAHint();
+                        Object hint = FontConfigManager.getFontConfigAAHint();
                         if (hint != null) {
                             /* set the fontconfig/KDE property so that
                              * getDesktopHints() below will see it
@@ -2074,7 +2074,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     private static void setBackingStoreType() {
-        String prop = (String)AccessController.doPrivileged(
+        String prop = AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.awt.backingStore"));
 
         if (prop == null) {

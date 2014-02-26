@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class CheckPackageAccess {
      * access to classes in the sun.* hierarchy, which is what is specified
      * in the JDK's default java.security file.
      */
-    private final static String restrictedClassName = "sun.misc.Ref";
+    private final static String restrictedClassName = "sun.misc.Cache";
 
     public static void main(String[] args) {
 

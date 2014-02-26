@@ -103,6 +103,7 @@ friend class ciMethodHandle;           \
 friend class ciMethodType;             \
 friend class ciReceiverTypeData;       \
 friend class ciTypeEntries;            \
+friend class ciSpeculativeTrapData;    \
 friend class ciSymbol;                 \
 friend class ciArray;                  \
 friend class ciObjArray;               \

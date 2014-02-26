@@ -1496,6 +1496,10 @@ void* os::dll_lookup(void* handle, const char* name) {
   return res;
 }
 
+void* os::get_default_process_handle() {
+  return (void*)::dlopen(NULL, RTLD_LAZY);
+}
+
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
   LoadedLibraries::print(st);

@@ -2037,19 +2037,6 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return L7_REGP_mask();
 }
 
-const RegMask Matcher::mathExactI_result_proj_mask() {
-  return G1_REGI_mask();
-}
-
-const RegMask Matcher::mathExactL_result_proj_mask() {
-  return G1_REGL_mask();
-}
-
-const RegMask Matcher::mathExactI_flags_proj_mask() {
-  return INT_FLAGS_mask();
-}
-
-
 %}
 
 

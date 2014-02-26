@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -999,8 +999,9 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
 
-  uint32_t debug_bits = 0;
-  if (is_thread_fully_suspended(java_thread, true, &debug_bits)) {
+  // It is only safe to perform the direct operation on the current
+  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  if (java_thread == calling_thread) {
     err = get_owned_monitors(calling_thread, java_thread, owned_monitors_list);
   } else {
     // JVMTI get monitors info at safepoint. Do not require target thread to
@@ -1044,8 +1045,9 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
          new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
 
-  uint32_t debug_bits = 0;
-  if (is_thread_fully_suspended(java_thread, true, &debug_bits)) {
+  // It is only safe to perform the direct operation on the current
+  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  if (java_thread == calling_thread) {
     err = get_owned_monitors(calling_thread, java_thread, owned_monitors_list);
   } else {
     // JVMTI get owned monitors info at safepoint. Do not require target thread to
@@ -1086,9 +1088,11 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
 jvmtiError
 JvmtiEnv::GetCurrentContendedMonitor(JavaThread* java_thread, jobject* monitor_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  uint32_t debug_bits = 0;
   JavaThread* calling_thread  = JavaThread::current();
-  if (is_thread_fully_suspended(java_thread, true, &debug_bits)) {
+
+  // It is only safe to perform the direct operation on the current
+  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  if (java_thread == calling_thread) {
     err = get_current_contended_monitor(calling_thread, java_thread, monitor_ptr);
   } else {
     // get contended monitor information at safepoint.
@@ -1297,8 +1301,10 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
 jvmtiError
 JvmtiEnv::GetStackTrace(JavaThread* java_thread, jint start_depth, jint max_frame_count, jvmtiFrameInfo* frame_buffer, jint* count_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  uint32_t debug_bits = 0;
-  if (is_thread_fully_suspended(java_thread, true, &debug_bits)) {
+
+  // It is only safe to perform the direct operation on the current
+  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  if (java_thread == JavaThread::current()) {
     err = get_stack_trace(java_thread, start_depth, max_frame_count, frame_buffer, count_ptr);
   } else {
     // JVMTI get stack trace at safepoint. Do not require target thread to
