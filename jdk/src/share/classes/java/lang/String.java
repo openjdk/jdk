@@ -1671,11 +1671,11 @@ public final class String
      * Returns the index within this string of the first occurrence of the
      * specified substring.
      *
-     * <p>The returned index is the smallest value <i>k</i> for which:
-     * <blockquote><pre>
-     * this.startsWith(str, <i>k</i>)
-     * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then {@code -1} is returned.
+     * <p>The returned index is the smallest value {@code k} for which:
+     * <pre>{@code
+     * this.startsWith(str, k)
+     * }</pre>
+     * If no such value of {@code k} exists, then {@code -1} is returned.
      *
      * @param   str   the substring to search for.
      * @return  the index of the first occurrence of the specified substring,
@@ -1689,11 +1689,12 @@ public final class String
      * Returns the index within this string of the first occurrence of the
      * specified substring, starting at the specified index.
      *
-     * <p>The returned index is the smallest value <i>k</i> for which:
-     * <blockquote><pre>
-     * <i>k</i> &gt;= fromIndex {@code &&} this.startsWith(str, <i>k</i>)
-     * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then {@code -1} is returned.
+     * <p>The returned index is the smallest value {@code k} for which:
+     * <pre>{@code
+     *     k >= Math.min(fromIndex, this.length()) &&
+     *                   this.startsWith(str, k)
+     * }</pre>
+     * If no such value of {@code k} exists, then {@code -1} is returned.
      *
      * @param   str         the substring to search for.
      * @param   fromIndex   the index from which to start the search.
@@ -1780,11 +1781,11 @@ public final class String
      * specified substring.  The last occurrence of the empty string ""
      * is considered to occur at the index value {@code this.length()}.
      *
-     * <p>The returned index is the largest value <i>k</i> for which:
-     * <blockquote><pre>
-     * this.startsWith(str, <i>k</i>)
-     * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then {@code -1} is returned.
+     * <p>The returned index is the largest value {@code k} for which:
+     * <pre>{@code
+     * this.startsWith(str, k)
+     * }</pre>
+     * If no such value of {@code k} exists, then {@code -1} is returned.
      *
      * @param   str   the substring to search for.
      * @return  the index of the last occurrence of the specified substring,
@@ -1798,11 +1799,12 @@ public final class String
      * Returns the index within this string of the last occurrence of the
      * specified substring, searching backward starting at the specified index.
      *
-     * <p>The returned index is the largest value <i>k</i> for which:
-     * <blockquote><pre>
-     * <i>k</i> {@code <=} fromIndex {@code &&} this.startsWith(str, <i>k</i>)
-     * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then {@code -1} is returned.
+     * <p>The returned index is the largest value {@code k} for which:
+     * <pre>{@code
+     *     k <= Math.min(fromIndex, this.length()) &&
+     *                   this.startsWith(str, k)
+     * }</pre>
+     * If no such value of {@code k} exists, then {@code -1} is returned.
      *
      * @param   str         the substring to search for.
      * @param   fromIndex   the index to start the search from.
