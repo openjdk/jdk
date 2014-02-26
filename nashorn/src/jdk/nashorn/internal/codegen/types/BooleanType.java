@@ -56,10 +56,9 @@ import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
 import static jdk.internal.org.objectweb.asm.Opcodes.ISTORE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
-
+import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_INT;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.runtime.JSType;
 
 /**
@@ -87,8 +86,19 @@ public final class BooleanType extends Type {
     }
 
     @Override
+    public char getBytecodeStackType() {
+        return 'I';
+    }
+
+    @Override
     public Type loadUndefined(final MethodVisitor method) {
-        method.visitLdcInsn(ObjectClassGenerator.UNDEFINED_INT);
+        method.visitLdcInsn(UNDEFINED_INT);
+        return BOOLEAN;
+    }
+
+    @Override
+    public Type loadForcedInitializer(MethodVisitor method) {
+        method.visitInsn(ICONST_0);
         return BOOLEAN;
     }
 
@@ -125,30 +135,29 @@ public final class BooleanType extends Type {
 
         if (to.isNumber()) {
             convert(method, OBJECT);
-            invokeStatic(method, JSType.TO_NUMBER);
+            invokestatic(method, JSType.TO_NUMBER);
         } else if (to.isInteger()) {
             return to; // do nothing.
         } else if (to.isLong()) {
             convert(method, OBJECT);
-            invokeStatic(method, JSType.TO_UINT32);
+            invokestatic(method, JSType.TO_UINT32);
         } else if (to.isLong()) {
             convert(method, OBJECT);
-            invokeStatic(method, JSType.TO_LONG);
+            invokestatic(method, JSType.TO_LONG);
         } else if (to.isString()) {
-            invokeStatic(method, VALUE_OF);
-            invokeStatic(method, JSType.TO_PRIMITIVE_TO_STRING);
+            invokestatic(method, VALUE_OF);
+            invokestatic(method, JSType.TO_PRIMITIVE_TO_STRING);
         } else if (to.isObject()) {
-            invokeStatic(method, VALUE_OF);
+            invokestatic(method, VALUE_OF);
         } else {
-            assert false : "Illegal conversion " + this + " -> " + to;
+            throw new UnsupportedOperationException("Illegal conversion " + this + " -> " + to);
         }
 
         return to;
     }
 
     @Override
-    public Type add(final MethodVisitor method) {
-        assert false : "unsupported operation";
-        return null;
+    public Type add(final MethodVisitor method, final int programPoint) {
+        throw new UnsupportedOperationException("add");
     }
 }

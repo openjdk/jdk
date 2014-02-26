@@ -28,6 +28,7 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.sameValue;
 
 import java.util.Objects;
+
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
@@ -198,6 +199,11 @@ public final class DataPropertyDescriptor extends ScriptObject implements Proper
                sameValue(enumerable, other.enumerable) &&
                sameValue(writable, other.writable) &&
                sameValue(value, other.value);
+    }
+
+    @Override
+    public String toString() {
+        return '[' + getClass().getSimpleName() + " {configurable=" + configurable + " enumerable=" + enumerable + " writable=" + writable + " value=" + value + "}]";
     }
 
     @Override

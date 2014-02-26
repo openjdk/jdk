@@ -34,11 +34,13 @@ import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
 
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
 /**
  * IR representation for a runtime call.
  */
 @Immutable
-public class RuntimeNode extends Expression {
+public class RuntimeNode extends Expression implements Optimistic {
 
     /**
      * Request enum used for meta-information about the runtime request
@@ -77,7 +79,9 @@ public class RuntimeNode extends Expression {
         /** !== operator with at least one object */
         NE_STRICT(TokenType.NE_STRICT, Type.BOOLEAN, 2, true),
         /** != operator with at least one object */
-        NE(TokenType.NE, Type.BOOLEAN, 2, true);
+        NE(TokenType.NE, Type.BOOLEAN, 2, true),
+        /** Verify type */
+        TYPE_GUARD(TokenType.VOID, Type.INT, 2);
 
         /** token type */
         private final TokenType tokenType;
@@ -211,6 +215,17 @@ public class RuntimeNode extends Expression {
         }
 
         /**
+         * Is this strict?
+         *
+         * @param request a request
+         *
+         * @return true if script
+         */
+        public static boolean isStrict(final Request request) {
+            return request == EQ_STRICT || request == NE_STRICT;
+        }
+
+        /**
          * If this request can be reversed, return the reverse request
          * Eq EQ {@literal ->} NE.
          *
@@ -301,6 +316,8 @@ public class RuntimeNode extends Expression {
     /** is final - i.e. may not be removed again, lower in the code pipeline */
     private final boolean isFinal;
 
+    private final int programPoint;
+
     /**
      * Constructor
      *
@@ -315,14 +332,16 @@ public class RuntimeNode extends Expression {
         this.request      = request;
         this.args         = args;
         this.isFinal      = false;
+        this.programPoint = INVALID_PROGRAM_POINT;
     }
 
-    private RuntimeNode(final RuntimeNode runtimeNode, final Request request, final boolean isFinal, final List<Expression> args) {
+    private RuntimeNode(final RuntimeNode runtimeNode, final Request request, final boolean isFinal, final List<Expression> args, final int programPoint) {
         super(runtimeNode);
 
         this.request      = request;
         this.args         = args;
         this.isFinal      = isFinal;
+        this.programPoint = programPoint;
     }
 
     /**
@@ -361,6 +380,7 @@ public class RuntimeNode extends Expression {
         this.request      = request;
         this.args         = args;
         this.isFinal      = false;
+        this.programPoint = parent instanceof Optimistic ? ((Optimistic)parent).getProgramPoint() : INVALID_PROGRAM_POINT;
     }
 
     /**
@@ -370,7 +390,7 @@ public class RuntimeNode extends Expression {
      * @param request the request
      */
     public RuntimeNode(final UnaryNode parent, final Request request) {
-        this(parent, request, parent.rhs());
+        this(parent, request, parent.getExpression());
     }
 
     /**
@@ -400,7 +420,7 @@ public class RuntimeNode extends Expression {
         if (this.isFinal == isFinal) {
             return this;
         }
-        return new RuntimeNode(this, request, isFinal, args);
+        return new RuntimeNode(this, request, isFinal, args, programPoint);
     }
 
     /**
@@ -457,7 +477,7 @@ public class RuntimeNode extends Expression {
         if (this.args == args) {
             return this;
         }
-        return new RuntimeNode(this, request, isFinal, args);
+        return new RuntimeNode(this, request, isFinal, args, programPoint);
     }
 
     /**
@@ -482,5 +502,50 @@ public class RuntimeNode extends Expression {
             }
         }
         return true;
+    }
+
+//TODO these are blank for now:
+
+    @Override
+    public int getProgramPoint() {
+        return programPoint;
+    }
+
+    @Override
+    public RuntimeNode setProgramPoint(final int programPoint) {
+        if(this.programPoint == programPoint) {
+            return this;
+        }
+        return new RuntimeNode(this, request, isFinal, args, programPoint);
+    }
+
+    @Override
+    public boolean canBeOptimistic() {
+        return false;
+    }
+
+    @Override
+    public Type getMostOptimisticType() {
+        return getType();
+    }
+
+    @Override
+    public Type getMostPessimisticType() {
+        return getType();
+    }
+
+    @Override
+    public boolean isOptimistic() {
+        return false;
+    }
+
+    @Override
+    public RuntimeNode setIsOptimistic(final boolean isOptimistic) {
+        return this;
+    }
+
+    @Override
+    public RuntimeNode setType(final TemporarySymbols ts, final Type type) {
+        return this;
     }
 }

@@ -35,15 +35,15 @@ import jdk.nashorn.internal.codegen.types.Type;
 public abstract class Expression extends Node {
     private Symbol symbol;
 
-    Expression(long token, int start, int finish) {
+    Expression(final long token, final int start, final int finish) {
         super(token, start, finish);
     }
 
-    Expression(long token, int finish) {
+    Expression(final long token, final int finish) {
         super(token, finish);
     }
 
-    Expression(Expression expr) {
+    Expression(final Expression expr) {
         super(expr);
         this.symbol = expr.symbol;
     }

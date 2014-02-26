@@ -38,86 +38,98 @@ public interface PropertyAccess {
     /**
      * Get the value for a given key and return it as an int
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public int getInt(Object key);
+    public int getInt(Object key, int programPoint);
 
     /**
      * Get the value for a given key and return it as an int
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public int getInt(double key);
+    public int getInt(double key, int programPoint);
 
     /**
      * Get the value for a given key and return it as an int
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public int getInt(final long key);
+    public int getInt(long key, int programPoint);
 
     /**
      * Get the value for a given key and return it as an int
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public int getInt(int key);
+    public int getInt(int key, int programPoint);
 
     /**
      * Get the value for a given key and return it as a long
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public long getLong(Object key);
+    public long getLong(Object key, int programPoint);
 
     /**
      * Get the value for a given key and return it as a long
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public long getLong(double key);
+    public long getLong(double key, int programPoint);
 
     /**
      * Get the value for a given key and return it as a long
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public long getLong(long key);
+    public long getLong(long key, int programPoint);
 
     /**
      * Get the value for a given key and return it as a long
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public long getLong(int key);
+    public long getLong(int key, int programPoint);
 
     /**
      * Get the value for a given key and return it as a double
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public double getDouble(Object key);
+    public double getDouble(Object key, int programPoint);
 
     /**
      * Get the value for a given key and return it as a double
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public double getDouble(double key);
+    public double getDouble(double key, int programPoint);
 
     /**
      * Get the value for a given key and return it as a double
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public double getDouble(long key);
+    public double getDouble(long key, int programPoint);
 
     /**
      * Get the value for a given key and return it as a double
      * @param key the key
+     * @param programPoint or INVALID_PROGRAM_POINT if pessimistic
      * @return the value
      */
-    public double getDouble(int key);
+    public double getDouble(int key, int programPoint);
 
     /**
      * Get the value for a given key and return it as an Object

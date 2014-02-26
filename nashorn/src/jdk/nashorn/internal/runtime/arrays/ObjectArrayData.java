@@ -25,7 +25,13 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCall;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
+
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -33,7 +39,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Implementation of {@link ArrayData} as soon as an Object has been
  * written to the array
  */
-final class ObjectArrayData extends ArrayData {
+final class ObjectArrayData extends ArrayData implements ContinuousArray {
 
     /**
      * The wrapped array
@@ -58,7 +64,15 @@ final class ObjectArrayData extends ArrayData {
 
     @Override
     public Object[] asObjectArray() {
-        return Arrays.copyOf(array, (int) length());
+        return array.length == length() ? array.clone() : asObjectArrayCopy();
+    }
+
+    private Object[] asObjectArrayCopy() {
+        final long l = length();
+        assert l <= Integer.MAX_VALUE;
+        final Object[] copy = new Object[(int)l];
+        System.arraycopy(array, 0, copy, 0, (int)l);
+        return copy;
     }
 
     @Override
@@ -149,6 +163,63 @@ final class ObjectArrayData extends ArrayData {
         Arrays.fill(array, (int)Math.max(lo, 0L), (int)Math.min(hi, Integer.MAX_VALUE), ScriptRuntime.EMPTY);
         return this;
     }
+
+    @Override
+    public Type getOptimisticType() {
+        return Type.OBJECT;
+    }
+
+    private static final MethodHandle HAS_GET_ELEM = virtualCall(MethodHandles.lookup(), ObjectArrayData.class, UNSAFE == null ? "getElem" : "getElemUnsafe", Object.class, int.class).methodHandle();
+    private static final MethodHandle SET_ELEM     = virtualCall(MethodHandles.lookup(), ObjectArrayData.class, UNSAFE == null ? "setElem" : "setElemUnsafe", void.class, int.class, Object.class).methodHandle();
+    private static final MethodHandle HAS          = virtualCall(MethodHandles.lookup(), ObjectArrayData.class, "has", boolean.class, int.class).methodHandle();
+
+    private final static long UNSAFE_BASE  = UNSAFE == null ? 0L : UNSAFE.arrayBaseOffset(Object[].class);
+    private final static long UNSAFE_SCALE = UNSAFE == null ? 0L : UNSAFE.arrayIndexScale(Object[].class);
+
+    @Override
+    public final MethodHandle getSetGuard() {
+        return HAS;
+    }
+
+    @SuppressWarnings("unused")
+    private Object getElemUnsafe(final int index) {
+        if (has(index)) {
+            return UNSAFE.getObject(array, UNSAFE_BASE + UNSAFE_SCALE * index);
+        }
+        throw new ClassCastException();
+    }
+
+    @SuppressWarnings("unused")
+    private Object getElem(final int index) {
+        if (has(index)) {
+            return array[index];
+        }
+        throw new ClassCastException();
+    }
+
+    @SuppressWarnings("unused")
+    private void setElemUnsafe(final int index, final Object elem) {
+        UNSAFE.putObject(array, UNSAFE_BASE + UNSAFE_SCALE * index, elem);
+    }
+
+    @SuppressWarnings("unused")
+    private void setElem(final int index, final Object elem) {
+        array[index] = elem;
+    }
+
+    @Override
+    public MethodHandle getElementGetter(final Class<?> returnType, final int programPoint) {
+        if (returnType.isPrimitive()) {
+            return null;
+        }
+        return getContinuousElementGetter(HAS_GET_ELEM, returnType, programPoint);
+    }
+
+    @Override
+    public MethodHandle getElementSetter(final Class<?> elementType) {
+        return getContinuousElementSetter(SET_ELEM, Object.class);
+    }
+
 
     @Override
     public int getInt(final int index) {

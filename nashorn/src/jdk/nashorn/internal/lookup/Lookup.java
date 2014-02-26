@@ -68,6 +68,12 @@ public final class Lookup {
     /** Method handle to the most generic of setters, the one that takes an Object */
     public static final MethodType SET_OBJECT_TYPE = MH.type(void.class, Object.class, Object.class);
 
+    /** Method handle to the primitive getters, the one that returns an long/int/double */
+    public static final MethodType GET_PRIMITIVE_TYPE = MH.type(long.class, Object.class);
+
+    /** Method handle to the primitive getters, the one that returns an long/int/double */
+    public static final MethodType SET_PRIMITIVE_TYPE = MH.type(void.class, Object.class, long.class);
+
     private Lookup() {
     }
 

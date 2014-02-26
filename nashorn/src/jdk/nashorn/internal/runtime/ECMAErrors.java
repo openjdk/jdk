@@ -29,8 +29,8 @@ import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import jdk.nashorn.api.scripting.NashornException;
-import jdk.nashorn.internal.scripts.JS;
 import jdk.nashorn.internal.codegen.CompilerConstants;
+import jdk.nashorn.internal.scripts.JS;
 
 /**
  * Helper class to throw various standard "ECMA error" exceptions such as Error, ReferenceError, TypeError etc.
@@ -402,7 +402,7 @@ public final class ECMAErrors {
         final String className = frame.getClassName();
 
         // Look for script package in class name (into which compiler puts generated code)
-        if (className.startsWith(scriptPackage) && !frame.getMethodName().startsWith(CompilerConstants.INTERNAL_METHOD_PREFIX)) {
+        if (className.startsWith(scriptPackage) && !CompilerConstants.isInternalMethodName(frame.getMethodName())) {
             final String source = frame.getFileName();
             /*
              * Make sure that it is not some Java code that Nashorn has in that package!

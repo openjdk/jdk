@@ -99,7 +99,7 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     }
 
     @Override
-    public VarNode setAssignmentDest(IdentNode n) {
+    public VarNode setAssignmentDest(final IdentNode n) {
         return setName(n);
     }
 

@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Getter;
@@ -333,8 +334,9 @@ abstract class ArrayBufferView extends ScriptObject {
             length = lengthToInt(((NativeArray) arg0).getArray().length());
             dst = factory.construct(length);
         } else {
-            // Constructor(unsigned long length)
-            length = lengthToInt(JSType.toInt64(arg0));
+            // Constructor(unsigned long length). Treating infinity as 0 is a special case for ArrayBufferView.
+            final double dlen = JSType.toNumber(arg0);
+            length = lengthToInt(Double.isInfinite(dlen) ? 0L : JSType.toLong(dlen));
             return factory.construct(length);
         }
 
@@ -370,11 +372,11 @@ abstract class ArrayBufferView extends ScriptObject {
     private static void copyElements(final ArrayBufferView dest, final int length, final ScriptObject source, final int offset) {
         if (!dest.isFloatArray()) {
             for (int i = 0, j = offset; i < length; i++, j++) {
-                dest.set(j, source.getInt(i), false);
+                dest.set(j, source.getInt(i, INVALID_PROGRAM_POINT), false);
             }
         } else {
             for (int i = 0, j = offset; i < length; i++, j++) {
-                dest.set(j, source.getDouble(i), false);
+                dest.set(j, source.getDouble(i, INVALID_PROGRAM_POINT), false);
             }
         }
     }

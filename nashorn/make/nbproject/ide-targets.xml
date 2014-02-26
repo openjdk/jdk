@@ -31,9 +31,10 @@
             <classpath path="${run.test.classpath}"/>
         </nbjpdastart>
         <java classname="jdk.nashorn.tools.Shell" classpath="${run.test.classpath}" dir="samples" fork="true">
+	    <jvmarg line="-Dnashorn.optimistic"/>
             <jvmarg line="${ext.class.path}"/> 
             <jvmarg line="${run.test.jvmargs}"/>
-            <arg value="test.js"/>
+            <arg value="../make/str.js"/>
             <jvmarg value="-Xdebug"/>
             <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
         </java>

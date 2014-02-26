@@ -28,6 +28,7 @@ package jdk.nashorn.internal.ir;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -89,13 +90,12 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /** Source of entity. */
     private final Source source;
 
+    /** Unique ID used for recompilation among other things */
+    private final int id;
+
     /** External function identifier. */
     @Ignore
     private final IdentNode ident;
-
-    /** Parsed version of functionNode */
-    @Ignore
-    private final FunctionNode snapshot;
 
     /** The body of the function node */
     private final Block body;
@@ -129,9 +129,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     @Ignore
     private final EnumSet<CompilationState> compilationState;
 
-    @Ignore
-    private final Compiler.Hints hints;
-
     /** Properties of this object assigned in this function */
     @Ignore
     private HashSet<String> thisProperties;
@@ -156,7 +153,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /** Does the function use the "arguments" identifier ? */
     public static final int USES_ARGUMENTS              = 1 << 3;
 
-    /** Has this node been split because it was too large? */
+    /** Has this function been split because it was too large? */
     public static final int IS_SPLIT                    = 1 << 4;
 
     /** Does the function call eval? If it does, then all variables in this function might be get/set by it and it can
@@ -164,11 +161,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     public static final int HAS_EVAL                    = 1 << 5;
 
     /** Does a nested function contain eval? If it does, then all variables in this function might be get/set by it. */
-    public static final int HAS_NESTED_EVAL = 1 << 6;
+    public static final int HAS_NESTED_EVAL             = 1 << 6;
 
     /** Does this function have any blocks that create a scope? This is used to determine if the function needs to
      * have a local variable slot for the scope symbol. */
-    public static final int HAS_SCOPE_BLOCK = 1 << 7;
+    public static final int HAS_SCOPE_BLOCK             = 1 << 7;
 
     /**
      * Flag this function as one that defines the identifier "arguments" as a function parameter or nested function
@@ -182,33 +179,43 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /** Does this function or any of its descendants use variables from an ancestor function's scope (incl. globals)? */
     public static final int USES_ANCESTOR_SCOPE         = 1 << 9;
 
-    /** Is this function lazily compiled? */
-    public static final int IS_LAZY                     = 1 << 10;
-
-    /** Does this function have lazy, yet uncompiled children */
-    public static final int HAS_LAZY_CHILDREN           = 1 << 11;
-
-    /** Does this function have lazy, yet uncompiled children */
-    public static final int IS_PROGRAM                  = 1 << 12;
-
     /** Does this function have nested declarations? */
-    public static final int HAS_FUNCTION_DECLARATIONS   = 1 << 13;
+    public static final int HAS_FUNCTION_DECLARATIONS   = 1 << 10;
 
     /** Can this function be specialized? */
-    public static final int CAN_SPECIALIZE              = 1 << 14;
+    public static final int CAN_SPECIALIZE              = 1 << 11;
+
+    /** Does this function have optimistic expressions? */
+    public static final int IS_OPTIMISTIC               = 1 << 12;
+
+    /** Does this function explicitly use the {@link CompilerConstants#RETURN} symbol? Some functions are known to
+     * always use the return symbol, namely a function that is a program (as it must track its last executed expression
+     * statement's value) as well as functions that are split (to communicate return values from inner to outer
+     * partitions). Other functions normally don't use the return symbol (so we optimize away its slot), except in some
+     * very special cases, e.g. when containing a return statement in a finally block. These special cases set this
+     * flag. */
+    public static final int USES_RETURN_SYMBOL = 1 << 13;
+
+    /**
+     * Is this function the top-level program?
+     */
+    public static final int IS_PROGRAM = 1 << 14;
 
     /** Does this function or any nested functions contain an eval? */
     private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
 
     /** Does this function need to store all its variables in scope? */
-    private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_EVAL | IS_SPLIT | HAS_LAZY_CHILDREN;
+    private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_EVAL;
 
     /** Does this function potentially need "arguments"? Note that this is not a full test, as further negative check of REDEFINES_ARGS is needed. */
     private static final int MAYBE_NEEDS_ARGUMENTS = USES_ARGUMENTS | HAS_EVAL;
 
     /** Does this function need the parent scope? It needs it if either it or its descendants use variables from it, or have a deep eval.
      *  We also pessimistically need a parent scope if we have lazy children that have not yet been compiled */
-    private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_EVAL | HAS_LAZY_CHILDREN;
+    private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_EVAL;
+
+    /** Where to start assigning global and unique function node ids */
+    public static final int FIRST_FUNCTION_ID = 1;
 
     /** What is the return type of this function? */
     private Type returnType = Type.UNKNOWN;
@@ -217,6 +224,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * Constructor
      *
      * @param source     the source
+     * @param id         unique id
      * @param lineNumber line number
      * @param token      token
      * @param finish     finish
@@ -231,6 +239,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      */
     public FunctionNode(
         final Source source,
+        final int id,
         final int lineNumber,
         final long token,
         final int finish,
@@ -245,6 +254,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         super(token, finish);
 
         this.source           = source;
+        this.id               = id;
         this.lineNumber       = lineNumber;
         this.ident            = ident;
         this.name             = name;
@@ -259,23 +269,19 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         this.sourceURL        = sourceURL;
         this.compileUnit      = null;
         this.body             = null;
-        this.snapshot         = null;
-        this.hints            = null;
     }
 
     private FunctionNode(
         final FunctionNode functionNode,
         final long lastToken,
         final int flags,
-        final String sourceURL,
+        String sourceURL,
         final String name,
         final Type returnType,
         final CompileUnit compileUnit,
         final EnumSet<CompilationState> compilationState,
         final Block body,
-        final List<IdentNode> parameters,
-        final FunctionNode snapshot,
-        final Compiler.Hints hints) {
+        final List<IdentNode> parameters) {
         super(functionNode);
         this.lineNumber       = functionNode.lineNumber;
         this.flags            = flags;
@@ -287,11 +293,10 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         this.compilationState = compilationState;
         this.body             = body;
         this.parameters       = parameters;
-        this.snapshot         = snapshot;
-        this.hints            = hints;
 
         // the fields below never change - they are final and assigned in constructor
         this.source          = functionNode.source;
+        this.id              = functionNode.id;
         this.ident           = functionNode.ident;
         this.namespace       = functionNode.namespace;
         this.declaredSymbols = functionNode.declaredSymbols;
@@ -314,6 +319,14 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      */
     public Source getSource() {
         return source;
+    }
+
+    /**
+     * Get the unique ID for this function
+     * @return the id
+     */
+    public int getId() {
+        return id;
     }
 
     /**
@@ -345,7 +358,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
             return this;
         }
 
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, newSourceURL, name, returnType, compileUnit, compilationState, body, parameters, null, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, newSourceURL, name, returnType, compileUnit, compilationState, body, parameters));
     }
 
     /**
@@ -357,50 +370,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Get the version of this function node's code as it looked upon construction
-     * i.e typically parsed and nothing else
-     * @return initial version of function node
-     */
-    public FunctionNode getSnapshot() {
-        return snapshot;
-    }
-
-    /**
-     * Throw away the snapshot, if any, to save memory. Used when heuristic
-     * determines that a method is not worth specializing
-     *
-     * @param lc lexical context
-     * @return new function node if a snapshot was present, now with snapsnot null
-     */
-    public FunctionNode clearSnapshot(final LexicalContext lc) {
-        if (this.snapshot == null) {
-            return this;
-        }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters, null, hints));
-    }
-
-    /**
-     * Take a snapshot of this function node at a given point in time
-     * and store it in the function node
-     * @param lc lexical context
-     * @return function node
-     */
-    public FunctionNode snapshot(final LexicalContext lc) {
-        if (this.snapshot == this) {
-            return this;
-        }
-        if (isProgram() || parameters.isEmpty()) {
-            return this; //never specialize anything that won't be recompiled
-        }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters, this, hints));
-    }
-
-    /**
      * Can this function node be regenerated with more specific type args?
      * @return true if specialization is possible
      */
     public boolean canSpecialize() {
-        return snapshot != null && getFlag(CAN_SPECIALIZE);
+        return (flags & (IS_OPTIMISTIC | CAN_SPECIALIZE)) != 0;
     }
 
     /**
@@ -450,28 +424,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         }
         final EnumSet<CompilationState> newState = EnumSet.copyOf(this.compilationState);
         newState.add(state);
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, newState, body, parameters, snapshot, hints));
-    }
-
-    /**
-     * Get any compiler hints that may associated with the function
-     * @return compiler hints
-     */
-    public Compiler.Hints getHints() {
-        return this.hints == null ? Compiler.Hints.EMPTY : hints;
-    }
-
-    /**
-     * Set compiler hints for this function
-     * @param lc    lexical context
-     * @param hints compiler hints
-     * @return new function if hints changed
-     */
-    public FunctionNode setHints(final LexicalContext lc, final Compiler.Hints hints) {
-        if (this.hints == hints) {
-            return this;
-        }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, newState, body, parameters));
     }
 
     /**
@@ -486,10 +439,10 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
 
     @Override
     public void toString(final StringBuilder sb) {
-        sb.append('[');
-        sb.append(returnType);
-        sb.append(']');
-        sb.append(' ');
+        sb.append('[').
+            append(returnType).
+            append(']').
+            append(' ');
 
         sb.append("function");
 
@@ -499,16 +452,16 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         }
 
         sb.append('(');
-        boolean first = true;
 
-        for (final IdentNode parameter : parameters) {
-            if (!first) {
-                sb.append(", ");
-            } else {
-                first = false;
+        for (final Iterator<IdentNode> iter = parameters.iterator(); iter.hasNext(); ) {
+            final IdentNode parameter = iter.next();
+            if (parameter.getSymbol() != null) {
+                sb.append('[').append(parameter.getType()).append(']').append(' ');
             }
-
             parameter.toString(sb);
+            if (iter.hasNext()) {
+                sb.append(", ");
+            }
         }
 
         sb.append(')');
@@ -524,7 +477,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         if (this.flags == flags) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters));
     }
 
     @Override
@@ -546,11 +499,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Should this function node be lazily code generated, i.e. first at link time
-     * @return true if lazy
+     * Returns true if the function is optimistic
+     * @return True if this function is optimistic
      */
-    public boolean isLazy() {
-        return getFlag(IS_LAZY);
+    public boolean isOptimistic() {
+        return getFlag(IS_OPTIMISTIC);
     }
 
     /**
@@ -587,7 +540,15 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @return true if the function's generated Java method needs a {@code callee} parameter.
      */
     public boolean needsCallee() {
-        return needsParentScope() || needsSelfSymbol() || isSplit() || (needsArguments() && !isStrict());
+        return needsParentScope() || usesSelfSymbol() || isSplit() || (needsArguments() && !isStrict());
+    }
+
+    /**
+     * Check if this function uses the return symbol
+     * @return true if uses the return symbol
+     */
+    public boolean usesReturnSymbol() {
+        return isProgram() || isSplit() || getFlag(USES_RETURN_SYMBOL);
     }
 
     /**
@@ -634,7 +595,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         if(this.body == body) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags | (body.needsScope() ? FunctionNode.HAS_SCOPE_BLOCK : 0), sourceURL, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags | (body.needsScope() ? FunctionNode.HAS_SCOPE_BLOCK : 0), sourceURL, name, returnType, compileUnit, compilationState, body, parameters));
     }
 
     /**
@@ -729,7 +690,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         if (this.lastToken == lastToken) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters));
     }
 
     /**
@@ -751,7 +712,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         if (this.name.equals(name)) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters));
     }
 
     /**
@@ -774,15 +735,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Checks if this function has yet-to-be-generated child functions
-     *
-     * @return true if there are lazy child functions
-     */
-    public boolean hasLazyChildren() {
-        return getFlag(HAS_LAZY_CHILDREN);
-    }
-
-    /**
      * Get the parameters to this function
      * @return a list of IdentNodes which represent the function parameters, in order
      */
@@ -801,7 +753,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         if (this.parameters == parameters) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters));
     }
 
     /**
@@ -821,12 +773,13 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Does this function need a self symbol - this is needed only for self
-     * referring functions
-     * @return true if function needs a symbol for self
+     * Does this function use its self symbol - this is needed only for self-referencing named function expressions.
+     * Self-referencing declared functions won't have this flag set, as they can access their own symbol through the
+     * scope (since they're bound to the symbol with their name in their enclosing scope).
+     * @return true if this function node is a named function expression that uses the symbol for itself.
      */
-    public boolean needsSelfSymbol() {
-        return body.getFlag(Block.NEEDS_SELF_SYMBOL);
+    public boolean usesSelfSymbol() {
+        return body.getFlag(Block.USES_SELF_SYMBOL);
     }
 
     @Override
@@ -871,11 +824,8 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                 type,
                 compileUnit,
                 compilationState,
-                body.setReturnType(type),
-                parameters,
-                snapshot,
-                hints));
-    }
+                body.setReturnType(type), parameters));
+   }
 
     /**
      * Check if the function is generated in strict mode
@@ -905,7 +855,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         if (this.compileUnit == compileUnit) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, sourceURL, name, returnType, compileUnit, compilationState, body, parameters));
     }
 
     /**

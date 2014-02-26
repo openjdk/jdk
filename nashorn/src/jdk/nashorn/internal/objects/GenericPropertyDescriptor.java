@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.objects;
 
 import java.util.Objects;
+
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
@@ -177,6 +178,11 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
         final GenericPropertyDescriptor other = (GenericPropertyDescriptor)obj;
         return ScriptRuntime.sameValue(configurable, other.configurable) &&
                ScriptRuntime.sameValue(enumerable, other.enumerable);
+    }
+
+    @Override
+    public String toString() {
+        return '[' + getClass().getSimpleName() + " {configurable=" + configurable + " enumerable=" + enumerable + "}]";
     }
 
     @Override

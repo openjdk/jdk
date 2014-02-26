@@ -26,14 +26,20 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCall;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
+
+import jdk.nashorn.internal.codegen.types.Type;
 
 /**
  * Implementation of {@link ArrayData} as soon as a double has been
  * written to the array
  */
-final class NumberArrayData extends ArrayData {
+final class NumberArrayData extends ArrayData implements ContinuousArray {
     /**
      * The wrapped array
      */
@@ -165,6 +171,62 @@ final class NumberArrayData extends ArrayData {
     }
 
     @Override
+    public Type getOptimisticType() {
+        return Type.NUMBER;
+    }
+
+    private static final MethodHandle HAS_GET_ELEM = virtualCall(MethodHandles.lookup(), NumberArrayData.class, UNSAFE == null ? "getElem" : "getElemUnsafe", double.class, int.class).methodHandle();
+    private static final MethodHandle SET_ELEM     = virtualCall(MethodHandles.lookup(), NumberArrayData.class, UNSAFE == null ? "setElem" : "setElemUnsafe", void.class, int.class, double.class).methodHandle();
+    private static final MethodHandle HAS          = virtualCall(MethodHandles.lookup(), NumberArrayData.class, "has", boolean.class, int.class).methodHandle();
+
+    private final static long UNSAFE_BASE  = UNSAFE == null ? 0L : UNSAFE.arrayBaseOffset(double[].class);
+    private final static long UNSAFE_SCALE = UNSAFE == null ? 0L : UNSAFE.arrayIndexScale(double[].class);
+
+    @Override
+    public final MethodHandle getSetGuard() {
+        return HAS;
+    }
+
+    @SuppressWarnings("unused")
+    private double getElemUnsafe(final int index) {
+        if (has(index)) {
+            return UNSAFE.getDouble(array, UNSAFE_BASE + UNSAFE_SCALE * index);
+        }
+        throw new ClassCastException();
+    }
+
+    @SuppressWarnings("unused")
+    private double getElem(final int index) {
+        if (has(index)) {
+            return array[index];
+        }
+        throw new ClassCastException();
+    }
+
+    @SuppressWarnings("unused")
+    private void setElemUnsafe(final int index, final double elem) {
+        UNSAFE.putDouble(array, UNSAFE_BASE + UNSAFE_SCALE * index, elem);
+    }
+
+    @SuppressWarnings("unused")
+    private void setElem(final int index, final double elem) {
+        array[index] = elem;
+    }
+
+    @Override
+    public MethodHandle getElementGetter(final Class<?> returnType, final int programPoint) {
+        if (returnType == int.class || returnType == long.class) {
+            return null;
+        }
+        return getContinuousElementGetter(HAS_GET_ELEM, returnType, programPoint);
+    }
+
+    @Override
+    public MethodHandle getElementSetter(final Class<?> elementType) {
+        return elementType.isPrimitive() ? getContinuousElementSetter(MH.asType(SET_ELEM, SET_ELEM.type().changeParameterType(2, elementType)), elementType) : null;
+    }
+
+    @Override
     public int getInt(final int index) {
         return (int)array[index];
     }
@@ -176,6 +238,11 @@ final class NumberArrayData extends ArrayData {
 
     @Override
     public double getDouble(final int index) {
+        return array[index];
+    }
+
+    @Override
+    public double getDoubleOptimistic(final int index, final int programPoint) {
         return array[index];
     }
 

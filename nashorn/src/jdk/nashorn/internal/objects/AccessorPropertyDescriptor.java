@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.sameValue;
 
 import java.util.Objects;
+
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
@@ -210,6 +211,11 @@ public final class AccessorPropertyDescriptor extends ScriptObject implements Pr
                sameValue(enumerable, other.enumerable) &&
                sameValue(get, other.get) &&
                sameValue(set, other.set);
+    }
+
+    @Override
+    public String toString() {
+        return '[' + getClass().getSimpleName() + " {configurable=" + configurable + " enumerable=" + enumerable + " getter=" + get + " setter=" + set + "}]";
     }
 
     @Override

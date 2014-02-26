@@ -33,4 +33,4 @@ load(__DIR__ + "point.js");
 // These objects should share the map
 assertSameMap(new Point(2, 3), new Point(43, 23));
 assertSameMap(new Point(), new Point());
-assertSameMap(new Point(), new Point(3, 1));
+assertEqualWithoutTypeMap(new Point(), new Point(3, 1));

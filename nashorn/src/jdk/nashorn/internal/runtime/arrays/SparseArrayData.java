@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime.arrays;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -35,7 +36,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Handle arrays where the index is very large.
  */
 class SparseArrayData extends ArrayData {
-    static final long MAX_DENSE_LENGTH = 512 * 1024;
+    static final long MAX_DENSE_LENGTH = 16 * 512 * 1024;
 
     /** Underlying array. */
     private ArrayData underlying;
@@ -220,11 +221,24 @@ class SparseArrayData extends ArrayData {
     }
 
     @Override
+    public Type getOptimisticType() {
+        return underlying.getOptimisticType();
+    }
+
+    @Override
     public int getInt(final int index) {
         if (index >= 0 && index < maxDenseLength) {
             return underlying.getInt(index);
         }
         return JSType.toInt32(sparseMap.get(indexToKey(index)));
+    }
+
+    @Override
+    public int getIntOptimistic(final int index, final int programPoint) {
+        if (index >= 0 && index < maxDenseLength) {
+            return underlying.getIntOptimistic(index, programPoint);
+        }
+        return JSType.toInt32Optimistic(sparseMap.get(indexToKey(index)), programPoint);
     }
 
     @Override
@@ -236,11 +250,27 @@ class SparseArrayData extends ArrayData {
     }
 
     @Override
+    public long getLongOptimistic(final int index, final int programPoint) {
+        if (index >= 0 && index < maxDenseLength) {
+            return underlying.getLongOptimistic(index, programPoint);
+        }
+        return JSType.toLongOptimistic(sparseMap.get(indexToKey(index)), programPoint);
+    }
+
+    @Override
     public double getDouble(final int index) {
         if (index >= 0 && index < maxDenseLength) {
             return underlying.getDouble(index);
         }
         return JSType.toNumber(sparseMap.get(indexToKey(index)));
+    }
+
+    @Override
+    public double getDoubleOptimistic(final int index, final int programPoint) {
+        if (index >= 0 && index < maxDenseLength) {
+            return underlying.getDouble(index);
+        }
+        return JSType.toNumberOptimistic(sparseMap.get(indexToKey(index)), programPoint);
     }
 
     @Override

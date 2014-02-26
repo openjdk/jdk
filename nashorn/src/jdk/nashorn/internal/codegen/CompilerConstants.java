@@ -51,9 +51,6 @@ public enum CompilerConstants {
     /** the __LINE__ variable */
     __LINE__,
 
-    /** lazy prefix for classes of jitted methods */
-    LAZY("Lazy"),
-
     /** constructor name */
     INIT("<init>"),
 
@@ -78,8 +75,11 @@ public enum CompilerConstants {
     /** function prefix for anonymous functions */
     ANON_FUNCTION_PREFIX("L:"),
 
-    /** method name for Java method that is script entry point */
-    RUN_SCRIPT("runScript"),
+    /** method name for Java method that is the program entry point */
+    PROGRAM(":program"),
+
+    /** method name for Java method that creates the script function for the program */
+    CREATE_PROGRAM_FUNCTION(":createProgramFunction"),
 
     /**
      * "this" name symbol for a parameter representing ECMAScript "this" in static methods that are compiled
@@ -161,7 +161,7 @@ public enum CompilerConstants {
     /** get map */
     GET_MAP(":getMap"),
 
-    /** get map */
+    /** set map */
     SET_MAP(":setMap"),
 
     /** get array prefix */
@@ -173,7 +173,7 @@ public enum CompilerConstants {
     /**
      * Prefix used for internal methods generated in script clases.
      */
-    public static final String INTERNAL_METHOD_PREFIX = ":";
+    private static final String INTERNAL_METHOD_PREFIX = ":";
 
     private final String symbolName;
     private final Class<?> type;
@@ -198,9 +198,23 @@ public enum CompilerConstants {
     }
 
     private CompilerConstants(final String symbolName, final Class<?> type, final int slot) {
-        this.symbolName  = symbolName;
-        this.type = type;
-        this.slot = slot;
+        this.symbolName = symbolName;
+        this.type       = type;
+        this.slot       = slot;
+    }
+
+    /**
+     * Check whether a name is that of a reserved compiler constnat
+     * @param name name
+     * @return true if compiler constant name
+     */
+    public static boolean isCompilerConstant(final String name) {
+        for (final CompilerConstants cc : CompilerConstants.values()) {
+            if (name.equals(cc.symbolName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -537,6 +551,18 @@ public enum CompilerConstants {
             }
         };
     }
+
+    /**
+     * Returns true if the passed string looks like a method name of an internally generated Nashorn method. Basically,
+     * if it starts with a colon character {@code :} but is not the name of the program method {@code :program}.
+     * Program function is not considered internal as we want it to show up in exception stack traces.
+     * @param methodName the name of a method
+     * @return true if it looks like an internal Nashorn method name.
+     * @throws NullPointerException if passed null
+     */
+    public static boolean isInternalMethodName(final String methodName) {
+        return methodName.startsWith(INTERNAL_METHOD_PREFIX) && !methodName.equals(PROGRAM.symbolName);
+     }
 
     /**
      * Private class representing an access. This can generate code into a method code or

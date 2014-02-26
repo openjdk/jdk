@@ -57,7 +57,7 @@ final class BranchOptimizer {
     }
 
     private void branchOptimizer(final UnaryNode unaryNode, final Label label, final boolean state) {
-        final Expression rhs = unaryNode.rhs();
+        final Expression rhs = unaryNode.getExpression();
 
         switch (unaryNode.tokenType()) {
         case NOT:

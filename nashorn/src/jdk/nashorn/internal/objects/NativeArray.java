@@ -29,10 +29,12 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.VALUE;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator.arrayLikeIterator;
 import static jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator.reverseArrayLikeIterator;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,8 +42,11 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
-
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.api.scripting.JSObject;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -50,6 +55,7 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Setter;
 import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -60,9 +66,11 @@ import jdk.nashorn.internal.runtime.Undefined;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
+import jdk.nashorn.internal.runtime.arrays.ContinuousArray;
 import jdk.nashorn.internal.runtime.arrays.IteratorAction;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * Runtime representation of a JavaScript array. NativeArray only holds numeric
@@ -79,6 +87,122 @@ public final class NativeArray extends ScriptObject {
     private static final Object REDUCE_CALLBACK_INVOKER  = new Object();
     private static final Object CALL_CMP                 = new Object();
     private static final Object TO_LOCALE_STRING         = new Object();
+
+    /*
+     * Constructors.
+     */
+    NativeArray() {
+        this(ArrayData.initialArray());
+    }
+
+    NativeArray(final long length) {
+        // TODO assert valid index in long before casting
+        this(ArrayData.allocate((int) length));
+    }
+
+    NativeArray(final int[] array) {
+        this(ArrayData.allocate(array));
+    }
+
+    NativeArray(final long[] array) {
+        this(ArrayData.allocate(array));
+    }
+
+    NativeArray(final double[] array) {
+        this(ArrayData.allocate(array));
+    }
+
+    NativeArray(final Object[] array) {
+        this(ArrayData.allocate(array.length));
+
+        ArrayData arrayData = this.getArray();
+        arrayData.ensure(array.length - 1);
+
+        for (int index = 0; index < array.length; index++) {
+            final Object value = array[index];
+
+            if (value == ScriptRuntime.EMPTY) {
+                arrayData = arrayData.delete(index);
+            } else {
+                arrayData = arrayData.set(index, value, false);
+            }
+        }
+
+        this.setArray(arrayData);
+    }
+
+    NativeArray(final ArrayData arrayData) {
+        this(arrayData, Global.instance());
+    }
+
+    NativeArray(final ArrayData arrayData, final Global global) {
+        super(global.getArrayPrototype(), global.getArrayMap());
+        this.setArray(arrayData);
+        this.setIsArray();
+    }
+
+    @Override
+    protected GuardedInvocation findGetIndexMethod(final CallSiteDescriptor desc, final LinkRequest request) {
+        final ArrayData  data       = getArray();
+        final MethodType callType   = desc.getMethodType();
+        final Class<?>   indexType  = callType.parameterType(1);
+        final Class<?>   returnType = callType.returnType();
+
+        if (data instanceof ContinuousArray && indexType == int.class) {
+            final Object[]   args       = request.getArguments();
+            final int        index      = (int)args[args.length - 1];
+
+            if (data.has(index)) {
+                final MethodHandle getArray     = ScriptObject.GET_ARRAY.methodHandle();
+                final int          programPoint = NashornCallSiteDescriptor.isOptimistic(desc) ? NashornCallSiteDescriptor.getProgramPoint(desc) : INVALID_PROGRAM_POINT;
+                MethodHandle       getElement   = ((ContinuousArray)data).getElementGetter(returnType, programPoint);
+                if (getElement != null) {
+                    getElement = MH.filterArguments(getElement, 0, MH.asType(getArray, getArray.type().changeReturnType(ContinuousArray.class)));
+                    //System.err.println("Relink fast GET "+ desc+ " "+  DynamicLinker.getLinkedCallSiteLocation());
+                    return new GuardedInvocation(getElement, null, null, ClassCastException.class);
+                }
+            }
+        }
+        //System.err.println("Relink slow GET "+ desc+ " "+  DynamicLinker.getLinkedCallSiteLocation());
+
+        return super.findGetIndexMethod(desc, request);
+    }
+
+    @Override
+    protected GuardedInvocation findSetIndexMethod(final CallSiteDescriptor desc, final LinkRequest request) { // array, index, value
+
+        final ArrayData  data        = getArray();
+        final MethodType callType    = desc.getMethodType();
+        final Class<?>   indexType   = callType.parameterType(1);
+        final Class<?>   elementType = callType.parameterType(2);
+
+        if (data instanceof ContinuousArray && indexType == int.class) {
+            final ContinuousArray cdata = (ContinuousArray)data;
+            final Object[]        args  = request.getArguments();
+            final int             index = (int)args[args.length - 2];
+
+            if (data.has(index)) {
+                MethodHandle hasGuard = cdata.getSetGuard();
+                hasGuard = MH.asType(hasGuard, hasGuard.type().changeParameterType(0, ContinuousArray.class));
+
+                MethodHandle setElement = cdata.getElementSetter(elementType); //Z(continuousarraydata, int, int), return true if successful
+                if (setElement != null) {
+                    //else we are dealing with a wider type than supported by this callsite
+                    MethodHandle getArray = ScriptObject.GET_ARRAY.methodHandle();
+                    getArray   = MH.asType(getArray, getArray.type().changeReturnType(ContinuousArray.class));
+                    setElement = MH.filterArguments(setElement, 0, getArray);
+                    hasGuard   = MH.filterArguments(hasGuard, 0, getArray);
+                    //if this is the first invocation we have to execute the setter ourselves, we know it will work
+
+                    //System.err.println("Relink fast SET "+ desc + " "+  DynamicLinker.getLinkedCallSiteLocation());
+                    return new GuardedInvocation(setElement, hasGuard, null, ClassCastException.class); //CCE if not a scriptObject anymore
+                }
+            }
+        }
+
+        //System.err.println("Relink slow SET "+ desc + " "+  DynamicLinker.getLinkedCallSiteLocation());
+        return super.findSetIndexMethod(desc, request);
+    }
 
     private static InvokeByName getJOIN() {
         return Global.instance().getInvokeByName(JOIN,
@@ -160,59 +284,6 @@ public final class NativeArray extends ScriptObject {
         return $nasgenmap$;
     }
 
-    /*
-     * Constructors.
-     */
-    NativeArray() {
-        this(ArrayData.initialArray());
-    }
-
-    NativeArray(final long length) {
-        // TODO assert valid index in long before casting
-        this(ArrayData.allocate((int) length));
-    }
-
-    NativeArray(final int[] array) {
-        this(ArrayData.allocate(array));
-    }
-
-    NativeArray(final long[] array) {
-        this(ArrayData.allocate(array));
-    }
-
-    NativeArray(final double[] array) {
-        this(ArrayData.allocate(array));
-    }
-
-    NativeArray(final Object[] array) {
-        this(ArrayData.allocate(array.length));
-
-        ArrayData arrayData = this.getArray();
-        arrayData.ensure(array.length - 1);
-
-        for (int index = 0; index < array.length; index++) {
-            final Object value = array[index];
-
-            if (value == ScriptRuntime.EMPTY) {
-                arrayData = arrayData.delete(index);
-            } else {
-                arrayData = arrayData.set(index, value, false);
-            }
-        }
-
-        this.setArray(arrayData);
-    }
-
-    NativeArray(final ArrayData arrayData) {
-        this(arrayData, Global.instance());
-    }
-
-    NativeArray(final ArrayData arrayData, final Global global) {
-        super(global.getArrayPrototype(), global.getArrayMap());
-        this.setArray(arrayData);
-        this.setIsArray();
-    }
-
     @Override
     public String getClassName() {
         return "Array";
@@ -220,7 +291,11 @@ public final class NativeArray extends ScriptObject {
 
     @Override
     public Object getLength() {
-        return getArray().length() & JSType.MAX_UINT;
+        final long length = getArray().length() & JSType.MAX_UINT;
+        if(length < Integer.MAX_VALUE) {
+            return (int)length;
+        }
+        return length;
     }
 
     /**
@@ -464,6 +539,19 @@ public final class NativeArray extends ScriptObject {
     }
 
     /**
+     * Assert that an array is numeric, if not throw type error
+     * @param self self array to check
+     * @return true if numeric
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    public static Object assertNumeric(final Object self) {
+        if(!(self instanceof NativeArray && ((NativeArray)self).getArray().getOptimisticType().isNumeric())) {
+            throw typeError("not.a.numeric.array", ScriptRuntime.safeToString(self));
+        }
+        return Boolean.TRUE;
+    }
+
+    /**
      * ECMA 15.4.4.3 Array.prototype.toLocaleString ( )
      *
      * @param self self reference
@@ -571,6 +659,21 @@ public final class NativeArray extends ScriptObject {
     @SpecializedConstructor
     public static Object construct(final boolean newObj, final Object self) {
         return new NativeArray(0);
+    }
+
+    /**
+     * ECMA 15.4.2.2 new Array (len)
+     *
+     * Specialized constructor for zero arguments - empty array
+     *
+     * @param newObj  was the new operator used to instantiate this array
+     * @param self    self reference
+     * @param element first element
+     * @return the new NativeArray
+     */
+    @SpecializedConstructor
+    public static Object construct(final boolean newObj, final Object self, final boolean element) {
+        return new NativeArray(new Object[] { element });
     }
 
     /**
@@ -746,7 +849,7 @@ public final class NativeArray extends ScriptObject {
      *
      * @param self self reference
      * @param args arguments to push
-     * @return array after pushes
+     * @return array length after pushes
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
     public static Object push(final Object self, final Object... args) {
@@ -770,7 +873,7 @@ public final class NativeArray extends ScriptObject {
 
             return len;
         } catch (final ClassCastException | NullPointerException e) {
-            throw typeError("not.an.object", ScriptRuntime.safeToString(self));
+            throw typeError(Context.getGlobal(), e, "not.an.object", ScriptRuntime.safeToString(self));
         }
     }
 

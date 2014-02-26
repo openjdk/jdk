@@ -153,8 +153,8 @@ public class ParserTest {
                 }
             };
             errors.setLimit(0);
-            final Source   source   = new Source(file.getAbsolutePath(), buffer);
-            new Parser(context.getEnv(), source, errors).parse();
+            final Source            source   = new Source(file.getAbsolutePath(), buffer);
+            new Parser(context.getEnv(), source, errors, context.getEnv()._strict).parse();
             if (errors.getNumberOfErrors() > 0) {
                 log("Parse failed: " + file.getAbsolutePath());
                 failed++;

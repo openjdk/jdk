@@ -54,19 +54,23 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
-
-import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.util.TraceClassVisitor;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.SplitNode;
+import jdk.nashorn.internal.ir.debug.NashornClassReader;
+import jdk.nashorn.internal.ir.debug.NashornTextifier;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.RewriteException;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Source;
@@ -106,6 +110,8 @@ import jdk.nashorn.internal.runtime.Source;
  * @see Compiler
  */
 public class ClassEmitter implements Emitter {
+    /** Default flags for class generation - public class */
+    private static final EnumSet<Flag> DEFAULT_METHOD_FLAGS = EnumSet.of(Flag.PUBLIC);
 
     /** Sanity check flag - have we started on a class? */
     private boolean classStarted;
@@ -124,9 +130,6 @@ public class ClassEmitter implements Emitter {
 
     /** The script environment */
     protected final ScriptEnvironment env;
-
-    /** Default flags for class generation - oublic class */
-    private static final EnumSet<Flag> DEFAULT_METHOD_FLAGS = EnumSet.of(Flag.PUBLIC);
 
     /** Compile unit class name. */
     private String unitClassName;
@@ -376,9 +379,19 @@ public class ClassEmitter implements Emitter {
     static String disassemble(final byte[] bytecode) {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (final PrintWriter pw = new PrintWriter(baos)) {
-            new ClassReader(bytecode).accept(new TraceClassVisitor(pw), 0);
+            final NashornClassReader cr = new NashornClassReader(bytecode);
+            final Context ctx = AccessController.doPrivileged(new PrivilegedAction<Context>() {
+                @Override
+                public Context run() {
+                    return Context.getContext();
+                }
+            });
+            TraceClassVisitor tcv = new TraceClassVisitor(null, new NashornTextifier(ctx.getEnv(), cr), pw);
+            cr.accept(tcv, 0);
         }
-        return new String(baos.toByteArray());
+
+        final String str = new String(baos.toByteArray());
+        return str;
     }
 
     /**
@@ -475,15 +488,38 @@ public class ClassEmitter implements Emitter {
      * @return method emitter to use for weaving this method
      */
     MethodEmitter method(final FunctionNode functionNode) {
+        final FunctionSignature signature = new FunctionSignature(functionNode);
         final MethodVisitor mv = cw.visitMethod(
             ACC_PUBLIC | ACC_STATIC | (functionNode.isVarArg() ? ACC_VARARGS : 0),
             functionNode.getName(),
-            new FunctionSignature(functionNode).toString(),
+            signature.toString(),
             null,
             null);
 
-        return new MethodEmitter(this, mv, functionNode);
+        final MethodEmitter method = new MethodEmitter(this, mv, functionNode);
+        method.setParameterTypes(signature.getParamTypes());
+        return method;
     }
+
+    /**
+     * Add a new method to the class, representing a rest-of version of the function node
+     *
+     * @param functionNode the function node to generate a method for
+     * @return method emitter to use for weaving this method
+     */
+    MethodEmitter restOfMethod(final FunctionNode functionNode) {
+        final MethodVisitor mv = cw.visitMethod(
+            ACC_PUBLIC | ACC_STATIC,
+            functionNode.getName(),
+            Type.getMethodDescriptor(functionNode.getReturnType().getTypeClass(), RewriteException.class),
+            null,
+            null);
+
+        final MethodEmitter method = new MethodEmitter(this, mv, functionNode);
+        method.setParameterTypes(new FunctionSignature(functionNode).getParamTypes());
+        return method;
+    }
+
 
     /**
      * Start generating the <clinit> method in the class

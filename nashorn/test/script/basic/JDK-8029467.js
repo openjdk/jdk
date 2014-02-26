@@ -32,3 +32,4 @@ print((function (x) { return x ? true : 0 })(true))
 print((function (x) { if(x) { return true } else { return 0 } })(true))
 print(typeof (function (x) { return x ? 1 : "123" })(true) === "number")
 print(typeof (function (x) { if(x) { return 1 } else { return "123" } })(true) === "number")
+

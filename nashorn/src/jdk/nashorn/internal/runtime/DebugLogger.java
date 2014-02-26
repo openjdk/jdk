@@ -129,14 +129,57 @@ public final class DebugLogger {
     }
 
     /**
-     * Check if the logger is above of the level of detail given
+     * Check if the logger is above the level of detail given
      * @see java.util.logging.Level
+     *
+     * The higher the level, the more severe the warning
      *
      * @param level logging level
      * @return true if level is above the given one
      */
-    public boolean levelAbove(final Level level) {
+    public boolean levelCoarserThan(final Level level) {
         return getLevel().intValue() > level.intValue();
+    }
+
+    /**
+     * Check if the logger is above or equal to the level
+     * of detail given
+     * @see java.util.logging.Level
+     *
+     * The higher the level, the more severe the warning
+     *
+     * @param level logging level
+     * @return true if level is above the given one
+     */
+    public boolean levelCoarserThanOrEqual(final Level level) {
+        return getLevel().intValue() >= level.intValue();
+    }
+
+    /**
+     * Check if the logger is below the level of detail given
+     * @see java.util.logging.Level
+     *
+     * The higher the level, the more severe the warning
+     *
+     * @param level logging level
+     * @return true if level is above the given one
+     */
+    public boolean levelFinerThan(final Level level) {
+        return getLevel().intValue() < level.intValue();
+    }
+
+    /**
+     * Check if the logger is below or equal to the level
+     * of detail given
+     * @see java.util.logging.Level
+     *
+     * The higher the level, the more severe the warning
+     *
+     * @param level logging level
+     * @return true if level is above the given one
+     */
+    public boolean levelFinerThanOrEqual(final Level level) {
+        return getLevel().intValue() <= level.intValue();
     }
 
     /**

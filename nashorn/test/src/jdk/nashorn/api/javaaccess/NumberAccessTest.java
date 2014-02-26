@@ -32,6 +32,7 @@ import static org.testng.internal.junit.ArrayAsserts.assertArrayEquals;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import jdk.nashorn.api.scripting.NashornScriptEngine;
 import org.testng.TestNG;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -44,8 +45,9 @@ import org.testng.annotations.Test;
  */
 public class NumberAccessTest {
 
-    private static ScriptEngine e = null;
-    private static SharedObject o = null;
+    private static ScriptEngine e;
+    private static SharedObject o;
+    private static boolean optimistic;
 
     public static void main(final String[] args) {
         TestNG.main(args);
@@ -55,6 +57,7 @@ public class NumberAccessTest {
     public static void setUpClass() throws ScriptException {
         final ScriptEngineManager m = new ScriptEngineManager();
         e = m.getEngineByName("nashorn");
+        optimistic = ((NashornScriptEngine)e).isOptimistic();
         o = new SharedObject();
         e.put("o", o);
         e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.SharedObject;");
@@ -264,7 +267,11 @@ public class NumberAccessTest {
     @Test
     public void accessFieldByte() throws ScriptException {
         e.eval("var p_byte = o.publicByte;");
-        assertEquals(o.publicByte, e.get("p_byte"));
+        if(optimistic) {
+            assertEquals((int)o.publicByte, e.get("p_byte"));
+        } else {
+            assertEquals(o.publicByte, e.get("p_byte"));
+        }
         e.eval("o.publicByte = 16;");
         assertEquals(16, o.publicByte);
     }
@@ -287,7 +294,11 @@ public class NumberAccessTest {
     @Test
     public void accessStaticFieldByte() throws ScriptException {
         e.eval("var ps_byte = SharedObject.publicStaticByte;");
-        assertEquals(SharedObject.publicStaticByte, e.get("ps_byte"));
+        if(optimistic) {
+            assertEquals((int)SharedObject.publicStaticByte, e.get("ps_byte"));
+        } else {
+            assertEquals(SharedObject.publicStaticByte, e.get("ps_byte"));
+        }
         e.eval("SharedObject.publicStaticByte = 16;");
         assertEquals(16, SharedObject.publicStaticByte);
     }
@@ -310,7 +321,11 @@ public class NumberAccessTest {
     @Test
     public void accessFinalFieldByte() throws ScriptException {
         e.eval("var pf_byte = o.publicFinalByte;");
-        assertEquals(o.publicFinalByte, e.get("pf_byte"));
+        if(optimistic) {
+            assertEquals((int)o.publicFinalByte, e.get("pf_byte"));
+        } else {
+            assertEquals(o.publicFinalByte, e.get("pf_byte"));
+        }
         e.eval("o.publicFinalByte = 16;");
         assertEquals(-7, o.publicFinalByte);
     }
@@ -333,7 +348,11 @@ public class NumberAccessTest {
     @Test
     public void accessStaticFinalFieldByte() throws ScriptException {
         e.eval("var psf_byte = SharedObject.publicStaticFinalByte;");
-        assertEquals(SharedObject.publicStaticFinalByte, e.get("psf_byte"));
+        if(optimistic) {
+            assertEquals((int)SharedObject.publicStaticFinalByte, e.get("psf_byte"));
+        } else {
+            assertEquals(SharedObject.publicStaticFinalByte, e.get("psf_byte"));
+        }
         e.eval("SharedObject.publicStaticFinalByte = 16;");
         assertEquals(-70, SharedObject.publicStaticFinalByte);
     }
@@ -358,7 +377,11 @@ public class NumberAccessTest {
     @Test
     public void accessFieldShort() throws ScriptException {
         e.eval("var p_short = o.publicShort;");
-        assertEquals(o.publicShort, e.get("p_short"));
+        if(optimistic) {
+            assertEquals((int)o.publicShort, e.get("p_short"));
+        } else {
+            assertEquals(o.publicShort, e.get("p_short"));
+        }
         e.eval("o.publicShort = 18;");
         assertEquals(18, o.publicShort);
     }
@@ -381,7 +404,11 @@ public class NumberAccessTest {
     @Test
     public void accessStaticFieldShort() throws ScriptException {
         e.eval("var ps_short = SharedObject.publicStaticShort;");
-        assertEquals(SharedObject.publicStaticShort, e.get("ps_short"));
+        if(optimistic) {
+            assertEquals((int)SharedObject.publicStaticShort, e.get("ps_short"));
+        } else {
+            assertEquals(SharedObject.publicStaticShort, e.get("ps_short"));
+        }
         e.eval("SharedObject.publicStaticShort = 180;");
         assertEquals(180, SharedObject.publicStaticShort);
     }
@@ -404,7 +431,11 @@ public class NumberAccessTest {
     @Test
     public void accessFinalFieldShort() throws ScriptException {
         e.eval("var pf_short = o.publicFinalShort;");
-        assertEquals(o.publicFinalShort, e.get("pf_short"));
+        if(optimistic) {
+            assertEquals((int)o.publicFinalShort, e.get("pf_short"));
+        } else {
+            assertEquals(o.publicFinalByte, e.get("pf_byte"));
+        }
         e.eval("o.publicFinalShort = 180;");
         assertEquals(31220, o.publicFinalShort);
     }
@@ -427,7 +458,11 @@ public class NumberAccessTest {
     @Test
     public void accessStaticFinalFieldShort() throws ScriptException {
         e.eval("var psf_short = SharedObject.publicStaticFinalShort;");
-        assertEquals(SharedObject.publicStaticFinalShort, e.get("psf_short"));
+        if(optimistic) {
+            assertEquals((int)SharedObject.publicStaticFinalShort, e.get("psf_short"));
+        } else {
+            assertEquals(SharedObject.publicStaticFinalShort, e.get("psf_short"));
+        }
         e.eval("SharedObject.publicStaticFinalShort = 180;");
         assertEquals(8888, SharedObject.publicStaticFinalShort);
     }
@@ -555,7 +590,11 @@ public class NumberAccessTest {
     @Test
     public void accessFieldFloat() throws ScriptException {
         e.eval("var p_float = o.publicFloat;");
-        assertEquals(o.publicFloat, e.get("p_float"));
+        if(optimistic) {
+            assertEquals((double)o.publicFloat, e.get("p_float"));
+        } else {
+            assertEquals(o.publicFloat, e.get("p_float"));
+        }
         o.publicFloat = 0.0f / 0.0f;
         assertEquals(true, e.eval("isNaN(o.publicFloat)"));
         o.publicFloat = 1.0f / 0.0f;
@@ -590,7 +629,12 @@ public class NumberAccessTest {
     @Test
     public void accessStaticFieldFloat() throws ScriptException {
         e.eval("var ps_float = SharedObject.publicStaticFloat;");
-        assertEquals(SharedObject.publicStaticFloat, e.get("ps_float"));
+        if(optimistic) {
+            assertTrue((int)SharedObject.publicStaticFloat == SharedObject.publicStaticFloat);
+            assertEquals((int)SharedObject.publicStaticFloat, e.get("ps_float"));
+        } else {
+            assertEquals(SharedObject.publicStaticFloat, e.get("ps_float"));
+        }
         SharedObject.publicStaticFloat = 0.0f / 0.0f;
         assertEquals(true, e.eval("isNaN(SharedObject.publicStaticFloat)"));
         SharedObject.publicStaticFloat = 1.0f / 0.0f;
@@ -625,7 +669,12 @@ public class NumberAccessTest {
     @Test
     public void accessFinalFloat() throws ScriptException {
         e.eval("var pf_float = o.publicFinalFloat;");
-        assertEquals(o.publicFinalFloat, e.get("pf_float"));
+        if(optimistic) {
+            assertTrue((int)o.publicFinalFloat == o.publicFinalFloat);
+            assertEquals((int)o.publicFinalFloat, e.get("pf_float"));
+        } else {
+            assertEquals(o.publicFinalFloat, e.get("pf_float"));
+        }
         e.eval("o.publicFinalFloat = 20.0;");
         assertEquals(7.72e8f, o.publicFinalFloat, 1e-10);
     }
@@ -648,7 +697,12 @@ public class NumberAccessTest {
     @Test
     public void accessStaticFinalFieldFloat() throws ScriptException {
         e.eval("var psf_float = SharedObject.publicStaticFinalFloat;");
-        assertEquals(SharedObject.publicStaticFinalFloat, e.get("psf_float"));
+        if(optimistic) {
+            assertTrue(((int)SharedObject.publicStaticFinalFloat) == SharedObject.publicStaticFinalFloat);
+            assertEquals((int)SharedObject.publicStaticFinalFloat, e.get("psf_float"));
+        } else {
+            assertEquals(SharedObject.publicStaticFinalFloat, e.get("psf_float"));
+        }
         e.eval("SharedObject.publicStaticFinalFloat = 20.0;");
         assertEquals(0.72e8f, SharedObject.publicStaticFinalFloat, 1e-10);
     }

@@ -100,6 +100,11 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
             return filters != null ? MethodHandles.filterArguments(typed, 0, filters) : typed;
         }
 
+        @Override
+        public MethodHandle asTypeLosslessReturn(MethodHandle handle, MethodType fromType) {
+            return Implementation.asTypeLosslessReturn(this, handle, fromType);
+        }
+
         private static boolean shouldConvert(final Class<?> handleType, final Class<?> fromType) {
             return handleType == Object.class && fromType == Object.class;
         }

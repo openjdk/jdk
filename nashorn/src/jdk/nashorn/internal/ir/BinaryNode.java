@@ -25,7 +25,13 @@
 
 package jdk.nashorn.internal.ir;
 
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
@@ -34,11 +40,33 @@ import jdk.nashorn.internal.parser.TokenType;
  * BinaryNode nodes represent two operand operations.
  */
 @Immutable
-public final class BinaryNode extends Expression implements Assignment<Expression> {
+public final class BinaryNode extends Expression implements Assignment<Expression>, Optimistic {
     /** Left hand side argument. */
     private final Expression lhs;
 
     private final Expression rhs;
+
+    private final int programPoint;
+
+    private final boolean isOptimistic;
+
+    private final Type type;
+
+    @Ignore
+    private static final List<TokenType> CAN_OVERFLOW =
+        Collections.unmodifiableList(
+            Arrays.asList(new TokenType[] {
+                TokenType.ADD,
+                TokenType.DIV,
+                TokenType.MOD,
+                TokenType.MUL,
+                TokenType.SUB,
+                TokenType.ASSIGN_ADD,
+                TokenType.ASSIGN_DIV,
+                TokenType.ASSIGN_MOD,
+                TokenType.ASSIGN_MUL,
+                TokenType.ASSIGN_SUB
+            }));
 
     /**
      * Constructor
@@ -51,12 +79,18 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         super(token, lhs.getStart(), rhs.getFinish());
         this.lhs   = lhs;
         this.rhs   = rhs;
+        this.programPoint = INVALID_PROGRAM_POINT;
+        this.isOptimistic = false;
+        this.type = null;
     }
 
-    private BinaryNode(final BinaryNode binaryNode, final Expression lhs, final Expression rhs) {
+    private BinaryNode(final BinaryNode binaryNode, final Expression lhs, final Expression rhs, final Type type, final int programPoint, final boolean isOptimistic) {
         super(binaryNode);
         this.lhs = lhs;
         this.rhs = rhs;
+        this.programPoint = programPoint;
+        this.isOptimistic = isOptimistic;
+        this.type = type;
     }
 
     @Override
@@ -109,6 +143,9 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         case ASSIGN_SUB:
             return Type.NUMBER;
         default:
+            if (isComparison()) {
+                return Type.BOOLEAN;
+            }
             return Type.OBJECT;
         }
     }
@@ -210,10 +247,10 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
 
     @Override
     public void toString(final StringBuilder sb) {
-        final TokenType type = tokenType();
+        final TokenType tokenType = tokenType();
 
-        final boolean lhsParen = type.needsParens(lhs().tokenType(), true);
-        final boolean rhsParen = type.needsParens(rhs().tokenType(), false);
+        final boolean lhsParen = tokenType.needsParens(lhs().tokenType(), true);
+        final boolean rhsParen = tokenType.needsParens(rhs().tokenType(), false);
 
         if (lhsParen) {
             sb.append('(');
@@ -227,7 +264,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
 
         sb.append(' ');
 
-        switch (type) {
+        switch (tokenType) {
         case COMMALEFT:
             sb.append(",<");
             break;
@@ -239,8 +276,12 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
             sb.append("++");
             break;
         default:
-            sb.append(type.getName());
+            sb.append(tokenType.getName());
             break;
+        }
+
+        if (isOptimistic()) {
+            sb.append(Node.OPT_IDENTIFIER);
         }
 
         sb.append(' ');
@@ -279,7 +320,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         if (this.lhs == lhs) {
             return this;
         }
-        return new BinaryNode(this, lhs, rhs);
+        return new BinaryNode(this, lhs, rhs, type, programPoint, isOptimistic);
     }
 
     /**
@@ -291,7 +332,64 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         if (this.rhs == rhs) {
             return this;
         }
-        return new BinaryNode(this, lhs, rhs);
+        return new BinaryNode(this, lhs, rhs, type, programPoint, isOptimistic);
     }
 
+    @Override
+    public int getProgramPoint() {
+        return programPoint;
+    }
+
+    @Override
+    public boolean canBeOptimistic() {
+        return getMostOptimisticType() != getMostPessimisticType();
+    }
+
+    @Override
+    public BinaryNode setProgramPoint(final int programPoint) {
+        if (this.programPoint == programPoint) {
+            return this;
+        }
+        return new BinaryNode(this, lhs, rhs, type, programPoint, isOptimistic);
+    }
+
+    @Override
+    public BinaryNode setIsOptimistic(final boolean isOptimistic) {
+        if (this.isOptimistic == isOptimistic) {
+            return this;
+        }
+        assert isOptimistic;
+        return new BinaryNode(this, lhs, rhs, type, programPoint, isOptimistic);
+    }
+
+    @Override
+    public Type getMostOptimisticType() {
+        if (CAN_OVERFLOW.contains(tokenType())) {
+            return Type.widest(Type.INT, Type.widest(lhs.getType(), rhs.getType()));
+        }
+        return getMostPessimisticType();
+    }
+
+    @Override
+    public Type getMostPessimisticType() {
+        return getWidestOperationType();
+    }
+
+    @Override
+    public boolean isOptimistic() {
+        return isOptimistic;
+    }
+
+    @Override
+    public Type getType() {
+        return type == null ? super.getType() : type;
+    }
+
+    @Override
+    public BinaryNode setType(TemporarySymbols ts, Type type) {
+        if (this.type == type) {
+            return this;
+        }
+        return new BinaryNode(this, lhs, rhs, type, programPoint, isOptimistic);
+    }
 }

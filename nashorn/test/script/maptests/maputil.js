@@ -27,12 +27,18 @@
 
 function assertSameMap(obj1, obj2, msg) {
     if (! Debug.identical(Debug.map(obj1), Debug.map(obj2))) {
-        fail(obj1.constructor + " instances don't share map");
+        fail(obj1.constructor + " instances don't share map " + Debug.diffPropertyMaps(Debug.map(obj1), Debug.map(obj2)));
     }
 }
 
 function assertNotSameMap(obj1, obj2, msg) {
     if (Debug.identical(Debug.map(obj1), Debug.map(obj2))) {
         fail(obj1.constructor + " and " + obj2.constructor + " instances share map");
+    }
+}
+
+function assertEqualWithoutTypeMap(obj1, obj2, msg) {
+    if (!Debug.equalWithoutType(Debug.map(obj1), Debug.map(obj2))) {
+        fail(obj1.constructor + " and " + obj2.constructor + " instances don't have identical (without considering property types) maps");
     }
 }

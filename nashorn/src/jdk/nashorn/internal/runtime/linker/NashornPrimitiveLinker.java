@@ -65,7 +65,7 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
         final GlobalObject global = (GlobalObject) Context.getGlobal();
         final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor) request.getCallSiteDescriptor();
 
-        return Bootstrap.asType(global.primitiveLookup(request, self), linkerServices, desc);
+        return Bootstrap.asTypeSafeReturn(global.primitiveLookup(request, self), linkerServices, desc);
     }
 
     /**

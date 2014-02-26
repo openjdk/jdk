@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -657,23 +656,12 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
          * Compute things like widest element type needed. Internal use from compiler only
          */
         public void analyze() {
-            elementType = Type.INT;
-            analyzeElements();
-
-            if (elementType.isInteger()) {
-                presetIntArray();
-            } else if (elementType.isLong()) {
-                presetLongArray();
-            } else if (elementType.isNumeric()) {
-                presetNumberArray();
-            } else {
-                presetObjectArray();
-            }
+            assert elementType.isUnknown();
+            elementType = getNarrowestElementType(value);
         }
 
-        private void presetIntArray() {
+        private int[] presetIntArray() {
             final int[] array = new int[value.length];
-            final int[] computed = new int[value.length];
             int nComputed = 0;
 
             for (int i = 0; i < value.length; i++) {
@@ -682,17 +670,16 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
                 if (element instanceof Number) {
                     array[i] = ((Number)element).intValue();
                 } else {
-                    computed[nComputed++] = i;
+                    assert getPostsets()[nComputed++] == i;
                 }
             }
 
-            presets = array;
-            postsets = Arrays.copyOf(computed, nComputed);
+            assert getPostsets().length == nComputed;
+            return array;
         }
 
-        private void presetLongArray() {
+        private long[] presetLongArray() {
             final long[] array = new long[value.length];
-            final int[] computed = new int[value.length];
             int nComputed = 0;
 
             for (int i = 0; i < value.length; i++) {
@@ -701,17 +688,16 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
                 if (element instanceof Number) {
                     array[i] = ((Number)element).longValue();
                 } else {
-                    computed[nComputed++] = i;
+                    assert getPostsets()[nComputed++] == i;
                 }
             }
 
-            presets = array;
-            postsets = Arrays.copyOf(computed, nComputed);
+            assert getPostsets().length == nComputed;
+            return array;
         }
 
-        private void presetNumberArray() {
+        private double[] presetNumberArray() {
             final double[] array = new double[value.length];
-            final int[] computed = new int[value.length];
             int nComputed = 0;
 
             for (int i = 0; i < value.length; i++) {
@@ -720,40 +706,40 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
                 if (element instanceof Number) {
                     array[i] = ((Number)element).doubleValue();
                 } else {
-                    computed[nComputed++] = i;
+                    assert getPostsets()[nComputed++] == i;
                 }
             }
 
-            presets = array;
-            postsets = Arrays.copyOf(computed, nComputed);
+            assert getPostsets().length == nComputed;
+            return array;
         }
 
-        private void presetObjectArray() {
+        private Object[] presetObjectArray() {
             final Object[] array = new Object[value.length];
-            final int[] computed = new int[value.length];
             int nComputed = 0;
 
             for (int i = 0; i < value.length; i++) {
                 final Node node = value[i];
 
                 if (node == null) {
-                    computed[nComputed++] = i;
+                    assert getPostsets()[nComputed++] == i;
                 } else {
                     final Object element = objectAsConstant(node);
 
                     if (element != POSTSET_MARKER) {
                         array[i] = element;
                     } else {
-                        computed[nComputed++] = i;
+                        assert getPostsets()[nComputed++] == i;
                     }
                 }
             }
 
-            presets = array;
-            postsets = Arrays.copyOf(computed, nComputed);
+            assert getPostsets().length == nComputed;
+            return array;
         }
 
-        private void analyzeElements() {
+        private static Type getNarrowestElementType(final Expression[] value) {
+            Type elementType = Type.INT;
             for (final Expression node : value) {
                 if (node == null) {
                     elementType = elementType.widest(Type.OBJECT); //no way to represent undefined as number
@@ -777,6 +763,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
                     break;
                 }
             }
+            return elementType;
         }
 
         @Override
@@ -789,6 +776,10 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
          * @return array element type
          */
         public ArrayType getArrayType() {
+            return getArrayType(getElementType());
+        }
+
+        private static ArrayType getArrayType(final Type elementType) {
             if (elementType.isInteger()) {
                 return Type.INT_ARRAY;
             } else if (elementType.isLong()) {
@@ -810,6 +801,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
          * @return element type
          */
         public Type getElementType() {
+            assert !elementType.isUnknown();
             return elementType;
         }
 
@@ -819,6 +811,18 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
          * @return post set indices
          */
         public int[] getPostsets() {
+            if(postsets == null) {
+                final int[] computed = new int[value.length];
+                int nComputed = 0;
+
+                for (int i = 0; i < value.length; i++) {
+                    final Expression element = value[i];
+                    if(element == null || objectAsConstant(element) == POSTSET_MARKER) {
+                        computed[nComputed++] = i;
+                    }
+                }
+                postsets = Arrays.copyOf(computed, nComputed);
+            }
             return postsets;
         }
 
@@ -827,6 +831,18 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
          * @return presets array, always returns an array type
          */
         public Object getPresets() {
+            if(presets == null) {
+                final Type type = getElementType();
+                if (type.isInteger()) {
+                    presets = presetIntArray();
+                } else if (type.isLong()) {
+                    presets = presetLongArray();
+                } else if (type.isNumeric()) {
+                    presets = presetNumberArray();
+                } else {
+                    presets = presetObjectArray();
+                }
+            }
             return presets;
         }
 

@@ -48,6 +48,7 @@ import static jdk.nashorn.internal.parser.TokenType.XML;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -76,7 +77,7 @@ public class Lexer extends Scanner {
     private final boolean nested;
 
     /** Pending new line number and position. */
-    private int pendingLine;
+    int pendingLine;
 
     /** Position of last EOL + 1. */
     private int linePosition;
@@ -181,8 +182,21 @@ public class Lexer extends Scanner {
      * @param scripting are we in scripting mode
      */
     public Lexer(final Source source, final TokenStream stream, final boolean scripting) {
-        super(source.getContent(), 1, 0, source.getLength());
+        this(source, 0, source.getLength(), stream, scripting);
+    }
 
+    /**
+     * Contructor
+     *
+     * @param source    the source
+     * @param start     start position in source from which to start lexing
+     * @param len       length of source segment to lex
+     * @param stream    token stream to lex
+     * @param scripting are we in scripting mode
+     */
+
+    public Lexer(final Source source, final int start, final int len, final TokenStream stream, final boolean scripting) {
+        super(source.getContent(), 1, start, len);
         this.source      = source;
         this.stream      = stream;
         this.scripting   = scripting;
@@ -1609,7 +1623,7 @@ public class Lexer extends Scanner {
      */
     Object getValueOf(final long token, final boolean strict) {
         final int start = Token.descPosition(token);
-        final int len = Token.descLength(token);
+        final int len   = Token.descLength(token);
 
         switch (Token.descType(token)) {
         case DECIMAL:
@@ -1619,7 +1633,23 @@ public class Lexer extends Scanner {
         case HEXADECIMAL:
             return Lexer.valueOf(source.getString(start + 2, len - 2), 16); // number
         case FLOATING:
-            return Double.valueOf(source.getString(start, len)); // number
+            final String str   = source.getString(start, len);
+            final double value = Double.valueOf(str);
+            if (str.indexOf('.') != -1) {
+                return value; //number
+            }
+            //anything without an explicit decimal point is still subject to a
+            //"representable as int or long" check. Then the programmer does not
+            //explicitly code something as a double. For example new Color(int, int, int)
+            //and new Color(float, float, float) will get ambiguous for cases like
+            //new Color(1.0, 1.5, 1.5) if we don't respect the decimal point.
+            //yet we don't want e.g. 1e6 to be a double unnecessarily
+            if (JSType.isRepresentableAsInt(value) && !JSType.isNegativeZero(value)) {
+                return (int)value;
+            } else if (JSType.isRepresentableAsLong(value) && !JSType.isNegativeZero(value)) {
+                return (long)value;
+            }
+            return value;
         case STRING:
             return source.getString(start, len); // String
         case ESCSTRING:

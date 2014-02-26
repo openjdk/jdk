@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -633,18 +634,23 @@ public final class NativeObject {
         final ScriptObject targetObj = (ScriptObject)target;
 
         if (source instanceof ScriptObject) {
-            final ScriptObject sourceObj = (ScriptObject)source;
-            final Property[] properties = sourceObj.getMap().getProperties();
+            final ScriptObject sourceObj  = (ScriptObject)source;
+
+            final PropertyMap  sourceMap  = sourceObj.getMap();
+            final Property[]   properties = sourceMap.getProperties();
+            //replace the map and blow up everything to objects to work with dual fields :-(
 
             // filter non-enumerable properties
             final ArrayList<Property> propList = new ArrayList<>();
-            for (Property prop : properties) {
+            for (final Property prop : properties) {
                 if (prop.isEnumerable()) {
+                    prop.setValue(sourceObj, sourceObj, sourceObj.get(prop.getKey()), false);
+                    prop.setCurrentType(Object.class);
                     propList.add(prop);
                 }
             }
 
-            if (! propList.isEmpty()) {
+            if (!propList.isEmpty()) {
                 targetObj.addBoundProperties(sourceObj, propList.toArray(new Property[propList.size()]));
             }
         } else if (source instanceof ScriptObjectMirror) {
@@ -662,7 +668,7 @@ public final class NativeObject {
                 final String name = keys[idx];
                 final MethodHandle getter = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getElem:" + name, MIRROR_GETTER_TYPE);
                 final MethodHandle setter = Bootstrap.createDynamicInvoker("dyn:setProp|setElem:" + name, MIRROR_SETTER_TYPE);
-                props[idx] = (AccessorProperty.create(name, 0, getter, setter));
+                props[idx] = AccessorProperty.create(name, 0, getter, setter);
             }
 
             targetObj.addBoundProperties(source, props);
@@ -774,6 +780,6 @@ public final class NativeObject {
 
     private static LinkRequest createLinkRequest(String operation, MethodType methodType, Object source) {
         return new LinkRequestImpl(CallSiteDescriptorFactory.create(MethodHandles.publicLookup(), operation,
-                methodType), false, source);
+                methodType), null, false, source);
     }
 }

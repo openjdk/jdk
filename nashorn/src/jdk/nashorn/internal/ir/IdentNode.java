@@ -28,28 +28,35 @@ package jdk.nashorn.internal.ir;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__DIR__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__FILE__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__LINE__;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
 
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 /**
  * IR representation for an identifier.
  */
 @Immutable
-public final class IdentNode extends Expression implements PropertyKey, FunctionCall {
+public final class IdentNode extends Expression implements PropertyKey, FunctionCall, Optimistic {
     private static final int PROPERTY_NAME     = 1 << 0;
     private static final int INITIALIZED_HERE  = 1 << 1;
     private static final int FUNCTION          = 1 << 2;
     private static final int FUTURESTRICT_NAME = 1 << 3;
+    private static final int OPTIMISTIC        = 1 << 4;
 
     /** Identifier. */
     private final String name;
 
-    /** Type for a callsite, e.g. X in a get()X or a set(X)V */
-    private final Type callSiteType;
+    /** Optimistic type */
+    private final Type optimisticType;
 
     private final int flags;
+
+    private final int programPoint;
 
     /**
      * Constructor
@@ -60,16 +67,18 @@ public final class IdentNode extends Expression implements PropertyKey, Function
      */
     public IdentNode(final long token, final int finish, final String name) {
         super(token, finish);
-        this.name = name.intern();
-        this.callSiteType = null;
-        this.flags = 0;
+        this.name           = name.intern();
+        this.optimisticType = null;
+        this.flags          = 0;
+        this.programPoint   = INVALID_PROGRAM_POINT;
     }
 
-    private IdentNode(final IdentNode identNode, final String name, final Type callSiteType, final int flags) {
+    private IdentNode(final IdentNode identNode, final String name, final Type callSiteType, final int flags, final int programPoint) {
         super(identNode);
-        this.name = name;
-        this.callSiteType = callSiteType;
-        this.flags = flags;
+        this.name           = name;
+        this.optimisticType = callSiteType;
+        this.flags          = flags;
+        this.programPoint   = programPoint;
     }
 
     /**
@@ -79,24 +88,20 @@ public final class IdentNode extends Expression implements PropertyKey, Function
      */
     public IdentNode(final IdentNode identNode) {
         super(identNode);
-        this.name         = identNode.getName();
-        this.callSiteType = null;
-        this.flags        = identNode.flags;
+        this.name           = identNode.getName();
+        this.optimisticType = null;
+        this.flags          = identNode.flags;
+        this.programPoint   = INVALID_PROGRAM_POINT;
     }
 
     @Override
     public Type getType() {
-        return callSiteType == null ? super.getType() : callSiteType;
+        return optimisticType == null ? super.getType() : optimisticType;
     }
 
     @Override
     public boolean isAtom() {
         return true;
-    }
-
-    private boolean hasCallSiteType() {
-        //this is an identity that's part of a getter or setter
-        return callSiteType != null;
     }
 
     /**
@@ -115,13 +120,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
 
     @Override
     public void toString(final StringBuilder sb) {
-        if (hasCallSiteType()) {
-            sb.append('{');
-            final String desc = getType().getDescriptor();
-            sb.append(desc.charAt(desc.length() - 1) == ';' ? 'O' : getType().getDescriptor());
-            sb.append('}');
-        }
-
+        Node.optimisticType(this, sb);
         sb.append(name);
     }
 
@@ -159,7 +158,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
         if (isPropertyName()) {
             return this;
         }
-        return new IdentNode(this, name, callSiteType, flags | PROPERTY_NAME);
+        return new IdentNode(this, name, optimisticType, flags | PROPERTY_NAME, programPoint);
     }
 
     /**
@@ -178,7 +177,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
         if (isFutureStrictName()) {
             return this;
         }
-        return new IdentNode(this, name, callSiteType, flags | FUTURESTRICT_NAME);
+        return new IdentNode(this, name, optimisticType, flags | FUTURESTRICT_NAME, programPoint);
     }
 
     /**
@@ -197,22 +196,33 @@ public final class IdentNode extends Expression implements PropertyKey, Function
         if (isInitializedHere()) {
             return this;
         }
-        return new IdentNode(this, name, callSiteType, flags | INITIALIZED_HERE);
+        return new IdentNode(this, name, optimisticType, flags | INITIALIZED_HERE, programPoint);
     }
 
     /**
-     * Check if this IdentNode is a special identity, currently __DIR__, __FILE__
-     * or __LINE__
+     * Check if the name of this IdentNode is same as that of a compile-time property (currently __DIR__, __FILE__, and
+     * __LINE__).
      *
-     * @return true if this IdentNode is special
+     * @return true if this IdentNode's name is same as that of a compile-time property
      */
-    public boolean isSpecialIdentity() {
+    public boolean isCompileTimePropertyName() {
         return name.equals(__DIR__.symbolName()) || name.equals(__FILE__.symbolName()) || name.equals(__LINE__.symbolName());
     }
 
     @Override
     public boolean isFunction() {
         return (flags & FUNCTION) != 0;
+    }
+
+    @Override
+    public IdentNode setType(final TemporarySymbols ts, final Type callSiteType) {
+        if (this.optimisticType == callSiteType) {
+            return this;
+        }
+        if (DEBUG_FIELDS && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), callSiteType)) {
+            ObjectClassGenerator.LOG.info(getClass().getName(), " ", this, " => ", callSiteType, " instead of ", getType());
+        }
+        return new IdentNode(this, name, callSiteType, flags, programPoint);
     }
 
     /**
@@ -223,6 +233,47 @@ public final class IdentNode extends Expression implements PropertyKey, Function
         if (isFunction()) {
             return this;
         }
-        return new IdentNode(this, name, callSiteType, flags | FUNCTION);
+        return new IdentNode(this, name, optimisticType, flags | FUNCTION, programPoint);
+    }
+
+    @Override
+    public int getProgramPoint() {
+        return programPoint;
+    }
+
+    @Override
+    public Optimistic setProgramPoint(final int programPoint) {
+        if (this.programPoint == programPoint) {
+            return this;
+        }
+        return new IdentNode(this, name, optimisticType, flags, programPoint);
+    }
+
+    @Override
+    public Type getMostOptimisticType() {
+        return Type.INT;
+    }
+
+    @Override
+    public Type getMostPessimisticType() {
+        return Type.OBJECT;
+    }
+
+    @Override
+    public boolean canBeOptimistic() {
+        return true;
+    }
+
+    @Override
+    public boolean isOptimistic() {
+        return (flags & OPTIMISTIC) == OPTIMISTIC;
+    }
+
+    @Override
+    public Optimistic setIsOptimistic(final boolean isOptimistic) {
+        if (isOptimistic() == isOptimistic) {
+            return this;
+        }
+        return new IdentNode(this, name, optimisticType, isOptimistic ? (flags | OPTIMISTIC) : (flags & ~OPTIMISTIC), programPoint);
     }
 }

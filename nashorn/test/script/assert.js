@@ -29,7 +29,7 @@
 
 // Assert is TestNG's Assert class
 Object.defineProperty(this, "Assert", { 
-    configuable: true,
+    configurable: true,
     enumerable: false,
     writable: true,
     value: Packages.org.testng.Assert
@@ -37,7 +37,7 @@ Object.defineProperty(this, "Assert", {
 
 // fail function to call TestNG Assert.fail
 Object.defineProperty(this, "fail", {
-    configuable: true,
+    configurable: true,
     enumerable: false,
     writable: true,
     // 'error' is optional. if present it has to be 
@@ -63,7 +63,7 @@ Object.defineProperty(this, "fail", {
 });
 
 Object.defineProperty(this, "printError", {
-    configuable: true,
+    configurable: true,
     enumerable: false,
     writable: true,
     value: function (e) {

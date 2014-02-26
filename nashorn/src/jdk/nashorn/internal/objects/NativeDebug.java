@@ -93,21 +93,6 @@ public final class NativeDebug extends ScriptObject {
     }
 
     /**
-     * Nashorn extension: get spill vector from {@link ScriptObject}
-     *
-     * @param self self reference
-     * @param obj script object
-     * @return the spill vector for the given ScriptObject
-     */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object spill(final Object self, final Object obj) {
-        if (obj instanceof ScriptObject) {
-            return ((ScriptObject)obj).spill;
-        }
-        return UNDEFINED;
-    }
-
-    /**
      * Check object identity comparison regardless of type
      *
      * @param self self reference
@@ -119,6 +104,30 @@ public final class NativeDebug extends ScriptObject {
     public static Object identical(final Object self, final Object obj1, final Object obj2) {
         return obj1 == obj2;
     }
+
+    /**
+     * Returns true if if the two objects are both property maps, and they have identical properties in the same order,
+     * but allows the properties to differ in their types.
+     * @param m1 first property map
+     * @param m2 second property map
+     * @return true if they have identical properties in same order, with possibly different types.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object equalWithoutType(final Object self, final Object m1, final Object m2) {
+        return ((PropertyMap)m1).equalsWithoutType((PropertyMap)m2);
+    }
+
+    /**
+     * Returns a diagnostic string representing the difference of two property maps.
+     * @param m1 first property map
+     * @param m2 second property map
+     * @return a diagnostic string representing the difference of two property maps.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object diffPropertyMaps(final Object self, final Object m1, final Object m2) {
+        return PropertyMap.diff((PropertyMap)m1, (PropertyMap)m2);
+    }
+
 
     /**
      * Object util - getClass

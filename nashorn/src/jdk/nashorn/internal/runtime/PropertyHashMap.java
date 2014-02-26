@@ -164,6 +164,20 @@ public final class PropertyHashMap implements Map <String, Property> {
     }
 
     /**
+     * Clone a property map, replacing a property with a new one in the same place,
+     * which is important for property iterations if a property changes types
+     * @param property    old property
+     * @param newProperty new property
+     * @return new property map
+     */
+    public PropertyHashMap immutableReplace(final Property property, final Property newProperty) {
+        assert property.getKey().equals(newProperty.getKey()) : "replacing properties with different keys: '" + property.getKey() + "' != '" + newProperty.getKey() + "'";
+        assert property.hashCode() != newProperty.hashCode()  : "replacing identical properties: '" + property + "'";
+        assert findElement(property.getKey()) != null         : "replacing property that doesn't exist in map: '" + property.getKey() + "'";
+        return cloneMap().replaceNoClone(property.getKey(), newProperty);
+    }
+
+    /**
      * Clone a {@link PropertyHashMap} and add a {@link Property}.
      *
      * @param property {@link Property} to add.
@@ -327,8 +341,9 @@ public final class PropertyHashMap implements Map <String, Property> {
         final Element[] newBins = new Element[binSize];
         for (Element element = list; element != null; element = element.getLink()) {
             final Property property = element.getProperty();
-            final String key = property.getKey();
-            final int binIndex = binIndex(newBins, key);
+            final String   key      = property.getKey();
+            final int      binIndex = binIndex(newBins, key);
+
             newBins[binIndex] = new Element(newBins[binIndex], property);
         }
         return newBins;
@@ -366,6 +381,11 @@ public final class PropertyHashMap implements Map <String, Property> {
         return null;
     }
 
+
+    private PropertyHashMap cloneMap() {
+        return new PropertyHashMap(size, bins == null ? null : bins.clone(), list);
+    }
+
     /**
      * Clone {@link PropertyHashMap} to accommodate new size.
      *
@@ -384,6 +404,8 @@ public final class PropertyHashMap implements Map <String, Property> {
         }
         return new PropertyHashMap(newSize, newBins, list);
     }
+
+
 
     /**
      * Add a {@link Property} to a temporary {@link PropertyHashMap}, that has
@@ -416,6 +438,22 @@ public final class PropertyHashMap implements Map <String, Property> {
         return new PropertyHashMap(newSize, bins, newList);
     }
 
+    private PropertyHashMap replaceNoClone(final String key, final Property property) {
+        if (bins != null) {
+            final int binIndex = binIndex(bins, key);
+            Element bin = bins[binIndex];
+    //        System.err.println("oldBin = " + bin);
+            bin = replaceInList(bin, key, property);
+    //        System.err.println("newBin = " + bin);
+            bins[binIndex] = bin;
+        }
+        Element newList = list;
+        //System.err.println("oldList = " + newList);
+        newList = replaceInList(newList, key, property);
+        //System.err.println("newList = " + newList);
+        return new PropertyHashMap(size, bins, newList);
+    }
+
     /**
      * Removes an {@link Element} from a specific list, avoiding duplication.
      *
@@ -445,6 +483,27 @@ public final class PropertyHashMap implements Map <String, Property> {
         }
         return list;
     }
+
+    // for element x. if x get link matches,
+    private static Element replaceInList(final Element list, final String key, final Property property) {
+        assert list != null;
+        final int hashCode = key.hashCode();
+
+        if (list.match(key, hashCode)) {
+            return new Element(list.getLink(), property);
+        }
+
+        Element previous = list;
+        for (Element element = list.getLink(); element != null; element = element.getLink()) {
+            if (element.match(key, hashCode)) {
+                previous.setLink(new Element(element.getLink(), property));
+                return list;
+            }
+            previous = element;
+        }
+        return list;
+    }
+
 
     /*
      * Map implementation
@@ -615,6 +674,26 @@ public final class PropertyHashMap implements Map <String, Property> {
         @Override
         public Property setValue(final Property value) {
             throw new UnsupportedOperationException("Immutable map.");
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+
+            sb.append('[');
+
+            Element elem = this;
+            do {
+                sb.append(elem.getValue().toStringShort());
+                elem = elem.link;
+                if (elem != null) {
+                    sb.append(" -> ");
+                }
+            } while (elem != null);
+
+            sb.append(']');
+
+            return sb.toString();
         }
 
         /*

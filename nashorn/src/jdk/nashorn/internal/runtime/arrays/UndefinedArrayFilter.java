@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.reflect.Array;
 import jdk.nashorn.internal.runtime.BitVector;
+import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 
 /**
  * This filter handles the presence of undefined array elements.
@@ -154,6 +155,15 @@ final class UndefinedArrayFilter extends ArrayFilter {
     }
 
     @Override
+    public int getIntOptimistic(int index, int programPoint) {
+        if (undefined.isSet(index)) {
+            throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
+        }
+
+        return super.getIntOptimistic(index, programPoint);
+    }
+
+    @Override
     public long getLong(final int index) {
         if (undefined.isSet(index)) {
             return 0L;
@@ -163,12 +173,30 @@ final class UndefinedArrayFilter extends ArrayFilter {
     }
 
     @Override
+    public long getLongOptimistic(int index, int programPoint) {
+        if (undefined.isSet(index)) {
+            throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
+        }
+
+        return super.getLongOptimistic(index, programPoint);
+    }
+
+    @Override
     public double getDouble(final int index) {
         if (undefined.isSet(index)) {
             return Double.NaN;
         }
 
         return super.getDouble(index);
+    }
+
+    @Override
+    public double getDoubleOptimistic(int index, int programPoint) {
+        if (undefined.isSet(index)) {
+            throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
+        }
+
+        return super.getDoubleOptimistic(index, programPoint);
     }
 
     @Override

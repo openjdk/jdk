@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import jdk.nashorn.internal.ir.BaseNode;
@@ -235,12 +236,18 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
             newForNode = forNode.setTest(lc, null);
         }
 
-        return addStatement(checkEscape(newForNode));
-    }
-
-    @Override
-    public boolean enterFunctionNode(final FunctionNode functionNode) {
-        return !functionNode.isLazy();
+        newForNode = checkEscape(newForNode);
+        if(newForNode.isForIn()) {
+            // Wrap it in a block so its internally created iterator is restricted in scope
+            BlockStatement b = BlockStatement.createReplacement(newForNode, Collections.singletonList((Statement)newForNode));
+            if(newForNode.isTerminal()) {
+                b = b.setBlock(b.getBlock().setIsTerminal(null, true));
+            }
+            addStatement(b);
+        } else {
+            addStatement(newForNode);
+        }
+        return newForNode;
     }
 
     @Override
@@ -308,7 +315,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         final long token      = tryNode.getToken();
         final int  finish     = tryNode.getFinish();
 
-        final IdentNode exception = new IdentNode(token, finish, lc.getCurrentFunction().uniqueName("catch_all"));
+        final IdentNode exception = new IdentNode(token, finish, lc.getCurrentFunction().uniqueName(CompilerConstants.EXCEPTION_PREFIX.symbolName()));
 
         final Block catchBody = new Block(token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception), ThrowNode.IS_SYNTHETIC_RETHROW));
         assert catchBody.isTerminal(); //ends with throw, so terminal
@@ -339,6 +346,8 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
      */
     private Node spliceFinally(final TryNode tryNode, final List<ThrowNode> rethrows, final Block finallyBody) {
         assert tryNode.getFinallyBody() == null;
+
+        final LexicalContext lowerLc = lc;
 
         final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             final List<Node> insideTry = new ArrayList<>();
@@ -388,6 +397,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                     //still in the try block, store it in a result value and return it afterwards
                     resultNode = new IdentNode(Lower.this.compilerConstant(RETURN));
                     newStatements.add(new ExpressionStatement(returnNode.getLineNumber(), returnNode.getToken(), returnNode.getFinish(), new BinaryNode(Token.recast(returnNode.getToken(), TokenType.ASSIGN), resultNode, expr)));
+                    lowerLc.setFlag(lowerLc.getCurrentFunction(), FunctionNode.USES_RETURN_SYMBOL);
                 } else {
                     resultNode = null;
                 }
@@ -620,10 +630,11 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         return !escapes.isEmpty();
     }
 
-    private LoopNode checkEscape(final LoopNode loopNode) {
+    @SuppressWarnings("unchecked")
+    private <T extends LoopNode> T checkEscape(final T loopNode) {
         final boolean escapes = controlFlowEscapes(lc, loopNode.getBody());
         if (escapes) {
-            return loopNode.
+            return (T)loopNode.
                 setBody(lc, loopNode.getBody().setIsTerminal(lc, false)).
                 setControlFlowEscapes(lc, escapes);
         }

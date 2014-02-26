@@ -25,17 +25,15 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.RUN_SCRIPT;
+import static jdk.nashorn.internal.codegen.CompilerConstants.CREATE_PROGRAM_FUNCTION;
 import static jdk.nashorn.internal.codegen.CompilerConstants.STRICT_MODE;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -51,7 +49,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.internal.codegen.CompilationEnvironment;
+import jdk.nashorn.internal.codegen.CompilationEnvironment.CompilationPhases;
 import jdk.nashorn.internal.codegen.Compiler;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
@@ -338,7 +339,7 @@ public final class Context {
         // if user passed -classpath option, make a class loader with that and set it as
         // thread context class loader so that script can access classes from that path.
         final String classPath = options.getString("classpath");
-        if (! env._compile_only && classPath != null && !classPath.isEmpty()) {
+        if (!env._compile_only && classPath != null && !classPath.isEmpty()) {
             // make sure that caller can create a class loader.
             if (sm != null) {
                 sm.checkPermission(new RuntimePermission("createClassLoader"));
@@ -426,7 +427,6 @@ public final class Context {
         final Source  source     = new Source(file, string);
         final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
         final ScriptObject global = Context.getGlobalTrusted();
-
         ScriptObject scope = initialScope;
 
         // ECMA section 10.1.1 point 2 says eval code is strict if it begins
@@ -468,7 +468,7 @@ public final class Context {
             scope = strictEvalScope;
         }
 
-        ScriptFunction func = getRunScriptFunction(clazz, scope);
+        ScriptFunction func = getProgramFunction(clazz, scope);
         Object evalThis;
         if (directEval) {
             evalThis = (callThis instanceof ScriptObject || strictFlag) ? callThis : global;
@@ -626,11 +626,12 @@ public final class Context {
      *
      * @throws ClassNotFoundException if structure class cannot be resolved
      */
-    public static Class<?> forStructureClass(final String fullName) throws ClassNotFoundException {
+    @SuppressWarnings("unchecked")
+    public static Class<? extends ScriptObject> forStructureClass(final String fullName) throws ClassNotFoundException {
         if (System.getSecurityManager() != null && !StructureLoader.isStructureClass(fullName)) {
             throw new ClassNotFoundException(fullName);
         }
-        return Class.forName(fullName, true, sharedLoader);
+        return (Class<? extends ScriptObject>)Class.forName(fullName, true, sharedLoader);
     }
 
     /**
@@ -802,7 +803,7 @@ public final class Context {
      * @return the initialized global scope object.
      */
     public ScriptObject initGlobal(final ScriptObject global) {
-        if (! (global instanceof GlobalObject)) {
+        if (!(global instanceof GlobalObject)) {
             throw new IllegalArgumentException("not a global object!");
         }
 
@@ -889,36 +890,21 @@ public final class Context {
         return ScriptRuntime.apply(script, thiz);
     }
 
-    private static ScriptFunction getRunScriptFunction(final Class<?> script, final ScriptObject scope) {
+    private static ScriptFunction getProgramFunction(final Class<?> script, final ScriptObject scope) {
         if (script == null) {
             return null;
         }
 
-        // Get run method - the entry point to the script
-        final MethodHandle runMethodHandle =
-                MH.findStatic(
-                    MethodHandles.lookup(),
-                    script,
-                    RUN_SCRIPT.symbolName(),
-                    MH.type(
-                        Object.class,
-                        ScriptFunction.class,
-                        Object.class));
-
-        boolean strict;
-
         try {
-            strict = script.getField(STRICT_MODE.symbolName()).getBoolean(null);
-        } catch (final NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            strict = false;
+            return (ScriptFunction)script.getMethod(CREATE_PROGRAM_FUNCTION.symbolName(), ScriptObject.class).invoke(null, scope);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+                | SecurityException e) {
+            throw new RuntimeException("Failed to create a program function for " + script.getName(), e);
         }
-
-        // Package as a JavaScript function and pass function back to shell.
-        return ((GlobalObject)Context.getGlobalTrusted()).newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, scope, strict);
     }
 
     private ScriptFunction compileScript(final Source source, final ScriptObject scope, final ErrorManager errMan) {
-        return getRunScriptFunction(compile(source, errMan, this._strict), scope);
+        return getProgramFunction(compile(source, errMan, this._strict), scope);
     }
 
     private synchronized Class<?> compile(final Source source, final ErrorManager errMan, final boolean strict) {
@@ -959,9 +945,16 @@ public final class Context {
         final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
-        final Compiler compiler = new Compiler(installer, strict);
+        final CompilationPhases phases = CompilationEnvironment.CompilationPhases.EAGER;
+        final Compiler compiler = new Compiler(
+                new CompilationEnvironment(
+                    phases.
+                        makeOptimistic(
+                            ScriptEnvironment.globalOptimistic()),
+                    strict),
+                installer);
 
-        final FunctionNode newFunctionNode = compiler.compile(functionNode);
+        final FunctionNode newFunctionNode = compiler.compile(CompilerConstants.DEFAULT_SCRIPT_NAME.symbolName(), functionNode);
         script = compiler.install(newFunctionNode);
 
         if (global != null) {

@@ -108,19 +108,27 @@ public final class ASTWriter {
         String   type  = clazz.getName();
 
         type = type.substring(type.lastIndexOf('.') + 1, type.length());
+        int truncate = type.indexOf("Node");
+        if (truncate == -1) {
+            truncate = type.indexOf("Statement");
+        }
+        if (truncate != -1) {
+            type = type.substring(0, truncate);
+        }
+        type = type.toLowerCase();
+
         if (isReference) {
             type = "ref: " + type;
         }
-        type += "@" + Debug.id(node);
         final Symbol symbol;
-        if(node instanceof Expression) {
+        if (node instanceof Expression) {
             symbol = ((Expression)node).getSymbol();
         } else {
             symbol = null;
         }
 
         if (symbol != null) {
-            type += "#" + symbol;
+            type += ">" + symbol;
         }
 
         if (node instanceof Block && ((Block)node).needsScope()) {
@@ -159,6 +167,8 @@ public final class ASTWriter {
             }
             status += " (" + tname + ")";
         }
+
+        status += " @" + Debug.id(node);
 
         if (children.isEmpty()) {
             sb.append("[").
@@ -200,7 +210,7 @@ public final class ASTWriter {
                 } else if (value instanceof Collection) {
                     int pos = 0;
                     ASTWriter.indent(sb, indent + 1);
-                    sb.append("[Collection ").
+                    sb.append('[').
                         append(child.getName()).
                         append("[0..").
                         append(((Collection<Node>)value).size()).

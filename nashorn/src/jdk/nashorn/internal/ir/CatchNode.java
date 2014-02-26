@@ -60,7 +60,7 @@ public final class CatchNode extends Statement {
      */
     public CatchNode(final int lineNumber, final long token, final int finish, final IdentNode exception, final Expression exceptionCondition, final Block body, final int flags) {
         super(lineNumber, token, finish);
-        this.exception          = exception;
+        this.exception          = exception == null ? null : exception.setIsInitializedHere();
         this.exceptionCondition = exceptionCondition;
         this.body               = body;
         this.flags              = flags;

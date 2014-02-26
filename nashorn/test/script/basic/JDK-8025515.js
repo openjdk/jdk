@@ -47,7 +47,7 @@ function testMethodName(f, expected) {
         var stack = e.nashornException.getStackTrace();
         var name = getFirstScriptFrame(stack).methodName;
         if (name !== expected) {
-            fail("got " + stack[0].methodName + ", expected " + expected);
+            fail("got " + name + ", expected " + expected);
         }
     }
 }
@@ -61,7 +61,7 @@ testMethodName(function() { throw new Error() }, "L:59");
 var f = (function() {
     return function() { a.b.c; };
 })();
-testMethodName(f, "L:61$L:62");
+testMethodName(f, "f$L:62");
 
 testMethodName((function() {
     return function() { return a.b.c; };

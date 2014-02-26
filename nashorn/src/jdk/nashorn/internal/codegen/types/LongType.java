@@ -27,29 +27,25 @@ package jdk.nashorn.internal.codegen.types;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.L2D;
 import static jdk.internal.org.objectweb.asm.Opcodes.L2I;
-import static jdk.internal.org.objectweb.asm.Opcodes.LADD;
 import static jdk.internal.org.objectweb.asm.Opcodes.LAND;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCMP;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCONST_0;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCONST_1;
-import static jdk.internal.org.objectweb.asm.Opcodes.LDIV;
 import static jdk.internal.org.objectweb.asm.Opcodes.LLOAD;
-import static jdk.internal.org.objectweb.asm.Opcodes.LMUL;
-import static jdk.internal.org.objectweb.asm.Opcodes.LNEG;
 import static jdk.internal.org.objectweb.asm.Opcodes.LOR;
 import static jdk.internal.org.objectweb.asm.Opcodes.LREM;
 import static jdk.internal.org.objectweb.asm.Opcodes.LRETURN;
 import static jdk.internal.org.objectweb.asm.Opcodes.LSHL;
 import static jdk.internal.org.objectweb.asm.Opcodes.LSHR;
 import static jdk.internal.org.objectweb.asm.Opcodes.LSTORE;
-import static jdk.internal.org.objectweb.asm.Opcodes.LSUB;
 import static jdk.internal.org.objectweb.asm.Opcodes.LUSHR;
 import static jdk.internal.org.objectweb.asm.Opcodes.LXOR;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
+import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_LONG;
 
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
+import jdk.nashorn.internal.runtime.JSType;
 
 /**
  * Type class: LONG
@@ -74,6 +70,11 @@ class LongType extends BitwiseType {
     @Override
     public Class<?> getBoxedType() {
         return Long.class;
+    }
+
+    @Override
+    public char getBytecodeStackType() {
+        return 'J';
     }
 
     @Override
@@ -121,11 +122,11 @@ class LongType extends BitwiseType {
         if (to.isNumber()) {
             method.visitInsn(L2D);
         } else if (to.isInteger()) {
-            method.visitInsn(L2I);
+            invokestatic(method, JSType.TO_INT32_L);
         } else if (to.isBoolean()) {
             method.visitInsn(L2I);
         } else if (to.isObject()) {
-            invokeStatic(method, VALUE_OF);
+            invokestatic(method, VALUE_OF);
         } else {
             assert false : "Illegal conversion " + this + " -> " + to;
         }
@@ -134,26 +135,26 @@ class LongType extends BitwiseType {
     }
 
     @Override
-    public Type add(final MethodVisitor method) {
-        method.visitInsn(LADD);
+    public Type add(final MethodVisitor method, final int programPoint) {
+        method.visitInvokeDynamicInsn("ladd", "(JJ)J", MATHBOOTSTRAP, programPoint);
         return LONG;
     }
 
     @Override
-    public Type sub(final MethodVisitor method) {
-        method.visitInsn(LSUB);
+    public Type sub(final MethodVisitor method, final int programPoint) {
+        method.visitInvokeDynamicInsn("lsub", "(JJ)J", MATHBOOTSTRAP, programPoint);
         return LONG;
     }
 
     @Override
-    public Type mul(final MethodVisitor method) {
-        method.visitInsn(LMUL);
+    public Type mul(final MethodVisitor method, final int programPoint) {
+        method.visitInvokeDynamicInsn("lmul", "(JJ)J", MATHBOOTSTRAP, programPoint);
         return LONG;
     }
 
     @Override
-    public Type div(final MethodVisitor method) {
-        method.visitInsn(LDIV);
+    public Type div(final MethodVisitor method, final int programPoint) {
+        method.visitInvokeDynamicInsn("ldiv", "(JJ)J", MATHBOOTSTRAP, programPoint);
         return LONG;
     }
 
@@ -200,8 +201,8 @@ class LongType extends BitwiseType {
     }
 
     @Override
-    public Type neg(final MethodVisitor method) {
-        method.visitInsn(LNEG);
+    public Type neg(final MethodVisitor method, final int programPoint) {
+        method.visitInvokeDynamicInsn("lneg", "(J)J", MATHBOOTSTRAP, programPoint);
         return LONG;
     }
 
@@ -212,7 +213,13 @@ class LongType extends BitwiseType {
 
     @Override
     public Type loadUndefined(final MethodVisitor method) {
-        method.visitLdcInsn(ObjectClassGenerator.UNDEFINED_LONG);
+        method.visitLdcInsn(UNDEFINED_LONG);
+        return LONG;
+    }
+
+    @Override
+    public Type loadForcedInitializer(MethodVisitor method) {
+        method.visitInsn(LCONST_0);
         return LONG;
     }
 

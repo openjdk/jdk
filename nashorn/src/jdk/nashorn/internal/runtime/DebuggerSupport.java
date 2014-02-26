@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -176,7 +178,7 @@ final class DebuggerSupport {
 
         if (ScriptObject.isArray(object)) {
             sb.append('[');
-            final long length = object.getLong("length");
+            final long length = object.getLong("length", INVALID_PROGRAM_POINT);
 
             for (long i = 0; i < length; i++) {
                 if (object.has(i)) {

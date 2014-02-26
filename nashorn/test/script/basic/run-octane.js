@@ -156,6 +156,7 @@ function run_one_benchmark(arg, iters) {
 
     } catch (e) {
 	print_always("*** Aborted and setting score to zero. Reason: " + e);
+	e.printStackTrace();
 	mean_score = min_score = max_score = 0;
 	scores = [0];
     }

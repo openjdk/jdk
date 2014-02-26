@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.ir;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,13 +35,10 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-
-import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 
 /**
  * IR representation for a list of statements.
@@ -53,7 +52,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     protected final Map<String, Symbol> symbols;
 
     /** Entry label. */
-    protected final Label entryLabel;
+    private final Label entryLabel;
 
     /** Break label. */
     private final Label breakLabel;
@@ -65,13 +64,11 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     public static final int NEEDS_SCOPE = 1 << 0;
 
     /**
-     * Flag indicating whether this block needs
-     * self symbol assignment at the start. This is used only for
-     * blocks that are the bodies of function nodes who refer to themselves
-     * by name. It causes codegen to insert a var [fn_name] = __callee__
+     * Flag indicating whether this block uses the self symbol for the function. This is used only for blocks that are
+     * bodies of function nodes who refer to themselves by name. It causes Attr to insert a var [fn_name] = __callee__
      * at the start of the body
      */
-    public static final int NEEDS_SELF_SYMBOL = 1 << 1;
+    public static final int USES_SELF_SYMBOL = 1 << 1;
 
     /**
      * Is this block tagged as terminal based on its contents

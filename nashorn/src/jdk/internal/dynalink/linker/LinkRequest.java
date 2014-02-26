@@ -101,6 +101,17 @@ public interface LinkRequest {
     public CallSiteDescriptor getCallSiteDescriptor();
 
     /**
+     * Returns the call site token for the call site being linked. This token is an opaque object that is guaranteed to
+     * have different identity for different call sites, and is also guaranteed to not become weakly reachable before
+     * the call site does and to become weakly reachable some time after the call site does. This makes it ideal as a
+     * candidate for a key in a weak hash map in which a linker might want to keep per-call site linking state (usually
+     * profiling information).
+     *
+     * @return the call site token for the call site being linked.
+     */
+    public Object getCallSiteToken();
+
+    /**
      * Returns the arguments for the invocation being linked. The returned array is a clone; modifications to it won't
      * affect the arguments in this request.
      *
