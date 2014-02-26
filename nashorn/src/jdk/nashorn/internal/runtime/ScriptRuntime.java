@@ -45,6 +45,7 @@ import java.util.Objects;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.ir.debug.JSONWriter;
 import jdk.nashorn.internal.objects.Global;
@@ -80,9 +81,6 @@ public final class ScriptRuntime {
 
     /** Method handle used to enter a {@code with} scope at runtime. */
     public static final Call OPEN_WITH = staticCallNoLookup(ScriptRuntime.class, "openWith", ScriptObject.class, ScriptObject.class, Object.class);
-
-    /** Method handle used to exit a {@code with} scope at runtime. */
-    public static final Call CLOSE_WITH = staticCallNoLookup(ScriptRuntime.class, "closeWith", ScriptObject.class, ScriptObject.class);
 
     /**
      * Method used to place a scope's variable into the Global scope, which has to be done for the
@@ -466,7 +464,8 @@ public final class ScriptRuntime {
     }
 
     /**
-     * Entering a {@code with} node requires new scope. This is the implementation
+     * Entering a {@code with} node requires new scope. This is the implementation. When exiting the with statement,
+     * use {@link ScriptObject#getProto()} on the scope.
      *
      * @param scope      existing scope
      * @param expression expression in with
@@ -487,20 +486,6 @@ public final class ScriptRuntime {
         }
 
         throw typeError(global, "cant.apply.with.to.non.scriptobject");
-    }
-
-    /**
-     * Exiting a {@code with} node requires restoring scope. This is the implementation
-     *
-     * @param scope existing scope
-     *
-     * @return restored scope
-     */
-    public static ScriptObject closeWith(final ScriptObject scope) {
-        if (scope instanceof WithObject) {
-            return ((WithObject)scope).getParentScope();
-        }
-        return scope;
     }
 
     /**
@@ -577,6 +562,13 @@ public final class ScriptRuntime {
         if (property != null) {
             if (obj instanceof ScriptObject) {
                 obj = ((ScriptObject)obj).get(property);
+                if(Global.isLocationPropertyPlaceholder(obj)) {
+                    if(CompilerConstants.__LINE__.name().equals(property)) {
+                        obj = Integer.valueOf(0);
+                    } else {
+                        obj = "";
+                    }
+                }
             } else if (object instanceof Undefined) {
                 obj = ((Undefined)obj).get(property);
             } else if (object == null) {

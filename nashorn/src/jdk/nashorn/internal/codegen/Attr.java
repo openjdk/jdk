@@ -43,6 +43,7 @@ import static jdk.nashorn.internal.ir.Symbol.IS_GLOBAL;
 import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
 import static jdk.nashorn.internal.ir.Symbol.IS_LET;
 import static jdk.nashorn.internal.ir.Symbol.IS_PARAM;
+import static jdk.nashorn.internal.ir.Symbol.IS_PROGRAM_LEVEL;
 import static jdk.nashorn.internal.ir.Symbol.IS_SCOPE;
 import static jdk.nashorn.internal.ir.Symbol.IS_THIS;
 import static jdk.nashorn.internal.ir.Symbol.IS_VAR;
@@ -63,10 +64,13 @@ import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.Expression;
+import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
+import jdk.nashorn.internal.ir.FunctionCall;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
+import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
@@ -74,9 +78,12 @@ import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
+import jdk.nashorn.internal.ir.Optimistic;
+import jdk.nashorn.internal.ir.OptimisticLexicalContext;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
+import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
@@ -85,6 +92,7 @@ import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
+import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -111,7 +119,9 @@ import jdk.nashorn.internal.runtime.PropertyMap;
  * computed.
  */
 
-final class Attr extends NodeOperatorVisitor<LexicalContext> {
+final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
+
+    private final CompilationEnvironment env;
 
     /**
      * Local definitions in current block (to discriminate from function
@@ -127,7 +137,8 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
      */
     private final Deque<Set<String>> localUses;
 
-    private final Deque<Type> returnTypes;
+    private final Set<Long> optimistic = new HashSet<>();
+    private final Set<Long> neverOptimistic = new HashSet<>();
 
     private int catchNestingLevel;
 
@@ -139,12 +150,12 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     /**
      * Constructor.
      */
-    Attr(final TemporarySymbols temporarySymbols) {
-        super(new LexicalContext());
+    Attr(final CompilationEnvironment env, final TemporarySymbols temporarySymbols) {
+        super(new OptimisticLexicalContext(env.useOptimisticTypes()));
+        this.env              = env;
         this.temporarySymbols = temporarySymbols;
-        this.localDefs   = new ArrayDeque<>();
-        this.localUses   = new ArrayDeque<>();
-        this.returnTypes = new ArrayDeque<>();
+        this.localDefs        = new ArrayDeque<>();
+        this.localUses        = new ArrayDeque<>();
     }
 
     @Override
@@ -159,10 +170,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveAccessNode(final AccessNode accessNode) {
-        //While Object type is assigned here, Access Specialization in FinalizeTypes may narrow this, that
-        //is why we can't set the access node base to be an object here, that will ruin access specialization
-        //for example for a.x | 17.
-        return end(ensureSymbol(Type.OBJECT, accessNode));
+        return end(ensureSymbolTypeOverride(accessNode, Type.OBJECT));
     }
 
     private void initFunctionWideVariables(final FunctionNode functionNode, final Block body) {
@@ -235,6 +243,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
             @Override
             public boolean enterVarNode(final VarNode varNode) {
+                final Expression init = varNode.getInit();
+                if (init != null) {
+                    tagOptimistic(init);
+                }
+
                 final String name = varNode.getName().getName();
                 //if this is used before the var node, the var node symbol needs to be tagged as can be undefined
                 if (uses.contains(name)) {
@@ -264,7 +277,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 if (varNode.isStatement()) {
                     final IdentNode ident  = varNode.getName();
                     final Symbol    symbol = defineSymbol(body, ident.getName(), IS_VAR);
-                    if (canBeUndefined.contains(ident.getName())) {
+                    if (canBeUndefined.contains(ident.getName()) && varNode.getInit() == null) {
                         symbol.setType(Type.OBJECT);
                         symbol.setCanBeUndefined();
                     }
@@ -299,6 +312,9 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             if (!(anonymous || body.getExistingSymbol(name) != null)) {
                 assert !anonymous && name != null;
                 newType(defineSymbol(body, name, IS_VAR | IS_FUNCTION_SELF), Type.OBJECT);
+                if(functionNode.allVarsInScope()) { // basically, has deep eval
+                    lc.setFlag(body, Block.USES_SELF_SYMBOL);
+                }
             }
         }
 
@@ -326,14 +342,24 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         return end(block);
     }
 
+    private boolean useOptimisticTypes() {
+        return env.useOptimisticTypes() && !lc.isInSplitNode();
+    }
+
     @Override
     public boolean enterCallNode(final CallNode callNode) {
-        return start(callNode);
+        for (final Expression arg : callNode.getArgs()) {
+            tagOptimistic(arg);
+        }
+        return true;
     }
 
     @Override
     public Node leaveCallNode(final CallNode callNode) {
-        return end(ensureSymbol(callNode.getType(), callNode));
+        for (final Expression arg : callNode.getArgs()) {
+            inferParameter(arg, arg.getType());
+        }
+        return end(ensureSymbolTypeOverride(callNode, Type.OBJECT));
     }
 
     @Override
@@ -346,8 +372,13 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
         // define block-local exception variable
         final String exname = exception.getName();
-        final Symbol def = defineSymbol(block, exname, IS_VAR | IS_LET | IS_ALWAYS_DEFINED);
-        newType(def, Type.OBJECT); //we can catch anything, not just ecma exceptions
+        // If the name of the exception starts with ":e", this is a synthetic catch block, likely a catch-all. Its
+        // symbol is naturally internal, and should be treated as such.
+        final boolean isInternal = exname.startsWith(EXCEPTION_PREFIX.symbolName());
+        final Symbol def = defineSymbol(block, exname, IS_VAR | IS_LET | IS_ALWAYS_DEFINED | (isInternal ? IS_INTERNAL : 0));
+        // Normally, we can catch anything, not just ECMAExceptions, hence Type.OBJECT. However, for catches with
+        // internal symbol, we can be sure the caught type is a Throwable.
+        newType(def, isInternal ? Type.typeFor(EXCEPTION_PREFIX.type()) : Type.OBJECT);
 
         addLocalDef(exname);
 
@@ -380,6 +411,10 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
         if ((flags & KINDMASK) == IS_GLOBAL) {
             flags |= IS_SCOPE;
+        }
+
+        if (lc.getCurrentFunction().isProgram()) {
+            flags |= IS_PROGRAM_LEVEL;
         }
 
         final FunctionNode function = lc.getFunction(block);
@@ -433,14 +468,19 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
+    public boolean enterExpressionStatement(final ExpressionStatement expressionStatement) {
+        final Expression expr = expressionStatement.getExpression();
+        if (!expr.isSelfModifying()) { //self modifying ops like i++ need the optimistic type for their own operation, not just the return value, as there is no difference. gah.
+            tagNeverOptimistic(expr);
+        }
+        return true;
+    }
+
+    @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
         start(functionNode, false);
 
-        if (functionNode.isLazy()) {
-            return false;
-        }
-
-        //an outermost function in our lexical context that is not a program (runScript)
+        //an outermost function in our lexical context that is not a program
         //is possible - it is a function being compiled lazily
         if (functionNode.isDeclared()) {
             final Iterator<Block> blocks = lc.getBlocks();
@@ -449,7 +489,6 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             }
         }
 
-        returnTypes.push(functionNode.getReturnType());
         pushLocalsFunction();
 
         return true;
@@ -471,7 +510,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             final boolean anonymous = functionNode.isAnonymous();
             final String  name      = anonymous ? null : functionNode.getIdent().getName();
             if (anonymous || body.getExistingSymbol(name) != null) {
-                newFunctionNode = (FunctionNode)ensureSymbol(FunctionNode.FUNCTION_TYPE, newFunctionNode);
+                newFunctionNode = (FunctionNode)ensureSymbol(newFunctionNode, FunctionNode.FUNCTION_TYPE);
             } else {
                 assert name != null;
                 final Symbol self = body.getExistingSymbol(name);
@@ -480,11 +519,6 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             }
         }
 
-        //unknown parameters are promoted to object type.
-        if (newFunctionNode.hasLazyChildren()) {
-            //the final body has already been assigned as we have left the function node block body by now
-            objectifySymbols(body);
-        }
         newFunctionNode = finalizeParameters(newFunctionNode);
         newFunctionNode = finalizeTypes(newFunctionNode);
         for (final Symbol symbol : newFunctionNode.getDeclaredSymbols()) {
@@ -496,7 +530,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
         List<VarNode> syntheticInitializers = null;
 
-        if (body.getFlag(Block.NEEDS_SELF_SYMBOL)) {
+        if (newFunctionNode.usesSelfSymbol()) {
             syntheticInitializers = new ArrayList<>(2);
             LOG.info("Accepting self symbol init for ", newFunctionNode.getName());
             // "var fn = :callee"
@@ -520,19 +554,12 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             newFunctionNode = newFunctionNode.setBody(lc, newFunctionNode.getBody().setStatements(lc, newStatements));
         }
 
-        if (returnTypes.peek().isUnknown()) {
-            LOG.info("Unknown return type promoted to object");
-            newFunctionNode = newFunctionNode.setReturnType(lc, Type.OBJECT);
-        }
-        final Type returnType = returnTypes.pop();
-        newFunctionNode = newFunctionNode.setReturnType(lc, returnType.isUnknown() ? Type.OBJECT : returnType);
-        newFunctionNode = newFunctionNode.setState(lc, CompilationState.ATTR);
+        final int optimisticFlag = lc.hasOptimisticAssumptions() ? FunctionNode.IS_OPTIMISTIC : 0;
+        newFunctionNode = newFunctionNode.setState(lc, CompilationState.ATTR).setFlag(lc, optimisticFlag);
 
         popLocals();
 
-        end(newFunctionNode, false);
-
-        return newFunctionNode;
+        return end(newFunctionNode, false);
     }
 
     /**
@@ -580,9 +607,9 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 final FunctionNode functionNode = lc.getDefiningFunction(symbol);
                 assert functionNode != null;
                 assert lc.getFunctionBody(functionNode).getExistingSymbol(CALLEE.symbolName()) != null;
-                lc.setFlag(functionNode.getBody(), Block.NEEDS_SELF_SYMBOL);
+                lc.setFlag(functionNode.getBody(), Block.USES_SELF_SYMBOL);
                 newType(symbol, FunctionNode.FUNCTION_TYPE);
-            } else if (!identNode.isInitializedHere()) {
+            } else if (!(identNode.isInitializedHere() || symbol.isAlwaysDefined())) {
                 /*
                  * See NASHORN-448, JDK-8016235
                  *
@@ -617,8 +644,12 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             symbol.increaseUseCount();
         }
         addLocalUse(identNode.getName());
+        IdentNode node = (IdentNode)identNode.setSymbol(lc, symbol);
+        if (isTaggedOptimistic(identNode) && symbol.isScope()) {
+            node = ensureSymbolTypeOverride(node, symbol.getSymbolType());
+        }
 
-        return end(identNode.setSymbol(lc, symbol));
+        return end(node);
     }
 
     private boolean inCatch() {
@@ -636,16 +667,21 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         }
     }
 
-    private boolean symbolNeedsToBeScope(Symbol symbol) {
+    private boolean symbolNeedsToBeScope(final Symbol symbol) {
         if (symbol.isThis() || symbol.isInternal()) {
             return false;
         }
+
+        if (lc.getCurrentFunction().allVarsInScope()) {
+            return true;
+        }
+
         boolean previousWasBlock = false;
         for (final Iterator<LexicalContextNode> it = lc.getAllNodes(); it.hasNext();) {
             final LexicalContextNode node = it.next();
-            if (node instanceof FunctionNode) {
-                // We reached the function boundary without seeing a definition for the symbol - it needs to be in
-                // scope.
+            if (node instanceof FunctionNode || node instanceof SplitNode) {
+                // We reached the function boundary or a splitting boundary without seeing a definition for the symbol.
+                // It needs to be in scope.
                 return true;
             } else if (node instanceof WithNode) {
                 if (previousWasBlock) {
@@ -729,7 +765,8 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveIndexNode(final IndexNode indexNode) {
-        return end(ensureSymbol(Type.OBJECT, indexNode));
+       // return end(ensureSymbolOptimistic(Type.OBJECT, indexNode));
+        return end(ensureSymbolTypeOverride(indexNode, Type.OBJECT));
     }
 
     @SuppressWarnings("rawtypes")
@@ -751,31 +788,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveObjectNode(final ObjectNode objectNode) {
-        return end(ensureSymbol(Type.OBJECT, objectNode));
-    }
-
-    @Override
-    public Node leaveReturnNode(final ReturnNode returnNode) {
-        final Expression expr = returnNode.getExpression();
-        final Type returnType;
-
-        if (expr != null) {
-            //we can't do parameter specialization if we return something that hasn't been typed yet
-            final Symbol symbol = expr.getSymbol();
-            if (expr.getType().isUnknown() && symbol.isParam()) {
-                symbol.setType(Type.OBJECT);
-            }
-
-            returnType = widestReturnType(returnTypes.pop(), symbol.getSymbolType());
-        } else {
-            returnType = Type.OBJECT; //undefined
-        }
-        LOG.info("Returntype is now ", returnType);
-        returnTypes.push(returnType);
-
-        end(returnNode);
-
-        return returnNode;
+        return end(ensureSymbol(objectNode, Type.OBJECT));
     }
 
     @Override
@@ -819,9 +832,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
         switchNode.setTag(newInternal(lc.getCurrentFunction().uniqueName(SWITCH_TAG_PREFIX.symbolName()), type));
 
-        end(switchNode);
-
-        return switchNode.setCases(lc, newCases);
+        return end(switchNode.setCases(lc, newCases));
     }
 
     @Override
@@ -848,7 +859,10 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         assert symbol != null;
 
         // NASHORN-467 - use before definition of vars - conservative
-        if (isLocalUse(ident.getName())) {
+        //function each(iterator, context) {
+        //  for (var i = 0, length = this.length >>> 0; i < length; i++) { if (i in this) iterator.call(context, this[i], i, this); }
+        //
+        if (isLocalUse(ident.getName()) && varNode.getInit() == null) {
             newType(symbol, Type.OBJECT);
             symbol.setCanBeUndefined();
         }
@@ -894,29 +908,55 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
+    public boolean enterNOT(UnaryNode unaryNode) {
+        tagNeverOptimistic(unaryNode.getExpression());
+        return true;
+    }
+
+    public boolean enterUnaryArithmetic(final UnaryNode unaryNode) {
+        tagOptimistic(unaryNode.getExpression());
+        return true;
+    }
+
+    private UnaryNode leaveUnaryArithmetic(final UnaryNode unaryNode) {
+        return end(coerce(unaryNode, unaryNode.getMostPessimisticType(), unaryNode.getExpression().getType()));
+    }
+
+    @Override
+    public boolean enterADD(final UnaryNode unaryNode) {
+        return enterUnaryArithmetic(unaryNode);
+    }
+
+    @Override
     public Node leaveADD(final UnaryNode unaryNode) {
-        return end(ensureSymbol(arithType(), unaryNode));
+        return leaveUnaryArithmetic(unaryNode);
     }
 
     @Override
     public Node leaveBIT_NOT(final UnaryNode unaryNode) {
-        return end(ensureSymbol(Type.INT, unaryNode));
+        return end(coerce(unaryNode, Type.INT));
+    }
+
+    @Override
+    public boolean enterDECINC(final UnaryNode unaryNode) {
+        return enterUnaryArithmetic(unaryNode);
     }
 
     @Override
     public Node leaveDECINC(final UnaryNode unaryNode) {
         // @see assignOffset
-        final Type type = arithType();
-        newType(unaryNode.rhs().getSymbol(), type);
-        return end(ensureSymbol(type, unaryNode));
+        final Type pessimisticType = unaryNode.getMostPessimisticType();
+        final UnaryNode newUnaryNode = ensureSymbolTypeOverride(unaryNode, pessimisticType, unaryNode.getExpression().getType());
+        newType(newUnaryNode.getExpression().getSymbol(), newUnaryNode.getType());
+        return end(newUnaryNode);
     }
 
     @Override
     public Node leaveDELETE(final UnaryNode unaryNode) {
-        final FunctionNode   currentFunctionNode = lc.getCurrentFunction();
-        final boolean        strictMode          = currentFunctionNode.isStrict();
-        final Expression     rhs                 = unaryNode.rhs();
-        final Expression     strictFlagNode      = (Expression)LiteralNode.newInstance(unaryNode, strictMode).accept(this);
+        final FunctionNode currentFunctionNode = lc.getCurrentFunction();
+        final boolean      strictMode          = currentFunctionNode.isStrict();
+        final Expression   rhs                 = unaryNode.getExpression();
+        final Expression   strictFlagNode      = (Expression)LiteralNode.newInstance(unaryNode, strictMode).accept(this);
 
         Request request = Request.DELETE;
         final List<Expression> args = new ArrayList<>();
@@ -925,7 +965,10 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             // If this is a declared variable or a function parameter, delete always fails (except for globals).
             final String name = ((IdentNode)rhs).getName();
 
-            final boolean failDelete = strictMode || rhs.getSymbol().isParam() || (rhs.getSymbol().isVar() && !isProgramLevelSymbol(name));
+            final boolean isParam         = rhs.getSymbol().isParam();
+            final boolean isVar           = rhs.getSymbol().isVar();
+            final boolean isNonProgramVar = isVar && !rhs.getSymbol().isProgramLevel();
+            final boolean failDelete      = strictMode || isParam || isNonProgramVar;
 
             if (failDelete && rhs.getSymbol().isThis()) {
                 return LiteralNode.newInstance(unaryNode, true).accept(this);
@@ -968,29 +1011,14 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         return leaveRuntimeNode(runtimeNode);
     }
 
-    /**
-     * Is the symbol denoted by the specified name in the current lexical context defined in the program level
-     * @param name the name of the symbol
-     * @return true if the symbol denoted by the specified name in the current lexical context defined in the program level.
-     */
-    private boolean isProgramLevelSymbol(final String name) {
-        for(final Iterator<Block> it = lc.getBlocks(); it.hasNext();) {
-            final Block next = it.next();
-            if(next.getExistingSymbol(name) != null) {
-                return next == lc.getFunctionBody(lc.getOutermostFunction());
-            }
-        }
-        throw new AssertionError("Couldn't find symbol " + name + " in the context");
-    }
-
     @Override
     public Node leaveNEW(final UnaryNode unaryNode) {
-        return end(ensureSymbol(Type.OBJECT, unaryNode.setRHS(((CallNode)unaryNode.rhs()).setIsNew())));
+        return end(coerce(unaryNode.setExpression(((CallNode)unaryNode.getExpression()).setIsNew()), Type.OBJECT));
     }
 
     @Override
     public Node leaveNOT(final UnaryNode unaryNode) {
-        return end(ensureSymbol(Type.BOOLEAN, unaryNode));
+        return end(coerce(unaryNode, Type.BOOLEAN));
     }
 
     private IdentNode compilerConstant(CompilerConstants cc) {
@@ -1010,7 +1038,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveTYPEOF(final UnaryNode unaryNode) {
-        final Expression rhs = unaryNode.rhs();
+        final Expression rhs = unaryNode.getExpression();
 
         List<Expression> args = new ArrayList<>();
         if (rhs instanceof IdentNode && !rhs.getSymbol().isParam() && !rhs.getSymbol().isVar()) {
@@ -1033,17 +1061,29 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveRuntimeNode(final RuntimeNode runtimeNode) {
-        return end(ensureSymbol(runtimeNode.getRequest().getReturnType(), runtimeNode));
+        return end(ensureSymbol(runtimeNode, runtimeNode.getRequest().getReturnType()));
+    }
+
+    @Override
+    public boolean enterSUB(final UnaryNode unaryNode) {
+        return enterUnaryArithmetic(unaryNode);
     }
 
     @Override
     public Node leaveSUB(final UnaryNode unaryNode) {
-        return end(ensureSymbol(arithType(), unaryNode));
+        return leaveUnaryArithmetic(unaryNode);
     }
 
     @Override
     public Node leaveVOID(final UnaryNode unaryNode) {
-        return end(ensureSymbol(Type.OBJECT, unaryNode));
+        return end(ensureSymbol(unaryNode, Type.OBJECT));
+    }
+
+    @Override
+    public boolean enterADD(final BinaryNode binaryNode) {
+        tagOptimistic(binaryNode.lhs());
+        tagOptimistic(binaryNode.rhs());
+        return true;
     }
 
     /**
@@ -1055,18 +1095,22 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         final Expression lhs = binaryNode.lhs();
         final Expression rhs = binaryNode.rhs();
 
-        ensureTypeNotUnknown(lhs);
-        ensureTypeNotUnknown(rhs);
-        //even if we are adding two known types, this can overflow. i.e.
-        //int and number -> number.
-        //int and int are also number though.
-        //something and object is object
-        return end(ensureSymbol(Type.widest(arithType(), Type.widest(lhs.getType(), rhs.getType())), binaryNode));
+        //an add is at least as wide as the current arithmetic type, possibly wider in the case of objects
+        //which will be corrected in the post pass if unknown at this stage
+
+        Type argumentsType = Type.widest(lhs.getType(), rhs.getType());
+        if(argumentsType.getTypeClass() == String.class) {
+            assert binaryNode.isTokenType(TokenType.ADD);
+            argumentsType = Type.OBJECT;
+        }
+        final Type pessimisticType = Type.widest(Type.NUMBER, argumentsType);
+
+        return end(ensureSymbolTypeOverride(binaryNode, pessimisticType, argumentsType));
     }
 
     @Override
     public Node leaveAND(final BinaryNode binaryNode) {
-        return end(ensureSymbol(Type.OBJECT, binaryNode));
+        return end(ensureSymbol(binaryNode, Type.OBJECT));
     }
 
     /**
@@ -1075,10 +1119,17 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
      */
     private boolean enterAssignmentNode(final BinaryNode binaryNode) {
         start(binaryNode);
+        final Expression lhs = binaryNode.lhs();
+        if (lhs instanceof IdentNode) {
+            if (CompilerConstants.isCompilerConstant(((IdentNode)lhs).getName())) {
+                tagNeverOptimistic(binaryNode.rhs());
+            }
+        }
+        //tagOptimistic(binaryNode.lhs());
+        tagOptimistic(binaryNode.rhs());
 
         return true;
     }
-
 
     /**
      * This assign helper is called after an assignment, when all children of
@@ -1096,6 +1147,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             final Block     block = lc.getCurrentBlock();
             final IdentNode ident = (IdentNode)lhs;
             final String    name  = ident.getName();
+
             final Symbol symbol = findSymbol(block, name);
 
             if (symbol == null) {
@@ -1114,7 +1166,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         }
 
         newType(lhs.getSymbol(), type);
-        return end(ensureSymbol(type, binaryNode));
+        return end(ensureSymbol(binaryNode, type));
     }
 
     private boolean isLocal(FunctionNode function, Symbol symbol) {
@@ -1140,11 +1192,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveASSIGN_ADD(final BinaryNode binaryNode) {
-        final Expression lhs = binaryNode.lhs();
-        final Expression rhs = binaryNode.rhs();
-
-        final Type widest = Type.widest(lhs.getType(), rhs.getType());
+        final Expression lhs    = binaryNode.lhs();
+        final Expression rhs    = binaryNode.rhs();
+        final Type       widest = Type.widest(lhs.getType(), rhs.getType());
         //Type.NUMBER if we can't prove that the add doesn't overflow. todo
+
         return leaveSelfModifyingAssignmentNode(binaryNode, widest.isNumeric() ? Type.NUMBER : Type.OBJECT);
     }
 
@@ -1249,22 +1301,49 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
+    public boolean enterBIT_AND(final BinaryNode binaryNode) {
+        return enterBitwiseOperator(binaryNode);
+    }
+
+    @Override
     public Node leaveBIT_AND(final BinaryNode binaryNode) {
-        return end(coerce(binaryNode, Type.INT));
+        return leaveBitwiseOperator(binaryNode);
+    }
+
+    @Override
+    public boolean enterBIT_OR(final BinaryNode binaryNode) {
+        return enterBitwiseOperator(binaryNode);
     }
 
     @Override
     public Node leaveBIT_OR(final BinaryNode binaryNode) {
-        return end(coerce(binaryNode, Type.INT));
+        return leaveBitwiseOperator(binaryNode);
+    }
+
+    @Override
+    public boolean enterBIT_XOR(final BinaryNode binaryNode) {
+        return enterBitwiseOperator(binaryNode);
     }
 
     @Override
     public Node leaveBIT_XOR(final BinaryNode binaryNode) {
+        return leaveBitwiseOperator(binaryNode);
+    }
+
+    public boolean enterBitwiseOperator(final BinaryNode binaryNode) {
+        start(binaryNode);
+        tagOptimistic(binaryNode.lhs());
+        tagOptimistic(binaryNode.rhs());
+        return true;
+    }
+
+    private Node leaveBitwiseOperator(final BinaryNode binaryNode) {
         return end(coerce(binaryNode, Type.INT));
     }
 
     @Override
     public Node leaveCOMMARIGHT(final BinaryNode binaryNode) {
+//        return end(ensureSymbol(binaryNode, binaryNode.rhs().getType()));
         return leaveComma(binaryNode, binaryNode.rhs());
     }
 
@@ -1274,8 +1353,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private Node leaveComma(final BinaryNode commaNode, final Expression effectiveExpr) {
-        ensureTypeNotUnknown(effectiveExpr);
-        return end(ensureSymbol(effectiveExpr.getType(), commaNode));
+        Type type = effectiveExpr.getType();
+        if (type.isUnknown()) { //TODO more optimistic
+            type = Type.OBJECT;
+        }
+        return end(ensureSymbol(commaNode, type));
     }
 
     @Override
@@ -1284,34 +1366,32 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private Node leaveCmp(final BinaryNode binaryNode) {
-        ensureTypeNotUnknown(binaryNode.lhs());
-        ensureTypeNotUnknown(binaryNode.rhs());
-        Type widest = Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType());
-        ensureSymbol(widest, binaryNode.lhs());
-        ensureSymbol(widest, binaryNode.rhs());
-        return end(ensureSymbol(Type.BOOLEAN, binaryNode));
+        //infect untyped comp with opportunistic type from other
+        final Expression lhs = binaryNode.lhs();
+        final Expression rhs = binaryNode.rhs();
+        final Type type = Type.narrowest(lhs.getType(), rhs.getType(), Type.INT);
+        inferParameter(lhs, type);
+        inferParameter(rhs, type);
+        Type widest = Type.widest(lhs.getType(), rhs.getType());
+        ensureSymbol(lhs, widest);
+        ensureSymbol(rhs, widest);
+        return end(ensureSymbol(binaryNode, Type.BOOLEAN));
     }
 
-    private Node coerce(final BinaryNode binaryNode, final Type operandType, final Type destType) {
-        // TODO we currently don't support changing inferred type based on uses, only on
-        // definitions. we would need some additional logic. We probably want to do that
-        // in the future, if e.g. a specialized method gets parameter that is only used
-        // as, say, an int : function(x) { return x & 4711 }, and x is not defined in
-        // the function. to make this work, uncomment the following two type inferences
-        // and debug.
-        //newType(binaryNode.lhs().getSymbol(), operandType);
-        //newType(binaryNode.rhs().getSymbol(), operandType);
-        return ensureSymbol(destType, binaryNode);
-    }
-
-    private Node coerce(final BinaryNode binaryNode, final Type type) {
-        return coerce(binaryNode, type, type);
+    private boolean enterBinaryArithmetic(final BinaryNode binaryNode) {
+        tagOptimistic(binaryNode.lhs());
+        tagOptimistic(binaryNode.rhs());
+        return true;
     }
 
     //leave a binary node and inherit the widest type of lhs , rhs
     private Node leaveBinaryArithmetic(final BinaryNode binaryNode) {
-        assert !Compiler.shouldUseIntegerArithmetic();
-        return end(coerce(binaryNode, Type.NUMBER));
+        return end(coerce(binaryNode, binaryNode.getMostPessimisticType(), Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType())));
+    }
+
+    @Override
+    public boolean enterEQ(BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
     }
 
     @Override
@@ -1320,13 +1400,28 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
+    public boolean enterEQ_STRICT(final BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
+    }
+
+    @Override
     public Node leaveEQ_STRICT(final BinaryNode binaryNode) {
         return leaveCmp(binaryNode);
     }
 
     @Override
+    public boolean enterGE(final BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
+    }
+
+    @Override
     public Node leaveGE(final BinaryNode binaryNode) {
         return leaveCmp(binaryNode);
+    }
+
+    @Override
+    public boolean enterGT(final BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
     }
 
     @Override
@@ -1354,8 +1449,18 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
+    public boolean enterLE(final BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
+    }
+
+    @Override
     public Node leaveLE(final BinaryNode binaryNode) {
         return leaveCmp(binaryNode);
+    }
+
+    @Override
+    public boolean enterLT(final BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
     }
 
     @Override
@@ -1369,13 +1474,28 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
+    public boolean enterMUL(final BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
+    }
+
+    @Override
     public Node leaveMUL(final BinaryNode binaryNode) {
         return leaveBinaryArithmetic(binaryNode);
     }
 
     @Override
+    public boolean enterNE(final BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
+    }
+
+    @Override
     public Node leaveNE(final BinaryNode binaryNode) {
         return leaveCmp(binaryNode);
+    }
+
+    @Override
+    public boolean enterNE_STRICT(final BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
     }
 
     @Override
@@ -1385,17 +1505,32 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveOR(final BinaryNode binaryNode) {
-        return end(ensureSymbol(Type.OBJECT, binaryNode));
+        return end(ensureSymbol(binaryNode, Type.OBJECT));
+    }
+
+    @Override
+    public boolean enterSAR(final BinaryNode binaryNode) {
+        return enterBitwiseOperator(binaryNode);
     }
 
     @Override
     public Node leaveSAR(final BinaryNode binaryNode) {
-        return end(coerce(binaryNode, Type.INT));
+        return leaveBitwiseOperator(binaryNode);
+    }
+
+    @Override
+    public boolean enterSHL(final BinaryNode binaryNode) {
+        return enterBitwiseOperator(binaryNode);
     }
 
     @Override
     public Node leaveSHL(final BinaryNode binaryNode) {
-        return end(coerce(binaryNode, Type.INT));
+        return leaveBitwiseOperator(binaryNode);
+    }
+
+    @Override
+    public boolean enterSHR(final BinaryNode binaryNode) {
+        return enterBitwiseOperator(binaryNode);
     }
 
     @Override
@@ -1404,8 +1539,19 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
+    public boolean enterSUB(final BinaryNode binaryNode) {
+        return enterBinaryArithmetic(binaryNode);
+    }
+
+    @Override
     public Node leaveSUB(final BinaryNode binaryNode) {
         return leaveBinaryArithmetic(binaryNode);
+    }
+
+    @Override
+    public boolean enterForNode(ForNode forNode) {
+        tagNeverOptimistic(forNode.getTest());
+        return true;
     }
 
     @Override
@@ -1420,54 +1566,59 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             newType(forNode.getInit().getSymbol(), Type.OBJECT);
         }
 
-        end(forNode);
+        return end(forNode);
+    }
 
-        return forNode;
+    @Override
+    public boolean enterTernaryNode(TernaryNode ternaryNode) {
+        tagNeverOptimistic(ternaryNode.getTest());
+        return true;
     }
 
     @Override
     public Node leaveTernaryNode(final TernaryNode ternaryNode) {
-        final Expression trueExpr  = ternaryNode.getTrueExpression();
-        final Expression falseExpr = ternaryNode.getFalseExpression();
-
-        ensureTypeNotUnknown(trueExpr);
-        ensureTypeNotUnknown(falseExpr);
-
-        final Type type = widestReturnType(trueExpr.getType(), falseExpr.getType());
-        return end(ensureSymbol(type, ternaryNode));
+        final Type trueType  = ternaryNode.getTrueExpression().getType();
+        final Type falseType = ternaryNode.getFalseExpression().getType();
+        final Type type;
+        if (trueType.isUnknown() || falseType.isUnknown()) {
+            type = Type.UNKNOWN;
+        } else {
+            type = widestReturnType(trueType, falseType);
+        }
+        return end(ensureSymbol(ternaryNode, type));
     }
 
     /**
      * When doing widening for return types of a function or a ternary operator, it is not valid to widen a boolean to
-     * anything other than Object. Also, widening a numeric type to an object type must widen to Object proper and not
-     * any more specific subclass (e.g. widest of int/long/double and String is Object).
+     * anything other than object. Note that this wouldn't be necessary if {@code Type.widest} did not allow
+     * boolean-to-number widening. Eventually, we should address it there, but it affects too many other parts of the
+     * system and is sometimes legitimate (e.g. whenever a boolean value would undergo ToNumber conversion anyway).
      * @param t1 type 1
      * @param t2 type 2
-     * @return wider of t1 and t2, except if one is boolean and the other is neither boolean nor unknown, or if one is
-     * numeric and the other is neither numeric nor unknown in which case {@code Type.OBJECT} is returned.
+     * @return wider of t1 and t2, except if one is boolean and the other is neither boolean nor unknown, in which case
+     * {@code Type.OBJECT} is returned.
      */
     private static Type widestReturnType(final Type t1, final Type t2) {
         if (t1.isUnknown()) {
             return t2;
         } else if (t2.isUnknown()) {
             return t1;
-        } else if (t1.isBoolean() != t2.isBoolean() || t1.isNumeric() != t2.isNumeric()) {
+        } else if(t1.isBoolean() != t2.isBoolean() || t1.isNumeric() != t2.isNumeric()) {
             return Type.OBJECT;
         }
         return Type.widest(t1, t2);
     }
 
     private void initCompileConstant(final CompilerConstants cc, final Block block, final int flags) {
-        final Class<?> type = cc.type();
         // Must not call this method for constants with no explicit types; use the one with (..., Type) signature instead.
-        assert type != null;
-        initCompileConstant(cc, block, flags, Type.typeFor(type));
+        assert cc.type() != null;
+        initCompileConstant(cc, block, flags, Type.typeFor(cc.type()));
     }
 
     private void initCompileConstant(final CompilerConstants cc, final Block block, final int flags, final Type type) {
-        final Symbol symbol = defineSymbol(block, cc.symbolName(), flags);
-        symbol.setTypeOverride(type);
-        symbol.setNeedsSlot(true);
+        defineSymbol(block, cc.symbolName(), flags).
+            setTypeOverride(type).
+            setNeedsSlot(true);
     }
 
     /**
@@ -1477,22 +1628,29 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
      * @param functionNode the function node
      */
     private void initParameters(final FunctionNode functionNode, final Block body) {
+        final boolean isOptimistic = env.useOptimisticTypes();
         int pos = 0;
         for (final IdentNode param : functionNode.getParameters()) {
             addLocalDef(param.getName());
 
-            final Type callSiteParamType = functionNode.getHints().getParameterType(pos);
-            int flags = IS_PARAM;
-            if (callSiteParamType != null) {
-                LOG.info("Param ", param, " has a callsite type ", callSiteParamType, ". Using that.");
-                flags |= Symbol.IS_SPECIALIZED_PARAM;
-            }
-
-            final Symbol paramSymbol = defineSymbol(body, param.getName(), flags);
+            final Symbol paramSymbol = defineSymbol(body, param.getName(), IS_PARAM);
             assert paramSymbol != null;
 
-            newType(paramSymbol, callSiteParamType == null ? Type.UNKNOWN : callSiteParamType);
-
+            final Type callSiteParamType = env.getParamType(functionNode, pos);
+            if (callSiteParamType != null) {
+                LOG.info("Callsite type override for parameter " + pos + " " + paramSymbol + " => " + callSiteParamType);
+                newType(paramSymbol, callSiteParamType);
+            } else {
+                // When we're using optimistic compilation, we'll generate specialized versions of the functions anyway
+                // based on their input type, so if we're doing a compilation without parameter types explicitly
+                // specified in the compilation environment, just pre-initialize them all to Object. Note that this is
+                // not merely an optimization; it has correctness implications as Type.UNKNOWN is narrower than all
+                // other types, which when combined with optimistic typing can cause invalid coercions to be introduced
+                // in the generated code. E.g. "var b = { x: 0 }; (function (i) { this.x += i }).apply(b, [1.1])" would
+                // erroneously allow coercion of "i" to int when "this.x" is an optimistic-int and "i" starts out
+                // with Type.UNKNOWN.
+                newType(paramSymbol, isOptimistic ? Type.OBJECT : Type.UNKNOWN);
+            }
             LOG.info("Initialized param ", pos, "=", paramSymbol);
             pos++;
         }
@@ -1508,48 +1666,46 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     private FunctionNode finalizeParameters(final FunctionNode functionNode) {
         final List<IdentNode> newParams = new ArrayList<>();
         final boolean isVarArg = functionNode.isVarArg();
-        final int nparams = functionNode.getParameters().size();
+        final boolean pessimistic = !useOptimisticTypes();
 
-        int specialize = 0;
-        int pos = 0;
         for (final IdentNode param : functionNode.getParameters()) {
             final Symbol paramSymbol = functionNode.getBody().getExistingSymbol(param.getName());
             assert paramSymbol != null;
-            assert paramSymbol.isParam();
+            assert paramSymbol.isParam() : paramSymbol + " " + paramSymbol.getFlags();
             newParams.add((IdentNode)param.setSymbol(lc, paramSymbol));
 
             assert paramSymbol != null;
-            Type type = functionNode.getHints().getParameterType(pos);
-            if (type == null) {
-                type = Type.OBJECT;
+            Type type = paramSymbol.getSymbolType();
+
+            // all param types are initialized to unknown
+            // first we check if we do have a type (inferred during generation)
+            // and it's not an object. In that case we make an optimistic
+            // assumption
+            if (!type.isUnknown() && !type.isObject()) {
+                //optimistically inferred
+                lc.logOptimisticAssumption(paramSymbol, type);
             }
 
-            // if we know that a parameter is only used as a certain type throughout
-            // this function, we can tell the runtime system that no matter what the
-            // call site is, use this information:
-            // we also need more than half of the parameters to be specializable
-            // for the heuristic to be worth it, and we need more than one use of
-            // the parameter to consider it, i.e. function(x) { call(x); } doens't count
-            if (paramSymbol.getUseCount() > 1 && !paramSymbol.getSymbolType().isObject()) {
-                LOG.finest("Parameter ", param, " could profit from specialization to ", paramSymbol.getSymbolType());
-                specialize++;
+            //known runtime types are hardcoded already in initParameters so avoid any
+            //overly optimistic assumptions, e.g. a double parameter known from
+            //RecompilableScriptFunctionData is with us all the way
+            if (type.isUnknown()) {
+                newType(paramSymbol, Type.OBJECT);
             }
 
-            newType(paramSymbol, Type.widest(type, paramSymbol.getSymbolType()));
+            // if we are pessimistic, we are always an object
+            if (pessimistic) {
+                newType(paramSymbol, Type.OBJECT);
+            }
 
             // parameters should not be slots for a function that uses variable arity signature
             if (isVarArg) {
                 paramSymbol.setNeedsSlot(false);
+                newType(paramSymbol, Type.OBJECT);
             }
-
-            pos++;
         }
 
         FunctionNode newFunctionNode = functionNode;
-
-        if (nparams == 0 || (specialize * 2) < nparams) {
-            newFunctionNode = newFunctionNode.clearSnapshot(lc);
-        }
 
         return newFunctionNode.setParameters(lc, newParams);
     }
@@ -1571,45 +1727,6 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         }
     }
 
-    private static void ensureTypeNotUnknown(final Expression node) {
-
-        final Symbol symbol = node.getSymbol();
-
-        LOG.info("Ensure type not unknown for: ", symbol);
-
-        /*
-         * Note that not just unknowns, but params need to be blown
-         * up to objects, because we can have something like
-         *
-         * function f(a) {
-         *    var b = ~a; //b and a are inferred to be int
-         *    return b;
-         * }
-         *
-         * In this case, it would be correct to say that "if you have
-         * an int at the callsite, just pass it".
-         *
-         * However
-         *
-         * function f(a) {
-         *    var b = ~a;      //b and a are inferred to be int
-         *    return b == 17;  //b is still inferred to be int.
-         * }
-         *
-         * can be called with f("17") and if we assume that b is an
-         * int and don't blow it up to an object in the comparison, we
-         * are screwed. I hate JavaScript.
-         *
-         * This check has to be done for any operation that might take
-         * objects as parameters, for example +, but not *, which is known
-         * to coerce types into doubles
-         */
-        if (node.getType().isUnknown() || (symbol.isParam() && !symbol.isSpecializedParam())) {
-            newType(symbol, Type.OBJECT);
-            symbol.setCanBeUndefined();
-         }
-    }
-
     private static Symbol pseudoSymbol(final String name) {
         return new Symbol(name, 0, Type.OBJECT);
     }
@@ -1618,15 +1735,6 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         return newInternal(lc.getCurrentFunction().uniqueName(EXCEPTION_PREFIX.symbolName()), Type.typeFor(EXCEPTION_PREFIX.type()));
     }
 
-    /**
-     * Return the type that arithmetic ops should use. Until we have implemented better type
-     * analysis (range based) or overflow checks that are fast enough for int arithmetic,
-     * this is the number type
-     * @return the arithetic type
-     */
-    private static Type arithType() {
-        return Compiler.shouldUseIntegerArithmetic() ? Type.INT : Type.NUMBER;
-    }
 
     /**
      * If types have changed, we can have failed to update vars. For example
@@ -1638,9 +1746,15 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
      */
     private FunctionNode finalizeTypes(final FunctionNode functionNode) {
         final Set<Node> changed = new HashSet<>();
+        final Deque<Type> returnTypes = new ArrayDeque<>();
+
         FunctionNode currentFunctionNode = functionNode;
+        int fixedPointIterations = 0;
         do {
+            fixedPointIterations++;
+            assert fixedPointIterations < 0x100 : "too many fixed point iterations for " + functionNode.getName() + " -> most likely infinite loop";
             changed.clear();
+
             final FunctionNode newFunctionNode = (FunctionNode)currentFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
 
                 private Expression widen(final Expression node, final Type to) {
@@ -1656,7 +1770,9 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                         }
                         newType(symbol, to);
                         final Expression newNode = node.setSymbol(lc, symbol);
-                        changed.add(newNode);
+                        if (node != newNode) {
+                            changed.add(newNode);
+                        }
                         return newNode;
                     }
                     return node;
@@ -1664,7 +1780,31 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
                 @Override
                 public boolean enterFunctionNode(final FunctionNode node) {
-                    return !node.isLazy();
+                    returnTypes.push(Type.UNKNOWN);
+                    return true;
+                }
+
+                @Override
+                public Node leaveFunctionNode(final FunctionNode node) {
+                    Type returnType = returnTypes.pop();
+                    if (returnType.isUnknown()) {
+                        returnType = Type.OBJECT;
+                    }
+                    return node.setReturnType(lc, returnType);
+                }
+
+                @Override
+                public Node leaveReturnNode(final ReturnNode returnNode) {
+                    Type returnType = returnTypes.pop();
+                    if (returnNode.hasExpression()) {
+                        returnType = widestReturnType(returnType, returnNode.getExpression().getType()); //getSymbol().getSymbolType());
+                    } else {
+                        returnType = Type.OBJECT; //undefined
+                    }
+
+                    returnTypes.push(returnType);
+
+                    return returnNode;
                 }
 
                 //
@@ -1683,10 +1823,16 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 @SuppressWarnings("fallthrough")
                 @Override
                 public Node leaveBinaryNode(final BinaryNode binaryNode) {
-                    final Type widest = Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType());
+                    Type widest = Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType());
                     BinaryNode newBinaryNode = binaryNode;
 
                     if (isAdd(binaryNode)) {
+                        if(widest.getTypeClass() == String.class) {
+                            // Erase "String" to "Object" as we have trouble with optimistically typed operands that
+                            // would be typed "String" in the code generator as they are always loaded using the type
+                            // of the operation.
+                            widest = Type.OBJECT;
+                        }
                         newBinaryNode = (BinaryNode)widen(newBinaryNode, widest);
                         if (newBinaryNode.getType().isObject() && !isAddString(newBinaryNode)) {
                             return new RuntimeNode(newBinaryNode, Request.ADD);
@@ -1726,6 +1872,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
                     return newBinaryNode;
 
+                }
+
+                @Override
+                public Node leaveTernaryNode(TernaryNode ternaryNode) {
+                    return widen(ternaryNode, Type.widest(ternaryNode.getTrueExpression().getType(), ternaryNode.getFalseExpression().getType()));
                 }
 
                 private boolean isAdd(final Node node) {
@@ -1773,24 +1924,145 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         return leaveSelfModifyingAssignmentNode(binaryNode, binaryNode.getWidestOperationType());
     }
 
-    private Node leaveSelfModifyingAssignmentNode(final BinaryNode binaryNode, final Type destType) {
+    private Node leaveSelfModifyingAssignmentNode(final BinaryNode binaryNode, final Type pessimisticType) {
         //e.g. for -=, Number, no wider, destType (binaryNode.getWidestOperationType())  is the coerce type
         final Expression lhs = binaryNode.lhs();
-
-        newType(lhs.getSymbol(), destType); //may not narrow if dest is already wider than destType
-
-        return end(ensureSymbol(destType, binaryNode));
+        final BinaryNode newBinaryNode = ensureSymbolTypeOverride(binaryNode, pessimisticType, Type.widest(lhs.getType(), binaryNode.rhs().getType()));
+        newType(lhs.getSymbol(), newBinaryNode.getType()); //may not narrow if dest is already wider than destType
+        return end(newBinaryNode);
     }
 
-    private Expression ensureSymbol(final Type type, final Expression expr) {
+    private Expression ensureSymbol(final Expression expr, final Type type) {
         LOG.info("New TEMPORARY added to ", lc.getCurrentFunction().getName(), " type=", type);
         return temporarySymbols.ensureSymbol(lc, type, expr);
     }
 
+    @Override
+    public boolean enterReturnNode(ReturnNode returnNode) {
+        tagOptimistic(returnNode.getExpression());
+        return true;
+    }
+
+    @Override
+    public boolean enterIfNode(IfNode ifNode) {
+        tagNeverOptimistic(ifNode.getTest());
+        return true;
+    }
+
+    @Override
+    public boolean enterWhileNode(WhileNode whileNode) {
+        tagNeverOptimistic(whileNode.getTest());
+        return true;
+    }
+
+    /**
+     * Used to signal that children should be optimistic. Otherwise every identnode
+     * in the entire program would basically start out as being guessed as an int
+     * and warmup would take an ENORMOUS time. This is also used while we get all
+     * the logic up and running, as we currently can't afford to debug every potential
+     * situtation that has to do with unwarranted optimism. We currently only tag
+     * type overrides, all other nodes are nops in this function
+     *
+     * @param expr an expression that is to be tagged as optimistic.
+     */
+    private long tag(final Optimistic expr) {
+        return ((long)lc.getCurrentFunction().getId() << 32) | expr.getProgramPoint();
+    }
+
+    /**
+     * This is used to guarantee that there are no optimistic setters, something that
+     * doesn't make sense in our current model, where only optimistic getters can exist.
+     * If we set something, we use the callSiteType. We might want to use dual fields
+     * though and incorporate this later for the option of putting something wider than
+     * is currently in the field causing an UnwarrantedOptimismException.
+     *
+     * @param expr expression to be tagged as never optimistic
+     */
+    private void tagNeverOptimistic(final Expression expr) {
+        if (expr instanceof Optimistic) {
+            LOG.info("Tagging TypeOverride node '" + expr + "' never optimistic");
+            neverOptimistic.add(tag((Optimistic)expr));
+        }
+    }
+
+    private void tagOptimistic(final Expression expr) {
+        if (expr instanceof Optimistic) {
+            LOG.info("Tagging TypeOverride node '" + expr + "' as optimistic");
+            optimistic.add(tag((Optimistic)expr));
+        }
+    }
+
+    private boolean isTaggedNeverOptimistic(final Optimistic expr) {
+        return neverOptimistic.contains(tag(expr));
+    }
+
+    private boolean isTaggedOptimistic(final Optimistic expr) {
+        return optimistic.contains(tag(expr));
+    }
+
+    private Type getOptimisticType(Optimistic expr) {
+        return useOptimisticTypes() ? env.getOptimisticType(expr) : expr.getMostPessimisticType();
+    }
+
+    /**
+     *  This is the base function for typing a TypeOverride as optimistic. For any expression that
+     *  can also be a type override (call, ident node (scope load), access node, index node) we use
+     *  the override type to communicate optimism.
+     *
+     *  @param pessimisticType conservative always guaranteed to work for this operation
+     *  @param to node to set type for
+     */
+    private <T extends Expression & Optimistic> T ensureSymbolTypeOverride(final T node, final Type pessimisticType) {
+        return ensureSymbolTypeOverride(node, pessimisticType, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Expression & Optimistic> T ensureSymbolTypeOverride(final T node, final Type pessimisticType, final Type argumentsType) {
+        // check what the most optimistic type for this node should be
+        // if we are running with optimistic types, this starts out as e.g. int, and based on previous
+        // failed assumptions it can be wider, for example double if we have failed this assumption
+        // in a previous run
+        Type optimisticType = getOptimisticType(node);
+
+        if (argumentsType != null) {
+            optimisticType = Type.widest(optimisticType, argumentsType);
+        }
+
+        // the symbol of the expression is the pessimistic one, i.e. IndexNodes are always Object for consistency
+        // with the type system.
+        T expr = (T)ensureSymbol(node, pessimisticType);
+
+        if (optimisticType.isObject()) {
+            return expr;
+        }
+
+        if (isTaggedNeverOptimistic(expr)) {
+            return expr;
+        }
+
+        if(!(node instanceof FunctionCall && ((FunctionCall)node).isFunction())) {
+            // in the case that we have an optimistic type, set the type override (setType is inherited from TypeOverride)
+            // but maintain the symbol type set above. Also flag the function as optimistic. Don't do this for any
+            // expressions that are used as the callee of a function call.
+            if (optimisticType.narrowerThan(pessimisticType)) {
+                expr = (T)expr.setType(temporarySymbols, optimisticType);
+                expr = (T)Node.setIsOptimistic(expr, true);
+                if (optimisticType.isPrimitive()) {
+                    final Symbol symbol = expr.getSymbol();
+                    if (symbol.isShared()) {
+                        expr = (T)expr.setSymbol(lc, symbol.createUnshared(symbol.getName()));
+                    }
+                }
+                LOG.fine(expr, " turned optimistic with type=", optimisticType);
+                assert ((Optimistic)expr).isOptimistic();
+            }
+        }
+        return expr;
+    }
+
+
     private Symbol newInternal(final String name, final Type type) {
-        final Symbol iter = defineSymbol(lc.getCurrentBlock(), name, IS_VAR | IS_INTERNAL);
-        iter.setType(type); // NASHORN-73
-        return iter;
+        return defineSymbol(lc.getCurrentBlock(), name, IS_VAR | IS_INTERNAL).setType(type); //NASHORN-73
     }
 
     private static void newType(final Symbol symbol, final Type type) {
@@ -1845,34 +2117,46 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         localUses.peek().add(name);
     }
 
-    /**
-     * Pessimistically promote all symbols in current function node to Object types
-     * This is done when the function contains unevaluated black boxes such as
-     * lazy sub-function nodes that have not been compiled.
-     *
-     * @param body body for the function node we are leaving
-     */
-    private static void objectifySymbols(final Block body) {
-        body.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-            private void toObject(final Block block) {
-                for (final Symbol symbol : block.getSymbols()) {
-                    if (!symbol.isTemp()) {
-                        newType(symbol, Type.OBJECT);
-                    }
-                }
+    private  void inferParameter(final Expression node, final Type type) {
+        final Symbol symbol = node.getSymbol();
+        if (useOptimisticTypes() && symbol.isParam()) {
+            final Type symbolType = symbol.getSymbolType();
+            if(symbolType.isBoolean() && !(type.isBoolean() || type == Type.OBJECT)) {
+                // boolean parameters can only legally be widened to Object
+                return;
             }
+            if (symbolType != type) {
+               LOG.info("Infer parameter type " + symbol + " ==> " + type + " " + lc.getCurrentFunction().getSource().getName() + " " + lc.getCurrentFunction().getName());
+            }
+            symbol.setType(type); //will be overwritten by object later if pessimistic anyway
+            lc.logOptimisticAssumption(symbol, type);
+        }
+    }
 
-            @Override
-            public boolean enterBlock(final Block block) {
-                toObject(block);
-                return true;
-            }
+    private BinaryNode coerce(final BinaryNode binaryNode, final Type pessimisticType) {
+        return coerce(binaryNode, pessimisticType, null);
+    }
 
-            @Override
-            public boolean enterFunctionNode(final FunctionNode node) {
-                return false;
+    private BinaryNode coerce(final BinaryNode binaryNode, final Type pessimisticType, final Type argumentsType) {
+        BinaryNode newNode = ensureSymbolTypeOverride(binaryNode, pessimisticType, argumentsType);
+        inferParameter(binaryNode.lhs(), newNode.getType());
+        inferParameter(binaryNode.rhs(), newNode.getType());
+        return newNode;
+    }
+
+    private UnaryNode coerce(final UnaryNode unaryNode, final Type pessimisticType) {
+        return coerce(unaryNode, pessimisticType, null);
+    }
+
+    private UnaryNode coerce(final UnaryNode unaryNode, final Type pessimisticType, final Type argumentType) {
+        UnaryNode newNode = ensureSymbolTypeOverride(unaryNode, pessimisticType, argumentType);
+        if (newNode.isOptimistic()) {
+            if (unaryNode.getExpression() instanceof Optimistic) {
+               newNode = newNode.setExpression(Node.setIsOptimistic(unaryNode.getExpression(), true));
             }
-        });
+        }
+        inferParameter(unaryNode.getExpression(), newNode.getType());
+        return newNode;
     }
 
     private static String name(final Node node) {

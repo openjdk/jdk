@@ -106,38 +106,49 @@ public class TypeUtilities {
     }
 
     /**
-     * Given two types represented by c1 and c2, returns a type that is their most specific common superclass or
-     * superinterface.
+     * Given two types represented by c1 and c2, returns a type that is their most specific common supertype for
+     * purposes of lossless conversions.
      *
      * @param c1 one type
      * @param c2 another type
-     * @return their most common superclass or superinterface. If they have several unrelated superinterfaces as their
-     * most specific common type, or the types themselves are completely unrelated interfaces, {@link java.lang.Object}
-     * is returned.
+     * @return their most common superclass or superinterface for purposes of lossless conversions. If they have several
+     * unrelated superinterfaces as their most specific common type, or the types themselves are completely
+     * unrelated interfaces, {@link java.lang.Object} is returned.
      */
-    public static Class<?> getMostSpecificCommonType(Class<?> c1, Class<?> c2) {
+    public static Class<?> getCommonLosslessConversionType(Class<?> c1, Class<?> c2) {
         if(c1 == c2) {
             return c1;
+        } else if(isConvertibleWithoutLoss(c2, c1)) {
+            return c1;
+        } else if(isConvertibleWithoutLoss(c1, c2)) {
+            return c2;
         }
-        Class<?> c3 = c2;
-        if(c3.isPrimitive()) {
-            if(c3 == Byte.TYPE)
-                c3 = Byte.class;
-            else if(c3 == Short.TYPE)
-                c3 = Short.class;
-            else if(c3 == Character.TYPE)
-                c3 = Character.class;
-            else if(c3 == Integer.TYPE)
-                c3 = Integer.class;
-            else if(c3 == Float.TYPE)
-                c3 = Float.class;
-            else if(c3 == Long.TYPE)
-                c3 = Long.class;
-            else if(c3 == Double.TYPE)
-                c3 = Double.class;
+        if(c1 == void.class) {
+            return c2;
+        } else if(c2 == void.class) {
+            return c1;
         }
-        Set<Class<?>> a1 = getAssignables(c1, c3);
-        Set<Class<?>> a2 = getAssignables(c3, c1);
+        if(c1.isPrimitive() && c2.isPrimitive()) {
+            if((c1 == byte.class && c2 == char.class) || (c1 == char.class && c2 == byte.class)) {
+                // byte + char = int
+                return int.class;
+            } else if((c1 == short.class && c2 == char.class) || (c1 == char.class && c2 == short.class)) {
+                // short + char = int
+                return int.class;
+            } else if((c1 == int.class && c2 == float.class) || (c1 == float.class && c2 == int.class)) {
+                // int + float = double
+                return double.class;
+            }
+        }
+        // For all other cases. This will handle long + (float|double) = Number case as well as boolean + anything = Object case too.
+        return getMostSpecificCommonTypeUnequalNonprimitives(c1, c2);
+    }
+
+    private static Class<?> getMostSpecificCommonTypeUnequalNonprimitives(Class<?> c1, Class<?> c2) {
+        final Class<?> npc1 = c1.isPrimitive() ? getWrapperType(c1) : c1;
+        final Class<?> npc2 = c2.isPrimitive() ? getWrapperType(c2) : c2;
+        Set<Class<?>> a1 = getAssignables(npc1, npc2);
+        Set<Class<?>> a2 = getAssignables(npc2, npc1);
         a1.retainAll(a2);
         if(a1.isEmpty()) {
             // Can happen when at least one of the arguments is an interface,
@@ -168,7 +179,7 @@ public class TypeUtilities {
             max.add(clazz);
         }
         if(max.size() > 1) {
-            return OBJECT_CLASS;
+            return Object.class;
         }
         return max.get(0);
     }
@@ -232,25 +243,60 @@ public class TypeUtilities {
      * {@link #isSubtype(Class, Class)}) as well as boxing conversion (JLS 5.1.7) optionally followed by widening
      * reference conversion and unboxing conversion (JLS 5.1.8) optionally followed by widening primitive conversion.
      *
-     * @param callSiteType the parameter type at the call site
-     * @param methodType the parameter type in the method declaration
-     * @return true if callSiteType is method invocation convertible to the methodType.
+     * @param sourceType the type being converted from (call site type for parameter types, method type for return types)
+     * @param targetType the parameter type being converted to (method type for parameter types, call site type for return types)
+     * @return true if source type is method invocation convertible to target type.
      */
-    public static boolean isMethodInvocationConvertible(Class<?> callSiteType, Class<?> methodType) {
-        if(methodType.isAssignableFrom(callSiteType)) {
+    public static boolean isMethodInvocationConvertible(Class<?> sourceType, Class<?> targetType) {
+        if(targetType.isAssignableFrom(sourceType)) {
             return true;
         }
-        if(callSiteType.isPrimitive()) {
-            if(methodType.isPrimitive()) {
-                return isProperPrimitiveSubtype(callSiteType, methodType);
+        if(sourceType.isPrimitive()) {
+            if(targetType.isPrimitive()) {
+                return isProperPrimitiveSubtype(sourceType, targetType);
             }
             // Boxing + widening reference conversion
-            return methodType.isAssignableFrom(WRAPPER_TYPES.get(callSiteType));
+            assert WRAPPER_TYPES.get(sourceType) != null : sourceType.getName();
+            return targetType.isAssignableFrom(WRAPPER_TYPES.get(sourceType));
         }
-        if(methodType.isPrimitive()) {
-            final Class<?> unboxedCallSiteType = PRIMITIVE_TYPES.get(callSiteType);
+        if(targetType.isPrimitive()) {
+            final Class<?> unboxedCallSiteType = PRIMITIVE_TYPES.get(sourceType);
             return unboxedCallSiteType != null
-                    && (unboxedCallSiteType == methodType || isProperPrimitiveSubtype(unboxedCallSiteType, methodType));
+                    && (unboxedCallSiteType == targetType || isProperPrimitiveSubtype(unboxedCallSiteType, targetType));
+        }
+        return false;
+    }
+
+    /**
+     * Determines whether a type can be converted to another without losing any
+     * precision.
+     *
+     * @param sourceType the source type
+     * @param targetType the target type
+     * @return true if lossess conversion is possible
+     */
+    public static boolean isConvertibleWithoutLoss(Class<?> sourceType, Class<?> targetType) {
+        if(targetType.isAssignableFrom(sourceType)) {
+            return true;
+        }
+        if(sourceType.isPrimitive()) {
+            if(sourceType == void.class) {
+                return true; // Void can be losslessly represented by any type
+            }
+            if(targetType.isPrimitive()) {
+                return isProperPrimitiveLosslessSubtype(sourceType, targetType);
+            }
+            // Boxing + widening reference conversion
+            assert WRAPPER_TYPES.get(sourceType) != null : sourceType.getName();
+            return targetType.isAssignableFrom(WRAPPER_TYPES.get(sourceType));
+        }
+        if(targetType.isPrimitive()) {
+            if(targetType == void.class) {
+                return false; // Void can't represent anything losslessly
+            }
+            final Class<?> unboxedCallSiteType = PRIMITIVE_TYPES.get(sourceType);
+            return unboxedCallSiteType != null
+                    && (unboxedCallSiteType == targetType || isProperPrimitiveLosslessSubtype(unboxedCallSiteType, targetType));
         }
         return false;
     }
@@ -266,7 +312,7 @@ public class TypeUtilities {
      */
     public static boolean isPotentiallyConvertible(Class<?> callSiteType, Class<?> methodType) {
         // Widening or narrowing reference conversion
-        if(methodType.isAssignableFrom(callSiteType) || callSiteType.isAssignableFrom(methodType)) {
+        if(areAssignable(callSiteType, methodType)) {
             return true;
         }
         if(callSiteType.isPrimitive()) {
@@ -284,6 +330,16 @@ public class TypeUtilities {
             return isAssignableFromBoxedPrimitive(callSiteType);
         }
         return false;
+    }
+
+    /**
+     * Returns true if either of the types is assignable from the other.
+     * @param c1 one of the types
+     * @param c2 another one of the types
+     * @return true if either c1 is assignable from c2 or c2 is assignable from c1.
+     */
+    public static boolean areAssignable(Class<?> c1, Class<?> c2) {
+        return c1.isAssignableFrom(c2) || c2.isAssignableFrom(c1);
     }
 
     /**
@@ -346,6 +402,37 @@ public class TypeUtilities {
         }
         if(subType == long.class) {
             return superType == float.class || superType == double.class;
+        }
+        if(subType == float.class) {
+            return superType == double.class;
+        }
+        return false;
+    }
+
+    /**
+     * Similar to {@link #isProperPrimitiveSubtype(Class, Class)}, except it disallows conversions from int and long to
+     * float, and from long to double, as those can lose precision. It also disallows conversion from and to char and
+     * anything else (similar to boolean) as char is not meant to be an arithmetic type.
+     * @param subType the supposed subtype
+     * @param superType the supposed supertype
+     * @return true if subType is a proper (not identical to) primitive subtype of the superType that can be represented
+     * by the supertype without no precision loss.
+     */
+    private static boolean isProperPrimitiveLosslessSubtype(Class<?> subType, Class<?> superType) {
+        if(superType == boolean.class || subType == boolean.class) {
+            return false;
+        }
+        if(superType == char.class || subType == char.class) {
+            return false;
+        }
+        if(subType == byte.class) {
+            return true;
+        }
+        if(subType == short.class) {
+            return superType != byte.class;
+        }
+        if(subType == int.class) {
+            return superType == long.class || superType == double.class;
         }
         if(subType == float.class) {
             return superType == double.class;

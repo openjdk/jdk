@@ -80,11 +80,6 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
     }
 
     @Override
-    public boolean enterFunctionNode(final FunctionNode functionNode) {
-        return !functionNode.isLazy();
-    }
-
-    @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
         return functionNode.setState(lc, CompilationState.CONSTANT_FOLDED);
     }
@@ -163,7 +158,7 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
 
         @Override
         protected LiteralNode<?> eval() {
-            final Node rhsNode = parent.rhs();
+            final Node rhsNode = parent.getExpression();
 
             if (!(rhsNode instanceof LiteralNode)) {
                 return null;
@@ -311,8 +306,8 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
                 return null;
             }
 
-            isInteger &= value != 0.0 && JSType.isRepresentableAsInt(value);
-            isLong    &= value != 0.0 && JSType.isRepresentableAsLong(value);
+            isInteger &= JSType.isRepresentableAsInt(value) && !JSType.isNegativeZero(value);
+            isLong    &= JSType.isRepresentableAsLong(value) && !JSType.isNegativeZero(value);
 
             if (isInteger) {
                 return LiteralNode.newInstance(token, finish, (int)value);

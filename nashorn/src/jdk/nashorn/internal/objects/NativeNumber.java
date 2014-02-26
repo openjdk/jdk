@@ -25,12 +25,10 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsInt;
-import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsLong;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -80,8 +78,6 @@ public final class NativeNumber extends ScriptObject {
     public static final double POSITIVE_INFINITY = Double.POSITIVE_INFINITY;
 
     private final double  value;
-    private final boolean isInt;
-    private final boolean isLong;
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
@@ -93,8 +89,6 @@ public final class NativeNumber extends ScriptObject {
     private NativeNumber(final double value, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         this.value = value;
-        this.isInt  = isRepresentableAsInt(value);
-        this.isLong = isRepresentableAsLong(value);
     }
 
     NativeNumber(final double value, final Global global) {
@@ -130,30 +124,6 @@ public final class NativeNumber extends ScriptObject {
      */
     public double doubleValue() {
         return value;
-    }
-
-    /**
-     * Get the value of this Number as a {@code int}
-     * @return an {@code int} representing the Number value
-     * @throws ClassCastException If number is not representable as an {@code int}
-     */
-    public int intValue() throws ClassCastException {
-        if (isInt) {
-            return (int)value;
-        }
-        throw new ClassCastException();
-    }
-
-    /**
-     * Get the value of this Number as a {@code long}
-     * @return a {@code long} representing the Number value
-     * @throws ClassCastException If number is not representable as an {@code long}
-     */
-    public long longValue() throws ClassCastException {
-        if (isLong) {
-            return (long)value;
-        }
-        throw new ClassCastException();
     }
 
     @Override

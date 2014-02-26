@@ -32,7 +32,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.options.KeyValueOption;
@@ -89,6 +88,9 @@ public final class ScriptEnvironment {
     /** Use single Global instance per jsr223 engine instance. */
     public final boolean _global_per_engine;
 
+    /** Argument passed to compile only if optimistic compilation should take place */
+    public static final String COMPILE_ONLY_OPTIMISTIC_ARG = "optimistic";
+
     /**
      * Behavior when encountering a function declaration in a lexical context where only statements are acceptable
      * (function declarations are source elements, but not statements).
@@ -110,14 +112,21 @@ public final class ScriptEnvironment {
         ERROR
     }
 
+    private static final boolean GLOBAL_OPTIMISTIC = Options.getBooleanProperty("nashorn.optimistic");
+
+    /**
+     * What is the default optimistic compilation policy?
+     * @return true if optimistic, false otherwise
+     */
+    public static boolean globalOptimistic() {
+        return GLOBAL_OPTIMISTIC;
+    }
+
     /**
      * Behavior when encountering a function declaration in a lexical context where only statements are acceptable
      * (function declarations are source elements, but not statements).
      */
     public final FunctionStatementBehavior _function_statement;
-
-    /** Should lazy compilation take place */
-    public final boolean _lazy_compilation;
 
     /** Create a new class loaded for each compilation */
     public final boolean _loader_per_compile;
@@ -142,6 +151,12 @@ public final class ScriptEnvironment {
 
     /** Print resulting bytecode for script */
     public final boolean _print_code;
+
+    /** Directory (optional) to print files to */
+    public final String _print_code_dir;
+
+    /** List of functions to write to the print code dir, optional */
+    public final String _print_code_func;
 
     /** Print memory usage for IR after each phase */
     public final boolean _print_mem_usage;
@@ -203,16 +218,15 @@ public final class ScriptEnvironment {
         _early_lvalue_error   = options.getBoolean("early.lvalue.error");
         _empty_statements     = options.getBoolean("empty.statements");
         _fullversion          = options.getBoolean("fullversion");
-        if(options.getBoolean("function.statement.error")) {
+        if (options.getBoolean("function.statement.error")) {
             _function_statement = FunctionStatementBehavior.ERROR;
-        } else if(options.getBoolean("function.statement.warning")) {
+        } else if (options.getBoolean("function.statement.warning")) {
             _function_statement = FunctionStatementBehavior.WARNING;
         } else {
             _function_statement = FunctionStatementBehavior.ACCEPT;
         }
         _fx                   = options.getBoolean("fx");
         _global_per_engine    = options.getBoolean("global.per.engine");
-        _lazy_compilation     = options.getBoolean("lazy.compilation");
         _loader_per_compile   = options.getBoolean("loader.per.compile");
         _no_java              = options.getBoolean("no.java");
         _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
@@ -220,7 +234,7 @@ public final class ScriptEnvironment {
         _parse_only           = options.getBoolean("parse.only");
         _print_ast            = options.getBoolean("print.ast");
         _print_lower_ast      = options.getBoolean("print.lower.ast");
-        _print_code           = options.getBoolean("print.code");
+        _print_code           = options.getString("print.code") != null;
         _print_mem_usage      = options.getBoolean("print.mem.usage");
         _print_no_newline     = options.getBoolean("print.no.newline");
         _print_parse          = options.getBoolean("print.parse");
@@ -242,6 +256,26 @@ public final class ScriptEnvironment {
                 _specialize_calls.add(st.nextToken());
             }
         }
+
+        String dir = null;
+        String func = null;
+        final String pc = options.getString("print.code");
+        if (pc != null) {
+            StringTokenizer st = new StringTokenizer(pc, ",");
+            while (st.hasMoreTokens()) {
+                StringTokenizer st2 = new StringTokenizer(st.nextToken(), ":");
+                while (st2.hasMoreTokens()) {
+                    String cmd = st2.nextToken();
+                    if ("dir".equals(cmd)) {
+                        dir = st2.nextToken();
+                    } else if ("function".equals(cmd)) {
+                        func = st2.nextToken();
+                    }
+                }
+            }
+        }
+        _print_code_dir = dir;
+        _print_code_func = func;
 
         int callSiteFlags = 0;
         if (options.getBoolean("profile.callsites")) {
@@ -335,4 +369,5 @@ public final class ScriptEnvironment {
     public List<String> getArguments() {
         return options.getArguments();
     }
+
 }

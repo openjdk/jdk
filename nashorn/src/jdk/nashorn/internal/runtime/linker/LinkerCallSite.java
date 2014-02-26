@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jdk.internal.dynalink.ChainedCallSite;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -63,7 +62,7 @@ public class LinkerCallSite extends ChainedCallSite {
 
     private static final String PROFILEFILE = Options.getStringProperty("nashorn.profilefile", "NashornProfile.txt");
 
-    private static final MethodHandle INCREASE_MISS_COUNTER = findOwnMH("increaseMissCount", Object.class, String.class, Object.class);
+    private static final MethodHandle INCREASE_MISS_COUNTER = MH.findStatic(MethodHandles.lookup(), LinkerCallSite.class, "increaseMissCount", MH.type(Object.class, String.class, Object.class));
 
     LinkerCallSite(final NashornCallSiteDescriptor descriptor) {
         super(descriptor);
@@ -145,24 +144,15 @@ public class LinkerCallSite extends ChainedCallSite {
      */
     public static Object increaseMissCount(final String desc, final Object self) {
         ++missCount;
-        if(r.nextInt(100) < missSamplingPercentage) {
-            AtomicInteger i = missCounts.get(desc);
-            if(i == null) {
-                i = new AtomicInteger(1);
-                missCounts.put(desc, i);
+        if (r.nextInt(100) < missSamplingPercentage) {
+            final AtomicInteger i = missCounts.get(desc);
+            if (i == null) {
+                missCounts.put(desc, new AtomicInteger(1));
             } else {
                 i.incrementAndGet();
             }
         }
         return self;
-    }
-
-    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MH.findStatic(MethodHandles.lookup(), LinkerCallSite.class, name, MH.type(rtype, types));
-        } catch (final MethodHandleFactory.LookupException e) {
-            return MH.findVirtual(MethodHandles.lookup(), LinkerCallSite.class, name, MH.type(rtype, types));
-        }
     }
 
     /*
@@ -314,10 +304,11 @@ public class LinkerCallSite extends ChainedCallSite {
      * Debug subclass for LinkerCallSite that allows tracing
      */
     private static class TracingLinkerCallSite extends LinkerCallSite {
+        private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-        private static final MethodHandle TRACEOBJECT = findOwnMH("traceObject", Object.class, MethodHandle.class, Object[].class);
-        private static final MethodHandle TRACEVOID   = findOwnMH("traceVoid", void.class, MethodHandle.class, Object[].class);
-        private static final MethodHandle TRACEMISS   = findOwnMH("traceMiss", void.class, String.class, Object[].class);
+        private static final MethodHandle TRACEOBJECT = MH.findVirtual(LOOKUP, TracingLinkerCallSite.class, "traceObject", MH.type(Object.class, MethodHandle.class, Object[].class));
+        private static final MethodHandle TRACEVOID   = MH.findVirtual(LOOKUP, TracingLinkerCallSite.class, "traceVoid", MH.type(void.class, MethodHandle.class, Object[].class));
+        private static final MethodHandle TRACEMISS   = MH.findVirtual(LOOKUP, TracingLinkerCallSite.class, "traceMiss", MH.type(void.class, String.class, Object[].class));
 
         TracingLinkerCallSite(final NashornCallSiteDescriptor desc) {
            super(desc);
@@ -486,14 +477,6 @@ public class LinkerCallSite extends ChainedCallSite {
         public void traceMiss(final String desc, final Object... args) throws Throwable {
             tracePrint(Context.getCurrentErr(), desc, args, null);
         }
-
-        private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-            try {
-                return MH.findStatic(MethodHandles.lookup(), TracingLinkerCallSite.class, name, MH.type(rtype, types));
-            } catch (final MethodHandleFactory.LookupException e) {
-                return MH.findVirtual(MethodHandles.lookup(), TracingLinkerCallSite.class, name, MH.type(rtype, types));
-            }
-        }
     }
 
     // counters updated in debug mode
@@ -502,6 +485,11 @@ public class LinkerCallSite extends ChainedCallSite {
     private static int missCount;
     private static final Random r = new Random();
     private static final int missSamplingPercentage = Options.getIntProperty("nashorn.tcs.miss.samplePercent", 1);
+
+    @Override
+    protected int getMaxChainLength() {
+        return 16;
+    }
 
     /**
      * Get the callsite count

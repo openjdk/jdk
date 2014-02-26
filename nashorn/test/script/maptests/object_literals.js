@@ -42,5 +42,5 @@ assertSameMap(makeObject2(), makeObject2());
 
 // Object literals created at different callsites
 assertSameMap({}, {});
-assertSameMap({foo: 4}, {foo: 'hello'});
-assertSameMap({foo: 34, bar: 'fdgd'}, {foo: 'world', bar: 54});
+assertEqualWithoutTypeMap({foo: 4}, {foo: 'hello'});
+assertEqualWithoutTypeMap({foo: 34, bar: 'fdgd'}, {foo: 'world', bar: 54});

@@ -155,10 +155,9 @@ public final class NativeString extends ScriptObject {
 
         if (returnType == Object.class && (self instanceof String || self instanceof ConsString)) {
             try {
-                MethodHandle mh = MH.findStatic(MethodHandles.lookup(), NativeString.class, "get", desc.getMethodType());
-                return new GuardedInvocation(mh, NashornGuards.getInstanceOf2Guard(String.class, ConsString.class));
+                return new GuardedInvocation(MH.findStatic(MethodHandles.lookup(), NativeString.class, "get", desc.getMethodType()), NashornGuards.getInstanceOf2Guard(String.class, ConsString.class));
             } catch (final LookupException e) {
-                // Shouldn't happen. Fall back to super
+                //empty. Shouldn't happen. Fall back to super
             }
         }
         return super.findGetIndexMethod(desc, request);
@@ -236,111 +235,111 @@ public final class NativeString extends ScriptObject {
     }
 
     @Override
-    public int getInt(final Object key) {
-        return JSType.toInt32(get(key));
+    public int getInt(final Object key, final int programPoint) {
+        return JSType.toInt32MaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public int getInt(final double key) {
-        return JSType.toInt32(get(key));
+    public int getInt(final double key, final int programPoint) {
+        return JSType.toInt32MaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public int getInt(final long key) {
-        return JSType.toInt32(get(key));
+    public int getInt(final long key, final int programPoint) {
+        return JSType.toInt32MaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public int getInt(final int key) {
-        return JSType.toInt32(get(key));
+    public int getInt(final int key, final int programPoint) {
+        return JSType.toInt32MaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public long getLong(final Object key) {
-        return JSType.toUint32(get(key));
+    public long getLong(final Object key, final int programPoint) {
+        return JSType.toLongMaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public long getLong(final double key) {
-        return JSType.toUint32(get(key));
+    public long getLong(final double key, final int programPoint) {
+        return JSType.toLongMaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public long getLong(final long key) {
-        return JSType.toUint32(get(key));
+    public long getLong(final long key, final int programPoint) {
+        return JSType.toLongMaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public long getLong(final int key) {
-        return JSType.toUint32(get(key));
+    public long getLong(final int key, final int programPoint) {
+        return JSType.toLongMaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public double getDouble(final Object key) {
-        return JSType.toNumber(get(key));
+    public double getDouble(final Object key, final int programPoint) {
+        return JSType.toNumberMaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public double getDouble(final double key) {
-        return JSType.toNumber(get(key));
+    public double getDouble(final double key, final int programPoint) {
+        return JSType.toNumberMaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public double getDouble(final long key) {
-        return JSType.toNumber(get(key));
+    public double getDouble(final long key, final int programPoint) {
+        return JSType.toNumberMaybeOptimistic(get(key), programPoint);
     }
 
     @Override
-    public double getDouble(final int key) {
-        return JSType.toNumber(get(key));
+    public double getDouble(final int key, final int programPoint) {
+        return JSType.toNumberMaybeOptimistic(get(key), programPoint);
     }
 
     @Override
     public boolean has(final Object key) {
         final Object primitiveKey = JSType.toPrimitive(key, String.class);
         final int index = ArrayIndex.getArrayIndex(primitiveKey);
-        return isValid(index) || super.has(primitiveKey);
+        return isValidStringIndex(index) || super.has(primitiveKey);
     }
 
     @Override
     public boolean has(final int key) {
-        return isValid(key) || super.has(key);
+        return isValidStringIndex(key) || super.has(key);
     }
 
     @Override
     public boolean has(final long key) {
         final int index = ArrayIndex.getArrayIndex(key);
-        return isValid(index) || super.has(key);
+        return isValidStringIndex(index) || super.has(key);
     }
 
     @Override
     public boolean has(final double key) {
         final int index = ArrayIndex.getArrayIndex(key);
-        return isValid(index) || super.has(key);
+        return isValidStringIndex(index) || super.has(key);
     }
 
     @Override
     public boolean hasOwnProperty(final Object key) {
         final Object primitiveKey = JSType.toPrimitive(key, String.class);
         final int index = ArrayIndex.getArrayIndex(primitiveKey);
-        return isValid(index) || super.hasOwnProperty(primitiveKey);
+        return isValidStringIndex(index) || super.hasOwnProperty(primitiveKey);
     }
 
     @Override
     public boolean hasOwnProperty(final int key) {
-        return isValid(key) || super.hasOwnProperty(key);
+        return isValidStringIndex(key) || super.hasOwnProperty(key);
     }
 
     @Override
     public boolean hasOwnProperty(final long key) {
         final int index = ArrayIndex.getArrayIndex(key);
-        return isValid(index) || super.hasOwnProperty(key);
+        return isValidStringIndex(index) || super.hasOwnProperty(key);
     }
 
     @Override
     public boolean hasOwnProperty(final double key) {
         final int index = ArrayIndex.getArrayIndex(key);
-        return isValid(index) || super.hasOwnProperty(key);
+        return isValidStringIndex(index) || super.hasOwnProperty(key);
     }
 
     @Override
@@ -368,7 +367,7 @@ public final class NativeString extends ScriptObject {
     }
 
     private boolean checkDeleteIndex(final int index, final boolean strict) {
-        if (isValid(index)) {
+        if (isValidStringIndex(index)) {
             if (strict) {
                 throw typeError("cant.delete.property", Integer.toString(index), ScriptRuntime.safeToString(this));
             }
@@ -442,11 +441,24 @@ public final class NativeString extends ScriptObject {
      */
     @SpecializedFunction
     public static Object fromCharCode(final Object self, final Object value) {
-        try {
-            return "" + (char)JSType.toUint16(((Number)value).doubleValue());
-        } catch (final ClassCastException e) {
-            return fromCharCode(self, new Object[] { value });
+        if (value instanceof Integer) {
+            return fromCharCode(self, (int)value);
+        } else if (value instanceof String) {
+            return "" + (char)JSType.toUint16(value);
         }
+        return fromCharCode(self, new Object[] { value });
+    }
+
+    /**
+     * fromCharCode specialization
+     *
+     * @param self  self reference
+     * @param value one argument to be interpreted as char
+     * @return string with one charcode
+     */
+    @SpecializedFunction
+    public static Object fromCharCode(final Object self, final String value) {
+        return fromCharCode(self, new Object[] { value });
     }
 
     /**
@@ -743,9 +755,10 @@ public final class NativeString extends ScriptObject {
      * @param string      item to replace
      * @param replacement item to replace it with
      * @return string after replacement
+     * @throws Throwable if replacement fails
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object replace(final Object self, final Object string, final Object replacement) {
+    public static Object replace(final Object self, final Object string, final Object replacement) throws Throwable {
 
         final String str = checkObjectToString(self);
 
@@ -1191,6 +1204,23 @@ public final class NativeString extends ScriptObject {
     }
 
     /**
+     * ECMA 15.5.2.1 new String ( [ value ] ) - special version with exactly one {@code boolean} arg
+     *
+     * Constructor
+     *
+     * @param newObj is this constructor invoked with the new operator
+     * @param self   self reference
+     * @param arg    the arg
+     *
+     * @return new NativeString containing the string representation of the arg
+     */
+    @SpecializedConstructor
+    public static Object constructor(final boolean newObj, final Object self, final boolean arg) {
+        final String str = JSType.toString(arg);
+        return newObj ? newObj(self, str) : str;
+    }
+
+    /**
      * Lookup the appropriate method for an invoke dynamic call.
      *
      * @param request  the link request
@@ -1250,11 +1280,12 @@ public final class NativeString extends ScriptObject {
         }
     }
 
-    private boolean isValid(final int key) {
+    private boolean isValidStringIndex(final int key) {
         return key >= 0 && key < value.length();
     }
 
     private static MethodHandle findWrapFilter() {
         return MH.findStatic(MethodHandles.lookup(), NativeString.class, "wrapFilter", MH.type(NativeString.class, Object.class));
     }
+
 }

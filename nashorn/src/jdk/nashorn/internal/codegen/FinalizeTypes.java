@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.CALLEE;
+import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -38,7 +39,6 @@ import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Symbol;
-import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.parser.Token;
@@ -62,11 +62,8 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
 
     private static final DebugLogger LOG = new DebugLogger("finalize");
 
-    private final TemporarySymbols temporarySymbols;
-
-    FinalizeTypes(final TemporarySymbols temporarySymbols) {
+    FinalizeTypes() {
         super(new LexicalContext());
-        this.temporarySymbols = temporarySymbols;
     }
 
     @Override
@@ -106,29 +103,41 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveExpressionStatement(final ExpressionStatement expressionStatement) {
-        temporarySymbols.reuse();
         return expressionStatement.setExpression(discard(expressionStatement.getExpression()));
     }
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
-        if (functionNode.isLazy()) {
-            return false;
-        }
+        // TODO: now that Splitter comes before Attr, these can probably all be moved to Attr.
 
-        // If the function doesn't need a callee, we ensure its __callee__ symbol doesn't get a slot. We can't do
-        // this earlier, as access to scoped variables, self symbol, etc. in previous phases can all trigger the
-        // need for the callee.
+        // If the function doesn't need a callee, we ensure its CALLEE symbol doesn't get a slot. We can't do this
+        // earlier, as access to scoped variables, self symbol, etc. in previous phases can all trigger the need for the
+        // callee.
         if (!functionNode.needsCallee()) {
             functionNode.compilerConstant(CALLEE).setNeedsSlot(false);
         }
-        // Similar reasoning applies to __scope__ symbol: if the function doesn't need either parent scope and none of
-        // its blocks create a scope, we ensure it doesn't get a slot, but we can't determine whether it needs a scope
+        // Similar reasoning applies to SCOPE symbol: if the function doesn't need either parent scope and none of its
+        // blocks create a scope, we ensure it doesn't get a slot, but we can't determine whether it needs a scope
         // earlier than this phase.
         if (!(functionNode.hasScopeBlock() || functionNode.needsParentScope())) {
             functionNode.compilerConstant(SCOPE).setNeedsSlot(false);
         }
-
+        // Also, we must wait until after Splitter to see if the function ended up needing the RETURN symbol.
+        if (!functionNode.usesReturnSymbol()) {
+            functionNode.compilerConstant(RETURN).setNeedsSlot(false);
+        }
+        // Named function expressions that end up not referencing themselves won't need a local slot for the self symbol.
+        if(!functionNode.isDeclared() && !functionNode.usesSelfSymbol() && !functionNode.isAnonymous()) {
+            final Symbol selfSymbol = functionNode.getBody().getExistingSymbol(functionNode.getIdent().getName());
+            if(selfSymbol != null) {
+                if(selfSymbol.isFunctionSelf()) {
+                    selfSymbol.setNeedsSlot(false);
+                    selfSymbol.clearFlag(Symbol.IS_VAR);
+                }
+            } else {
+                assert functionNode.isProgram();
+            }
+        }
         return true;
     }
 
@@ -183,16 +192,16 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
         }
     }
 
-    private static Expression discard(final Expression node) {
-        if (node.getSymbol() != null) {
-            final UnaryNode discard = new UnaryNode(Token.recast(node.getToken(), TokenType.DISCARD), node);
+    private static Expression discard(final Expression expr) {
+        if (expr.getSymbol() != null) {
+            UnaryNode discard = new UnaryNode(Token.recast(expr.getToken(), TokenType.DISCARD), expr);
             //discard never has a symbol in the discard node - then it would be a nop
-            assert !node.isTerminal();
+            assert !expr.isTerminal();
             return discard;
         }
 
         // node has no result (symbol) so we can keep it the way it is
-        return node;
+        return expr;
     }
 
 

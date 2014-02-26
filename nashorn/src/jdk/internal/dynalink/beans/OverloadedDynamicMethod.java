@@ -148,7 +148,6 @@ class OverloadedDynamicMethod extends DynamicMethod {
         }
     }
 
-    @SuppressWarnings("fallthrough")
     @Override
     public MethodHandle getInvocation(final CallSiteDescriptor callSiteDescriptor, final LinkerServices linkerServices) {
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
@@ -207,7 +206,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
             case 1: {
                 // Very lucky, we ended up with a single candidate method handle based on the call site signature; we
                 // can link it very simply by delegating to the SingleDynamicMethod.
-                invokables.iterator().next().getInvocation(callSiteDescriptor, linkerServices);
+                return invokables.iterator().next().getInvocation(callSiteDescriptor, linkerServices);
             }
             default: {
                 // We have more than one candidate. We have no choice but to link to a method that resolves overloads on

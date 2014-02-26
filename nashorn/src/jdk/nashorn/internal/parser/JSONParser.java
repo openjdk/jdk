@@ -57,7 +57,7 @@ public class JSONParser extends AbstractParser {
      * @param errors  the error manager
      */
     public JSONParser(final Source source, final ErrorManager errors) {
-        super(source, errors, false);
+        super(source, errors, false, 0);
     }
 
     /**

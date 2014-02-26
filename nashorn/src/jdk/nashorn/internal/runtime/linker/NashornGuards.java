@@ -29,37 +29,19 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
  * Constructor of method handles used to guard call sites.
  */
 public final class NashornGuards {
-    private static final MethodHandle IS_SCRIPTOBJECT          = findOwnMH("isScriptObject", boolean.class, Object.class);
-    private static final MethodHandle IS_SCRIPTFUNCTION        = findOwnMH("isScriptFunction", boolean.class, Object.class);
-    private static final MethodHandle IS_MAP                   = findOwnMH("isMap", boolean.class, Object.class, PropertyMap.class);
-    private static final MethodHandle IS_INSTANCEOF_2          = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
+    private static final MethodHandle IS_MAP          = findOwnMH("isMap", boolean.class, ScriptObject.class, PropertyMap.class);
+    private static final MethodHandle IS_INSTANCEOF_2 = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
 
     // don't create me!
     private NashornGuards() {
-    }
-
-    /**
-     * Get the guard that checks if an item is a {@code ScriptObject}
-     * @return method handle for guard
-     */
-    public static MethodHandle getScriptObjectGuard() {
-        return IS_SCRIPTOBJECT;
-    }
-
-    /**
-     * Get the guard that checks if an item is a {@code ScriptFunction}
-     * @return method handle for guard
-     */
-    public static MethodHandle getScriptFunctionGuard() {
-        return IS_SCRIPTFUNCTION;
     }
 
     /**
@@ -86,18 +68,8 @@ public final class NashornGuards {
     }
 
     @SuppressWarnings("unused")
-    private static boolean isScriptObject(final Object self) {
-        return self instanceof ScriptObject;
-    }
-
-    @SuppressWarnings("unused")
-    private static boolean isScriptFunction(final Object self) {
-        return self instanceof ScriptFunction;
-    }
-
-    @SuppressWarnings("unused")
-    private static boolean isMap(final Object self, final PropertyMap map) {
-        return self instanceof ScriptObject && ((ScriptObject)self).getMap() == map;
+    private static boolean isMap(final ScriptObject self, final PropertyMap map) {
+        return self.getMap() == map;
     }
 
     @SuppressWarnings("unused")

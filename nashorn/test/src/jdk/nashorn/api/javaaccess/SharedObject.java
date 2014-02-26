@@ -51,7 +51,7 @@ public class SharedObject {
     public short                  publicShort                   = 32000;
     public short[]                publicShortArray              = { 3240, 8900, -16789, 1, 12 };
     public Short                  publicShortBox                = Short.MIN_VALUE;
-    public float                  publicFloat                   = 0.7e6f;
+    public float                  publicFloat                   = 0.7f;
     public float[]                publicFloatArray              = { -32.01f, 89.3f, -1.3e8f, 3.1f };
     public Float                  publicFloatBox                = 1.377e4f;
     public double                 publicDouble                  = 1.34e20;

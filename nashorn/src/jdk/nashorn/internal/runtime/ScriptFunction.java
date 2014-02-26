@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -36,10 +37,11 @@ import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.objects.NativeFunction;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
-import jdk.nashorn.internal.runtime.linker.NashornGuards;
 
 /**
  * Runtime representation of a JavaScript function.
@@ -47,33 +49,37 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
 public abstract class ScriptFunction extends ScriptObject {
 
     /** Method handle for prototype getter for this ScriptFunction */
-    public static final MethodHandle G$PROTOTYPE = findOwnMH("G$prototype", Object.class, Object.class);
+    public static final MethodHandle G$PROTOTYPE = findOwnMH_S("G$prototype", Object.class, Object.class);
 
     /** Method handle for prototype setter for this ScriptFunction */
-    public static final MethodHandle S$PROTOTYPE = findOwnMH("S$prototype", void.class, Object.class, Object.class);
+    public static final MethodHandle S$PROTOTYPE = findOwnMH_S("S$prototype", void.class, Object.class, Object.class);
 
     /** Method handle for length getter for this ScriptFunction */
-    public static final MethodHandle G$LENGTH = findOwnMH("G$length", int.class, Object.class);
+    public static final MethodHandle G$LENGTH = findOwnMH_S("G$length", int.class, Object.class);
 
     /** Method handle for name getter for this ScriptFunction */
-    public static final MethodHandle G$NAME = findOwnMH("G$name", Object.class, Object.class);
+    public static final MethodHandle G$NAME = findOwnMH_S("G$name", Object.class, Object.class);
 
     /** Method handle used for implementing sync() in mozilla_compat */
-    public static final MethodHandle INVOKE_SYNC = findOwnMH("invokeSync", Object.class, ScriptFunction.class, Object.class, Object.class, Object[].class);
+    public static final MethodHandle INVOKE_SYNC = findOwnMH_S("invokeSync", Object.class, ScriptFunction.class, Object.class, Object.class, Object[].class);
 
     /** Method handle for allocate function for this ScriptFunction */
-    static final MethodHandle ALLOCATE = findOwnMH("allocate", Object.class);
+    static final MethodHandle ALLOCATE = findOwnMH_V("allocate", Object.class);
 
-    private static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", Object.class, Object.class);
+    private static final MethodHandle WRAPFILTER = findOwnMH_S("wrapFilter", Object.class, Object.class);
 
     /** method handle to scope getter for this ScriptFunction */
     public static final Call GET_SCOPE = virtualCallNoLookup(ScriptFunction.class, "getScope", ScriptObject.class);
 
-    private static final MethodHandle IS_FUNCTION_MH  = findOwnMH("isFunctionMH", boolean.class, Object.class, ScriptFunctionData.class);
+    private static final MethodHandle IS_FUNCTION_MH  = findOwnMH_S("isFunctionMH", boolean.class, Object.class, ScriptFunctionData.class);
 
-    private static final MethodHandle IS_NONSTRICT_FUNCTION = findOwnMH("isNonStrictFunction", boolean.class, Object.class, Object.class, ScriptFunctionData.class);
+    private static final MethodHandle IS_APPLY_FUNCTION  = findOwnMH_S("isApplyFunction", boolean.class, boolean.class, Object.class, Object.class);
 
-    private static final MethodHandle ADD_ZEROTH_ELEMENT = findOwnMH("addZerothElement", Object[].class, Object[].class, Object.class);
+    private static final MethodHandle IS_NONSTRICT_FUNCTION = findOwnMH_S("isNonStrictFunction", boolean.class, Object.class, Object.class, ScriptFunctionData.class);
+
+    private static final MethodHandle ADD_ZEROTH_ELEMENT = findOwnMH_S("addZerothElement", Object[].class, Object[].class, Object.class);
+
+    private static final MethodHandle WRAP_THIS = MH.findStatic(MethodHandles.lookup(), ScriptFunctionData.class, "wrapThis", MH.type(Object.class, Object.class));
 
     /** The parent scope. */
     private final ScriptObject scope;
@@ -192,6 +198,10 @@ public abstract class ScriptFunction extends ScriptObject {
         return data.needsWrappedThis();
     }
 
+    private static boolean needsWrappedThis(Object fn) {
+        return fn instanceof ScriptFunction ? ((ScriptFunction)fn).needsWrappedThis() : false;
+    }
+
     /**
      * Execute this script function.
      * @param self  Target object.
@@ -308,25 +318,17 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param sync the Object to synchronize on, or undefined
      * @return synchronized function
      */
-    public abstract ScriptFunction makeSynchronizedFunction(Object sync);
+   public abstract ScriptFunction makeSynchronizedFunction(Object sync);
 
     /**
-     * Return the most appropriate invoke handle if there are specializations
-     * @param type most specific method type to look for invocation with
-     * @param args args for trampoline invocation
-     * @return invoke method handle
+     * Return the most appropriate invocation for the specified call site type. If specializations are possible, it will
+     * strive to return an efficient specialization.
+     * @param callSiteType the call site type; can be as specific as needed.
+     * @return a guarded invocation with invoke method handle and potentially a switch point guarding optimistic
+     * assumptions.
      */
-    private MethodHandle getBestInvoker(final MethodType type, final Object[] args) {
-        return data.getBestInvoker(type, args);
-    }
-
-    /**
-     * Return the most appropriate invoke handle if there are specializations
-     * @param type most specific method type to look for invocation with
-     * @return invoke method handle
-     */
-    public MethodHandle getBestInvoker(final MethodType type) {
-        return getBestInvoker(type, null);
+    private GuardedInvocation getBestInvoker(final MethodType callSiteType, final int callerProgramPoint) {
+        return data.getBestInvoker(callSiteType, callerProgramPoint);
     }
 
     /**
@@ -465,7 +467,9 @@ public abstract class ScriptFunction extends ScriptObject {
     @Override
     protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc) {
         final MethodType type = desc.getMethodType();
-        return new GuardedInvocation(pairArguments(data.getBestConstructor(type.changeParameterType(0, ScriptFunction.class), null), type), null, getFunctionGuard(this));
+        assert desc.getMethodType().returnType() == Object.class && !NashornCallSiteDescriptor.isOptimistic(desc);
+        final GuardedInvocation bestCtorInv = data.getBestConstructor(type);
+        return new GuardedInvocation(pairArguments(bestCtorInv.getInvocation(), type), getFunctionGuard(this), bestCtorInv.getSwitchPoint());
     }
 
     @SuppressWarnings("unused")
@@ -487,56 +491,75 @@ public abstract class ScriptFunction extends ScriptObject {
      * (b) method doesn't have callee parameter (builtin functions)
      *   (3) for local/scope calls, bind thiz and drop both callee and thiz.
      *   (4) for normal this-calls, drop callee.
+     *
+     * @return guarded invocation for call
      */
     @Override
     protected GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final MethodType type = desc.getMethodType();
 
-        if (request.isCallSiteUnstable()) {
-            // (this, callee, args...) => (this, callee, args[])
-            final MethodHandle collector = MH.asCollector(ScriptRuntime.APPLY.methodHandle(), Object[].class,
-                    type.parameterCount() - 2);
+        final String  name       = getName();
+        final boolean isUnstable = request.isCallSiteUnstable();
+        final boolean scopeCall  = NashornCallSiteDescriptor.isScope(desc);
+        final boolean isCall     = !scopeCall && data.isBuiltin() && "call".equals(name);
+        final boolean isApply    = !scopeCall && data.isBuiltin() && "apply".equals(name);
+
+        if (isUnstable && !(isApply || isCall)) {
+            //megamorphic - replace call with apply
+            final MethodHandle handle;
+            //ensure that the callsite is vararg so apply can consume it
+            if(type.parameterCount() == 3 && type.parameterType(2) == Object[].class) {
+                // Vararg call site
+                handle = ScriptRuntime.APPLY.methodHandle();
+            } else {
+                // (callee, this, args...) => (callee, this, args[])
+                handle = MH.asCollector(ScriptRuntime.APPLY.methodHandle(), Object[].class, type.parameterCount() - 2);
+            }
 
             // If call site is statically typed to take a ScriptFunction, we don't need a guard, otherwise we need a
             // generic "is this a ScriptFunction?" guard.
-            return new GuardedInvocation(collector, ScriptFunction.class.isAssignableFrom(desc.getMethodType().parameterType(0))
-                    ? null : NashornGuards.getScriptFunctionGuard());
+            return new GuardedInvocation(
+                    handle,
+                    null,
+                    null,
+                    ClassCastException.class);
         }
 
         MethodHandle boundHandle;
         MethodHandle guard = null;
 
-        final boolean scopeCall = NashornCallSiteDescriptor.isScope(desc);
+        // Special handling of Function.apply and Function.call. Note we must be invoking
+        if ((isApply || isCall) && !isUnstable) {
+            final Object[] args = request.getArguments();
+            if (Bootstrap.isCallable(args[1])) {
+                return createApplyOrCallCall(isApply, desc, request, args);
+            }
+        } //else just fall through and link as ordinary function or unstable apply
 
+        final int programPoint = NashornCallSiteDescriptor.isOptimistic(desc) ? NashornCallSiteDescriptor.getProgramPoint(desc) : INVALID_PROGRAM_POINT;
+        final GuardedInvocation bestInvoker = getBestInvoker(type, programPoint);
+        final MethodHandle callHandle = bestInvoker.getInvocation();
         if (data.needsCallee()) {
-            final MethodHandle callHandle = getBestInvoker(type, request.getArguments());
             if (scopeCall) {
-                // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
-                // (callee, this, args...) => (callee, args...)
-                boundHandle = MH.insertArguments(callHandle, 1, needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
-                // (callee, args...) => (callee, [this], args...)
-                boundHandle = MH.dropArguments(boundHandle, 1, Object.class);
-
+                // Make a handle that drops the passed "this" argument and binds either Global or Undefined instead
+                // Signature remains (callee, this, args...)
+                boundHandle = MH.dropArguments(bindImplicitThis(callHandle), 1, type.parameterType(1));
             } else {
                 // It's already (callee, this, args...), just what we need
                 boundHandle = callHandle;
             }
+        } else if (data.isBuiltin() && "extend".equals(data.getName())) {
+            // NOTE: the only built-in named "extend" is NativeJava.extend. As a special-case we're binding the
+            // current lookup as its "this" so it can do security-sensitive creation of adapter classes.
+            boundHandle = MH.dropArguments(MH.bindTo(callHandle, desc.getLookup()), 0, type.parameterType(0), type.parameterType(1));
+        } else if (scopeCall) {
+            // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
+            // (this, args...) => (args...)
+            // (args...) => ([callee], [this], args...)
+            boundHandle = MH.dropArguments(MH.bindTo(callHandle, getImplicitThis()), 0, type.parameterType(0), type.parameterType(1));
         } else {
-            final MethodHandle callHandle = getBestInvoker(type.dropParameterTypes(0, 1), request.getArguments());
-            if (data.isBuiltin() && "extend".equals(data.getName())) {
-                // NOTE: the only built-in named "extend" is NativeJava.extend. As a special-case we're binding the
-                // current lookup as its "this" so it can do security-sensitive creation of adapter classes.
-                boundHandle = MH.dropArguments(MH.bindTo(callHandle, desc.getLookup()), 0, Object.class, Object.class);
-            } else if (scopeCall) {
-                // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
-                // (this, args...) => (args...)
-                boundHandle = MH.bindTo(callHandle, needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
-                // (args...) => ([callee], [this], args...)
-                boundHandle = MH.dropArguments(boundHandle, 0, Object.class, Object.class);
-            } else {
-                // (this, args...) => ([callee], this, args...)
-                boundHandle = MH.dropArguments(callHandle, 0, Object.class);
-            }
+            // (this, args...) => ([callee], this, args...)
+            boundHandle = MH.dropArguments(callHandle, 0, type.parameterType(0));
         }
 
         // For non-strict functions, check whether this-object is primitive type.
@@ -552,8 +575,112 @@ public abstract class ScriptFunction extends ScriptObject {
 
         boundHandle = pairArguments(boundHandle, type);
 
-        return new GuardedInvocation(boundHandle, guard == null ? getFunctionGuard(this) : guard);
-   }
+        return new GuardedInvocation(boundHandle, guard == null ? getFunctionGuard(this) : guard, bestInvoker.getSwitchPoint());
+    }
+
+    private GuardedInvocation createApplyOrCallCall(final boolean isApply, final CallSiteDescriptor desc, final LinkRequest request, final Object[] args) {
+        final MethodType descType = desc.getMethodType();
+        final int paramCount = descType.parameterCount();
+        final boolean passesThis = paramCount > 2;
+        final boolean passesArgs = paramCount > 3;
+
+        final Object appliedFn = args[1];
+        final boolean appliedFnNeedsWrappedThis = needsWrappedThis(appliedFn);
+
+        // R(apply|call, ...) => R(...)
+        MethodType appliedType = descType.dropParameterTypes(0, 1);
+        if(!passesThis) {
+            // R() => R(this)
+            appliedType = appliedType.insertParameterTypes(1, Object.class);
+        } else if(appliedFnNeedsWrappedThis) {
+            appliedType = appliedType.changeParameterType(1, Object.class);
+        }
+        if(isApply) {
+            if(passesArgs) {
+                // R(this, args) => R(this, Object[])
+                appliedType = appliedType.changeParameterType(2, Object[].class);
+            } else {
+                // R(this) => R(this, Object[])
+                appliedType = appliedType.insertParameterTypes(2, Object[].class);
+            }
+        }
+        final CallSiteDescriptor appliedDesc = desc.changeMethodType(appliedType);
+
+        // Create the same arguments for the delegate linking request that would be passed in an actual apply'd invocation
+        final Object[] appliedArgs = new Object[isApply ? 3 : appliedType.parameterCount()];
+        appliedArgs[0] = appliedFn;
+        appliedArgs[1] = passesThis ? (appliedFnNeedsWrappedThis ? ScriptFunctionData.wrapThis(args[2]) : args[2]) : ScriptRuntime.UNDEFINED;
+        if(isApply) {
+            appliedArgs[2] = passesArgs ? NativeFunction.toApplyArgs(args[3]) : ScriptRuntime.EMPTY_ARRAY;
+        } else {
+            if(passesArgs) {
+                System.arraycopy(args, 3, appliedArgs, 2, args.length - 3);
+            }
+        }
+
+        // Ask the linker machinery for an invocation of the target function
+        final LinkRequest appliedRequest = request.replaceArguments(appliedDesc, appliedArgs);
+        final GuardedInvocation appliedInvocation;
+        try {
+            appliedInvocation = Bootstrap.getLinkerServices().getGuardedInvocation(appliedRequest);
+        } catch(final RuntimeException | Error e) {
+            throw e;
+        } catch(final Exception e) {
+            throw new RuntimeException(e);
+        }
+        assert appliedRequest != null; // Bootstrap.isCallable() returned true for args[1], so it must produce a linkage.
+
+        final Class<?> applyFnType = descType.parameterType(0);
+        MethodHandle inv = appliedInvocation.getInvocation(); //method handle from apply invocation. the applied function invocation
+        if(isApply) {
+            if(passesArgs) {
+                // Make sure that the passed argArray is converted to Object[] the same way NativeFunction.apply() would do it.
+                inv = MH.filterArguments(inv, 2, NativeFunction.TO_APPLY_ARGS);
+            } else {
+                // If the original call site doesn't pass argArray, pass in an empty array
+                inv = MH.insertArguments(inv, 2, (Object)ScriptRuntime.EMPTY_ARRAY);
+            }
+        }
+        if(!passesThis) {
+            // If the original call site doesn't pass in a thisArg, pass in Global/undefined as needed
+            inv = bindImplicitThis(appliedFn, inv);
+        } else if(appliedFnNeedsWrappedThis) {
+            // target function needs a wrapped this, so make sure we filter for that
+            inv = MH.filterArguments(inv, 1, WRAP_THIS);
+        }
+        inv = MH.dropArguments(inv, 0, applyFnType);
+        MethodHandle guard = appliedInvocation.getGuard();
+        // If the guard checks the value of "this" but we aren't passing thisArg, insert the default one
+        if(!passesThis && guard.type().parameterCount() > 1) {
+            guard = bindImplicitThis(appliedFn, guard);
+        }
+        final MethodType guardType = guard.type();
+
+        // Original function guard will expect the invoked function in parameter position 0, but we're passing it in
+        // position 1.
+        guard = MH.dropArguments(guard, 0, descType.parameterType(0));
+        // Take the "isApplyFunction" guard, and bind it to this function.
+        MethodHandle applyFnGuard = MH.insertArguments(IS_APPLY_FUNCTION, 2, this);
+        // Adapt the guard to receive all the arguments that the original guard does.
+        applyFnGuard = MH.dropArguments(applyFnGuard, 2, guardType.parameterArray());
+        // Fold the original function guard into our apply guard.
+        guard = MH.foldArguments(applyFnGuard, guard);
+
+        return appliedInvocation.replaceMethods(inv, guard);
+    }
+
+     private static MethodHandle bindImplicitThis(final Object fn, final MethodHandle mh) {
+         return MH.insertArguments(mh, 1, fn instanceof ScriptFunction ? ((ScriptFunction)fn).getImplicitThis() : ScriptRuntime.UNDEFINED);
+     }
+
+     private MethodHandle bindImplicitThis(final MethodHandle mh) {
+         return MH.insertArguments(mh, 1, getImplicitThis());
+     }
+
+    private Object getImplicitThis() {
+        return needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED;
+    }
+
 
     /**
      * Used for noSuchMethod/noSuchProperty and JSAdapter hooks.
@@ -561,7 +688,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * These don't want a callee parameter, so bind that. Name binding is optional.
      */
     MethodHandle getCallMethodHandle(final MethodType type, final String bindName) {
-        return pairArguments(bindToNameIfNeeded(bindToCalleeIfNeeded(getBestInvoker(type, null)), bindName), type);
+        return pairArguments(bindToNameIfNeeded(bindToCalleeIfNeeded(data.getGenericInvoker()), bindName), type);
     }
 
     private static MethodHandle bindToNameIfNeeded(final MethodHandle methodHandle, final String bindName) {
@@ -591,7 +718,9 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     private static MethodHandle getFunctionGuard(final ScriptFunction function) {
         assert function.data != null;
-        return MH.insertArguments(IS_FUNCTION_MH, 1, function.data);
+        // Built-in functions have a 1-1 correspondence to their ScriptFunctionData, so we can use a cheaper identity
+        // comparison for them.
+        return function.data.isBuiltin() ? Guards.getIdentityGuard(function) : MH.insertArguments(IS_FUNCTION_MH, 1, function.data);
     }
 
     /**
@@ -619,6 +748,12 @@ public abstract class ScriptFunction extends ScriptObject {
     }
 
     @SuppressWarnings("unused")
+    private static boolean isApplyFunction(final boolean appliedFnCondition, final Object self, final Object expectedSelf) {
+        // NOTE: we're using self == expectedSelf as we're only using this with built-in functions apply() and call()
+        return appliedFnCondition && self == expectedSelf;
+    }
+
+    @SuppressWarnings("unused")
     private static Object[] addZerothElement(final Object[] args, final Object value) {
         // extends input array with by adding new zeroth element
         final Object[] src = (args == null)? ScriptRuntime.EMPTY_ARRAY : args;
@@ -637,14 +772,12 @@ public abstract class ScriptFunction extends ScriptObject {
         }
     }
 
-    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        final Class<?>   own = ScriptFunction.class;
-        final MethodType mt  = MH.type(rtype, types);
-        try {
-            return MH.findStatic(MethodHandles.lookup(), own, name, mt);
-        } catch (final MethodHandleFactory.LookupException e) {
-            return MH.findVirtual(MethodHandles.lookup(), own, name, mt);
-        }
+    private static MethodHandle findOwnMH_S(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(MethodHandles.lookup(), ScriptFunction.class, name, MH.type(rtype, types));
+    }
+
+    private static MethodHandle findOwnMH_V(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findVirtual(MethodHandles.lookup(), ScriptFunction.class, name, MH.type(rtype, types));
     }
 }
 

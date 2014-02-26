@@ -93,6 +93,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.support.TypeUtilities;
 
 /**
  * Represents a subset of overloaded methods for a certain method name on a certain class. It can be either a fixarg or
@@ -114,13 +115,15 @@ class OverloadedMethod {
     OverloadedMethod(List<MethodHandle> methodHandles, OverloadedDynamicMethod parent, MethodType callSiteType,
             LinkerServices linkerServices) {
         this.parent = parent;
-        this.callSiteType = callSiteType;
+        final Class<?> commonRetType = getCommonReturnType(methodHandles);
+        this.callSiteType = callSiteType.changeReturnType(commonRetType);
         this.linkerServices = linkerServices;
 
         fixArgMethods = new ArrayList<>(methodHandles.size());
         varArgMethods = new ArrayList<>(methodHandles.size());
         final int argNum = callSiteType.parameterCount();
         for(MethodHandle mh: methodHandles) {
+            mh = mh.asType(mh.type().changeReturnType(commonRetType));
             if(mh.isVarargsCollector()) {
                 final MethodHandle asFixed = mh.asFixedArity();
                 if(argNum == asFixed.type().parameterCount()) {
@@ -137,7 +140,7 @@ class OverloadedMethod {
         final MethodHandle bound = SELECT_METHOD.bindTo(this);
         final MethodHandle collecting = SingleDynamicMethod.collectArguments(bound, argNum).asType(
                 callSiteType.changeReturnType(MethodHandle.class));
-        invoker = MethodHandles.foldArguments(MethodHandles.exactInvoker(callSiteType), collecting);
+        invoker = MethodHandles.foldArguments(MethodHandles.exactInvoker(this.callSiteType), collecting);
     }
 
     MethodHandle getInvoker() {
@@ -261,5 +264,14 @@ class OverloadedMethod {
             }
             b.append(classes[l - 1].getComponentType().getCanonicalName()).append("...");
         }
+    }
+
+    private static Class<?> getCommonReturnType(List<MethodHandle> methodHandles) {
+        final Iterator<MethodHandle> it = methodHandles.iterator();
+        Class<?> retType = it.next().type().returnType();
+        while(it.hasNext()) {
+            retType = TypeUtilities.getCommonLosslessConversionType(retType, it.next().type().returnType());
+        }
+        return retType;
     }
 }

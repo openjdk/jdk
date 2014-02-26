@@ -87,5 +87,3 @@ for(var i in withScopes) {
 
 print(withScopes[0].func);
 print(withScopes[1].func);
-
-

@@ -22,13 +22,12 @@
  */
 
 /**
- * runsunspider : runs the sunspider tests and checks for compliance
+ * JDK-8029384: Function expression self-symbol not available for eval
  *
  * @test
- * @option -timezone=PST
- * @option --lazy-compilation
- * @runif external.sunspider
+ * @run
  */
 
-load(__DIR__ + "runsunspider.js");
-
+var g = function f() { print(eval("f.x")) }
+g.x = "tada!"
+g()

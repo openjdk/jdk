@@ -28,6 +28,7 @@ package jdk.nashorn.internal.codegen;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+
 import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Assignment;
@@ -242,7 +243,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private Node leaveSelfModifyingAssign(final UnaryNode node, final Range range) {
-        setRange(node.rhs(), range);
+        setRange(node.getExpression(), range);
         setRange(node, range);
         return node;
     }
@@ -307,19 +308,18 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
         switch (node.tokenType()) {
         case DECPREFIX:
         case DECPOSTFIX:
-            return leaveSelfModifyingAssign(node, RANGE.sub(node.rhs().getSymbol().getRange(), Range.createRange(1)));
+            return leaveSelfModifyingAssign(node, RANGE.sub(node.getExpression().getSymbol().getRange(), Range.createRange(1)));
         case INCPREFIX:
         case INCPOSTFIX:
-            return leaveSelfModifyingAssign(node, RANGE.add(node.rhs().getSymbol().getRange(), Range.createRange(1)));
+            return leaveSelfModifyingAssign(node, RANGE.add(node.getExpression().getSymbol().getRange(), Range.createRange(1)));
         default:
-            assert false;
-            return node;
+            throw new UnsupportedOperationException("" + node.tokenType());
         }
     }
 
     @Override
     public Node leaveADD(final UnaryNode node) {
-        Range range = node.rhs().getSymbol().getRange();
+        Range range = node.getExpression().getSymbol().getRange();
         if (!range.getType().isNumeric()) {
            range = Range.createTypeRange(Type.NUMBER);
         }
@@ -341,7 +341,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveSUB(final UnaryNode node) {
-        setRange(node, RANGE.neg(node.rhs().getSymbol().getRange()));
+        setRange(node, RANGE.neg(node.getExpression().getSymbol().getRange()));
         return node;
     }
 

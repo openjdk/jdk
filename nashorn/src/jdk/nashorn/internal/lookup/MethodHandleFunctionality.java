@@ -152,6 +152,17 @@ public interface MethodHandleFunctionality {
     public MethodHandle throwException(Class<?> returnType, Class<? extends Throwable> exType);
 
     /**
+     * Wrapper for {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)}
+     *
+     * @param target  target method
+     * @param exType  exception type
+     * @param handler the method handle to call when exception is thrown
+     *
+     * @return exception thrower method handle
+     */
+    public MethodHandle catchException(final MethodHandle target, final Class<? extends Throwable> exType, final MethodHandle handler);
+
+    /**
      * Wrapper for {@link java.lang.invoke.MethodHandles#constant(Class, Object)}
      *
      * @param type  type of constant

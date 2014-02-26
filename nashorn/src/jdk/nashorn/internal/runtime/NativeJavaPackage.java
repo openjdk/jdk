@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -203,8 +205,12 @@ public final class NativeJavaPackage extends ScriptObject {
     }
 
     @Override
-    protected Object invokeNoSuchProperty(final String name) {
-        return createProperty(name);
+    protected Object invokeNoSuchProperty(final String name, final int programPoint) {
+        final Object retval = createProperty(name);
+        if (isValid(programPoint)) {
+            throw new UnwarrantedOptimismException(retval, programPoint);
+        }
+        return retval;
     }
 
     @Override

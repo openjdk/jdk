@@ -40,21 +40,25 @@ import java.lang.annotation.Target;
 public @interface Property {
     /**
      * Name of the script property. If empty, the name is inferred.
+     * @return name
      */
     public String name() default "";
 
     /**
      * Attribute flags for this function.
+     * @return attribute
      */
     public int attributes() default DEFAULT_ATTRIBUTES;
 
     /**
      * Initialize this property with the object of given class.
+     * @return class
      */
     public String clazz() default "";
 
     /**
      * Where this property lives?
+     * @return location of property
      */
     public Where where() default Where.INSTANCE;
 }

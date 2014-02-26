@@ -156,7 +156,9 @@ abstract class SingleDynamicMethod extends DynamicMethod {
     /**
      * Given a method handle and a call site type, adapts the method handle to the call site type. Performs type
      * conversions as needed using the specified linker services, and in case that the method handle is a vararg
-     * collector, matches it to the arity of the call site.
+     * collector, matches it to the arity of the call site. The type of the return value is only changed if it can be
+     * converted using a conversion that loses neither precision nor magnitude, see
+     * {@link LinkerServices#asTypeLosslessReturn(MethodHandle, MethodType)}.
      * @param target the method handle to adapt
      * @param callSiteType the type of the call site
      * @param linkerServices the linker services used for type conversions
@@ -286,7 +288,7 @@ abstract class SingleDynamicMethod extends DynamicMethod {
 
     private static MethodHandle createConvertingInvocation(final MethodHandle sizedMethod,
             final LinkerServices linkerServices, final MethodType callSiteType) {
-        return linkerServices.asType(sizedMethod, callSiteType);
+        return linkerServices.asTypeLosslessReturn(sizedMethod, callSiteType);
     }
 
     private static boolean typeMatchesDescription(String paramTypes, MethodType type) {

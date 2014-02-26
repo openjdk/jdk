@@ -33,6 +33,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.DUP2_X1;
 import static jdk.internal.org.objectweb.asm.Opcodes.DUP2_X2;
 import static jdk.internal.org.objectweb.asm.Opcodes.DUP_X1;
 import static jdk.internal.org.objectweb.asm.Opcodes.DUP_X2;
+import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.IALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.IASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESTATIC;
@@ -45,13 +46,20 @@ import static jdk.internal.org.objectweb.asm.Opcodes.SWAP;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_DOUBLE;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_INT;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_LONG;
+import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 
+import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
-
+import jdk.nashorn.internal.runtime.Undefined;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
  * This is the representation of a JavaScript type, disassociated from java
@@ -96,6 +104,10 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
 
     /** Set way below Integer.MAX_VALUE to prevent overflow when adding weights. Objects are still heaviest. */
     protected static final int MAX_WEIGHT = 20;
+
+    static final Call BOOTSTRAP = staticCallNoLookup(Bootstrap.class, "mathBootstrap", CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class);
+
+    static final Handle MATHBOOTSTRAP = new Handle(H_INVOKESTATIC, BOOTSTRAP.className(), "mathBootstrap", BOOTSTRAP.descriptor());
 
     /**
      * Constructor
@@ -149,6 +161,17 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     }
 
     /**
+     * Returns the character describing the bytecode type for this value on the stack or local variable, identical to
+     * what would be used as the prefix for a bytecode {@code LOAD} or {@code STORE} instruction, therefore it must be
+     * one of {@code A, F, D, I, L}. Also, the special value {@code U} is used for local variable slots that haven't
+     * been initialized yet (it can't appear for a value pushed to the operand stack, those always have known values).
+     * Note that while we allow all JVM internal types, Nashorn doesn't necessarily use them all - currently we don't
+     * have floats, only doubles, but that might change in the future.
+     * @return the character describing the bytecode type for this value on the stack.
+     */
+    public abstract char getBytecodeStackType();
+
+    /**
      * Generate a method descriptor given a return type and a param array
      *
      * @param returnType return type
@@ -199,7 +222,11 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
         case jdk.internal.org.objectweb.asm.Type.DOUBLE:
             return NUMBER;
         case jdk.internal.org.objectweb.asm.Type.OBJECT:
-            return OBJECT;
+            try {
+                return Type.typeFor(Class.forName(itype.getClassName()));
+            } catch(ClassNotFoundException e) {
+                throw new AssertionError(e);
+            }
         case jdk.internal.org.objectweb.asm.Type.VOID:
             return null;
         case jdk.internal.org.objectweb.asm.Type.ARRAY:
@@ -260,7 +287,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
         return jdk.internal.org.objectweb.asm.Type.getType(type);
     }
 
-    static void invokeStatic(final MethodVisitor method, final Call call) {
+    static void invokestatic(final MethodVisitor method, final Call call) {
         method.visitMethodInsn(INVOKESTATIC, call.className(), call.name(), call.descriptor(), false);
     }
 
@@ -373,6 +400,14 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     }
 
     /**
+     * Is this a primitive type (e.g int, long, double, boolean)
+     * @return true if primitive
+     */
+    public boolean isPrimitive() {
+        return !isObject();
+    }
+
+    /**
      * Determines whether a type is a STRING type
      *
      * @return true if object type, false otherwise
@@ -470,7 +505,25 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * @return the widest type
      */
     public static Type narrowest(final Type type0, final Type type1) {
-        return type0.weight() < type1.weight() ? type0 : type1;
+        return type0.narrowerThan(type1) ? type0 : type1;
+    }
+
+    /**
+     * Check whether this type is strictly narrower than another one
+     * @param type type to check against
+     * @return true if this type is strictly narrower
+     */
+    public boolean narrowerThan(final Type type) {
+        return weight() < type.weight();
+    }
+
+    /**
+     * Check whether this type is strictly wider than another one
+     * @param type type to check against
+     * @return true if this type is strictly wider
+     */
+    public boolean widerThan(final Type type) {
+        return weight() > type.weight();
     }
 
     /**
@@ -546,6 +599,16 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * @return the descriptor
      */
     public String getDescriptor() {
+        return descriptor;
+    }
+
+    /**
+     * Return the descriptor of a type, short version
+     * Used mainly for debugging purposes
+     *
+     * @return the short descriptor
+     */
+    public String getShortDescriptor() {
         return descriptor;
     }
 
@@ -711,6 +774,11 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     public static final Type OBJECT = putInCache(new ObjectType());
 
     /**
+     * A undefined singleton
+     */
+    public static final Type UNDEFINED = putInCache(new ObjectType(Undefined.class));
+
+    /**
      * This is the singleton for integer arrays
      */
     public static final ArrayType INT_ARRAY = new ArrayType(int[].class) {
@@ -820,55 +888,83 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
         // EMPTY - used as a class that is absolutely not compatible with a type to represent "unknown"
     }
 
+    private abstract static class ValueLessType extends Type {
+
+        ValueLessType(final String name) {
+            super(name, Unknown.class, MIN_WEIGHT, 1);
+        }
+
+        @Override
+        public Type load(final MethodVisitor method, final int slot) {
+            throw new UnsupportedOperationException("load " + slot);
+        }
+
+        @Override
+        public void store(final MethodVisitor method, final int slot) {
+            throw new UnsupportedOperationException("store " + slot);
+        }
+
+        @Override
+        public Type ldc(final MethodVisitor method, final Object c) {
+            throw new UnsupportedOperationException("ldc " + c);
+        }
+
+        @Override
+        public Type loadUndefined(final MethodVisitor method) {
+            throw new UnsupportedOperationException("load undefined");
+        }
+
+        @Override
+        public Type loadForcedInitializer(final MethodVisitor method) {
+            throw new UnsupportedOperationException("load forced initializer");
+        }
+
+        @Override
+        public Type convert(final MethodVisitor method, final Type to) {
+            throw new UnsupportedOperationException("convert => " + to);
+        }
+
+        @Override
+        public void _return(final MethodVisitor method) {
+            throw new UnsupportedOperationException("return");
+       }
+
+        @Override
+        public Type add(final MethodVisitor method, final int programPoint) {
+            throw new UnsupportedOperationException("add");
+        }
+    }
+
     /**
      * This is the unknown type which is used as initial type for type
      * inference. It has the minimum type width
      */
-    public static final Type UNKNOWN = new Type("<unknown>", Unknown.class, MIN_WEIGHT, 1) {
-
+    public static final Type UNKNOWN = new ValueLessType("<unknown>") {
         @Override
         public String getDescriptor() {
             return "<unknown>";
         }
 
         @Override
-        public Type load(final MethodVisitor method, final int slot) {
-            assert false : "unsupported operation";
-            return null;
+        public char getBytecodeStackType() {
+            return 'U';
+        }
+    };
+
+    /**
+     * This is the unknown type which is used as initial type for type
+     * inference. It has the minimum type width
+     */
+    public static final Type SLOT_2 = new ValueLessType("<slot_2>") {
+
+        @Override
+        public String getDescriptor() {
+            return "<slot_2>";
         }
 
         @Override
-        public void store(final MethodVisitor method, final int slot) {
-            assert false : "unsupported operation";
-        }
-
-        @Override
-        public Type ldc(final MethodVisitor method, final Object c) {
-            assert false : "unsupported operation";
-            return null;
-        }
-
-        @Override
-        public Type loadUndefined(final MethodVisitor method) {
-            assert false : "unsupported operation";
-            return null;
-        }
-
-        @Override
-        public Type convert(final MethodVisitor method, final Type to) {
-            assert false : "unsupported operation";
-            return null;
-        }
-
-        @Override
-        public void _return(final MethodVisitor method) {
-            assert false : "unsupported operation";
-        }
-
-        @Override
-        public Type add(final MethodVisitor method) {
-            assert false : "unsupported operation";
-            return null;
+        public char getBytecodeStackType() {
+            throw new UnsupportedOperationException("getBytecodeStackType");
         }
     };
 

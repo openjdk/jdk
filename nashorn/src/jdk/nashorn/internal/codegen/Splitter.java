@@ -81,20 +81,16 @@ final class Splitter extends NodeVisitor<LexicalContext> {
     }
 
     /**
-     * Execute the split
+     * Execute the split.
+     * @param fn the function to split
+     * @param top whether this is the topmost compiled function (it's either a program, or we're doing a recompilation).
      */
-    FunctionNode split(final FunctionNode fn) {
+    FunctionNode split(final FunctionNode fn, boolean top) {
         FunctionNode functionNode = fn;
-
-        if (functionNode.isLazy()) {
-            LOG.finest("Postponing split of '", functionNode.getName(), "' as it's lazy");
-            return functionNode;
-        }
 
         LOG.finest("Initiating split of '", functionNode.getName(), "'");
 
         long weight = WeighNodes.weigh(functionNode);
-        final boolean top = fn.isProgram(); //compiler.getFunctionNode() == outermost;
 
         // We know that our LexicalContext is empty outside the call to functionNode.accept(this) below,
         // so we can pass null to all methods expecting a LexicalContext parameter.
@@ -138,7 +134,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
 
             @Override
             public Node leaveFunctionNode(final FunctionNode nestedFunction) {
-                FunctionNode split = new Splitter(compiler, nestedFunction, outermostCompileUnit).split(nestedFunction);
+                FunctionNode split = new Splitter(compiler, nestedFunction, outermostCompileUnit).split(nestedFunction, false);
                 lc.replace(nestedFunction, split);
                 return split;
             }
@@ -319,10 +315,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
     @Override
     public boolean enterFunctionNode(final FunctionNode node) {
         //only go into the function node for this splitter. any subfunctions are rejected
-        if (node == outermost && !node.isLazy()) {
-            return true;
-        }
-        return false;
+        return node == outermost;
     }
 }
 

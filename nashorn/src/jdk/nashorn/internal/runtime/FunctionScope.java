@@ -72,6 +72,19 @@ public class FunctionScope extends ScriptObject implements Scope {
     }
 
     /**
+     * Constructor
+     *
+     * @param map            property map
+     * @param primitiveSpill primitive spill pool
+     * @param objectSpill    reference spill pool
+     */
+    public FunctionScope(final PropertyMap map, final long[] primitiveSpill, final Object[] objectSpill) {
+        super(map, primitiveSpill, objectSpill);
+        this.arguments = null;
+    }
+
+
+    /**
      * Get the current split state.
      * @return current split state
      */

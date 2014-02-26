@@ -25,16 +25,45 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
+import jdk.nashorn.internal.codegen.CompilerConstants;
+import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
+import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
+import sun.misc.Unsafe;
 
 /**
  * ArrayData - abstraction for wrapping array elements
  */
 public abstract class ArrayData {
+    /**
+     * Unsafe instance used for unsafe array getters (de facto always safe as they are guarded
+     * by {@link ArrayData#has(int)} anyway
+     */
+    protected static final Unsafe UNSAFE = null;
+
+/*    static {
+        @SuppressWarnings("unused")
+        Unsafe unsafe = null;
+        try {
+            unsafe = Unsafe.getUnsafe();
+        } catch (final SecurityException e) {
+            System.err.println("WARNING: Disabling unsafe array getters... Unsafe not available");
+        }
+        //TODO: disabled for now as we have seen no real performance improvement on non-micros
+        //and using UNSAFE is a damn stupid thing to do
+        UNSAFE = unsafe;
+    }*/
 
     /** Minimum chunk size for underlying arrays */
     protected static final int CHUNK_SIZE = 16;
@@ -53,6 +82,37 @@ public abstract class ArrayData {
     private long length;
 
     /**
+     * Method handle to throw an {@link UnwarrantedOptimismException} when getting an element
+     * of the wrong type
+     */
+    protected static final CompilerConstants.Call THROW_UNWARRANTED = staticCall(MethodHandles.lookup(), ArrayData.class, "throwUnwarranted", void.class, ArrayData.class, int.class, int.class);
+
+    /**
+     * Unwarranted thrower
+     *
+     * @param data         array data
+     * @param programPoint program point
+     * @param index        array index
+     */
+    protected static void throwUnwarranted(final ArrayData data, final int programPoint, final int index) {
+        throw new UnwarrantedOptimismException(data.getObject(index), programPoint);
+    }
+
+    /**
+     * Version of has that throws a class cast exception if element does not exist
+     * used for relinking
+     *
+     * @param index index to check - currently only int indexes
+     * @return index
+     */
+    protected int throwHas(final int index) {
+        if (!has(index)) {
+            throw new ClassCastException();
+        }
+        return index;
+    }
+
+    /**
      * Constructor
      * @param length Virtual length of the array.
      */
@@ -66,6 +126,43 @@ public abstract class ArrayData {
      */
     public static ArrayData initialArray() {
         return new IntArrayData();
+    }
+
+    /**
+     * Return element getter for a {@link ContinuousArray}
+     * @param getHas       has getter
+     * @param returnType   return type
+     * @param programPoint program point
+     * @return method handle for element setter
+     */
+    protected final static MethodHandle getContinuousElementGetter(final MethodHandle getHas, final Class<?> returnType, final int programPoint) {
+        final boolean isOptimistic = isValid(programPoint);
+        final int fti = getAccessorTypeIndex(getHas.type().returnType());
+        final int ti  = getAccessorTypeIndex(returnType);
+        MethodHandle mh = getHas;
+
+        if (isOptimistic) {
+            if (ti < fti) {
+                mh = MH.insertArguments(ArrayData.THROW_UNWARRANTED.methodHandle(), 1, programPoint);
+            }
+        }
+        mh = MH.asType(mh, mh.type().changeReturnType(returnType).changeParameterType(0, ContinuousArray.class));
+
+        if (!isOptimistic) {
+            //for example a & array[17];
+            return Lookup.filterReturnType(mh, returnType);
+        }
+        return mh;
+    }
+
+    /**
+     * Return element setter for a {@link ContinuousArray}
+     * @param setHas       set has guard
+     * @param elementType  element type
+     * @return method handle for element setter
+     */
+    protected final static MethodHandle getContinuousElementSetter(final MethodHandle setHas, final Class<?> elementType) {
+        return MH.asType(setHas, setHas.type().changeParameterType(2, elementType).changeParameterType(0, ContinuousArray.class));
     }
 
     /**
@@ -151,7 +248,7 @@ public abstract class ArrayData {
      * @return the ArrayData
      */
     public static ArrayData allocate(final ByteBuffer buf) {
-        return new ByteBufferArrayData((ByteBuffer)buf);
+        return new ByteBufferArrayData(buf);
     }
 
     /**
@@ -336,6 +433,27 @@ public abstract class ArrayData {
     public abstract int getInt(int index);
 
     /**
+     * Returns the optimistic type of this array data. Basically, when an array data object needs to throw an
+     * {@link UnwarrantedOptimismException}, this type is used as the actual type of the return value.
+     * @return the optimistic type of this array data.
+     */
+    public Type getOptimisticType() {
+        return Type.OBJECT;
+    }
+
+    /**
+     * Get optimistic int - default is that it's impossible. Overridden
+     * by arrays that actually represents ints
+     *
+     * @param index        the index
+     * @param programPoint program point
+     * @return the value
+     */
+    public int getIntOptimistic(int index, int programPoint) {
+        throw new UnwarrantedOptimismException(getObject(index), programPoint, getOptimisticType());
+    }
+
+    /**
      * Get a long value from a given index
      *
      * @param index the index
@@ -344,12 +462,36 @@ public abstract class ArrayData {
     public abstract long getLong(int index);
 
     /**
+     * Get optimistic long - default is that it's impossible. Overridden
+     * by arrays that actually represents longs or narrower
+     *
+     * @param index        the index
+     * @param programPoint program point
+     * @return the value
+     */
+    public long getLongOptimistic(int index, int programPoint) {
+        throw new UnwarrantedOptimismException(getObject(index), programPoint, getOptimisticType());
+    }
+
+    /**
      * Get a double value from a given index
      *
      * @param index the index
      * @return the value
      */
     public abstract double getDouble(int index);
+
+    /**
+     * Get optimistic double - default is that it's impossible. Overridden
+     * by arrays that actually represents doubles or narrower
+     *
+     * @param index        the index
+     * @param programPoint program point
+     * @return the value
+     */
+    public double getDoubleOptimistic(int index, int programPoint) {
+        throw new UnwarrantedOptimismException(getObject(index), programPoint, getOptimisticType());
+    }
 
     /**
      * Get an Object value from a given index
@@ -482,11 +624,11 @@ public abstract class ArrayData {
      * @param removed number of removed elements
      * @param added number of added elements
      * @throws UnsupportedOperationException if fast splice is not supported for the class or arguments.
+     * @return new arraydata, but this never happens because we always throw an exception
      */
     public ArrayData fastSplice(final int start, final int removed, final int added) throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
-
 
     static Class<?> widestType(final Object... items) {
         assert items.length > 0;
@@ -553,4 +695,5 @@ public abstract class ArrayData {
             throw new RuntimeException(t);
         }
     }
+
 }

@@ -43,4 +43,4 @@ function addX(obj, val) {
 addX(obj1, 3);
 addX(obj2, 'hello');
 
-assertSameMap(obj1, obj2);
+assertEqualWithoutTypeMap(obj1, obj2);

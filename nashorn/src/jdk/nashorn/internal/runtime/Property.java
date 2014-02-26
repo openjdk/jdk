@@ -66,32 +66,34 @@ public abstract class Property {
 
     private static final int MODIFY_MASK     = (NOT_WRITABLE | NOT_ENUMERABLE | NOT_CONFIGURABLE);
 
-    /** Is this a spill property? See {@link AccessorProperty} */
-    public static final int IS_SPILL         = 1 << 3;
-
     /** Is this a function parameter? */
-    public static final int IS_PARAMETER     = 1 << 4;
+    public static final int IS_PARAMETER     = 1 << 3;
 
     /** Is parameter accessed thru arguments? */
-    public static final int HAS_ARGUMENTS    = 1 << 5;
+    public static final int HAS_ARGUMENTS    = 1 << 4;
 
     /** Is this property always represented as an Object? See {@link ObjectClassGenerator} and dual fields flag. */
-    public static final int IS_ALWAYS_OBJECT = 1 << 6;
-
-    /** Can this property be primitive? */
-    public static final int CAN_BE_PRIMITIVE = 1 << 7;
+    public static final int IS_ALWAYS_OBJECT = 1 << 5;
 
     /** Can this property be undefined? */
-    public static final int CAN_BE_UNDEFINED = 1 << 8;
+    public static final int CAN_BE_UNDEFINED = 1 << 6;
 
-    /* Is this a function declaration property ? */
-    public static final int IS_FUNCTION_DECLARATION = 1 << 9;
+    /** Is this a function declaration property ? */
+    public static final int IS_FUNCTION_DECLARATION = 1 << 7;
+
+    /**
+     * Is this is a primitive field given to us by Nasgen, i.e.
+     * something we can be sure remains a constant whose type
+     * is narrower than object, e.g. Math.PI which is declared
+     * as a double
+     */
+    public static final int IS_NASGEN_PRIMITIVE = 1 << 8;
 
     /** Property key. */
     private final String key;
 
     /** Property flags. */
-    protected int flags;
+    private int flags;
 
     /** Property field number or spill slot. */
     private final int slot;
@@ -126,7 +128,15 @@ public abstract class Property {
      *
      * @return cloned property
      */
-    abstract Property copy();
+    public abstract Property copy();
+
+    /**
+     * Copy function
+     *
+     * @param  newType new type
+     * @return cloned property with new type
+     */
+    public abstract Property copy(final Class<?> newType);
 
     /**
      * Property flag utility method for {@link PropertyDescriptor}s. Given two property descriptors,
@@ -248,19 +258,18 @@ public abstract class Property {
      * @return true if spill property
      */
     public boolean isSpill() {
-        return (flags & IS_SPILL) == IS_SPILL;
+        return false;
     }
 
     /**
      * Does this property use any slots in the spill array described in
      * {@link Property#isSpill}? In that case how many. Currently a property
      * only uses max one spill slot, but this may change in future representations
-     * Only {@link AccessorProperty} instances use spill slots
      *
      * @return number of spill slots a property is using
      */
     public int getSpillCount() {
-        return isSpill() ? 1 : 0;
+        return 0;
     }
 
     /**
@@ -344,6 +353,14 @@ public abstract class Property {
     public abstract MethodHandle getGetter(final Class<?> type);
 
     /**
+     * Get an optimistic getter that throws an exception if type is not the known given one
+     * @param type          type
+     * @param programPoint  program point
+     * @return getter
+     */
+    public abstract MethodHandle getOptimisticGetter(final Class<?> type, final int programPoint);
+
+    /**
      * Get the key for this property. This key is an ordinary string. The "name".
      * @return key for property
      */
@@ -360,6 +377,46 @@ public abstract class Property {
     }
 
     /**
+     * get the Object value of this property from {@code owner}. This allows to bypass creation of the
+     * getter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner of the property
+     * @return  the property value
+     */
+    public abstract int getIntValue(final ScriptObject self, final ScriptObject owner);
+
+    /**
+     * get the Object value of this property from {@code owner}. This allows to bypass creation of the
+     * getter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner of the property
+     * @return  the property value
+     */
+    public abstract long getLongValue(final ScriptObject self, final ScriptObject owner);
+
+    /**
+     * get the Object value of this property from {@code owner}. This allows to bypass creation of the
+     * getter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner of the property
+     * @return  the property value
+     */
+    public abstract double getDoubleValue(final ScriptObject self, final ScriptObject owner);
+
+    /**
+     * get the Object value of this property from {@code owner}. This allows to bypass creation of the
+     * getter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner of the property
+     * @return  the property value
+     */
+    public abstract Object getObjectValue(final ScriptObject self, final ScriptObject owner);
+
+    /**
      * Set the value of this property in {@code owner}. This allows to bypass creation of the
      * setter MethodHandle for spill and user accessor properties.
      *
@@ -368,17 +425,40 @@ public abstract class Property {
      * @param value the new property value
      * @param strict is this a strict setter?
      */
-    public abstract void setObjectValue(ScriptObject self, ScriptObject owner, Object value, boolean strict);
+    public abstract void setValue(final ScriptObject self, final ScriptObject owner, final int value, final boolean strict);
 
     /**
-     * Set the Object value of this property from {@code owner}. This allows to bypass creation of the
-     * getter MethodHandle for spill and user accessor properties.
+     * Set the value of this property in {@code owner}. This allows to bypass creation of the
+     * setter MethodHandle for spill and user accessor properties.
      *
      * @param self the this object
      * @param owner the owner object
-     * @return  the property value
+     * @param value the new property value
+     * @param strict is this a strict setter?
      */
-    public abstract Object getObjectValue(ScriptObject self, ScriptObject owner);
+    public abstract void setValue(final ScriptObject self, final ScriptObject owner, final long value, final boolean strict);
+
+    /**
+     * Set the value of this property in {@code owner}. This allows to bypass creation of the
+     * setter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner object
+     * @param value the new property value
+     * @param strict is this a strict setter?
+     */
+    public abstract void setValue(final ScriptObject self, final ScriptObject owner, final double value, final boolean strict);
+
+    /**
+     * Set the value of this property in {@code owner}. This allows to bypass creation of the
+     * setter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner object
+     * @param value the new property value
+     * @param strict is this a strict setter?
+     */
+    public abstract void setValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict);
 
     /**
      * Abstract method for retrieving the setter for the property. We do not know
@@ -442,10 +522,39 @@ public abstract class Property {
 
         final Property otherProperty = (Property)other;
 
-        return getFlags()       == otherProperty.getFlags() &&
-               getSlot()        == otherProperty.getSlot() &&
-               getCurrentType() == otherProperty.getCurrentType() &&
-               getKey().equals(otherProperty.getKey());
+        return equalsWithoutType(otherProperty) &&
+               getCurrentType() == otherProperty.getCurrentType();
+    }
+
+    boolean equalsWithoutType(final Property otherProperty) {
+        return getFlags() == otherProperty.getFlags() &&
+                getSlot() == otherProperty.getSlot() &&
+                getKey().equals(otherProperty.getKey());
+    }
+
+    private static final String type(final Class<?> type) {
+        if (type == null) {
+            return "undef";
+        } else if (type == int.class) {
+            return "i";
+        } else if (type == long.class) {
+            return "j";
+        } else if (type == double.class) {
+            return "d";
+        } else {
+            return "o";
+        }
+    }
+
+    /**
+     * Short toString version
+     * @return short toString
+     */
+    public final String toStringShort() {
+        final StringBuilder sb   = new StringBuilder();
+        final Class<?>      type = getCurrentType();
+        sb.append(getKey()).append(" (").append(type(type)).append(')');
+        return sb.toString();
     }
 
     @Override
@@ -454,18 +563,21 @@ public abstract class Property {
         final Class<?>      type = getCurrentType();
 
         sb.append(getKey()).
-            append("(0x").
+            append(" id=").
+            append(Debug.id(this)).
+            append(" (0x").
             append(Integer.toHexString(flags)).
             append(") ").
             append(getClass().getSimpleName()).
             append(" {").
-            append(type == null ? "UNDEFINED" : Type.typeFor(type).getDescriptor()).
+            append(type(type)).
             append('}');
 
         if (slot != -1) {
-            sb.append('[');
-            sb.append(slot);
-            sb.append(']');
+            sb.append('[').
+               append("slot=").
+               append(slot).
+               append(']');
         }
 
         return sb.toString();
@@ -479,9 +591,13 @@ public abstract class Property {
      *
      * @return current type of property, null means undefined
      */
-    public Class<?> getCurrentType() {
-        return Object.class;
-    }
+    public abstract Class<?> getCurrentType();
+
+    /**
+     * Reset the current type of this property
+     * @param currentType new current type
+     */
+    public abstract void setCurrentType(final Class<?> currentType);
 
     /**
      * Check whether this Property can ever change its type. The default is false, and if
@@ -501,17 +617,6 @@ public abstract class Property {
      */
     public boolean isAlwaysObject() {
         return (flags & IS_ALWAYS_OBJECT) == IS_ALWAYS_OBJECT;
-    }
-
-    /**
-     * Check whether this property can be primitive. This is a conservative
-     * analysis result, so {@code false} might mean that it can still be
-     * primitive
-     *
-     * @return can be primitive status
-     */
-    public boolean canBePrimitive() {
-        return (flags & CAN_BE_PRIMITIVE) == CAN_BE_PRIMITIVE;
     }
 
     /**

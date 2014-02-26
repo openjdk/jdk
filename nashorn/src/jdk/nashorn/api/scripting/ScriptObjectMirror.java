@@ -169,6 +169,12 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         });
     }
 
+    /**
+     * Call member function
+     * @param functionName function name
+     * @param args         arguments
+     * @return return value of function
+     */
     public Object callMember(final String functionName, final Object... args) {
         functionName.getClass(); // null check
         final ScriptObject oldGlobal = Context.getGlobal();

@@ -46,4 +46,4 @@ load(__DIR__ + "maputil.js");
 
 assertSameMap(new Point(2, 3), new Point(43, 23));
 assertSameMap(new Point(), new Point());
-assertSameMap(new Point(), new Point(3, 1));
+assertEqualWithoutTypeMap(new Point(), new Point(3, 1));

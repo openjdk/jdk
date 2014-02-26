@@ -195,6 +195,14 @@ public final class FunctionSignature {
     }
 
     /**
+     * Get the param types for this function signature
+     * @return cloned vector of param types
+     */
+    public Type[] getParamTypes() {
+        return paramTypes.clone();
+    }
+
+    /**
      * Return the {@link MethodType} for this function signature
      * @return the method type
      */

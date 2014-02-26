@@ -25,9 +25,12 @@
 
 package jdk.nashorn.internal.ir;
 
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
+
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-
 /**
  * IR representation of an indexed access (brackets operator.)
  */
@@ -49,8 +52,8 @@ public final class IndexNode extends BaseNode {
         this.index = index;
     }
 
-    private IndexNode(final IndexNode indexNode, final Expression base, final Expression index, final boolean isFunction) {
-        super(indexNode, base, isFunction);
+    private IndexNode(final IndexNode indexNode, final Expression base, final Expression index, final boolean isFunction, final Type optimisticType, final boolean isOptimistic, final int programPoint) {
+        super(indexNode, base, isFunction, optimisticType, isOptimistic, programPoint);
         this.index = index;
     }
 
@@ -71,6 +74,8 @@ public final class IndexNode extends BaseNode {
         if (needsParen) {
             sb.append('(');
         }
+
+        Node.optimisticType(this, sb);
 
         base.toString(sb);
 
@@ -95,7 +100,7 @@ public final class IndexNode extends BaseNode {
         if (this.base == base) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction());
+        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
     }
 
     /**
@@ -107,15 +112,41 @@ public final class IndexNode extends BaseNode {
         if(this.index == index) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction());
+        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
     }
 
     @Override
-    public BaseNode setIsFunction() {
+    public IndexNode setType(final TemporarySymbols ts, final Type optimisticType) {
+        if (this.optimisticType == optimisticType) {
+            return this;
+        }
+        if (DEBUG_FIELDS && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), optimisticType)) {
+            ObjectClassGenerator.LOG.info(getClass().getName(), " ", this, " => ", optimisticType, " instead of ", getType());
+        }
+        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
+    }
+
+    @Override
+    public IndexNode setIsFunction() {
         if (isFunction()) {
             return this;
         }
-        return new IndexNode(this, base, index, true);
+        return new IndexNode(this, base, index, true, optimisticType, isOptimistic, programPoint);
     }
 
+    @Override
+    public IndexNode setProgramPoint(int programPoint) {
+        if (this.programPoint == programPoint) {
+            return this;
+        }
+        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
+    }
+
+    @Override
+    public IndexNode setIsOptimistic(boolean isOptimistic) {
+        if (this.isOptimistic == isOptimistic) {
+            return this;
+        }
+        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
+    }
 }

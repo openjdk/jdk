@@ -145,6 +145,7 @@ class ConstantData {
      * @return the index in the constant pool that the object was given
      */
     public int add(final Object object) {
+        assert object != null;
         final Object  entry = object.getClass().isArray() ? new ArrayWrapper(object) : object;
         final Integer value = objectMap.get(entry);
 

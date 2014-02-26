@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -37,8 +38,6 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.runtime.AccessorProperty;
 
 /**
  * Concrete implementation of ScriptFunction. This sets correct map for the
@@ -292,14 +291,13 @@ public class ScriptFunctionImpl extends ScriptFunction {
 
         // We have to fill user accessor functions late as these are stored
         // in this object rather than in the PropertyMap of this object.
-
-        final ScriptFunction errorThrower = global.getTypeErrorThrower();
+        assert objectSpill == null;
+        final ScriptFunction typeErrorThrower = global.getTypeErrorThrower();
         if (findProperty("arguments", true) != null) {
-            setUserAccessors("arguments", errorThrower, errorThrower);
-        }
-
+            initUserAccessors("arguments", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
+       }
         if (findProperty("caller", true) != null) {
-            setUserAccessors("caller", errorThrower, errorThrower);
-        }
+            initUserAccessors("caller", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
+       }
     }
 }

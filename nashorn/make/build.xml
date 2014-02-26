@@ -365,18 +365,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test-basicparallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file">
-      <!-- use just build.test.classes.dir to avoid referring to TestNG -->
-      <java classname="${parallel.test.runner}" dir="${basedir}" classpath="${build.test.classes.dir}" failonerror="true" fork="true">
-      <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
-      <syspropertyset>
-          <propertyref prefix="test-sys-prop."/>
-          <mapper type="glob" from="test-sys-prop.*" to="*"/>
-      </syspropertyset>
-      </java>
-  </target>
-
   <target name="check-jemmy.jfx.testng" unless="jemmy.jfx.testng.available">
     <echo message="WARNING: Jemmy or JavaFX or TestNG not available, will not run tests. Please copy testng.jar, JemmyCore.jar, JemmyFX.jar, JemmyAWTInput.jar under test${file.separator}lib directory. And make sure you have jfxrt.jar in ${java.home}${file.separator}lib${file.separator}ext dir."/>
   </target>
@@ -465,6 +453,28 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
           <mapper type="glob" from="test262-test-sys-prop.*" to="*"/>
       </syspropertyset>
     </java>
+  </target>
+
+<!--	    classpath="${build.test.classes.dir}"-->
+
+  <target name="testparallel" depends="test-parallel"/>
+
+  <target name="test-parallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+      <!-- use just build.test.classes.dir to avoid referring to TestNG -->
+      <java classname="${parallel.test.runner}" dir="${basedir}"
+	    failonerror="true" 
+	    fork="true">
+      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
+      <classpath>
+          <pathelement path="${run.test.classpath}"/>
+	  <pathelement path="${build.test.classes.dir}"/>
+      </classpath>
+      <syspropertyset>
+          <propertyref prefix="test-sys-prop."/>
+          <mapper type="glob" from="test-sys-prop.*" to="*"/>
+      </syspropertyset>
+      </java>
   </target>
 
   <target name="all" depends="test, docs"

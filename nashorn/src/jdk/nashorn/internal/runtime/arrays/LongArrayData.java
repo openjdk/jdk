@@ -25,7 +25,14 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCall;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
+
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -33,7 +40,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Implementation of {@link ArrayData} as soon as a long has been
  * written to the array
  */
-final class LongArrayData extends ArrayData {
+final class LongArrayData extends ArrayData implements ContinuousArray {
     /**
      * The wrapped array
      */
@@ -52,12 +59,12 @@ final class LongArrayData extends ArrayData {
 
     @Override
     public ArrayData copy() {
-        return new LongArrayData(array.clone(), (int) length());
+        return new LongArrayData(array.clone(), (int)length());
     }
 
     @Override
     public Object[] asObjectArray() {
-        return toObjectArray(array, (int) length());
+        return toObjectArray(array, (int)length());
     }
 
     private static Object[] toObjectArray(final long[] array, final int length) {
@@ -73,8 +80,8 @@ final class LongArrayData extends ArrayData {
 
     @Override
     public Object asArrayOfType(final Class<?> componentType) {
-        if(componentType == long.class) {
-            return array.length == length() ? array.clone() : Arrays.copyOf(array, (int) length());
+        if (componentType == long.class) {
+            return array.length == length() ? array.clone() : Arrays.copyOf(array, (int)length());
         }
         return super.asArrayOfType(componentType);
     }
@@ -184,6 +191,62 @@ final class LongArrayData extends ArrayData {
     }
 
     @Override
+    public Type getOptimisticType() {
+        return Type.LONG;
+    }
+
+    private static final MethodHandle HAS_GET_ELEM = virtualCall(MethodHandles.lookup(), LongArrayData.class, UNSAFE == null ? "getElem" : "getElemUnsafe", long.class, int.class).methodHandle();
+    private static final MethodHandle SET_ELEM     = virtualCall(MethodHandles.lookup(), LongArrayData.class, UNSAFE == null ? "setElem" : "setElemUnsafe", void.class, int.class, long.class).methodHandle();
+    private static final MethodHandle HAS          = virtualCall(MethodHandles.lookup(), LongArrayData.class, "has", boolean.class, int.class).methodHandle();
+
+    private final static long UNSAFE_BASE  = UNSAFE == null ? 0L : UNSAFE.arrayBaseOffset(long[].class);
+    private final static long UNSAFE_SCALE = UNSAFE == null ? 0L : UNSAFE.arrayIndexScale(long[].class);
+
+    @Override
+    public final MethodHandle getSetGuard() {
+        return HAS;
+    }
+
+    @SuppressWarnings("unused")
+    private long getElemUnsafe(final int index) {
+        if (has(index)) {
+            return UNSAFE.getLong(array, UNSAFE_BASE + UNSAFE_SCALE * index);
+        }
+        throw new ClassCastException();
+    }
+
+    @SuppressWarnings("unused")
+    private long getElem(final int index) {
+        if (has(index)) {
+            return array[index];
+        }
+        throw new ClassCastException();
+    }
+
+    @SuppressWarnings("unused")
+    private void setElemUnsafe(final int index, final long elem) {
+        UNSAFE.putLong(array, UNSAFE_BASE + UNSAFE_SCALE * index, elem);
+    }
+
+    @SuppressWarnings("unused")
+    private void setElem(final int index, final long elem) {
+        array[index] = elem;
+    }
+
+    @Override
+    public MethodHandle getElementGetter(final Class<?> returnType, final int programPoint) {
+        if (returnType == int.class) {
+            return null;
+        }
+        return getContinuousElementGetter(HAS_GET_ELEM, returnType, programPoint);
+    }
+
+    @Override
+    public MethodHandle getElementSetter(final Class<?> elementType) {
+        return (elementType == int.class || elementType == long.class) ? getContinuousElementSetter(MH.asType(SET_ELEM, SET_ELEM.type().changeParameterType(2, elementType)), elementType) : null;
+    }
+
+    @Override
     public int getInt(final int index) {
         return (int)array[index];
     }
@@ -194,7 +257,17 @@ final class LongArrayData extends ArrayData {
     }
 
     @Override
+    public long getLongOptimistic(final int index, final int programPoint) {
+        return array[index];
+    }
+
+    @Override
     public double getDouble(final int index) {
+        return array[index];
+    }
+
+    @Override
+    public double getDoubleOptimistic(final int index, final int programPoint) {
         return array[index];
     }
 

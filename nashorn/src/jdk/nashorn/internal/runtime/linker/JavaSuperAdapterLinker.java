@@ -42,7 +42,7 @@ import jdk.internal.dynalink.support.Lookup;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
- * A linker for instances of {@link JavaSuperAdapter}. Only links {@code getMethod} calls, by forwarding them to the
+ * A linker for instances of {@code JavaSuperAdapter}. Only links {@code getMethod} calls, by forwarding them to the
  * bean linker for the adapter class and prepending {@code super$} to method names.
  *
  */
@@ -115,15 +115,15 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
 
         final MethodHandle invocation = guardedInv.getInvocation();
         final MethodType invType = invocation.type();
-        // For invocation typed R(T0, ...) create a dynamic method binder of type R(R, T0)
-        final MethodHandle typedBinder = BIND_DYNAMIC_METHOD.asType(MethodType.methodType(invType.returnType(),
+        // For invocation typed R(T0, ...) create a dynamic method binder of type Object(R, T0)
+        final MethodHandle typedBinder = BIND_DYNAMIC_METHOD.asType(MethodType.methodType(Object.class,
                 invType.returnType(), invType.parameterType(0)));
-        // For invocation typed R(T0, T1, ...) create a dynamic method binder of type R(R, T0, T1, ...)
+        // For invocation typed R(T0, T1, ...) create a dynamic method binder of type Object(R, T0, T1, ...)
         final MethodHandle droppingBinder = MethodHandles.dropArguments(typedBinder, 2,
                 invType.parameterList().subList(1, invType.parameterCount()));
         // Finally, fold the invocation into the binder to produce a method handle that will bind every returned
         // DynamicMethod object from dyn:getMethod calls to the actual receiver
-        // R(R(T0, T1, ...), T0, T1, ...)
+        // Object(R(T0, T1, ...), T0, T1, ...)
         final MethodHandle bindingInvocation = MethodHandles.foldArguments(droppingBinder, invocation);
 
         final MethodHandle typedGetAdapter = asFilterType(GET_ADAPTER, 0, invType, type);

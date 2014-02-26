@@ -25,9 +25,9 @@
 
 package jdk.nashorn.internal.parser;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.EVAL;
 import static jdk.nashorn.internal.codegen.CompilerConstants.ANON_FUNCTION_PREFIX;
-import static jdk.nashorn.internal.codegen.CompilerConstants.RUN_SCRIPT;
+import static jdk.nashorn.internal.codegen.CompilerConstants.EVAL;
+import static jdk.nashorn.internal.codegen.CompilerConstants.PROGRAM;
 import static jdk.nashorn.internal.parser.TokenType.ASSIGN;
 import static jdk.nashorn.internal.parser.TokenType.CASE;
 import static jdk.nashorn.internal.parser.TokenType.CATCH;
@@ -52,8 +52,10 @@ import static jdk.nashorn.internal.parser.TokenType.SEMICOLON;
 import static jdk.nashorn.internal.parser.TokenType.TERNARY;
 import static jdk.nashorn.internal.parser.TokenType.WHILE;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -106,6 +108,7 @@ import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
+import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
@@ -126,6 +129,7 @@ public class Parser extends AbstractParser {
     private List<Statement> functionDeclarations;
 
     private final BlockLexicalContext lc = new BlockLexicalContext();
+    private final Deque<Object> defaultNames = new ArrayDeque<>();
 
     /** Namespace for function names where not explicitly given */
     private final Namespace namespace;
@@ -134,6 +138,8 @@ public class Parser extends AbstractParser {
 
     /** to receive line information from Lexer when scanning multine literals. */
     protected final Lexer.LineInfoReceiver lineInfoReceiver;
+
+    private int nextFunctionId;
 
     /**
      * Constructor
@@ -147,17 +153,32 @@ public class Parser extends AbstractParser {
     }
 
     /**
+     * Constructor
+     *
+     * @param env     script environment
+     * @param source  source to parse
+     * @param errors  error manager
+     * @param strict  strict
+     */
+    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict) {
+        this(env, source, errors, strict, FunctionNode.FIRST_FUNCTION_ID, 0);
+    }
+
+    /**
      * Construct a parser.
      *
      * @param env     script environment
      * @param source  source to parse
      * @param errors  error manager
      * @param strict  parser created with strict mode enabled.
+     * @param nextFunctionId  starting value for assigning new unique ids to function nodes
+     * @param lineOffset line offset to start counting lines from
      */
-    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict) {
-        super(source, errors, strict);
-        this.env       = env;
+    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict, final int nextFunctionId, final int lineOffset) {
+        super(source, errors, strict, lineOffset);
+        this.env        = env;
         this.namespace = new Namespace(env.getNamespace());
+        this.nextFunctionId    = nextFunctionId;
         this.scripting = env._scripting;
         if (this.scripting) {
             this.lineInfoReceiver = new Lexer.LineInfoReceiver() {
@@ -175,17 +196,26 @@ public class Parser extends AbstractParser {
     }
 
     /**
+     * Sets the name for the first function. This is only used when reparsing anonymous functions to ensure they can
+     * preserve their already assigned name, as that name doesn't appear in their source text.
+     * @param name the name for the first parsed function.
+     */
+    public void setFunctionName(final String name) {
+        defaultNames.push(new IdentNode(0, 0, name));
+    }
+
+    /**
      * Execute parse and return the resulting function node.
      * Errors will be thrown and the error manager will contain information
      * if parsing should fail
      *
      * This is the default parse call, which will name the function node
-     * "runScript" {@link CompilerConstants#RUN_SCRIPT}
+     * {code :program} {@link CompilerConstants#PROGRAM}
      *
      * @return function node resulting from successful parse
      */
     public FunctionNode parse() {
-        return parse(RUN_SCRIPT.symbolName());
+        return parse(PROGRAM.symbolName());
     }
 
     /**
@@ -198,19 +228,40 @@ public class Parser extends AbstractParser {
      * @return function node resulting from successful parse
      */
     public FunctionNode parse(final String scriptName) {
+        return parse(scriptName, 0, source.getLength(), false);
+    }
+
+    /**
+     * Execute parse and return the resulting function node.
+     * Errors will be thrown and the error manager will contain information
+     * if parsing should fail
+     *
+     * This should be used to create one and only one function node
+     *
+     * @param scriptName name for the script, given to the parsed FunctionNode
+     * @param startPos start position in source
+     * @param len length of parse
+     * @param allowPropertyFunction if true, "get" and "set" are allowed as first tokens of the program, followed by
+     * a property getter or setter function. This is used when reparsing a function that can potentially be defined as a
+     * property getter or setter in an object literal.
+     *
+     * @return function node resulting from successful parse
+     */
+    public FunctionNode parse(final String scriptName, final int startPos, final int len, final boolean allowPropertyFunction) {
         final long t0 = Timing.isEnabled() ? System.currentTimeMillis() : 0L;
         LOG.info(this, " begin for '", scriptName, "'");
 
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+            lexer  = new Lexer(source, startPos, len, stream, scripting && !env._no_syntax_extensions);
+            lexer.line = lexer.pendingLine = lineOffset + 1;
+            line = lineOffset;
 
             // Set up first token (skips opening EOL.)
             k = -1;
             next();
-
             // Begin parse.
-            return program(scriptName);
+            return program(scriptName, allowPropertyFunction);
         } catch (final Exception e) {
             handleParseException(e);
 
@@ -263,6 +314,7 @@ public class Parser extends AbstractParser {
         try {
             stream = new TokenStream();
             lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+            int functionLine = line;
 
             // Set up first token (skips opening EOL.)
             k = -1;
@@ -274,12 +326,13 @@ public class Parser extends AbstractParser {
 
             FunctionNode function = newFunctionNode(
                 functionToken,
-                new IdentNode(functionToken, Token.descPosition(functionToken), RUN_SCRIPT.symbolName()),
+                new IdentNode(functionToken, Token.descPosition(functionToken), PROGRAM.symbolName()),
                 new ArrayList<IdentNode>(),
-                FunctionNode.Kind.NORMAL);
+                FunctionNode.Kind.NORMAL,
+                functionLine);
 
             functionDeclarations = new ArrayList<>();
-            sourceElements();
+            sourceElements(false);
             addFunctionDeclarations(function);
             functionDeclarations = null;
 
@@ -380,7 +433,7 @@ loop:
      * @param ident Name of function.
      * @return New block.
      */
-    private FunctionNode newFunctionNode(final long startToken, final IdentNode ident, final List<IdentNode> parameters, final FunctionNode.Kind kind) {
+    private FunctionNode newFunctionNode(final long startToken, final IdentNode ident, final List<IdentNode> parameters, final FunctionNode.Kind kind, final int functionLine) {
         // Build function name.
         final StringBuilder sb = new StringBuilder();
 
@@ -393,12 +446,9 @@ loop:
         sb.append(ident.getName());
 
         final String name = namespace.uniqueName(sb.toString());
-        assert parentFunction != null || name.equals(RUN_SCRIPT.symbolName())  : "name = " + name;// must not rename runScript().
+        assert parentFunction != null || name.equals(PROGRAM.symbolName()) || name.startsWith(RecompilableScriptFunctionData.RECOMPILATION_PREFIX) : "name = " + name;
 
         int flags = 0;
-        if (parentFunction == null) {
-            flags |= FunctionNode.IS_PROGRAM;
-        }
         if (isStrictMode) {
             flags |= FunctionNode.IS_STRICT;
         }
@@ -407,12 +457,16 @@ loop:
                 flags |= FunctionNode.CAN_SPECIALIZE;
             }
         }
+        if (parentFunction == null) {
+            flags |= FunctionNode.IS_PROGRAM;
+        }
 
         // Start new block.
-        FunctionNode functionNode =
+        final FunctionNode functionNode =
             new FunctionNode(
                 source,
-                line, //TODO?
+                nextFunctionId++,
+                functionLine,
                 token,
                 Token.descPosition(token),
                 startToken,
@@ -446,9 +500,8 @@ loop:
         return lc.pop(functionNode).
             setBody(lc, newBody).
             setLastToken(lc, lastToken).
-            setState(lc, errors.hasErrors() ? CompilationState.PARSE_ERROR : CompilationState.PARSED).
-            snapshot(lc);
-        }
+            setState(lc, errors.hasErrors() ? CompilationState.PARSE_ERROR : CompilationState.PARSED);
+    }
 
     /**
      * Get the statements in a block.
@@ -619,19 +672,21 @@ loop:
      *
      * Parse the top level script.
      */
-    private FunctionNode program(final String scriptName) {
-        // Make a fake token for the script.
-        final long functionToken = Token.toDesc(FUNCTION, 0, source.getLength());
+    private FunctionNode program(final String scriptName, final boolean allowPropertyFunction) {
+        // Make a pseudo-token for the script holding its start and length.
+        final long functionToken = Token.toDesc(FUNCTION, getProgramStartPosition(token), source.getLength());
+        final int  functionLine  = line;
         // Set up the script to append elements.
 
         FunctionNode script = newFunctionNode(
             functionToken,
             new IdentNode(functionToken, Token.descPosition(functionToken), scriptName),
             new ArrayList<IdentNode>(),
-            FunctionNode.Kind.SCRIPT);
+            FunctionNode.Kind.SCRIPT,
+            functionLine);
 
         functionDeclarations = new ArrayList<>();
-        sourceElements();
+        sourceElements(allowPropertyFunction);
         addFunctionDeclarations(script);
         functionDeclarations = null;
 
@@ -649,6 +704,20 @@ loop:
         return script;
     }
 
+    /**
+     * Returns the start position of the program based on its first token. Normally returns the position of the token
+     * itself, except in case of string tokens which report their position past their opening delimiter and thus need
+     * to have one subtracted from their position.
+     * @param firstToken the first token of the program
+     * @return the start position of the program
+     */
+    private static int getProgramStartPosition(final long firstToken) {
+        final int start = Token.descPosition(firstToken);
+        switch(Token.descType(firstToken)) {
+            case STRING: case ESCSTRING: case EXECSTRING: return start - 1;
+            default: return start;
+        }
+    }
     /**
      * Directive value or null if statement is not a directive.
      *
@@ -682,10 +751,12 @@ loop:
      *
      * Parse the elements of the script or function.
      */
-    private void sourceElements() {
-        List<Node>    directiveStmts = null;
-        boolean       checkDirective = true;
-        final boolean oldStrictMode = isStrictMode;
+    private void sourceElements(final boolean shouldAllowPropertyFunction) {
+        List<Node>    directiveStmts        = null;
+        boolean       checkDirective        = true;
+        boolean       allowPropertyFunction = shouldAllowPropertyFunction;
+        final boolean oldStrictMode         = isStrictMode;
+
 
         try {
             // If is a script, then process until the end of the script.
@@ -697,7 +768,8 @@ loop:
 
                 try {
                     // Get the next element.
-                    statement(true);
+                    statement(true, allowPropertyFunction);
+                    allowPropertyFunction = false;
 
                     // check for directive prologues
                     if (checkDirective) {
@@ -780,13 +852,13 @@ loop:
      * Parse any of the basic statement types.
      */
     private void statement() {
-        statement(false);
+        statement(false, false);
     }
 
     /**
      * @param topLevel does this statement occur at the "top level" of a script or a function?
      */
-    private void statement(final boolean topLevel) {
+    private void statement(final boolean topLevel, final boolean allowPropertyFunction) {
         if (type == FUNCTION) {
             // As per spec (ECMA section 12), function declarations as arbitrary statement
             // is not "portable". Implementation can issue a warning or disallow the same.
@@ -854,11 +926,30 @@ loop:
                     labelStatement();
                     return;
                 }
+                if(allowPropertyFunction) {
+                    final String ident = (String)getValue();
+                    final long propertyToken = token;
+                    final int propertyLine = line;
+                    if("get".equals(ident)) {
+                        next();
+                        addPropertyFunctionStatement(propertyGetterFunction(propertyToken, propertyLine));
+                        return;
+                    } else if("set".equals(ident)) {
+                        next();
+                        addPropertyFunctionStatement(propertySetterFunction(propertyToken, propertyLine));
+                        return;
+                    }
+                }
             }
 
             expressionStatement();
             break;
         }
+    }
+
+    private void addPropertyFunctionStatement(final PropertyFunction propertyFunction) {
+        final FunctionNode fn = propertyFunction.functionNode;
+        functionDeclarations.add(new ExpressionStatement(fn.getLineNumber(), fn.getToken(), finish, fn));
     }
 
     /**
@@ -964,7 +1055,12 @@ loop:
                 next();
 
                 // Get initializer expression. Suppress IN if not statement.
-                init = assignmentExpression(!isStatement);
+                defaultNames.push(name);
+                try {
+                    init = assignmentExpression(!isStatement);
+                } finally {
+                    defaultNames.pop();
+                }
             }
 
             // Allocate var node.
@@ -2113,8 +2209,8 @@ loop:
     private PropertyNode propertyAssignment() {
         // Capture firstToken.
         final long propertyToken = token;
+        final int  functionLine  = line;
 
-        FunctionNode functionNode;
         PropertyKey propertyName;
 
         if (type == IDENT) {
@@ -2126,36 +2222,12 @@ loop:
 
                 switch (ident) {
                 case "get":
-                    final PropertyKey getIdent = propertyName();
-                    final String getterName = getIdent.getPropertyName();
-                    final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
-                    expect(LPAREN);
-                    expect(RPAREN);
-                    functionNode = functionBody(getSetToken, getNameNode, new ArrayList<IdentNode>(), FunctionNode.Kind.GETTER);
-                    return new PropertyNode(propertyToken, finish, getIdent, null, functionNode, null);
+                    final PropertyFunction getter = propertyGetterFunction(getSetToken, functionLine);
+                    return new PropertyNode(propertyToken, finish, getter.ident, null, getter.functionNode, null);
 
                 case "set":
-                    final PropertyKey setIdent = propertyName();
-                    final String setterName = setIdent.getPropertyName();
-                    final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
-                    expect(LPAREN);
-                    // be sloppy and allow missing setter parameter even though
-                    // spec does not permit it!
-                    final IdentNode argIdent;
-                    if (type == IDENT || isNonStrictModeIdent()) {
-                        argIdent = getIdent();
-                        verifyStrictIdent(argIdent, "setter argument");
-                    } else {
-                        argIdent = null;
-                    }
-                    expect(RPAREN);
-                    List<IdentNode> parameters = new ArrayList<>();
-                    if (argIdent != null) {
-                        parameters.add(argIdent);
-                    }
-                    functionNode = functionBody(getSetToken, setNameNode, parameters, FunctionNode.Kind.SETTER);
-                    return new PropertyNode(propertyToken, finish, setIdent, null, null, functionNode);
-
+                    final PropertyFunction setter = propertySetterFunction(getSetToken, functionLine);
+                    return new PropertyNode(propertyToken, finish, setter.ident, null, null, setter.functionNode);
                 default:
                     break;
                 }
@@ -2168,7 +2240,57 @@ loop:
 
         expect(COLON);
 
-        return new PropertyNode(propertyToken, finish, propertyName, assignmentExpression(false), null, null);
+        defaultNames.push(propertyName);
+        try {
+            return new PropertyNode(propertyToken, finish, propertyName, assignmentExpression(false), null, null);
+        } finally {
+            defaultNames.pop();
+        }
+    }
+
+    private PropertyFunction propertyGetterFunction(final long getSetToken, final int functionLine) {
+        final PropertyKey getIdent = propertyName();
+        final String getterName = getIdent.getPropertyName();
+        final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
+        expect(LPAREN);
+        expect(RPAREN);
+        final FunctionNode functionNode = functionBody(getSetToken, getNameNode, new ArrayList<IdentNode>(), FunctionNode.Kind.GETTER, functionLine);
+
+        return new PropertyFunction(getIdent, functionNode);
+    }
+
+    private PropertyFunction propertySetterFunction(final long getSetToken, final int functionLine) {
+        final PropertyKey setIdent = propertyName();
+        final String setterName = setIdent.getPropertyName();
+        final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
+        expect(LPAREN);
+        // be sloppy and allow missing setter parameter even though
+        // spec does not permit it!
+        final IdentNode argIdent;
+        if (type == IDENT || isNonStrictModeIdent()) {
+            argIdent = getIdent();
+            verifyStrictIdent(argIdent, "setter argument");
+        } else {
+            argIdent = null;
+        }
+        expect(RPAREN);
+        final List<IdentNode> parameters = new ArrayList<>();
+        if (argIdent != null) {
+            parameters.add(argIdent);
+        }
+        final FunctionNode functionNode = functionBody(getSetToken, setNameNode, parameters, FunctionNode.Kind.SETTER, functionLine);
+
+        return new PropertyFunction(setIdent, functionNode);
+    }
+
+    private static class PropertyFunction {
+        final PropertyKey ident;
+        final FunctionNode functionNode;
+
+        PropertyFunction(final PropertyKey ident, final FunctionNode function) {
+            this.ident = ident;
+            this.functionNode = function;
+        }
     }
 
     /**
@@ -2464,7 +2586,7 @@ loop:
         // name is null, generate anonymous name
         boolean isAnonymous = false;
         if (name == null) {
-            final String tmpName = ANON_FUNCTION_PREFIX.symbolName() + functionLine;
+            final String tmpName = getDefaultValidFunctionName(functionLine);
             name = new IdentNode(functionToken, Token.descPosition(functionToken), tmpName);
             isAnonymous = true;
         }
@@ -2473,7 +2595,7 @@ loop:
         final List<IdentNode> parameters = formalParameterList();
         expect(RPAREN);
 
-        FunctionNode functionNode = functionBody(functionToken, name, parameters, FunctionNode.Kind.NORMAL);
+        FunctionNode functionNode = functionBody(functionToken, name, parameters, FunctionNode.Kind.NORMAL, functionLine);
 
         if (isStatement) {
             if (topLevel) {
@@ -2539,6 +2661,47 @@ loop:
         return functionNode;
     }
 
+    private String getDefaultValidFunctionName(final int functionLine) {
+        final String defaultFunctionName = getDefaultFunctionName();
+        return isValidIdentifier(defaultFunctionName) ? defaultFunctionName : (ANON_FUNCTION_PREFIX.symbolName() + functionLine);
+    }
+
+    private static boolean isValidIdentifier(String name) {
+        if(name == null || name.isEmpty()) {
+            return false;
+        }
+        if(!Character.isJavaIdentifierStart(name.charAt(0))) {
+            return false;
+        }
+        for(int i = 1; i < name.length(); ++i) {
+            if(!Character.isJavaIdentifierPart(name.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String getDefaultFunctionName() {
+        if(!defaultNames.isEmpty()) {
+            final Object nameExpr = defaultNames.peek();
+            if(nameExpr instanceof PropertyKey) {
+                markDefaultNameUsed();
+                return ((PropertyKey)nameExpr).getPropertyName();
+            } else if(nameExpr instanceof AccessNode) {
+                markDefaultNameUsed();
+                return ((AccessNode)nameExpr).getProperty().getName();
+            }
+        }
+        return null;
+    }
+
+    private void markDefaultNameUsed() {
+        defaultNames.pop();
+        // Can be any value as long as getDefaultFunctionName doesn't recognize it as something it can extract a value
+        // from. Can't be null
+        defaultNames.push("");
+    }
+
     /**
      * FormalParameterList :
      *      Identifier
@@ -2601,13 +2764,13 @@ loop:
      * Parse function body.
      * @return function node (body.)
      */
-    private FunctionNode functionBody(final long firstToken, final IdentNode ident, final List<IdentNode> parameters, final FunctionNode.Kind kind) {
+    private FunctionNode functionBody(final long firstToken, final IdentNode ident, final List<IdentNode> parameters, final FunctionNode.Kind kind, final int functionLine) {
         FunctionNode functionNode = null;
         long lastToken = 0L;
 
         try {
             // Create a new function block.
-            functionNode = newFunctionNode(firstToken, ident, parameters, kind);
+            functionNode = newFunctionNode(firstToken, ident, parameters, kind, functionLine);
 
             // Nashorn extension: expression closures
             if (!env._no_syntax_extensions && type != LBRACE) {
@@ -2620,11 +2783,13 @@ loop:
 
                 // just expression as function body
                 final Expression expr = assignmentExpression(true);
+                lastToken = previousToken;
                 assert lc.getCurrentBlock() == lc.getFunctionBody(functionNode);
-                final ReturnNode returnNode = new ReturnNode(functionNode.getLineNumber(), expr.getToken(), finish, expr);
+                // EOL uses length field to store the line number
+                final int lastFinish = Token.descPosition(lastToken) + (Token.descType(lastToken) == EOL ? 0 : Token.descLength(lastToken));
+                final ReturnNode returnNode = new ReturnNode(functionNode.getLineNumber(), expr.getToken(), lastFinish, expr);
                 appendStatement(returnNode);
-                lastToken = token;
-                functionNode.setFinish(Token.descPosition(token) + Token.descLength(token));
+                functionNode.setFinish(lastFinish);
 
             } else {
                 expect(LBRACE);
@@ -2633,7 +2798,7 @@ loop:
                 final List<Statement> prevFunctionDecls = functionDeclarations;
                 functionDeclarations = new ArrayList<>();
                 try {
-                    sourceElements();
+                    sourceElements(false);
                     addFunctionDeclarations(functionNode);
                 } finally {
                     functionDeclarations = prevFunctionDecls;
@@ -2934,19 +3099,28 @@ loop:
                 next();
 
                  // Get the next primary expression.
-                Expression rhs = unaryExpression();
-
-                // Get precedence of next operator.
-                int nextPrecedence = type.getPrecedence();
-
-                // Subtask greater precedence.
-                while (type.isOperator(noIn) &&
-                       (nextPrecedence > precedence ||
-                       nextPrecedence == precedence && !type.isLeftAssociative())) {
-                    rhs = expression(rhs, nextPrecedence, noIn);
-                    nextPrecedence = type.getPrecedence();
+                Expression rhs;
+                final boolean isAssign = Token.descType(op) == ASSIGN;
+                if(isAssign) {
+                    defaultNames.push(lhs);
                 }
+                try {
+                    rhs = unaryExpression();
+                    // Get precedence of next operator.
+                    int nextPrecedence = type.getPrecedence();
 
+                    // Subtask greater precedence.
+                    while (type.isOperator(noIn) &&
+                           (nextPrecedence > precedence ||
+                           nextPrecedence == precedence && !type.isLeftAssociative())) {
+                        rhs = expression(rhs, nextPrecedence, noIn);
+                        nextPrecedence = type.getPrecedence();
+                    }
+                } finally {
+                    if(isAssign) {
+                        defaultNames.pop();
+                    }
+                }
                 lhs = verifyAssignment(op, lhs, rhs);
             }
 

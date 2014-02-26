@@ -188,7 +188,7 @@ public final class JSONFunctions {
         } else if (node instanceof UnaryNode) {
             // UnaryNode used only to represent negative number JSON value
             final UnaryNode unaryNode = (UnaryNode)node;
-            return -((LiteralNode<?>)unaryNode.rhs()).getNumber();
+            return -((LiteralNode<?>)unaryNode.getExpression()).getNumber();
         } else {
             return null;
         }

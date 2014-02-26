@@ -24,91 +24,115 @@
  */
 package jdk.nashorn.internal.runtime;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.Iterator;
-import java.util.TreeSet;
+import java.util.LinkedList;
 
 /**
  * This is a list of code versions of a function.
  * The list is sorted in ascending order of generic descriptors
  */
-@SuppressWarnings("serial")
-final class CompiledFunctions extends TreeSet<CompiledFunction> {
+final class CompiledFunctions {
 
-    private CompiledFunction generic;
+    private final String name;
+    final LinkedList<CompiledFunction> functions = new LinkedList<>();
 
-    CompiledFunction best(final MethodType type) {
-        final Iterator<CompiledFunction> iter = iterator();
-        while (iter.hasNext()) {
-            final CompiledFunction next = iter.next();
-            if (next.typeCompatible(type)) {
-                return next;
+    CompiledFunctions(final String name) {
+        this.name = name;
+    }
+
+    void add(CompiledFunction f) {
+        functions.add(f);
+    }
+
+    void addAll(CompiledFunctions fs) {
+        functions.addAll(fs.functions);
+    }
+
+    boolean isEmpty() {
+        return functions.isEmpty();
+    }
+
+    int size() {
+        return functions.size();
+    }
+
+    @Override
+    public String toString() {
+        return '\'' + name + "' code=" + functions;
+    }
+
+    /**
+     * Returns the compiled function best matching the requested call site method type
+     * @param callSiteType
+     * @param recompilable
+     * @param hasThis
+     * @return
+     */
+    CompiledFunction best(final MethodType callSiteType, final boolean recompilable) {
+        assert callSiteType.parameterCount() >= 2 : callSiteType; // Must have at least (callee, this)
+        assert callSiteType.parameterType(0).isAssignableFrom(ScriptFunction.class) : callSiteType; // Callee must be assignable from script function
+
+        if (recompilable) {
+            for (final CompiledFunction candidate: functions) {
+                if(candidate.matchesCallSite(callSiteType)) {
+                    return candidate;
+                }
+            }
+            return null;
+        }
+
+        CompiledFunction best = null;
+        for(final CompiledFunction candidate: functions) {
+            if(candidate.betterThanFinal(best, callSiteType)) {
+                best = candidate;
             }
         }
-        return generic();
+
+        return best;
     }
 
+    /**
+     * Returns true if functions managed by this {@code CompiledFunctions} require a callee. This method is only safe to
+     * be invoked for a {@code CompiledFunctions} that is not empty. As such, it should only be used from
+     * {@link FinalScriptFunctionData} and not from {@link RecompilableScriptFunctionData}.
+     * @return true if the functions need a callee, false otherwise.
+     */
     boolean needsCallee() {
-        return ScriptFunctionData.needsCallee(mostGeneric().getInvoker());
+        boolean needsCallee = functions.getFirst().needsCallee();
+        assert allNeedCallee(needsCallee);
+        return needsCallee;
     }
 
-    CompiledFunction mostGeneric() {
-        return last();
-    }
-
-    CompiledFunction generic() {
-        CompiledFunction gen = this.generic;
-        if (gen == null) {
-            gen = this.generic = makeGeneric(mostGeneric());
+    private boolean allNeedCallee(final boolean needCallee) {
+        for (final CompiledFunction inv : functions) {
+            if(inv.needsCallee() != needCallee) {
+                return false;
+            }
         }
-        return gen;
-    }
-
-    private static CompiledFunction makeGeneric(final CompiledFunction func) {
-        final MethodHandle invoker = composeGenericMethod(func.getInvoker());
-        final MethodHandle constructor = func.hasConstructor() ? composeGenericMethod(func.getConstructor()) : null;
-        return new CompiledFunction(invoker.type(), invoker, constructor);
+        return true;
     }
 
     /**
-     * Takes a method handle, and returns a potentially different method handle that can be used in
-     * {@code ScriptFunction#invoke(Object, Object...)} or {code ScriptFunction#construct(Object, Object...)}.
-     * The returned method handle will be sure to return {@code Object}, and will have all its parameters turned into
-     * {@code Object} as well, except for the following ones:
-     * <ul>
-     *   <li>a last parameter of type {@code Object[]} which is used for vararg functions,</li>
-     *   <li>the first argument, which is forced to be {@link ScriptFunction}, in case the function receives itself
-     *   (callee) as an argument.</li>
-     * </ul>
-     *
-     * @param mh the original method handle
-     *
-     * @return the new handle, conforming to the rules above.
+     * If this CompiledFunctions object belongs to a {@code FinalScriptFunctionData}, get a method type for a generic
+     * invoker. It will either be a vararg type, if any of the contained functions is vararg, or a generic type of the
+     * arity of the largest arity of all functions.
+     * @return the method type for the generic invoker
      */
-    private static MethodHandle composeGenericMethod(final MethodHandle mh) {
-        final MethodType type = mh.type();
-        final boolean isVarArg = ScriptFunctionData.isVarArg(mh);
-        final int paramCount = isVarArg ? type.parameterCount() - 1 : type.parameterCount();
-
-        MethodType newType = MethodType.genericMethodType(paramCount, isVarArg);
-
-        if (ScriptFunctionData.needsCallee(mh)) {
-            newType = newType.changeParameterType(0, ScriptFunction.class);
+    MethodType getFinalGenericType() {
+        int max = 0;
+        for(final CompiledFunction fn: functions) {
+            final MethodType t = fn.type();
+            if(ScriptFunctionData.isVarArg(t)) {
+                // 2 for (callee, this, args[])
+                return MethodType.genericMethodType(2, true);
+            }
+            final int paramCount = t.parameterCount() - (ScriptFunctionData.needsCallee(t) ? 1 : 0);
+            if(paramCount > max) {
+                max = paramCount;
+            }
         }
-        return type.equals(newType) ? mh : mh.asType(newType);
-    }
-
-    /**
-     * Is the given type even more specific than this entire list? That means
-     * we have an opportunity for more specific versions of the method
-     * through lazy code generation
-     *
-     * @param type type to check against
-     * @return true if the given type is more specific than all invocations available
-     */
-    boolean isLessSpecificThan(final MethodType type) {
-        return best(type).moreGenericThan(type);
+        // +1 for callee
+        return MethodType.genericMethodType(max + 1);
     }
 
 }

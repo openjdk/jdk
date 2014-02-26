@@ -215,7 +215,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
         unaryNode.toString(sb, new Runnable() {
             @Override
             public void run() {
-                unaryNode.rhs().accept(PrintVisitor.this);
+                unaryNode.getExpression().accept(PrintVisitor.this);
             }
         });
         return false;

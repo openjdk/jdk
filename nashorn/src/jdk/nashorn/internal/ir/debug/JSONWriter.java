@@ -91,7 +91,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         final Parser       parser     = new Parser(env, new Source(name, code), new Context.ThrowErrorManager(), env._strict);
         final JSONWriter   jsonWriter = new JSONWriter(includeLoc);
         try {
-            final FunctionNode functionNode = parser.parse(CompilerConstants.RUN_SCRIPT.symbolName());
+            final FunctionNode functionNode = parser.parse(CompilerConstants.PROGRAM.symbolName());
             functionNode.accept(jsonWriter);
             return jsonWriter.getString();
         } catch (final ParserException e) {
@@ -802,7 +802,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
             type("NewExpression");
             comma();
 
-            final CallNode callNode = (CallNode)unaryNode.rhs();
+            final CallNode callNode = (CallNode)unaryNode.getExpression();
             property("callee");
             callNode.getFunction().accept(this);
             comma();
@@ -844,7 +844,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
             comma();
 
             property("argument");
-            unaryNode.rhs().accept(this);
+            unaryNode.getExpression().accept(this);
         }
 
         return leave();

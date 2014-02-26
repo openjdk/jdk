@@ -37,8 +37,10 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.Compiler;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
@@ -223,6 +225,7 @@ public class Shell {
 
     /**
      * Compiles the given script files in the command line
+     * This is called only when using the --compile-only flag
      *
      * @param context the nashorn context
      * @param global the global scope
@@ -243,7 +246,7 @@ public class Shell {
 
             // For each file on the command line.
             for (final String fileName : files) {
-                final FunctionNode functionNode = new Parser(env, new Source(fileName, new File(fileName)), errors).parse();
+                final FunctionNode functionNode = new Parser(env, new Source(fileName, new File(fileName)), errors, env._strict).parse();
 
                 if (errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;
@@ -258,7 +261,8 @@ public class Shell {
                 }
 
                 //null - pass no code installer - this is compile only
-                new Compiler(env).compile(functionNode);
+                new Compiler(env).
+                    compile(CompilerConstants.DEFAULT_SCRIPT_NAME.symbolName(), functionNode);
             }
         } finally {
             env.getOut().flush();

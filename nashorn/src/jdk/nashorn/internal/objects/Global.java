@@ -74,6 +74,9 @@ import jdk.nashorn.internal.scripts.JO;
  */
 @ScriptClass("Global")
 public final class Global extends ScriptObject implements GlobalObject, Scope {
+    // Placeholder value used in place of a location property (__FILE__, __DIR__, __LINE__)
+    private static final Object LOCATION_PROPERTY_PLACEHOLDER = new Object();
+
     private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
     private final InvokeByName VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
 
@@ -139,11 +142,11 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     /** Value property NaN of the Global Object - ECMA 15.1.1.1 NaN */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object NaN = Double.NaN;
+    public final double NaN = Double.NaN;
 
     /** Value property Infinity of the Global Object - ECMA 15.1.1.2 Infinity */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public final Object Infinity = Double.POSITIVE_INFINITY;
+    public final double Infinity = Double.POSITIVE_INFINITY;
 
     /** Value property Undefined of the Global Object - ECMA 15.1.1.3 Undefined */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
@@ -303,15 +306,15 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     /** Nashorn extension: current script's file name */
     @Property(name = "__FILE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public Object __FILE__;
+    public final Object __FILE__ = LOCATION_PROPERTY_PLACEHOLDER;
 
     /** Nashorn extension: current script's directory */
     @Property(name = "__DIR__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public Object __DIR__;
+    public final Object __DIR__ = LOCATION_PROPERTY_PLACEHOLDER;
 
     /** Nashorn extension: current source line number being executed */
     @Property(name = "__LINE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public Object __LINE__;
+    public final Object __LINE__ = LOCATION_PROPERTY_PLACEHOLDER;
 
     /** Used as Date.prototype's default value */
     public NativeDate   DEFAULT_DATE;
@@ -1550,6 +1553,26 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     }
 
     /**
+     * Called from generated to replace a location property placeholder with the actual location property value.
+     *
+     * @param  placeholder the value tested for being a placeholder for a location property
+     * @param  locationProperty the actual value for the location property
+     * @return locationProperty if placeholder is indeed a placeholder for a location property, the placeholder otherwise
+     */
+    public static Object replaceLocationPropertyPlaceholder(final Object placeholder, final Object locationProperty) {
+        return isLocationPropertyPlaceholder(placeholder) ? locationProperty : placeholder;
+    }
+
+    /**
+     * Called from runtime internals to check if the passed value is a location property placeholder.
+     * @param  placeholder the value tested for being a placeholder for a location property
+     * @return true if the value is a placeholder, false otherwise.
+     */
+    public static boolean isLocationPropertyPlaceholder(final Object placeholder) {
+        return placeholder == LOCATION_PROPERTY_PLACEHOLDER;
+    }
+
+    /**
      * Create a new RegExp object.
      *
      * @param expression Regular expression.
@@ -1633,7 +1656,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         // duplicate PropertyMaps of Native* classes
         copyInitialMaps(env);
-
         // initialize Function and Object constructor
         initFunctionAndObject();
 
@@ -1728,19 +1750,14 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         copyBuiltins();
 
-        // initialized with strings so that typeof will work as expected.
-        this.__FILE__ = "";
-        this.__DIR__  = "";
-        this.__LINE__ = 0.0;
-
         // expose script (command line) arguments as "arguments" property of global
         final List<String> arguments = env.getArguments();
         final Object argsObj = wrapAsObject(arguments.toArray());
-
-        addOwnProperty("arguments", Attribute.NOT_ENUMERABLE, argsObj);
+        final int flags = jdk.nashorn.internal.runtime.Property.IS_ALWAYS_OBJECT | Attribute.NOT_ENUMERABLE;
+        addOwnProperty("arguments", flags, argsObj);
         if (env._scripting) {
             // synonym for "arguments" in scripting mode
-            addOwnProperty("$ARG", Attribute.NOT_ENUMERABLE, argsObj);
+            addOwnProperty("$ARG", flags, argsObj);
         }
     }
 
@@ -1991,6 +2008,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.functionMap = ScriptFunctionImpl.getInitialMap().duplicate();
         this.anonymousFunctionMap = ScriptFunctionImpl.getInitialAnonymousMap().duplicate();
         this.strictFunctionMap = ScriptFunctionImpl.getInitialStrictMap().duplicate();
+        assert strictFunctionMap != null;
         this.boundFunctionMap = ScriptFunctionImpl.getInitialBoundMap().duplicate();
 
         // java

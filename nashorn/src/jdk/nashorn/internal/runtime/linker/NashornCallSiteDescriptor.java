@@ -42,35 +42,56 @@ import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
     /** Flags that the call site references a scope variable (it's an identifier reference or a var declaration, not a
      * property access expression. */
-    public static final int CALLSITE_SCOPE                = 0x01;
+    public static final int CALLSITE_SCOPE      = 1 << 0;
     /** Flags that the call site is in code that uses ECMAScript strict mode. */
-    public static final int CALLSITE_STRICT               = 0x02;
+    public static final int CALLSITE_STRICT     = 1 << 1;
     /** Flags that a property getter or setter call site references a scope variable that is located at a known distance
      * in the scope chain. Such getters and setters can often be linked more optimally using these assumptions. */
-    public static final int CALLSITE_FAST_SCOPE    = 0x400;
+    public static final int CALLSITE_FAST_SCOPE = 1 << 2;
+    /** Flags that a callsite type is optimistic, i.e. we might get back a wider return value than encoded in the
+     * descriptor, and in that case we have to throw an UnwarrantedOptimismException */
+    public static final int CALLSITE_OPTIMISTIC = 1 << 3;
 
     /** Flags that the call site is profiled; Contexts that have {@code "profile.callsites"} boolean property set emit
      * code where call sites have this flag set. */
-    public static final int CALLSITE_PROFILE          = 0x10;
+    public static final int CALLSITE_PROFILE        = 1 << 4;
     /** Flags that the call site is traced; Contexts that have {@code "trace.callsites"} property set emit code where
      * call sites have this flag set. */
-    public static final int CALLSITE_TRACE            = 0x20;
+    public static final int CALLSITE_TRACE          = 1 << 5;
     /** Flags that the call site linkage miss (and thus, relinking) is traced; Contexts that have the keyword
      * {@code "miss"} in their {@code "trace.callsites"} property emit code where call sites have this flag set. */
-    public static final int CALLSITE_TRACE_MISSES     = 0x40;
+    public static final int CALLSITE_TRACE_MISSES   = 1 << 6;
     /** Flags that entry/exit to/from the method linked at call site are traced; Contexts that have the keyword
-     * {@code "enterexit"} in their {@code "trace.callsites"} property emit code where call sites have this flag
-     * set. */
-    public static final int CALLSITE_TRACE_ENTEREXIT  = 0x80;
+     * {@code "enterexit"} in their {@code "trace.callsites"} property emit code where call sites have this flag set. */
+    public static final int CALLSITE_TRACE_ENTEREXIT = 1 << 7;
     /** Flags that values passed as arguments to and returned from the method linked at call site are traced; Contexts
      * that have the keyword {@code "values"} in their {@code "trace.callsites"} property emit code where call sites
      * have this flag set. */
-    public static final int CALLSITE_TRACE_VALUES    = 0x100;
+    public static final int CALLSITE_TRACE_VALUES   = 1 << 8;
     /** Ordinarily, when {@link #CALLSITE_TRACE_VALUES} is set, scope objects are not printed in the trace but instead
      * the word {@code "SCOPE"} is printed instead With this flag, scope objects are also printed. Contexts that have
      * the keyword {@code "scope"} in their {@code "trace.callsites"} property emit code where call sites have this flag
      * set. */
-    public static final int CALLSITE_TRACE_SCOPE      = 0x200;
+    public static final int CALLSITE_TRACE_SCOPE      = 1 << 9;
+
+    /**
+     * Number of bits the program point is shifted to the left in the flags (lowest bit containing a program point).
+     * Always one larger than the largest flag shift. Note that introducing a new flag halves the number of program
+     * points we can have.
+     * TODO: rethink if we need the various profile/trace flags or the linker can use the Context instead to query its
+     * trace/profile settings.
+     */
+    public static final int CALLSITE_PROGRAM_POINT_SHIFT = 10;
+
+    /**
+     * Maximum program point value. 22 bits should be enough for anyone
+     */
+    public static final int MAX_PROGRAM_POINT_VALUE = (1 << (32 - CALLSITE_PROGRAM_POINT_SHIFT)) - 1;
+
+    /**
+     * Flag mask to get the program point flags
+     */
+    public static final int FLAGS_MASK = (1 << CALLSITE_PROGRAM_POINT_SHIFT) - 1;
 
     private static final ClassValue<ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor>> canonicals =
             new ClassValue<ConcurrentMap<NashornCallSiteDescriptor,NashornCallSiteDescriptor>>() {
@@ -262,6 +283,25 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
         return isFlag(desc, CALLSITE_STRICT);
     }
 
+    /**
+     * Is this an optimistic call site
+     * @param desc descriptor
+     * @return true if optimistic
+     */
+    public static boolean isOptimistic(final CallSiteDescriptor desc) {
+        return isFlag(desc, CALLSITE_OPTIMISTIC);
+    }
+
+    /**
+     * Get a program point from a descriptor (must be optimistic)
+     * @param desc descriptor
+     * @return program point
+     */
+    public static int getProgramPoint(final CallSiteDescriptor desc) {
+        assert isOptimistic(desc) : "program point requested from non-optimistic descriptor " + desc;
+        return getFlags(desc) >> CALLSITE_PROGRAM_POINT_SHIFT;
+    }
+
     boolean isProfile() {
         return isFlag(CALLSITE_PROFILE);
     }
@@ -284,6 +324,10 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
 
     boolean isTraceScope() {
         return isFlag(CALLSITE_TRACE_SCOPE);
+    }
+
+    boolean isOptimistic() {
+        return isFlag(CALLSITE_OPTIMISTIC);
     }
 
     @Override
