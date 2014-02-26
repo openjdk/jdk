@@ -557,8 +557,8 @@ public class Package implements java.lang.reflect.AnnotatedElement {
         // First, update the system package map with new package names
         String[] names = getSystemPackages0();
         synchronized (pkgs) {
-            for (int i = 0; i < names.length; i++) {
-                defineSystemPackage(names[i], getSystemPackage0(names[i]));
+            for (String name : names) {
+                defineSystemPackage(name, getSystemPackage0(name));
             }
             return pkgs.values().toArray(new Package[pkgs.size()]);
         }

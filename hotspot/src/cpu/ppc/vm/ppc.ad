@@ -2076,6 +2076,8 @@ const bool Matcher::match_rule_supported(int opcode) {
     return false;
 
   switch (opcode) {
+  case Op_SqrtD:
+    return VM_Version::has_fsqrt();
   case Op_CountLeadingZerosI:
   case Op_CountLeadingZerosL:
   case Op_CountTrailingZerosI:
@@ -8740,7 +8742,7 @@ instruct negD_absD_reg(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// VM_Version::has_sqrt() decides if this node will be used.
+// VM_Version::has_fsqrt() decides if this node will be used.
 // Sqrt float double precision
 instruct sqrtD_reg(regD dst, regD src) %{
   match(Set dst (SqrtD src));

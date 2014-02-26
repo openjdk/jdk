@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2648,23 +2648,6 @@ void SystemDictionary::verify() {
   // Verify constraint table
   guarantee(constraints() != NULL, "Verify of loader constraints failed");
   constraints()->verify(dictionary(), placeholders());
-}
-
-
-void SystemDictionary::verify_obj_klass_present(Symbol* class_name,
-                                                ClassLoaderData* loader_data) {
-  GCMutexLocker mu(SystemDictionary_lock);
-  Symbol* name;
-
-  Klass* probe = find_class(class_name, loader_data);
-  if (probe == NULL) {
-    probe = SystemDictionary::find_shared_class(class_name);
-    if (probe == NULL) {
-      name = find_placeholder(class_name, loader_data);
-    }
-  }
-  guarantee(probe != NULL || name != NULL,
-            "Loaded klasses should be in SystemDictionary");
 }
 
 // utility function for class load event

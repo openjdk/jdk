@@ -98,217 +98,6 @@ Address MacroAssembler::as_Address(ArrayAddress adr) {
   return Address::make_array(adr);
 }
 
-int MacroAssembler::biased_locking_enter(Register lock_reg,
-                                         Register obj_reg,
-                                         Register swap_reg,
-                                         Register tmp_reg,
-                                         bool swap_reg_contains_mark,
-                                         Label& done,
-                                         Label* slow_case,
-                                         BiasedLockingCounters* counters) {
-  assert(UseBiasedLocking, "why call this otherwise?");
-  assert(swap_reg == rax, "swap_reg must be rax, for cmpxchg");
-  assert_different_registers(lock_reg, obj_reg, swap_reg);
-
-  if (PrintBiasedLockingStatistics && counters == NULL)
-    counters = BiasedLocking::counters();
-
-  bool need_tmp_reg = false;
-  if (tmp_reg == noreg) {
-    need_tmp_reg = true;
-    tmp_reg = lock_reg;
-  } else {
-    assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg);
-  }
-  assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
-  Address mark_addr      (obj_reg, oopDesc::mark_offset_in_bytes());
-  Address klass_addr     (obj_reg, oopDesc::klass_offset_in_bytes());
-  Address saved_mark_addr(lock_reg, 0);
-
-  // Biased locking
-  // See whether the lock is currently biased toward our thread and
-  // whether the epoch is still valid
-  // Note that the runtime guarantees sufficient alignment of JavaThread
-  // pointers to allow age to be placed into low bits
-  // First check to see whether biasing is even enabled for this object
-  Label cas_label;
-  int null_check_offset = -1;
-  if (!swap_reg_contains_mark) {
-    null_check_offset = offset();
-    movl(swap_reg, mark_addr);
-  }
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
-  movl(tmp_reg, swap_reg);
-  andl(tmp_reg, markOopDesc::biased_lock_mask_in_place);
-  cmpl(tmp_reg, markOopDesc::biased_lock_pattern);
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
-  jcc(Assembler::notEqual, cas_label);
-  // The bias pattern is present in the object's header. Need to check
-  // whether the bias owner and the epoch are both still current.
-  // Note that because there is no current thread register on x86 we
-  // need to store off the mark word we read out of the object to
-  // avoid reloading it and needing to recheck invariants below. This
-  // store is unfortunate but it makes the overall code shorter and
-  // simpler.
-  movl(saved_mark_addr, swap_reg);
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
-  get_thread(tmp_reg);
-  xorl(swap_reg, tmp_reg);
-  if (swap_reg_contains_mark) {
-    null_check_offset = offset();
-  }
-  movl(tmp_reg, klass_addr);
-  xorl(swap_reg, Address(tmp_reg, Klass::prototype_header_offset()));
-  andl(swap_reg, ~((int) markOopDesc::age_mask_in_place));
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address)counters->biased_lock_entry_count_addr()));
-  }
-  jcc(Assembler::equal, done);
-
-  Label try_revoke_bias;
-  Label try_rebias;
-
-  // At this point we know that the header has the bias pattern and
-  // that we are not the bias owner in the current epoch. We need to
-  // figure out more details about the state of the header in order to
-  // know what operations can be legally performed on the object's
-  // header.
-
-  // If the low three bits in the xor result aren't clear, that means
-  // the prototype header is no longer biased and we have to revoke
-  // the bias on this object.
-  testl(swap_reg, markOopDesc::biased_lock_mask_in_place);
-  jcc(Assembler::notZero, try_revoke_bias);
-
-  // Biasing is still enabled for this data type. See whether the
-  // epoch of the current bias is still valid, meaning that the epoch
-  // bits of the mark word are equal to the epoch bits of the
-  // prototype header. (Note that the prototype header's epoch bits
-  // only change at a safepoint.) If not, attempt to rebias the object
-  // toward the current thread. Note that we must be absolutely sure
-  // that the current epoch is invalid in order to do this because
-  // otherwise the manipulations it performs on the mark word are
-  // illegal.
-  testl(swap_reg, markOopDesc::epoch_mask_in_place);
-  jcc(Assembler::notZero, try_rebias);
-
-  // The epoch of the current bias is still valid but we know nothing
-  // about the owner; it might be set or it might be clear. Try to
-  // acquire the bias of the object using an atomic operation. If this
-  // fails we will go in to the runtime to revoke the object's bias.
-  // Note that we first construct the presumed unbiased header so we
-  // don't accidentally blow away another thread's valid bias.
-  movl(swap_reg, saved_mark_addr);
-  andl(swap_reg,
-       markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place);
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
-  get_thread(tmp_reg);
-  orl(tmp_reg, swap_reg);
-  if (os::is_MP()) {
-    lock();
-  }
-  cmpxchgptr(tmp_reg, Address(obj_reg, 0));
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
-  // If the biasing toward our thread failed, this means that
-  // another thread succeeded in biasing it toward itself and we
-  // need to revoke that bias. The revocation will occur in the
-  // interpreter runtime in the slow case.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address)counters->anonymously_biased_lock_entry_count_addr()));
-  }
-  if (slow_case != NULL) {
-    jcc(Assembler::notZero, *slow_case);
-  }
-  jmp(done);
-
-  bind(try_rebias);
-  // At this point we know the epoch has expired, meaning that the
-  // current "bias owner", if any, is actually invalid. Under these
-  // circumstances _only_, we are allowed to use the current header's
-  // value as the comparison value when doing the cas to acquire the
-  // bias in the current epoch. In other words, we allow transfer of
-  // the bias from one thread to another directly in this situation.
-  //
-  // FIXME: due to a lack of registers we currently blow away the age
-  // bits in this situation. Should attempt to preserve them.
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
-  get_thread(tmp_reg);
-  movl(swap_reg, klass_addr);
-  orl(tmp_reg, Address(swap_reg, Klass::prototype_header_offset()));
-  movl(swap_reg, saved_mark_addr);
-  if (os::is_MP()) {
-    lock();
-  }
-  cmpxchgptr(tmp_reg, Address(obj_reg, 0));
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
-  // If the biasing toward our thread failed, then another thread
-  // succeeded in biasing it toward itself and we need to revoke that
-  // bias. The revocation will occur in the runtime in the slow case.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address)counters->rebiased_lock_entry_count_addr()));
-  }
-  if (slow_case != NULL) {
-    jcc(Assembler::notZero, *slow_case);
-  }
-  jmp(done);
-
-  bind(try_revoke_bias);
-  // The prototype mark in the klass doesn't have the bias bit set any
-  // more, indicating that objects of this data type are not supposed
-  // to be biased any more. We are going to try to reset the mark of
-  // this object to the prototype value and fall through to the
-  // CAS-based locking scheme. Note that if our CAS fails, it means
-  // that another thread raced us for the privilege of revoking the
-  // bias of this particular object, so it's okay to continue in the
-  // normal locking code.
-  //
-  // FIXME: due to a lack of registers we currently blow away the age
-  // bits in this situation. Should attempt to preserve them.
-  movl(swap_reg, saved_mark_addr);
-  if (need_tmp_reg) {
-    push(tmp_reg);
-  }
-  movl(tmp_reg, klass_addr);
-  movl(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset()));
-  if (os::is_MP()) {
-    lock();
-  }
-  cmpxchgptr(tmp_reg, Address(obj_reg, 0));
-  if (need_tmp_reg) {
-    pop(tmp_reg);
-  }
-  // Fall through to the normal CAS-based lock, because no matter what
-  // the result of the above CAS, some thread must have succeeded in
-  // removing the bias bit from the object's header.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address)counters->revoked_lock_entry_count_addr()));
-  }
-
-  bind(cas_label);
-
-  return null_check_offset;
-}
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments) {
   call(RuntimeAddress(entry_point));
@@ -724,165 +513,6 @@ Address MacroAssembler::as_Address(ArrayAddress adr) {
   assert(index._disp == 0, "must not have disp"); // maybe it can?
   Address array(rscratch1, index._index, index._scale, index._disp);
   return array;
-}
-
-int MacroAssembler::biased_locking_enter(Register lock_reg,
-                                         Register obj_reg,
-                                         Register swap_reg,
-                                         Register tmp_reg,
-                                         bool swap_reg_contains_mark,
-                                         Label& done,
-                                         Label* slow_case,
-                                         BiasedLockingCounters* counters) {
-  assert(UseBiasedLocking, "why call this otherwise?");
-  assert(swap_reg == rax, "swap_reg must be rax for cmpxchgq");
-  assert(tmp_reg != noreg, "tmp_reg must be supplied");
-  assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg);
-  assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
-  Address mark_addr      (obj_reg, oopDesc::mark_offset_in_bytes());
-  Address saved_mark_addr(lock_reg, 0);
-
-  if (PrintBiasedLockingStatistics && counters == NULL)
-    counters = BiasedLocking::counters();
-
-  // Biased locking
-  // See whether the lock is currently biased toward our thread and
-  // whether the epoch is still valid
-  // Note that the runtime guarantees sufficient alignment of JavaThread
-  // pointers to allow age to be placed into low bits
-  // First check to see whether biasing is even enabled for this object
-  Label cas_label;
-  int null_check_offset = -1;
-  if (!swap_reg_contains_mark) {
-    null_check_offset = offset();
-    movq(swap_reg, mark_addr);
-  }
-  movq(tmp_reg, swap_reg);
-  andq(tmp_reg, markOopDesc::biased_lock_mask_in_place);
-  cmpq(tmp_reg, markOopDesc::biased_lock_pattern);
-  jcc(Assembler::notEqual, cas_label);
-  // The bias pattern is present in the object's header. Need to check
-  // whether the bias owner and the epoch are both still current.
-  load_prototype_header(tmp_reg, obj_reg);
-  orq(tmp_reg, r15_thread);
-  xorq(tmp_reg, swap_reg);
-  andq(tmp_reg, ~((int) markOopDesc::age_mask_in_place));
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->anonymously_biased_lock_entry_count_addr()));
-  }
-  jcc(Assembler::equal, done);
-
-  Label try_revoke_bias;
-  Label try_rebias;
-
-  // At this point we know that the header has the bias pattern and
-  // that we are not the bias owner in the current epoch. We need to
-  // figure out more details about the state of the header in order to
-  // know what operations can be legally performed on the object's
-  // header.
-
-  // If the low three bits in the xor result aren't clear, that means
-  // the prototype header is no longer biased and we have to revoke
-  // the bias on this object.
-  testq(tmp_reg, markOopDesc::biased_lock_mask_in_place);
-  jcc(Assembler::notZero, try_revoke_bias);
-
-  // Biasing is still enabled for this data type. See whether the
-  // epoch of the current bias is still valid, meaning that the epoch
-  // bits of the mark word are equal to the epoch bits of the
-  // prototype header. (Note that the prototype header's epoch bits
-  // only change at a safepoint.) If not, attempt to rebias the object
-  // toward the current thread. Note that we must be absolutely sure
-  // that the current epoch is invalid in order to do this because
-  // otherwise the manipulations it performs on the mark word are
-  // illegal.
-  testq(tmp_reg, markOopDesc::epoch_mask_in_place);
-  jcc(Assembler::notZero, try_rebias);
-
-  // The epoch of the current bias is still valid but we know nothing
-  // about the owner; it might be set or it might be clear. Try to
-  // acquire the bias of the object using an atomic operation. If this
-  // fails we will go in to the runtime to revoke the object's bias.
-  // Note that we first construct the presumed unbiased header so we
-  // don't accidentally blow away another thread's valid bias.
-  andq(swap_reg,
-       markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place);
-  movq(tmp_reg, swap_reg);
-  orq(tmp_reg, r15_thread);
-  if (os::is_MP()) {
-    lock();
-  }
-  cmpxchgq(tmp_reg, Address(obj_reg, 0));
-  // If the biasing toward our thread failed, this means that
-  // another thread succeeded in biasing it toward itself and we
-  // need to revoke that bias. The revocation will occur in the
-  // interpreter runtime in the slow case.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->anonymously_biased_lock_entry_count_addr()));
-  }
-  if (slow_case != NULL) {
-    jcc(Assembler::notZero, *slow_case);
-  }
-  jmp(done);
-
-  bind(try_rebias);
-  // At this point we know the epoch has expired, meaning that the
-  // current "bias owner", if any, is actually invalid. Under these
-  // circumstances _only_, we are allowed to use the current header's
-  // value as the comparison value when doing the cas to acquire the
-  // bias in the current epoch. In other words, we allow transfer of
-  // the bias from one thread to another directly in this situation.
-  //
-  // FIXME: due to a lack of registers we currently blow away the age
-  // bits in this situation. Should attempt to preserve them.
-  load_prototype_header(tmp_reg, obj_reg);
-  orq(tmp_reg, r15_thread);
-  if (os::is_MP()) {
-    lock();
-  }
-  cmpxchgq(tmp_reg, Address(obj_reg, 0));
-  // If the biasing toward our thread failed, then another thread
-  // succeeded in biasing it toward itself and we need to revoke that
-  // bias. The revocation will occur in the runtime in the slow case.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->rebiased_lock_entry_count_addr()));
-  }
-  if (slow_case != NULL) {
-    jcc(Assembler::notZero, *slow_case);
-  }
-  jmp(done);
-
-  bind(try_revoke_bias);
-  // The prototype mark in the klass doesn't have the bias bit set any
-  // more, indicating that objects of this data type are not supposed
-  // to be biased any more. We are going to try to reset the mark of
-  // this object to the prototype value and fall through to the
-  // CAS-based locking scheme. Note that if our CAS fails, it means
-  // that another thread raced us for the privilege of revoking the
-  // bias of this particular object, so it's okay to continue in the
-  // normal locking code.
-  //
-  // FIXME: due to a lack of registers we currently blow away the age
-  // bits in this situation. Should attempt to preserve them.
-  load_prototype_header(tmp_reg, obj_reg);
-  if (os::is_MP()) {
-    lock();
-  }
-  cmpxchgq(tmp_reg, Address(obj_reg, 0));
-  // Fall through to the normal CAS-based lock, because no matter what
-  // the result of the above CAS, some thread must have succeeded in
-  // removing the bias bit from the object's header.
-  if (counters != NULL) {
-    cond_inc32(Assembler::zero,
-               ExternalAddress((address) counters->revoked_lock_entry_count_addr()));
-  }
-
-  bind(cas_label);
-
-  return null_check_offset;
 }
 
 void MacroAssembler::call_VM_leaf_base(address entry_point, int num_args) {
@@ -1360,9 +990,16 @@ void MacroAssembler::andptr(Register dst, int32_t imm32) {
 
 void MacroAssembler::atomic_incl(AddressLiteral counter_addr) {
   pushf();
-  if (os::is_MP())
-    lock();
-  incrementl(counter_addr);
+  if (reachable(counter_addr)) {
+    if (os::is_MP())
+      lock();
+    incrementl(as_Address(counter_addr));
+  } else {
+    lea(rscratch1, counter_addr);
+    if (os::is_MP())
+      lock();
+    incrementl(Address(rscratch1, 0));
+  }
   popf();
 }
 
@@ -1393,6 +1030,234 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   }
 }
 
+int MacroAssembler::biased_locking_enter(Register lock_reg,
+                                         Register obj_reg,
+                                         Register swap_reg,
+                                         Register tmp_reg,
+                                         bool swap_reg_contains_mark,
+                                         Label& done,
+                                         Label* slow_case,
+                                         BiasedLockingCounters* counters) {
+  assert(UseBiasedLocking, "why call this otherwise?");
+  assert(swap_reg == rax, "swap_reg must be rax for cmpxchgq");
+  LP64_ONLY( assert(tmp_reg != noreg, "tmp_reg must be supplied"); )
+  bool need_tmp_reg = false;
+  if (tmp_reg == noreg) {
+    need_tmp_reg = true;
+    tmp_reg = lock_reg;
+    assert_different_registers(lock_reg, obj_reg, swap_reg);
+  } else {
+    assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg);
+  }
+  assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
+  Address mark_addr      (obj_reg, oopDesc::mark_offset_in_bytes());
+  Address saved_mark_addr(lock_reg, 0);
+
+  if (PrintBiasedLockingStatistics && counters == NULL) {
+    counters = BiasedLocking::counters();
+  }
+  // Biased locking
+  // See whether the lock is currently biased toward our thread and
+  // whether the epoch is still valid
+  // Note that the runtime guarantees sufficient alignment of JavaThread
+  // pointers to allow age to be placed into low bits
+  // First check to see whether biasing is even enabled for this object
+  Label cas_label;
+  int null_check_offset = -1;
+  if (!swap_reg_contains_mark) {
+    null_check_offset = offset();
+    movptr(swap_reg, mark_addr);
+  }
+  if (need_tmp_reg) {
+    push(tmp_reg);
+  }
+  movptr(tmp_reg, swap_reg);
+  andptr(tmp_reg, markOopDesc::biased_lock_mask_in_place);
+  cmpptr(tmp_reg, markOopDesc::biased_lock_pattern);
+  if (need_tmp_reg) {
+    pop(tmp_reg);
+  }
+  jcc(Assembler::notEqual, cas_label);
+  // The bias pattern is present in the object's header. Need to check
+  // whether the bias owner and the epoch are both still current.
+#ifndef _LP64
+  // Note that because there is no current thread register on x86_32 we
+  // need to store off the mark word we read out of the object to
+  // avoid reloading it and needing to recheck invariants below. This
+  // store is unfortunate but it makes the overall code shorter and
+  // simpler.
+  movptr(saved_mark_addr, swap_reg);
+#endif
+  if (need_tmp_reg) {
+    push(tmp_reg);
+  }
+  if (swap_reg_contains_mark) {
+    null_check_offset = offset();
+  }
+  load_prototype_header(tmp_reg, obj_reg);
+#ifdef _LP64
+  orptr(tmp_reg, r15_thread);
+  xorptr(tmp_reg, swap_reg);
+  Register header_reg = tmp_reg;
+#else
+  xorptr(tmp_reg, swap_reg);
+  get_thread(swap_reg);
+  xorptr(swap_reg, tmp_reg);
+  Register header_reg = swap_reg;
+#endif
+  andptr(header_reg, ~((int) markOopDesc::age_mask_in_place));
+  if (need_tmp_reg) {
+    pop(tmp_reg);
+  }
+  if (counters != NULL) {
+    cond_inc32(Assembler::zero,
+               ExternalAddress((address) counters->biased_lock_entry_count_addr()));
+  }
+  jcc(Assembler::equal, done);
+
+  Label try_revoke_bias;
+  Label try_rebias;
+
+  // At this point we know that the header has the bias pattern and
+  // that we are not the bias owner in the current epoch. We need to
+  // figure out more details about the state of the header in order to
+  // know what operations can be legally performed on the object's
+  // header.
+
+  // If the low three bits in the xor result aren't clear, that means
+  // the prototype header is no longer biased and we have to revoke
+  // the bias on this object.
+  testptr(header_reg, markOopDesc::biased_lock_mask_in_place);
+  jccb(Assembler::notZero, try_revoke_bias);
+
+  // Biasing is still enabled for this data type. See whether the
+  // epoch of the current bias is still valid, meaning that the epoch
+  // bits of the mark word are equal to the epoch bits of the
+  // prototype header. (Note that the prototype header's epoch bits
+  // only change at a safepoint.) If not, attempt to rebias the object
+  // toward the current thread. Note that we must be absolutely sure
+  // that the current epoch is invalid in order to do this because
+  // otherwise the manipulations it performs on the mark word are
+  // illegal.
+  testptr(header_reg, markOopDesc::epoch_mask_in_place);
+  jccb(Assembler::notZero, try_rebias);
+
+  // The epoch of the current bias is still valid but we know nothing
+  // about the owner; it might be set or it might be clear. Try to
+  // acquire the bias of the object using an atomic operation. If this
+  // fails we will go in to the runtime to revoke the object's bias.
+  // Note that we first construct the presumed unbiased header so we
+  // don't accidentally blow away another thread's valid bias.
+  NOT_LP64( movptr(swap_reg, saved_mark_addr); )
+  andptr(swap_reg,
+         markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place);
+  if (need_tmp_reg) {
+    push(tmp_reg);
+  }
+#ifdef _LP64
+  movptr(tmp_reg, swap_reg);
+  orptr(tmp_reg, r15_thread);
+#else
+  get_thread(tmp_reg);
+  orptr(tmp_reg, swap_reg);
+#endif
+  if (os::is_MP()) {
+    lock();
+  }
+  cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
+  if (need_tmp_reg) {
+    pop(tmp_reg);
+  }
+  // If the biasing toward our thread failed, this means that
+  // another thread succeeded in biasing it toward itself and we
+  // need to revoke that bias. The revocation will occur in the
+  // interpreter runtime in the slow case.
+  if (counters != NULL) {
+    cond_inc32(Assembler::zero,
+               ExternalAddress((address) counters->anonymously_biased_lock_entry_count_addr()));
+  }
+  if (slow_case != NULL) {
+    jcc(Assembler::notZero, *slow_case);
+  }
+  jmp(done);
+
+  bind(try_rebias);
+  // At this point we know the epoch has expired, meaning that the
+  // current "bias owner", if any, is actually invalid. Under these
+  // circumstances _only_, we are allowed to use the current header's
+  // value as the comparison value when doing the cas to acquire the
+  // bias in the current epoch. In other words, we allow transfer of
+  // the bias from one thread to another directly in this situation.
+  //
+  // FIXME: due to a lack of registers we currently blow away the age
+  // bits in this situation. Should attempt to preserve them.
+  if (need_tmp_reg) {
+    push(tmp_reg);
+  }
+  load_prototype_header(tmp_reg, obj_reg);
+#ifdef _LP64
+  orptr(tmp_reg, r15_thread);
+#else
+  get_thread(swap_reg);
+  orptr(tmp_reg, swap_reg);
+  movptr(swap_reg, saved_mark_addr);
+#endif
+  if (os::is_MP()) {
+    lock();
+  }
+  cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
+  if (need_tmp_reg) {
+    pop(tmp_reg);
+  }
+  // If the biasing toward our thread failed, then another thread
+  // succeeded in biasing it toward itself and we need to revoke that
+  // bias. The revocation will occur in the runtime in the slow case.
+  if (counters != NULL) {
+    cond_inc32(Assembler::zero,
+               ExternalAddress((address) counters->rebiased_lock_entry_count_addr()));
+  }
+  if (slow_case != NULL) {
+    jcc(Assembler::notZero, *slow_case);
+  }
+  jmp(done);
+
+  bind(try_revoke_bias);
+  // The prototype mark in the klass doesn't have the bias bit set any
+  // more, indicating that objects of this data type are not supposed
+  // to be biased any more. We are going to try to reset the mark of
+  // this object to the prototype value and fall through to the
+  // CAS-based locking scheme. Note that if our CAS fails, it means
+  // that another thread raced us for the privilege of revoking the
+  // bias of this particular object, so it's okay to continue in the
+  // normal locking code.
+  //
+  // FIXME: due to a lack of registers we currently blow away the age
+  // bits in this situation. Should attempt to preserve them.
+  NOT_LP64( movptr(swap_reg, saved_mark_addr); )
+  if (need_tmp_reg) {
+    push(tmp_reg);
+  }
+  load_prototype_header(tmp_reg, obj_reg);
+  if (os::is_MP()) {
+    lock();
+  }
+  cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
+  if (need_tmp_reg) {
+    pop(tmp_reg);
+  }
+  // Fall through to the normal CAS-based lock, because no matter what
+  // the result of the above CAS, some thread must have succeeded in
+  // removing the bias bit from the object's header.
+  if (counters != NULL) {
+    cond_inc32(Assembler::zero,
+               ExternalAddress((address) counters->revoked_lock_entry_count_addr()));
+  }
+
+  bind(cas_label);
+
+  return null_check_offset;
+}
+
 void MacroAssembler::biased_locking_exit(Register obj_reg, Register temp_reg, Label& done) {
   assert(UseBiasedLocking, "why call this otherwise?");
 
@@ -1407,6 +1272,620 @@ void MacroAssembler::biased_locking_exit(Register obj_reg, Register temp_reg, La
   cmpptr(temp_reg, markOopDesc::biased_lock_pattern);
   jcc(Assembler::equal, done);
 }
+
+#ifdef COMPILER2
+// Fast_Lock and Fast_Unlock used by C2
+
+// Because the transitions from emitted code to the runtime
+// monitorenter/exit helper stubs are so slow it's critical that
+// we inline both the stack-locking fast-path and the inflated fast path.
+//
+// See also: cmpFastLock and cmpFastUnlock.
+//
+// What follows is a specialized inline transliteration of the code
+// in slow_enter() and slow_exit().  If we're concerned about I$ bloat
+// another option would be to emit TrySlowEnter and TrySlowExit methods
+// at startup-time.  These methods would accept arguments as
+// (rax,=Obj, rbx=Self, rcx=box, rdx=Scratch) and return success-failure
+// indications in the icc.ZFlag.  Fast_Lock and Fast_Unlock would simply
+// marshal the arguments and emit calls to TrySlowEnter and TrySlowExit.
+// In practice, however, the # of lock sites is bounded and is usually small.
+// Besides the call overhead, TrySlowEnter and TrySlowExit might suffer
+// if the processor uses simple bimodal branch predictors keyed by EIP
+// Since the helper routines would be called from multiple synchronization
+// sites.
+//
+// An even better approach would be write "MonitorEnter()" and "MonitorExit()"
+// in java - using j.u.c and unsafe - and just bind the lock and unlock sites
+// to those specialized methods.  That'd give us a mostly platform-independent
+// implementation that the JITs could optimize and inline at their pleasure.
+// Done correctly, the only time we'd need to cross to native could would be
+// to park() or unpark() threads.  We'd also need a few more unsafe operators
+// to (a) prevent compiler-JIT reordering of non-volatile accesses, and
+// (b) explicit barriers or fence operations.
+//
+// TODO:
+//
+// *  Arrange for C2 to pass "Self" into Fast_Lock and Fast_Unlock in one of the registers (scr).
+//    This avoids manifesting the Self pointer in the Fast_Lock and Fast_Unlock terminals.
+//    Given TLAB allocation, Self is usually manifested in a register, so passing it into
+//    the lock operators would typically be faster than reifying Self.
+//
+// *  Ideally I'd define the primitives as:
+//       fast_lock   (nax Obj, nax box, EAX tmp, nax scr) where box, tmp and scr are KILLED.
+//       fast_unlock (nax Obj, EAX box, nax tmp) where box and tmp are KILLED
+//    Unfortunately ADLC bugs prevent us from expressing the ideal form.
+//    Instead, we're stuck with a rather awkward and brittle register assignments below.
+//    Furthermore the register assignments are overconstrained, possibly resulting in
+//    sub-optimal code near the synchronization site.
+//
+// *  Eliminate the sp-proximity tests and just use "== Self" tests instead.
+//    Alternately, use a better sp-proximity test.
+//
+// *  Currently ObjectMonitor._Owner can hold either an sp value or a (THREAD *) value.
+//    Either one is sufficient to uniquely identify a thread.
+//    TODO: eliminate use of sp in _owner and use get_thread(tr) instead.
+//
+// *  Intrinsify notify() and notifyAll() for the common cases where the
+//    object is locked by the calling thread but the waitlist is empty.
+//    avoid the expensive JNI call to JVM_Notify() and JVM_NotifyAll().
+//
+// *  use jccb and jmpb instead of jcc and jmp to improve code density.
+//    But beware of excessive branch density on AMD Opterons.
+//
+// *  Both Fast_Lock and Fast_Unlock set the ICC.ZF to indicate success
+//    or failure of the fast-path.  If the fast-path fails then we pass
+//    control to the slow-path, typically in C.  In Fast_Lock and
+//    Fast_Unlock we often branch to DONE_LABEL, just to find that C2
+//    will emit a conditional branch immediately after the node.
+//    So we have branches to branches and lots of ICC.ZF games.
+//    Instead, it might be better to have C2 pass a "FailureLabel"
+//    into Fast_Lock and Fast_Unlock.  In the case of success, control
+//    will drop through the node.  ICC.ZF is undefined at exit.
+//    In the case of failure, the node will branch directly to the
+//    FailureLabel
+
+
+// obj: object to lock
+// box: on-stack box address (displaced header location) - KILLED
+// rax,: tmp -- KILLED
+// scr: tmp -- KILLED
+void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg, Register scrReg, BiasedLockingCounters* counters) {
+  // Ensure the register assignents are disjoint
+  guarantee (objReg != boxReg, "");
+  guarantee (objReg != tmpReg, "");
+  guarantee (objReg != scrReg, "");
+  guarantee (boxReg != tmpReg, "");
+  guarantee (boxReg != scrReg, "");
+  guarantee (tmpReg == rax, "");
+
+  if (counters != NULL) {
+    atomic_incl(ExternalAddress((address)counters->total_entry_count_addr()));
+  }
+  if (EmitSync & 1) {
+      // set box->dhw = unused_mark (3)
+      // Force all sync thru slow-path: slow_enter() and slow_exit()
+      movptr (Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
+      cmpptr (rsp, (int32_t)NULL_WORD);
+  } else
+  if (EmitSync & 2) {
+      Label DONE_LABEL ;
+      if (UseBiasedLocking) {
+         // Note: tmpReg maps to the swap_reg argument and scrReg to the tmp_reg argument.
+         biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, counters);
+      }
+
+      movptr(tmpReg, Address(objReg, 0));           // fetch markword
+      orptr (tmpReg, 0x1);
+      movptr(Address(boxReg, 0), tmpReg);           // Anticipate successful CAS
+      if (os::is_MP()) {
+        lock();
+      }
+      cmpxchgptr(boxReg, Address(objReg, 0));       // Updates tmpReg
+      jccb(Assembler::equal, DONE_LABEL);
+      // Recursive locking
+      subptr(tmpReg, rsp);
+      andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
+      movptr(Address(boxReg, 0), tmpReg);
+      bind(DONE_LABEL);
+  } else {
+    // Possible cases that we'll encounter in fast_lock
+    // ------------------------------------------------
+    // * Inflated
+    //    -- unlocked
+    //    -- Locked
+    //       = by self
+    //       = by other
+    // * biased
+    //    -- by Self
+    //    -- by other
+    // * neutral
+    // * stack-locked
+    //    -- by self
+    //       = sp-proximity test hits
+    //       = sp-proximity test generates false-negative
+    //    -- by other
+    //
+
+    Label IsInflated, DONE_LABEL;
+
+    // it's stack-locked, biased or neutral
+    // TODO: optimize away redundant LDs of obj->mark and improve the markword triage
+    // order to reduce the number of conditional branches in the most common cases.
+    // Beware -- there's a subtle invariant that fetch of the markword
+    // at [FETCH], below, will never observe a biased encoding (*101b).
+    // If this invariant is not held we risk exclusion (safety) failure.
+    if (UseBiasedLocking && !UseOptoBiasInlining) {
+      biased_locking_enter(boxReg, objReg, tmpReg, scrReg, true, DONE_LABEL, NULL, counters);
+    }
+
+    movptr(tmpReg, Address(objReg, 0));          // [FETCH]
+    testl (tmpReg, markOopDesc::monitor_value);  // inflated vs stack-locked|neutral|biased
+    jccb  (Assembler::notZero, IsInflated);
+
+    // Attempt stack-locking ...
+    orptr (tmpReg, 0x1);
+    movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
+    if (os::is_MP()) {
+      lock();
+    }
+    cmpxchgptr(boxReg, Address(objReg, 0));      // Updates tmpReg
+    if (counters != NULL) {
+      cond_inc32(Assembler::equal,
+                 ExternalAddress((address)counters->fast_path_entry_count_addr()));
+    }
+    jccb(Assembler::equal, DONE_LABEL);
+
+    // Recursive locking
+    subptr(tmpReg, rsp);
+    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
+    movptr(Address(boxReg, 0), tmpReg);
+    if (counters != NULL) {
+      cond_inc32(Assembler::equal,
+                 ExternalAddress((address)counters->fast_path_entry_count_addr()));
+    }
+    jmpb(DONE_LABEL);
+
+    bind(IsInflated);
+#ifndef _LP64
+    // The object is inflated.
+    //
+    // TODO-FIXME: eliminate the ugly use of manifest constants:
+    //   Use markOopDesc::monitor_value instead of "2".
+    //   use markOop::unused_mark() instead of "3".
+    // The tmpReg value is an objectMonitor reference ORed with
+    // markOopDesc::monitor_value (2).   We can either convert tmpReg to an
+    // objectmonitor pointer by masking off the "2" bit or we can just
+    // use tmpReg as an objectmonitor pointer but bias the objectmonitor
+    // field offsets with "-2" to compensate for and annul the low-order tag bit.
+    //
+    // I use the latter as it avoids AGI stalls.
+    // As such, we write "mov r, [tmpReg+OFFSETOF(Owner)-2]"
+    // instead of "mov r, [tmpReg+OFFSETOF(Owner)]".
+    //
+    #define OFFSET_SKEWED(f) ((ObjectMonitor::f ## _offset_in_bytes())-2)
+
+    // boxReg refers to the on-stack BasicLock in the current frame.
+    // We'd like to write:
+    //   set box->_displaced_header = markOop::unused_mark().  Any non-0 value suffices.
+    // This is convenient but results a ST-before-CAS penalty.  The following CAS suffers
+    // additional latency as we have another ST in the store buffer that must drain.
+
+    if (EmitSync & 8192) {
+       movptr(Address(boxReg, 0), 3);            // results in ST-before-CAS penalty
+       get_thread (scrReg);
+       movptr(boxReg, tmpReg);                    // consider: LEA box, [tmp-2]
+       movptr(tmpReg, NULL_WORD);                 // consider: xor vs mov
+       if (os::is_MP()) {
+         lock();
+       }
+       cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+    } else
+    if ((EmitSync & 128) == 0) {                      // avoid ST-before-CAS
+       movptr(scrReg, boxReg);
+       movptr(boxReg, tmpReg);                   // consider: LEA box, [tmp-2]
+
+       // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
+       if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
+          // prefetchw [eax + Offset(_owner)-2]
+          prefetchw(Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       }
+
+       if ((EmitSync & 64) == 0) {
+         // Optimistic form: consider XORL tmpReg,tmpReg
+         movptr(tmpReg, NULL_WORD);
+       } else {
+         // Can suffer RTS->RTO upgrades on shared or cold $ lines
+         // Test-And-CAS instead of CAS
+         movptr(tmpReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));   // rax, = m->_owner
+         testptr(tmpReg, tmpReg);                   // Locked ?
+         jccb  (Assembler::notZero, DONE_LABEL);
+       }
+
+       // Appears unlocked - try to swing _owner from null to non-null.
+       // Ideally, I'd manifest "Self" with get_thread and then attempt
+       // to CAS the register containing Self into m->Owner.
+       // But we don't have enough registers, so instead we can either try to CAS
+       // rsp or the address of the box (in scr) into &m->owner.  If the CAS succeeds
+       // we later store "Self" into m->Owner.  Transiently storing a stack address
+       // (rsp or the address of the box) into  m->owner is harmless.
+       // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
+       if (os::is_MP()) {
+         lock();
+       }
+       cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
+       jccb  (Assembler::notZero, DONE_LABEL);
+       get_thread (scrReg);                    // beware: clobbers ICCs
+       movptr(Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2), scrReg);
+       xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
+
+       // If the CAS fails we can either retry or pass control to the slow-path.
+       // We use the latter tactic.
+       // Pass the CAS result in the icc.ZFlag into DONE_LABEL
+       // If the CAS was successful ...
+       //   Self has acquired the lock
+       //   Invariant: m->_recursions should already be 0, so we don't need to explicitly set it.
+       // Intentional fall-through into DONE_LABEL ...
+    } else {
+       movptr(Address(boxReg, 0), intptr_t(markOopDesc::unused_mark()));  // results in ST-before-CAS penalty
+       movptr(boxReg, tmpReg);
+
+       // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
+       if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
+          // prefetchw [eax + Offset(_owner)-2]
+          prefetchw(Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       }
+
+       if ((EmitSync & 64) == 0) {
+         // Optimistic form
+         xorptr  (tmpReg, tmpReg);
+       } else {
+         // Can suffer RTS->RTO upgrades on shared or cold $ lines
+         movptr(tmpReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));   // rax, = m->_owner
+         testptr(tmpReg, tmpReg);                   // Locked ?
+         jccb  (Assembler::notZero, DONE_LABEL);
+       }
+
+       // Appears unlocked - try to swing _owner from null to non-null.
+       // Use either "Self" (in scr) or rsp as thread identity in _owner.
+       // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
+       get_thread (scrReg);
+       if (os::is_MP()) {
+         lock();
+       }
+       cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+
+       // If the CAS fails we can either retry or pass control to the slow-path.
+       // We use the latter tactic.
+       // Pass the CAS result in the icc.ZFlag into DONE_LABEL
+       // If the CAS was successful ...
+       //   Self has acquired the lock
+       //   Invariant: m->_recursions should already be 0, so we don't need to explicitly set it.
+       // Intentional fall-through into DONE_LABEL ...
+    }
+#else // _LP64
+    // It's inflated
+
+    // TODO: someday avoid the ST-before-CAS penalty by
+    // relocating (deferring) the following ST.
+    // We should also think about trying a CAS without having
+    // fetched _owner.  If the CAS is successful we may
+    // avoid an RTO->RTS upgrade on the $line.
+
+    // Without cast to int32_t a movptr will destroy r10 which is typically obj
+    movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
+
+    mov    (boxReg, tmpReg);
+    movptr (tmpReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+    testptr(tmpReg, tmpReg);
+    jccb   (Assembler::notZero, DONE_LABEL);
+
+    // It's inflated and appears unlocked
+    if (os::is_MP()) {
+      lock();
+    }
+    cmpxchgptr(r15_thread, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2));
+    // Intentional fall-through into DONE_LABEL ...
+
+#endif
+
+    // DONE_LABEL is a hot target - we'd really like to place it at the
+    // start of cache line by padding with NOPs.
+    // See the AMD and Intel software optimization manuals for the
+    // most efficient "long" NOP encodings.
+    // Unfortunately none of our alignment mechanisms suffice.
+    bind(DONE_LABEL);
+
+    // At DONE_LABEL the icc ZFlag is set as follows ...
+    // Fast_Unlock uses the same protocol.
+    // ZFlag == 1 -> Success
+    // ZFlag == 0 -> Failure - force control through the slow-path
+  }
+}
+
+// obj: object to unlock
+// box: box address (displaced header location), killed.  Must be EAX.
+// tmp: killed, cannot be obj nor box.
+//
+// Some commentary on balanced locking:
+//
+// Fast_Lock and Fast_Unlock are emitted only for provably balanced lock sites.
+// Methods that don't have provably balanced locking are forced to run in the
+// interpreter - such methods won't be compiled to use fast_lock and fast_unlock.
+// The interpreter provides two properties:
+// I1:  At return-time the interpreter automatically and quietly unlocks any
+//      objects acquired the current activation (frame).  Recall that the
+//      interpreter maintains an on-stack list of locks currently held by
+//      a frame.
+// I2:  If a method attempts to unlock an object that is not held by the
+//      the frame the interpreter throws IMSX.
+//
+// Lets say A(), which has provably balanced locking, acquires O and then calls B().
+// B() doesn't have provably balanced locking so it runs in the interpreter.
+// Control returns to A() and A() unlocks O.  By I1 and I2, above, we know that O
+// is still locked by A().
+//
+// The only other source of unbalanced locking would be JNI.  The "Java Native Interface:
+// Programmer's Guide and Specification" claims that an object locked by jni_monitorenter
+// should not be unlocked by "normal" java-level locking and vice-versa.  The specification
+// doesn't specify what will occur if a program engages in such mixed-mode locking, however.
+
+void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpReg) {
+  guarantee (objReg != boxReg, "");
+  guarantee (objReg != tmpReg, "");
+  guarantee (boxReg != tmpReg, "");
+  guarantee (boxReg == rax, "");
+
+  if (EmitSync & 4) {
+    // Disable - inhibit all inlining.  Force control through the slow-path
+    cmpptr (rsp, 0);
+  } else
+  if (EmitSync & 8) {
+    Label DONE_LABEL;
+    if (UseBiasedLocking) {
+       biased_locking_exit(objReg, tmpReg, DONE_LABEL);
+    }
+    // Classic stack-locking code ...
+    // Check whether the displaced header is 0
+    //(=> recursive unlock)
+    movptr(tmpReg, Address(boxReg, 0));
+    testptr(tmpReg, tmpReg);
+    jccb(Assembler::zero, DONE_LABEL);
+    // If not recursive lock, reset the header to displaced header
+    if (os::is_MP()) {
+      lock();
+    }
+    cmpxchgptr(tmpReg, Address(objReg, 0));   // Uses RAX which is box
+    bind(DONE_LABEL);
+  } else {
+    Label DONE_LABEL, Stacked, CheckSucc;
+
+    // Critically, the biased locking test must have precedence over
+    // and appear before the (box->dhw == 0) recursive stack-lock test.
+    if (UseBiasedLocking && !UseOptoBiasInlining) {
+       biased_locking_exit(objReg, tmpReg, DONE_LABEL);
+    }
+
+    cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD); // Examine the displaced header
+    movptr(tmpReg, Address(objReg, 0));             // Examine the object's markword
+    jccb  (Assembler::zero, DONE_LABEL);            // 0 indicates recursive stack-lock
+
+    testptr(tmpReg, 0x02);                          // Inflated?
+    jccb  (Assembler::zero, Stacked);
+
+    // It's inflated.
+    // Despite our balanced locking property we still check that m->_owner == Self
+    // as java routines or native JNI code called by this thread might
+    // have released the lock.
+    // Refer to the comments in synchronizer.cpp for how we might encode extra
+    // state in _succ so we can avoid fetching EntryList|cxq.
+    //
+    // I'd like to add more cases in fast_lock() and fast_unlock() --
+    // such as recursive enter and exit -- but we have to be wary of
+    // I$ bloat, T$ effects and BP$ effects.
+    //
+    // If there's no contention try a 1-0 exit.  That is, exit without
+    // a costly MEMBAR or CAS.  See synchronizer.cpp for details on how
+    // we detect and recover from the race that the 1-0 exit admits.
+    //
+    // Conceptually Fast_Unlock() must execute a STST|LDST "release" barrier
+    // before it STs null into _owner, releasing the lock.  Updates
+    // to data protected by the critical section must be visible before
+    // we drop the lock (and thus before any other thread could acquire
+    // the lock and observe the fields protected by the lock).
+    // IA32's memory-model is SPO, so STs are ordered with respect to
+    // each other and there's no need for an explicit barrier (fence).
+    // See also http://gee.cs.oswego.edu/dl/jmm/cookbook.html.
+#ifndef _LP64
+    get_thread (boxReg);
+    if ((EmitSync & 4096) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
+      // prefetchw [ebx + Offset(_owner)-2]
+      prefetchw(Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+    }
+
+    // Note that we could employ various encoding schemes to reduce
+    // the number of loads below (currently 4) to just 2 or 3.
+    // Refer to the comments in synchronizer.cpp.
+    // In practice the chain of fetches doesn't seem to impact performance, however.
+    if ((EmitSync & 65536) == 0 && (EmitSync & 256)) {
+       // Attempt to reduce branch density - AMD's branch predictor.
+       xorptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       orptr(boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2));
+       orptr(boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2));
+       orptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2));
+       jccb  (Assembler::notZero, DONE_LABEL);
+       movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD);
+       jmpb  (DONE_LABEL);
+    } else {
+       xorptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       orptr(boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2));
+       jccb  (Assembler::notZero, DONE_LABEL);
+       movptr(boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2));
+       orptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2));
+       jccb  (Assembler::notZero, CheckSucc);
+       movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD);
+       jmpb  (DONE_LABEL);
+    }
+
+    // The Following code fragment (EmitSync & 65536) improves the performance of
+    // contended applications and contended synchronization microbenchmarks.
+    // Unfortunately the emission of the code - even though not executed - causes regressions
+    // in scimark and jetstream, evidently because of $ effects.  Replacing the code
+    // with an equal number of never-executed NOPs results in the same regression.
+    // We leave it off by default.
+
+    if ((EmitSync & 65536) != 0) {
+       Label LSuccess, LGoSlowPath ;
+
+       bind  (CheckSucc);
+
+       // Optional pre-test ... it's safe to elide this
+       if ((EmitSync & 16) == 0) {
+          cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD);
+          jccb  (Assembler::zero, LGoSlowPath);
+       }
+
+       // We have a classic Dekker-style idiom:
+       //    ST m->_owner = 0 ; MEMBAR; LD m->_succ
+       // There are a number of ways to implement the barrier:
+       // (1) lock:andl &m->_owner, 0
+       //     is fast, but mask doesn't currently support the "ANDL M,IMM32" form.
+       //     LOCK: ANDL [ebx+Offset(_Owner)-2], 0
+       //     Encodes as 81 31 OFF32 IMM32 or 83 63 OFF8 IMM8
+       // (2) If supported, an explicit MFENCE is appealing.
+       //     In older IA32 processors MFENCE is slower than lock:add or xchg
+       //     particularly if the write-buffer is full as might be the case if
+       //     if stores closely precede the fence or fence-equivalent instruction.
+       //     In more modern implementations MFENCE appears faster, however.
+       // (3) In lieu of an explicit fence, use lock:addl to the top-of-stack
+       //     The $lines underlying the top-of-stack should be in M-state.
+       //     The locked add instruction is serializing, of course.
+       // (4) Use xchg, which is serializing
+       //     mov boxReg, 0; xchgl boxReg, [tmpReg + Offset(_owner)-2] also works
+       // (5) ST m->_owner = 0 and then execute lock:orl &m->_succ, 0.
+       //     The integer condition codes will tell us if succ was 0.
+       //     Since _succ and _owner should reside in the same $line and
+       //     we just stored into _owner, it's likely that the $line
+       //     remains in M-state for the lock:orl.
+       //
+       // We currently use (3), although it's likely that switching to (2)
+       // is correct for the future.
+
+       movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD);
+       if (os::is_MP()) {
+          if (VM_Version::supports_sse2() && 1 == FenceInstruction) {
+            mfence();
+          } else {
+            lock (); addptr(Address(rsp, 0), 0);
+          }
+       }
+       // Ratify _succ remains non-null
+       cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), 0);
+       jccb  (Assembler::notZero, LSuccess);
+
+       xorptr(boxReg, boxReg);                  // box is really EAX
+       if (os::is_MP()) { lock(); }
+       cmpxchgptr(rsp, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+       jccb  (Assembler::notEqual, LSuccess);
+       // Since we're low on registers we installed rsp as a placeholding in _owner.
+       // Now install Self over rsp.  This is safe as we're transitioning from
+       // non-null to non=null
+       get_thread (boxReg);
+       movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), boxReg);
+       // Intentional fall-through into LGoSlowPath ...
+
+       bind  (LGoSlowPath);
+       orptr(boxReg, 1);                      // set ICC.ZF=0 to indicate failure
+       jmpb  (DONE_LABEL);
+
+       bind  (LSuccess);
+       xorptr(boxReg, boxReg);                 // set ICC.ZF=1 to indicate success
+       jmpb  (DONE_LABEL);
+    }
+
+    bind (Stacked);
+    // It's not inflated and it's not recursively stack-locked and it's not biased.
+    // It must be stack-locked.
+    // Try to reset the header to displaced header.
+    // The "box" value on the stack is stable, so we can reload
+    // and be assured we observe the same value as above.
+    movptr(tmpReg, Address(boxReg, 0));
+    if (os::is_MP()) {
+      lock();
+    }
+    cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses RAX which is box
+    // Intention fall-thru into DONE_LABEL
+
+    // DONE_LABEL is a hot target - we'd really like to place it at the
+    // start of cache line by padding with NOPs.
+    // See the AMD and Intel software optimization manuals for the
+    // most efficient "long" NOP encodings.
+    // Unfortunately none of our alignment mechanisms suffice.
+    if ((EmitSync & 65536) == 0) {
+       bind (CheckSucc);
+    }
+#else // _LP64
+    // It's inflated
+    movptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+    xorptr(boxReg, r15_thread);
+    orptr (boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2));
+    jccb  (Assembler::notZero, DONE_LABEL);
+    movptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2));
+    orptr (boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2));
+    jccb  (Assembler::notZero, CheckSucc);
+    movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD);
+    jmpb  (DONE_LABEL);
+
+    if ((EmitSync & 65536) == 0) {
+      Label LSuccess, LGoSlowPath ;
+      bind  (CheckSucc);
+      cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD);
+      jccb  (Assembler::zero, LGoSlowPath);
+
+      // I'd much rather use lock:andl m->_owner, 0 as it's faster than the
+      // the explicit ST;MEMBAR combination, but masm doesn't currently support
+      // "ANDQ M,IMM".  Don't use MFENCE here.  lock:add to TOS, xchg, etc
+      // are all faster when the write buffer is populated.
+      movptr (Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD);
+      if (os::is_MP()) {
+         lock (); addl (Address(rsp, 0), 0);
+      }
+      cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD);
+      jccb  (Assembler::notZero, LSuccess);
+
+      movptr (boxReg, (int32_t)NULL_WORD);                   // box is really EAX
+      if (os::is_MP()) { lock(); }
+      cmpxchgptr(r15_thread, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+      jccb  (Assembler::notEqual, LSuccess);
+      // Intentional fall-through into slow-path
+
+      bind  (LGoSlowPath);
+      orl   (boxReg, 1);                      // set ICC.ZF=0 to indicate failure
+      jmpb  (DONE_LABEL);
+
+      bind  (LSuccess);
+      testl (boxReg, 0);                      // set ICC.ZF=1 to indicate success
+      jmpb  (DONE_LABEL);
+    }
+
+    bind  (Stacked);
+    movptr(tmpReg, Address (boxReg, 0));      // re-fetch
+    if (os::is_MP()) { lock(); }
+    cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses RAX which is box
+
+    if (EmitSync & 65536) {
+       bind (CheckSucc);
+    }
+#endif
+    bind(DONE_LABEL);
+    // Avoid branch to branch on AMD processors
+    if (EmitSync & 32768) {
+       nop();
+    }
+  }
+}
+#endif // COMPILER2
 
 void MacroAssembler::c2bool(Register x) {
   // implements x == 0 ? 0 : 1

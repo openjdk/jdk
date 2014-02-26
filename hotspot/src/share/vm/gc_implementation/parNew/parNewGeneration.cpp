@@ -621,7 +621,6 @@ void ParNewGenTask::work(uint worker_id) {
                                 false, // no scope; this is parallel code
                                 SharedHeap::ScanningOption(so),
                                 &par_scan_state.to_space_root_closure(),
-                                true,   // walk *all* scavengable nmethods
                                 &par_scan_state.older_gen_closure(),
                                 &klass_scan_closure);
   par_scan_state.end_strong_roots();

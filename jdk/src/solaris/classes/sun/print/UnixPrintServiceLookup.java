@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,19 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
     static String osname;
 
+    // List of commands used to deal with the printer queues on AIX
+    String[] lpNameComAix = {
+      "/usr/bin/lsallq",
+      "/usr/bin/lpstat -W -p|/usr/bin/expand|/usr/bin/cut -f1 -d' '",
+      "/usr/bin/lpstat -W -d|/usr/bin/expand|/usr/bin/cut -f1 -d' '",
+      "/usr/bin/lpstat -W -v"
+    };
+    private static final int aix_lsallq = 0;
+    private static final int aix_lpstat_p = 1;
+    private static final int aix_lpstat_d = 2;
+    private static final int aix_lpstat_v = 3;
+    private static int aix_defaultPrinterEnumeration = aix_lsallq;
+
     static {
         /* The system property "sun.java2d.print.polling"
          * can be used to force the printing code to poll or not poll
@@ -114,6 +127,24 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
         osname = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("os.name"));
+
+        /* The system property "sun.java2d.print.aix.lpstat"
+         * can be used to force the usage of 'lpstat -p' to enumerate all
+         * printer queues. By default we use 'lsallq', because 'lpstat -p' can
+         * take lots of time if thousands of printers are attached to a server.
+         */
+        if (isAIX()) {
+            String aixPrinterEnumerator = java.security.AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction("sun.java2d.print.aix.lpstat"));
+
+            if (aixPrinterEnumerator != null) {
+                if (aixPrinterEnumerator.equalsIgnoreCase("lpstat")) {
+                    aix_defaultPrinterEnumeration = aix_lpstat_p;
+                } else if (aixPrinterEnumerator.equalsIgnoreCase("lsallq")) {
+                    aix_defaultPrinterEnumeration = aix_lsallq;
+                }
+            }
+        }
     }
 
     static boolean isMac() {
@@ -131,6 +162,10 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
     static boolean isBSD() {
         return (osname.equals("Linux") ||
                 osname.contains("OS X"));
+    }
+
+    static boolean isAIX() {
+        return osname.equals("AIX");
     }
 
     static final int UNINITIALIZED = -1;
@@ -200,7 +235,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         if (printServices == null) {
             return new PrintService[0];
         } else {
-            return (PrintService[])printServices.clone();
+            return printServices.clone();
         }
     }
 
@@ -213,13 +248,13 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
             // information when queried using IPP. Workaround is to remove it.
             // Even CUPS ignores these entries as shown in lpstat or using
             // their web configuration.
-            PrinterURI uri = (PrinterURI)ps.getAttribute(PrinterURI.class);
+            PrinterURI uri = ps.getAttribute(PrinterURI.class);
             if (uri.getURI().getHost().equals("localhost")) {
                 IPPPrintService.debug_println(debugPrefix+"duplicate PrintService, ignoring the new local printer: "+ps);
                 return index;  // Do not add this.
             }
             PrintService oldPS = (PrintService)(printerList.get(index));
-            uri = (PrinterURI)oldPS.getAttribute(PrinterURI.class);
+            uri = oldPS.getAttribute(PrinterURI.class);
             if (uri.getURI().getHost().equals("localhost")) {
                 IPPPrintService.debug_println(debugPrefix+"duplicate PrintService, removing existing local printer: "+oldPS);
                 printerList.remove(oldPS);
@@ -251,6 +286,8 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         } else {
             if (isMac() || isSysV()) {
                 printers = getAllPrinterNamesSysV();
+            } else if (isAIX()) {
+                printers = getAllPrinterNamesAIX();
             } else { //BSD
                 printers = getAllPrinterNamesBSD();
             }
@@ -410,8 +447,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         /* check if all printers are already available */
         if (printServices != null) {
             for (PrintService printService : printServices) {
-                PrinterName printerName =
-                    (PrinterName)printService.getAttribute(PrinterName.class);
+                PrinterName printerName = printService.getAttribute(PrinterName.class);
                 if (printerName.getValue().equals(name)) {
                     return printService;
                 }
@@ -435,6 +471,8 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         PrintService printer = null;
         if (isMac() || isSysV()) {
             printer = getNamedPrinterNameSysV(name);
+        } else if (isAIX()) {
+            printer = getNamedPrinterNameAIX(name);
         } else {
             printer = getNamedPrinterNameBSD(name);
         }
@@ -464,8 +502,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
              * initialised.
              */
 
-            PrinterName defName =
-                (PrinterName)defService.getAttribute(PrinterName.class);
+            PrinterName defName = defService.getAttribute(PrinterName.class);
 
             if (defName != null && name.equals(defName)) {
                 if (matchesAttributes(defService, serviceSet)) {
@@ -600,6 +637,8 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         } else {
             if (isMac() || isSysV()) {
                 defaultPrinter = getDefaultPrinterNameSysV();
+            } else if (isAIX()) {
+                defaultPrinter = getDefaultPrinterNameAIX();
             } else {
                 defaultPrinter = getDefaultPrinterNameBSD();
             }
@@ -774,11 +813,49 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         return (String[])printerNames.toArray(new String[printerNames.size()]);
     }
 
+    private String getDefaultPrinterNameAIX() {
+        String[] names = execCmd(lpNameComAix[aix_lpstat_d]);
+        // Remove headers and bogus entries added by remote printers.
+        names = UnixPrintService.filterPrinterNamesAIX(names);
+        if (names == null || names.length != 1) {
+            // No default printer found
+            return null;
+        } else {
+            return names[0];
+        }
+    }
+
+    private PrintService getNamedPrinterNameAIX(String name) {
+        // On AIX there should be no blank after '-v'.
+        String[] result = execCmd(lpNameComAix[aix_lpstat_v] + name);
+        // Remove headers and bogus entries added by remote printers.
+        result = UnixPrintService.filterPrinterNamesAIX(result);
+        if (result == null || result.length != 1) {
+            return null;
+        } else {
+            return new UnixPrintService(name);
+        }
+    }
+
+    private String[] getAllPrinterNamesAIX() {
+        // Determine all printers of the system.
+        String [] names = execCmd(lpNameComAix[aix_defaultPrinterEnumeration]);
+
+        // Remove headers and bogus entries added by remote printers.
+        names = UnixPrintService.filterPrinterNamesAIX(names);
+
+        ArrayList<String> printerNames = new ArrayList<String>();
+        for ( int i=0; i < names.length; i++) {
+            printerNames.add(names[i]);
+        }
+        return printerNames.toArray(new String[printerNames.size()]);
+    }
+
     static String[] execCmd(final String command) {
         ArrayList results = null;
         try {
             final String[] cmd = new String[3];
-            if (isSysV()) {
+            if (isSysV() || isAIX()) {
                 cmd[0] = "/usr/bin/sh";
                 cmd[1] = "-c";
                 cmd[2] = "env LC_ALL=C " + command;

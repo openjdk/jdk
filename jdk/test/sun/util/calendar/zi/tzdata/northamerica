@@ -2688,6 +2688,11 @@ Zone America/Costa_Rica	-5:36:13 -	LMT	1890		# San Jose
 # to DST--and one more hour on 1999-04-04--when the announcers will have
 # returned to Baltimore, which switches on that date.)
 
+# From Steffen Thorsen (2013-11-11):
+# DST start in Cuba in 2004 ... does not follow the same rules as the
+# years before.  The correct date should be Sunday 2004-03-28 00:00 ...
+# https://web.archive.org/web/20040402060750/http://www.granma.cu/espanol/2004/marzo/sab27/reloj.html
+
 # From Evert van der Veer via Steffen Thorsen (2004-10-28):
 # Cuba is not going back to standard time this year.
 # From Paul Eggert (2006-03-22):
@@ -2877,7 +2882,8 @@ Rule	Cuba	1996	only	-	Oct	 6	0:00s	0	S
 Rule	Cuba	1997	only	-	Oct	12	0:00s	0	S
 Rule	Cuba	1998	1999	-	Mar	lastSun	0:00s	1:00	D
 Rule	Cuba	1998	2003	-	Oct	lastSun	0:00s	0	S
-Rule	Cuba	2000	2004	-	Apr	Sun>=1	0:00s	1:00	D
+Rule	Cuba	2000	2003	-	Apr	Sun>=1	0:00s	1:00	D
+Rule	Cuba	2004	only	-	Mar	lastSun	0:00s	1:00	D
 Rule	Cuba	2006	2010	-	Oct	lastSun	0:00s	0	S
 Rule	Cuba	2007	only	-	Mar	Sun>=8	0:00s	1:00	D
 Rule	Cuba	2008	only	-	Mar	Sun>=15	0:00s	1:00	D

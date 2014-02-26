@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ class ArrayKlass: public Klass {
   void oop_print_on(oop obj, outputStream* st);
 
   // Verification
-  void verify_on(outputStream* st, bool check_dictionary);
+  void verify_on(outputStream* st);
 
   void oop_verify_on(oop obj, outputStream* st);
 };

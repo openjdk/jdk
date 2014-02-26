@@ -47,6 +47,10 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
+  AIX )
+    PS=":"
+    FS="/"
+    ;;
   Windows*)
     PS=";"
     OS="Windows"

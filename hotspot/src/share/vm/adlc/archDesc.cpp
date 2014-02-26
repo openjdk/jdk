@@ -1167,15 +1167,12 @@ void ArchDesc::buildMustCloneMap(FILE *fp_hpp, FILE *fp_cpp) {
          || strcmp(idealName,"CmpF") == 0
          || strcmp(idealName,"FastLock") == 0
          || strcmp(idealName,"FastUnlock") == 0
-         || strcmp(idealName,"AddExactI") == 0
-         || strcmp(idealName,"AddExactL") == 0
-         || strcmp(idealName,"SubExactI") == 0
-         || strcmp(idealName,"SubExactL") == 0
-         || strcmp(idealName,"MulExactI") == 0
-         || strcmp(idealName,"MulExactL") == 0
-         || strcmp(idealName,"NegExactI") == 0
-         || strcmp(idealName,"NegExactL") == 0
-         || strcmp(idealName,"FlagsProj") == 0
+         || strcmp(idealName,"OverflowAddI") == 0
+         || strcmp(idealName,"OverflowAddL") == 0
+         || strcmp(idealName,"OverflowSubI") == 0
+         || strcmp(idealName,"OverflowSubL") == 0
+         || strcmp(idealName,"OverflowMulI") == 0
+         || strcmp(idealName,"OverflowMulL") == 0
          || strcmp(idealName,"Bool") == 0
          || strcmp(idealName,"Binary") == 0 ) {
       // Removed ConI from the must_clone list.  CPUs that cannot use

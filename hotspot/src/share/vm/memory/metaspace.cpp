@@ -46,8 +46,8 @@
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 
-typedef BinaryTreeDictionary<Metablock, FreeList> BlockTreeDictionary;
-typedef BinaryTreeDictionary<Metachunk, FreeList> ChunkTreeDictionary;
+typedef BinaryTreeDictionary<Metablock, FreeList<Metablock> > BlockTreeDictionary;
+typedef BinaryTreeDictionary<Metachunk, FreeList<Metachunk> > ChunkTreeDictionary;
 
 // Set this constant to enable slow integrity checking of the free chunk lists
 const bool metaspace_slow_verify = false;
@@ -790,7 +790,7 @@ MetaWord* BlockFreelist::get_block(size_t word_size) {
     return NULL;
   }
 
-  if (word_size < TreeChunk<Metablock, FreeList>::min_size()) {
+  if (word_size < TreeChunk<Metablock, FreeList<Metablock> >::min_size()) {
     // Dark matter.  Too small for dictionary.
     return NULL;
   }
@@ -810,7 +810,7 @@ MetaWord* BlockFreelist::get_block(size_t word_size) {
   MetaWord* new_block = (MetaWord*)free_block;
   assert(block_size >= word_size, "Incorrect size of block from freelist");
   const size_t unused = block_size - word_size;
-  if (unused >= TreeChunk<Metablock, FreeList>::min_size()) {
+  if (unused >= TreeChunk<Metablock, FreeList<Metablock> >::min_size()) {
     return_block(new_block + word_size, unused);
   }
 
@@ -2240,7 +2240,7 @@ ChunkIndex ChunkManager::list_index(size_t size) {
 void SpaceManager::deallocate(MetaWord* p, size_t word_size) {
   assert_lock_strong(_lock);
   size_t raw_word_size = get_raw_word_size(word_size);
-  size_t min_size = TreeChunk<Metablock, FreeList>::min_size();
+  size_t min_size = TreeChunk<Metablock, FreeList<Metablock> >::min_size();
   assert(raw_word_size >= min_size,
          err_msg("Should not deallocate dark matter " SIZE_FORMAT "<" SIZE_FORMAT, word_size, min_size));
   block_freelists()->return_block(p, raw_word_size);
@@ -2296,7 +2296,7 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
 void SpaceManager::retire_current_chunk() {
   if (current_chunk() != NULL) {
     size_t remaining_words = current_chunk()->free_word_size();
-    if (remaining_words >= TreeChunk<Metablock, FreeList>::min_size()) {
+    if (remaining_words >= TreeChunk<Metablock, FreeList<Metablock> >::min_size()) {
       block_freelists()->return_block(current_chunk()->allocate(remaining_words), remaining_words);
       inc_used_metrics(remaining_words);
     }
@@ -3279,7 +3279,7 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
     assert(Thread::current()->is_VM_thread(), "should be the VM thread");
     // Don't take Heap_lock
     MutexLockerEx ml(vsm()->lock(), Mutex::_no_safepoint_check_flag);
-    if (word_size < TreeChunk<Metablock, FreeList>::min_size()) {
+    if (word_size < TreeChunk<Metablock, FreeList<Metablock> >::min_size()) {
       // Dark matter.  Too small for dictionary.
 #ifdef ASSERT
       Copy::fill_to_words((HeapWord*)ptr, word_size, 0xf5f5f5f5);
@@ -3294,7 +3294,7 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
   } else {
     MutexLockerEx ml(vsm()->lock(), Mutex::_no_safepoint_check_flag);
 
-    if (word_size < TreeChunk<Metablock, FreeList>::min_size()) {
+    if (word_size < TreeChunk<Metablock, FreeList<Metablock> >::min_size()) {
       // Dark matter.  Too small for dictionary.
 #ifdef ASSERT
       Copy::fill_to_words((HeapWord*)ptr, word_size, 0xf5f5f5f5);

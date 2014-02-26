@@ -1788,7 +1788,7 @@ void os::jvm_path(char *buf, jint buflen) {
         jrelib_p = buf + len;
         snprintf(jrelib_p, buflen-len, "/%s", COMPILER_VARIANT);
         if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "");
+          snprintf(jrelib_p, buflen-len, "%s", "");
         }
 
         // If the path exists within JAVA_HOME, add the JVM library name

@@ -27,7 +27,7 @@
  * @bug 8027353
  * @summary Test non constant subtractExact
  * @compile SubExactLNonConstantTest.java Verify.java
- * @run main SubExactLNonConstantTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main SubExactLNonConstantTest
  *
  */
 

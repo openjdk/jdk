@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import org.w3c.dom.Node;
  *
  */
 public class IIOInvalidTreeException extends IIOException {
+    private static final long serialVersionUID = -1314083172544132777L;
 
     /**
      * The <code>Node</code> that led to the parsing error, or

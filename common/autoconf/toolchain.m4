@@ -44,6 +44,15 @@ AC_DEFUN([TOOLCHAIN_CHECK_COMPILER_VERSION],
       COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.*@<:@ ,\t@:>@$COMPILER_NAME@<:@ ,\t@:>@\(@<:@1-9@:>@\.@<:@0-9@:>@@<:@0-9@:>@*\).*/\1/p"`
       COMPILER_VENDOR="Sun Studio"
     fi
+  elif test  "x$OPENJDK_TARGET_OS" = xaix; then
+      COMPILER_VERSION_TEST=`$COMPILER -qversion  2>&1 | $TAIL -n 1`
+      $ECHO $COMPILER_VERSION_TEST | $GREP "^Version: " > /dev/null
+      if test $? -ne 0; then
+        AC_MSG_ERROR([Failed to detect the compiler version of $COMPILER ....])
+      else
+        COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n 's/Version: \([0-9][0-9]\.[0-9][0-9]*\).*/\1/p'`
+        COMPILER_VENDOR='IBM'
+      fi
   elif test  "x$OPENJDK_TARGET_OS" = xwindows; then
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
@@ -113,34 +122,62 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_SYSROOT_AND_OUT_OPTIONS],
 AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 [
   COMPILER_NAME=$2
+  SEARCH_LIST="$3"
 
-  $1=
-  # If TOOLS_DIR is set, check for all compiler names in there first
-  # before checking the rest of the PATH.
-  if test -n "$TOOLS_DIR"; then
-    PATH_save="$PATH"
-    PATH="$TOOLS_DIR"
-    AC_PATH_PROGS(TOOLS_DIR_$1, $3)
-    $1=$TOOLS_DIR_$1
-    PATH="$PATH_save"
+  if test "x[$]$1" != x; then
+    # User has supplied compiler name already, always let that override.
+    AC_MSG_NOTICE([Will use user supplied compiler $1=[$]$1])
+    if test "x`basename [$]$1`" = "x[$]$1"; then
+      # A command without a complete path is provided, search $PATH.
+      
+      AC_PATH_PROGS(POTENTIAL_$1, [$]$1)
+      if test "x$POTENTIAL_$1" != x; then
+        $1=$POTENTIAL_$1
+      else
+        AC_MSG_ERROR([User supplied compiler $1=[$]$1 could not be found])
+      fi
+    else
+      # Otherwise it might already be a complete path
+      if test ! -x "[$]$1"; then
+        AC_MSG_ERROR([User supplied compiler $1=[$]$1 does not exist])
+      fi
+    fi
+  else
+    # No user supplied value. Locate compiler ourselves
+    $1=
+    # If TOOLS_DIR is set, check for all compiler names in there first
+    # before checking the rest of the PATH.
+    if test -n "$TOOLS_DIR"; then
+      PATH_save="$PATH"
+      PATH="$TOOLS_DIR"
+      AC_PATH_PROGS(TOOLS_DIR_$1, $SEARCH_LIST)
+      $1=$TOOLS_DIR_$1
+      PATH="$PATH_save"
+    fi
+
+    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # so create a new name for this run.
+    if test "x[$]$1" = x; then
+      AC_PATH_PROGS(POTENTIAL_$1, $SEARCH_LIST)
+      $1=$POTENTIAL_$1
+    fi
+
+    if test "x[$]$1" = x; then
+      HELP_MSG_MISSING_DEPENDENCY([devkit])
+      AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
+    fi
   fi
 
-  # AC_PATH_PROGS can't be run multiple times with the same variable,
-  # so create a new name for this run.
-  if test "x[$]$1" = x; then
-    AC_PATH_PROGS(POTENTIAL_$1, $3)
-    $1=$POTENTIAL_$1
-  fi
-
-  if test "x[$]$1" = x; then
-    HELP_MSG_MISSING_DEPENDENCY([devkit])
-    AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
-  fi
+  # Now we have a compiler binary in $1. Make sure it's okay.
   BASIC_FIXUP_EXECUTABLE($1)
-  AC_MSG_CHECKING([resolved symbolic links for $1])
   TEST_COMPILER="[$]$1"
-  BASIC_REMOVE_SYMBOLIC_LINKS(TEST_COMPILER)
-  AC_MSG_RESULT([$TEST_COMPILER])
+  # Don't remove symbolic links on AIX because 'xlc_r' and 'xlC_r' may all be links
+  # to 'xlc' but it is crucial that we invoke the compiler with the right name!
+  if test "x$OPENJDK_BUILD_OS" != xaix; then
+    AC_MSG_CHECKING([resolved symbolic links for $1])
+    BASIC_REMOVE_SYMBOLIC_LINKS(TEST_COMPILER)
+    AC_MSG_RESULT([$TEST_COMPILER])
+  fi
   AC_MSG_CHECKING([if $1 is disguised ccache])
 
   COMPILER_BASENAME=`$BASENAME "$TEST_COMPILER"`
@@ -201,11 +238,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
     # otherwise we might pick up cross-compilers which don't use standard naming.
     # Otherwise, we'll set the BUILD_tools to the native tools, but that'll have
     # to wait until they are properly discovered.
-    AC_PATH_PROGS(BUILD_CC, [cl cc gcc])
+    BASIC_PATH_PROGS(BUILD_CC, [cl cc gcc])
     BASIC_FIXUP_EXECUTABLE(BUILD_CC)
-    AC_PATH_PROGS(BUILD_CXX, [cl CC g++])
+    BASIC_PATH_PROGS(BUILD_CXX, [cl CC g++])
     BASIC_FIXUP_EXECUTABLE(BUILD_CXX)
-    AC_PATH_PROG(BUILD_LD, ld)
+    BASIC_PATH_PROGS(BUILD_LD, ld)
     BASIC_FIXUP_EXECUTABLE(BUILD_LD)
   fi
   AC_SUBST(BUILD_CC)
@@ -248,12 +285,13 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
   # On Solaris, cc is preferred to gcc.
   # Elsewhere, gcc is preferred to cc.
 
-  if test "x$CC" != x; then
-    COMPILER_CHECK_LIST="$CC"
-  elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     COMPILER_CHECK_LIST="cl"
   elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
     COMPILER_CHECK_LIST="cc gcc"
+  elif test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    # Do not probe for cc on AIX.
+    COMPILER_CHECK_LIST="xlc_r"
   else
     COMPILER_CHECK_LIST="gcc cc"
   fi
@@ -262,14 +300,23 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
   # Now that we have resolved CC ourself, let autoconf have its go at it
   AC_PROG_CC([$CC])
 
+  # Option used to tell the compiler whether to create 32- or 64-bit executables
+  # Notice that CC contains the full compiler path at this point.
+  case $CC in
+    *xlc_r) COMPILER_TARGET_BITS_FLAG="-q";;
+    *)      COMPILER_TARGET_BITS_FLAG="-m";;
+  esac
+  AC_SUBST(COMPILER_TARGET_BITS_FLAG)
+
   ### Locate C++ compiler (CXX)
 
-  if test "x$CXX" != x; then
-    COMPILER_CHECK_LIST="$CXX"
-  elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     COMPILER_CHECK_LIST="cl"
   elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
     COMPILER_CHECK_LIST="CC g++"
+  elif test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    # Do not probe for CC on AIX .
+    COMPILER_CHECK_LIST="xlC_r"
   else
     COMPILER_CHECK_LIST="g++ CC"
   fi
@@ -306,11 +353,13 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
   AC_SUBST(LDEXECXX)
 
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
-    AC_CHECK_TOOL(AR, ar)
+    BASIC_CHECK_TOOLS(AR, ar)
     BASIC_FIXUP_EXECUTABLE(AR)
   fi
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     ARFLAGS="-r"
+  elif test "x$OPENJDK_TARGET_OS" = xaix; then
+    ARFLAGS="-X64"
   else
     ARFLAGS=""
   fi
@@ -431,7 +480,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
 
   # Find the right assembler.
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    AC_PATH_PROG(AS, as)
+    BASIC_PATH_PROGS(AS, as)
     BASIC_FIXUP_EXECUTABLE(AS)
   else
     AS="$CC -c"
@@ -439,41 +488,41 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
   AC_SUBST(AS)
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    AC_PATH_PROG(NM, nm)
+    BASIC_PATH_PROGS(NM, nm)
     BASIC_FIXUP_EXECUTABLE(NM)
-    AC_PATH_PROG(GNM, gnm)
+    BASIC_PATH_PROGS(GNM, gnm)
     BASIC_FIXUP_EXECUTABLE(GNM)
-    AC_PATH_PROG(STRIP, strip)
+    BASIC_PATH_PROGS(STRIP, strip)
     BASIC_FIXUP_EXECUTABLE(STRIP)
-    AC_PATH_PROG(MCS, mcs)
+    BASIC_PATH_PROGS(MCS, mcs)
     BASIC_FIXUP_EXECUTABLE(MCS)
   elif test "x$OPENJDK_TARGET_OS" != xwindows; then
-    AC_CHECK_TOOL(NM, nm)
+    BASIC_CHECK_TOOLS(NM, nm)
     BASIC_FIXUP_EXECUTABLE(NM)
     GNM="$NM"
     AC_SUBST(GNM)
-    AC_CHECK_TOOL(STRIP, strip)
+    BASIC_CHECK_TOOLS(STRIP, strip)
     BASIC_FIXUP_EXECUTABLE(STRIP)
   fi
 
   # objcopy is used for moving debug symbols to separate files when
   # full debug symbols are enabled.
   if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
-    AC_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
+    BASIC_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
     # Only call fixup if objcopy was found.
     if test -n "$OBJCOPY"; then
       BASIC_FIXUP_EXECUTABLE(OBJCOPY)
     fi
   fi
 
-  AC_CHECK_TOOLS(OBJDUMP, [gobjdump objdump])
+  BASIC_CHECK_TOOLS(OBJDUMP, [gobjdump objdump])
   if test "x$OBJDUMP" != x; then
     # Only used for compare.sh; we can live without it. BASIC_FIXUP_EXECUTABLE bails if argument is missing.
     BASIC_FIXUP_EXECUTABLE(OBJDUMP)
   fi
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    AC_PATH_PROG(LIPO, lipo)
+    BASIC_PATH_PROGS(LIPO, lipo)
     BASIC_FIXUP_EXECUTABLE(LIPO)
   fi
 
@@ -553,6 +602,29 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_LIBS],
       CFLAGS_JDKLIB_EXTRA='-xstrconst'
       POST_STRIP_CMD="$STRIP -x"
       POST_MCS_CMD="$MCS -d -a \"JDK $FULL_VERSION\""
+    fi
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+        COMPILER_NAME=xlc
+        PICFLAG="-qpic=large"
+        LIBRARY_PREFIX=lib
+        SHARED_LIBRARY='lib[$]1.so'
+        STATIC_LIBRARY='lib[$]1.a'
+        SHARED_LIBRARY_FLAGS="-qmkshrobj"
+        SHARED_LIBRARY_SUFFIX='.so'
+        STATIC_LIBRARY_SUFFIX='.a'
+        OBJ_SUFFIX='.o'
+        EXE_SUFFIX=''
+        SET_SHARED_LIBRARY_NAME=''
+        SET_SHARED_LIBRARY_MAPFILE=''
+        C_FLAG_REORDER=''
+        CXX_FLAG_REORDER=''
+        SET_SHARED_LIBRARY_ORIGIN=''
+        SET_EXECUTABLE_ORIGIN=""
+        CFLAGS_JDK=""
+        CXXFLAGS_JDK=""
+        CFLAGS_JDKLIB_EXTRA=''
+        POST_STRIP_CMD="$STRIP -X32_64"
+        POST_MCS_CMD=""
     fi
     if test "x$OPENJDK_TARGET_OS" = xwindows; then
       # If it is not gcc, then assume it is the MS Visual Studio compiler
@@ -730,6 +802,24 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
 
           CFLAGS_DEBUG_SYMBOLS="-g -xs"
           CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
+          ;;
+        xlc )
+          C_FLAG_DEPS="-qmakedep=gcc -MF"
+          CXX_FLAG_DEPS="-qmakedep=gcc -MF"
+          C_O_FLAG_HIGHEST="-O3"
+          C_O_FLAG_HI="-O3 -qstrict"
+          C_O_FLAG_NORM="-O2"
+          C_O_FLAG_NONE=""
+          CXX_O_FLAG_HIGHEST="-O3"
+          CXX_O_FLAG_HI="-O3 -qstrict"
+          CXX_O_FLAG_NORM="-O2"
+          CXX_O_FLAG_NONE=""
+          CFLAGS_DEBUG_SYMBOLS="-g"
+          CXXFLAGS_DEBUG_SYMBOLS="-g"
+          LDFLAGS_JDK="${LDFLAGS_JDK} -q64 -brtl -bnolibpath -liconv -bexpall"
+          CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+          CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+          ;;
       esac
       ;;
     CL )
@@ -840,6 +930,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_JDK],
       LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
       LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
       ;;
+    xlc )
+      CFLAGS_JDK="$CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+      CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+
+      LDFLAGS_JDK="$LDFLAGS_JDK"
+      LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK"
+      ;;
     cl )
       CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
       -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB -DWIN32_LEAN_AND_MEAN \
@@ -908,6 +1005,9 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_JDK],
   fi
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DSOLARIS"
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DAIX -DPPC64"
   fi
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
@@ -1076,20 +1176,38 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_MISC],
   # ZERO_ARCHFLAG tells the compiler which mode to build for
   case "${OPENJDK_TARGET_CPU}" in
     s390)
-      ZERO_ARCHFLAG="-m31"
+      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}31"
       ;;
     *)
-      ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   esac
   TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([$ZERO_ARCHFLAG], [], [ZERO_ARCHFLAG=""])
   AC_SUBST(ZERO_ARCHFLAG)
 
-  # Check that the compiler supports -mX flags
+  # Check that the compiler supports -mX (or -qX on AIX) flags
   # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
-  TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([-m${OPENJDK_TARGET_CPU_BITS}],
+  TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
+
+
+  # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed in executable.'
+  USING_BROKEN_SUSE_LD=no
+  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$GCC" = xyes; then
+    AC_MSG_CHECKING([for broken SuSE 'ld' which only understands anonymous version tags in executables])
+    echo "SUNWprivate_1.1 { local: *; };" > version-script.map
+    echo "int main() { }" > main.c
+    if $CXX -Xlinker -version-script=version-script.map main.c 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
+      AC_MSG_RESULT(no)
+      USING_BROKEN_SUSE_LD=no
+    else
+      AC_MSG_RESULT(yes)
+      USING_BROKEN_SUSE_LD=yes
+    fi
+    rm -rf version-script.map main.c
+  fi
+  AC_SUBST(USING_BROKEN_SUSE_LD)
 ])
 
 # Setup the JTREG paths
@@ -1126,7 +1244,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
       AC_MSG_RESULT($JTREGEXE)
     else
       # try to find jtreg on path
-      BASIC_REQUIRE_PROG(JTREGEXE, jtreg)
+      BASIC_REQUIRE_PROGS(JTREGEXE, jtreg)
       JT_HOME="`$DIRNAME $JTREGEXE`"
     fi
   fi

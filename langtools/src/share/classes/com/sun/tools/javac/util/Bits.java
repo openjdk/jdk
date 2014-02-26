@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,25 +345,4 @@ public class Bits {
         }
     }
 
-    /** Test Bits.nextBit(int). */
-    public static void main(String[] args) {
-        java.util.Random r = new java.util.Random();
-        Bits bits = new Bits();
-        for (int i=0; i<125; i++) {
-            int k;
-            do {
-                k = r.nextInt(250);
-            } while (bits.isMember(k));
-            System.out.println("adding " + k);
-            bits.incl(k);
-        }
-        int count = 0;
-        for (int i = bits.nextBit(0); i >= 0; i = bits.nextBit(i+1)) {
-            System.out.println("found " + i);
-            count ++;
-        }
-        if (count != 125) {
-            throw new Error();
-        }
-    }
 }

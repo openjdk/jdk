@@ -489,6 +489,7 @@ protected:
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
 
 public:
+  typedef jint NativeType;
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
@@ -531,6 +532,9 @@ public:
   static const TypeInt *POS1;
   static const TypeInt *INT;
   static const TypeInt *SYMINT; // symmetric range [-max_jint..max_jint]
+  static const TypeInt *TYPE_DOMAIN; // alias for TypeInt::INT
+
+  static const TypeInt *as_self(const Type *t) { return t->is_int(); }
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
@@ -546,6 +550,7 @@ protected:
   // Do not kill _widen bits.
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
 public:
+  typedef jlong NativeType;
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
@@ -568,6 +573,7 @@ public:
 
   virtual bool        is_finite() const;  // Has a finite value
 
+
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   virtual const Type *widen( const Type *t, const Type* limit_type ) const;
@@ -580,6 +586,11 @@ public:
   static const TypeLong *LONG;
   static const TypeLong *INT;    // 32-bit subrange [min_jint..max_jint]
   static const TypeLong *UINT;   // 32-bit unsigned [0..max_juint]
+  static const TypeLong *TYPE_DOMAIN; // alias for TypeLong::LONG
+
+  // static convenience methods.
+  static const TypeLong *as_self(const Type *t) { return t->is_long(); }
+
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const;// Specialized per-Type dumping
 #endif

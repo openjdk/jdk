@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,7 @@ import sun.swing.UIClientPropertyKey;
  * @author Hans Muller
  * @author Arnaud Weber
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public abstract class JComponent extends Container implements Serializable,
                                               TransferHandler.HasGetTransferHandler
 {
@@ -3657,6 +3658,7 @@ public abstract class JComponent extends Container implements Serializable,
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public abstract class AccessibleJComponent extends AccessibleAWTContainer
        implements AccessibleExtendedComponent
     {

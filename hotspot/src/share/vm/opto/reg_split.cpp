@@ -55,7 +55,7 @@ static const char out_of_nodes[] = "out of nodes during split";
 // Get a SpillCopy node with wide-enough masks.  Use the 'wide-mask', the
 // wide ideal-register spill-mask if possible.  If the 'wide-mask' does
 // not cover the input (or output), use the input (or output) mask instead.
-Node *PhaseChaitin::get_spillcopy_wide( Node *def, Node *use, uint uidx ) {
+Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx ) {
   // If ideal reg doesn't exist we've got a bad schedule happening
   // that is forcing us to spill something that isn't spillable.
   // Bail rather than abort
@@ -93,7 +93,7 @@ Node *PhaseChaitin::get_spillcopy_wide( Node *def, Node *use, uint uidx ) {
       // Here we assume a trip through memory is required.
       w_i_mask = &C->FIRST_STACK_mask();
   }
-  return new (C) MachSpillCopyNode( def, *w_i_mask, *w_o_mask );
+  return new (C) MachSpillCopyNode(spill_type, def, *w_i_mask, *w_o_mask );
 }
 
 //------------------------------insert_proj------------------------------------
@@ -159,7 +159,7 @@ uint PhaseChaitin::split_DEF( Node *def, Block *b, int loc, uint maxlrg, Node **
   assert( loc >= 0, "must insert past block head" );
 
   // Get a def-side SpillCopy
-  Node *spill = get_spillcopy_wide(def,NULL,0);
+  Node *spill = get_spillcopy_wide(MachSpillCopyNode::Definition, def, NULL, 0);
   // Did we fail to split?, then bail
   if (!spill) {
     return 0;
@@ -180,7 +180,7 @@ uint PhaseChaitin::split_DEF( Node *def, Block *b, int loc, uint maxlrg, Node **
 //------------------------------split_USE--------------------------------------
 // Splits at uses can involve redeffing the LRG, so no CISC Spilling there.
 // Debug uses want to know if def is already stack enabled.
-uint PhaseChaitin::split_USE( Node *def, Block *b, Node *use, uint useidx, uint maxlrg, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx ) {
+uint PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint maxlrg, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx ) {
 #ifdef ASSERT
   // Increment the counter for this lrg
   splits.at_put(slidx, splits.at(slidx)+1);
@@ -216,7 +216,7 @@ uint PhaseChaitin::split_USE( Node *def, Block *b, Node *use, uint useidx, uint 
         // DEF is UP, so must copy it DOWN and hook in USE
         // Insert SpillCopy before the USE, which uses DEF as its input,
         // and defs a new live range, which is used by this node.
-        Node *spill = get_spillcopy_wide(def,use,useidx);
+        Node *spill = get_spillcopy_wide(spill_type, def,use,useidx);
         // did we fail to split?
         if (!spill) {
           // Bail
@@ -268,7 +268,7 @@ uint PhaseChaitin::split_USE( Node *def, Block *b, Node *use, uint useidx, uint 
     bindex = b->find_node(use);
   }
 
-  Node *spill = get_spillcopy_wide( def, use, useidx );
+  Node *spill = get_spillcopy_wide(spill_type, def, use, useidx );
   if( !spill ) return 0;        // Bailed out
   // Insert SpillCopy before the USE, which uses the reaching DEF as
   // its input, and defs a new live range, which is used by this node.
@@ -327,7 +327,7 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
 
       Block *b_def = _cfg.get_block_for_node(def);
       int idx_def = b_def->find_node(def);
-      Node *in_spill = get_spillcopy_wide( in, def, i );
+      Node *in_spill = get_spillcopy_wide(MachSpillCopyNode::InputToRematerialization, in, def, i );
       if( !in_spill ) return 0; // Bailed out
       insert_proj(b_def,idx_def,in_spill,maxlrg++);
       if( b_def == b )
@@ -935,7 +935,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                 // This def has been rematerialized a couple of times without
                 // progress. It doesn't care if it lives UP or DOWN, so
                 // spill it down now.
-                maxlrg = split_USE(def,b,n,inpidx,maxlrg,false,false,splits,slidx);
+                maxlrg = split_USE(MachSpillCopyNode::BasePointerToMem, def,b,n,inpidx,maxlrg,false,false,splits,slidx);
                 // If it wasn't split bail
                 if (!maxlrg) {
                   return 0;
@@ -1015,7 +1015,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                  !is_vect && umask.is_misaligned_pair())) {
               // These need a Split regardless of overlap or pressure
               // SPLIT - NO DEF - NO CISC SPILL
-              maxlrg = split_USE(def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
+              maxlrg = split_USE(MachSpillCopyNode::Bound, def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
               // If it wasn't split bail
               if (!maxlrg) {
                 return 0;
@@ -1027,7 +1027,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             if (UseFPUForSpilling && n->is_MachCall() && !uup && !dup ) {
               // The use at the call can force the def down so insert
               // a split before the use to allow the def more freedom.
-              maxlrg = split_USE(def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
+              maxlrg = split_USE(MachSpillCopyNode::CallUse, def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
               // If it wasn't split bail
               if (!maxlrg) {
                 return 0;
@@ -1063,7 +1063,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               else {  // Both are either up or down, and there is no overlap
                 if( dup ) {  // If UP, reg->reg copy
                   // COPY ACROSS HERE - NO DEF - NO CISC SPILL
-                  maxlrg = split_USE(def,b,n,inpidx,maxlrg,false,false, splits,slidx);
+                  maxlrg = split_USE(MachSpillCopyNode::RegToReg, def,b,n,inpidx,maxlrg,false,false, splits,slidx);
                   // If it wasn't split bail
                   if (!maxlrg) {
                     return 0;
@@ -1075,10 +1075,10 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                   // First Split-UP to move value into Register
                   uint def_ideal = def->ideal_reg();
                   const RegMask* tmp_rm = Matcher::idealreg2regmask[def_ideal];
-                  Node *spill = new (C) MachSpillCopyNode(def, dmask, *tmp_rm);
+                  Node *spill = new (C) MachSpillCopyNode(MachSpillCopyNode::MemToReg, def, dmask, *tmp_rm);
                   insert_proj( b, insidx, spill, maxlrg );
                   // Then Split-DOWN as if previous Split was DEF
-                  maxlrg = split_USE(spill,b,n,inpidx,maxlrg,false,false, splits,slidx);
+                  maxlrg = split_USE(MachSpillCopyNode::RegToMem, spill,b,n,inpidx,maxlrg,false,false, splits,slidx);
                   // If it wasn't split bail
                   if (!maxlrg) {
                     return 0;
@@ -1103,7 +1103,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                   }
                 }
                 // COPY DOWN HERE - NO DEF - NO CISC SPILL
-                maxlrg = split_USE(def,b,n,inpidx,maxlrg,false,false, splits,slidx);
+                maxlrg = split_USE(MachSpillCopyNode::RegToMem, def,b,n,inpidx,maxlrg,false,false, splits,slidx);
                 // If it wasn't split bail
                 if (!maxlrg) {
                   return 0;
@@ -1118,7 +1118,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               else {       // DOWN, Split-UP and check register pressure
                 if( is_high_pressure( b, &lrgs(useidx), insidx ) ) {
                   // COPY UP HERE - NO DEF - CISC SPILL
-                  maxlrg = split_USE(def,b,n,inpidx,maxlrg,true,true, splits,slidx);
+                  maxlrg = split_USE(MachSpillCopyNode::MemToReg, def,b,n,inpidx,maxlrg,true,true, splits,slidx);
                   // If it wasn't split bail
                   if (!maxlrg) {
                     return 0;
@@ -1126,7 +1126,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                   insidx++;  // Reset iterator to skip USE side split
                 } else {                          // LRP
                   // COPY UP HERE - WITH DEF - NO CISC SPILL
-                  maxlrg = split_USE(def,b,n,inpidx,maxlrg,true,false, splits,slidx);
+                  maxlrg = split_USE(MachSpillCopyNode::MemToReg, def,b,n,inpidx,maxlrg,true,false, splits,slidx);
                   // If it wasn't split bail
                   if (!maxlrg) {
                     return 0;
@@ -1229,7 +1229,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               if (C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {  // Check when generating nodes
                 return 0;
               }
-              Node *spill = new (C) MachSpillCopyNode(use,use_rm,def_rm);
+              Node *spill = new (C) MachSpillCopyNode(MachSpillCopyNode::MemToReg, use,use_rm,def_rm);
               n->set_req(copyidx,spill);
               n->as_MachSpillCopy()->set_in_RegMask(def_rm);
               // Put the spill just before the copy
@@ -1336,7 +1336,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       // Grab the UP/DOWN sense for the input
       u1 = UP[pidx][slidx];
       if( u1 != (phi_up != 0)) {
-        maxlrg = split_USE(def, b, phi, i, maxlrg, !u1, false, splits,slidx);
+        maxlrg = split_USE(MachSpillCopyNode::PhiLocationDifferToInputLocation, def, b, phi, i, maxlrg, !u1, false, splits,slidx);
         // If it wasn't split bail
         if (!maxlrg) {
           return 0;
