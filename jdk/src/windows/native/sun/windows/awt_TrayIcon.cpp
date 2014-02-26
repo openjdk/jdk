@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,6 +503,7 @@ void AwtTrayIcon::SendMouseEvent(jint id, jlong when, jint x, jint y,
             env->GetMethodID(mouseEventCls, "<init>",
                              "(Ljava/awt/Component;IJIIIIIIZI)V");
         DASSERT(mouseEventConst);
+        CHECK_NULL(mouseEventConst);
     }
     if (env->EnsureLocalCapacity(2) < 0) {
         return;
@@ -556,6 +557,7 @@ void AwtTrayIcon::SendActionEvent(jint id, jlong when, jint modifiers, MSG *pMsg
             env->GetMethodID(actionEventCls, "<init>",
                              "(Ljava/lang/Object;ILjava/lang/String;JI)V");
         DASSERT(actionEventConst);
+        CHECK_NULL(actionEventConst);
     }
     if (env->EnsureLocalCapacity(2) < 0) {
         return;
@@ -736,6 +738,7 @@ void AwtTrayIcon::_SetToolTip(void *param)
     }
 
     tooltipStr = JNU_GetStringPlatformChars(env, jtooltip, (jboolean *)NULL);
+    if (env->ExceptionCheck()) goto ret;
     trayIcon->SetToolTip(tooltipStr);
     JNU_ReleaseStringPlatformChars(env, jtooltip, tooltipStr);
 ret:
@@ -855,9 +858,18 @@ void AwtTrayIcon::_DisplayMessage(void *param)
     trayIcon = (AwtTrayIcon *)pData;
 
     captionStr = JNU_GetStringPlatformChars(env, jcaption, (jboolean *)NULL);
+    if (env->ExceptionCheck()) goto ret;
     textStr = JNU_GetStringPlatformChars(env, jtext, (jboolean *)NULL);
+    if (env->ExceptionCheck()) {
+        JNU_ReleaseStringPlatformChars(env, jcaption, captionStr);
+        goto ret;
+    }
     msgTypeStr = JNU_GetStringPlatformChars(env, jmsgType, (jboolean *)NULL);
-
+    if (env->ExceptionCheck()) {
+        JNU_ReleaseStringPlatformChars(env, jcaption, captionStr);
+        JNU_ReleaseStringPlatformChars(env, jtext, textStr);
+        goto ret;
+    }
     trayIcon->DisplayMessage(captionStr, textStr, msgTypeStr);
 
     JNU_ReleaseStringPlatformChars(env, jcaption, captionStr);
@@ -889,10 +901,12 @@ Java_java_awt_TrayIcon_initIDs(JNIEnv *env, jclass cls)
 
     /* init field ids */
     AwtTrayIcon::idID = env->GetFieldID(cls, "id", "I");
-    AwtTrayIcon::actionCommandID = env->GetFieldID(cls, "actionCommand", "Ljava/lang/String;");
-
     DASSERT(AwtTrayIcon::idID != NULL);
+    CHECK_NULL(AwtTrayIcon::idID);
+
+    AwtTrayIcon::actionCommandID = env->GetFieldID(cls, "actionCommand", "Ljava/lang/String;");
     DASSERT(AwtTrayIcon::actionCommandID != NULL);
+    CHECK_NULL( AwtTrayIcon::actionCommandID);
 
     CATCH_BAD_ALLOC;
 }
@@ -981,8 +995,11 @@ Java_sun_awt_windows_WTrayIconPeer_setNativeIcon(JNIEnv *env, jobject self,
     jint *intRasterDataPtr = NULL;
     HBITMAP hColor = NULL;
     try {
-        intRasterDataPtr =
-            (jint *)env->GetPrimitiveArrayCritical(intRasterData, 0);
+        intRasterDataPtr = (jint *)env->GetPrimitiveArrayCritical(intRasterData, 0);
+        if (intRasterDataPtr == NULL) {
+            ::DeleteObject(hMask);
+            return;
+        }
         hColor = AwtTrayIcon::CreateBMP(NULL, (int *)intRasterDataPtr, nSS, nW, nH);
     } catch (...) {
         if (intRasterDataPtr != NULL) {
