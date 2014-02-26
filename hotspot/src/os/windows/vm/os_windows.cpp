@@ -3619,13 +3619,14 @@ bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
          "possibility of dangling Thread pointer");
 
   OSThread* osthread = thread->osthread();
-  bool interrupted = osthread->interrupted();
   // There is no synchronization between the setting of the interrupt
   // and it being cleared here. It is critical - see 6535709 - that
   // we only clear the interrupt state, and reset the interrupt event,
   // if we are going to report that we were indeed interrupted - else
   // an interrupt can be "lost", leading to spurious wakeups or lost wakeups
-  // depending on the timing
+  // depending on the timing. By checking thread interrupt event to see
+  // if the thread gets real interrupt thus prevent spurious wakeup.
+  bool interrupted = osthread->interrupted() && (WaitForSingleObject(osthread->interrupt_event(), 0) == WAIT_OBJECT_0);
   if (interrupted && clear_interrupted) {
     osthread->set_interrupted(false);
     ResetEvent(osthread->interrupt_event());
