@@ -28,10 +28,9 @@
 SUNWprivate_1.1 {
         global:
                 Java_sun_security_ec_ECKeyPairGenerator_generateECKeyPair;
-                Java_sun_security_ec_ECKeyPairGenerator_getEncodedBytes;
-		Java_sun_security_ec_ECDSASignature_signDigest;
-		Java_sun_security_ec_ECDSASignature_verifySignedDigest;
-		Java_sun_security_ec_ECDHKeyAgreement_deriveKey;
+                Java_sun_security_ec_ECDSASignature_signDigest;
+                Java_sun_security_ec_ECDSASignature_verifySignedDigest;
+                Java_sun_security_ec_ECDHKeyAgreement_deriveKey;
         local:
                 *;
 };

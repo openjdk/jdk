@@ -66,22 +66,39 @@ void FreeECParams(ECParams *ecparams, jboolean freeStruct)
         free(ecparams);
 }
 
+jbyteArray getEncodedBytes(JNIEnv *env, SECItem *hSECItem)
+{
+    SECItem *s = (SECItem *)hSECItem;
+
+    jbyteArray jEncodedBytes = env->NewByteArray(s->len);
+    if (jEncodedBytes == NULL) {
+        return NULL;
+    }
+    // Copy bytes from a native SECItem buffer to Java byte array
+    env->SetByteArrayRegion(jEncodedBytes, 0, s->len, (jbyte *)s->data);
+    if (env->ExceptionCheck()) { // should never happen
+        return NULL;
+    }
+    return jEncodedBytes;
+}
+
 /*
  * Class:     sun_security_ec_ECKeyPairGenerator
  * Method:    generateECKeyPair
- * Signature: (I[B[B)[J
+ * Signature: (I[B[B)[[B
  */
-JNIEXPORT jlongArray
+JNIEXPORT jobjectArray
 JNICALL Java_sun_security_ec_ECKeyPairGenerator_generateECKeyPair
   (JNIEnv *env, jclass clazz, jint keySize, jbyteArray encodedParams, jbyteArray seed)
 {
-    ECPrivateKey *privKey = NULL; /* contains both public and private values */
+    ECPrivateKey *privKey = NULL; // contains both public and private values
     ECParams *ecparams = NULL;
     SECKEYECParams params_item;
     jint jSeedLength;
     jbyte* pSeedBuffer = NULL;
-    jlongArray result = NULL;
-    jlong* resultElements = NULL;
+    jobjectArray result = NULL;
+    jclass baCls = NULL;
+    jbyteArray jba;
 
     // Initialize the ECParams struct
     params_item.len = env->GetArrayLength(encodedParams);
@@ -111,68 +128,59 @@ JNICALL Java_sun_security_ec_ECKeyPairGenerator_generateECKeyPair
     }
 
     jboolean isCopy;
-    result = env->NewLongArray(2);
+    baCls = env->FindClass("[B");
+    if (baCls == NULL) {
+        goto cleanup;
+    }
+    result = env->NewObjectArray(2, baCls, NULL);
     if (result == NULL) {
         goto cleanup;
     }
-
-    resultElements = env->GetLongArrayElements(result, &isCopy);
-    if (resultElements == NULL) {
+    jba = getEncodedBytes(env, &(privKey->privateValue));
+    if (jba == NULL) {
+        result = NULL;
+        goto cleanup;
+    }
+    env->SetObjectArrayElement(result, 0, jba); // big integer
+    if (env->ExceptionCheck()) { // should never happen
+        result = NULL;
         goto cleanup;
     }
 
-    resultElements[0] = (jlong) &(privKey->privateValue); // private big integer
-    resultElements[1] = (jlong) &(privKey->publicValue); // encoded ec point
-
-    // If the array is a copy then we must write back our changes
-    if (isCopy == JNI_TRUE) {
-        env->ReleaseLongArrayElements(result, resultElements, 0);
+    jba = getEncodedBytes(env, &(privKey->publicValue));
+    if (jba == NULL) {
+        result = NULL;
+        goto cleanup;
+    }
+    env->SetObjectArrayElement(result, 1, jba); // encoded ec point
+    if (env->ExceptionCheck()) { // should never happen
+        result = NULL;
+        goto cleanup;
     }
 
 cleanup:
     {
-        if (params_item.data)
+        if (params_item.data) {
             env->ReleaseByteArrayElements(encodedParams,
                 (jbyte *) params_item.data, JNI_ABORT);
-
-        if (ecparams)
+        }
+        if (ecparams) {
             FreeECParams(ecparams, true);
-
+        }
         if (privKey) {
             FreeECParams(&privKey->ecParams, false);
             SECITEM_FreeItem(&privKey->version, B_FALSE);
-            // Don't free privKey->privateValue and privKey->publicValue
+            SECITEM_FreeItem(&privKey->privateValue, B_FALSE);
+            SECITEM_FreeItem(&privKey->publicValue, B_FALSE);
+            free(privKey);
         }
 
-        if (pSeedBuffer)
+        if (pSeedBuffer) {
             delete [] pSeedBuffer;
+        }
     }
 
     return result;
-}
-
-/*
- * Class:     sun_security_ec_ECKeyPairGenerator
- * Method:    getEncodedBytes
- * Signature: (J)[B
- */
-JNIEXPORT jbyteArray
-JNICALL Java_sun_security_ec_ECKeyPairGenerator_getEncodedBytes
-  (JNIEnv *env, jclass clazz, jlong hSECItem)
-{
-    SECItem *s = (SECItem *)hSECItem;
-    jbyteArray jEncodedBytes = env->NewByteArray(s->len);
-    if (jEncodedBytes == NULL) {
-        return NULL;
-    }
-
-    // Copy bytes from a native SECItem buffer to Java byte array
-    env->SetByteArrayRegion(jEncodedBytes, 0, s->len, (jbyte *)s->data);
-
-    // Use B_FALSE to free only the SECItem->data
-    SECITEM_FreeItem(s, B_FALSE);
-
-    return jEncodedBytes;
 }
 
 /*
@@ -258,21 +266,26 @@ JNICALL Java_sun_security_ec_ECDSASignature_signDigest
 
 cleanup:
     {
-        if (params_item.data)
+        if (params_item.data) {
             env->ReleaseByteArrayElements(encodedParams,
                 (jbyte *) params_item.data, JNI_ABORT);
-
-        if (pDigestBuffer)
+        }
+        if (privKey.privateValue.data) {
+            env->ReleaseByteArrayElements(privateKey,
+                (jbyte *) privKey.privateValue.data, JNI_ABORT);
+        }
+        if (pDigestBuffer) {
             delete [] pDigestBuffer;
-
-        if (pSignedDigestBuffer)
+        }
+        if (pSignedDigestBuffer) {
             delete [] pSignedDigestBuffer;
-
-        if (pSeedBuffer)
+        }
+        if (pSeedBuffer) {
             delete [] pSeedBuffer;
-
-        if (ecparams)
+        }
+        if (ecparams) {
             FreeECParams(ecparams, true);
+        }
     }
 
     return jSignedDigest;
