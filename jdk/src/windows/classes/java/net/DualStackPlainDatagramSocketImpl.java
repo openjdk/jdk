@@ -45,6 +45,10 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 {
     static JavaIOFileDescriptorAccess fdAccess = SharedSecrets.getJavaIOFileDescriptorAccess();
 
+    static {
+        initIDs();
+    }
+
     // true if this socket is exclusively bound
     private final boolean exclusiveBind;
 

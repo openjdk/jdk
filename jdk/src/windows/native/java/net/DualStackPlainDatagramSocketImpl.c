@@ -72,6 +72,17 @@ static jboolean purgeOutstandingICMP(JNIEnv *env, jint fd)
 
 /*
  * Class:     java_net_DualStackPlainDatagramSocketImpl
+ * Method:    initIDs
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_initIDs
+  (JNIEnv *env, jclass clazz)
+{
+    initInetAddressIDs(env);
+}
+
+/*
+ * Class:     java_net_DualStackPlainDatagramSocketImpl
  * Method:    socketCreate
  * Signature: (Z)I
  */
