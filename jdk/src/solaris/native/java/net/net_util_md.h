@@ -49,9 +49,12 @@ int NET_Connect(int s, struct sockaddr *addr, int addrlen);
 int NET_Accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 int NET_SocketClose(int s);
 int NET_Dup2(int oldfd, int newfd);
+#ifdef USE_SELECT
 extern int NET_Select(int s, fd_set *readfds, fd_set *writefds,
                fd_set *exceptfds, struct timeval *timeout);
+#else
 extern int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout);
+#endif
 
 int NET_SocketAvailable(int s, jint *pbytes);
 
