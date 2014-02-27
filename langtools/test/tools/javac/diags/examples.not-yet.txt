@@ -110,4 +110,4 @@ compiler.warn.unexpected.archive.file                   # Paths: zip file with u
 compiler.warn.unknown.enum.constant                     # in bad class file
 compiler.warn.unknown.enum.constant.reason              # in bad class file
 compiler.warn.override.equals.but.not.hashcode          # when a class overrides equals but not hashCode method from Object
-
+compiler.warn.file.from.future                          # warning for future modification times on files
