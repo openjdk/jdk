@@ -882,8 +882,8 @@ BUILD_LOG_WRAPPER
 BUILD_LOG_PREVIOUS
 BUILD_LOG
 SYS_ROOT
-PATH_SEP
 TOPDIR
+PATH_SEP
 ZERO_ARCHDEF
 DEFINE_CROSS_COMPILE_ARCH
 LP64
@@ -4220,7 +4220,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1393416124
+DATE_WHEN_GENERATED=1393490405
 
 ###############################################################################
 #
@@ -13869,143 +13869,114 @@ $as_echo "$COMPILE_TYPE" >&6; }
 
 # Continue setting up basic stuff. Most remaining code require fundamental tools.
 
+  # Save the current directory this script was started from
+  CURDIR="$PWD"
+
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    PATH_SEP=";"
+
+  SRC_ROOT_LENGTH=`$THEPWDCMD -L|$WC -m`
+  if test $SRC_ROOT_LENGTH -gt 100; then
+    as_fn_error $? "Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported" "$LINENO" 5
+  fi
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking cygwin release" >&5
+$as_echo_n "checking cygwin release... " >&6; }
+    CYGWIN_VERSION=`$UNAME -r`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGWIN_VERSION" >&5
+$as_echo "$CYGWIN_VERSION" >&6; }
+    WINDOWS_ENV_VENDOR='cygwin'
+    WINDOWS_ENV_VERSION="$CYGWIN_VERSION"
+
+    CYGWIN_VERSION_OK=`$ECHO $CYGWIN_VERSION | $GREP ^1.7.`
+    if test "x$CYGWIN_VERSION_OK" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Your cygwin is too old. You are running $CYGWIN_VERSION, but at least cygwin 1.7 is required. Please upgrade." >&5
+$as_echo "$as_me: Your cygwin is too old. You are running $CYGWIN_VERSION, but at least cygwin 1.7 is required. Please upgrade." >&6;}
+      as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+    if test "x$CYGPATH" = x; then
+      as_fn_error $? "Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path" "$LINENO" 5
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking cygwin root directory as unix-style path" >&5
+$as_echo_n "checking cygwin root directory as unix-style path... " >&6; }
+    # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
+    cygwin_winpath_root=`cd / ; cmd /c cd | grep ".*"`
+    # Force cygpath to report the proper root by including a trailing space, and then stripping it off again.
+    CYGWIN_ROOT_PATH=`$CYGPATH -u "$cygwin_winpath_root " | $CUT -f 1 -d " "`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGWIN_ROOT_PATH" >&5
+$as_echo "$CYGWIN_ROOT_PATH" >&6; }
+    WINDOWS_ENV_ROOT_PATH="$CYGWIN_ROOT_PATH"
+    test_cygdrive_prefix=`$ECHO $CYGWIN_ROOT_PATH | $GREP ^/cygdrive/`
+    if test "x$test_cygdrive_prefix" = x; then
+      as_fn_error $? "Your cygdrive prefix is not /cygdrive. This is currently not supported. Change with mount -c." "$LINENO" 5
+    fi
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking msys release" >&5
+$as_echo_n "checking msys release... " >&6; }
+    MSYS_VERSION=`$UNAME -r`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSYS_VERSION" >&5
+$as_echo "$MSYS_VERSION" >&6; }
+
+    WINDOWS_ENV_VENDOR='msys'
+    WINDOWS_ENV_VERSION="$MSYS_VERSION"
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking msys root directory as unix-style path" >&5
+$as_echo_n "checking msys root directory as unix-style path... " >&6; }
+    # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
+    MSYS_ROOT_PATH=`cd / ; cmd /c cd | grep ".*"`
+
+  windows_path="$MSYS_ROOT_PATH"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    MSYS_ROOT_PATH="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    MSYS_ROOT_PATH="$unix_path"
+  fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSYS_ROOT_PATH" >&5
+$as_echo "$MSYS_ROOT_PATH" >&6; }
+    WINDOWS_ENV_ROOT_PATH="$MSYS_ROOT_PATH"
+  else
+    as_fn_error $? "Unknown Windows environment. Neither cygwin nor msys was detected." "$LINENO" 5
+  fi
+
+  # Test if windows or unix (cygwin/msys) find is first in path.
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking what kind of 'find' is first on the PATH" >&5
+$as_echo_n "checking what kind of 'find' is first on the PATH... " >&6; }
+  FIND_BINARY_OUTPUT=`find --version 2>&1`
+  if test "x`echo $FIND_BINARY_OUTPUT | $GREP GNU`" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unix style" >&5
+$as_echo "unix style" >&6; }
+  elif test "x`echo $FIND_BINARY_OUTPUT | $GREP FIND`" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: Windows" >&5
+$as_echo "Windows" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Your path contains Windows tools (C:\Windows\system32) before your unix (cygwin or msys) tools." >&5
+$as_echo "$as_me: Your path contains Windows tools (C:\Windows\system32) before your unix (cygwin or msys) tools." >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: This will not work. Please correct and make sure /usr/bin (or similar) is first in path." >&5
+$as_echo "$as_me: This will not work. Please correct and make sure /usr/bin (or similar) is first in path." >&6;}
+    as_fn_error $? "Cannot continue" "$LINENO" 5
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
+$as_echo "unknown" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: It seems that your find utility is non-standard." >&5
+$as_echo "$as_me: WARNING: It seems that your find utility is non-standard." >&2;}
+  fi
+
+  else
+    PATH_SEP=":"
+  fi
+
+
   # We get the top-level directory from the supporting wrappers.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for top-level directory" >&5
 $as_echo_n "checking for top-level directory... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOPDIR" >&5
 $as_echo "$TOPDIR" >&6; }
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$TOPDIR"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of TOPDIR, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of TOPDIR" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-stile (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    TOPDIR="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting TOPDIR to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting TOPDIR to \"$new_path\"" >&6;}
-  fi
-
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$TOPDIR"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    TOPDIR="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting TOPDIR to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting TOPDIR to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-  else
-    # We're on a posix platform. Hooray! :)
-    path="$TOPDIR"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of TOPDIR, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
-
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of TOPDIR, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
-    TOPDIR="`cd "$path"; $THEPWDCMD -L`"
-  fi
-
-
-
-  # SRC_ROOT is a traditional alias for TOPDIR.
-  SRC_ROOT=$TOPDIR
-
-  # Locate the directory of this script.
-  AUTOCONF_DIR=$TOPDIR/common/autoconf
-
-  # Save the current directory this script was started from
-  CURDIR="$PWD"
+  # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
@@ -14129,102 +14100,132 @@ $as_echo "$as_me: The path of CURDIR, which resolves as \"$path\", is invalid." 
   fi
 
 
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    PATH_SEP=";"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
-  SRC_ROOT_LENGTH=`$THEPWDCMD -L|$WC -m`
-  if test $SRC_ROOT_LENGTH -gt 100; then
-    as_fn_error $? "Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported" "$LINENO" 5
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$TOPDIR"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of TOPDIR, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of TOPDIR" "$LINENO" 5
   fi
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking cygwin release" >&5
-$as_echo_n "checking cygwin release... " >&6; }
-    CYGWIN_VERSION=`$UNAME -r`
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGWIN_VERSION" >&5
-$as_echo "$CYGWIN_VERSION" >&6; }
-    WINDOWS_ENV_VENDOR='cygwin'
-    WINDOWS_ENV_VERSION="$CYGWIN_VERSION"
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
 
-    CYGWIN_VERSION_OK=`$ECHO $CYGWIN_VERSION | $GREP ^1.7.`
-    if test "x$CYGWIN_VERSION_OK" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Your cygwin is too old. You are running $CYGWIN_VERSION, but at least cygwin 1.7 is required. Please upgrade." >&5
-$as_echo "$as_me: Your cygwin is too old. You are running $CYGWIN_VERSION, but at least cygwin 1.7 is required. Please upgrade." >&6;}
-      as_fn_error $? "Cannot continue" "$LINENO" 5
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
     fi
-    if test "x$CYGPATH" = x; then
-      as_fn_error $? "Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path" "$LINENO" 5
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking cygwin root directory as unix-style path" >&5
-$as_echo_n "checking cygwin root directory as unix-style path... " >&6; }
-    # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
-    cygwin_winpath_root=`cd / ; cmd /c cd | grep ".*"`
-    # Force cygpath to report the proper root by including a trailing space, and then stripping it off again.
-    CYGWIN_ROOT_PATH=`$CYGPATH -u "$cygwin_winpath_root " | $CUT -f 1 -d " "`
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGWIN_ROOT_PATH" >&5
-$as_echo "$CYGWIN_ROOT_PATH" >&6; }
-    WINDOWS_ENV_ROOT_PATH="$CYGWIN_ROOT_PATH"
-    test_cygdrive_prefix=`$ECHO $CYGWIN_ROOT_PATH | $GREP ^/cygdrive/`
-    if test "x$test_cygdrive_prefix" = x; then
-      as_fn_error $? "Your cygdrive prefix is not /cygdrive. This is currently not supported. Change with mount -c." "$LINENO" 5
-    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    TOPDIR="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting TOPDIR to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting TOPDIR to \"$new_path\"" >&6;}
+  fi
+
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking msys release" >&5
-$as_echo_n "checking msys release... " >&6; }
-    MSYS_VERSION=`$UNAME -r`
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSYS_VERSION" >&5
-$as_echo "$MSYS_VERSION" >&6; }
 
-    WINDOWS_ENV_VENDOR='msys'
-    WINDOWS_ENV_VERSION="$MSYS_VERSION"
+  path="$TOPDIR"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking msys root directory as unix-style path" >&5
-$as_echo_n "checking msys root directory as unix-style path... " >&6; }
-    # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
-    MSYS_ROOT_PATH=`cd / ; cmd /c cd | grep ".*"`
 
-  windows_path="$MSYS_ROOT_PATH"
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     unix_path=`$CYGPATH -u "$windows_path"`
-    MSYS_ROOT_PATH="$unix_path"
+    new_path="$unix_path"
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    MSYS_ROOT_PATH="$unix_path"
+    new_path="$unix_path"
   fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSYS_ROOT_PATH" >&5
-$as_echo "$MSYS_ROOT_PATH" >&6; }
-    WINDOWS_ENV_ROOT_PATH="$MSYS_ROOT_PATH"
-  else
-    as_fn_error $? "Unknown Windows environment. Neither cygwin nor msys was detected." "$LINENO" 5
+  if test "x$path" != "x$new_path"; then
+    TOPDIR="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting TOPDIR to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting TOPDIR to \"$new_path\"" >&6;}
   fi
 
-  # Test if windows or unix (cygwin/msys) find is first in path.
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking what kind of 'find' is first on the PATH" >&5
-$as_echo_n "checking what kind of 'find' is first on the PATH... " >&6; }
-  FIND_BINARY_OUTPUT=`find --version 2>&1`
-  if test "x`echo $FIND_BINARY_OUTPUT | $GREP GNU`" != x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unix style" >&5
-$as_echo "unix style" >&6; }
-  elif test "x`echo $FIND_BINARY_OUTPUT | $GREP FIND`" != x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: Windows" >&5
-$as_echo "Windows" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Your path contains Windows tools (C:\Windows\system32) before your unix (cygwin or msys) tools." >&5
-$as_echo "$as_me: Your path contains Windows tools (C:\Windows\system32) before your unix (cygwin or msys) tools." >&6;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: This will not work. Please correct and make sure /usr/bin (or similar) is first in path." >&5
-$as_echo "$as_me: This will not work. Please correct and make sure /usr/bin (or similar) is first in path." >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-  else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
-$as_echo "unknown" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: It seems that your find utility is non-standard." >&5
-$as_echo "$as_me: WARNING: It seems that your find utility is non-standard." >&2;}
-  fi
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    PATH_SEP=":"
+    # We're on a posix platform. Hooray! :)
+    path="$TOPDIR"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of TOPDIR, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of TOPDIR, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    TOPDIR="`cd "$path"; $THEPWDCMD -L`"
   fi
 
+  # SRC_ROOT is a traditional alias for TOPDIR.
+  SRC_ROOT=$TOPDIR
+
+  # Locate the directory of this script.
+  AUTOCONF_DIR=$TOPDIR/common/autoconf
 
   if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
     # Add extra search paths on solaris for utilities like ar and as etc...

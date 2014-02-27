@@ -418,21 +418,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
-  # We get the top-level directory from the supporting wrappers.
-  AC_MSG_CHECKING([for top-level directory])
-  AC_MSG_RESULT([$TOPDIR])
-  BASIC_FIXUP_PATH(TOPDIR)
-  AC_SUBST(TOPDIR)
-
-  # SRC_ROOT is a traditional alias for TOPDIR.
-  SRC_ROOT=$TOPDIR
-
-  # Locate the directory of this script.
-  AUTOCONF_DIR=$TOPDIR/common/autoconf
-
   # Save the current directory this script was started from
   CURDIR="$PWD"
-  BASIC_FIXUP_PATH(CURDIR)
 
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     PATH_SEP=";"
@@ -441,6 +428,20 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
     PATH_SEP=":"
   fi
   AC_SUBST(PATH_SEP)
+
+  # We get the top-level directory from the supporting wrappers.
+  AC_MSG_CHECKING([for top-level directory])
+  AC_MSG_RESULT([$TOPDIR])
+  AC_SUBST(TOPDIR)
+
+  # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
+  BASIC_FIXUP_PATH(CURDIR)
+  BASIC_FIXUP_PATH(TOPDIR)
+  # SRC_ROOT is a traditional alias for TOPDIR.
+  SRC_ROOT=$TOPDIR
+
+  # Locate the directory of this script.
+  AUTOCONF_DIR=$TOPDIR/common/autoconf
 
   if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
     # Add extra search paths on solaris for utilities like ar and as etc...
