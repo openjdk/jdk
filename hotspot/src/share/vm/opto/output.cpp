@@ -344,6 +344,11 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
   uint*      jmp_offset = NEW_RESOURCE_ARRAY(uint,nblocks);
   uint*      jmp_size   = NEW_RESOURCE_ARRAY(uint,nblocks);
   int*       jmp_nidx   = NEW_RESOURCE_ARRAY(int ,nblocks);
+
+  // Collect worst case block paddings
+  int* block_worst_case_pad = NEW_RESOURCE_ARRAY(int, nblocks);
+  memset(block_worst_case_pad, 0, nblocks * sizeof(int));
+
   DEBUG_ONLY( uint *jmp_target = NEW_RESOURCE_ARRAY(uint,nblocks); )
   DEBUG_ONLY( uint *jmp_rule = NEW_RESOURCE_ARRAY(uint,nblocks); )
 
@@ -460,6 +465,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
           last_avoid_back_to_back_adr += max_loop_pad;
         }
         blk_size += max_loop_pad;
+        block_worst_case_pad[i + 1] = max_loop_pad;
       }
     }
 
@@ -499,9 +505,16 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         if (bnum > i) { // adjust following block's offset
           offset -= adjust_block_start;
         }
+
+        // This block can be a loop header, account for the padding
+        // in the previous block.
+        int block_padding = block_worst_case_pad[i];
+        assert(i == 0 || block_padding == 0 || br_offs >= block_padding, "Should have at least a padding on top");
         // In the following code a nop could be inserted before
         // the branch which will increase the backward distance.
-        bool needs_padding = ((uint)br_offs == last_may_be_short_branch_adr);
+        bool needs_padding = ((uint)(br_offs - block_padding) == last_may_be_short_branch_adr);
+        assert(!needs_padding || jmp_offset[i] == 0, "padding only branches at the beginning of block");
+
         if (needs_padding && offset <= 0)
           offset -= nop_size;
 
