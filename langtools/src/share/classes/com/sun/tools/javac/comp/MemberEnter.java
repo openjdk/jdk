@@ -607,7 +607,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             annotate.annotateLater(tree.mods.annotations, localEnv, m, tree.pos());
             // Visit the signature of the method. Note that
             // TypeAnnotate doesn't descend into the body.
-            annotate.typeAnnotate(tree, localEnv, m, tree.pos());
+            annotate.annotateTypeLater(tree, localEnv, m, tree.pos());
 
             if (tree.defaultValue != null)
                 annotateDefaultValueLater(tree.defaultValue, localEnv, m);
@@ -698,7 +698,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 enclScope.enter(v);
             }
             annotate.annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
-            annotate.typeAnnotate(tree.vartype, env, v, tree.pos());
+            annotate.annotateTypeLater(tree.vartype, env, v, tree.pos());
             v.pos = tree.pos;
         } finally {
             annotate.enterDone();
@@ -939,9 +939,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             Env<AttrContext> baseEnv = baseEnv(tree, env);
 
             if (tree.extending != null)
-                annotate.typeAnnotate(tree.extending, baseEnv, sym, tree.pos());
+                annotate.annotateTypeLater(tree.extending, baseEnv, sym, tree.pos());
             for (JCExpression impl : tree.implementing)
-                annotate.typeAnnotate(impl, baseEnv, sym, tree.pos());
+                annotate.annotateTypeLater(impl, baseEnv, sym, tree.pos());
             annotate.flush();
 
             // Determine supertype.
@@ -1010,7 +1010,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             attr.attribTypeVariables(tree.typarams, baseEnv);
             // Do this here, where we have the symbol.
             for (JCTypeParameter tp : tree.typarams)
-                annotate.typeAnnotate(tp, baseEnv, sym, tree.pos());
+                annotate.annotateTypeLater(tp, baseEnv, sym, tree.pos());
 
             // Add default constructor if needed.
             if ((c.flags() & INTERFACE) == 0 &&
