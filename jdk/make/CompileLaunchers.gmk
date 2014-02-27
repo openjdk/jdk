@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -679,7 +679,10 @@ ifndef OPENJDK
         PROGRAM := jabswitch, \
         DEBUG_SYMBOLS := true, \
         VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/AccessBridgeStatusWindow.rc, \
-        RC_FLAGS := $(RC_FLAGS), \
+        RC_FLAGS := $(RC_FLAGS) \
+            -D "JDK_FNAME=jabswitch.exe" \
+            -D "JDK_INTERNAL_NAME=jabswitch" \
+            -D "JDK_FTYPE=0x01L", \
         MANIFEST := $(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/jabswitch.manifest))
 
     BUILD_LAUNCHERS += $(BUILD_JABSWITCH)
