@@ -1403,12 +1403,22 @@ Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 # switch back to standard time this winter, so the will stay on DST
 # until about the same time next year (at least).
 # http://www.petra.gov.jo/Public_News/Nws_NewsDetails.aspx?NewsID=88950
-#
-# From Paul Eggert (2013-09-21):
-# It's looking like this change will be permanent; see
-# Petra News Agency, Cancelling winter saved Jordan $7 million (2013-02-20)
-# <http://www.albawaba.com/business/jordan-winter-electricity--472005>.
-# So move Jordan to UTC+3 as of the abovementioned date.
+
+# From Steffen Thorsen (2013-12-11):
+# Jordan Times and other sources say that Jordan is going back to
+# UTC+2 on 2013-12-19 at midnight:
+# http://jordantimes.com/govt-decides-to-switch-back-to-wintertime
+# Official, in Arabic:
+# http://www.petra.gov.jo/public_news/Nws_NewsDetails.aspx?Menu_ID=&Site_Id=2&lang=1&NewsID=133230&CatID=14
+# ... Our background/permalink about it
+# http://www.timeanddate.com/news/time/jordan-reverses-dst-decision.html
+# ...
+# http://www.petra.gov.jo/Public_News/Nws_NewsDetails.aspx?lang=2&site_id=1&NewsID=133313&Type=P
+# ... says midnight for the coming one and 1:00 for the ones in the future
+# (and they will use DST again next year, using the normal schedule).
+
+# From Paul Eggert (2013-12-11):
+# As Steffen suggested, consider the past 21-month experiment to be DST.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Jordan	1973	only	-	Jun	6	0:00	1:00	S
@@ -1438,11 +1448,13 @@ Rule	Jordan	2002	2012	-	Mar	lastThu	24:00	1:00	S
 Rule	Jordan	2003	only	-	Oct	24	0:00s	0	-
 Rule	Jordan	2004	only	-	Oct	15	0:00s	0	-
 Rule	Jordan	2005	only	-	Sep	lastFri	0:00s	0	-
-Rule	Jordan	2006	2012	-	Oct	lastFri	0:00s	0	-
+Rule	Jordan	2006	2011	-	Oct	lastFri	0:00s	0	-
+Rule	Jordan	2013	only	-	Dec	20	0:00	0	-
+Rule	Jordan	2014	max	-	Mar	lastThu	24:00	1:00	S
+Rule	Jordan	2014	max	-	Oct	lastFri	0:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Amman	2:23:44 -	LMT	1931
-			2:00	Jordan	EE%sT	2012 Oct 26 0:00s
-			3:00	-	AST
+			2:00	Jordan	EE%sT
 
 
 # Kazakhstan

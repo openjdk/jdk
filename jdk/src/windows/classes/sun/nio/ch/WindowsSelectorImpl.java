@@ -313,16 +313,16 @@ final class WindowsSelectorImpl extends SelectorImpl {
         private int processSelectedKeys(long updateCount) {
             int numKeysUpdated = 0;
             numKeysUpdated += processFDSet(updateCount, readFds,
-                                           PollArrayWrapper.POLLIN,
+                                           Net.POLLIN,
                                            false);
             numKeysUpdated += processFDSet(updateCount, writeFds,
-                                           PollArrayWrapper.POLLCONN |
-                                           PollArrayWrapper.POLLOUT,
+                                           Net.POLLCONN |
+                                           Net.POLLOUT,
                                            false);
             numKeysUpdated += processFDSet(updateCount, exceptFds,
-                                           PollArrayWrapper.POLLIN |
-                                           PollArrayWrapper.POLLCONN |
-                                           PollArrayWrapper.POLLOUT,
+                                           Net.POLLIN |
+                                           Net.POLLCONN |
+                                           Net.POLLOUT,
                                            true);
             return numKeysUpdated;
         }

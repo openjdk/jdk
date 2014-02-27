@@ -4078,11 +4078,9 @@ public class Attr extends JCTree.Visitor {
             @Override
             public void run() {
                 List<Attribute.TypeCompound> compounds = fromAnnotations(annotations);
-                if (annotations.size() == compounds.size()) {
-                    // All annotations were successfully converted into compounds
+                Assert.check(annotations.size() == compounds.size());
                     tree.type = tree.type.unannotatedType().annotatedType(compounds);
                 }
-            }
         });
     }
 
@@ -4093,18 +4091,8 @@ public class Attr extends JCTree.Visitor {
 
         ListBuffer<Attribute.TypeCompound> buf = new ListBuffer<>();
         for (JCAnnotation anno : annotations) {
-            if (anno.attribute != null) {
-                // TODO: this null-check is only needed for an obscure
-                // ordering issue, where annotate.flush is called when
-                // the attribute is not set yet. For an example failure
-                // try the referenceinfos/NestedTypes.java test.
-                // Any better solutions?
-                buf.append((Attribute.TypeCompound) anno.attribute);
-            }
-            // Eventually we will want to throw an exception here, but
-            // we can't do that just yet, because it gets triggered
-            // when attempting to attach an annotation that isn't
-            // defined.
+            Assert.checkNonNull(anno.attribute);
+            buf.append((Attribute.TypeCompound) anno.attribute);
         }
         return buf.toList();
     }
@@ -4661,8 +4649,17 @@ public class Attr extends JCTree.Visitor {
 
         private void initTypeIfNeeded(JCTree that) {
             if (that.type == null) {
-                that.type = syms.unknownType;
+                if (that.hasTag(METHODDEF)) {
+                    that.type = dummyMethodType();
+                } else {
+                    that.type = syms.unknownType;
+                }
             }
+        }
+
+        private Type dummyMethodType() {
+            return new MethodType(List.<Type>nil(), syms.unknownType,
+                            List.<Type>nil(), syms.methodClass);
         }
 
         @Override
@@ -4720,7 +4717,8 @@ public class Attr extends JCTree.Visitor {
         @Override
         public void visitNewClass(JCNewClass that) {
             if (that.constructor == null) {
-                that.constructor = new MethodSymbol(0, names.init, syms.unknownType, syms.noSymbol);
+                that.constructor = new MethodSymbol(0, names.init,
+                        dummyMethodType(), syms.noSymbol);
             }
             if (that.constructorType == null) {
                 that.constructorType = syms.unknownType;
@@ -4730,22 +4728,28 @@ public class Attr extends JCTree.Visitor {
 
         @Override
         public void visitAssignop(JCAssignOp that) {
-            if (that.operator == null)
-                that.operator = new OperatorSymbol(names.empty, syms.unknownType, -1, syms.noSymbol);
+            if (that.operator == null) {
+                that.operator = new OperatorSymbol(names.empty, dummyMethodType(),
+                        -1, syms.noSymbol);
+            }
             super.visitAssignop(that);
         }
 
         @Override
         public void visitBinary(JCBinary that) {
-            if (that.operator == null)
-                that.operator = new OperatorSymbol(names.empty, syms.unknownType, -1, syms.noSymbol);
+            if (that.operator == null) {
+                that.operator = new OperatorSymbol(names.empty, dummyMethodType(),
+                        -1, syms.noSymbol);
+            }
             super.visitBinary(that);
         }
 
         @Override
         public void visitUnary(JCUnary that) {
-            if (that.operator == null)
-                that.operator = new OperatorSymbol(names.empty, syms.unknownType, -1, syms.noSymbol);
+            if (that.operator == null) {
+                that.operator = new OperatorSymbol(names.empty, dummyMethodType(),
+                        -1, syms.noSymbol);
+            }
             super.visitUnary(that);
         }
 
@@ -4761,7 +4765,8 @@ public class Attr extends JCTree.Visitor {
         public void visitReference(JCMemberReference that) {
             super.visitReference(that);
             if (that.sym == null) {
-                that.sym = new MethodSymbol(0, names.empty, syms.unknownType, syms.noSymbol);
+                that.sym = new MethodSymbol(0, names.empty, dummyMethodType(),
+                        syms.noSymbol);
             }
             if (that.targets == null) {
                 that.targets = List.nil();

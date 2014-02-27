@@ -31,6 +31,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/top.hpp"
+#include "trace/tracing.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1_globals.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -61,6 +62,14 @@ ARCH_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PRODUCT_FLAG, \
 
 MATERIALIZE_FLAGS_EXT
 
+
+static bool is_product_build() {
+#ifdef PRODUCT
+  return true;
+#else
+  return false;
+#endif
+}
 
 void Flag::check_writable() {
   if (is_constant_in_binary()) {
@@ -235,6 +244,27 @@ bool Flag::is_unlocked() const {
 // Get custom message for this locked flag, or return NULL if
 // none is available.
 void Flag::get_locked_message(char* buf, int buflen) const {
+  buf[0] = '\0';
+  if (is_diagnostic() && !is_unlocked()) {
+    jio_snprintf(buf, buflen, "Error: VM option '%s' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.\n",
+                 _name);
+    return;
+  }
+  if (is_experimental() && !is_unlocked()) {
+    jio_snprintf(buf, buflen, "Error: VM option '%s' is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions.\n",
+                 _name);
+    return;
+  }
+  if (is_develop() && is_product_build()) {
+    jio_snprintf(buf, buflen, "Error: VM option '%s' is develop and is available only in debug version of VM.\n",
+                 _name);
+    return;
+  }
+  if (is_notproduct() && is_product_build()) {
+    jio_snprintf(buf, buflen, "Error: VM option '%s' is notproduct and is available only in debug version of VM.\n",
+                 _name);
+    return;
+  }
   get_locked_message_ext(buf, buflen);
 }
 
@@ -464,13 +494,13 @@ inline bool str_equal(const char* s, const char* q, size_t len) {
 }
 
 // Search the flag table for a named flag
-Flag* Flag::find_flag(const char* name, size_t length, bool allow_locked) {
+Flag* Flag::find_flag(const char* name, size_t length, bool allow_locked, bool return_flag) {
   for (Flag* current = &flagTable[0]; current->_name != NULL; current++) {
     if (str_equal(current->_name, name, length)) {
       // Found a matching entry.
       // Don't report notproduct and develop flags in product builds.
       if (current->is_constant_in_binary()) {
-        return NULL;
+        return (return_flag == true ? current : NULL);
       }
       // Report locked flags only if allowed.
       if (!(current->is_unlocked() || current->is_unlocker())) {
@@ -564,6 +594,17 @@ bool CommandLineFlags::wasSetOnCmdline(const char* name, bool* value) {
   return true;
 }
 
+template<class E, class T>
+static void trace_flag_changed(const char* name, const T old_value, const T new_value, const Flag::Flags origin)
+{
+  E e;
+  e.set_name(name);
+  e.set_old_value(old_value);
+  e.set_new_value(new_value);
+  e.set_origin(origin);
+  e.commit();
+}
+
 bool CommandLineFlags::boolAt(char* name, size_t len, bool* value) {
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return false;
@@ -577,6 +618,7 @@ bool CommandLineFlags::boolAtPut(char* name, size_t len, bool* value, Flag::Flag
   if (result == NULL) return false;
   if (!result->is_bool()) return false;
   bool old_value = result->get_bool();
+  trace_flag_changed<EventBooleanFlagChanged, bool>(name, old_value, *value, origin);
   result->set_bool(*value);
   *value = old_value;
   result->set_origin(origin);
@@ -586,6 +628,7 @@ bool CommandLineFlags::boolAtPut(char* name, size_t len, bool* value, Flag::Flag
 void CommandLineFlagsEx::boolAtPut(CommandLineFlagWithType flag, bool value, Flag::Flags origin) {
   Flag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_bool(), "wrong flag type");
+  trace_flag_changed<EventBooleanFlagChanged, bool>(faddr->_name, faddr->get_bool(), value, origin);
   faddr->set_bool(value);
   faddr->set_origin(origin);
 }
@@ -603,6 +646,7 @@ bool CommandLineFlags::intxAtPut(char* name, size_t len, intx* value, Flag::Flag
   if (result == NULL) return false;
   if (!result->is_intx()) return false;
   intx old_value = result->get_intx();
+  trace_flag_changed<EventLongFlagChanged, s8>(name, old_value, *value, origin);
   result->set_intx(*value);
   *value = old_value;
   result->set_origin(origin);
@@ -612,6 +656,7 @@ bool CommandLineFlags::intxAtPut(char* name, size_t len, intx* value, Flag::Flag
 void CommandLineFlagsEx::intxAtPut(CommandLineFlagWithType flag, intx value, Flag::Flags origin) {
   Flag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_intx(), "wrong flag type");
+  trace_flag_changed<EventLongFlagChanged, s8>(faddr->_name, faddr->get_intx(), value, origin);
   faddr->set_intx(value);
   faddr->set_origin(origin);
 }
@@ -629,6 +674,7 @@ bool CommandLineFlags::uintxAtPut(char* name, size_t len, uintx* value, Flag::Fl
   if (result == NULL) return false;
   if (!result->is_uintx()) return false;
   uintx old_value = result->get_uintx();
+  trace_flag_changed<EventUnsignedLongFlagChanged, u8>(name, old_value, *value, origin);
   result->set_uintx(*value);
   *value = old_value;
   result->set_origin(origin);
@@ -638,6 +684,7 @@ bool CommandLineFlags::uintxAtPut(char* name, size_t len, uintx* value, Flag::Fl
 void CommandLineFlagsEx::uintxAtPut(CommandLineFlagWithType flag, uintx value, Flag::Flags origin) {
   Flag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_uintx(), "wrong flag type");
+  trace_flag_changed<EventUnsignedLongFlagChanged, u8>(faddr->_name, faddr->get_uintx(), value, origin);
   faddr->set_uintx(value);
   faddr->set_origin(origin);
 }
@@ -655,6 +702,7 @@ bool CommandLineFlags::uint64_tAtPut(char* name, size_t len, uint64_t* value, Fl
   if (result == NULL) return false;
   if (!result->is_uint64_t()) return false;
   uint64_t old_value = result->get_uint64_t();
+  trace_flag_changed<EventUnsignedLongFlagChanged, u8>(name, old_value, *value, origin);
   result->set_uint64_t(*value);
   *value = old_value;
   result->set_origin(origin);
@@ -664,6 +712,7 @@ bool CommandLineFlags::uint64_tAtPut(char* name, size_t len, uint64_t* value, Fl
 void CommandLineFlagsEx::uint64_tAtPut(CommandLineFlagWithType flag, uint64_t value, Flag::Flags origin) {
   Flag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_uint64_t(), "wrong flag type");
+  trace_flag_changed<EventUnsignedLongFlagChanged, u8>(faddr->_name, faddr->get_uint64_t(), value, origin);
   faddr->set_uint64_t(value);
   faddr->set_origin(origin);
 }
@@ -681,6 +730,7 @@ bool CommandLineFlags::doubleAtPut(char* name, size_t len, double* value, Flag::
   if (result == NULL) return false;
   if (!result->is_double()) return false;
   double old_value = result->get_double();
+  trace_flag_changed<EventDoubleFlagChanged, double>(name, old_value, *value, origin);
   result->set_double(*value);
   *value = old_value;
   result->set_origin(origin);
@@ -690,6 +740,7 @@ bool CommandLineFlags::doubleAtPut(char* name, size_t len, double* value, Flag::
 void CommandLineFlagsEx::doubleAtPut(CommandLineFlagWithType flag, double value, Flag::Flags origin) {
   Flag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_double(), "wrong flag type");
+  trace_flag_changed<EventDoubleFlagChanged, double>(faddr->_name, faddr->get_double(), value, origin);
   faddr->set_double(value);
   faddr->set_origin(origin);
 }
@@ -707,6 +758,7 @@ bool CommandLineFlags::ccstrAtPut(char* name, size_t len, ccstr* value, Flag::Fl
   if (result == NULL) return false;
   if (!result->is_ccstr()) return false;
   ccstr old_value = result->get_ccstr();
+  trace_flag_changed<EventStringFlagChanged, const char*>(name, old_value, *value, origin);
   char* new_value = NULL;
   if (*value != NULL) {
     new_value = NEW_C_HEAP_ARRAY(char, strlen(*value)+1, mtInternal);
@@ -728,6 +780,7 @@ void CommandLineFlagsEx::ccstrAtPut(CommandLineFlagWithType flag, ccstr value, F
   Flag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_ccstr(), "wrong flag type");
   ccstr old_value = faddr->get_ccstr();
+  trace_flag_changed<EventStringFlagChanged, const char*>(faddr->_name, old_value, value, origin);
   char* new_value = NEW_C_HEAP_ARRAY(char, strlen(value)+1, mtInternal);
   strcpy(new_value, value);
   faddr->set_ccstr(new_value);

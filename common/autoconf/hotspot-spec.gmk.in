@@ -102,6 +102,8 @@ HOTSPOT_BUILD_JOBS:=$(JOBS)
 # Control wether Hotspot runs Queens test after building
 TEST_IN_BUILD=@TEST_IN_BUILD@
 
+USE_CLANG := @USE_CLANG@
+
 # For hotspot, override compiler/tools definition to not include FIXPATH prefix.
 # Hotspot has its own handling on the Windows path situation.
 CXX:=@CCACHE@ @HOTSPOT_CXX@

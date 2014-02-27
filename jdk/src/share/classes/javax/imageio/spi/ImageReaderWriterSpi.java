@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,14 +239,14 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
             throw new IllegalArgumentException("pluginClassName == null!");
         }
 
-        this.names = (String[])names.clone();
+        this.names = names.clone();
         // If length == 0, leave it null
         if (suffixes != null && suffixes.length > 0) {
-            this.suffixes = (String[])suffixes.clone();
+            this.suffixes = suffixes.clone();
         }
         // If length == 0, leave it null
         if (MIMETypes != null && MIMETypes.length > 0) {
-            this.MIMETypes = (String[])MIMETypes.clone();
+            this.MIMETypes = MIMETypes.clone();
         }
         this.pluginClassName = pluginClassName;
 
@@ -259,13 +259,13 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
         if (extraStreamMetadataFormatNames != null &&
             extraStreamMetadataFormatNames.length > 0) {
             this.extraStreamMetadataFormatNames =
-                (String[])extraStreamMetadataFormatNames.clone();
+                extraStreamMetadataFormatNames.clone();
         }
         // If length == 0, leave it null
         if (extraStreamMetadataFormatClassNames != null &&
             extraStreamMetadataFormatClassNames.length > 0) {
             this.extraStreamMetadataFormatClassNames =
-                (String[])extraStreamMetadataFormatClassNames.clone();
+                extraStreamMetadataFormatClassNames.clone();
         }
         this.supportsStandardImageMetadataFormat =
             supportsStandardImageMetadataFormat;
@@ -276,13 +276,13 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
         if (extraImageMetadataFormatNames != null &&
             extraImageMetadataFormatNames.length > 0) {
             this.extraImageMetadataFormatNames =
-                (String[])extraImageMetadataFormatNames.clone();
+                extraImageMetadataFormatNames.clone();
         }
         // If length == 0, leave it null
         if (extraImageMetadataFormatClassNames != null &&
             extraImageMetadataFormatClassNames.length > 0) {
             this.extraImageMetadataFormatClassNames =
-                (String[])extraImageMetadataFormatClassNames.clone();
+                extraImageMetadataFormatClassNames.clone();
         }
     }
 
@@ -308,7 +308,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      * associated with this reader or writer.
      */
     public String[] getFormatNames() {
-        return (String[])names.clone();
+        return names.clone();
     }
 
     /**
@@ -332,7 +332,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      * writer, or <code>null</code>.
      */
     public String[] getFileSuffixes() {
-        return suffixes == null ? null : (String[])suffixes.clone();
+        return suffixes == null ? null : suffixes.clone();
     }
 
     /**
@@ -367,7 +367,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      * <code>null</code>.
      */
     public String[] getMIMETypes() {
-        return MIMETypes == null ? null : (String[])MIMETypes.clone();
+        return MIMETypes == null ? null : MIMETypes.clone();
     }
 
     /**
@@ -443,7 +443,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      */
     public String[] getExtraStreamMetadataFormatNames() {
         return extraStreamMetadataFormatNames == null ?
-            null : (String[])extraStreamMetadataFormatNames.clone();
+            null : extraStreamMetadataFormatNames.clone();
     }
 
     /**
@@ -507,7 +507,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
      */
     public String[] getExtraImageMetadataFormatNames() {
         return extraImageMetadataFormatNames == null ?
-            null : (String[])extraImageMetadataFormatNames.clone();
+            null : extraImageMetadataFormatNames.clone();
     }
 
     /**

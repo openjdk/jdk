@@ -26,7 +26,7 @@
 
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux | Darwin )
+  SunOS | Linux | Darwin | AIX )
     exit 0
     ;;
   CYGWIN* )

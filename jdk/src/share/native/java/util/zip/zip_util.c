@@ -659,7 +659,10 @@ readCEN(jzfile *zip, jint knownTotal)
     entries  = zip->entries  = calloc(total, sizeof(entries[0]));
     tablelen = zip->tablelen = ((total/2) | 1); // Odd -> fewer collisions
     table    = zip->table    = malloc(tablelen * sizeof(table[0]));
-    if (entries == NULL || table == NULL) goto Catch;
+    /* According to ISO C it is perfectly legal for malloc to return zero
+     * if called with a zero argument. We check this for 'entries' but not
+     * for 'table' because 'tablelen' can't be zero (see computation above). */
+    if ((entries == NULL && total != 0) || table == NULL) goto Catch;
     for (j = 0; j < tablelen; j++)
         table[j] = ZIP_ENDCHAIN;
 

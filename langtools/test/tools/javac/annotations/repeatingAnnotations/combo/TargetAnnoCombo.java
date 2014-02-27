@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      7151010 8006547 8007766
+ * @bug      7151010 8006547 8007766 8029017
  * @summary  Default test cases for running combinations for Target values
  * @build    Helper
  * @run main TargetAnnoCombo
@@ -145,9 +145,17 @@ public class TargetAnnoCombo {
 
             Set<ElementType> tempBaseSet = EnumSet.noneOf(ElementType.class);
             tempBaseSet.addAll(baseAnnotations);
+
             // If BaseAnno has TYPE, then ANNOTATION_TYPE is allowed by default.
             if (baseAnnotations.contains(TYPE)) {
                 tempBaseSet.add(ANNOTATION_TYPE);
+            }
+
+            // If BaseAnno has TYPE_USE, then add the extra allowed types
+            if (baseAnnotations.contains(TYPE_USE)) {
+                tempBaseSet.add(ANNOTATION_TYPE);
+                tempBaseSet.add(TYPE);
+                tempBaseSet.add(TYPE_PARAMETER);
             }
 
             // If containerAnno has no @Target, only valid case if baseAnnoTarget has

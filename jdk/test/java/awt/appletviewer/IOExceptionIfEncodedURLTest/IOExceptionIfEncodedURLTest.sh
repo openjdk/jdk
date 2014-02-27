@@ -135,6 +135,14 @@ case "$OS" in
       TMP=`cd "${SystemRoot}/Temp"; echo ${PWD}`
       ;;
 
+    AIX )
+      VAR="A different value for AIX"
+      DEFAULT_JDK=/
+      FILESEP="/"
+      PATHSEP=":"
+      TMP="/tmp"
+      ;;
+
    # catch all other OSs
    * )
       echo "Unrecognized system!  $OS"

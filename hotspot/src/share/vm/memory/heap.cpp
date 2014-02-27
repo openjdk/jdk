@@ -183,7 +183,7 @@ void* CodeHeap::allocate(size_t instance_size, bool is_critical) {
   size_t number_of_segments = size_to_segments(instance_size + sizeof(HeapBlock));
   assert(segments_to_size(number_of_segments) >= sizeof(FreeBlock), "not enough room for FreeList");
 
-  // First check if we can satify request from freelist
+  // First check if we can satisfy request from freelist
   debug_only(verify());
   HeapBlock* block = search_freelist(number_of_segments, is_critical);
   debug_only(if (VerifyCodeCacheOften) verify());
@@ -372,7 +372,7 @@ void CodeHeap::add_to_freelist(HeapBlock *a) {
   }
 
   // Scan for right place to put into list. List
-  // is sorted by increasing addresseses
+  // is sorted by increasing addresses
   FreeBlock* prev = NULL;
   FreeBlock* cur  = _freelist;
   while(cur != NULL && cur < b) {

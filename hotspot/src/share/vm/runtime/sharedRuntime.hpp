@@ -382,7 +382,7 @@ class SharedRuntime: AllStatic {
   // present if we see that compiled code is present the compiled call site
   // will be patched/re-resolved so that later calls will run compiled.
 
-  // Aditionally a c2i blob need to have a unverified entry because it can be reached
+  // Additionally a c2i blob need to have a unverified entry because it can be reached
   // in situations where the call site is an inlined cache site and may go megamorphic.
 
   // A i2c adapter is simpler than the c2i adapter. This is because it is assumed
@@ -576,7 +576,7 @@ class SharedRuntime: AllStatic {
 // arguments for a Java-compiled call, and jumps to Rmethod-> code()->
 // code_begin().  It is broken to call it without an nmethod assigned.
 // The usual behavior is to lift any register arguments up out of the
-// stack and possibly re-pack the extra arguments to be contigious.
+// stack and possibly re-pack the extra arguments to be contiguous.
 // I2C adapters will save what the interpreter's stack pointer will be
 // after arguments are popped, then adjust the interpreter's frame
 // size to force alignment and possibly to repack the arguments.
@@ -593,7 +593,7 @@ class SharedRuntime: AllStatic {
 // outgoing stack args will be dead after the copy.
 //
 // Native wrappers, like adapters, marshal arguments.  Unlike adapters they
-// also perform an offical frame push & pop.  They have a call to the native
+// also perform an official frame push & pop.  They have a call to the native
 // routine in their middles and end in a return (instead of ending in a jump).
 // The native wrappers are stored in real nmethods instead of the BufferBlobs
 // used by the adapters.  The code generation happens here because it's very
@@ -610,7 +610,7 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
 
 #ifdef ASSERT
   // Captures code and signature used to generate this adapter when
-  // verifing adapter equivalence.
+  // verifying adapter equivalence.
   unsigned char* _saved_code;
   int            _saved_code_length;
 #endif

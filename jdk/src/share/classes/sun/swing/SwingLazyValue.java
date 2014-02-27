@@ -67,13 +67,13 @@ public class SwingLazyValue implements UIDefaults.LazyValue {
             ReflectUtil.checkPackageAccess(className);
             Class<?> c = Class.forName(className, true, null);
             if (methodName != null) {
-                Class[] types = getClassArray(args);
+                Class<?>[] types = getClassArray(args);
                 Method m = c.getMethod(methodName, types);
                 makeAccessible(m);
                 return m.invoke(c, args);
             } else {
-                Class[] types = getClassArray(args);
-                Constructor constructor = c.getConstructor(types);
+                Class<?>[] types = getClassArray(args);
+                Constructor<?> constructor = c.getConstructor(types);
                 makeAccessible(constructor);
                 return constructor.newInstance(args);
             }
@@ -96,10 +96,10 @@ public class SwingLazyValue implements UIDefaults.LazyValue {
         });
     }
 
-    private Class[] getClassArray(Object[] args) {
-        Class[] types = null;
+    private Class<?>[] getClassArray(Object[] args) {
+        Class<?>[] types = null;
         if (args!=null) {
-            types = new Class[args.length];
+            types = new Class<?>[args.length];
             for (int i = 0; i< args.length; i++) {
                 /* PENDING(ges): At present only the primitive types
                    used are handled correctly; this should eventually

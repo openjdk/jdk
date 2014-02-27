@@ -237,7 +237,7 @@ public class MemoryUsage {
      * Returns a descriptive representation of this memory usage.
      */
     public String toString() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append("init = " + init + "(" + (init >> 10) + "K) ");
         buf.append("used = " + used + "(" + (used >> 10) + "K) ");
         buf.append("committed = " + committed + "(" +

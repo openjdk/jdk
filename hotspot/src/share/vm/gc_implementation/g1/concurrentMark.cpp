@@ -909,7 +909,7 @@ void ConcurrentMark::checkpointRootsInitialPre() {
   }
 #endif
 
-  // Initialise marking structures. This has to be done in a STW phase.
+  // Initialize marking structures. This has to be done in a STW phase.
   reset();
 
   // For each region note start of marking.
@@ -923,8 +923,8 @@ void ConcurrentMark::checkpointRootsInitialPost() {
 
   // If we force an overflow during remark, the remark operation will
   // actually abort and we'll restart concurrent marking. If we always
-  // force an oveflow during remark we'll never actually complete the
-  // marking phase. So, we initilize this here, at the start of the
+  // force an overflow during remark we'll never actually complete the
+  // marking phase. So, we initialize this here, at the start of the
   // cycle, so that at the remaining overflow number will decrease at
   // every remark and we'll eventually not need to cause one.
   force_overflow_stw()->init();
@@ -959,7 +959,7 @@ void ConcurrentMark::checkpointRootsInitialPost() {
  *
  * Note, however, that this code is also used during remark and in
  * this case we should not attempt to leave / enter the STS, otherwise
- * we'll either hit an asseert (debug / fastdebug) or deadlock
+ * we'll either hit an assert (debug / fastdebug) or deadlock
  * (product). So we should only leave / enter the STS if we are
  * operating concurrently.
  *
@@ -1001,7 +1001,7 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
       // task 0 is responsible for clearing the global data structures
       // We should be here because of an overflow. During STW we should
       // not clear the overflow flag since we rely on it being true when
-      // we exit this method to abort the pause and restart concurent
+      // we exit this method to abort the pause and restart concurrent
       // marking.
       reset_marking_state(true /* clear_overflow */);
       force_overflow()->update();
@@ -1251,7 +1251,7 @@ void ConcurrentMark::markFromRoots() {
   CMConcurrentMarkingTask markingTask(this, cmThread());
   if (use_parallel_marking_threads()) {
     _parallel_workers->set_active_workers((int)active_workers);
-    // Don't set _n_par_threads because it affects MT in proceess_strong_roots()
+    // Don't set _n_par_threads because it affects MT in process_strong_roots()
     // and the decisions on that MT processing is made elsewhere.
     assert(_parallel_workers->active_workers() > 0, "Should have been set");
     _parallel_workers->run_task(&markingTask);
@@ -1484,7 +1484,7 @@ public:
     }
 
     // Set the marked bytes for the current region so that
-    // it can be queried by a calling verificiation routine
+    // it can be queried by a calling verification routine
     _region_marked_bytes = marked_bytes;
 
     return false;
@@ -1618,7 +1618,6 @@ public:
     return false;
   }
 };
-
 
 class G1ParVerifyFinalCountTask: public AbstractGangTask {
 protected:
@@ -2307,7 +2306,7 @@ class G1CMDrainMarkingStackClosure: public VoidClosure {
       // oop closure (an instance of G1CMKeepAliveAndDrainClosure above).
       //
       // CMTask::do_marking_step() is called in a loop, which we'll exit
-      // if there's nothing more to do (i.e. we'completely drained the
+      // if there's nothing more to do (i.e. we've completely drained the
       // entries that were pushed as a a result of applying the 'keep alive'
       // closure to the entries on the discovered ref lists) or we overflow
       // the global marking stack.
@@ -2470,7 +2469,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     // reference processing is not multi-threaded and is thus
     // performed by the current thread instead of a gang worker).
     //
-    // The gang tasks involved in parallel reference procssing create
+    // The gang tasks involved in parallel reference processing create
     // their own instances of these closures, which do their own
     // synchronization among themselves.
     G1CMKeepAliveAndDrainClosure g1_keep_alive(this, task(0), true /* is_serial */);
@@ -2529,10 +2528,9 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     assert(!rp->discovery_enabled(), "Post condition");
   }
 
-  // Now clean up stale oops in StringTable
-  StringTable::unlink(&g1_is_alive);
-  // Clean up unreferenced symbols in symbol table.
-  SymbolTable::unlink();
+  g1h->unlink_string_and_symbol_table(&g1_is_alive,
+                                      /* process_strings */ false, // currently strings are always roots
+                                      /* process_symbols */ true);
 }
 
 void ConcurrentMark::swapMarkBitMaps() {
@@ -2548,7 +2546,7 @@ private:
 public:
   void work(uint worker_id) {
     // Since all available tasks are actually started, we should
-    // only proceed if we're supposed to be actived.
+    // only proceed if we're supposed to be active.
     if (worker_id < _cm->active_tasks()) {
       CMTask* task = _cm->task(worker_id);
       task->record_start_time();
@@ -3068,7 +3066,7 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
 
     // 'start' should be in the heap.
     assert(_g1h->is_in_g1_reserved(start) && _ct_bs->is_card_aligned(start), "sanity");
-    // 'end' *may* be just beyone the end of the heap (if hr is the last region)
+    // 'end' *may* be just beyond the end of the heap (if hr is the last region)
     assert(!_g1h->is_in_g1_reserved(end) || _ct_bs->is_card_aligned(end), "sanity");
 
     BitMap::idx_t start_idx = _cm->card_bitmap_index_for(start);
@@ -4416,7 +4414,7 @@ void CMTask::do_marking_step(double time_target_ms,
       // overflow was raised. This means we have to restart the
       // marking phase and start iterating over regions. However, in
       // order to do this we have to make sure that all tasks stop
-      // what they are doing and re-initialise in a safe manner. We
+      // what they are doing and re-initialize in a safe manner. We
       // will achieve this with the use of two barrier sync points.
 
       if (_cm->verbose_low()) {
@@ -4430,7 +4428,7 @@ void CMTask::do_marking_step(double time_target_ms,
 
         // When we exit this sync barrier we know that all tasks have
         // stopped doing marking work. So, it's now safe to
-        // re-initialise our data structures. At the end of this method,
+        // re-initialize our data structures. At the end of this method,
         // task 0 will clear the global data structures.
       }
 

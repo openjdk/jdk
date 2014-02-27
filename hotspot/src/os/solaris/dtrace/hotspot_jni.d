@@ -211,7 +211,7 @@ provider hotspot_jni {
   probe CallVoidMethodV__return();
   probe CreateJavaVM__entry(void**, void**, void*);
   probe CreateJavaVM__return(uint32_t);
-  probe DefineClass__entry(void*, const char*, void*, char, uintptr_t);
+  probe DefineClass__entry(void*, const char*, void*, char*, uintptr_t);
   probe DefineClass__return(void*);
   probe DeleteGlobalRef__entry(void*, void*);
   probe DeleteGlobalRef__return();
