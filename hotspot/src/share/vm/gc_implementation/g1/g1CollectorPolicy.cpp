@@ -318,7 +318,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
 void G1CollectorPolicy::initialize_alignments() {
   _space_alignment = HeapRegion::GrainBytes;
-  size_t card_table_alignment = GenRemSet::max_alignment_constraint(GenRemSet::CardTable);
+  size_t card_table_alignment = GenRemSet::max_alignment_constraint();
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   _heap_alignment = MAX3(card_table_alignment, _space_alignment, page_size);
 }
@@ -1075,7 +1075,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
   }
 
   _short_lived_surv_rate_group->start_adding_regions();
-  // do that for any other surv rate groupsx
+  // Do that for any other surv rate groups
 
   if (update_stats) {
     double cost_per_card_ms = 0.0;
@@ -1741,7 +1741,7 @@ void G1CollectorPolicy::add_to_incremental_cset_info(HeapRegion* hr, size_t rs_l
   _inc_cset_predicted_elapsed_time_ms += region_elapsed_time_ms;
   _inc_cset_bytes_used_before += used_bytes;
 
-  // Cache the values we have added to the aggregated informtion
+  // Cache the values we have added to the aggregated information
   // in the heap region in case we have to remove this region from
   // the incremental collection set, or it is updated by the
   // rset sampling code

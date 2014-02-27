@@ -407,8 +407,8 @@ size_t CompactibleFreeListSpace::max_alloc_in_words() const {
   res = MAX2(res, MIN2(_smallLinearAllocBlock._word_size,
                        (size_t) SmallForLinearAlloc - 1));
   // XXX the following could potentially be pretty slow;
-  // should one, pesimally for the rare cases when res
-  // caclulated above is less than IndexSetSize,
+  // should one, pessimistically for the rare cases when res
+  // calculated above is less than IndexSetSize,
   // just return res calculated above? My reasoning was that
   // those cases will be so rare that the extra time spent doesn't
   // really matter....
@@ -759,7 +759,7 @@ CompactibleFreeListSpace::new_dcto_cl(ExtendedOopClosure* cl,
 // Note on locking for the space iteration functions:
 // since the collector's iteration activities are concurrent with
 // allocation activities by mutators, absent a suitable mutual exclusion
-// mechanism the iterators may go awry. For instace a block being iterated
+// mechanism the iterators may go awry. For instance a block being iterated
 // may suddenly be allocated or divided up and part of it allocated and
 // so on.
 
@@ -2090,7 +2090,7 @@ CompactibleFreeListSpace::refillLinearAllocBlock(LinearAllocBlock* blk) {
 
 // Support for concurrent collection policy decisions.
 bool CompactibleFreeListSpace::should_concurrent_collect() const {
-  // In the future we might want to add in frgamentation stats --
+  // In the future we might want to add in fragmentation stats --
   // including erosion of the "mountain" into this decision as well.
   return !adaptive_freelists() && linearAllocationWouldFail();
 }
@@ -2099,7 +2099,7 @@ bool CompactibleFreeListSpace::should_concurrent_collect() const {
 
 void CompactibleFreeListSpace::prepare_for_compaction(CompactPoint* cp) {
   SCAN_AND_FORWARD(cp,end,block_is_obj,block_size);
-  // prepare_for_compaction() uses the space between live objects
+  // Prepare_for_compaction() uses the space between live objects
   // so that later phase can skip dead space quickly.  So verification
   // of the free lists doesn't work after.
 }
@@ -2122,7 +2122,7 @@ void CompactibleFreeListSpace::compact() {
   SCAN_AND_COMPACT(obj_size);
 }
 
-// fragmentation_metric = 1 - [sum of (fbs**2) / (sum of fbs)**2]
+// Fragmentation metric = 1 - [sum of (fbs**2) / (sum of fbs)**2]
 // where fbs is free block sizes
 double CompactibleFreeListSpace::flsFrag() const {
   size_t itabFree = totalSizeInIndexedFreeLists();
@@ -2651,7 +2651,7 @@ void CFLS_LAB::get_from_global_pool(size_t word_sz, AdaptiveFreeList<FreeChunk>*
   // changes on-the-fly during a scavenge and avoid such a phase-change
   // pothole. The following code is a heuristic attempt to do that.
   // It is protected by a product flag until we have gained
-  // enough experience with this heuristic and fine-tuned its behaviour.
+  // enough experience with this heuristic and fine-tuned its behavior.
   // WARNING: This might increase fragmentation if we overreact to
   // small spikes, so some kind of historical smoothing based on
   // previous experience with the greater reactivity might be useful.

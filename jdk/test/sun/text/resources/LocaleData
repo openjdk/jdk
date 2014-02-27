@@ -431,10 +431,6 @@ CurrencyNames/es_CL/CLP=Ch$
 FormatData/es_CL/NumberPatterns/0=#,##0.###;-#,##0.###
 # FormatData/es_CL/NumberPatterns/1=Ch$#,##0.00;Ch$-#,##0.00 # Changed; see bug 4122840
 FormatData/es_CL/NumberPatterns/2=#,##0%
-FormatData/es_CL/TimePatterns/0=hh:mm:ss a z
-FormatData/es_CL/TimePatterns/1=hh:mm:ss a z
-FormatData/es_CL/TimePatterns/2=hh:mm:ss a
-FormatData/es_CL/TimePatterns/3=hh:mm a
 FormatData/es_CL/DatePatterns/0=EEEE d' de 'MMMM' de 'yyyy
 FormatData/es_CL/DatePatterns/1=d' de 'MMMM' de 'yyyy
 FormatData/es_CL/DatePatterns/2=dd-MM-yyyy
@@ -498,10 +494,6 @@ FormatData/es_EC/NumberPatterns/0=#,##0.###;-#,##0.###
 FormatData/es_EC/NumberPatterns/2=#,##0%
 #changed for 4945388
 CurrencyNames/es_EC/USD=$
-FormatData/es_EC/TimePatterns/0=hh:mm:ss a z
-FormatData/es_EC/TimePatterns/1=hh:mm:ss a z
-FormatData/es_EC/TimePatterns/2=hh:mm:ss a
-FormatData/es_EC/TimePatterns/3=hh:mm a
 FormatData/es_EC/DatePatterns/0=EEEE d' de 'MMMM' de 'yyyy
 FormatData/es_EC/DatePatterns/1=d' de 'MMMM' de 'yyyy
 FormatData/es_EC/DatePatterns/2=dd/MM/yyyy
@@ -7690,3 +7682,13 @@ LocaleNames/sv/ZA=Sydafrika
 
 # bug 8027695
 FormatData/sv_SE/NumberPatterns/2=#,##0 %
+
+# bug 8017142
+FormatData/es_CL/TimePatterns/0=HH:mm:ss zzzz
+FormatData/es_CL/TimePatterns/1=H:mm:ss z
+FormatData/es_CL/TimePatterns/2=H:mm:ss
+FormatData/es_CL/TimePatterns/3=H:mm
+FormatData/es_EC/TimePatterns/0=HH:mm:ss zzzz
+FormatData/es_EC/TimePatterns/1=H:mm:ss z
+FormatData/es_EC/TimePatterns/2=H:mm:ss
+FormatData/es_EC/TimePatterns/3=H:mm

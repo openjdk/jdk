@@ -394,14 +394,16 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // the following methods:
   // Returns "true" iff the heap supports thread-local allocation buffers.
   // The default is "no".
-  virtual bool supports_tlab_allocation() const {
-    return false;
-  }
+  virtual bool supports_tlab_allocation() const = 0;
+
   // The amount of space available for thread-local allocation buffers.
-  virtual size_t tlab_capacity(Thread *thr) const {
-    guarantee(false, "thread-local allocation buffers not supported");
-    return 0;
-  }
+  virtual size_t tlab_capacity(Thread *thr) const = 0;
+
+  // The amount of used space for thread-local allocation buffers for the given thread.
+  virtual size_t tlab_used(Thread *thr) const = 0;
+
+  virtual size_t max_tlab_size() const;
+
   // An estimate of the maximum allocation that could be performed
   // for thread-local allocation buffers without triggering any
   // collection or expansion activity.

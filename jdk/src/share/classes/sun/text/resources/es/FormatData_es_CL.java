@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,10 @@ public class FormatData_es_CL extends ParallelListResourceBundle {
             },
             { "TimePatterns",
                 new String[] {
-                    "hh:mm:ss a z", // full time pattern
-                    "hh:mm:ss a z", // long time pattern
-                    "hh:mm:ss a", // medium time pattern
-                    "hh:mm a", // short time pattern
+                    "HH:mm:ss zzzz", // full time pattern
+                    "H:mm:ss z", // long time pattern
+                    "H:mm:ss", // medium time pattern
+                    "H:mm", // short time pattern
                 }
             },
             { "DatePatterns",

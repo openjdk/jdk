@@ -98,6 +98,9 @@ import jdk.internal.dynalink.linker.LinkerServices;
  */
 public class LinkerServicesImpl implements LinkerServices {
 
+    private static final RuntimePermission GET_CURRENT_LINK_REQUEST = new RuntimePermission("dynalink.getCurrentLinkRequest");
+    private static final ThreadLocal<LinkRequest> threadLinkRequest = new ThreadLocal<>();
+
     private final TypeConverterFactory typeConverterFactory;
     private final GuardingDynamicLinker topLevelLinker;
 
@@ -135,6 +138,26 @@ public class LinkerServicesImpl implements LinkerServices {
 
     @Override
     public GuardedInvocation getGuardedInvocation(LinkRequest linkRequest) throws Exception {
-        return topLevelLinker.getGuardedInvocation(linkRequest, this);
+        final LinkRequest prevLinkRequest = threadLinkRequest.get();
+        threadLinkRequest.set(linkRequest);
+        try {
+            return topLevelLinker.getGuardedInvocation(linkRequest, this);
+        } finally {
+            threadLinkRequest.set(prevLinkRequest);
+        }
+    }
+
+    /**
+     * Returns the currently processed link request, or null if the method is invoked outside of the linking process.
+     * @return the currently processed link request, or null.
+     * @throws SecurityException if the calling code doesn't have the {@code "dynalink.getCurrentLinkRequest"} runtime
+     * permission.
+     */
+    public static LinkRequest getCurrentLinkRequest() {
+        SecurityManager sm = System.getSecurityManager();
+        if(sm != null) {
+            sm.checkPermission(GET_CURRENT_LINK_REQUEST);
+        }
+        return threadLinkRequest.get();
     }
 }

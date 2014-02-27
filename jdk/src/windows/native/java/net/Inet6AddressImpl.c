@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -563,7 +563,7 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
 
     /* No good, let's fall back on TCP */
     fd = NET_Socket(AF_INET6, SOCK_STREAM, 0);
-    if (fd == JVM_IO_ERR) {
+    if (fd == SOCKET_ERROR) {
         /* note: if you run out of fds, you may not be able to load
          * the exception class, and get a NoClassDefFoundError
          * instead.

@@ -487,7 +487,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   NOT_PRODUCT(SystemDictionary::verify();)
 
   // Copy the the symbol table, and the system dictionary to the shared
-  // space in usable form.  Copy the hastable
+  // space in usable form.  Copy the hashtable
   // buckets first [read-write], then copy the linked lists of entries
   // [read-only].
 
@@ -953,7 +953,7 @@ void MetaspaceShared::initialize_shared_spaces() {
 
   // The following data in the shared misc data region are the linked
   // list elements (HashtableEntry objects) for the symbol table, string
-  // table, and shared dictionary.  The heap objects refered to by the
+  // table, and shared dictionary.  The heap objects referred to by the
   // symbol table, string table, and shared dictionary are permanent and
   // unmovable.  Since new entries added to the string and symbol tables
   // are always added at the beginning of the linked lists, THESE LINKED

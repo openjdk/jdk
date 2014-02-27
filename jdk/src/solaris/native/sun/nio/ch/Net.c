@@ -78,6 +78,18 @@
     #define MCAST_UNBLOCK_SOURCE            65
     #define MCAST_JOIN_SOURCE_GROUP         66
     #define MCAST_LEAVE_SOURCE_GROUP        67
+
+    /* This means we're on AIX 5.3 and 'group_source_req' and 'ip_mreq_source' aren't defined as well */
+    struct group_source_req {
+        uint32_t gsr_interface;
+        struct sockaddr_storage gsr_group;
+        struct sockaddr_storage gsr_source;
+    };
+    struct ip_mreq_source {
+        struct in_addr  imr_multiaddr;  /* IP multicast address of group */
+        struct in_addr  imr_sourceaddr; /* IP address of source */
+        struct in_addr  imr_interface;  /* local IP address of interface */
+    };
   #endif
 #endif /* _AIX */
 

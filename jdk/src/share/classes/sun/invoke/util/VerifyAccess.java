@@ -90,35 +90,28 @@ public class VerifyAccess {
         if (allowedModes == 0)  return false;
         assert((allowedModes & PUBLIC) != 0 &&
                (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED)) == 0);
-        // Usually refc and defc are the same, but if they differ, verify them both.
-        if (refc != defc) {
-            if (!isClassAccessible(refc, lookupClass, allowedModes)) {
-                // Note that defc is verified in the switch below.
-                return false;
-            }
-            if ((mods & (ALL_ACCESS_MODES|STATIC)) == (PROTECTED|STATIC) &&
-                (allowedModes & PROTECTED_OR_PACKAGE_ALLOWED) != 0) {
-                // Apply the special rules for refc here.
-                if (!isRelatedClass(refc, lookupClass))
-                    return isSamePackage(defc, lookupClass);
-                // If refc == defc, the call to isPublicSuperClass will do
-                // the whole job, since in that case refc (as defc) will be
-                // a superclass of the lookup class.
-            }
+        // The symbolic reference class (refc) must always be fully verified.
+        if (!isClassAccessible(refc, lookupClass, allowedModes)) {
+            return false;
         }
+        // Usually refc and defc are the same, but verify defc also in case they differ.
         if (defc == lookupClass &&
             (allowedModes & PRIVATE) != 0)
             return true;        // easy check; all self-access is OK
         switch (mods & ALL_ACCESS_MODES) {
         case PUBLIC:
-            if (refc != defc)  return true;  // already checked above
-            return isClassAccessible(refc, lookupClass, allowedModes);
+            return true;  // already checked above
         case PROTECTED:
             if ((allowedModes & PROTECTED_OR_PACKAGE_ALLOWED) != 0 &&
                 isSamePackage(defc, lookupClass))
                 return true;
+            if ((allowedModes & PROTECTED) == 0)
+                return false;
+            if ((mods & STATIC) != 0 &&
+                !isRelatedClass(refc, lookupClass))
+                return false;
             if ((allowedModes & PROTECTED) != 0 &&
-                isPublicSuperClass(defc, lookupClass))
+                isSuperClass(defc, lookupClass))
                 return true;
             return false;
         case PACKAGE_ONLY:  // That is, zero.  Unmarked member is package-only access.
@@ -140,8 +133,8 @@ public class VerifyAccess {
                 lookupClass.isAssignableFrom(refc));
     }
 
-    static boolean isPublicSuperClass(Class<?> defc, Class<?> lookupClass) {
-        return isPublic(getClassModifiers(defc)) && defc.isAssignableFrom(lookupClass);
+    static boolean isSuperClass(Class<?> defc, Class<?> lookupClass) {
+        return defc.isAssignableFrom(lookupClass);
     }
 
     static int getClassModifiers(Class<?> c) {

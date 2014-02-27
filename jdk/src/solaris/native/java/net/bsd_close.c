@@ -297,9 +297,8 @@ int NET_ReadV(int s, const struct iovec * vector, int count) {
 }
 
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
-       struct sockaddr *from, int *fromlen) {
-    /* casting int *fromlen -> socklen_t* Both are ints */
-    BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, (socklen_t *)fromlen) );
+       struct sockaddr *from, socklen_t *fromlen) {
+    BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, fromlen) );
 }
 
 int NET_Send(int s, void *msg, int len, unsigned int flags) {
@@ -315,12 +314,8 @@ int NET_SendTo(int s, const void *msg, int len,  unsigned  int
     BLOCKING_IO_RETURN_INT( s, sendto(s, msg, len, flags, to, tolen) );
 }
 
-int NET_Accept(int s, struct sockaddr *addr, int *addrlen) {
-    socklen_t len = *addrlen;
-    int error = accept(s, addr, &len);
-    if (error != -1)
-        *addrlen = (int)len;
-    BLOCKING_IO_RETURN_INT( s, error );
+int NET_Accept(int s, struct sockaddr *addr, socklen_t *addrlen) {
+    BLOCKING_IO_RETURN_INT( s, accept(s, addr, addrlen) );
 }
 
 int NET_Connect(int s, struct sockaddr *addr, int addrlen) {
