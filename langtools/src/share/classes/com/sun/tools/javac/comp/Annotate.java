@@ -790,44 +790,69 @@ public class Annotate {
      */
     private void actualEnterTypeAnnotations(final List<JCAnnotation> annotations,
                                             final Env<AttrContext> env,
-                                            final Symbol s) {
+                                            final Symbol s,
+                                            final DiagnosticPosition deferPos) {
         Map<TypeSymbol, ListBuffer<Attribute.TypeCompound>> annotated = new LinkedHashMap<>();
         Map<Attribute.TypeCompound, DiagnosticPosition> pos = new HashMap<>();
 
-        for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
-            JCAnnotation a = al.head;
-            Attribute.TypeCompound tc =
-                enterTypeAnnotation(a, syms.annotationType, env);
+        JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
+        DiagnosticPosition prevLintPos = null;
 
-            if (tc == null) {
-                continue;
-            }
-
-            if (annotated.containsKey(a.type.tsym)) {
-                if (!allowRepeatedAnnos) {
-                    log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
-                    allowRepeatedAnnos = true;
-                }
-                ListBuffer<Attribute.TypeCompound> l = annotated.get(a.type.tsym);
-                l = l.append(tc);
-                annotated.put(a.type.tsym, l);
-                pos.put(tc, a.pos());
-            } else {
-                annotated.put(a.type.tsym, ListBuffer.of(tc));
-                pos.put(tc, a.pos());
-            }
+        if (deferPos != null) {
+            prevLintPos = deferredLintHandler.setPos(deferPos);
         }
+        try {
 
-        if (s != null) {
-            s.appendTypeAttributesWithCompletion(
-                new AnnotateRepeatedContext<>(env, annotated, pos, log, true));
+            for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
+                JCAnnotation a = al.head;
+                Attribute.TypeCompound tc =
+                    enterTypeAnnotation(a, syms.annotationType, env);
+
+                if (tc == null) {
+                    continue;
+                }
+
+                if (annotated.containsKey(a.type.tsym)) {
+                    if (!allowRepeatedAnnos) {
+                        log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
+                        allowRepeatedAnnos = true;
+                    }
+                    ListBuffer<Attribute.TypeCompound> l = annotated.get(a.type.tsym);
+                    l = l.append(tc);
+                    annotated.put(a.type.tsym, l);
+                    pos.put(tc, a.pos());
+                } else {
+                    annotated.put(a.type.tsym, ListBuffer.of(tc));
+                    pos.put(tc, a.pos());
+                }
+            }
+
+            if (s != null) {
+                s.appendTypeAttributesWithCompletion(
+                    new AnnotateRepeatedContext<>(env, annotated, pos, log, true));
+            }
+        } finally {
+            if (prevLintPos != null)
+                deferredLintHandler.setPos(prevLintPos);
+            log.useSource(prev);
         }
     }
 
-    public void typeAnnotate(final JCTree tree, final Env<AttrContext> env, final Symbol sym, DiagnosticPosition deferPos) {
-        if (allowTypeAnnos) {
-            tree.accept(new TypeAnnotate(env, sym, deferPos));
-        }
+    public void annotateTypeLater(final JCTree tree,
+                                  final Env<AttrContext> env,
+                                  final Symbol sym,
+                                  final DiagnosticPosition deferPos) {
+
+        normal(new Annotate.Worker() {
+                @Override
+                public String toString() {
+                    return "type annotate " + tree + " onto " + sym + " in " + sym.owner;
+                }
+                @Override
+                public void run() {
+                    tree.accept(new TypeAnnotate(env, sym, deferPos));
+                }
+            });
     }
 
     /**
@@ -835,64 +860,36 @@ public class Annotate {
      * annotations. We also need to visit type arguments, etc.
      */
     private class TypeAnnotate extends TreeScanner {
-        private Env<AttrContext> env;
-        private Symbol sym;
+        private final Env<AttrContext> env;
+        private final Symbol sym;
         private DiagnosticPosition deferPos;
 
-        public TypeAnnotate(final Env<AttrContext> env, final Symbol sym, DiagnosticPosition deferPos) {
+        public TypeAnnotate(final Env<AttrContext> env,
+                            final Symbol sym,
+                            final DiagnosticPosition deferPos) {
+
             this.env = env;
             this.sym = sym;
             this.deferPos = deferPos;
         }
 
-        void annotateTypeLater(final List<JCAnnotation> annotations) {
-            if (annotations.isEmpty()) {
-                return;
-            }
-
-            final DiagnosticPosition deferPos = this.deferPos;
-
-            normal(new Annotate.Worker() {
-                @Override
-                public String toString() {
-                    return "type annotate " + annotations + " onto " + sym + " in " + sym.owner;
-                }
-                @Override
-                public void run() {
-                    JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-                    DiagnosticPosition prevLintPos = null;
-
-                    if (deferPos != null) {
-                        prevLintPos = deferredLintHandler.setPos(deferPos);
-                    }
-                    try {
-                        actualEnterTypeAnnotations(annotations, env, sym);
-                    } finally {
-                        if (prevLintPos != null)
-                            deferredLintHandler.setPos(prevLintPos);
-                        log.useSource(prev);
-                    }
-                }
-            });
-        }
-
         @Override
         public void visitAnnotatedType(final JCAnnotatedType tree) {
-            annotateTypeLater(tree.annotations);
+            actualEnterTypeAnnotations(tree.annotations, env, sym, deferPos);
             super.visitAnnotatedType(tree);
         }
 
         @Override
         public void visitTypeParameter(final JCTypeParameter tree) {
-            annotateTypeLater(tree.annotations);
+            actualEnterTypeAnnotations(tree.annotations, env, sym, deferPos);
             super.visitTypeParameter(tree);
         }
 
         @Override
         public void visitNewArray(final JCNewArray tree) {
-            annotateTypeLater(tree.annotations);
+            actualEnterTypeAnnotations(tree.annotations, env, sym, deferPos);
             for (List<JCAnnotation> dimAnnos : tree.dimAnnotations)
-                annotateTypeLater(dimAnnos);
+                actualEnterTypeAnnotations(dimAnnos, env, sym, deferPos);
             super.visitNewArray(tree);
         }
 
