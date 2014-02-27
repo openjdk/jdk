@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,10 @@ ifndef OPENJDK
               -subsystem:windows -machine:$2 \
               -def:$(ACCESSBRIDGE_SRCDIR)/JAWTAccessBridge.DEF, \
           VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRCDIR)/AccessBridgeStatusWindow.rc, \
-          RC_FLAGS := $(RC_FLAGS), \
+          RC_FLAGS := $(RC_FLAGS) \
+              -D "JDK_FNAME=JAWTAccessBridge$1.dll" \
+              -D "JDK_INTERNAL_NAME=JAWTAccessBridge$1" \
+              -D "JDK_FTYPE=0x02L", \
           OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjawtaccessbridge$1, \
           DEBUG_SYMBOLS := true)
 
@@ -183,7 +186,10 @@ ifndef OPENJDK
               -subsystem:windows -machine:$2 \
               -def:$(ACCESSBRIDGE_SRCDIR)/JavaAccessBridge.DEF, \
           VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRCDIR)/AccessBridgeStatusWindow.rc, \
-          RC_FLAGS := $(RC_FLAGS), \
+          RC_FLAGS := $(RC_FLAGS) \
+              -D "JDK_FNAME=JavaAccessBridge$1.dll" \
+              -D "JDK_INTERNAL_NAME=JavaAccessBridge$1" \
+              -D "JDK_FTYPE=0x02L", \
           OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjavaaccessbridge$1, \
           DEBUG_SYMBOLS := true)
 
@@ -205,7 +211,10 @@ ifndef OPENJDK
               -subsystem:windows -machine:$2 \
               -def:$(ACCESSBRIDGE_SRCDIR)/WinAccessBridge.DEF, \
           VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRCDIR)/AccessBridgeStatusWindow.rc, \
-          RC_FLAGS := $(RC_FLAGS), \
+          RC_FLAGS := $(RC_FLAGS) \
+              -D "JDK_FNAME=WindowsAccessBridge$1.dll" \
+              -D "JDK_INTERNAL_NAME=WindowsAccessBridge$1" \
+              -D "JDK_FTYPE=0x02L", \
           OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libwindowsaccessbridge$1, \
           DEBUG_SYMBOLS := true)
 
