@@ -4055,15 +4055,16 @@ public class JavacParser implements Parser {
      */
     protected static class SimpleEndPosTable extends AbstractEndPosTable {
 
-        private final Map<JCTree, Integer> endPosMap;
+        private final IntHashTable endPosMap;
 
         SimpleEndPosTable(JavacParser parser) {
             super(parser);
-            endPosMap = new HashMap<>();
+            endPosMap = new IntHashTable();
         }
 
         public void storeEnd(JCTree tree, int endpos) {
-            endPosMap.put(tree, errorEndPos > endpos ? errorEndPos : endpos);
+            endPosMap.putAtIndex(tree, errorEndPos > endpos ? errorEndPos : endpos,
+                                 endPosMap.lookup(tree));
         }
 
         protected <T extends JCTree> T to(T t) {
@@ -4077,14 +4078,15 @@ public class JavacParser implements Parser {
         }
 
         public int getEndPos(JCTree tree) {
-            Integer value = endPosMap.get(tree);
-            return (value == null) ? Position.NOPOS : value;
+            int value = endPosMap.getFromIndex(endPosMap.lookup(tree));
+            // As long as Position.NOPOS==-1, this just returns value.
+            return (value == -1) ? Position.NOPOS : value;
         }
 
         public int replaceTree(JCTree oldTree, JCTree newTree) {
-            Integer pos = endPosMap.remove(oldTree);
-            if (pos != null) {
-                endPosMap.put(newTree, pos);
+            int pos = endPosMap.remove(oldTree);
+            if (pos != -1) {
+                storeEnd(newTree, pos);
                 return pos;
             }
             return Position.NOPOS;
