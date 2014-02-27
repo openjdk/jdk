@@ -60,7 +60,7 @@ Java_com_sun_security_auth_module_UnixSystem_getUnixInfo
     groups = (gid_t *)calloc(numSuppGroups, sizeof(gid_t));
     if (groups == NULL) {
         jclass cls = (*env)->FindClass(env,"java/lang/OutOfMemoryError");
-        if(cls != 0)
+        if (cls != NULL)
             (*env)->ThrowNew(env, cls, NULL);
         return;
     }
@@ -90,6 +90,8 @@ Java_com_sun_security_auth_module_UnixSystem_getUnixInfo
             goto cleanUpAndReturn;
 
         jstr = (*env)->NewStringUTF(env, pwd->pw_name);
+        if (jstr == NULL)
+            goto cleanUpAndReturn;
         (*env)->SetObjectField(env, obj, userNameID, jstr);
 
         (*env)->SetLongField(env, obj, userID, pwd->pw_uid);
@@ -97,7 +99,11 @@ Java_com_sun_security_auth_module_UnixSystem_getUnixInfo
         (*env)->SetLongField(env, obj, groupID, pwd->pw_gid);
 
         jgroups = (*env)->NewLongArray(env, numSuppGroups);
+        if (jgroups == NULL)
+            goto cleanUpAndReturn;
         jgroupsAsArray = (*env)->GetLongArrayElements(env, jgroups, 0);
+        if (jgroupsAsArray == NULL)
+            goto cleanUpAndReturn;
         for (i = 0; i < numSuppGroups; i++)
             jgroupsAsArray[i] = groups[i];
         (*env)->ReleaseLongArrayElements(env, jgroups, jgroupsAsArray, 0);

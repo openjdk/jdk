@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug      8001457
+ * @bug      8001457 8027477
  * @author   sogoel
  * @summary  Reflection api tests
  * @build    Helper
@@ -159,7 +159,12 @@ public class ReflectionTest {
                             "SingleOnSuperContainerAndSingleOnSub_Inherited_Legacy",
                             "ContainerAndSingleOnSuperSingleOnSub_Inherited_Legacy",
                             "SingleAnnoWithContainer",
-                            "SingleOnSuperContainerAndSingleOnSub_Inherited");
+                            "SingleOnSuperContainerAndSingleOnSub_Inherited",
+                            "RepeatableOnSuperSingleOnSub_Inherited",
+                            "SingleOnSuperRepeatableOnSub_Inherited",
+                            "ContainerOnSuperSingleOnSub_Inherited",
+                            "SingleOnSuperContainerOnSub_Inherited",
+                            "ContainerAndSingleOnSuperSingleOnSub_Inherited");
                     if (orderingTestFailures.contains(testCase.toString())) {
                         CHECKORDERING = false;
                     } else
@@ -1612,323 +1617,323 @@ public class ReflectionTest {
                 return files;
             }
         },
-//         // Testcase not working as expected, JDK-8004912
-//         RepeatableOnSuperSingleOnSub_Inherited(
-//         "@ExpectedBase(value=Foo.class, "
-//                 + "getAnnotationVal = \"Foo\", "
-//                 + "getAnnotationsVals = {"
-//                 +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                 + //override every annotation on superClass
-//                 "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
-//                 + // ignores inherited annotations
-//                 "getDeclAnnoVal = \"Foo\", " // ignores inherited
-//                 + "getAnnosArgs = {\"Foo\"}, "
-//                 + "getDeclAnnosArgs = { \"Foo\" })", // ignores inherited
-//         "@ExpectedContainer(value=FooContainer.class, "
-//                 + "getAnnotationVal = \"FooContainer\", "
-//                 + "getAnnotationsVals = {"
-//                 +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
-//                 + // ignores inherited annotations
-//                 "getDeclAnnoVal = \"NULL\", "
-//                 + "getAnnosArgs = {\"FooContainer\"}, "
-//                 + "getDeclAnnosArgs = {}) // ignores inherited ") {
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
+        RepeatableOnSuperSingleOnSub_Inherited(
+        "@ExpectedBase(value=Foo.class, "
+                + "getAnnotationVal = \"@Foo(value=3)\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + //override every annotation on superClass
+                "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\"}, "
+                + // ignores inherited annotations
+                "getDeclAnnoVal = \"@Foo(value=3)\", " // ignores inherited
+                + "getAnnosArgs = {\"@Foo(value=3)\"}, "
+                + "getDeclAnnosArgs = { \"@Foo(value=3)\" })", // ignores inherited
+        "@ExpectedContainer(value=FooContainer.class, "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=3)\"}, "
+                + // ignores inherited annotations
+                "getDeclAnnoVal = \"NULL\", "
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosArgs = {}) // ignores inherited ") {
 
-//             @Override
-//             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
-//                     String className) {
-//                 String anno = "";
-//                 String replaceVal = "";
-//                 String contents = "";
-//                 JavaFileObject srcFileObj = null;
-//                 Iterable<? extends JavaFileObject> files = null;
+            @Override
+            public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
+                    String className) {
+                String anno = "";
+                String replaceVal = "";
+                String contents = "";
+                JavaFileObject srcFileObj = null;
+                Iterable<? extends JavaFileObject> files = null;
 
-//                 String expectedVals = "\n" + getExpectedBase() + "\n"
-//                         + getExpectedContainer() + "\n";
-//                 StringBuilder commonStmts = getCommonStmts(true);
+                String expectedVals = "\n" + getExpectedBase() + "\n"
+                        + getExpectedContainer() + "\n";
+                StringBuilder commonStmts = getCommonStmts(true);
 
-//                 /*
-//                 Sample testSrc:
-//                 @Retention(RetentionPolicy.RUNTIME)
-//                 @Inherited
-//                 @Repeatable(FooContainer.class)
-//                 @interface Foo {int value() default Integer.MAX_VALUE;}
+                /*
+                 Sample testSrc:
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @Repeatable(FooContainer.class)
+                 @interface Foo {int value() default Integer.MAX_VALUE;}
 
-//                 @Retention(RetentionPolicy.RUNTIME)
-//                 @Inherited
-//                 @interface FooContainer {
-//                 Foo[] value();
-//                 }
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @interface FooContainer {
+                 Foo[] value();
+                 }
 
-//                 @Foo() @Foo
-//                 class SuperClass { }
+                 @Foo(1) @Foo(2)
+                 class SuperClass { }
 
-//                 @ExpectedBase
-//                 @ExpectedContainer
-//                 @Foo
-//                 class SubClass extends SuperClass { }
-//                  */
-//                 //@Inherited only works for classes, no switch cases for method, field, package
+                 @ExpectedBase
+                 @ExpectedContainer
+                 @Foo(3)
+                 class SubClass extends SuperClass { }
+                 */
+                //@Inherited only works for classes, no switch cases for method, field, package
+                if (srcType == SrcType.CLASS) {
+                    //Contents for SuperClass
+                    anno = Helper.ContentVars.REPEATABLEANNO.getVal();
+                    replaceVal = commonStmts + "\n" + anno;
+                    String superClassContents = srcType.getTemplate()
+                            .replace("#CN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
 
-//                 if (srcType == SrcType.CLASS) {
-//                     //Contents for SuperClass
-//                     anno = Helper.ContentVars.REPEATABLEANNO.getVal();
-//                     replaceVal = commonStmts + "\n" + anno;
-//                     String superClassContents = srcType.getTemplate()
-//                             .replace("#CN", SUPERCLASS)
-//                             .replace("#REPLACE", replaceVal);
+                    //Contents for SubClass that extends SuperClass
+                    anno = "@Foo(3)";
+                    replaceVal = expectedVals + "\n" + anno;
+                    String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
+                            .replace("#CN", className)
+                            .replace("#SN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
+                    contents = superClassContents + subClassContents;
+                    srcFileObj = Helper.getFile(className, contents);
+                    files = Arrays.asList(srcFileObj);
+                }
+                return files;
+            }
+        },
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
+        SingleOnSuperRepeatableOnSub_Inherited(
+        "@ExpectedBase(value=Foo.class, "
+                + "getAnnotationVal = \"@Foo(value=0)\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + //override every annotation on superClass
+                "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + // ignores inherited annotations
+                "getDeclAnnoVal = \"NULL\","// ignores inherited
+                + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"}, "
+                + "getDeclAnnosArgs = { \"@Foo(value=1)\", \"@Foo(value=2)\"})",
+        "@ExpectedContainer(value=FooContainer.class, "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + // ignores inherited annotations
+                "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "// ignores inherited
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
 
-//                     //Contents for SubClass that extends SuperClass
-//                     anno = "@Foo(0)";
-//                     replaceVal = expectedVals + "\n" + anno;
-//                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
-//                             .replace("#CN", className)
-//                             .replace("#SN", SUPERCLASS)
-//                             .replace("#REPLACE", replaceVal);
-//                     contents = superClassContents + subClassContents;
-//                     srcFileObj = Helper.getFile(className, contents);
-//                     files = Arrays.asList(srcFileObj);
-//                 }
-//                 return files;
-//             }
-//         },
-//         //Testcase not working as expected, JDK-8004912
-//         SingleOnSuperRepeatableOnSub_Inherited(
-//         "@ExpectedBase(value=Foo.class, "
-//                 + "getAnnotationVal = \"Foo\", "
-//                 + "getAnnotationsVals = {"
-//                 +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                 + //override every annotation on superClass
-//                 "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
-//                 + // ignores inherited annotations
-//                 "getDeclAnnoVal = \"NULL\","// ignores inherited
-//                 + "getAnnosArgs = {\"Foo\", \"Foo\"}, "
-//                 + "getDeclAnnosArgs = { \"Foo\", \"Foo\"})",
-//         "@ExpectedContainer(value=FooContainer.class, "
-//                 + "getAnnotationVal = \"FooContainer\", "
-//                 + "getAnnotationsVals = {"
-//                 +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
-//                 + // ignores inherited annotations
-//                 "getDeclAnnoVal = \"FooContainer\", "// ignores inherited
-//                 + "getAnnosArgs = {\"FooContainer\"}, "
-//                 + "getDeclAnnosArgs = {\"FooContainer\"})") {
+            @Override
+            public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
+                    String className) {
+                String anno = "";
+                String replaceVal = "";
+                String contents = "";
+                JavaFileObject srcFileObj = null;
+                Iterable<? extends JavaFileObject> files = null;
 
-//             @Override
-//             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
-//                     String className) {
-//                 String anno = "";
-//                 String replaceVal = "";
-//                 String contents = "";
-//                 JavaFileObject srcFileObj = null;
-//                 Iterable<? extends JavaFileObject> files = null;
+                String expectedVals = "\n" + getExpectedBase() + "\n"
+                        + getExpectedContainer() + "\n";
+                StringBuilder commonStmts = getCommonStmts(true);
 
-//                 String expectedVals = "\n" + getExpectedBase() + "\n"
-//                         + getExpectedContainer() + "\n";
-//                 StringBuilder commonStmts = getCommonStmts(true);
+                /*
+                 Sample testSrc:
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @Repeatable(FooContainer.class)
+                 @interface Foo {int value() default Integer.MAX_VALUE;}
 
-//                 /*
-//                 Sample testSrc:
-//                 @Retention(RetentionPolicy.RUNTIME)
-//                 @Inherited
-//                 @Repeatable(FooContainer.class)
-//                 @interface Foo {int value() default Integer.MAX_VALUE;}
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @interface FooContainer {
+                 Foo[] value();
+                 }
 
-//                 @Retention(RetentionPolicy.RUNTIME)
-//                 @Inherited
-//                 @interface FooContainer {
-//                 Foo[] value();
-//                 }
+                 @Foo(0)
+                 class SuperClass { }
 
-//                 @Foo()
-//                 class SuperClass { }
+                 @ExpectedBase
+                 @ExpectedContainer
+                 @Foo(1) @Foo(2)
+                 class SubClass extends SuperClass { }
+                 */
+                //@Inherited only works for classes, no switch cases for method, field, package
+                if (srcType == SrcType.CLASS) {
+                    //Contents for SuperClass
+                    anno = Helper.ContentVars.BASEANNO.getVal();
+                    replaceVal = commonStmts + "\n" + anno;
+                    String superClassContents = srcType.getTemplate()
+                            .replace("#CN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
 
-//                 @ExpectedBase
-//                 @ExpectedContainer
-//                 @Foo @Foo
-//                 class SubClass extends SuperClass { }
-//                  */
+                    //Contents for SubClass that extends SuperClass
+                    anno = Helper.ContentVars.REPEATABLEANNO.getVal();
+                    replaceVal = expectedVals + "\n" + anno;
+                    String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
+                            .replace("#CN", className)
+                            .replace("#SN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
 
-//                 //@Inherited only works for classes, no switch cases for method, field, package
-//                 if (srcType == SrcType.CLASS) {
-//                     //Contents for SuperClass
-//                     anno = "@Foo(0)";
-//                     replaceVal = commonStmts + "\n" + anno;
-//                     String superClassContents = srcType.getTemplate()
-//                             .replace("#CN", SUPERCLASS)
-//                             .replace("#REPLACE", replaceVal);
+                    contents = superClassContents + subClassContents;
+                    srcFileObj = Helper.getFile(className, contents);
+                    files = Arrays.asList(srcFileObj);
+                }
+                return files;
+            }
+        },
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
+        ContainerOnSuperSingleOnSub_Inherited(
+        "@ExpectedBase(value=Foo.class, "
+                + "getAnnotationVal = \"@Foo(value=0)\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
+                + "getDeclAnnoVal = \"@Foo(value=0)\","
+                + "getAnnosArgs = {\"@Foo(value=0)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=0)\"})",
+        "@ExpectedContainer(value=FooContainer.class, "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
+                + "getDeclAnnoVal = \"NULL\","
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnosArgs = {})") {
 
-//                     //Contents for SubClass that extends SuperClass
-//                     anno = Helper.ContentVars.REPEATABLEANNO.getVal();
-//                     replaceVal = expectedVals + "\n" + anno;
-//                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
-//                             .replace("#CN", className)
-//                             .replace("#SN", SUPERCLASS)
-//                             .replace("#REPLACE", replaceVal);
+            @Override
+            public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
+                    String className) {
+                String anno = "";
+                String replaceVal = "";
+                String contents = "";
+                JavaFileObject srcFileObj = null;
+                Iterable<? extends JavaFileObject> files = null;
 
-//                     contents = superClassContents + subClassContents;
-//                     srcFileObj = Helper.getFile(className, contents);
-//                     files = Arrays.asList(srcFileObj);
-//                 }
-//                 return files;
-//             }
-//         },
-//         //Testcase not working as expected, JDK-8004912
-//         ContainerOnSuperSingleOnSub_Inherited(
-//         "@ExpectedBase(value=Foo.class, "
-//                 + "getAnnotationVal = \"Foo\", "
-//                 + "getAnnotationsVals = {"
-//                 +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"},"
-//                 + "getDeclAnnoVal = \"Foo\","
-//                 + "getAnnosArgs = {\"Foo\"},"
-//                 + "getDeclAnnosArgs = {\"Foo\"})",
-//         "@ExpectedContainer(value=FooContainer.class, "
-//                 + "getAnnotationVal = \"FooContainer\", "
-//                 + "getAnnotationsVals = {"
-//                 +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"},"
-//                 + "getDeclAnnoVal = \"NULL\","
-//                 + "getAnnosArgs = {\"FooContainer\"},"
-//                 + "getDeclAnnosArgs = {})") {
+                String expectedVals = "\n" + getExpectedBase() + "\n"
+                        + getExpectedContainer() + "\n";
+                StringBuilder commonStmts = getCommonStmts(true);
 
-//             @Override
-//             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
-//                     String className) {
-//                 String anno = "";
-//                 String replaceVal = "";
-//                 String contents = "";
-//                 JavaFileObject srcFileObj = null;
-//                 Iterable<? extends JavaFileObject> files = null;
+                /*
+                 Sample testSrc:
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @Repeatable(FooContainer.class)
+                 @interface Foo {int value() default Integer.MAX_VALUE;}
 
-//                 String expectedVals = "\n" + getExpectedBase() + "\n"
-//                         + getExpectedContainer() + "\n";
-//                 StringBuilder commonStmts = getCommonStmts(true);
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @interface FooContainer {
+                 Foo[] value();
+                 }
 
-//                 /*
-//                 Sample testSrc:
-//                 @Retention(RetentionPolicy.RUNTIME)
-//                 @Inherited
-//                 @Repeatable(FooContainer.class)
-//                 @interface Foo {int value() default Integer.MAX_VALUE;}
+                 @FooContainer(value = {@Foo(1), @Foo(2)})
+                 class SuperClass { }
 
-//                 @Retention(RetentionPolicy.RUNTIME)
-//                 @Inherited
-//                 @interface FooContainer {
-//                 Foo[] value();
-//                 }
+                 @ExpectedBase
+                 @ExpectedContainer
+                 @Foo(0)
+                 class SubClass extends SuperClass { }
+                 */
+                //@Inherited only works for classes, no switch cases for method, field, package
+                if (srcType == SrcType.CLASS) {
+                    //Contents for SuperClass
+                    anno = Helper.ContentVars.LEGACYCONTAINER.getVal();
+                    replaceVal = commonStmts + "\n" + anno;
+                    String superClassContents = srcType.getTemplate()
+                            .replace("#CN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
 
-//                 @FooContainer(value = {@Foo, @Foo})
-//                 class SuperClass { }
+                    //Contents for SubClass that extends SuperClass
+                    anno = Helper.ContentVars.BASEANNO.getVal();
+                    replaceVal = expectedVals + "\n" + anno;
+                    String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
+                            .replace("#CN", className)
+                            .replace("#SN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
 
-//                 @ExpectedBase
-//                 @ExpectedContainer
-//                 @Foo
-//                 class SubClass extends SuperClass { }
-//                  */
+                    contents = superClassContents + subClassContents;
+                    srcFileObj = Helper.getFile(className, contents);
+                    files = Arrays.asList(srcFileObj);
+                }
+                return files;
+            }
+        },
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
+        SingleOnSuperContainerOnSub_Inherited(
+        "@ExpectedBase(value=Foo.class, "
+                + "getAnnotationVal = \"@Foo(value=0)\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnoVal = \"NULL\","
+                + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"})",
+        "@ExpectedContainer(value=FooContainer.class, "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
 
-//                 //@Inherited only works for classes, no switch cases for method, field, package
-//                 if (srcType == SrcType.CLASS) {
-//                     //Contents for SuperClass
-//                     anno = Helper.ContentVars.LEGACYCONTAINER.getVal();
-//                     replaceVal = commonStmts + "\n" + anno;
-//                     String superClassContents = srcType.getTemplate()
-//                             .replace("#CN", SUPERCLASS)
-//                             .replace("#REPLACE", replaceVal);
+            @Override
+            public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
+                     String className) {
+                String anno = "";
+                String replaceVal = "";
+                String contents = "";
+                JavaFileObject srcFileObj = null;
+                Iterable<? extends JavaFileObject> files = null;
 
-//                     //Contents for SubClass that extends SuperClass
-//                     anno = "@Foo(0)";
-//                     replaceVal = expectedVals + "\n" + anno;
-//                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
-//                             .replace("#CN", className)
-//                             .replace("#SN", SUPERCLASS)
-//                             .replace("#REPLACE", replaceVal);
+                String expectedVals = "\n" + getExpectedBase() + "\n"
+                        + getExpectedContainer() + "\n";
+                StringBuilder commonStmts = getCommonStmts(true);
 
-//                     contents = superClassContents + subClassContents;
-//                     srcFileObj = Helper.getFile(className, contents);
-//                     files = Arrays.asList(srcFileObj);
-//                 }
-//                 return files;
-//             }
-//         },
-//         // TestCase not working as expected, JDK-8004912
-//         SingleOnSuperContainerOnSub_Inherited(
-//         "@ExpectedBase(value=Foo.class, "
-//                 + "getAnnotationVal = \"Foo\", "
-//                 + "getAnnotationsVals = {"
-//                 +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"},"
-//                 + "getDeclAnnoVal = \"NULL\","
-//                 + "getAnnosArgs = {\"Foo\", \"Foo\"},"
-//                 + "getDeclAnnosArgs = {\"Foo\", \"Foo\"})",
-//         "@ExpectedContainer(value=FooContainer.class, "
-//                 + "getAnnotationVal = \"FooContainer\", "
-//                 + "getAnnotationsVals = {"
-//                 +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"},"
-//                 + "getDeclAnnoVal = \"FooContainer\","
-//                 + "getAnnosArgs = {\"FooContainer\"},"
-//                 + "getDeclAnnosArgs = {\"FooContainer\"})") {
+                /*
+                 Sample testSrc:
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @Repeatable(FooContainer.class)
+                 @interface Foo {int value() default Integer.MAX_VALUE;}
 
-//             @Override
-//             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
-//                     String className) {
-//                 String anno = "";
-//                 String replaceVal = "";
-//                 String contents = "";
-//                 JavaFileObject srcFileObj = null;
-//                 Iterable<? extends JavaFileObject> files = null;
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @interface FooContainer {
+                 Foo[] value();
+                 }
 
-//                 String expectedVals = "\n" + getExpectedBase() + "\n"
-//                         + getExpectedContainer() + "\n";
-//                 StringBuilder commonStmts = getCommonStmts(true);
+                 @Foo(0)
+                 class SuperClass { }
 
-//                 /*
-//                 Sample testSrc:
-//                 @Retention(RetentionPolicy.RUNTIME)
-//                 @Inherited
-//                 @Repeatable(FooContainer.class)
-//                 @interface Foo {int value() default Integer.MAX_VALUE;}
+                 @ExpectedBase
+                 @ExpectedContainer
+                 @FooContainer(value = {@Foo(1), @Foo(2)})
+                 class SubClass extends SuperClass { }
+                 */
+                //@Inherited only works for classes, no switch cases for method, field, package
+                if (srcType == SrcType.CLASS) {
+                    //Contents for SuperClass
+                    anno = Helper.ContentVars.BASEANNO.getVal();
+                    replaceVal = commonStmts + "\n" + anno;
+                    String superClassContents = srcType.getTemplate()
+                            .replace("#CN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
 
-//                 @Retention(RetentionPolicy.RUNTIME)
-//                 @Inherited
-//                 @interface FooContainer {
-//                 Foo[] value();
-//                 }
+                    //Contents for SubClass that extends SuperClass
+                    anno = Helper.ContentVars.LEGACYCONTAINER.getVal();
+                    replaceVal = expectedVals + "\n" + anno;
+                    String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
+                            .replace("#CN", className)
+                            .replace("#SN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
 
-//                 @Foo
-//                 class SuperClass { }
-
-//                 @ExpectedBase
-//                 @ExpectedContainer
-//                 @FooContainer(value = {@Foo, @Foo})
-//                 class SubClass extends SuperClass { }
-//                  */
-
-//                 //@Inherited only works for classes, no switch cases for method, field, package
-//                 if (srcType == SrcType.CLASS) {
-//                     //Contents for SuperClass
-//                     anno = "@Foo(0)";
-//                     replaceVal = commonStmts + "\n" + anno;
-//                     String superClassContents = srcType.getTemplate()
-//                             .replace("#CN", SUPERCLASS)
-//                             .replace("#REPLACE", replaceVal);
-
-//                     //Contents for SubClass that extends SuperClass
-//                     anno = Helper.ContentVars.LEGACYCONTAINER.getVal();
-//                     replaceVal = expectedVals + "\n" + anno;
-//                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
-//                             .replace("#CN", className)
-//                             .replace("#SN", SUPERCLASS)
-//                             .replace("#REPLACE", replaceVal);
-
-//                     contents = superClassContents + subClassContents;
-//                     srcFileObj = Helper.getFile(className, contents);
-//                     files = Arrays.asList(srcFileObj);
-//                 }
-//                 return files;
-//             }
-//         },
+                    contents = superClassContents + subClassContents;
+                    srcFileObj = Helper.getFile(className, contents);
+                    files = Arrays.asList(srcFileObj);
+                }
+                return files;
+            }
+        },
         // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
         // fail with ordering issues
         SingleOnSuperContainerAndSingleOnSub_Inherited(
@@ -2009,87 +2014,88 @@ public class ReflectionTest {
                 return files;
             }
         },
-//          // TestCase not working as expected, JDK-8004912
-//          ContainerAndSingleOnSuperSingleOnSub_Inherited(
-//          "@ExpectedBase(value=Foo.class, "
-//                  + "getAnnotationVal = \"Foo\", "
-//                  + "getAnnotationsVals = {"
-//                  +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                  + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"},"
-//                  + "getDeclAnnoVal = \"Foo\","
-//                  + "getAnnosArgs = {\"Foo\"},"
-//                  + "getDeclAnnosArgs = {\"Foo\"})",
-//          "@ExpectedContainer(value=FooContainer.class, "
-//                  + "getAnnotationVal = \"FooContainer\", "
-//                  + "getAnnotationsVals = {"
-//                  +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-//                  + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"},"
-//                  + "getDeclAnnoVal = \"NULL\","
-//                  + "getAnnosArgs = {\"FooContainer\"},"
-//                  + "getDeclAnnosArgs = {})") {
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
+        ContainerAndSingleOnSuperSingleOnSub_Inherited(
+        "@ExpectedBase(value=Foo.class, "
+                + "getAnnotationVal = \"@Foo(value=0)\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
+                + "getDeclAnnoVal = \"@Foo(value=0)\","
+                + "getAnnosArgs = {\"@Foo(value=0)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=0)\"})",
+        "@ExpectedContainer(value=FooContainer.class, "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationsVals = {"
+                + "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
+                + "getDeclAnnoVal = \"NULL\","
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnosArgs = {})") {
 
-//              @Override
-//              public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
-//                      String className) {
-//                  String anno = "";
-//                  String replaceVal = "";
-//                  String contents = "";
-//                  JavaFileObject srcFileObj = null;
-//                  Iterable<? extends JavaFileObject> files = null;
+            @Override
+            public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
+                    String className) {
+                String anno = "";
+                String replaceVal = "";
+                String contents = "";
+                JavaFileObject srcFileObj = null;
+                Iterable<? extends JavaFileObject> files = null;
 
-//                  String expectedVals = "\n" + getExpectedBase() + "\n"
-//                          + getExpectedContainer() + "\n";
-//                  StringBuilder commonStmts = getCommonStmts(true);
+                String expectedVals = "\n" + getExpectedBase() + "\n"
+                        + getExpectedContainer() + "\n";
+                StringBuilder commonStmts = getCommonStmts(true);
 
-//                  /*
-//                  Sample testSrc:
-//                  @Retention(RetentionPolicy.RUNTIME)
-//                  @Inherited
-//                  @Repeatable(FooContainer.class)
-//                  @interface Foo {int value() default Integer.MAX_VALUE;}
+                /*
+                 Sample testSrc:
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @Repeatable(FooContainer.class)
+                 @interface Foo {int value() default Integer.MAX_VALUE;}
 
-//                  @Retention(RetentionPolicy.RUNTIME)
-//                  @Inherited
-//                  @interface FooContainer {
-//                  Foo[] value();
-//                  }
+                 @Retention(RetentionPolicy.RUNTIME)
+                 @Inherited
+                 @interface FooContainer {
+                 Foo[] value();
+                 }
 
-//                  @FooContainer(value = {@Foo, @Foo})
-//                  @Foo
-//                  class SuperClass { }
+                 @FooContainer(value = {@Foo(1), @Foo(2)})
+                 @Foo(3)
+                 class SuperClass { }
 
-//                  @ExpectedBase
-//                  @ExpectedContainer
-//                  @Foo
-//                  class SubClass extends SuperClass { }
-//                   */
+                 @ExpectedBase
+                 @ExpectedContainer
+                 @Foo(0)
+                 class SubClass extends SuperClass { }
+                 */
 
-//                  //@Inherited only works for classes, no switch cases for method, field, package
-//                  if (srcType == SrcType.CLASS) {
-//                      //Contents for SuperClass
-//                      anno = Helper.ContentVars.LEGACYCONTAINER.getVal()
-//                              + Helper.ContentVars.BASEANNO.getVal();
-//                      replaceVal = commonStmts + "\n" + anno;
-//                      String superClassContents = srcType.getTemplate()
-//                              .replace("#CN", SUPERCLASS)
-//                              .replace("#REPLACE", replaceVal);
+                //@Inherited only works for classes, no switch cases for method, field, package
+                if (srcType == SrcType.CLASS) {
+                    //Contents for SuperClass
+                    anno = Helper.ContentVars.LEGACYCONTAINER.getVal()
+                            + "@Foo(3)" ;
+                    replaceVal = commonStmts + "\n" + anno;
+                    String superClassContents = srcType.getTemplate()
+                            .replace("#CN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
 
-//                      //Contents for SubClass that extends SuperClass
-//                      anno = "@Foo(0)";
-//                      replaceVal = expectedVals + "\n" + anno;
-//                      String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
-//                              .replace("#CN", className)
-//                              .replace("#SN", SUPERCLASS)
-//                              .replace("#REPLACE", replaceVal);
+                    //Contents for SubClass that extends SuperClass
+                    anno = Helper.ContentVars.BASEANNO.getVal();
+                    replaceVal = expectedVals + "\n" + anno;
+                    String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
+                            .replace("#CN", className)
+                            .replace("#SN", SUPERCLASS)
+                            .replace("#REPLACE", replaceVal);
 
-//                      contents = superClassContents + subClassContents;
-//                      srcFileObj = Helper.getFile(className, contents);
-//                      files = Arrays.asList(srcFileObj);
-//                  }
-//                  return files;
-//              }
-//         }
-            ;
+                    contents = superClassContents + subClassContents;
+                    srcFileObj = Helper.getFile(className, contents);
+                    files = Arrays.asList(srcFileObj);
+                }
+                return files;
+            }
+        };
+
          private String expectedBase, expectedContainer;
 
          private TestCase(String expectedBase, String expectedContainer) {
@@ -2942,7 +2948,7 @@ public class ReflectionTest {
         System.out.print("Actual Arr Values: ");
         for (Annotation a : actualAnnos) {
             if (a != null && a.annotationType() != null) {
-                System.out.print("[" + a.annotationType().getSimpleName() + "]");
+                System.out.print("[" + a.toString() + "]");
             } else {
                 System.out.println("[null]");
             }

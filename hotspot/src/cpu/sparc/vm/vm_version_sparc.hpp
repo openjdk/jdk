@@ -48,7 +48,9 @@ protected:
     sparc64_family       = 14,
     M_family             = 15,
     T_family             = 16,
-    T1_model             = 17
+    T1_model             = 17,
+    sparc5_instructions  = 18,
+    aes_instructions     = 19
   };
 
   enum Feature_Flag_Set {
@@ -73,6 +75,8 @@ protected:
     M_family_m              = 1 << M_family,
     T_family_m              = 1 << T_family,
     T1_model_m              = 1 << T1_model,
+    sparc5_instructions_m   = 1 << sparc5_instructions,
+    aes_instructions_m      = 1 << aes_instructions,
 
     generic_v8_m        = v8_instructions_m | hardware_mul32_m | hardware_div32_m | hardware_fsmuld_m,
     generic_v9_m        = generic_v8_m | v9_instructions_m,
@@ -123,6 +127,8 @@ public:
   static bool has_vis3()                { return (_features & vis3_instructions_m) != 0; }
   static bool has_blk_init()            { return (_features & blk_init_instructions_m) != 0; }
   static bool has_cbcond()              { return (_features & cbcond_instructions_m) != 0; }
+  static bool has_sparc5_instr()        { return (_features & sparc5_instructions_m) != 0; }
+  static bool has_aes()                 { return (_features & aes_instructions_m) != 0; }
 
   static bool supports_compare_and_exchange()
                                         { return has_v9(); }
@@ -133,6 +139,7 @@ public:
 
   static bool is_M_series()             { return is_M_family(_features); }
   static bool is_T4()                   { return is_T_family(_features) && has_cbcond(); }
+  static bool is_T7()                   { return is_T_family(_features) && has_sparc5_instr(); }
 
   // Fujitsu SPARC64
   static bool is_sparc64()              { return (_features & sparc64_family_m) != 0; }
@@ -152,7 +159,7 @@ public:
   static const char* cpu_features()     { return _features_str; }
 
   static intx prefetch_data_size()  {
-    return is_T4() ? 32 : 64;  // default prefetch block size on sparc
+    return is_T4() && !is_T7() ? 32 : 64;  // default prefetch block size on sparc
   }
 
   // Prefetch

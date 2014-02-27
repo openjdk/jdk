@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ public class AWTKeyStroke implements Serializable {
                 return null;
             }
         });
-        return (Constructor)ctor;
+        return ctor;
     }
 
     private static synchronized AWTKeyStroke getCachedStroke
@@ -275,7 +275,7 @@ public class AWTKeyStroke implements Serializable {
         cacheKey.modifiers = mapNewModifiers(mapOldModifiers(modifiers));
         cacheKey.onKeyRelease = onKeyRelease;
 
-        AWTKeyStroke stroke = (AWTKeyStroke)cache.get(cacheKey);
+        AWTKeyStroke stroke = cache.get(cacheKey);
         if (stroke == null) {
             stroke = cacheKey;
             cache.put(stroke, stroke);
@@ -581,7 +581,7 @@ public class AWTKeyStroke implements Serializable {
                 continue;
             }
 
-            Integer tokenMask = (Integer)modifierKeywords.get(token);
+            Integer tokenMask = modifierKeywords.get(token);
             if (tokenMask != null) {
                 mask |= tokenMask.intValue();
             } else {
@@ -879,11 +879,11 @@ class VKCollection {
 
     public synchronized Integer findCode(String name) {
         assert(name != null);
-        return (Integer)name2code.get(name);
+        return name2code.get(name);
     }
 
     public synchronized String findName(Integer code) {
         assert(code != null);
-        return (String)code2name.get(code);
+        return code2name.get(code);
     }
 }

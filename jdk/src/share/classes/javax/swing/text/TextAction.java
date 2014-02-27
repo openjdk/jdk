@@ -58,6 +58,7 @@ import javax.swing.KeyStroke;
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public abstract class TextAction extends AbstractAction {
 
     /**

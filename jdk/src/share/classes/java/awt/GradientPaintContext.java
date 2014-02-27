@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ class GradientPaintContext implements PaintContext {
     static synchronized Raster getCachedRaster(ColorModel cm, int w, int h) {
         if (cm == cachedModel) {
             if (cached != null) {
-                Raster ras = (Raster) cached.get();
+                Raster ras = cached.get();
                 if (ras != null &&
                     ras.getWidth() >= w &&
                     ras.getHeight() >= h)
@@ -61,7 +61,7 @@ class GradientPaintContext implements PaintContext {
 
     static synchronized void putCachedRaster(ColorModel cm, Raster ras) {
         if (cached != null) {
-            Raster cras = (Raster) cached.get();
+            Raster cras = cached.get();
             if (cras != null) {
                 int cw = cras.getWidth();
                 int ch = cras.getHeight();

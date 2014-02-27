@@ -48,6 +48,11 @@ ${CP} ${TESTSRC}${FS}* ${THIS_DIR}
 # A Clean Compile: this line will probably fail within jtreg as have a clean dir:
 ${RM} -f *.class *.impl many_loader.java
 
+# Make sure that the compilation steps occurs in the future as not to allow fast systems
+# to copy and compile bug_21227.java so fast as to make the class and java have the same
+# time stamp, which later on would make the compilation step of many_loader.java fail
+sleep 2
+
 # Compile all the usual suspects, including the default 'many_loader'
 ${CP} many_loader1.java.foo many_loader.java
 ${JAVAC} ${TESTJAVACOPTS} -source 1.4 -target 1.4 -Xlint *.java

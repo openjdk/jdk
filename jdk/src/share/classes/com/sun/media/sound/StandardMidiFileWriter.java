@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
         buffer = new byte[bufferSize];
 
         while( (bytesRead = fileStream.read( buffer )) >= 0 ) {
-            out.write( buffer, 0, (int)bytesRead );
+            out.write( buffer, 0, bytesRead );
             bytesWritten += bytesRead;
         }
         // Done....return bytesWritten

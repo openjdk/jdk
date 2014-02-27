@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -538,7 +538,7 @@ public final class XDragSourceContextPeer
             return false;
         }
 
-        if (ev.get_type() != (int)XConstants.ClientMessage) {
+        if (ev.get_type() != XConstants.ClientMessage) {
             return false;
         }
 
@@ -612,7 +612,7 @@ public final class XDragSourceContextPeer
                                                        xkey.get_keycode(), 0);
             switch ((int)keysym) {
             case (int)XKeySymConstants.XK_Escape: {
-                if (ev.get_type() == (int)XConstants.KeyRelease) {
+                if (ev.get_type() == XConstants.KeyRelease) {
                     cleanup(xkey.get_time());
                 }
                 break;
