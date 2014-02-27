@@ -3162,7 +3162,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 ac_aux_dir=
-for ac_dir in common/autoconf/build-aux "$srcdir"/common/autoconf/build-aux; do
+for ac_dir in $TOPDIR/common/autoconf/build-aux "$srcdir"/$TOPDIR/common/autoconf/build-aux; do
   if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
     ac_install_sh="$ac_aux_dir/install-sh -c"
@@ -3178,7 +3178,7 @@ for ac_dir in common/autoconf/build-aux "$srcdir"/common/autoconf/build-aux; do
   fi
 done
 if test -z "$ac_aux_dir"; then
-  as_fn_error $? "cannot find install-sh, install.sh, or shtool in common/autoconf/build-aux \"$srcdir\"/common/autoconf/build-aux" "$LINENO" 5
+  as_fn_error $? "cannot find install-sh, install.sh, or shtool in $TOPDIR/common/autoconf/build-aux \"$srcdir\"/$TOPDIR/common/autoconf/build-aux" "$LINENO" 5
 fi
 
 # These three variables are undocumented and unsupported,
@@ -4220,7 +4220,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1393327380
+DATE_WHEN_GENERATED=1393416124
 
 ###############################################################################
 #

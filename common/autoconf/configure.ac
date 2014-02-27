@@ -33,7 +33,7 @@
 AC_PREREQ([2.69])
 AC_INIT(OpenJDK, jdk8, build-dev@openjdk.java.net,,http://openjdk.java.net)
 
-AC_CONFIG_AUX_DIR([common/autoconf/build-aux])
+AC_CONFIG_AUX_DIR([$TOPDIR/common/autoconf/build-aux])
 m4_include([build-aux/pkg.m4])
 
 # Include these first...
