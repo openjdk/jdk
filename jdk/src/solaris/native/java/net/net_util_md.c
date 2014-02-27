@@ -65,6 +65,10 @@
 
 #endif
 
+#ifdef _AIX
+#include <sys/ioctl.h>
+#endif
+
 #include "jni_util.h"
 #include "jvm.h"
 #include "net_util.h"
