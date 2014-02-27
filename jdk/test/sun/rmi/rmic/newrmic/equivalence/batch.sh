@@ -61,13 +61,13 @@ mkdir $newv11dir $newvcompatdir $newv12dir
 
 set -ex
 
-${TESTJAVA}/bin/rmic -keep -nowrite -v1.1 -d $refv11dir -classpath "$@"
-${TESTJAVA}/bin/rmic -keep -nowrite -vcompat -d $refvcompatdir -classpath "$@"
-${TESTJAVA}/bin/rmic -keep -v1.2 -d $refv12dir -classpath "$@"
+${TESTJAVA}/bin/rmic       -keep -nowrite -v1.1 -d $refv11dir -classpath "$@"
+${TESTJAVA}/bin/rmic       -keep -nowrite -vcompat -d $refvcompatdir -classpath "$@"
+${TESTJAVA}/bin/rmic       -keep -nowrite -v1.2 -d $refv12dir -classpath "$@"
 
-${TESTJAVA}/bin/rmic -Xnew -nowrite -keep -v1.1 -d $newv11dir -classpath "$@"
-${TESTJAVA}/bin/rmic -Xnew -nowrite -keep -vcompat -d $newvcompatdir -classpath "$@"
-${TESTJAVA}/bin/rmic -Xnew -keep -v1.2 -d $newv12dir -classpath "$@"
+${TESTJAVA}/bin/rmic -Xnew -keep -nowrite -v1.1 -d $newv11dir -classpath "$@"
+${TESTJAVA}/bin/rmic -Xnew -keep -nowrite -vcompat -d $newvcompatdir -classpath "$@"
+${TESTJAVA}/bin/rmic -Xnew -keep -nowrite -v1.2 -d $newv12dir -classpath "$@"
 
 set +ex
 

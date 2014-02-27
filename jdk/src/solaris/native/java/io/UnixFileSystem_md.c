@@ -283,6 +283,10 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
     struct dirent64 *result;
     int len, maxlen;
     jobjectArray rv, old;
+    jclass str_class;
+
+    str_class = JNU_ClassString(env);
+    CHECK_NULL_RETURN(str_class, NULL);
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
         dir = opendir(path);
@@ -299,7 +303,7 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
     /* Allocate an initial String array */
     len = 0;
     maxlen = 16;
-    rv = (*env)->NewObjectArray(env, maxlen, JNU_ClassString(env), NULL);
+    rv = (*env)->NewObjectArray(env, maxlen, str_class, NULL);
     if (rv == NULL) goto error;
 
     /* Scan the directory */
@@ -309,8 +313,7 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
             continue;
         if (len == maxlen) {
             old = rv;
-            rv = (*env)->NewObjectArray(env, maxlen <<= 1,
-                                        JNU_ClassString(env), NULL);
+            rv = (*env)->NewObjectArray(env, maxlen <<= 1, str_class, NULL);
             if (rv == NULL) goto error;
             if (JNU_CopyObjectArray(env, rv, old, len) < 0) goto error;
             (*env)->DeleteLocalRef(env, old);
@@ -329,7 +332,7 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
 
     /* Copy the final results into an appropriately-sized array */
     old = rv;
-    rv = (*env)->NewObjectArray(env, len, JNU_ClassString(env), NULL);
+    rv = (*env)->NewObjectArray(env, len, str_class, NULL);
     if (rv == NULL) {
         return NULL;
     }

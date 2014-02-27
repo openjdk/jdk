@@ -172,6 +172,19 @@ public final class DataPropertyDescriptor extends ScriptObject implements Proper
     }
 
     @Override
+    public boolean hasAndEquals(final PropertyDescriptor otherDesc) {
+        if (! (otherDesc instanceof DataPropertyDescriptor)) {
+            return false;
+        }
+
+        final DataPropertyDescriptor other = (DataPropertyDescriptor)otherDesc;
+        return (!has(CONFIGURABLE) || sameValue(configurable, other.configurable)) &&
+               (!has(ENUMERABLE) || sameValue(enumerable, other.enumerable)) &&
+               (!has(WRITABLE) || sameValue(writable, other.writable)) &&
+               (!has(VALUE) || sameValue(value, other.value));
+    }
+
+    @Override
     public boolean equals(final Object obj) {
         if (this == obj) {
             return true;

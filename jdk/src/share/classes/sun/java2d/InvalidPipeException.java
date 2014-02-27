@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ package sun.java2d;
  * windows which toggle the need to use platform graphics or direct
  * graphics access.
  */
+@SuppressWarnings("serial") // JDK-implementation class
 public class InvalidPipeException extends IllegalStateException {
     /**
      * Constructs an InvalidPipeException with no detail message.

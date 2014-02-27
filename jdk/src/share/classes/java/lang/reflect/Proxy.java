@@ -465,7 +465,7 @@ public class Proxy implements java.io.Serializable {
         Key2(Class<?> intf1, Class<?> intf2) {
             super(intf1);
             hash = 31 * intf1.hashCode() + intf2.hashCode();
-            ref2 = new WeakReference<Class<?>>(intf2);
+            ref2 = new WeakReference<>(intf2);
         }
 
         @Override
@@ -725,7 +725,6 @@ public class Proxy implements java.io.Serializable {
             }
 
             final Constructor<?> cons = cl.getConstructor(constructorParams);
-            final InvocationHandler ih = h;
             if (!Modifier.isPublic(cl.getModifiers())) {
                 AccessController.doPrivileged(new PrivilegedAction<Void>() {
                     public Void run() {
@@ -735,7 +734,7 @@ public class Proxy implements java.io.Serializable {
                 });
             }
             return cons.newInstance(new Object[]{h});
-        } catch (IllegalAccessException|InstantiationException e) {
+        } catch (IllegalAccessException | InstantiationException | NoSuchMethodException e) {
             throw new InternalError(e.toString(), e);
         } catch (InvocationTargetException e) {
             Throwable t = e.getCause();
@@ -744,8 +743,6 @@ public class Proxy implements java.io.Serializable {
             } else {
                 throw new InternalError(t.toString(), t);
             }
-        } catch (NoSuchMethodException e) {
-            throw new InternalError(e.toString(), e);
         }
     }
 

@@ -51,6 +51,10 @@ case "$OS" in
   Darwin )
     FILESEP="/"
     ;;
+  AIX )
+    PATHSEP=":"
+    FILESEP="/"
+    ;;
   CYGWIN* )
     FILESEP="/"
     ;;

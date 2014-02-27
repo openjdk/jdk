@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
                                                dataType);
         }
         this.dataType = dataType;
-        this.bitMasks = (int[]) bitMasks.clone();
+        this.bitMasks = bitMasks.clone();
         this.scanlineStride = scanlineStride;
 
         this.bitOffsets = new int[numBands];
@@ -276,14 +276,14 @@ public class SinglePixelPackedSampleModel extends SampleModel
      *  @return the bit offsets representing a pixel for all bands.
      */
     public int [] getBitOffsets() {
-      return (int[])bitOffsets.clone();
+      return bitOffsets.clone();
     }
 
     /** Returns the bit masks for all bands.
      *  @return the bit masks for all bands.
      */
     public int [] getBitMasks() {
-      return (int[])bitMasks.clone();
+      return bitMasks.clone();
     }
 
     /** Returns the scanline stride of this SinglePixelPackedSampleModel.
@@ -746,7 +746,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
               int value = data.getElem(lineOffset+j);
               value &= ~bitMasks[b];
               int sample = iArray[srcOffset++];
-              value |= ((int)sample << bitOffsets[b]) & bitMasks[b];
+              value |= (sample << bitOffsets[b]) & bitMasks[b];
               data.setElem(lineOffset+j,value);
            }
            lineOffset += scanlineStride;

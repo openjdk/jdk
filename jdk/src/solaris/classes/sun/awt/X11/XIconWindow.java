@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,8 +301,8 @@ public class XIconWindow extends XBaseWindow {
             }
             long dst = XlibWrapper.XCreateImage(XToolkit.getDisplay(),
                                                 visInfo.get_visual(),
-                                                (int)awtImage.get_Depth(),
-                                                (int)XConstants.ZPixmap,
+                                                awtImage.get_Depth(),
+                                                XConstants.ZPixmap,
                                                 0,
                                                 bytes,
                                                 iconWidth,
@@ -483,7 +483,7 @@ public class XIconWindow extends XBaseWindow {
                 params.add(BACKGROUND_PIXMAP, iconPixmap);
                 params.add(COLORMAP, adata.get_awt_cmap());
                 params.add(DEPTH, awtImage.get_Depth());
-                params.add(VISUAL_CLASS, (int)XConstants.InputOutput);
+                params.add(VISUAL_CLASS, XConstants.InputOutput);
                 params.add(VISUAL, visInfo.get_visual());
                 params.add(VALUE_MASK, XConstants.CWBorderPixel | XConstants.CWColormap | XConstants.CWBackPixmap);
                 params.add(PARENT_WINDOW, XlibWrapper.RootWindow(XToolkit.getDisplay(), visInfo.get_screen()));

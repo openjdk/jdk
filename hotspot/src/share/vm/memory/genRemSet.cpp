@@ -31,8 +31,7 @@
 // enumerate ref fields that have been modified (since the last
 // enumeration.)
 
-uintx GenRemSet::max_alignment_constraint(Name nm) {
-  assert(nm == GenRemSet::CardTable, "Unrecognized GenRemSet type.");
+uintx GenRemSet::max_alignment_constraint() {
   return CardTableRS::ct_max_alignment_constraint();
 }
 

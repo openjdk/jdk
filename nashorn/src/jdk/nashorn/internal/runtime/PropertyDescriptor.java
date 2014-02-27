@@ -151,5 +151,12 @@ public interface PropertyDescriptor {
      * @return true if property exists in implementor
      */
     public boolean has(Object key);
+
+    /**
+     * Check existence and compare attributes of descriptors.
+     *
+     * @return true if every field of this desc exists in otherDesc and has the same value.
+     */
+    public boolean hasAndEquals(PropertyDescriptor otherDesc);
 }
 

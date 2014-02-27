@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,11 @@ public class X11TextRenderer extends GlyphListPipe {
             super.drawGlyphVector(sg2d, g, x, y);
             return;
         case SunHints.INTVAL_TEXT_ANTIALIAS_ON:
-             sg2d.surfaceData.aaTextRenderer.drawGlyphVector(sg2d, g, x, y);
+             SurfaceData.aaTextRenderer.drawGlyphVector(sg2d, g, x, y);
             return;
         case SunHints.INTVAL_TEXT_ANTIALIAS_LCD_HRGB:
         case SunHints.INTVAL_TEXT_ANTIALIAS_LCD_VRGB:
-             sg2d.surfaceData.lcdTextRenderer.drawGlyphVector(sg2d, g, x, y);
+             SurfaceData.lcdTextRenderer.drawGlyphVector(sg2d, g, x, y);
             return;
         default:
         }

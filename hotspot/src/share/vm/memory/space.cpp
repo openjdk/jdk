@@ -112,7 +112,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   // cards are processed. For instance, CMS must remember mutator updates
   // (i.e. dirty cards) so as to re-scan mutated objects.
   // Such work can be piggy-backed here on dirty card scanning, so as to make
-  // it slightly more efficient than doing a complete non-detructive pre-scan
+  // it slightly more efficient than doing a complete non-destructive pre-scan
   // of the card table.
   MemRegionClosure* pCl = _sp->preconsumptionDirtyCardClosure();
   if (pCl != NULL) {
@@ -324,8 +324,8 @@ void OffsetTableContigSpace::set_bottom(HeapWord* new_bottom) {
 }
 
 void OffsetTableContigSpace::set_end(HeapWord* new_end) {
-  // Space should not advertize an increase in size
-  // until after the underlying offest table has been enlarged.
+  // Space should not advertise an increase in size
+  // until after the underlying offset table has been enlarged.
   _offsets.resize(pointer_delta(new_end, bottom()));
   Space::set_end(new_end);
 }
@@ -729,7 +729,7 @@ void ContiguousSpace::object_iterate(ObjectClosure* blk) {
   object_iterate_from(bm, blk);
 }
 
-// For a continguous space object_iterate() and safe_object_iterate()
+// For a ContiguousSpace object_iterate() and safe_object_iterate()
 // are the same.
 void ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
   object_iterate(blk);

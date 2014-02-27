@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.border.Border;
 import javax.swing.table.*;
 
+@SuppressWarnings("serial") // JDK-implementation class
 public class DefaultTableCellHeaderRenderer extends DefaultTableCellRenderer
         implements UIResource {
     private boolean horizontalTextPositionSet;
@@ -187,6 +188,7 @@ public class DefaultTableCellHeaderRenderer extends DefaultTableCellRenderer
         return new Point(x, y);
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     private class EmptyIcon implements Icon, Serializable {
         int width = 0;
         int height = 0;

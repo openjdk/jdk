@@ -117,6 +117,12 @@ SUNWprivate_1.1 {
 		Java_sun_nio_ch_Net_getInterface6;
 		Java_sun_nio_ch_Net_shutdown;
 		Java_sun_nio_ch_Net_poll;
+		Java_sun_nio_ch_Net_pollinValue;
+		Java_sun_nio_ch_Net_polloutValue;
+		Java_sun_nio_ch_Net_pollerrValue;
+		Java_sun_nio_ch_Net_pollhupValue;
+		Java_sun_nio_ch_Net_pollnvalValue;
+		Java_sun_nio_ch_Net_pollconnValue;
                 Java_sun_nio_ch_Net_isExclusiveBindAvailable;
                 Java_sun_nio_ch_PollArrayWrapper_interrupt;
                 Java_sun_nio_ch_PollArrayWrapper_poll0;
