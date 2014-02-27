@@ -461,12 +461,11 @@ bool java_lang_String::equals(oop str1, oop str2) {
   return true;
 }
 
-void java_lang_String::print(Handle java_string, outputStream* st) {
-  oop          obj    = java_string();
-  assert(obj->klass() == SystemDictionary::String_klass(), "must be java_string");
-  typeArrayOop value  = java_lang_String::value(obj);
-  int          offset = java_lang_String::offset(obj);
-  int          length = java_lang_String::length(obj);
+void java_lang_String::print(oop java_string, outputStream* st) {
+  assert(java_string->klass() == SystemDictionary::String_klass(), "must be java_string");
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  int          length = java_lang_String::length(java_string);
 
   int end = MIN2(length, 100);
   if (value == NULL) {

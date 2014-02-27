@@ -2987,8 +2987,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
         offset          <= (juint) value->length() &&
         offset + length <= (juint) value->length()) {
       st->print(BULLET"string: ");
-      Handle h_obj(obj);
-      java_lang_String::print(h_obj, st);
+      java_lang_String::print(obj, st);
       st->cr();
       if (!WizardMode)  return;  // that is enough
     }
