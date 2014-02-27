@@ -243,7 +243,7 @@ reconfigure:
         else
 	  @$(ECHO) "Re-running configure using default settings"
         endif
-	@( cd $(OUTPUT_ROOT) && $(BASH) $(TOPDIR)/configure "$(CONFIGURE_COMMAND_LINE)" )
+	@( cd $(OUTPUT_ROOT) && $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
 
 .PHONY: langtools corba jaxp jaxws hotspot jdk nashorn images overlay-images install test docs
 .PHONY: langtools-only corba-only jaxp-only jaxws-only hotspot-only jdk-only nashorn-only images-only overlay-images-only install-only test-only docs-only

@@ -22,18 +22,26 @@
 # questions.
 #
 
-if test "x$BASH_VERSION" = x; then
-  echo This script needs bash to run.
-  echo It is recommended to use the configure script in the source tree root instead.
-  exit 1
+if test "x$1" != xCHECKME; then
+  echo "WARNING: Calling the wrapper script directly is deprecated and unsupported."
+  echo "Not all features of configure will be available."
+  echo "Use the 'configure' script in the top-level directory instead."
+  TOPDIR=$(cd $(dirname $0)/../.. > /dev/null && pwd)
+else
+  # Now the next argument is the absolute top-level directory path.
+  # The TOPDIR variable is passed on to configure.ac.
+  TOPDIR="$2"
+  # Remove these two arguments to get to the user supplied arguments
+  shift
+  shift
 fi
 
-conf_script_dir=`dirname $0`
+conf_script_dir="$TOPDIR/common/autoconf"
 
 if [ "$CUSTOM_CONFIG_DIR" = "" ]; then
-  conf_custom_script_dir="$conf_script_dir/../../closed/autoconf"
+  conf_custom_script_dir="$TOPDIR/closed/autoconf"
 else
-  conf_custom_script_dir=$CUSTOM_CONFIG_DIR
+  conf_custom_script_dir="$CUSTOM_CONFIG_DIR"
 fi
 
 ###
@@ -226,10 +234,10 @@ conf_processed_arguments=("--enable-option-checking=fatal" "${conf_processed_arg
 ###
 if test -e $conf_custom_script_dir/generated-configure.sh; then
   # Custom source configure available; run that instead
-  echo Running custom generated-configure.sh
+  echo "Running custom generated-configure.sh"
   conf_script_to_run=$conf_custom_script_dir/generated-configure.sh
 else
-  echo Running generated-configure.sh
+  echo "Running generated-configure.sh"
   conf_script_to_run=$conf_script_dir/generated-configure.sh
 fi
 
@@ -262,6 +270,13 @@ Additional (non-autoconf) OpenJDK Options:
                           --build=<current platform>
   --debug-configure       Run the configure script with additional debug
                           logging enabled.
+
+EOT
+
+    # Print list of toolchains. This must be done by the autoconf script.
+    ( CONFIGURE_PRINT_TOOLCHAIN_LIST=true . $conf_script_to_run PRINTF=printf )
+
+    cat <<EOT
 
 Please be aware that, when cross-compiling, the OpenJDK configure script will
 generally use 'target' where autoconf traditionally uses 'host'.

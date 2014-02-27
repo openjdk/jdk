@@ -79,7 +79,7 @@ protected:
     assert((uintptr_t)end % mapping_granularity_in_bytes == 0,
       err_msg("end mapping area address must be a multiple of mapping granularity %zd, is "PTR_FORMAT,
         mapping_granularity_in_bytes, end));
-    size_t num_target_elems = (end - bottom) / (mapping_granularity_in_bytes / HeapWordSize);
+    size_t num_target_elems = pointer_delta(end, bottom, mapping_granularity_in_bytes);
     idx_t bias = (uintptr_t)bottom / mapping_granularity_in_bytes;
     address base = create_new_base_array(num_target_elems, target_elem_size_in_bytes);
     initialize_base(base, num_target_elems, bias, target_elem_size_in_bytes, log2_intptr(mapping_granularity_in_bytes));

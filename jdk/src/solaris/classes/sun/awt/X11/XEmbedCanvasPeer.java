@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -654,9 +654,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         if (xembedLog.isLoggable(PlatformLogger.Level.FINER)) {
             xembedLog.finer("Client message to embedder: " + msg);
         }
-        if (msg.get_message_type() == xembed.XEmbed.getAtom()) {
+        if (msg.get_message_type() == XEmbedHelper.XEmbed.getAtom()) {
             if (xembedLog.isLoggable(PlatformLogger.Level.FINE)) {
-                xembedLog.fine(xembed.XEmbedMessageToString(msg));
+                xembedLog.fine(XEmbedHelper.XEmbedMessageToString(msg));
             }
         }
         if (isXEmbedActive()) {

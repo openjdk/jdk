@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,27 @@ pkgadd_help() {
   PKGHANDLER_COMMAND=""
 }
 
+# This function will check if we're called from the "configure" wrapper while
+# printing --help. If so, we will print out additional information that can
+# only be extracted within the autoconf script, and then exit. This must be
+# called at the very beginning in configure.ac.
+AC_DEFUN_ONCE([HELP_PRINT_ADDITIONAL_HELP_AND_EXIT],
+[
+  if test "x$CONFIGURE_PRINT_TOOLCHAIN_LIST" != x; then
+    $PRINTF "The following toolchains are available as arguments to --with-toolchain-type.\n"
+    $PRINTF "Which are valid to use depends on the build platform.\n"
+    for toolchain in $VALID_TOOLCHAINS_all; do
+      # Use indirect variable referencing
+      toolchain_var_name=TOOLCHAIN_DESCRIPTION_$toolchain
+      TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
+      $PRINTF "  %-10s  %s\n" $toolchain "$TOOLCHAIN_DESCRIPTION"
+    done
+
+    # And now exit directly
+    exit 0
+  fi
+])
+
 AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 [
   # Finally output some useful information to the user
@@ -189,8 +210,9 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
     printf "* Environment:    $WINDOWS_ENV_VENDOR version $WINDOWS_ENV_VERSION (root at $WINDOWS_ENV_ROOT_PATH)\n"
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
-  printf "* C Compiler:     $CC_VENDOR version $CC_VERSION (at $CC)\n"
-  printf "* C++ Compiler:   $CXX_VENDOR version $CXX_VERSION (at $CXX)\n"
+  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
+  printf "* C Compiler:     Version $CC_VERSION_NUMBER (at $CC)\n"
+  printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at $CXX)\n"
 
   printf "\n"
   printf "Build performance summary:\n"

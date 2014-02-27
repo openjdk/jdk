@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class ClassWriter extends BasicWriter {
     public void write(ClassFile cf) {
         setClassFile(cf);
 
-        if ((options.sysInfo || options.verbose) && !options.compat) {
+        if (options.sysInfo || options.verbose) {
             if (uri != null) {
                 if (uri.getScheme().equals("file"))
                     println("Classfile " + uri.getPath());
@@ -152,7 +152,7 @@ public class ClassWriter extends BasicWriter {
             println("Compiled from \"" + getSourceFile((SourceFile_attribute) sfa) + "\"");
         }
 
-        if ((options.sysInfo || options.verbose) && !options.compat) {
+        if (options.sysInfo || options.verbose) {
             indent(-1);
         }
 
@@ -205,8 +205,7 @@ public class ClassWriter extends BasicWriter {
             attrWriter.write(cf, cf.attributes, constant_pool);
             println("minor version: " + cf.minor_version);
             println("major version: " + cf.major_version);
-            if (!options.compat)
-              writeList("flags: ", flags.getClassFlags(), "\n");
+            writeList("flags: ", flags.getClassFlags(), "\n");
             indent(-1);
             constantWriter.writeConstantPool();
         } else {
@@ -372,7 +371,7 @@ public class ClassWriter extends BasicWriter {
         }
         print(" ");
         print(getFieldName(f));
-        if (options.showConstants && !options.compat) { // BUG 4111861 print static final field contents
+        if (options.showConstants) {
             Attribute a = f.attributes.get(Attribute.ConstantValue);
             if (a instanceof ConstantValue_attribute) {
                 print(" = ");
@@ -385,21 +384,23 @@ public class ClassWriter extends BasicWriter {
 
         indent(+1);
 
+        boolean showBlank = false;
+
         if (options.showDescriptors)
             println("descriptor: " + getValue(f.descriptor));
 
-        if (options.verbose && !options.compat)
+        if (options.verbose)
             writeList("flags: ", flags.getFieldFlags(), "\n");
 
         if (options.showAllAttrs) {
             for (Attribute attr: f.attributes)
                 attrWriter.write(f, attr, constant_pool);
-            println();
+            showBlank = true;
         }
 
         indent(-1);
 
-        if (options.showDisassembled || options.showLineAndLocalVariableTables)
+        if (showBlank || options.showDisassembled || options.showLineAndLocalVariableTables)
             println();
     }
 
@@ -485,7 +486,7 @@ public class ClassWriter extends BasicWriter {
             println("descriptor: " + getValue(m.descriptor));
         }
 
-        if (options.verbose && !options.compat) {
+        if (options.verbose) {
             writeList("flags: ", flags.getMethodFlags(), "\n");
         }
 
@@ -498,25 +499,21 @@ public class ClassWriter extends BasicWriter {
                 report("Unexpected or invalid value for Code attribute");
         }
 
-        if (options.showDisassembled && !options.showAllAttrs) {
-            if (code != null) {
-                println("Code:");
-                codeWriter.writeInstrs(code);
-                codeWriter.writeExceptionTable(code);
-            }
-        }
-
-        if (options.showLineAndLocalVariableTables) {
-            if (code != null) {
-                attrWriter.write(code, code.attributes.get(Attribute.LineNumberTable), constant_pool);
-                attrWriter.write(code, code.attributes.get(Attribute.LocalVariableTable), constant_pool);
-            }
-        }
-
         if (options.showAllAttrs) {
             Attribute[] attrs = m.attributes.attrs;
             for (Attribute attr: attrs)
                 attrWriter.write(m, attr, constant_pool);
+        } else if (code != null) {
+            if (options.showDisassembled) {
+                println("Code:");
+                codeWriter.writeInstrs(code);
+                codeWriter.writeExceptionTable(code);
+            }
+
+            if (options.showLineAndLocalVariableTables) {
+                attrWriter.write(code, code.attributes.get(Attribute.LineNumberTable), constant_pool);
+                attrWriter.write(code, code.attributes.get(Attribute.LocalVariableTable), constant_pool);
+            }
         }
 
         indent(-1);
@@ -555,13 +552,11 @@ public class ClassWriter extends BasicWriter {
     }
 
     Signature_attribute getSignature(Attributes attributes) {
-        if (options.compat) // javap does not recognize recent attributes
-            return null;
         return (Signature_attribute) attributes.get(Attribute.Signature);
     }
 
     String adjustVarargs(AccessFlags flags, String params) {
-        if (flags.is(ACC_VARARGS) && !options.compat) {
+        if (flags.is(ACC_VARARGS)) {
             int i = params.lastIndexOf("[]");
             if (i > 0)
                 return params.substring(0, i) + "..." + params.substring(i+2);

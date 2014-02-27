@@ -1,0 +1,111 @@
+#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This must be the first rule
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
+
+include CommonLangtools.gmk
+
+################################################################################
+# Setup the compilation of the properties compilation tool. You can depend
+# upon $(BUILD_TOOLS) to trigger a compilation of the tools. Note that we
+# add src/share/classes to the sourcepath. This is necessary since the GenStubs
+# program needs to be linked and run with the new javac sources.
+$(eval $(call SetupJavaCompilation,BUILD_TOOLS, \
+    SETUP := BOOT_JAVAC, \
+    DISABLE_SJAVAC := true, \
+    ADD_JAVAC_FLAGS := -Xprefer:source, \
+    SRC := $(LANGTOOLS_TOPDIR)/make/tools, \
+    INCLUDES := compileproperties, \
+    BIN := $(LANGTOOLS_OUTPUTDIR)/buildtools_classes))
+
+################################################################################
+# The compileprops tools compiles a properties file into a resource bundle.
+TOOL_COMPILEPROPS_CMD := $(JAVA) -cp $(LANGTOOLS_OUTPUTDIR)/buildtools_classes \
+    compileproperties.CompileProperties -quiet
+
+# Lookup the properties that need to be compiled into resource bundles.
+PROPSOURCES := $(shell $(FIND) $(LANGTOOLS_TOPDIR)/src/share/classes -name "*.properties")
+
+# Strip away prefix and suffix, leaving for example only: 
+# "com/sun/tools/javac/resources/javac_zh_CN"
+PROPPATHS := $(patsubst $(LANGTOOLS_TOPDIR)/src/share/classes/%.properties, %, $(PROPSOURCES))
+
+# Generate the list of java files to be created.
+PROPJAVAS := $(patsubst %, $(LANGTOOLS_OUTPUTDIR)/gensrc/%.java, $(PROPPATHS))
+
+# Generate the package dirs for the tobe generated java files.
+PROPDIRS := $(dir $(PROPJAVAS))
+
+# Now generate a sequence of:
+# "-compile ...javac_zh_CN.properties ...javac_zh_CN.java java.util.ListResourceBundle"
+# suitable to be fed into the CompileProperties command.
+PROPCMDLINE := $(subst _SPACE_, $(SPACE), \
+    $(join $(addprefix -compile_SPACE_, $(PROPSOURCES)), \
+    $(addsuffix _SPACE_java.util.ListResourceBundle, \
+    $(addprefix _SPACE_$(LANGTOOLS_OUTPUTDIR)/gensrc/, \
+    $(addsuffix .java, $(PROPPATHS))))))
+
+# Now setup the rule for the generation of the resource bundles.
+$(LANGTOOLS_OUTPUTDIR)/gensrc/_the_props: $(PROPSOURCES) $(BUILD_TOOLS)
+	$(RM) -r $(@D)/*
+	$(MKDIR) -p $(@D) $(PROPDIRS)
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.properties
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javap/resources/version.properties
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javac/resources/version.properties
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.properties
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javadoc/resources/version.properties
+	$(ECHO) Compiling $(words $(PROPSOURCES) javah javap javac jdeps javadoc) \
+	    properties into resource bundles
+	$(TOOL_COMPILEPROPS_CMD) $(PROPCMDLINE) \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.java \
+	        java.util.ListResourceBundle \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javap/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javap/resources/version.java \
+	        java.util.ListResourceBundle \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javac/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javac/resources/version.java \
+	        java.util.ListResourceBundle \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.java \
+	        java.util.ListResourceBundle \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javadoc/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javadoc/resources/version.java \
+	        java.util.ListResourceBundle
+	$(TOUCH) $@
+
+all: $(LANGTOOLS_OUTPUTDIR)/gensrc/_the_props
+
+################################################################################

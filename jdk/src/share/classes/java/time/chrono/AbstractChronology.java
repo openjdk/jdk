@@ -766,6 +766,7 @@ public abstract class AbstractChronology implements Chronology {
     /**
      * Defend against malicious streams.
      *
+     * @param s the stream to read
      * @throws java.io.InvalidObjectException always
      */
     private void readObject(ObjectInputStream s) throws ObjectStreamException {

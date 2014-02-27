@@ -89,6 +89,10 @@ void ParGCAllocBuffer::flush_stats(PLABStats* stats) {
 // scavenge; it clears the sensor accumulators.
 void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   assert(ResizePLAB, "Not set");
+
+  assert(is_object_aligned(max_size()) && min_size() <= max_size(),
+         "PLAB clipping computation may be incorrect");
+
   if (_allocated == 0) {
     assert(_unused == 0,
            err_msg("Inconsistency in PLAB stats: "
@@ -152,7 +156,7 @@ ParGCAllocBufferWithBOT::ParGCAllocBufferWithBOT(size_t word_sz,
 
 // The buffer comes with its own BOT, with a shared (obviously) underlying
 // BlockOffsetSharedArray. We manipulate this BOT in the normal way
-// as we would for any contiguous space. However, on accasion we
+// as we would for any contiguous space. However, on occasion we
 // need to do some buffer surgery at the extremities before we
 // start using the body of the buffer for allocations. Such surgery
 // (as explained elsewhere) is to prevent allocation on a card that

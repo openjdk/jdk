@@ -88,6 +88,7 @@ class Assembler : public AbstractAssembler  {
     orncc_op3    = 0x16,
     xnorcc_op3   = 0x17,
     addccc_op3   = 0x18,
+    aes4_op3     = 0x19,
     umulcc_op3   = 0x1a,
     smulcc_op3   = 0x1b,
     subccc_op3   = 0x1c,
@@ -121,6 +122,8 @@ class Assembler : public AbstractAssembler  {
     fpop1_op3    = 0x34,
     fpop2_op3    = 0x35,
     impdep1_op3  = 0x36,
+    aes3_op3     = 0x36,
+    flog3_op3    = 0x36,
     impdep2_op3  = 0x37,
     jmpl_op3     = 0x38,
     rett_op3     = 0x39,
@@ -172,41 +175,56 @@ class Assembler : public AbstractAssembler  {
 
   enum opfs {
     // selected opfs
-    fmovs_opf   = 0x01,
-    fmovd_opf   = 0x02,
+    fmovs_opf          = 0x01,
+    fmovd_opf          = 0x02,
 
-    fnegs_opf   = 0x05,
-    fnegd_opf   = 0x06,
+    fnegs_opf          = 0x05,
+    fnegd_opf          = 0x06,
 
-    fadds_opf   = 0x41,
-    faddd_opf   = 0x42,
-    fsubs_opf   = 0x45,
-    fsubd_opf   = 0x46,
+    fadds_opf          = 0x41,
+    faddd_opf          = 0x42,
+    fsubs_opf          = 0x45,
+    fsubd_opf          = 0x46,
 
-    fmuls_opf   = 0x49,
-    fmuld_opf   = 0x4a,
-    fdivs_opf   = 0x4d,
-    fdivd_opf   = 0x4e,
+    fmuls_opf          = 0x49,
+    fmuld_opf          = 0x4a,
+    fdivs_opf          = 0x4d,
+    fdivd_opf          = 0x4e,
 
-    fcmps_opf   = 0x51,
-    fcmpd_opf   = 0x52,
+    fcmps_opf          = 0x51,
+    fcmpd_opf          = 0x52,
 
-    fstox_opf   = 0x81,
-    fdtox_opf   = 0x82,
-    fxtos_opf   = 0x84,
-    fxtod_opf   = 0x88,
-    fitos_opf   = 0xc4,
-    fdtos_opf   = 0xc6,
-    fitod_opf   = 0xc8,
-    fstod_opf   = 0xc9,
-    fstoi_opf   = 0xd1,
-    fdtoi_opf   = 0xd2,
+    fstox_opf          = 0x81,
+    fdtox_opf          = 0x82,
+    fxtos_opf          = 0x84,
+    fxtod_opf          = 0x88,
+    fitos_opf          = 0xc4,
+    fdtos_opf          = 0xc6,
+    fitod_opf          = 0xc8,
+    fstod_opf          = 0xc9,
+    fstoi_opf          = 0xd1,
+    fdtoi_opf          = 0xd2,
 
-    mdtox_opf   = 0x110,
-    mstouw_opf  = 0x111,
-    mstosw_opf  = 0x113,
-    mxtod_opf   = 0x118,
-    mwtos_opf   = 0x119
+    mdtox_opf          = 0x110,
+    mstouw_opf         = 0x111,
+    mstosw_opf         = 0x113,
+    mxtod_opf          = 0x118,
+    mwtos_opf          = 0x119,
+
+    aes_kexpand0_opf   = 0x130,
+    aes_kexpand2_opf   = 0x131
+  };
+
+  enum op5s {
+    aes_eround01_op5     = 0x00,
+    aes_eround23_op5     = 0x01,
+    aes_dround01_op5     = 0x02,
+    aes_dround23_op5     = 0x03,
+    aes_eround01_l_op5   = 0x04,
+    aes_eround23_l_op5   = 0x05,
+    aes_dround01_l_op5   = 0x06,
+    aes_dround23_l_op5   = 0x07,
+    aes_kexpand1_op5     = 0x08
   };
 
   enum RCondition {  rc_z = 1,  rc_lez = 2,  rc_lz = 3, rc_nz = 5, rc_gz = 6, rc_gez = 7, rc_last = rc_gez  };
@@ -427,6 +445,7 @@ class Assembler : public AbstractAssembler  {
   static int immed(    bool        i)  { return  u_field(i ? 1 : 0,     13, 13); }
   static int opf_low6( int         w)  { return  u_field(w,             10,  5); }
   static int opf_low5( int         w)  { return  u_field(w,              9,  5); }
+  static int op5(      int         x)  { return  u_field(x,              8,  5); }
   static int trapcc(   CC         cc)  { return  u_field(cc,            12, 11); }
   static int sx(       int         i)  { return  u_field(i,             12, 12); } // shift x=1 means 64-bit
   static int opf(      int         x)  { return  u_field(x,             13,  5); }
@@ -451,6 +470,7 @@ class Assembler : public AbstractAssembler  {
   static int fd( FloatRegister r,  FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa), 29, 25); };
   static int fs1(FloatRegister r,  FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa), 18, 14); };
   static int fs2(FloatRegister r,  FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa),  4,  0); };
+  static int fs3(FloatRegister r,  FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa), 13,  9); };
 
   // some float instructions use this encoding on the op3 field
   static int alt_op3(int op, FloatRegisterImpl::Width w) {
@@ -558,6 +578,12 @@ class Assembler : public AbstractAssembler  {
   static int low10( int x ) {
     return x & ((1 << 10) - 1);
   }
+
+  // AES crypto instructions supported only on certain processors
+  static void aes_only() { assert( VM_Version::has_aes(), "This instruction only works on SPARC with AES instructions support"); }
+
+  // instruction only in VIS1
+  static void vis1_only() { assert( VM_Version::has_vis1(), "This instruction only works on SPARC with VIS1"); }
 
   // instruction only in VIS3
   static void vis3_only() { assert( VM_Version::has_vis3(), "This instruction only works on SPARC with VIS3"); }
@@ -682,6 +708,24 @@ public:
   void addccc( Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(addc_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
 
+  // 4-operand AES instructions
+
+  void aes_eround01(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes4_op3) | fs1(s1, FloatRegisterImpl::D) | fs3(s3, FloatRegisterImpl::D) | op5(aes_eround01_op5) | fs2(s2, FloatRegisterImpl::D) ); }
+  void aes_eround23(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes4_op3) | fs1(s1, FloatRegisterImpl::D) | fs3(s3, FloatRegisterImpl::D) | op5(aes_eround23_op5) | fs2(s2, FloatRegisterImpl::D) ); }
+  void aes_dround01(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes4_op3) | fs1(s1, FloatRegisterImpl::D) | fs3(s3, FloatRegisterImpl::D) | op5(aes_dround01_op5) | fs2(s2, FloatRegisterImpl::D) ); }
+  void aes_dround23(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes4_op3) | fs1(s1, FloatRegisterImpl::D) | fs3(s3, FloatRegisterImpl::D) | op5(aes_dround23_op5) | fs2(s2, FloatRegisterImpl::D) ); }
+  void aes_eround01_l(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes4_op3) | fs1(s1, FloatRegisterImpl::D) | fs3(s3, FloatRegisterImpl::D) | op5(aes_eround01_l_op5) | fs2(s2, FloatRegisterImpl::D) ); }
+  void aes_eround23_l(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes4_op3) | fs1(s1, FloatRegisterImpl::D) | fs3(s3, FloatRegisterImpl::D) | op5(aes_eround23_l_op5) | fs2(s2, FloatRegisterImpl::D) ); }
+  void aes_dround01_l(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes4_op3) | fs1(s1, FloatRegisterImpl::D) | fs3(s3, FloatRegisterImpl::D) | op5(aes_dround01_l_op5) | fs2(s2, FloatRegisterImpl::D) ); }
+  void aes_dround23_l(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes4_op3) | fs1(s1, FloatRegisterImpl::D) | fs3(s3, FloatRegisterImpl::D) | op5(aes_dround23_l_op5) | fs2(s2, FloatRegisterImpl::D) ); }
+  void aes_kexpand1(  FloatRegister s1, FloatRegister s2, int imm5a, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes4_op3) | fs1(s1, FloatRegisterImpl::D) | u_field(imm5a, 13, 9) | op5(aes_kexpand1_op5) | fs2(s2, FloatRegisterImpl::D) ); }
+
+
+  // 3-operand AES instructions
+
+  void aes_kexpand0(  FloatRegister s1, FloatRegister s2, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes3_op3) | fs1(s1, FloatRegisterImpl::D) | opf(aes_kexpand0_opf) | fs2(s2, FloatRegisterImpl::D) ); }
+  void aes_kexpand2(  FloatRegister s1, FloatRegister s2, FloatRegister d ) { aes_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(aes3_op3) | fs1(s1, FloatRegisterImpl::D) | opf(aes_kexpand2_opf) | fs2(s2, FloatRegisterImpl::D) ); }
+
   // pp 136
 
   inline void bpr(RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none);
@@ -783,6 +827,10 @@ public:
   void fmul( FloatRegisterImpl::Width w,                            FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w)  | op3(fpop1_op3) | fs1(s1, w)  | opf(0x48 + w)         | fs2(s2, w)); }
   void fmul( FloatRegisterImpl::Width sw, FloatRegisterImpl::Width dw,  FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, dw) | op3(fpop1_op3) | fs1(s1, sw) | opf(0x60 + sw + dw*4) | fs2(s2, sw)); }
   void fdiv( FloatRegisterImpl::Width w,                            FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w)  | op3(fpop1_op3) | fs1(s1, w)  | opf(0x4c + w)         | fs2(s2, w)); }
+
+  // FXORs/FXORd instructions
+
+  void fxor( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d ) { vis1_only(); emit_int32( op(arith_op) | fd(d, w) | op3(flog3_op3) | fs1(s1, w) | opf(0x6E - w) | fs2(s2, w)); }
 
   // pp 164
 

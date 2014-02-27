@@ -30,7 +30,7 @@ BEGIN	{
 	{ totallines++; print $0 }
 
 END	{ 
-	    if ((headerlines == 1) && (datalines == 10) && (totallines == 11)) {
+	    if ((headerlines == 1) && (datalines == 10)) {
 	        exit 0
 	    } else {
 	        exit 1
