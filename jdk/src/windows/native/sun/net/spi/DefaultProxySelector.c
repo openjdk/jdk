@@ -45,9 +45,6 @@ static jfieldID pr_no_proxyID;
 static jfieldID ptype_httpID;
 static jfieldID ptype_socksID;
 
-#define CHECK_NULL(X) { if ((X) == NULL) fprintf (stderr,"JNI errror at line %d\n", __LINE__); }
-
-
 /*
  * Class:     sun_net_spi_DefaultProxySelector
  * Method:    init
@@ -62,17 +59,30 @@ Java_sun_net_spi_DefaultProxySelector_init(JNIEnv *env, jclass clazz) {
   /**
    * Get all the method & field IDs for later use.
    */
-  CHECK_NULL(cls = (*env)->FindClass(env,"java/net/Proxy"));
+  cls = (*env)->FindClass(env,"java/net/Proxy");
+  CHECK_NULL_RETURN(cls, JNI_FALSE);
   proxy_class = (*env)->NewGlobalRef(env, cls);
-  CHECK_NULL(cls = (*env)->FindClass(env,"java/net/Proxy$Type"));
+  CHECK_NULL_RETURN(proxy_class, JNI_FALSE);
+  cls = (*env)->FindClass(env,"java/net/Proxy$Type");
+  CHECK_NULL_RETURN(cls, JNI_FALSE);
   ptype_class = (*env)->NewGlobalRef(env, cls);
-  CHECK_NULL(cls = (*env)->FindClass(env, "java/net/InetSocketAddress"));
+  CHECK_NULL_RETURN(ptype_class, JNI_FALSE);
+  cls = (*env)->FindClass(env, "java/net/InetSocketAddress");
+  CHECK_NULL_RETURN(cls, JNI_FALSE);
   isaddr_class = (*env)->NewGlobalRef(env, cls);
-  proxy_ctrID = (*env)->GetMethodID(env, proxy_class, "<init>", "(Ljava/net/Proxy$Type;Ljava/net/SocketAddress;)V");
+  CHECK_NULL_RETURN(isaddr_class, JNI_FALSE);
+  proxy_ctrID = (*env)->GetMethodID(env, proxy_class, "<init>",
+                                    "(Ljava/net/Proxy$Type;Ljava/net/SocketAddress;)V");
+  CHECK_NULL_RETURN(proxy_ctrID, JNI_FALSE);
   pr_no_proxyID = (*env)->GetStaticFieldID(env, proxy_class, "NO_PROXY", "Ljava/net/Proxy;");
+  CHECK_NULL_RETURN(pr_no_proxyID, JNI_FALSE);
   ptype_httpID = (*env)->GetStaticFieldID(env, ptype_class, "HTTP", "Ljava/net/Proxy$Type;");
+  CHECK_NULL_RETURN(ptype_httpID, JNI_FALSE);
   ptype_socksID = (*env)->GetStaticFieldID(env, ptype_class, "SOCKS", "Ljava/net/Proxy$Type;");
-  isaddr_createUnresolvedID = (*env)->GetStaticMethodID(env, isaddr_class, "createUnresolved", "(Ljava/lang/String;I)Ljava/net/InetSocketAddress;");
+  CHECK_NULL_RETURN(ptype_socksID, JNI_FALSE);
+  isaddr_createUnresolvedID = (*env)->GetStaticMethodID(env, isaddr_class, "createUnresolved",
+                                                        "(Ljava/lang/String;I)Ljava/net/InetSocketAddress;");
+  CHECK_NULL_RETURN(isaddr_createUnresolvedID, JNI_FALSE);
 
   /**
    * Let's see if we can find the proper Registry entry.

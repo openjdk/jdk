@@ -72,7 +72,7 @@ public:
   // reprofile request
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr) = 0;
   // delay_compilation(method) can be called by any component of the runtime to notify the policy
-  // that it's recommended to delay the complation of this method.
+  // that it's recommended to delay the compilation of this method.
   virtual void delay_compilation(Method* method) = 0;
   // disable_compilation() is called whenever the runtime decides to disable compilation of the
   // specified method.

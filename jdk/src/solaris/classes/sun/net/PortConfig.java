@@ -55,6 +55,14 @@ public final class PortConfig {
                     } else if (os.contains("OS X")) {
                         defaultLower = 49152;
                         defaultUpper = 65535;
+                    } else if (os.startsWith("AIX")) {
+                        // The ephemeral port is OS version dependent on AIX:
+                        // http://publib.boulder.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.rsct315.admin/bl503_ephport.htm
+                        // However, on AIX 5.3 / 6.1 / 7.1 we always see the
+                        // settings below by using:
+                        // /usr/sbin/no -a | fgrep ephemeral
+                        defaultLower = 32768;
+                        defaultUpper = 65535;
                     } else {
                         throw new InternalError(
                             "sun.net.PortConfig: unknown OS");

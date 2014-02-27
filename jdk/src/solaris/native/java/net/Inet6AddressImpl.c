@@ -70,8 +70,8 @@ Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     char hostname[NI_MAXHOST+1];
 
     hostname[0] = '\0';
-    ret = JVM_GetHostName(hostname, sizeof(hostname));
-    if (ret) {
+    ret = gethostname(hostname, NI_MAXHOST);
+    if (ret == -1) {
         /* Something went wrong, maybe networking is not setup? */
         strcpy(hostname, "localhost");
     } else {
@@ -140,7 +140,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
      * the name (if the name actually matches something in DNS etc.
      */
     myhostname[0] = '\0';
-    if (JVM_GetHostName(myhostname, NI_MAXHOST)) {
+    if (gethostname(myhostname, NI_MAXHOST) == -1) {
         /* Something went wrong, maybe networking is not setup? */
         return NULL;
     }
@@ -711,15 +711,15 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
      * or the echo service has been disabled.
      */
 
-    fd = JVM_Socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+    fd = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 
     if (fd != -1) { /* Good to go, let's do a ping */
         return ping6(env, fd, &him6, timeout, netif, ttl);
     }
 
     /* No good, let's fall back on TCP */
-    fd = JVM_Socket(AF_INET6, SOCK_STREAM, 0);
-    if (fd == JVM_IO_ERR) {
+    fd = socket(AF_INET6, SOCK_STREAM, 0);
+    if (fd == -1) {
         /* note: if you run out of fds, you may not be able to load
          * the exception class, and get a NoClassDefFoundError
          * instead.
@@ -743,9 +743,8 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
     }
     SET_NONBLOCKING(fd);
 
-    /* no need to use NET_Connect as non-blocking */
     him6.sin6_port = htons((short) 7); /* Echo port */
-    connect_rv = JVM_Connect(fd, (struct sockaddr *)&him6, len);
+    connect_rv = NET_Connect(fd, (struct sockaddr *)&him6, len);
 
     /**
      * connection established or refused immediately, either way it means
@@ -755,7 +754,7 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
         close(fd);
         return JNI_TRUE;
     } else {
-        int optlen;
+        socklen_t optlen = (socklen_t)sizeof(connect_rv);
 
         switch (errno) {
         case ENETUNREACH: /* Network Unreachable */
@@ -786,9 +785,8 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
 
         if (timeout >= 0) {
           /* has connection been established */
-          optlen = sizeof(connect_rv);
-          if (JVM_GetSockOpt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
-                             &optlen) <0) {
+          if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
+                         &optlen) <0) {
             connect_rv = errno;
           }
           if (connect_rv == 0 || ECONNREFUSED) {

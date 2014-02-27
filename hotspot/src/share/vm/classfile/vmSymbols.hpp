@@ -787,7 +787,7 @@
    do_intrinsic(_cipherBlockChaining_decryptAESCrypt, com_sun_crypto_provider_cipherBlockChaining, decrypt_name, byteArray_int_int_byteArray_int_signature, F_R)   \
    do_name(     encrypt_name,                                      "encrypt")                                           \
    do_name(     decrypt_name,                                      "decrypt")                                           \
-   do_signature(byteArray_int_int_byteArray_int_signature,         "([BII[BI)V")                                        \
+   do_signature(byteArray_int_int_byteArray_int_signature,         "([BII[BI)I")                                        \
                                                                                                                         \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \

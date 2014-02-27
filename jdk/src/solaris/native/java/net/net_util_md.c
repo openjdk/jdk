@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,18 +40,21 @@
 #include <limits.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
+#include <sys/ioctl.h>
 #ifndef MAXINT
 #define MAXINT INT_MAX
 #endif
 #endif
 
 #ifdef __solaris__
+#include <sys/filio.h>
 #include <sys/sockio.h>
 #include <stropts.h>
 #include <inet/nd.h>
 #endif
 
 #ifdef __linux__
+#include <sys/ioctl.h>
 #include <arpa/inet.h>
 #include <net/route.h>
 #include <sys/utsname.h>
@@ -60,6 +63,10 @@
 #define IPV6_FLOWINFO_SEND      33
 #endif
 
+#endif
+
+#ifdef _AIX
+#include <sys/ioctl.h>
 #endif
 
 #include "jni_util.h"
@@ -110,6 +117,7 @@ void setDefaultScopeID(JNIEnv *env, struct sockaddr *him)
 }
 
 int getDefaultScopeID(JNIEnv *env) {
+    int defaultIndex = 0;
     static jclass ni_class = NULL;
     static jfieldID ni_defaultIndexID;
     if (ni_class == NULL) {
@@ -121,10 +129,23 @@ int getDefaultScopeID(JNIEnv *env) {
                                                      "defaultIndex", "I");
         ni_class = c;
     }
-    int defaultIndex = 0;
     defaultIndex = (*env)->GetStaticIntField(env, ni_class,
                                              ni_defaultIndexID);
     return defaultIndex;
+}
+
+#define RESTARTABLE(_cmd, _result) do { \
+    do { \
+        _result = _cmd; \
+    } while((_result == -1) && (errno == EINTR)); \
+} while(0)
+
+int NET_SocketAvailable(int s, jint *pbytes) {
+    int result;
+    RESTARTABLE(ioctl(s, FIONREAD, pbytes), result);
+    // note: ioctl can return 0 when successful, NET_SocketAvailable
+    // is expected to return 0 on failure and 1 on success.
+    return (result == -1) ? 0 : 1;
 }
 
 #ifdef __solaris__
@@ -322,7 +343,7 @@ jint  IPv6_supported()
     SOCKADDR sa;
     socklen_t sa_len = sizeof(sa);
 
-    fd = JVM_Socket(AF_INET6, SOCK_STREAM, 0) ;
+    fd = socket(AF_INET6, SOCK_STREAM, 0) ;
     if (fd < 0) {
         /*
          *  TODO: We really cant tell since it may be an unrelated error
@@ -1207,6 +1228,7 @@ NET_GetSockOpt(int fd, int level, int opt, void *result,
                int *len)
 {
     int rv;
+    socklen_t socklen = *len;
 
 #ifdef AF_INET6
     if ((level == IPPROTO_IP) && (opt == IP_TOS)) {
@@ -1223,15 +1245,8 @@ NET_GetSockOpt(int fd, int level, int opt, void *result,
     }
 #endif
 
-#ifdef __solaris__
-    rv = getsockopt(fd, level, opt, result, len);
-#else
-    {
-        socklen_t socklen = *len;
-        rv = getsockopt(fd, level, opt, result, &socklen);
-        *len = socklen;
-    }
-#endif
+    rv = getsockopt(fd, level, opt, result, &socklen);
+    *len = socklen;
 
     if (rv < 0) {
         return rv;
@@ -1342,7 +1357,8 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 #ifdef __solaris__
     if (level == SOL_SOCKET) {
         if (opt == SO_SNDBUF || opt == SO_RCVBUF) {
-            int sotype=0, arglen;
+            int sotype=0;
+            socklen_t arglen;
             int *bufsize, maxbuf;
             int ret;
 
@@ -1546,7 +1562,8 @@ NET_Bind(int fd, struct sockaddr *him, int len)
      * corresponding IPv4 port is in use.
      */
     if (ipv6_available()) {
-        int arg, len;
+        int arg;
+        socklen_t len;
 
         len = sizeof(arg);
         if (useExclBind || getsockopt(fd, SOL_SOCKET, SO_REUSEADDR,

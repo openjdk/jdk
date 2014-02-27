@@ -108,7 +108,7 @@ class G1CollectedHeap;
 // is that all the above sizes need to be recalculated when the old
 // gen changes capacity (after a GC or after a humongous allocation)
 // but only the eden occupancy changes when a new eden region is
-// allocated. So, in the latter case we have minimal recalcuation to
+// allocated. So, in the latter case we have minimal recalculation to
 // do which is important as we want to keep the eden region allocation
 // path as low-overhead as possible.
 

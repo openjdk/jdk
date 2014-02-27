@@ -120,7 +120,7 @@ ifeq ($(OPENJDK_TARGET_OS), aix)
   BUILD_LIBNIO_FILES += \
       AixPollPort.c \
       InheritedChannel.c \
-      NativeThread.c \
+      AixNativeThread.c \
       PollArrayWrapper.c \
       UnixAsynchronousServerSocketChannelImpl.c \
       UnixAsynchronousSocketChannelImpl.c \
