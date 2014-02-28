@@ -306,6 +306,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::POS1    = TypeInt::make(1,max_jint,   WidenMin); // Positive values
   TypeInt::INT     = TypeInt::make(min_jint,max_jint, WidenMax); // 32-bit integers
   TypeInt::SYMINT  = TypeInt::make(-max_jint,max_jint,WidenMin); // symmetric range
+  TypeInt::TYPE_DOMAIN  = TypeInt::INT;
   // CmpL is overloaded both as the bytecode computation returning
   // a trinary (-1,0,+1) integer result AND as an efficient long
   // compare returning optimizer ideal-type flags.
@@ -322,6 +323,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::LONG    = TypeLong::make(min_jlong,max_jlong,WidenMax); // 64-bit integers
   TypeLong::INT     = TypeLong::make((jlong)min_jint,(jlong)max_jint,WidenMin);
   TypeLong::UINT    = TypeLong::make(0,(jlong)max_juint,WidenMin);
+  TypeLong::TYPE_DOMAIN  = TypeLong::LONG;
 
   const Type **fboth =(const Type**)shared_type_arena->Amalloc_4(2*sizeof(Type*));
   fboth[0] = Type::CONTROL;
@@ -1161,6 +1163,7 @@ const TypeInt *TypeInt::POS;    // Positive 32-bit integers or zero
 const TypeInt *TypeInt::POS1;   // Positive 32-bit integers
 const TypeInt *TypeInt::INT;    // 32-bit integers
 const TypeInt *TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
+const TypeInt *TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
 //------------------------------TypeInt----------------------------------------
 TypeInt::TypeInt( jint lo, jint hi, int w ) : Type(Int), _lo(lo), _hi(hi), _widen(w) {
@@ -1418,6 +1421,7 @@ const TypeLong *TypeLong::POS;  // >=0
 const TypeLong *TypeLong::LONG; // 64-bit integers
 const TypeLong *TypeLong::INT;  // 32-bit subrange
 const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
+const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 //------------------------------TypeLong---------------------------------------
 TypeLong::TypeLong( jlong lo, jlong hi, int w ) : Type(Long), _lo(lo), _hi(hi), _widen(w) {
@@ -2459,7 +2463,7 @@ void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 const TypeOopPtr *TypeOopPtr::BOTTOM;
 
 //------------------------------TypeOopPtr-------------------------------------
-TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id, const TypeOopPtr* speculative)
+TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth)
   : TypePtr(t, ptr, offset),
     _const_oop(o), _klass(k),
     _klass_is_exact(xk),
@@ -2467,7 +2471,8 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int o
     _is_ptr_to_narrowklass(false),
     _is_ptr_to_boxed_value(false),
     _instance_id(instance_id),
-    _speculative(speculative) {
+    _speculative(speculative),
+    _inline_depth(inline_depth){
   if (Compile::current()->eliminate_boxing() && (t == InstPtr) &&
       (offset > 0) && xk && (k != 0) && k->is_instance_klass()) {
     _is_ptr_to_boxed_value = k->as_instance_klass()->is_boxed_value_offset(offset);
@@ -2534,12 +2539,12 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int o
 
 //------------------------------make-------------------------------------------
 const TypeOopPtr *TypeOopPtr::make(PTR ptr,
-                                   int offset, int instance_id, const TypeOopPtr* speculative) {
+                                   int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth) {
   assert(ptr != Constant, "no constant generic pointers");
   ciKlass*  k = Compile::current()->env()->Object_klass();
   bool      xk = false;
   ciObject* o = NULL;
-  return (TypeOopPtr*)(new TypeOopPtr(OopPtr, ptr, k, xk, o, offset, instance_id, speculative))->hashcons();
+  return (TypeOopPtr*)(new TypeOopPtr(OopPtr, ptr, k, xk, o, offset, instance_id, speculative, inline_depth))->hashcons();
 }
 
 
@@ -2547,7 +2552,7 @@ const TypeOopPtr *TypeOopPtr::make(PTR ptr,
 const Type *TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
-  return make(ptr, _offset, _instance_id, _speculative);
+  return make(ptr, _offset, _instance_id, _speculative, _inline_depth);
 }
 
 //-----------------------------cast_to_instance_id----------------------------
@@ -2644,7 +2649,7 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
     case AnyNull: {
       int instance_id = meet_instance_id(InstanceTop);
       const TypeOopPtr* speculative = _speculative;
-      return make(ptr, offset, instance_id, speculative);
+      return make(ptr, offset, instance_id, speculative, _inline_depth);
     }
     case BotPTR:
     case NotNull:
@@ -2657,7 +2662,8 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
     const TypeOopPtr *tp = t->is_oopptr();
     int instance_id = meet_instance_id(tp->instance_id());
     const TypeOopPtr* speculative = xmeet_speculative(tp);
-    return make(meet_ptr(tp->ptr()), meet_offset(tp->offset()), instance_id, speculative);
+    int depth = meet_inline_depth(tp->inline_depth());
+    return make(meet_ptr(tp->ptr()), meet_offset(tp->offset()), instance_id, speculative, depth);
   }
 
   case InstPtr:                  // For these, flip the call around to cut down
@@ -2674,7 +2680,7 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
 const Type *TypeOopPtr::xdual() const {
   assert(klass() == Compile::current()->env()->Object_klass(), "no klasses here");
   assert(const_oop() == NULL,             "no constants here");
-  return new TypeOopPtr(_base, dual_ptr(), klass(), klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative());
+  return new TypeOopPtr(_base, dual_ptr(), klass(), klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative(), dual_inline_depth());
 }
 
 //--------------------------make_from_klass_common-----------------------------
@@ -2765,7 +2771,7 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o,
     } else if (!o->should_be_constant()) {
       return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
     }
-    const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0, InstanceBot, NULL, is_autobox_cache);
+    const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0, InstanceBot, NULL, InlineDepthBottom, is_autobox_cache);
     return arr;
   } else if (klass->is_type_array_klass()) {
     // Element is an typeArray
@@ -2854,7 +2860,8 @@ bool TypeOopPtr::eq( const Type *t ) const {
   const TypeOopPtr *a = (const TypeOopPtr*)t;
   if (_klass_is_exact != a->_klass_is_exact ||
       _instance_id != a->_instance_id ||
-      !eq_speculative(a))  return false;
+      !eq_speculative(a) ||
+      _inline_depth != a->_inline_depth)  return false;
   ciObject* one = const_oop();
   ciObject* two = a->const_oop();
   if (one == NULL || two == NULL) {
@@ -2872,6 +2879,7 @@ int TypeOopPtr::hash(void) const {
     _klass_is_exact +
     _instance_id +
     hash_speculative() +
+    _inline_depth +
     TypePtr::hash();
 }
 
@@ -2892,6 +2900,7 @@ void TypeOopPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   else if (_instance_id != InstanceBot)
     st->print(",iid=%d",_instance_id);
 
+  dump_inline_depth(st);
   dump_speculative(st);
 }
 
@@ -2903,6 +2912,16 @@ void TypeOopPtr::dump_speculative(outputStream *st) const {
     st->print(" (speculative=");
     _speculative->dump_on(st);
     st->print(")");
+  }
+}
+
+void TypeOopPtr::dump_inline_depth(outputStream *st) const {
+  if (_inline_depth != InlineDepthBottom) {
+    if (_inline_depth == InlineDepthTop) {
+      st->print(" (inline_depth=InlineDepthTop)");
+    } else {
+      st->print(" (inline_depth=%d)", _inline_depth);
+    }
   }
 }
 #endif
@@ -2918,7 +2937,7 @@ bool TypeOopPtr::singleton(void) const {
 
 //------------------------------add_offset-------------------------------------
 const TypePtr *TypeOopPtr::add_offset(intptr_t offset) const {
-  return make(_ptr, xadd_offset(offset), _instance_id, add_offset_speculative(offset));
+  return make(_ptr, xadd_offset(offset), _instance_id, add_offset_speculative(offset), _inline_depth);
 }
 
 /**
@@ -2928,7 +2947,52 @@ const Type* TypeOopPtr::remove_speculative() const {
   if (_speculative == NULL) {
     return this;
   }
-  return make(_ptr, _offset, _instance_id, NULL);
+  assert(_inline_depth == InlineDepthTop || _inline_depth == InlineDepthBottom, "non speculative type shouldn't have inline depth");
+  return make(_ptr, _offset, _instance_id, NULL, _inline_depth);
+}
+
+/**
+ * Return same type but with a different inline depth (used for speculation)
+ *
+ * @param depth  depth to meet with
+ */
+const TypeOopPtr* TypeOopPtr::with_inline_depth(int depth) const {
+  if (!UseInlineDepthForSpeculativeTypes) {
+    return this;
+  }
+  return make(_ptr, _offset, _instance_id, _speculative, depth);
+}
+
+/**
+ * Check whether new profiling would improve speculative type
+ *
+ * @param   exact_kls    class from profiling
+ * @param   inline_depth inlining depth of profile point
+ *
+ * @return  true if type profile is valuable
+ */
+bool TypeOopPtr::would_improve_type(ciKlass* exact_kls, int inline_depth) const {
+  // no way to improve an already exact type
+  if (klass_is_exact()) {
+    return false;
+  }
+  // no profiling?
+  if (exact_kls == NULL) {
+    return false;
+  }
+  // no speculative type or non exact speculative type?
+  if (speculative_type() == NULL) {
+    return true;
+  }
+  // If the node already has an exact speculative type keep it,
+  // unless it was provided by profiling that is at a deeper
+  // inlining level. Profiling at a higher inlining depth is
+  // expected to be less accurate.
+  if (_speculative->inline_depth() == InlineDepthBottom) {
+    return false;
+  }
+  assert(_speculative->inline_depth() != InlineDepthTop, "can't do the comparison");
+  return inline_depth < _speculative->inline_depth();
 }
 
 //------------------------------meet_instance_id--------------------------------
@@ -3031,6 +3095,21 @@ int TypeOopPtr::hash_speculative() const {
   return _speculative->hash();
 }
 
+/**
+ * dual of the inline depth for this type (used for speculation)
+ */
+int TypeOopPtr::dual_inline_depth() const {
+  return -inline_depth();
+}
+
+/**
+ * meet of 2 inline depth (used for speculation)
+ *
+ * @param depth  depth to meet with
+ */
+int TypeOopPtr::meet_inline_depth(int depth) const {
+  return MAX2(inline_depth(), depth);
+}
 
 //=============================================================================
 // Convenience common pre-built types.
@@ -3041,8 +3120,8 @@ const TypeInstPtr *TypeInstPtr::MARK;
 const TypeInstPtr *TypeInstPtr::KLASS;
 
 //------------------------------TypeInstPtr-------------------------------------
-TypeInstPtr::TypeInstPtr(PTR ptr, ciKlass* k, bool xk, ciObject* o, int off, int instance_id, const TypeOopPtr* speculative)
-  : TypeOopPtr(InstPtr, ptr, k, xk, o, off, instance_id, speculative), _name(k->name()) {
+TypeInstPtr::TypeInstPtr(PTR ptr, ciKlass* k, bool xk, ciObject* o, int off, int instance_id, const TypeOopPtr* speculative, int inline_depth)
+  : TypeOopPtr(InstPtr, ptr, k, xk, o, off, instance_id, speculative, inline_depth), _name(k->name()) {
    assert(k != NULL &&
           (k->is_loaded() || o == NULL),
           "cannot have constants with non-loaded klass");
@@ -3055,7 +3134,8 @@ const TypeInstPtr *TypeInstPtr::make(PTR ptr,
                                      ciObject* o,
                                      int offset,
                                      int instance_id,
-                                     const TypeOopPtr* speculative) {
+                                     const TypeOopPtr* speculative,
+                                     int inline_depth) {
   assert( !k->is_loaded() || k->is_instance_klass(), "Must be for instance");
   // Either const_oop() is NULL or else ptr is Constant
   assert( (!o && ptr != Constant) || (o && ptr == Constant),
@@ -3076,7 +3156,7 @@ const TypeInstPtr *TypeInstPtr::make(PTR ptr,
 
   // Now hash this baby
   TypeInstPtr *result =
-    (TypeInstPtr*)(new TypeInstPtr(ptr, k, xk, o ,offset, instance_id, speculative))->hashcons();
+    (TypeInstPtr*)(new TypeInstPtr(ptr, k, xk, o ,offset, instance_id, speculative, inline_depth))->hashcons();
 
   return result;
 }
@@ -3109,7 +3189,7 @@ const Type *TypeInstPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   // Reconstruct _sig info here since not a problem with later lazy
   // construction, _sig will show up on demand.
-  return make(ptr, klass(), klass_is_exact(), const_oop(), _offset, _instance_id, _speculative);
+  return make(ptr, klass(), klass_is_exact(), const_oop(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
 
@@ -3121,13 +3201,13 @@ const Type *TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
   ciInstanceKlass* ik = _klass->as_instance_klass();
   if( (ik->is_final() || _const_oop) )  return this;  // cannot clear xk
   if( ik->is_interface() )              return this;  // cannot set xk
-  return make(ptr(), klass(), klass_is_exact, const_oop(), _offset, _instance_id, _speculative);
+  return make(ptr(), klass(), klass_is_exact, const_oop(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
 //-----------------------------cast_to_instance_id----------------------------
 const TypeOopPtr *TypeInstPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
-  return make(_ptr, klass(), _klass_is_exact, const_oop(), _offset, instance_id, _speculative);
+  return make(_ptr, klass(), _klass_is_exact, const_oop(), _offset, instance_id, _speculative, _inline_depth);
 }
 
 //------------------------------xmeet_unloaded---------------------------------
@@ -3138,6 +3218,7 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst) const {
     PTR ptr = meet_ptr(tinst->ptr());
     int instance_id = meet_instance_id(tinst->instance_id());
     const TypeOopPtr* speculative = xmeet_speculative(tinst);
+    int depth = meet_inline_depth(tinst->inline_depth());
 
     const TypeInstPtr *loaded    = is_loaded() ? this  : tinst;
     const TypeInstPtr *unloaded  = is_loaded() ? tinst : this;
@@ -3158,7 +3239,7 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst) const {
       assert(loaded->ptr() != TypePtr::Null, "insanity check");
       //
       if(      loaded->ptr() == TypePtr::TopPTR ) { return unloaded; }
-      else if (loaded->ptr() == TypePtr::AnyNull) { return TypeInstPtr::make(ptr, unloaded->klass(), false, NULL, off, instance_id, speculative); }
+      else if (loaded->ptr() == TypePtr::AnyNull) { return TypeInstPtr::make(ptr, unloaded->klass(), false, NULL, off, instance_id, speculative, depth); }
       else if (loaded->ptr() == TypePtr::BotPTR ) { return TypeInstPtr::BOTTOM; }
       else if (loaded->ptr() == TypePtr::Constant || loaded->ptr() == TypePtr::NotNull) {
         if (unloaded->ptr() == TypePtr::BotPTR  ) { return TypeInstPtr::BOTTOM;  }
@@ -3215,6 +3296,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     PTR ptr = meet_ptr(tp->ptr());
     int instance_id = meet_instance_id(tp->instance_id());
     const TypeOopPtr* speculative = xmeet_speculative(tp);
+    int depth = meet_inline_depth(tp->inline_depth());
     switch (ptr) {
     case TopPTR:
     case AnyNull:                // Fall 'down' to dual of object klass
@@ -3222,12 +3304,12 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
       // below the centerline when the superclass is exact. We need to
       // do the same here.
       if (klass()->equals(ciEnv::current()->Object_klass()) && !klass_is_exact()) {
-        return TypeAryPtr::make(ptr, tp->ary(), tp->klass(), tp->klass_is_exact(), offset, instance_id, speculative);
+        return TypeAryPtr::make(ptr, tp->ary(), tp->klass(), tp->klass_is_exact(), offset, instance_id, speculative, depth);
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
         ptr = NotNull;
         instance_id = InstanceBot;
-        return TypeInstPtr::make( ptr, ciEnv::current()->Object_klass(), false, NULL, offset, instance_id, speculative);
+        return TypeInstPtr::make( ptr, ciEnv::current()->Object_klass(), false, NULL, offset, instance_id, speculative, depth);
       }
     case Constant:
     case NotNull:
@@ -3242,7 +3324,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
         if (klass()->equals(ciEnv::current()->Object_klass()) && !klass_is_exact()) {
           // that is, tp's array type is a subtype of my klass
           return TypeAryPtr::make(ptr, (ptr == Constant ? tp->const_oop() : NULL),
-                                  tp->ary(), tp->klass(), tp->klass_is_exact(), offset, instance_id, speculative);
+                                  tp->ary(), tp->klass(), tp->klass_is_exact(), offset, instance_id, speculative, depth);
         }
       }
       // The other case cannot happen, since I cannot be a subtype of an array.
@@ -3250,7 +3332,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
       if( ptr == Constant )
          ptr = NotNull;
       instance_id = InstanceBot;
-      return make(ptr, ciEnv::current()->Object_klass(), false, NULL, offset, instance_id, speculative);
+      return make(ptr, ciEnv::current()->Object_klass(), false, NULL, offset, instance_id, speculative, depth);
     default: typerr(t);
     }
   }
@@ -3265,14 +3347,16 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     case AnyNull: {
       int instance_id = meet_instance_id(InstanceTop);
       const TypeOopPtr* speculative = xmeet_speculative(tp);
+      int depth = meet_inline_depth(tp->inline_depth());
       return make(ptr, klass(), klass_is_exact(),
-                  (ptr == Constant ? const_oop() : NULL), offset, instance_id, speculative);
+                  (ptr == Constant ? const_oop() : NULL), offset, instance_id, speculative, depth);
     }
     case NotNull:
     case BotPTR: {
       int instance_id = meet_instance_id(tp->instance_id());
       const TypeOopPtr* speculative = xmeet_speculative(tp);
-      return TypeOopPtr::make(ptr, offset, instance_id, speculative);
+      int depth = meet_inline_depth(tp->inline_depth());
+      return TypeOopPtr::make(ptr, offset, instance_id, speculative, depth);
     }
     default: typerr(t);
     }
@@ -3292,7 +3376,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
       int instance_id = meet_instance_id(InstanceTop);
       const TypeOopPtr* speculative = _speculative;
       return make(ptr, klass(), klass_is_exact(),
-                  (ptr == Constant ? const_oop() : NULL), offset, instance_id, speculative);
+                  (ptr == Constant ? const_oop() : NULL), offset, instance_id, speculative, _inline_depth);
     }
     case NotNull:
     case BotPTR:
@@ -3324,13 +3408,14 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     PTR ptr = meet_ptr( tinst->ptr() );
     int instance_id = meet_instance_id(tinst->instance_id());
     const TypeOopPtr* speculative = xmeet_speculative(tinst);
+    int depth = meet_inline_depth(tinst->inline_depth());
 
     // Check for easy case; klasses are equal (and perhaps not loaded!)
     // If we have constants, then we created oops so classes are loaded
     // and we can handle the constants further down.  This case handles
     // both-not-loaded or both-loaded classes
     if (ptr != Constant && klass()->equals(tinst->klass()) && klass_is_exact() == tinst->klass_is_exact()) {
-      return make(ptr, klass(), klass_is_exact(), NULL, off, instance_id, speculative);
+      return make(ptr, klass(), klass_is_exact(), NULL, off, instance_id, speculative, depth);
     }
 
     // Classes require inspection in the Java klass hierarchy.  Must be loaded.
@@ -3394,7 +3479,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
         // Find out which constant.
         o = (this_klass == klass()) ? const_oop() : tinst->const_oop();
       }
-      return make(ptr, k, xk, o, off, instance_id, speculative);
+      return make(ptr, k, xk, o, off, instance_id, speculative, depth);
     }
 
     // Either oop vs oop or interface vs interface or interface vs Object
@@ -3471,7 +3556,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
         else
           ptr = NotNull;
       }
-      return make(ptr, this_klass, this_xk, o, off, instance_id, speculative);
+      return make(ptr, this_klass, this_xk, o, off, instance_id, speculative, depth);
     } // Else classes are not equal
 
     // Since klasses are different, we require a LCA in the Java
@@ -3482,7 +3567,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
 
     // Now we find the LCA of Java classes
     ciKlass* k = this_klass->least_common_ancestor(tinst_klass);
-    return make(ptr, k, false, NULL, off, instance_id, speculative);
+    return make(ptr, k, false, NULL, off, instance_id, speculative, depth);
   } // End of case InstPtr
 
   } // End of switch
@@ -3506,7 +3591,7 @@ ciType* TypeInstPtr::java_mirror_type() const {
 // Dual: do NOT dual on klasses.  This means I do NOT understand the Java
 // inheritance mechanism.
 const Type *TypeInstPtr::xdual() const {
-  return new TypeInstPtr(dual_ptr(), klass(), klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative());
+  return new TypeInstPtr(dual_ptr(), klass(), klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative(), dual_inline_depth());
 }
 
 //------------------------------eq---------------------------------------------
@@ -3563,6 +3648,7 @@ void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   else if (_instance_id != InstanceBot)
     st->print(",iid=%d",_instance_id);
 
+  dump_inline_depth(st);
   dump_speculative(st);
 }
 #endif
@@ -3576,7 +3662,15 @@ const Type *TypeInstPtr::remove_speculative() const {
   if (_speculative == NULL) {
     return this;
   }
-  return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset, _instance_id, NULL);
+  assert(_inline_depth == InlineDepthTop || _inline_depth == InlineDepthBottom, "non speculative type shouldn't have inline depth");
+  return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset, _instance_id, NULL, _inline_depth);
+}
+
+const TypeOopPtr *TypeInstPtr::with_inline_depth(int depth) const {
+  if (!UseInlineDepthForSpeculativeTypes) {
+    return this;
+  }
+  return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset, _instance_id, _speculative, depth);
 }
 
 //=============================================================================
@@ -3593,30 +3687,30 @@ const TypeAryPtr *TypeAryPtr::FLOATS;
 const TypeAryPtr *TypeAryPtr::DOUBLES;
 
 //------------------------------make-------------------------------------------
-const TypeAryPtr *TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id, const TypeOopPtr* speculative) {
+const TypeAryPtr *TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth) {
   assert(!(k == NULL && ary->_elem->isa_int()),
          "integral arrays must be pre-equipped with a class");
   if (!xk)  xk = ary->ary_must_be_exact();
   assert(instance_id <= 0 || xk || !UseExactTypes, "instances are always exactly typed");
   if (!UseExactTypes)  xk = (ptr == Constant);
-  return (TypeAryPtr*)(new TypeAryPtr(ptr, NULL, ary, k, xk, offset, instance_id, false, speculative))->hashcons();
+  return (TypeAryPtr*)(new TypeAryPtr(ptr, NULL, ary, k, xk, offset, instance_id, false, speculative, inline_depth))->hashcons();
 }
 
 //------------------------------make-------------------------------------------
-const TypeAryPtr *TypeAryPtr::make(PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id, const TypeOopPtr* speculative, bool is_autobox_cache) {
+const TypeAryPtr *TypeAryPtr::make(PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth, bool is_autobox_cache) {
   assert(!(k == NULL && ary->_elem->isa_int()),
          "integral arrays must be pre-equipped with a class");
   assert( (ptr==Constant && o) || (ptr!=Constant && !o), "" );
   if (!xk)  xk = (o != NULL) || ary->ary_must_be_exact();
   assert(instance_id <= 0 || xk || !UseExactTypes, "instances are always exactly typed");
   if (!UseExactTypes)  xk = (ptr == Constant);
-  return (TypeAryPtr*)(new TypeAryPtr(ptr, o, ary, k, xk, offset, instance_id, is_autobox_cache, speculative))->hashcons();
+  return (TypeAryPtr*)(new TypeAryPtr(ptr, o, ary, k, xk, offset, instance_id, is_autobox_cache, speculative, inline_depth))->hashcons();
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
 const Type *TypeAryPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
-  return make(ptr, const_oop(), _ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative);
+  return make(ptr, const_oop(), _ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
 
@@ -3625,13 +3719,13 @@ const Type *TypeAryPtr::cast_to_exactness(bool klass_is_exact) const {
   if( klass_is_exact == _klass_is_exact ) return this;
   if (!UseExactTypes)  return this;
   if (_ary->ary_must_be_exact())  return this;  // cannot clear xk
-  return make(ptr(), const_oop(), _ary, klass(), klass_is_exact, _offset, _instance_id, _speculative);
+  return make(ptr(), const_oop(), _ary, klass(), klass_is_exact, _offset, _instance_id, _speculative, _inline_depth);
 }
 
 //-----------------------------cast_to_instance_id----------------------------
 const TypeOopPtr *TypeAryPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
-  return make(_ptr, const_oop(), _ary, klass(), _klass_is_exact, _offset, instance_id, _speculative);
+  return make(_ptr, const_oop(), _ary, klass(), _klass_is_exact, _offset, instance_id, _speculative, _inline_depth);
 }
 
 //-----------------------------narrow_size_type-------------------------------
@@ -3694,7 +3788,7 @@ const TypeAryPtr* TypeAryPtr::cast_to_size(const TypeInt* new_size) const {
   new_size = narrow_size_type(new_size);
   if (new_size == size())  return this;
   const TypeAry* new_ary = TypeAry::make(elem(), new_size, is_stable());
-  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative);
+  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
 
@@ -3773,19 +3867,20 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     const TypeOopPtr *tp = t->is_oopptr();
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
+    int depth = meet_inline_depth(tp->inline_depth());
     switch (tp->ptr()) {
     case TopPTR:
     case AnyNull: {
       int instance_id = meet_instance_id(InstanceTop);
       const TypeOopPtr* speculative = xmeet_speculative(tp);
       return make(ptr, (ptr == Constant ? const_oop() : NULL),
-                  _ary, _klass, _klass_is_exact, offset, instance_id, speculative);
+                  _ary, _klass, _klass_is_exact, offset, instance_id, speculative, depth);
     }
     case BotPTR:
     case NotNull: {
       int instance_id = meet_instance_id(tp->instance_id());
       const TypeOopPtr* speculative = xmeet_speculative(tp);
-      return TypeOopPtr::make(ptr, offset, instance_id, speculative);
+      return TypeOopPtr::make(ptr, offset, instance_id, speculative, depth);
     }
     default: ShouldNotReachHere();
     }
@@ -3809,7 +3904,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
       int instance_id = meet_instance_id(InstanceTop);
       const TypeOopPtr* speculative = _speculative;
       return make(ptr, (ptr == Constant ? const_oop() : NULL),
-                  _ary, _klass, _klass_is_exact, offset, instance_id, speculative);
+                  _ary, _klass, _klass_is_exact, offset, instance_id, speculative, _inline_depth);
     }
     default: ShouldNotReachHere();
     }
@@ -3826,6 +3921,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     PTR ptr = meet_ptr(tap->ptr());
     int instance_id = meet_instance_id(tap->instance_id());
     const TypeOopPtr* speculative = xmeet_speculative(tap);
+    int depth = meet_inline_depth(tap->inline_depth());
     ciKlass* lazy_klass = NULL;
     if (tary->_elem->isa_int()) {
       // Integral array element types have irrelevant lattice relations.
@@ -3866,7 +3962,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
       } else {
         xk = (tap->_klass_is_exact | this->_klass_is_exact);
       }
-      return make(ptr, const_oop(), tary, lazy_klass, xk, off, instance_id, speculative);
+      return make(ptr, const_oop(), tary, lazy_klass, xk, off, instance_id, speculative, depth);
     case Constant: {
       ciObject* o = const_oop();
       if( _ptr == Constant ) {
@@ -3885,7 +3981,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
         // Only precise for identical arrays
         xk = this->_klass_is_exact && (klass() == tap->klass());
       }
-      return TypeAryPtr::make(ptr, o, tary, lazy_klass, xk, off, instance_id, speculative);
+      return TypeAryPtr::make(ptr, o, tary, lazy_klass, xk, off, instance_id, speculative, depth);
     }
     case NotNull:
     case BotPTR:
@@ -3894,7 +3990,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
             xk = tap->_klass_is_exact;
       else  xk = (tap->_klass_is_exact & this->_klass_is_exact) &&
               (klass() == tap->klass()); // Only precise for identical arrays
-      return TypeAryPtr::make(ptr, NULL, tary, lazy_klass, xk, off, instance_id, speculative);
+      return TypeAryPtr::make(ptr, NULL, tary, lazy_klass, xk, off, instance_id, speculative, depth);
     default: ShouldNotReachHere();
     }
   }
@@ -3906,6 +4002,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     PTR ptr = meet_ptr(tp->ptr());
     int instance_id = meet_instance_id(tp->instance_id());
     const TypeOopPtr* speculative = xmeet_speculative(tp);
+    int depth = meet_inline_depth(tp->inline_depth());
     switch (ptr) {
     case TopPTR:
     case AnyNull:                // Fall 'down' to dual of object klass
@@ -3913,12 +4010,12 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
       // below the centerline when the superclass is exact. We need to
       // do the same here.
       if (tp->klass()->equals(ciEnv::current()->Object_klass()) && !tp->klass_is_exact()) {
-        return TypeAryPtr::make(ptr, _ary, _klass, _klass_is_exact, offset, instance_id, speculative);
+        return TypeAryPtr::make(ptr, _ary, _klass, _klass_is_exact, offset, instance_id, speculative, depth);
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
         ptr = NotNull;
         instance_id = InstanceBot;
-        return TypeInstPtr::make(ptr, ciEnv::current()->Object_klass(), false, NULL,offset, instance_id, speculative);
+        return TypeInstPtr::make(ptr, ciEnv::current()->Object_klass(), false, NULL,offset, instance_id, speculative, depth);
       }
     case Constant:
     case NotNull:
@@ -3933,7 +4030,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
         if (tp->klass()->equals(ciEnv::current()->Object_klass()) && !tp->klass_is_exact()) {
           // that is, my array type is a subtype of 'tp' klass
           return make(ptr, (ptr == Constant ? const_oop() : NULL),
-                      _ary, _klass, _klass_is_exact, offset, instance_id, speculative);
+                      _ary, _klass, _klass_is_exact, offset, instance_id, speculative, depth);
         }
       }
       // The other case cannot happen, since t cannot be a subtype of an array.
@@ -3941,7 +4038,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
       if( ptr == Constant )
          ptr = NotNull;
       instance_id = InstanceBot;
-      return TypeInstPtr::make(ptr, ciEnv::current()->Object_klass(), false, NULL,offset, instance_id, speculative);
+      return TypeInstPtr::make(ptr, ciEnv::current()->Object_klass(), false, NULL,offset, instance_id, speculative, depth);
     default: typerr(t);
     }
   }
@@ -3952,7 +4049,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
 //------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type *TypeAryPtr::xdual() const {
-  return new TypeAryPtr(dual_ptr(), _const_oop, _ary->dual()->is_ary(),_klass, _klass_is_exact, dual_offset(), dual_instance_id(), is_autobox_cache(), dual_speculative());
+  return new TypeAryPtr(dual_ptr(), _const_oop, _ary->dual()->is_ary(),_klass, _klass_is_exact, dual_offset(), dual_instance_id(), is_autobox_cache(), dual_speculative(), dual_inline_depth());
 }
 
 //----------------------interface_vs_oop---------------------------------------
@@ -4005,6 +4102,7 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   else if (_instance_id != InstanceBot)
     st->print(",iid=%d",_instance_id);
 
+  dump_inline_depth(st);
   dump_speculative(st);
 }
 #endif
@@ -4016,11 +4114,22 @@ bool TypeAryPtr::empty(void) const {
 
 //------------------------------add_offset-------------------------------------
 const TypePtr *TypeAryPtr::add_offset(intptr_t offset) const {
-  return make(_ptr, _const_oop, _ary, _klass, _klass_is_exact, xadd_offset(offset), _instance_id, add_offset_speculative(offset));
+  return make(_ptr, _const_oop, _ary, _klass, _klass_is_exact, xadd_offset(offset), _instance_id, add_offset_speculative(offset), _inline_depth);
 }
 
 const Type *TypeAryPtr::remove_speculative() const {
-  return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, _instance_id, NULL);
+  if (_speculative == NULL) {
+    return this;
+  }
+  assert(_inline_depth == InlineDepthTop || _inline_depth == InlineDepthBottom, "non speculative type shouldn't have inline depth");
+  return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, _instance_id, NULL, _inline_depth);
+}
+
+const TypeOopPtr *TypeAryPtr::with_inline_depth(int depth) const {
+  if (!UseInlineDepthForSpeculativeTypes) {
+    return this;
+  }
+  return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, _instance_id, _speculative, depth);
 }
 
 //=============================================================================

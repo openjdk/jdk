@@ -26,7 +26,7 @@
  * @bug 8024924
  * @summary Test non constant addExact
  * @compile AddExactILoopDependentTest.java Verify.java
- * @run main AddExactILoopDependentTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main AddExactILoopDependentTest
  *
  */
 

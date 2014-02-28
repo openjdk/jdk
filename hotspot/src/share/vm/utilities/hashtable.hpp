@@ -300,7 +300,7 @@ public:
 };
 
 
-//  Verions of hashtable where two handles are used to compute the index.
+// Versions of hashtable where two handles are used to compute the index.
 
 template <class T, MEMFLAGS F> class TwoOopHashtable : public Hashtable<T, F> {
   friend class VMStructs;
@@ -325,6 +325,88 @@ public:
   int index_for(Symbol* name, ClassLoaderData* loader_data) {
     return this->hash_to_index(compute_hash(name, loader_data));
   }
+};
+
+
+/*
+ * Usage of GenericHashtable:
+ *
+ * class X : public GenericHashtableEntry<X, ResourceObj> {
+ *
+ *   // Implement virtual functions in class X
+ *   bool      equals(X* sig) const;
+ *   uintptr_t hash()         const;
+ * };
+ *
+ * void foo() {
+ *   GenericHashtable<X, ResourceObj>* table = new GenericHashtable<X, ResourceObj>(11027, false);
+ *
+ *   X* elem = new X();
+ *   table->add(elem);
+ *   table->contains(elem);
+ * }
+ *
+ * You can choose other allocation types as well. For example, to store the hashtable to a
+ * particular region (CHeapObj<type>) simply replace ResourceObj with the desired type:
+ *
+ * class X : public GenericHashtableEntry<X, CHeapObj<mtCode> > { ... };
+ *
+ * To make the destructor (and remove) of the hashtable work:
+ * 1) override the delete operator of X
+ * 2) provide a destructor of the X
+ *
+ * You may also find it convenient to override the new operator.
+ *
+ * If you use this templates do not forget to add an explicit initialization
+ * (at the end of hashtable.cpp).
+ *
+ *  template class GenericHashtable<X, ResourceObj>;
+ */
+template <class T, class M> class GenericHashtableEntry : public M {
+ private:
+  T* _next;
+  T* _prev;
+ public:
+  // Must be implemented by subclass.
+  virtual uintptr_t key()            const = 0;
+  virtual bool      equals(T* other) const = 0;
+
+  T* next() const        { return _next; }
+  T* prev() const        { return _prev; }
+  void set_next(T* item) { _next = item; }
+  void set_prev(T* item) { _prev = item; }
+
+  // Constructor and destructor
+  GenericHashtableEntry() : _next(NULL), _prev(NULL) { };
+  virtual ~GenericHashtableEntry() {};
+};
+
+template <class T, class M> class GenericHashtable : public M {
+ private:
+  T**      _items;
+  int      _size;
+  bool     _C_heap;
+  MEMFLAGS _memflag;
+
+  // Accessor methods
+  T*   head    (int idx) const    { return _items[idx]; }
+  void set_head(T* item, int idx) { _items[idx] = item; }
+  int  index   (T* item)          { assert(item != NULL, "missing null check"); return item->key() % size(); }
+
+  // Helper function
+  T* contains_impl(T* item, int idx);
+
+  DEBUG_ONLY(int _num_items;)
+ public:
+  GenericHashtable(int size, bool C_heap = false, MEMFLAGS memflag = mtNone);
+  ~GenericHashtable();
+  T*   contains(T* match_item);
+  T*   remove  (T* match_item);
+  bool add     (T* item);
+
+
+  bool on_C_heap() const { return _C_heap; }
+  int  size()      const { return _size; }
 };
 
 #endif // SHARE_VM_UTILITIES_HASHTABLE_HPP

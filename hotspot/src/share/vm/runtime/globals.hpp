@@ -3078,8 +3078,14 @@ class CommandLineFlags {
   product(intx, PerMethodTrapLimit,  100,                                   \
           "Limit on traps (of one kind) in a method (includes inlines)")    \
                                                                             \
+  experimental(intx, PerMethodSpecTrapLimit,  5000,                         \
+          "Limit on speculative traps (of one kind) in a method (includes inlines)") \
+                                                                            \
   product(intx, PerBytecodeTrapLimit,  4,                                   \
           "Limit on traps (of one kind) at a particular BCI")               \
+                                                                            \
+  experimental(intx, SpecTrapLimitExtraEntries,  3,                         \
+          "Extra method data trap entries for speculation")                 \
                                                                             \
   develop(intx, InlineFrequencyRatio,    20,                                \
           "Ratio of call site execution to caller method invocation")       \

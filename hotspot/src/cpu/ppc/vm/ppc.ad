@@ -2360,18 +2360,6 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
 }
 
-const RegMask Matcher::mathExactI_result_proj_mask() {
-  return RARG4_BITS64_REG_mask();
-}
-
-const RegMask Matcher::mathExactL_result_proj_mask() {
-  return RARG4_BITS64_REG_mask();
-}
-
-const RegMask Matcher::mathExactI_flags_proj_mask() {
-  return INT_FLAGS_mask();
-}
-
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------
@@ -7571,16 +7559,6 @@ instruct getAndSetN(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src) %{
 
 //----------Arithmetic Instructions--------------------------------------------
 // Addition Instructions
-
-// PPC has no instruction setting overflow of 32-bit integer.
-//instruct addExactI_rReg(rarg4RegI dst, rRegI src, flagsReg cr) %{
-//  match(AddExactI dst src);
-//  effect(DEF cr);
-//
-//  format %{ "ADD     $dst, $dst, $src \t// addExact int, sets $cr" %}
-//  ins_encode( enc_add(dst, dst, src) );
-//  ins_pipe(pipe_class_default);
-//%}
 
 // Register Addition
 instruct addI_reg_reg(iRegIdst dst, iRegIsrc_iRegL2Isrc src1, iRegIsrc_iRegL2Isrc src2) %{

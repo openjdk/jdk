@@ -644,7 +644,7 @@
   diagnostic(bool, OptimizeExpensiveOps, true,                              \
           "Find best control for expensive operations")                     \
                                                                             \
-  experimental(bool, UseMathExactIntrinsics, false,                         \
+  product(bool, UseMathExactIntrinsics, true,                               \
           "Enables intrinsification of various java.lang.Math functions")   \
                                                                             \
   experimental(bool, ReplaceInParentMaps, false,                            \
@@ -652,6 +652,10 @@
                                                                             \
   experimental(bool, UseTypeSpeculation, false,                             \
           "Speculatively propagate types from profiles")                    \
+                                                                            \
+  diagnostic(bool, UseInlineDepthForSpeculativeTypes, true,                 \
+          "Carry inline depth of profile point with speculative type "      \
+          "and give priority to profiling from lower inline depth")         \
                                                                             \
   product_pd(bool, TrapBasedRangeChecks,                                    \
           "Generate code for range checks that uses a cmp and trap "        \

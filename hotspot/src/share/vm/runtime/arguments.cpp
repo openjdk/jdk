@@ -2408,6 +2408,10 @@ bool Arguments::check_vm_args_consistency() {
   status &= verify_interval(NmethodSweepFraction, 1, ReservedCodeCacheSize/K, "NmethodSweepFraction");
   status &= verify_interval(NmethodSweepActivity, 0, 2000, "NmethodSweepActivity");
 
+  // TieredCompilation needs at least 2 compiler threads.
+  const int num_min_compiler_threads = (TieredCompilation) ? 2 : 1;
+  status &=verify_min_value(CICompilerCount, num_min_compiler_threads, "CICompilerCount");
+
   return status;
 }
 
