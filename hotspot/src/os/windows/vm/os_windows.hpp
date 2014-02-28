@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ class win32 {
   static bool   _is_nt;
   static bool   _is_windows_2003;
   static bool   _is_windows_server;
+  static bool   _has_performance_count;
 
   static void print_windows_version(outputStream* st);
 
@@ -62,6 +63,9 @@ class win32 {
 
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
+
+  private:
+    static void initialize_performance_counter();
 
  public:
   // Generic interface:

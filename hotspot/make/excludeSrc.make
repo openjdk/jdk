@@ -86,7 +86,7 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 	concurrentMark.cpp concurrentMarkThread.cpp dirtyCardQueue.cpp g1AllocRegion.cpp \
 	g1BlockOffsetTable.cpp g1CardCounts.cpp g1CollectedHeap.cpp g1CollectorPolicy.cpp \
 	g1ErgoVerbose.cpp g1GCPhaseTimes.cpp g1HRPrinter.cpp g1HotCardCache.cpp g1Log.cpp \
-	g1MMUTracker.cpp g1MarkSweep.cpp g1MemoryPool.cpp g1MonitoringSupport.cpp \
+	g1MMUTracker.cpp g1MarkSweep.cpp g1MemoryPool.cpp g1MonitoringSupport.cpp g1OopClosures.cpp \
 	g1RemSet.cpp g1RemSetSummary.cpp g1SATBCardTableModRefBS.cpp g1_globals.cpp heapRegion.cpp \
 	g1BiasedArray.cpp heapRegionRemSet.cpp heapRegionSeq.cpp heapRegionSet.cpp heapRegionSets.cpp \
 	ptrQueue.cpp satbQueue.cpp sparsePRT.cpp survRateGroup.cpp vm_operations_g1.cpp \

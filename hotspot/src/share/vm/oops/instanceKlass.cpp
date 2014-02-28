@@ -49,6 +49,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
@@ -862,10 +863,16 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     // Step 10 and 11
     Handle e(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
+    // JVMTI has already reported the pending exception
+    // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
+    JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
     {
       EXCEPTION_MARK;
       this_oop->set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
+      // JVMTI has already reported the pending exception
+      // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
+      JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
     }
     DTRACE_CLASSINIT_PROBE_WAIT(error, InstanceKlass::cast(this_oop()), -1,wait);
     if (e->is_a(SystemDictionary::Error_klass())) {
@@ -2192,15 +2199,7 @@ void InstanceKlass::clean_method_data(BoolObjectClosure* is_alive) {
   for (int m = 0; m < methods()->length(); m++) {
     MethodData* mdo = methods()->at(m)->method_data();
     if (mdo != NULL) {
-      for (ProfileData* data = mdo->first_data();
-           mdo->is_valid(data);
-           data = mdo->next_data(data)) {
-        data->clean_weak_klass_links(is_alive);
-      }
-      ParametersTypeData* parameters = mdo->parameters_type_data();
-      if (parameters != NULL) {
-        parameters->clean_weak_klass_links(is_alive);
-      }
+      mdo->clean_method_data(is_alive);
     }
   }
 }
@@ -2719,7 +2718,7 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
   Method* m = n->method();
   // Search for match
   while(cur != NULL && cur != n) {
-    if (TieredCompilation) {
+    if (TieredCompilation && m == cur->method()) {
       // Find max level before n
       max_level = MAX2(max_level, cur->comp_level());
     }
@@ -2741,7 +2740,9 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
     cur = next;
     while (cur != NULL) {
       // Find max level after n
-      max_level = MAX2(max_level, cur->comp_level());
+      if (m == cur->method()) {
+        max_level = MAX2(max_level, cur->comp_level());
+      }
       cur = cur->osr_link();
     }
     m->set_highest_osr_comp_level(max_level);
@@ -2987,8 +2988,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
         offset          <= (juint) value->length() &&
         offset + length <= (juint) value->length()) {
       st->print(BULLET"string: ");
-      Handle h_obj(obj);
-      java_lang_String::print(h_obj, st);
+      java_lang_String::print(obj, st);
       st->cr();
       if (!WizardMode)  return;  // that is enough
     }

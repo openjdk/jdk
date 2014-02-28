@@ -147,12 +147,13 @@ inline void   oopDesc::init_mark()                 { set_mark(markOopDesc::proto
 
 inline bool oopDesc::is_a(Klass* k)        const { return klass()->is_subtype_of(k); }
 
-inline bool oopDesc::is_instance()           const { return klass()->oop_is_instance(); }
-inline bool oopDesc::is_instanceMirror()     const { return klass()->oop_is_instanceMirror(); }
-inline bool oopDesc::is_instanceRef()        const { return klass()->oop_is_instanceRef(); }
-inline bool oopDesc::is_array()              const { return klass()->oop_is_array(); }
-inline bool oopDesc::is_objArray()           const { return klass()->oop_is_objArray(); }
-inline bool oopDesc::is_typeArray()          const { return klass()->oop_is_typeArray(); }
+inline bool oopDesc::is_instance()            const { return klass()->oop_is_instance(); }
+inline bool oopDesc::is_instanceClassLoader() const { return klass()->oop_is_instanceClassLoader(); }
+inline bool oopDesc::is_instanceMirror()      const { return klass()->oop_is_instanceMirror(); }
+inline bool oopDesc::is_instanceRef()         const { return klass()->oop_is_instanceRef(); }
+inline bool oopDesc::is_array()               const { return klass()->oop_is_array(); }
+inline bool oopDesc::is_objArray()            const { return klass()->oop_is_objArray(); }
+inline bool oopDesc::is_typeArray()           const { return klass()->oop_is_typeArray(); }
 
 inline void*     oopDesc::field_base(int offset)        const { return (void*)&((char*)this)[offset]; }
 

@@ -43,12 +43,6 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
     return NULL;
   }
 
-  if (n->is_MathExact()) {
-    // MathExact has projections that are not correctly handled in the code
-    // below.
-    return NULL;
-  }
-
   int wins = 0;
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
@@ -2362,8 +2356,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
         opc == Op_Catch     ||
         opc == Op_CatchProj ||
         opc == Op_Jump      ||
-        opc == Op_JumpProj  ||
-        opc == Op_FlagsProj) {
+        opc == Op_JumpProj) {
 #if !defined(PRODUCT)
       if (TracePartialPeeling) {
         tty->print_cr("\nExit control too complex: lp: %d", head->_idx);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -628,8 +628,6 @@ void os::free_thread(OSThread* osthread) {
   delete osthread;
 }
 
-
-static int    has_performance_count = 0;
 static jlong first_filetime;
 static jlong initial_performance_count;
 static jlong performance_frequency;
@@ -645,7 +643,7 @@ jlong as_long(LARGE_INTEGER x) {
 
 jlong os::elapsed_counter() {
   LARGE_INTEGER count;
-  if (has_performance_count) {
+  if (win32::_has_performance_count) {
     QueryPerformanceCounter(&count);
     return as_long(count) - initial_performance_count;
   } else {
@@ -657,7 +655,7 @@ jlong os::elapsed_counter() {
 
 
 jlong os::elapsed_frequency() {
-  if (has_performance_count) {
+  if (win32::_has_performance_count) {
     return performance_frequency;
   } else {
    // the FILETIME time is the number of 100-nanosecond intervals since January 1,1601.
@@ -736,15 +734,15 @@ bool os::bind_to_processor(uint processor_id) {
   return false;
 }
 
-static void initialize_performance_counter() {
+void os::win32::initialize_performance_counter() {
   LARGE_INTEGER count;
   if (QueryPerformanceFrequency(&count)) {
-    has_performance_count = 1;
+    win32::_has_performance_count = 1;
     performance_frequency = as_long(count);
     QueryPerformanceCounter(&count);
     initial_performance_count = as_long(count);
   } else {
-    has_performance_count = 0;
+    win32::_has_performance_count = 0;
     FILETIME wt;
     GetSystemTimeAsFileTime(&wt);
     first_filetime = jlong_from(wt.dwHighDateTime, wt.dwLowDateTime);
@@ -839,7 +837,7 @@ jlong os::javaTimeMillis() {
 }
 
 jlong os::javaTimeNanos() {
-  if (!has_performance_count) {
+  if (!win32::_has_performance_count) {
     return javaTimeMillis() * NANOSECS_PER_MILLISEC; // the best we can do.
   } else {
     LARGE_INTEGER current_count;
@@ -852,7 +850,7 @@ jlong os::javaTimeNanos() {
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  if (!has_performance_count) {
+  if (!win32::_has_performance_count) {
     // javaTimeMillis() doesn't have much percision,
     // but it is not going to wrap -- so all 64 bits
     info_ptr->max_value = ALL_64_BITS;
@@ -3681,6 +3679,8 @@ volatile intx os::win32::_os_thread_count    = 0;
 bool   os::win32::_is_nt              = false;
 bool   os::win32::_is_windows_2003    = false;
 bool   os::win32::_is_windows_server  = false;
+
+bool   os::win32::_has_performance_count = 0;
 
 void os::win32::initialize_system_info() {
   SYSTEM_INFO si;

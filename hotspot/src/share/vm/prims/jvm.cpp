@@ -1241,7 +1241,11 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
   if (HAS_PENDING_EXCEPTION) {
     pending_exception = Handle(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
-
+    // JVMTI has already reported the pending exception
+    // JVMTI internal flag reset is needed in order to report PrivilegedActionException
+    if (THREAD->is_Java_thread()) {
+      JvmtiExport::clear_detected_exception((JavaThread*) THREAD);
+    }
     if ( pending_exception->is_a(SystemDictionary::Exception_klass()) &&
         !pending_exception->is_a(SystemDictionary::RuntimeException_klass())) {
       // Throw a java.security.PrivilegedActionException(Exception e) exception

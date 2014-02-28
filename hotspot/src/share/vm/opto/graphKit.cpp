@@ -612,9 +612,10 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   // Usual case:  Bail to interpreter.
   // Reserve the right to recompile if we haven't seen anything yet.
 
+  assert(!Deoptimization::reason_is_speculate(reason), "unsupported");
   Deoptimization::DeoptAction action = Deoptimization::Action_maybe_recompile;
   if (treat_throw_as_hot
-      && (method()->method_data()->trap_recompiled_at(bci())
+      && (method()->method_data()->trap_recompiled_at(bci(), NULL)
           || C->too_many_traps(reason))) {
     // We cannot afford to take more traps here.  Suffer in the interpreter.
     if (C->log() != NULL)
@@ -864,7 +865,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     }
   }
 
-  if (env()->jvmti_can_access_local_variables()) {
+  if (env()->should_retain_local_variables()) {
     // At any safepoint, this method can get breakpointed, which would
     // then require an immediate deoptimization.
     can_prune_locals = false;  // do not prune locals
@@ -2112,30 +2113,33 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
  * @return           node with improved type
  */
 Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls) {
-  const TypeOopPtr* current_type = _gvn.type(n)->isa_oopptr();
+  const Type* current_type = _gvn.type(n);
   assert(UseTypeSpeculation, "type speculation must be on");
-  if (exact_kls != NULL &&
-      // nothing to improve if type is already exact
-      (current_type == NULL ||
-       (!current_type->klass_is_exact() &&
-        (current_type->speculative() == NULL ||
-         !current_type->speculative()->klass_is_exact())))) {
+
+  const TypeOopPtr* speculative = current_type->speculative();
+
+  if (current_type->would_improve_type(exact_kls, jvms()->depth())) {
     const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls);
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
+    // record the new speculative type's depth
+    speculative = xtype->with_inline_depth(jvms()->depth());
+  }
 
+  if (speculative != current_type->speculative()) {
     // Build a type with a speculative type (what we think we know
     // about the type but will need a guard when we use it)
-    const TypeOopPtr* spec_type = TypeOopPtr::make(TypePtr::BotPTR, Type::OffsetBot, TypeOopPtr::InstanceBot, xtype);
-    // We're changing the type, we need a new cast node to carry the
-    // new type. The new type depends on the control: what profiling
-    // tells us is only valid from here as far as we can tell.
-    Node* cast = new(C) CastPPNode(n, spec_type);
-    cast->init_req(0, control());
+    const TypeOopPtr* spec_type = TypeOopPtr::make(TypePtr::BotPTR, Type::OffsetBot, TypeOopPtr::InstanceBot, speculative);
+    // We're changing the type, we need a new CheckCast node to carry
+    // the new type. The new type depends on the control: what
+    // profiling tells us is only valid from here as far as we can
+    // tell.
+    Node* cast = new(C) CheckCastPPNode(control(), n, current_type->remove_speculative()->join_speculative(spec_type));
     cast = _gvn.transform(cast);
     replace_in_map(n, cast);
     n = cast;
   }
+
   return n;
 }
 
@@ -2145,7 +2149,7 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls) {
  *
  * @param n  receiver node
  *
- * @return           node with improved type
+ * @return   node with improved type
  */
 Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
   if (!UseTypeSpeculation) {
@@ -2739,12 +2743,14 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data) {
 // Subsequent type checks will always fold up.
 Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
                                              ciKlass* require_klass,
-                                            ciKlass* spec_klass,
+                                             ciKlass* spec_klass,
                                              bool safe_for_replace) {
   if (!UseTypeProfile || !TypeProfileCasts) return NULL;
 
+  Deoptimization::DeoptReason reason = spec_klass == NULL ? Deoptimization::Reason_class_check : Deoptimization::Reason_speculate_class_check;
+
   // Make sure we haven't already deoptimized from this tactic.
-  if (too_many_traps(Deoptimization::Reason_class_check))
+  if (too_many_traps(reason))
     return NULL;
 
   // (No, this isn't a call, but it's enough like a virtual call
@@ -2766,7 +2772,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
                                             &exact_obj);
       { PreserveJVMState pjvms(this);
         set_control(slow_ctl);
-        uncommon_trap(Deoptimization::Reason_class_check,
+        uncommon_trap(reason,
                       Deoptimization::Action_maybe_recompile);
       }
       if (safe_for_replace) {
@@ -2793,8 +2799,10 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
                                         bool not_null) {
   // type == NULL if profiling tells us this object is always null
   if (type != NULL) {
-    if (!too_many_traps(Deoptimization::Reason_null_check) &&
-        !too_many_traps(Deoptimization::Reason_class_check)) {
+    Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
+    Deoptimization::DeoptReason null_reason = Deoptimization::Reason_null_check;
+    if (!too_many_traps(null_reason) &&
+        !too_many_traps(class_reason)) {
       Node* not_null_obj = NULL;
       // not_null is true if we know the object is not null and
       // there's no need for a null check
@@ -2813,7 +2821,7 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
       {
         PreserveJVMState pjvms(this);
         set_control(slow_ctl);
-        uncommon_trap(Deoptimization::Reason_class_check,
+        uncommon_trap(class_reason,
                       Deoptimization::Action_maybe_recompile);
       }
       replace_in_map(not_null_obj, exact_obj);
@@ -2882,7 +2890,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   }
 
   if (known_statically && UseTypeSpeculation) {
-    // If we know the type check always succeed then we don't use the
+    // If we know the type check always succeeds then we don't use the
     // profiling data at this bytecode. Don't lose it, feed it to the
     // type system as a speculative type.
     not_null_obj = record_profiled_receiver_for_speculation(not_null_obj);

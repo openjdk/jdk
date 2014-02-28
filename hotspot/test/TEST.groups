@@ -67,10 +67,8 @@ needs_jdk = \
   gc/metaspace/TestPerfCountersAndMemoryPools.java \
   runtime/6819213/TestBootNativeLibraryPath.java \
   runtime/6925573/SortMethodsTest.java \
-  runtime/7107135/Test7107135.sh \
   runtime/7158988/FieldMonitor.java \
   runtime/7194254/Test7194254.java \
-  runtime/jsig/Test8017498.sh \
   runtime/Metaspace/FragmentMetaspace.java \
   runtime/NMT/BaselineWithParameter.java \
   runtime/NMT/JcmdScale.java \
@@ -175,7 +173,6 @@ needs_full_vm_compact1 = \
   gc/startup_warnings/TestParallelScavengeSerialOld.java \
   gc/startup_warnings/TestParNewCMS.java \
   gc/startup_warnings/TestParNewSerialOld.java \
-  runtime/6929067/Test6929067.sh \
   runtime/SharedArchiveFile/SharedArchiveFile.java
 
 # Minimal VM on Compact 2 adds in some compact2 tests

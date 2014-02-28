@@ -332,12 +332,6 @@ void os::Solaris::setup_interruptible(JavaThread* thread) {
   ThreadStateTransition::transition(thread, thread_state, _thread_blocked);
 }
 
-// Version of setup_interruptible() for threads that are already in
-// _thread_blocked. Used by os_sleep().
-void os::Solaris::setup_interruptible_already_blocked(JavaThread* thread) {
-  thread->frame_anchor()->make_walkable(thread);
-}
-
 JavaThread* os::Solaris::setup_interruptible() {
   JavaThread* thread = (JavaThread*)ThreadLocalStorage::thread();
   setup_interruptible(thread);
@@ -3370,61 +3364,6 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-static int os_sleep(jlong millis, bool interruptible) {
-  const jlong limit = INT_MAX;
-  jlong prevtime;
-  int res;
-
-  while (millis > limit) {
-    if ((res = os_sleep(limit, interruptible)) != OS_OK)
-      return res;
-    millis -= limit;
-  }
-
-  // Restart interrupted polls with new parameters until the proper delay
-  // has been completed.
-
-  prevtime = getTimeMillis();
-
-  while (millis > 0) {
-    jlong newtime;
-
-    if (!interruptible) {
-      // Following assert fails for os::yield_all:
-      // assert(!thread->is_Java_thread(), "must not be java thread");
-      res = poll(NULL, 0, millis);
-    } else {
-      JavaThread *jt = JavaThread::current();
-
-      INTERRUPTIBLE_NORESTART_VM_ALWAYS(poll(NULL, 0, millis), res, jt,
-        os::Solaris::clear_interrupted);
-    }
-
-    // INTERRUPTIBLE_NORESTART_VM_ALWAYS returns res == OS_INTRPT for
-    // thread.Interrupt.
-
-    // See c/r 6751923. Poll can return 0 before time
-    // has elapsed if time is set via clock_settime (as NTP does).
-    // res == 0 if poll timed out (see man poll RETURN VALUES)
-    // using the logic below checks that we really did
-    // sleep at least "millis" if not we'll sleep again.
-    if( ( res == 0 ) || ((res == OS_ERR) && (errno == EINTR))) {
-      newtime = getTimeMillis();
-      assert(newtime >= prevtime, "time moving backwards");
-    /* Doing prevtime and newtime in microseconds doesn't help precision,
-       and trying to round up to avoid lost milliseconds can result in a
-       too-short delay. */
-      millis -= newtime - prevtime;
-      if(millis <= 0)
-        return OS_OK;
-      prevtime = newtime;
-    } else
-      return res;
-  }
-
-  return OS_OK;
-}
-
 // Read calls from inside the vm need to perform state transitions
 size_t os::read(int fd, void *buf, unsigned int nBytes) {
   INTERRUPTIBLE_RETURN_INT_VM(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
@@ -3432,69 +3371,6 @@ size_t os::read(int fd, void *buf, unsigned int nBytes) {
 
 size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
   INTERRUPTIBLE_RETURN_INT(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
-}
-
-int os::sleep(Thread* thread, jlong millis, bool interruptible) {
-  assert(thread == Thread::current(),  "thread consistency check");
-
-  // TODO-FIXME: this should be removed.
-  // On Solaris machines (especially 2.5.1) we found that sometimes the VM gets into a live lock
-  // situation with a JavaThread being starved out of a lwp. The kernel doesn't seem to generate
-  // a SIGWAITING signal which would enable the threads library to create a new lwp for the starving
-  // thread. We suspect that because the Watcher thread keeps waking up at periodic intervals the kernel
-  // is fooled into believing that the system is making progress. In the code below we block the
-  // the watcher thread while safepoint is in progress so that it would not appear as though the
-  // system is making progress.
-  if (!Solaris::T2_libthread() &&
-      thread->is_Watcher_thread() && SafepointSynchronize::is_synchronizing() && !Arguments::has_profile()) {
-    // We now try to acquire the threads lock. Since this lock is held by the VM thread during
-    // the entire safepoint, the watcher thread will  line up here during the safepoint.
-    Threads_lock->lock_without_safepoint_check();
-    Threads_lock->unlock();
-  }
-
-  if (thread->is_Java_thread()) {
-    // This is a JavaThread so we honor the _thread_blocked protocol
-    // even for sleeps of 0 milliseconds. This was originally done
-    // as a workaround for bug 4338139. However, now we also do it
-    // to honor the suspend-equivalent protocol.
-
-    JavaThread *jt = (JavaThread *) thread;
-    ThreadBlockInVM tbivm(jt);
-
-    jt->set_suspend_equivalent();
-    // cleared by handle_special_suspend_equivalent_condition() or
-    // java_suspend_self() via check_and_wait_while_suspended()
-
-    int ret_code;
-    if (millis <= 0) {
-      thr_yield();
-      ret_code = 0;
-    } else {
-      // The original sleep() implementation did not create an
-      // OSThreadWaitState helper for sleeps of 0 milliseconds.
-      // I'm preserving that decision for now.
-      OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
-
-      ret_code = os_sleep(millis, interruptible);
-    }
-
-    // were we externally suspended while we were waiting?
-    jt->check_and_wait_while_suspended();
-
-    return ret_code;
-  }
-
-  // non-JavaThread from this point on:
-
-  if (millis <= 0) {
-    thr_yield();
-    return 0;
-  }
-
-  OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-
-  return os_sleep(millis, interruptible);
 }
 
 void os::naked_short_sleep(jlong ms) {
@@ -4138,68 +4014,6 @@ void os::Solaris::SR_handler(Thread* thread, ucontext_t* uc) {
 
   errno = old_errno;
 }
-
-
-void os::interrupt(Thread* thread) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(), "possibility of dangling Thread pointer");
-
-  OSThread* osthread = thread->osthread();
-
-  int isInterrupted = osthread->interrupted();
-  if (!isInterrupted) {
-      osthread->set_interrupted(true);
-      OrderAccess::fence();
-      // os::sleep() is implemented with either poll (NULL,0,timeout) or
-      // by parking on _SleepEvent.  If the former, thr_kill will unwedge
-      // the sleeper by SIGINTR, otherwise the unpark() will wake the sleeper.
-      ParkEvent * const slp = thread->_SleepEvent ;
-      if (slp != NULL) slp->unpark() ;
-  }
-
-  // For JSR166:  unpark after setting status but before thr_kill -dl
-  if (thread->is_Java_thread()) {
-    ((JavaThread*)thread)->parker()->unpark();
-  }
-
-  // Handle interruptible wait() ...
-  ParkEvent * const ev = thread->_ParkEvent ;
-  if (ev != NULL) ev->unpark() ;
-
-  // When events are used everywhere for os::sleep, then this thr_kill
-  // will only be needed if UseVMInterruptibleIO is true.
-
-  if (!isInterrupted) {
-    int status = thr_kill(osthread->thread_id(), os::Solaris::SIGinterrupt());
-    assert_status(status == 0, status, "thr_kill");
-
-    // Bump thread interruption counter
-    RuntimeService::record_thread_interrupt_signaled_count();
-  }
-}
-
-
-bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(), "possibility of dangling Thread pointer");
-
-  OSThread* osthread = thread->osthread();
-
-  bool res = osthread->interrupted();
-
-  // NOTE that since there is no "lock" around these two operations,
-  // there is the possibility that the interrupted flag will be
-  // "false" but that the interrupt event will be set. This is
-  // intentional. The effect of this is that Object.wait() will appear
-  // to have a spurious wakeup, which is not harmful, and the
-  // possibility is so rare that it is not worth the added complexity
-  // to add yet another lock. It has also been recommended not to put
-  // the interrupted flag into the os::Solaris::Event structure,
-  // because it hides the issue.
-  if (res && clear_interrupted) {
-    osthread->set_interrupted(false);
-  }
-  return res;
-}
-
 
 void os::print_statistics() {
 }

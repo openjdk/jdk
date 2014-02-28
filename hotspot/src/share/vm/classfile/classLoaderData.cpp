@@ -73,7 +73,11 @@ ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Dependencies dependencies) :
   _class_loader(h_class_loader()),
-  _is_anonymous(is_anonymous), _keep_alive(is_anonymous), // initially
+  _is_anonymous(is_anonymous),
+  // An anonymous class loader data doesn't have anything to keep
+  // it from being unloaded during parsing of the anonymous class.
+  // The null-class-loader should always be kept alive.
+  _keep_alive(is_anonymous || h_class_loader.is_null()),
   _metaspace(NULL), _unloading(false), _klasses(NULL),
   _claimed(0), _jmethod_ids(NULL), _handles(NULL), _deallocate_list(NULL),
   _next(NULL), _dependencies(dependencies),
@@ -317,11 +321,15 @@ void ClassLoaderData::unload() {
   }
 }
 
+oop ClassLoaderData::keep_alive_object() const {
+  assert(!keep_alive(), "Don't use with CLDs that are artificially kept alive");
+  return is_anonymous() ? _klasses->java_mirror() : class_loader();
+}
+
 bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
-  bool alive =
-    is_anonymous() ?
-       is_alive_closure->do_object_b(_klasses->java_mirror()) :
-       class_loader() == NULL || is_alive_closure->do_object_b(class_loader());
+  bool alive = keep_alive() // null class loader and incomplete anonymous klasses.
+      || is_alive_closure->do_object_b(keep_alive_object());
+
   assert(!alive || claimed(), "must be claimed");
   return alive;
 }
@@ -598,8 +606,6 @@ void ClassLoaderDataGraph::keep_alive_oops_do(OopClosure* f, KlassClosure* klass
 
 void ClassLoaderDataGraph::always_strong_oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
   if (ClassUnloading) {
-    ClassLoaderData::the_null_class_loader_data()->oops_do(f, klass_closure, must_claim);
-    // keep any special CLDs alive.
     ClassLoaderDataGraph::keep_alive_oops_do(f, klass_closure, must_claim);
   } else {
     ClassLoaderDataGraph::oops_do(f, klass_closure, must_claim);
@@ -705,7 +711,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
   bool has_redefined_a_class = JvmtiExport::has_redefined_a_class();
   MetadataOnStackMark md_on_stack;
   while (data != NULL) {
-    if (data->keep_alive() || data->is_alive(is_alive_closure)) {
+    if (data->is_alive(is_alive_closure)) {
       if (has_redefined_a_class) {
         data->classes_do(InstanceKlass::purge_previous_versions);
       }

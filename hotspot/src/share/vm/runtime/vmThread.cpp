@@ -656,7 +656,7 @@ void VMThread::execute(VM_Operation* op) {
 }
 
 
-void VMThread::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {
+void VMThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   Thread::oops_do(f, cld_f, cf);
   _vm_queue->oops_do(f);
 }

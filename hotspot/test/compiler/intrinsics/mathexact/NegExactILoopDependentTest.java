@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test negExact loop dependent
  * @compile NegExactILoopDependentTest.java Verify.java
- * @run main NegExactILoopDependentTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main NegExactILoopDependentTest
  *
  */
 public class NegExactILoopDependentTest {

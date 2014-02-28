@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,18 @@
 
 /*
  * @test
- * @bug 8026844
- * @summary Test constant negExact
- * @compile NegExactLNonConstantTest.java Verify.java
- * @run main NegExactLNonConstantTest
- *
+ * @bug 8034775
+ * @summary Ensures correct minimal number of compiler threads (provided by -XX:CICompilerCount=)
+ * @library /testlibrary
  */
+import com.oracle.java.testlibrary.*;
 
-public class NegExactLNonConstantTest {
-    public static void main(String[] args) {
-        Verify.NonConstantLongTest.verify(new Verify.UnaryToBinaryLong(new Verify.NegExactL()));
-    }
+public class NumCompilerThreadsCheck {
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:CICompilerCount=-1");
+    OutputAnalyzer out = new OutputAnalyzer(pb.start());
+
+    String expectedOutput = "CICompilerCount of -1 is invalid";
+    out.shouldContain(expectedOutput);
+  }
 }

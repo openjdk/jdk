@@ -314,6 +314,9 @@ class frame VALUE_OBJ_CLASS_SPEC {
   void interpreter_frame_set_monitor_end(BasicObjectLock* value);
 #endif // CC_INTERP
 
+  // Address of the temp oop in the frame. Needed as GC root.
+  oop* interpreter_frame_temp_oop_addr() const;
+
   // BasicObjectLocks:
   //
   // interpreter_frame_monitor_begin is higher in memory than interpreter_frame_monitor_end
@@ -350,9 +353,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   void interpreter_frame_set_method(Method* method);
   Method** interpreter_frame_method_addr() const;
   ConstantPoolCache** interpreter_frame_cache_addr() const;
-#ifdef PPC32
-  oop* interpreter_frame_mirror_addr() const;
-#endif
 
  public:
   // Entry frames
@@ -419,19 +419,19 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
   // Oops-do's
   void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f);
-  void oops_interpreted_do(OopClosure* f, CLDToOopClosure* cld_f, const RegisterMap* map, bool query_oop_map_cache = true);
+  void oops_interpreted_do(OopClosure* f, CLDClosure* cld_f, const RegisterMap* map, bool query_oop_map_cache = true);
 
  private:
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f);
 
   // Iteration of oops
-  void oops_do_internal(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache);
+  void oops_do_internal(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache);
   void oops_entry_do(OopClosure* f, const RegisterMap* map);
   void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map);
   int adjust_offset(Method* method, int index); // helper for above fn
  public:
   // Memory management
-  void oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf, RegisterMap* map) { oops_do_internal(f, cld_f, cf, map, true); }
+  void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf, RegisterMap* map) { oops_do_internal(f, cld_f, cf, map, true); }
   void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses support for finding live interpreted methods on the stack
