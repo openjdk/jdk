@@ -126,7 +126,7 @@ class VMThread: public NamedThread {
   static VMThread* vm_thread()                    { return _vm_thread; }
 
   // GC support
-  void oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf);
+  void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
 
   // Debugging
   void print_on(outputStream* st) const;

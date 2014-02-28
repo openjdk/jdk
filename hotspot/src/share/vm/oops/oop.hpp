@@ -109,12 +109,13 @@ class oopDesc {
   int size_given_klass(Klass* klass);
 
   // type test operations (inlined in oop.inline.h)
-  bool is_instance()           const;
-  bool is_instanceMirror()     const;
-  bool is_instanceRef()        const;
-  bool is_array()              const;
-  bool is_objArray()           const;
-  bool is_typeArray()          const;
+  bool is_instance()            const;
+  bool is_instanceMirror()      const;
+  bool is_instanceClassLoader() const;
+  bool is_instanceRef()         const;
+  bool is_array()               const;
+  bool is_objArray()            const;
+  bool is_typeArray()           const;
 
  private:
   // field addresses in oop
