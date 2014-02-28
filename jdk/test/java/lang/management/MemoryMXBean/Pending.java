@@ -76,6 +76,9 @@ public class Pending {
         System.out.println("Test passed.");
     }
 
+    // Keep objs public so the optimizer will not remove them too early.
+    public static Object[] objs = null;
+
     private static void test() throws Exception {
         // Clean the memory and remove all objects that are pending
         // finalization
@@ -105,7 +108,7 @@ public class Pending {
         System.out.println("   Afer creating objects with no ref: " + snapshot);
         printFinalizerInstanceCount();
 
-        Object[] objs = new Object[REF_COUNT];
+        objs = new Object[REF_COUNT];
         for (int i = 0; i < REF_COUNT; i++) {
             objs[i] = new MyObject();
         }
