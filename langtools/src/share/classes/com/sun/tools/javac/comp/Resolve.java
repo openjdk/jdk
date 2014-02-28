@@ -898,7 +898,7 @@ public class Resolve {
 
                 @Override
                 public boolean compatible(Type found, Type req, Warner warn) {
-                    found = pendingInferenceContext.asFree(found);
+                    found = pendingInferenceContext.asUndetVar(found);
                     req = infer.returnConstraintTarget(found, req);
                     return super.compatible(found, req, warn);
                 }
@@ -935,8 +935,8 @@ public class Resolve {
 
         public boolean compatible(Type found, Type req, Warner warn) {
             return strict ?
-                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asFree(req), warn) :
-                    types.isConvertible(found, deferredAttrContext.inferenceContext.asFree(req), warn);
+                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asUndetVar(req), warn) :
+                    types.isConvertible(found, deferredAttrContext.inferenceContext.asUndetVar(req), warn);
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
@@ -1141,7 +1141,7 @@ public class Resolve {
                         Type desc_t = types.findDescriptorType(t);
                         Type desc_s = types.findDescriptorType(s);
                         if (types.isSameTypes(desc_t.getParameterTypes(),
-                                inferenceContext().asFree(desc_s.getParameterTypes()))) {
+                                inferenceContext().asUndetVars(desc_s.getParameterTypes()))) {
                             if (types.asSuper(t, s.tsym) != null ||
                                 types.asSuper(s, t.tsym) != null) {
                                 result &= MostSpecificCheckContext.super.compatible(t, s, warn);
@@ -1168,7 +1168,7 @@ public class Resolve {
                         Type desc_t = types.findDescriptorType(t);
                         Type desc_s = types.findDescriptorType(s);
                         if (types.isSameTypes(desc_t.getParameterTypes(),
-                                inferenceContext().asFree(desc_s.getParameterTypes()))) {
+                                inferenceContext().asUndetVars(desc_s.getParameterTypes()))) {
                             if (types.asSuper(t, s.tsym) != null ||
                                 types.asSuper(s, t.tsym) != null) {
                                 result &= MostSpecificCheckContext.super.compatible(t, s, warn);
@@ -3151,7 +3151,7 @@ public class Resolve {
             if (TreeInfo.isStaticSelector(referenceTree.expr, names) &&
                     argtypes.nonEmpty() &&
                     (argtypes.head.hasTag(NONE) ||
-                    types.isSubtypeUnchecked(inferenceContext.asFree(argtypes.head), site))) {
+                    types.isSubtypeUnchecked(inferenceContext.asUndetVar(argtypes.head), site))) {
                 return new UnboundMethodReferenceLookupHelper(referenceTree, name,
                         site, argtypes, typeargtypes, maxPhase);
             } else {
@@ -4263,7 +4263,11 @@ public class Resolve {
         }
 
         DeferredAttrContext deferredAttrContext(Symbol sym, InferenceContext inferenceContext, ResultInfo pendingResult, Warner warn) {
-            return deferredAttr.new DeferredAttrContext(attrMode, sym, step, inferenceContext, pendingResult != null ? pendingResult.checkContext.deferredAttrContext() : deferredAttr.emptyDeferredAttrContext, warn);
+            DeferredAttrContext parent = (pendingResult == null)
+                ? deferredAttr.emptyDeferredAttrContext
+                : pendingResult.checkContext.deferredAttrContext();
+            return deferredAttr.new DeferredAttrContext(attrMode, sym, step,
+                    inferenceContext, parent, warn);
         }
 
         /**
