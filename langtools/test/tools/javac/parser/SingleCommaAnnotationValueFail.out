@@ -1,6 +1,3 @@
 SingleCommaAnnotationValueFail.java:34:12: compiler.err.expected: '}'
-SingleCommaAnnotationValueFail.java:34:13: compiler.err.illegal.start.of.type
-SingleCommaAnnotationValueFail.java:34:14: compiler.err.expected: token.identifier
-SingleCommaAnnotationValueFail.java:34:15: compiler.err.expected: ';'
-SingleCommaAnnotationValueFail.java:34:21: compiler.err.invalid.meth.decl.ret.type.req
-5 errors
+SingleCommaAnnotationValueFail.java:34:14: compiler.err.expected3: class, interface, enum
+2 errors

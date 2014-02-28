@@ -21,8 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.varargs.must.be.last
+// key: compiler.err.illegal.start.of.type
 
-class VarargMustBeLast {
-    public void invalidVarArg(String... invalidVarArg, String extra) { }
+class IllegalStartOfType {
+    public void test(int i,) { }
 }

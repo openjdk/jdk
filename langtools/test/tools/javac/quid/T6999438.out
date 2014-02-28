@@ -1,6 +1,2 @@
 T6999438.java:8:9: compiler.err.illegal.char: #
-T6999438.java:8:10: compiler.err.illegal.start.of.type
-T6999438.java:8:25: compiler.err.expected: token.identifier
-T6999438.java:8:26: compiler.err.expected: ';'
-T6999438.java:9:2: compiler.err.premature.eof
-5 errors
+1 error
