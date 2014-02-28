@@ -322,17 +322,9 @@ int NET_Connect(int s, struct sockaddr *addr, int addrlen) {
     BLOCKING_IO_RETURN_INT( s, connect(s, addr, addrlen) );
 }
 
-#ifndef USE_SELECT
 int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
     BLOCKING_IO_RETURN_INT( ufds[0].fd, poll(ufds, nfds, timeout) );
 }
-#else
-int NET_Select(int s, fd_set *readfds, fd_set *writefds,
-               fd_set *exceptfds, struct timeval *timeout) {
-    BLOCKING_IO_RETURN_INT( s-1,
-                            select(s, readfds, writefds, exceptfds, timeout) );
-}
-#endif
 
 /*
  * Wrapper for select(s, timeout). We are using select() on Mac OS due to Bug 7131399.

@@ -27,7 +27,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#if defined(__linux__) && !defined(USE_SELECT)
+#if defined(__linux__)
 #include <sys/poll.h>
 #endif
 #include <netinet/tcp.h>        /* Defines TCP_NODELAY, needed for 2.6 */
@@ -309,26 +309,11 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
              * See 6343810.
              */
             while (1) {
-#ifndef USE_SELECT
-                {
-                    struct pollfd pfd;
-                    pfd.fd = fd;
-                    pfd.events = POLLOUT;
+                struct pollfd pfd;
+                pfd.fd = fd;
+                pfd.events = POLLOUT;
 
-                    connect_rv = NET_Poll(&pfd, 1, -1);
-                }
-#else
-                {
-                    fd_set wr, ex;
-
-                    FD_ZERO(&wr);
-                    FD_SET(fd, &wr);
-                    FD_ZERO(&ex);
-                    FD_SET(fd, &ex);
-
-                    connect_rv = NET_Select(fd+1, 0, &wr, &ex, 0);
-                }
-#endif
+                connect_rv = NET_Poll(&pfd, 1, -1);
 
                 if (connect_rv == -1) {
                     if (errno == EINTR) {
@@ -381,38 +366,18 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
 
             /*
              * Wait for the connection to be established or a
-             * timeout occurs. poll/select needs to handle EINTR in
+             * timeout occurs. poll needs to handle EINTR in
              * case lwp sig handler redirects any process signals to
              * this thread.
              */
             while (1) {
                 jlong newTime;
-#ifndef USE_SELECT
-                {
-                    struct pollfd pfd;
-                    pfd.fd = fd;
-                    pfd.events = POLLOUT;
+                struct pollfd pfd;
+                pfd.fd = fd;
+                pfd.events = POLLOUT;
 
-                    errno = 0;
-                    connect_rv = NET_Poll(&pfd, 1, timeout);
-                }
-#else
-                {
-                    fd_set wr, ex;
-                    struct timeval t;
-
-                    t.tv_sec = timeout / 1000;
-                    t.tv_usec = (timeout % 1000) * 1000;
-
-                    FD_ZERO(&wr);
-                    FD_SET(fd, &wr);
-                    FD_ZERO(&ex);
-                    FD_SET(fd, &ex);
-
-                    errno = 0;
-                    connect_rv = NET_Select(fd+1, 0, &wr, &ex, &t);
-                }
-#endif
+                errno = 0;
+                connect_rv = NET_Poll(&pfd, 1, timeout);
 
                 if (connect_rv >= 0) {
                     break;
