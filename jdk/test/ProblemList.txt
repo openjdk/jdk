@@ -127,9 +127,6 @@ java/lang/reflect/Method/invoke/TestPrivateInterfaceMethodReflect.java generic-a
 
 # jdk_management
 
-# 8028150
-sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
-
 ############################################################################
 
 # jdk_jmx

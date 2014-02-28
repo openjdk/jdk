@@ -22,6 +22,7 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.FileSystem;
@@ -32,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import jdk.testlibrary.ProcessTools;
 
 /**
  * @test
@@ -43,15 +43,25 @@ import jdk.testlibrary.ProcessTools;
  *          TestManager will attempt a connection to the address obtained from
  *          both agent properties and jvmstat buffer.
  * @build jdk.testlibrary.ProcessTools
+ * @build jdk.testlibrary.Utils
  * @build TestManager TestApplication
  * @run main/othervm/timeout=300 -XX:+UsePerfData LocalManagementTest
  */
 
+import jdk.testlibrary.ProcessTools;
+import jdk.testlibrary.Utils;
+
 public class LocalManagementTest {
-    private static final  String TEST_CLASSPATH = System.getProperty("test.class.path");
-    private static final  String TEST_JDK = System.getProperty("test.jdk");
+    private static final String TEST_CLASSPATH = System.getProperty("test.class.path");
+    private static final String TEST_JDK = System.getProperty("test.jdk");
+    private static int MAX_GET_FREE_PORT_TRIES = 10;
 
     public static void main(String[] args) throws Exception {
+        try {
+            MAX_GET_FREE_PORT_TRIES = Integer.parseInt(System.getProperty("test.getfreeport.max.tries", "10"));
+        } catch (NumberFormatException ex) {
+        }
+
         int failures = 0;
         for(Method m : LocalManagementTest.class.getDeclaredMethods()) {
             if (Modifier.isStatic(m.getModifiers()) &&
@@ -103,29 +113,49 @@ public class LocalManagementTest {
     private static boolean test4() throws Exception {
         Path agentPath = findAgent();
         if (agentPath != null) {
-            ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(
-                "-javaagent:" + agentPath.toString() +
-                "=com.sun.management.jmxremote.port=7775," +
-                "com.sun.management.jmxremote.authenticate=false," +
-                "com.sun.management.jmxremote.ssl=false",
-                "-cp",
-                TEST_CLASSPATH,
-                "TestApplication",
-                "-exit"
-            );
 
-            Process prc = null;
-            try {
-                prc = ProcessTools.startProcess(
-                    "TestApplication",
-                    builder
+            for (int i = 0; i < MAX_GET_FREE_PORT_TRIES; ++i) {
+                ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(
+                        "-javaagent:" + agentPath.toString() +
+                                "=com.sun.management.jmxremote.port=" + Utils.getFreePort() + "," +
+                                "com.sun.management.jmxremote.authenticate=false," +
+                                "com.sun.management.jmxremote.ssl=false",
+                        "-cp",
+                        TEST_CLASSPATH,
+                        "TestApplication",
+                        "-exit"
                 );
-                int exitCode = prc.waitFor();
-                return exitCode == 0;
-            } finally {
-                if (prc != null) {
-                    prc.destroy();
+
+                Process prc = null;
+                final AtomicReference<Boolean> isBindExceptionThrown = new AtomicReference<>();
+                isBindExceptionThrown.set(new Boolean(false));
+                try {
+                    prc = ProcessTools.startProcess(
+                            "TestApplication",
+                            builder,
+                            (String line) -> {
+                                if (line.contains("Exception thrown by the agent : " +
+                                        "java.rmi.server.ExportException: Port already in use")) {
+                                    isBindExceptionThrown.set(new Boolean(true));
+                                }
+                            });
+
                     prc.waitFor();
+
+                    if (prc.exitValue() == 0) {
+                        return true;
+                    }
+
+                    if (isBindExceptionThrown.get().booleanValue()) {
+                        System.out.println("'Port already in use' error detected. Try again");
+                    } else {
+                        return false;
+                    }
+                } finally {
+                    if (prc != null) {
+                        prc.destroy();
+                        prc.waitFor();
+                    }
                 }
             }
         }
