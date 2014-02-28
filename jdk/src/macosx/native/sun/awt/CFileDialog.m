@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,9 +223,8 @@ JNF_COCOA_ENTER(env);
         NSArray *urls = [dialogDelegate URLs];
         jsize count = [urls count];
 
-        jclass stringClass = (*env)->FindClass(env, "java/lang/String");
-        returnValue = (*env)->NewObjectArray(env, count, stringClass, NULL);
-        (*env)->DeleteLocalRef(env, stringClass);
+        static JNF_CLASS_CACHE(jc_String, "java/lang/String");
+        returnValue = JNFNewObjectArray(env, &jc_String, count);
 
         [urls enumerateObjectsUsingBlock:^(id url, NSUInteger index, BOOL *stop) {
             jstring filename = JNFNormalizedJavaStringForPath(env, [url path]);
