@@ -48,6 +48,7 @@ import sun.invoke.util.VerifyType;
 class InvokerBytecodeGenerator {
     /** Define class names for convenience. */
     private static final String MH      = "java/lang/invoke/MethodHandle";
+    private static final String MHI     = "java/lang/invoke/MethodHandleImpl";
     private static final String LF      = "java/lang/invoke/LambdaForm";
     private static final String LFN     = "java/lang/invoke/LambdaForm$Name";
     private static final String CLS     = "java/lang/Class";
@@ -57,6 +58,7 @@ class InvokerBytecodeGenerator {
     private static final String LF_SIG  = "L" + LF + ";";
     private static final String LFN_SIG = "L" + LFN + ";";
     private static final String LL_SIG  = "(L" + OBJ + ";)L" + OBJ + ";";
+    private static final String CLL_SIG = "(L" + CLS + ";L" + OBJ + ";)L" + OBJ + ";";
 
     /** Name of its super class*/
     private static final String superName = LF;
@@ -433,7 +435,7 @@ class InvokerBytecodeGenerator {
                 mv.visitLdcInsn(constantPlaceholder(pclass));
                 mv.visitTypeInsn(Opcodes.CHECKCAST, CLS);
                 mv.visitInsn(Opcodes.SWAP);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, CLS, "cast", LL_SIG, false);
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, MHI, "castReference", CLL_SIG, false);
                 if (pclass.isArray())
                     mv.visitTypeInsn(Opcodes.CHECKCAST, OBJARY);
             }
