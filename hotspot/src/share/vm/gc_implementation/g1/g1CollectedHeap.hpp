@@ -497,13 +497,14 @@ protected:
   // check whether there's anything available on the
   // secondary_free_list and/or wait for more regions to appear on
   // that list, if _free_regions_coming is set.
-  HeapRegion* new_region_try_secondary_free_list();
+  HeapRegion* new_region_try_secondary_free_list(bool is_old);
 
   // Try to allocate a single non-humongous HeapRegion sufficient for
   // an allocation of the given word_size. If do_expand is true,
   // attempt to expand the heap if necessary to satisfy the allocation
-  // request.
-  HeapRegion* new_region(size_t word_size, bool do_expand);
+  // request. If the region is to be used as an old region or for a
+  // humongous object, set is_old to true. If not, to false.
+  HeapRegion* new_region(size_t word_size, bool is_old, bool do_expand);
 
   // Attempt to satisfy a humongous allocation request of the given
   // size by finding a contiguous set of free regions of num_regions
@@ -1232,12 +1233,12 @@ public:
   // Wrapper for the region list operations that can be called from
   // methods outside this class.
 
-  void secondary_free_list_add_as_tail(FreeRegionList* list) {
-    _secondary_free_list.add_as_tail(list);
+  void secondary_free_list_add(FreeRegionList* list) {
+    _secondary_free_list.add_ordered(list);
   }
 
   void append_secondary_free_list() {
-    _free_list.add_as_head(&_secondary_free_list);
+    _free_list.add_ordered(&_secondary_free_list);
   }
 
   void append_secondary_free_list_if_not_empty_with_lock() {

@@ -1929,7 +1929,7 @@ public:
         }
       }
 
-      _cleanup_list->add_as_tail(&local_cleanup_list);
+      _cleanup_list->add_ordered(&local_cleanup_list);
       assert(local_cleanup_list.is_empty(), "post-condition");
 
       HeapRegionRemSet::finish_cleanup_task(&hrrs_cleanup_task);
@@ -2158,9 +2158,9 @@ void ConcurrentMark::completeCleanup() {
   // so it's not necessary to take any locks
   while (!_cleanup_list.is_empty()) {
     HeapRegion* hr = _cleanup_list.remove_head();
-    assert(hr != NULL, "the list was not empty");
+    assert(hr != NULL, "Got NULL from a non-empty list");
     hr->par_clear();
-    tmp_free_list.add_as_tail(hr);
+    tmp_free_list.add_ordered(hr);
 
     // Instead of adding one region at a time to the secondary_free_list,
     // we accumulate them in the local list and move them a few at a
@@ -2180,7 +2180,7 @@ void ConcurrentMark::completeCleanup() {
 
       {
         MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-        g1h->secondary_free_list_add_as_tail(&tmp_free_list);
+        g1h->secondary_free_list_add(&tmp_free_list);
         SecondaryFreeList_lock->notify_all();
       }
 
