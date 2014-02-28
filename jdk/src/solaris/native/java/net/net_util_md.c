@@ -75,13 +75,6 @@
 
 #include "java_net_SocketOptions.h"
 
-/* needed from libsocket on Solaris 8 */
-
-getaddrinfo_f getaddrinfo_ptr = NULL;
-freeaddrinfo_f freeaddrinfo_ptr = NULL;
-gai_strerror_f gai_strerror_ptr = NULL;
-getnameinfo_f getnameinfo_ptr = NULL;
-
 /*
  * EXCLBIND socket options only on Solaris
  */
@@ -446,15 +439,14 @@ jint  IPv6_supported()
 }
 #endif /* DONT_ENABLE_IPV6 */
 
-void ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
-                                           const char* hostname,
-                                           int gai_error)
+void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
+                                               const char* hostname,
+                                               int gai_error)
 {
     int size;
     char *buf;
     const char *format = "%s: %s";
-    const char *error_string =
-        (gai_strerror_ptr == NULL) ? NULL : (*gai_strerror_ptr)(gai_error);
+    const char *error_string = gai_strerror(gai_error);
     if (error_string == NULL)
         error_string = "unknown error";
 
@@ -1614,7 +1606,7 @@ NET_Bind(int fd, struct sockaddr *him, int len)
 }
 
 /**
- * Wrapper for select/poll with timeout on a single file descriptor.
+ * Wrapper for poll with timeout on a single file descriptor.
  *
  * flags (defined in net_util_md.h can be any combination of
  * NET_WAIT_READ, NET_WAIT_WRITE & NET_WAIT_CONNECT.
@@ -1633,47 +1625,18 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
 
     while (1) {
         jlong newTime;
-#ifndef USE_SELECT
-        {
-          struct pollfd pfd;
-          pfd.fd = fd;
-          pfd.events = 0;
-          if (flags & NET_WAIT_READ)
-            pfd.events |= POLLIN;
-          if (flags & NET_WAIT_WRITE)
-            pfd.events |= POLLOUT;
-          if (flags & NET_WAIT_CONNECT)
-            pfd.events |= POLLOUT;
+        struct pollfd pfd;
+        pfd.fd = fd;
+        pfd.events = 0;
+        if (flags & NET_WAIT_READ)
+          pfd.events |= POLLIN;
+        if (flags & NET_WAIT_WRITE)
+          pfd.events |= POLLOUT;
+        if (flags & NET_WAIT_CONNECT)
+          pfd.events |= POLLOUT;
 
-          errno = 0;
-          read_rv = NET_Poll(&pfd, 1, timeout);
-        }
-#else
-        {
-          fd_set rd, wr, ex;
-          struct timeval t;
-
-          t.tv_sec = timeout / 1000;
-          t.tv_usec = (timeout % 1000) * 1000;
-
-          FD_ZERO(&rd);
-          FD_ZERO(&wr);
-          FD_ZERO(&ex);
-          if (flags & NET_WAIT_READ) {
-            FD_SET(fd, &rd);
-          }
-          if (flags & NET_WAIT_WRITE) {
-            FD_SET(fd, &wr);
-          }
-          if (flags & NET_WAIT_CONNECT) {
-            FD_SET(fd, &wr);
-            FD_SET(fd, &ex);
-          }
-
-          errno = 0;
-          read_rv = NET_Select(fd+1, &rd, &wr, &ex, &t);
-        }
-#endif
+        errno = 0;
+        read_rv = NET_Poll(&pfd, 1, timeout);
 
         newTime = JVM_CurrentTimeMillis(env, 0);
         timeout -= (newTime - prevTime);

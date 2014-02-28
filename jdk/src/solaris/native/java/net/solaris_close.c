@@ -86,11 +86,6 @@ int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
     RESTARTABLE_RETURN_INT(poll(ufds, nfds, timeout));
 }
 
-int NET_Select(int s, fd_set *readfds, fd_set *writefds,
-               fd_set *exceptfds, struct timeval *timeout) {
-    RESTARTABLE_RETURN_INT(select(s, readfds, writefds, exceptfds, timeout));
-}
-
 int NET_Timeout(int s, long timeout) {
     int result;
     struct timeval t;
