@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1661,6 +1661,9 @@ julong Arguments::limit_by_allocatable_memory(julong limit) {
   return result;
 }
 
+// Use static initialization to get the default before parsing
+static const uintx DefaultHeapBaseMinAddress = HeapBaseMinAddress;
+
 void Arguments::set_heap_size() {
   if (!FLAG_IS_DEFAULT(DefaultMaxRAMFraction)) {
     // Deprecated flag
@@ -1692,6 +1695,23 @@ void Arguments::set_heap_size() {
     if (UseCompressedOops) {
       // Limit the heap size to the maximum possible when using compressed oops
       julong max_coop_heap = (julong)max_heap_for_compressed_oops();
+
+      // HeapBaseMinAddress can be greater than default but not less than.
+      if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
+        if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
+          if (PrintMiscellaneous && Verbose) {  // matches compressed oops printing flags
+            jio_fprintf(defaultStream::error_stream(),
+                        "HeapBaseMinAddress must be at least " UINTX_FORMAT
+                        " (" UINTX_FORMAT "G) which is greater than value given "
+                        UINTX_FORMAT "\n",
+                        DefaultHeapBaseMinAddress,
+                        DefaultHeapBaseMinAddress/G,
+                        HeapBaseMinAddress);
+          }
+          FLAG_SET_ERGO(uintx, HeapBaseMinAddress, DefaultHeapBaseMinAddress);
+        }
+      }
+
       if (HeapBaseMinAddress + MaxHeapSize < max_coop_heap) {
         // Heap should be above HeapBaseMinAddress to get zero based compressed oops
         // but it should be not less than default MaxHeapSize.
@@ -2387,6 +2407,10 @@ bool Arguments::check_vm_args_consistency() {
 
   status &= verify_interval(NmethodSweepFraction, 1, ReservedCodeCacheSize/K, "NmethodSweepFraction");
   status &= verify_interval(NmethodSweepActivity, 0, 2000, "NmethodSweepActivity");
+
+  // TieredCompilation needs at least 2 compiler threads.
+  const int num_min_compiler_threads = (TieredCompilation) ? 2 : 1;
+  status &=verify_min_value(CICompilerCount, num_min_compiler_threads, "CICompilerCount");
 
   return status;
 }

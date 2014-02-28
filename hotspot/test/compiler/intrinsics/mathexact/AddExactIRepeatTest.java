@@ -26,7 +26,7 @@
  * @bug 8025657
  * @summary Test repeating addExact
  * @compile AddExactIRepeatTest.java Verify.java
- * @run main AddExactIRepeatTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main AddExactIRepeatTest
  *
  */
 

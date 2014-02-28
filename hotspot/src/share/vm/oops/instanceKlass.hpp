@@ -306,7 +306,7 @@ class InstanceKlass: public Klass {
   //   three cases:
   //     NULL: no implementor.
   //     A Klass* that's not itself: one implementor.
-  //     Itsef: more than one implementors.
+  //     Itself: more than one implementors.
   // embedded host klass follows here
   //   The embedded host klass only exists in an anonymous class for
   //   dynamic language support (JSR 292 enabled). The host class grants

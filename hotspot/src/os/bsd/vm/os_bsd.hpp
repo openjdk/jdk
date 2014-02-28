@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,10 +133,6 @@ class Bsd {
 
   // Real-time clock functions
   static void clock_init(void);
-
-  static inline bool supports_monotonic_clock() {
-    return _clock_gettime != NULL;
-  }
 
   static int clock_gettime(clockid_t clock_id, struct timespec *tp) {
     return _clock_gettime ? _clock_gettime(clock_id, tp) : -1;

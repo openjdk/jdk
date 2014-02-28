@@ -1176,9 +1176,9 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   c2_nonstatic_field(Block,              _pre_order,               uint)                                                             \
   c2_nonstatic_field(Block,              _dom_depth,               uint)                                                             \
   c2_nonstatic_field(Block,              _idom,                    Block*)                                                           \
-  c2_nonstatic_field(Block,              _freq,                    jfloat)                                                           \
+  c2_nonstatic_field(Block,              _freq,                    jdouble)                                                          \
                                                                                                                                      \
-  c2_nonstatic_field(CFGElement,         _freq,                    jfloat)                                                           \
+  c2_nonstatic_field(CFGElement,         _freq,                    jdouble)                                                          \
                                                                                                                                      \
   c2_nonstatic_field(Block_List,         _cnt,                     uint)                                                             \
                                                                                                                                      \
@@ -1942,15 +1942,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(CmpF3Node, CmpFNode)                                    \
   declare_c2_type(CmpDNode, CmpNode)                                      \
   declare_c2_type(CmpD3Node, CmpDNode)                                    \
-  declare_c2_type(MathExactNode, MultiNode)                               \
-  declare_c2_type(MathExactINode, MathExactNode)                          \
-  declare_c2_type(AddExactINode, MathExactINode)                          \
-  declare_c2_type(AddExactLNode, MathExactLNode)                          \
-  declare_c2_type(SubExactINode, MathExactINode)                          \
-  declare_c2_type(SubExactLNode, MathExactLNode)                          \
-  declare_c2_type(NegExactINode, MathExactINode)                          \
-  declare_c2_type(MulExactINode, MathExactINode)                          \
-  declare_c2_type(FlagsProjNode, ProjNode)                                \
   declare_c2_type(BoolNode, Node)                                         \
   declare_c2_type(AbsNode, Node)                                          \
   declare_c2_type(AbsINode, AbsNode)                                      \
@@ -2031,6 +2022,15 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(ExtractLNode, ExtractNode)                              \
   declare_c2_type(ExtractFNode, ExtractNode)                              \
   declare_c2_type(ExtractDNode, ExtractNode)                              \
+  declare_c2_type(OverflowNode, CmpNode)                                  \
+  declare_c2_type(OverflowINode, OverflowNode)                            \
+  declare_c2_type(OverflowAddINode, OverflowINode)                        \
+  declare_c2_type(OverflowSubINode, OverflowINode)                        \
+  declare_c2_type(OverflowMulINode, OverflowINode)                        \
+  declare_c2_type(OverflowLNode, OverflowNode)                            \
+  declare_c2_type(OverflowAddLNode, OverflowLNode)                        \
+  declare_c2_type(OverflowSubLNode, OverflowLNode)                        \
+  declare_c2_type(OverflowMulLNode, OverflowLNode)                        \
                                                                           \
   /*********************/                                                 \
   /* Adapter Blob Entries */                                              \

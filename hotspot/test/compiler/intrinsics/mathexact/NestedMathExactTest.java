@@ -26,7 +26,7 @@
  * @bug 8027444
  * @summary Test nested loops
  * @compile NestedMathExactTest.java
- * @run main NestedMathExactTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main NestedMathExactTest
  *
  */
 

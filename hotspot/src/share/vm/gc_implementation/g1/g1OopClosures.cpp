@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 8026844
- * @summary Test constant negExact
- * @compile NegExactLNonConstantTest.java Verify.java
- * @run main NegExactLNonConstantTest
  *
  */
 
-public class NegExactLNonConstantTest {
-    public static void main(String[] args) {
-        Verify.NonConstantLongTest.verify(new Verify.UnaryToBinaryLong(new Verify.NegExactL()));
-    }
-}
+#include "precompiled.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1OopClosures.inline.hpp"
+
+G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state) :
+  G1ParClosureSuper(g1, par_scan_state), _scanned_klass(NULL),
+  _cm(_g1->concurrent_mark()) {}

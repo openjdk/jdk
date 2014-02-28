@@ -75,7 +75,7 @@ class ValueStack: public CompilationResourceObj {
 
   void set_caller_state(ValueStack* s)           {
     assert(kind() == EmptyExceptionState ||
-           (Compilation::current()->env()->jvmti_can_access_local_variables() && kind() == ExceptionState),
+           (Compilation::current()->env()->should_retain_local_variables() && kind() == ExceptionState),
            "only EmptyExceptionStates can be modified");
     _caller_state = s;
   }
