@@ -431,7 +431,9 @@ public class JavacParser implements Parser {
         return toP(err);
     }
 
+    private static final int RECOVERY_THRESHOLD = 50;
     private int errorPos = Position.NOPOS;
+    private int count = 0;
 
     /**
      * Report a syntax using the given the position parameter and arguments,
@@ -456,9 +458,13 @@ public class JavacParser implements Parser {
             }
         }
         S.errPos(pos);
-        if (token.pos == errorPos)
-            nextToken(); // guarantee progress
-        errorPos = token.pos;
+        if (token.pos == errorPos) {
+            //check for a possible infinite loop in parsing:
+            Assert.check(count++ < RECOVERY_THRESHOLD);
+        } else {
+            count = 0;
+            errorPos = token.pos;
+        }
     }
 
 
@@ -2288,14 +2294,19 @@ public class JavacParser implements Parser {
     @SuppressWarnings("fallthrough")
     List<JCStatement> blockStatements() {
         //todo: skip to anchor on error(?)
+        int lastErrPos = -1;
         ListBuffer<JCStatement> stats = new ListBuffer<>();
         while (true) {
             List<JCStatement> stat = blockStatement();
             if (stat.isEmpty()) {
                 return stats.toList();
             } else {
+                // error recovery
+                if (token.pos == lastErrPos)
+                    return stats.toList();
                 if (token.pos <= endPosTable.errorEndPos) {
                     skip(false, true, true, true);
+                    lastErrPos = token.pos;
                 }
                 stats.addAll(stat);
             }
@@ -3424,9 +3435,12 @@ public class JavacParser implements Parser {
                 token.kind == INTERFACE ||
                 allowEnums && token.kind == ENUM) {
                 return List.<JCTree>of(classOrInterfaceOrEnumDeclaration(mods, dc));
-            } else if (token.kind == LBRACE && !isInterface &&
+            } else if (token.kind == LBRACE &&
                        (mods.flags & Flags.StandardFlags & ~Flags.STATIC) == 0 &&
                        mods.annotations.isEmpty()) {
+                if (isInterface) {
+                    error(token.pos, "initializer.not.allowed");
+                }
                 return List.<JCTree>of(block(pos, mods.flags));
             } else {
                 pos = token.pos;

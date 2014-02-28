@@ -21,8 +21,10 @@
  * questions.
  */
 
-// key: compiler.err.varargs.must.be.last
+// key: compiler.err.initializer.not.allowed
 
-class VarargMustBeLast {
-    public void invalidVarArg(String... invalidVarArg, String extra) { }
+interface InitializerNotAllowed {
+    {
+        System.out.println();
+    }
 }
