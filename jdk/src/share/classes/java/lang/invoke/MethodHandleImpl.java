@@ -253,7 +253,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                     // Note:  Do not check for a class hierarchy relation
                     // between src and dst.  In all cases a 'null' argument
                     // will pass the cast conversion.
-                    fn = ValueConversions.cast(dst);
+                    fn = ValueConversions.cast(dst, Lazy.MH_castReference);
                 }
             }
             Name conv = new Name(fn, names[INARG_BASE + i]);
@@ -291,6 +291,25 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         LambdaForm form = new LambdaForm("convert", lambdaType.parameterCount(), names);
         return SimpleMethodHandle.make(srcType, form);
+    }
+
+    /**
+     * Identity function, with reference cast.
+     * @param t an arbitrary reference type
+     * @param x an arbitrary reference value
+     * @return the same value x
+     */
+    @ForceInline
+    @SuppressWarnings("unchecked")
+    static <T,U> T castReference(Class<? extends T> t, U x) {
+        // inlined Class.cast because we can't ForceInline it
+        if (x != null && !t.isInstance(x))
+            throw newClassCastException(t, x);
+        return (T) x;
+    }
+
+    private static ClassCastException newClassCastException(Class<?> t, Object obj) {
+        return new ClassCastException("Cannot cast " + obj.getClass().getName() + " to " + t.getName());
     }
 
     static MethodHandle makeReferenceIdentity(Class<?> refType) {
@@ -488,6 +507,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static final NamedFunction NF_selectAlternative;
         static final NamedFunction NF_throwException;
 
+        static final MethodHandle MH_castReference;
+
         static {
             try {
                 NF_checkSpreadArgument = new NamedFunction(MHI.getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
@@ -501,6 +522,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 NF_guardWithCatch.resolve();
                 NF_selectAlternative.resolve();
                 NF_throwException.resolve();
+
+                MethodType mt = MethodType.methodType(Object.class, Class.class, Object.class);
+                MH_castReference = IMPL_LOOKUP.findStatic(MHI, "castReference", mt);
             } catch (ReflectiveOperationException ex) {
                 throw newInternalError(ex);
             }
