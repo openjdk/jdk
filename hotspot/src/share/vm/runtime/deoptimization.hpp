@@ -59,6 +59,7 @@ class Deoptimization : AllStatic {
     Reason_age,                   // nmethod too old; tier threshold reached
     Reason_predicate,             // compiler generated predicate failed
     Reason_loop_limit_check,      // compiler generated loop limits check failed
+    Reason_speculate_class_check, // saw unexpected object class from type speculation
     Reason_LIMIT,
     // Note:  Keep this enum in sync. with _trap_reason_name.
     Reason_RECORDED_LIMIT = Reason_bimorphic  // some are not recorded per bc
@@ -311,8 +312,21 @@ class Deoptimization : AllStatic {
       return reason;
     else if (reason == Reason_div0_check) // null check due to divide-by-zero?
       return Reason_null_check;           // recorded per BCI as a null check
+    else if (reason == Reason_speculate_class_check)
+      return Reason_class_check;
     else
       return Reason_none;
+  }
+
+  static bool reason_is_speculate(int reason) {
+    if (reason == Reason_speculate_class_check) {
+      return true;
+    }
+    return false;
+  }
+
+  static uint per_method_trap_limit(int reason) {
+    return reason_is_speculate(reason) ? (uint)PerMethodSpecTrapLimit : (uint)PerMethodTrapLimit;
   }
 
   static const char* trap_reason_name(int reason);
@@ -337,6 +351,7 @@ class Deoptimization : AllStatic {
   static ProfileData* query_update_method_data(MethodData* trap_mdo,
                                                int trap_bci,
                                                DeoptReason reason,
+                                               Method* compiled_method,
                                                //outputs:
                                                uint& ret_this_trap_count,
                                                bool& ret_maybe_prior_trap,

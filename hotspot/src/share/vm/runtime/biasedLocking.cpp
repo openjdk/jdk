@@ -128,7 +128,7 @@ static GrowableArray<MonitorInfo*>* get_or_compute_monitor_info(JavaThread* thre
         // Walk monitors youngest to oldest
         for (int i = len - 1; i >= 0; i--) {
           MonitorInfo* mon_info = monitors->at(i);
-          if (mon_info->owner_is_scalar_replaced()) continue;
+          if (mon_info->eliminated()) continue;
           oop owner = mon_info->owner();
           if (owner != NULL) {
             info->append(mon_info);

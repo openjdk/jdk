@@ -160,6 +160,7 @@ public class Verify {
 
     public static class NonConstantTest {
         public static java.util.Random rnd = new java.util.Random();
+        public static int[] values = new int[] { Integer.MAX_VALUE, Integer.MIN_VALUE };
 
         public static void verify(BinaryMethod method) {
             for (int i = 0; i < 50000; ++i) {
@@ -169,6 +170,10 @@ public class Verify {
                 Verify.verifyBinary(rnd1 + 1, rnd2, method);
                 Verify.verifyBinary(rnd1 - 1, rnd2, method);
                 Verify.verifyBinary(rnd1, rnd2 - 1, method);
+                Verify.verifyBinary(0, values[0], method);
+                Verify.verifyBinary(values[0], 0, method);
+                Verify.verifyBinary(0, values[1], method);
+                Verify.verifyBinary(values[1], 0, method);
             }
         }
     }

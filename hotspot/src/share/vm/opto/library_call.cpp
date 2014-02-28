@@ -203,7 +203,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_trig(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
-  void inline_math_mathExact(Node* math);
+  template <typename OverflowOp>
+  bool inline_math_overflow(Node* arg1, Node* arg2);
+  void inline_math_mathExact(Node* math, Node* test);
   bool inline_math_addExactI(bool is_increment);
   bool inline_math_addExactL(bool is_increment);
   bool inline_math_multiplyExactI();
@@ -517,31 +519,31 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
 
   case vmIntrinsics::_incrementExactI:
   case vmIntrinsics::_addExactI:
-    if (!Matcher::match_rule_supported(Op_AddExactI) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowAddI) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_incrementExactL:
   case vmIntrinsics::_addExactL:
-    if (!Matcher::match_rule_supported(Op_AddExactL) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowAddL) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_decrementExactI:
   case vmIntrinsics::_subtractExactI:
-    if (!Matcher::match_rule_supported(Op_SubExactI) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowSubI) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_decrementExactL:
   case vmIntrinsics::_subtractExactL:
-    if (!Matcher::match_rule_supported(Op_SubExactL) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowSubL) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_negateExactI:
-    if (!Matcher::match_rule_supported(Op_NegExactI) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowSubI) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_negateExactL:
-    if (!Matcher::match_rule_supported(Op_NegExactL) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowSubL) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_multiplyExactI:
-    if (!Matcher::match_rule_supported(Op_MulExactI) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowMulI) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_multiplyExactL:
-    if (!Matcher::match_rule_supported(Op_MulExactL) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowMulL) || !UseMathExactIntrinsics) return NULL;
     break;
 
  default:
@@ -1970,18 +1972,8 @@ bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   return true;
 }
 
-void LibraryCallKit::inline_math_mathExact(Node* math) {
-  // If we didn't get the expected opcode it means we have optimized
-  // the node to something else and don't need the exception edge.
-  if (!math->is_MathExact()) {
-    set_result(math);
-    return;
-  }
-
-  Node* result = _gvn.transform( new(C) ProjNode(math, MathExactNode::result_proj_node));
-  Node* flags = _gvn.transform( new(C) FlagsProjNode(math, MathExactNode::flags_proj_node));
-
-  Node* bol = _gvn.transform( new (C) BoolNode(flags, BoolTest::overflow) );
+void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
+  Node* bol = _gvn.transform( new (C) BoolNode(test, BoolTest::overflow) );
   IfNode* check = create_and_map_if(control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
   Node* fast_path = _gvn.transform( new (C) IfFalseNode(check));
   Node* slow_path = _gvn.transform( new (C) IfTrueNode(check) );
@@ -1999,108 +1991,50 @@ void LibraryCallKit::inline_math_mathExact(Node* math) {
   }
 
   set_control(fast_path);
-  set_result(result);
+  set_result(math);
+}
+
+template <typename OverflowOp>
+bool LibraryCallKit::inline_math_overflow(Node* arg1, Node* arg2) {
+  typedef typename OverflowOp::MathOp MathOp;
+
+  MathOp* mathOp = new(C) MathOp(arg1, arg2);
+  Node* operation = _gvn.transform( mathOp );
+  Node* ofcheck = _gvn.transform( new(C) OverflowOp(arg1, arg2) );
+  inline_math_mathExact(operation, ofcheck);
+  return true;
 }
 
 bool LibraryCallKit::inline_math_addExactI(bool is_increment) {
-  Node* arg1 = argument(0);
-  Node* arg2 = NULL;
-
-  if (is_increment) {
-    arg2 = intcon(1);
-  } else {
-    arg2 = argument(1);
-  }
-
-  Node* add = _gvn.transform( new(C) AddExactINode(NULL, arg1, arg2) );
-  inline_math_mathExact(add);
-  return true;
+  return inline_math_overflow<OverflowAddINode>(argument(0), is_increment ? intcon(1) : argument(1));
 }
 
 bool LibraryCallKit::inline_math_addExactL(bool is_increment) {
-  Node* arg1 = argument(0); // type long
-  // argument(1) == TOP
-  Node* arg2 = NULL;
-
-  if (is_increment) {
-    arg2 = longcon(1);
-  } else {
-    arg2 = argument(2); // type long
-    // argument(3) == TOP
-  }
-
-  Node* add = _gvn.transform(new(C) AddExactLNode(NULL, arg1, arg2));
-  inline_math_mathExact(add);
-  return true;
+  return inline_math_overflow<OverflowAddLNode>(argument(0), is_increment ? longcon(1) : argument(2));
 }
 
 bool LibraryCallKit::inline_math_subtractExactI(bool is_decrement) {
-  Node* arg1 = argument(0);
-  Node* arg2 = NULL;
-
-  if (is_decrement) {
-    arg2 = intcon(1);
-  } else {
-    arg2 = argument(1);
-  }
-
-  Node* sub = _gvn.transform(new(C) SubExactINode(NULL, arg1, arg2));
-  inline_math_mathExact(sub);
-  return true;
+  return inline_math_overflow<OverflowSubINode>(argument(0), is_decrement ? intcon(1) : argument(1));
 }
 
 bool LibraryCallKit::inline_math_subtractExactL(bool is_decrement) {
-  Node* arg1 = argument(0); // type long
-  // argument(1) == TOP
-  Node* arg2 = NULL;
-
-  if (is_decrement) {
-    arg2 = longcon(1);
-  } else {
-    arg2 = argument(2); // type long
-    // argument(3) == TOP
-  }
-
-  Node* sub = _gvn.transform(new(C) SubExactLNode(NULL, arg1, arg2));
-  inline_math_mathExact(sub);
-  return true;
+  return inline_math_overflow<OverflowSubLNode>(argument(0), is_decrement ? longcon(1) : argument(2));
 }
 
 bool LibraryCallKit::inline_math_negateExactI() {
-  Node* arg1 = argument(0);
-
-  Node* neg = _gvn.transform(new(C) NegExactINode(NULL, arg1));
-  inline_math_mathExact(neg);
-  return true;
+  return inline_math_overflow<OverflowSubINode>(intcon(0), argument(0));
 }
 
 bool LibraryCallKit::inline_math_negateExactL() {
-  Node* arg1 = argument(0);
-  // argument(1) == TOP
-
-  Node* neg = _gvn.transform(new(C) NegExactLNode(NULL, arg1));
-  inline_math_mathExact(neg);
-  return true;
+  return inline_math_overflow<OverflowSubLNode>(longcon(0), argument(0));
 }
 
 bool LibraryCallKit::inline_math_multiplyExactI() {
-  Node* arg1 = argument(0);
-  Node* arg2 = argument(1);
-
-  Node* mul = _gvn.transform(new(C) MulExactINode(NULL, arg1, arg2));
-  inline_math_mathExact(mul);
-  return true;
+  return inline_math_overflow<OverflowMulINode>(argument(0), argument(1));
 }
 
 bool LibraryCallKit::inline_math_multiplyExactL() {
-  Node* arg1 = argument(0);
-  // argument(1) == TOP
-  Node* arg2 = argument(2);
-  // argument(3) == TOP
-
-  Node* mul = _gvn.transform(new(C) MulExactLNode(NULL, arg1, arg2));
-  inline_math_mathExact(mul);
-  return true;
+  return inline_math_overflow<OverflowMulLNode>(argument(0), argument(2));
 }
 
 Node*
