@@ -498,6 +498,7 @@ class Klass : public Metadata {
   virtual bool oop_is_objArray_slow()       const { return false; }
   virtual bool oop_is_typeArray_slow()      const { return false; }
  public:
+  virtual bool oop_is_instanceClassLoader() const { return false; }
   virtual bool oop_is_instanceMirror()      const { return false; }
   virtual bool oop_is_instanceRef()         const { return false; }
 

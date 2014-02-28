@@ -692,3 +692,21 @@ bool Klass::verify_itable_index(int i) {
 }
 
 #endif
+
+/////////////// Unit tests ///////////////
+
+#ifndef PRODUCT
+
+class TestKlass {
+ public:
+  static void test_oop_is_instanceClassLoader() {
+    assert(SystemDictionary::ClassLoader_klass()->oop_is_instanceClassLoader(), "assert");
+    assert(!SystemDictionary::String_klass()->oop_is_instanceClassLoader(), "assert");
+  }
+};
+
+void TestKlass_test() {
+  TestKlass::test_oop_is_instanceClassLoader();
+}
+
+#endif

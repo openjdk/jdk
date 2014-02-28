@@ -198,7 +198,7 @@ class java_lang_String : AllStatic {
   }
 
   // Debugging
-  static void print(Handle java_string, outputStream* st);
+  static void print(oop java_string, outputStream* st);
   friend class JavaClasses;
 };
 
