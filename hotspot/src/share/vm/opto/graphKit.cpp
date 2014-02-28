@@ -2113,30 +2113,33 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
  * @return           node with improved type
  */
 Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls) {
-  const TypeOopPtr* current_type = _gvn.type(n)->isa_oopptr();
+  const Type* current_type = _gvn.type(n);
   assert(UseTypeSpeculation, "type speculation must be on");
-  if (exact_kls != NULL &&
-      // nothing to improve if type is already exact
-      (current_type == NULL ||
-       (!current_type->klass_is_exact() &&
-        (current_type->speculative() == NULL ||
-         !current_type->speculative()->klass_is_exact())))) {
+
+  const TypeOopPtr* speculative = current_type->speculative();
+
+  if (current_type->would_improve_type(exact_kls, jvms()->depth())) {
     const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls);
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
+    // record the new speculative type's depth
+    speculative = xtype->with_inline_depth(jvms()->depth());
+  }
 
+  if (speculative != current_type->speculative()) {
     // Build a type with a speculative type (what we think we know
     // about the type but will need a guard when we use it)
-    const TypeOopPtr* spec_type = TypeOopPtr::make(TypePtr::BotPTR, Type::OffsetBot, TypeOopPtr::InstanceBot, xtype);
-    // We're changing the type, we need a new cast node to carry the
-    // new type. The new type depends on the control: what profiling
-    // tells us is only valid from here as far as we can tell.
-    Node* cast = new(C) CastPPNode(n, spec_type);
-    cast->init_req(0, control());
+    const TypeOopPtr* spec_type = TypeOopPtr::make(TypePtr::BotPTR, Type::OffsetBot, TypeOopPtr::InstanceBot, speculative);
+    // We're changing the type, we need a new CheckCast node to carry
+    // the new type. The new type depends on the control: what
+    // profiling tells us is only valid from here as far as we can
+    // tell.
+    Node* cast = new(C) CheckCastPPNode(control(), n, current_type->remove_speculative()->join_speculative(spec_type));
     cast = _gvn.transform(cast);
     replace_in_map(n, cast);
     n = cast;
   }
+
   return n;
 }
 
