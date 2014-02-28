@@ -328,16 +328,13 @@ jobject AwtWin32GraphicsDevice::GetColorModel(JNIEnv *env, jboolean dynamic)
         jintArray bitsArray;
 
         clazz1 = env->FindClass("java/awt/color/ColorSpace");
+        CHECK_NULL_RETURN(clazz1, NULL);
         mid = env->GetStaticMethodID(clazz1, "getInstance",
               "(I)Ljava/awt/color/ColorSpace;");
-        if (mid == 0) {
-            return NULL;
-        }
+        CHECK_NULL_RETURN(mid, NULL);
         cspace = env->CallStaticObjectMethod(clazz1, mid,
             java_awt_color_ColorSpace_CS_GRAY);
-        if (cspace == 0) {
-            return NULL;
-        }
+        CHECK_NULL_RETURN(cspace, NULL);
 
         bits[0] = 8;
         bitsArray = env->NewIntArray(1);
@@ -348,13 +345,10 @@ jobject AwtWin32GraphicsDevice::GetColorModel(JNIEnv *env, jboolean dynamic)
         }
 
         clazz = env->FindClass("java/awt/image/ComponentColorModel");
-
+        CHECK_NULL_RETURN(clazz, NULL);
         mid = env->GetMethodID(clazz,"<init>",
             "(Ljava/awt/color/ColorSpace;[IZZII)V");
-
-        if (mid == 0) {
-            return NULL;
-        }
+        CHECK_NULL_RETURN(mid, NULL);
 
         awt_colormodel = env->NewObject(clazz, mid,
                                         cspace,
@@ -370,12 +364,11 @@ jobject AwtWin32GraphicsDevice::GetColorModel(JNIEnv *env, jboolean dynamic)
         jbyte vbits[256/8];
         jobject validBits = NULL;
 
+        CHECK_NULL_RETURN(hRGB, NULL);
         /* Create the LUT from the color map */
         try {
             rgb = (unsigned int *) env->GetPrimitiveArrayCritical(hRGB, 0);
-            if (rgb == NULL) {
-                return NULL;
-            }
+            CHECK_NULL_RETURN(rgb, NULL);
             rgbP = rgb;
             if (!palette) {
                 palette = new AwtPalette(this);
@@ -439,10 +432,12 @@ jobject AwtWin32GraphicsDevice::GetColorModel(JNIEnv *env, jboolean dynamic)
         // Construct a new color model
         if (!allvalid) {
             jbyteArray bArray = env->NewByteArray(sizeof(vbits));
+            CHECK_NULL_RETURN(bArray, NULL);
             env->SetByteArrayRegion(bArray, 0, sizeof(vbits), vbits);
             validBits = JNU_NewObjectByName(env,
                                             "java/math/BigInteger",
                                             "([B)V", bArray);
+            JNU_CHECK_EXCEPTION_RETURN(env, NULL);
         }
         awt_colormodel =
             JNU_NewObjectByName(env,
@@ -500,19 +495,22 @@ void AwtWin32GraphicsDevice::UpdateDynamicColorModel()
         jintArray cacheArray = (jintArray)env->GetObjectField(colorModel,
             AwtWin32GraphicsDevice::indexCMcacheID);
         if (!rgbArray || !cacheArray) {
-            JNU_ThrowInternalError(env,
-                "rgb or lookupcache array of IndexColorModel null");
+            JNU_ThrowInternalError(env, "rgb or lookupcache array of IndexColorModel null");
             return;
         }
         int rgbLength = env->GetArrayLength(rgbArray);
         int cacheLength = env->GetArrayLength(cacheArray);
-        jint *cmEntries = (jint *)env->GetPrimitiveArrayCritical(rgbArray,
-            &isCopy);
-        jint *cache = (jint *)env->GetPrimitiveArrayCritical(cacheArray,
-            &isCopy);
-        if (!cmEntries || !cache) {
-            JNU_ThrowInternalError(env,
-                "Problem retrieving rgb or cache critical array");
+        jint *cmEntries = (jint *)env->GetPrimitiveArrayCritical(rgbArray, &isCopy);
+        if (!cmEntries) {
+            env->ExceptionClear();
+            JNU_ThrowInternalError(env, "Problem retrieving rgb critical array");
+            return;
+        }
+        jint *cache = (jint *)env->GetPrimitiveArrayCritical(cacheArray, &isCopy);
+        if (!cache) {
+            env->ExceptionClear();
+            env->ReleasePrimitiveArrayCritical(rgbArray, cmEntries, JNI_ABORT);
+            JNU_ThrowInternalError(env, "Problem retrieving cache critical array");
             return;
         }
         // Set the new rgb values
@@ -839,31 +837,36 @@ Java_sun_awt_Win32GraphicsDevice_initIDs(JNIEnv *env, jclass cls)
     /* class ids */
     AwtWin32GraphicsDevice::indexCMClass =
         (jclass)env->NewGlobalRef(env->FindClass("java/awt/image/IndexColorModel"));
+    DASSERT(AwtWin32GraphicsDevice::indexCMClass);
+    CHECK_NULL(AwtWin32GraphicsDevice::indexCMClass);
+
     AwtWin32GraphicsDevice::wToolkitClass =
         (jclass)env->NewGlobalRef(env->FindClass("sun/awt/windows/WToolkit"));
-
-    DASSERT(AwtWin32GraphicsDevice::indexCMClass);
     DASSERT(AwtWin32GraphicsDevice::wToolkitClass);
+    CHECK_NULL(AwtWin32GraphicsDevice::wToolkitClass);
 
     /* field ids */
     AwtWin32GraphicsDevice::dynamicColorModelID = env->GetFieldID(cls,
         "dynamicColorModel", "Ljava/awt/image/ColorModel;");
+    DASSERT(AwtWin32GraphicsDevice::dynamicColorModelID);
+    CHECK_NULL(AwtWin32GraphicsDevice::dynamicColorModelID);
+
     AwtWin32GraphicsDevice::indexCMrgbID =
         env->GetFieldID(AwtWin32GraphicsDevice::indexCMClass, "rgb", "[I");
+    DASSERT(AwtWin32GraphicsDevice::indexCMrgbID);
+    CHECK_NULL(AwtWin32GraphicsDevice::indexCMrgbID);
+
     AwtWin32GraphicsDevice::indexCMcacheID =
         env->GetFieldID(AwtWin32GraphicsDevice::indexCMClass,
         "lookupcache", "[I");
+    DASSERT(AwtWin32GraphicsDevice::indexCMcacheID);
+    CHECK_NULL(AwtWin32GraphicsDevice::indexCMcacheID);
 
     /* method ids */
     AwtWin32GraphicsDevice::paletteChangedMID = env->GetStaticMethodID(
         AwtWin32GraphicsDevice::wToolkitClass, "paletteChanged", "()V");
-
-
-    DASSERT(AwtWin32GraphicsDevice::dynamicColorModelID);
-    DASSERT(AwtWin32GraphicsDevice::indexCMrgbID);
-    DASSERT(AwtWin32GraphicsDevice::indexCMcacheID);
-
     DASSERT(AwtWin32GraphicsDevice::paletteChangedMID);
+    CHECK_NULL(AwtWin32GraphicsDevice::paletteChangedMID);
 
     // Only want to call this once per session
     make_uns_ordered_dither_array(img_oda_alpha, 256);
@@ -1069,16 +1072,15 @@ jobject CreateDisplayMode(JNIEnv* env, jint width, jint height,
 
     jclass displayModeClass = env->FindClass("java/awt/DisplayMode");
     if (JNU_IsNull(env, displayModeClass)) {
-        JNU_ThrowInternalError(env,
-            "Could not get display mode class");
+        env->ExceptionClear();
+        JNU_ThrowInternalError(env, "Could not get display mode class");
         return NULL;
     }
 
-    jmethodID cid = env->GetMethodID(displayModeClass, "<init>",
-        "(IIII)V");
+    jmethodID cid = env->GetMethodID(displayModeClass, "<init>", "(IIII)V");
     if (cid == NULL) {
-        JNU_ThrowInternalError(env,
-            "Could not get display mode constructor");
+        env->ExceptionClear();
+        JNU_ThrowInternalError(env, "Could not get display mode constructor");
         return NULL;
     }
 
@@ -1224,6 +1226,7 @@ void addDisplayMode(JNIEnv* env, jobject arrayList, jint width,
         jmethodID mid = env->GetMethodID(arrayListClass, "add",
         "(Ljava/lang/Object;)Z");
         if (mid == NULL) {
+            env->ExceptionClear();
             JNU_ThrowInternalError(env,
                 "Could not get method java.util.ArrayList.add()");
             return;
@@ -1264,6 +1267,7 @@ JNIEXPORT void JNICALL Java_sun_awt_Win32GraphicsDevice_enumDisplayModes
         if (dm.dmBitsPerPel >= 8) {
             addDisplayMode(env, arrayList, dm.dmPelsWidth, dm.dmPelsHeight,
                            dm.dmBitsPerPel, dm.dmDisplayFrequency);
+            JNU_CHECK_EXCEPTION(env);
         }
     }
 

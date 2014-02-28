@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ JNIEXPORT jobject JNICALL
     jobject bounds = NULL;
 
     clazz = env->FindClass("java/awt/Rectangle");
+    CHECK_NULL_RETURN(clazz, NULL);
     mid = env->GetMethodID(clazz, "<init>", "(IIII)V");
     if (mid != 0) {
         RECT rRW = {0, 0, 0, 0};
