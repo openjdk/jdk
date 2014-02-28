@@ -27,7 +27,6 @@ package java.lang.invoke;
 
 import sun.invoke.util.VerifyAccess;
 import java.lang.invoke.LambdaForm.Name;
-import java.lang.invoke.MethodHandles.Lookup;
 
 import sun.invoke.util.Wrapper;
 
@@ -39,8 +38,6 @@ import jdk.internal.org.objectweb.asm.*;
 import java.lang.reflect.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
-import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 
 /**
@@ -51,7 +48,6 @@ import sun.invoke.util.VerifyType;
 class InvokerBytecodeGenerator {
     /** Define class names for convenience. */
     private static final String MH      = "java/lang/invoke/MethodHandle";
-    private static final String BMH     = "java/lang/invoke/BoundMethodHandle";
     private static final String LF      = "java/lang/invoke/LambdaForm";
     private static final String LFN     = "java/lang/invoke/LambdaForm$Name";
     private static final String CLS     = "java/lang/Class";
@@ -511,16 +507,21 @@ class InvokerBytecodeGenerator {
             Name name = lambdaForm.names[i];
             MemberName member = name.function.member();
 
-            if (isSelectAlternative(member)) {
-                // selectAlternative idiom
-                // FIXME: make sure this idiom is really present!
+            if (isSelectAlternative(i)) {
                 emitSelectAlternative(name, lambdaForm.names[i + 1]);
                 i++;  // skip MH.invokeBasic of the selectAlternative result
+            } else if (isGuardWithCatch(i)) {
+                emitGuardWithCatch(i);
+                i = i+2; // Jump to the end of GWC idiom
             } else if (isStaticallyInvocable(member)) {
                 emitStaticInvoke(member, name);
             } else {
                 emitInvoke(name);
             }
+
+            // Update cached form name's info in case an intrinsic spanning multiple names was encountered.
+            name = lambdaForm.names[i];
+            member = name.function.member();
 
             // store the result from evaluating to the target name in a local if required
             // (if this is the last value, i.e., the one that is going to be returned,
@@ -674,12 +675,66 @@ class InvokerBytecodeGenerator {
     }
 
     /**
-     * Check if MemberName is a call to MethodHandleImpl.selectAlternative.
+     * Check if MemberName is a call to a method named {@code name} in class {@code declaredClass}.
      */
-    private boolean isSelectAlternative(MemberName member) {
+    private boolean memberRefersTo(MemberName member, Class<?> declaringClass, String name) {
         return member != null &&
-               member.getDeclaringClass() == MethodHandleImpl.class &&
-               member.getName().equals("selectAlternative");
+               member.getDeclaringClass() == declaringClass &&
+               member.getName().equals(name);
+    }
+    private boolean nameRefersTo(Name name, Class<?> declaringClass, String methodName) {
+        return name.function != null &&
+               memberRefersTo(name.function.member(), declaringClass, methodName);
+    }
+
+    /**
+     * Check if MemberName is a call to MethodHandle.invokeBasic.
+     */
+    private boolean isInvokeBasic(Name name) {
+        if (name.function == null)
+            return false;
+        if (name.arguments.length < 1)
+            return false;  // must have MH argument
+        MemberName member = name.function.member();
+        return memberRefersTo(member, MethodHandle.class, "invokeBasic") &&
+               !member.isPublic() && !member.isStatic();
+    }
+
+    /**
+     * Check if i-th name is a call to MethodHandleImpl.selectAlternative.
+     */
+    private boolean isSelectAlternative(int pos) {
+        // selectAlternative idiom:
+        //   t_{n}:L=MethodHandleImpl.selectAlternative(...)
+        //   t_{n+1}:?=MethodHandle.invokeBasic(t_{n}, ...)
+        if (pos+1 >= lambdaForm.names.length)  return false;
+        Name name0 = lambdaForm.names[pos];
+        Name name1 = lambdaForm.names[pos+1];
+        return nameRefersTo(name0, MethodHandleImpl.class, "selectAlternative") &&
+               isInvokeBasic(name1) &&
+               name1.lastUseIndex(name0) == 0 &&        // t_{n+1}:?=MethodHandle.invokeBasic(t_{n}, ...)
+               lambdaForm.lastUseIndex(name0) == pos+1; // t_{n} is local: used only in t_{n+1}
+    }
+
+    /**
+     * Check if i-th name is a start of GuardWithCatch idiom.
+     */
+    private boolean isGuardWithCatch(int pos) {
+        // GuardWithCatch idiom:
+        //   t_{n}:L=MethodHandle.invokeBasic(...)
+        //   t_{n+1}:L=MethodHandleImpl.guardWithCatch(*, *, *, t_{n});
+        //   t_{n+2}:?=MethodHandle.invokeBasic(t_{n+1})
+        if (pos+2 >= lambdaForm.names.length)  return false;
+        Name name0 = lambdaForm.names[pos];
+        Name name1 = lambdaForm.names[pos+1];
+        Name name2 = lambdaForm.names[pos+2];
+        return nameRefersTo(name1, MethodHandleImpl.class, "guardWithCatch") &&
+               isInvokeBasic(name0) &&
+               isInvokeBasic(name2) &&
+               name1.lastUseIndex(name0) == 3 &&          // t_{n+1}:L=MethodHandleImpl.guardWithCatch(*, *, *, t_{n});
+               lambdaForm.lastUseIndex(name0) == pos+1 && // t_{n} is local: used only in t_{n+1}
+               name2.lastUseIndex(name1) == 1 &&          // t_{n+2}:?=MethodHandle.invokeBasic(t_{n+1})
+               lambdaForm.lastUseIndex(name1) == pos+2;   // t_{n+1} is local: used only in t_{n+2}
     }
 
     /**
@@ -694,8 +749,6 @@ class InvokerBytecodeGenerator {
      * }</pre></blockquote>
      */
     private void emitSelectAlternative(Name selectAlternativeName, Name invokeBasicName) {
-        MethodType type = selectAlternativeName.function.methodType();
-
         Name receiver = (Name) invokeBasicName.arguments[0];
 
         Label L_fallback = new Label();
@@ -709,7 +762,6 @@ class InvokerBytecodeGenerator {
         mv.visitJumpInsn(Opcodes.IF_ICMPNE, L_fallback);
 
         // invoke selectAlternativeName.arguments[1]
-        MethodHandle target = (MethodHandle) selectAlternativeName.arguments[1];
         emitPushArgument(selectAlternativeName, 1);  // get 2nd argument of selectAlternative
         emitAstoreInsn(receiver.index());  // store the MH in the receiver slot
         emitInvoke(invokeBasicName);
@@ -721,13 +773,91 @@ class InvokerBytecodeGenerator {
         mv.visitLabel(L_fallback);
 
         // invoke selectAlternativeName.arguments[2]
-        MethodHandle fallback = (MethodHandle) selectAlternativeName.arguments[2];
         emitPushArgument(selectAlternativeName, 2);  // get 3rd argument of selectAlternative
         emitAstoreInsn(receiver.index());  // store the MH in the receiver slot
         emitInvoke(invokeBasicName);
 
         // L_done:
         mv.visitLabel(L_done);
+    }
+
+    /**
+      * Emit bytecode for the guardWithCatch idiom.
+      *
+      * The pattern looks like (Cf. MethodHandleImpl.makeGuardWithCatch):
+      * <blockquote><pre>{@code
+      *  guardWithCatch=Lambda(a0:L,a1:L,a2:L,a3:L,a4:L,a5:L,a6:L,a7:L)=>{
+      *    t8:L=MethodHandle.invokeBasic(a4:L,a6:L,a7:L);
+      *    t9:L=MethodHandleImpl.guardWithCatch(a1:L,a2:L,a3:L,t8:L);
+      *   t10:I=MethodHandle.invokeBasic(a5:L,t9:L);t10:I}
+      * }</pre></blockquote>
+      *
+      * It is compiled into bytecode equivalent of the following code:
+      * <blockquote><pre>{@code
+      *  try {
+      *      return a1.invokeBasic(a6, a7);
+      *  } catch (Throwable e) {
+      *      if (!a2.isInstance(e)) throw e;
+      *      return a3.invokeBasic(ex, a6, a7);
+      *  }}
+      */
+    private void emitGuardWithCatch(int pos) {
+        Name args    = lambdaForm.names[pos];
+        Name invoker = lambdaForm.names[pos+1];
+        Name result  = lambdaForm.names[pos+2];
+
+        Label L_startBlock = new Label();
+        Label L_endBlock = new Label();
+        Label L_handler = new Label();
+        Label L_done = new Label();
+
+        Class<?> returnType = result.function.resolvedHandle.type().returnType();
+        MethodType type = args.function.resolvedHandle.type()
+                              .dropParameterTypes(0,1)
+                              .changeReturnType(returnType);
+
+        mv.visitTryCatchBlock(L_startBlock, L_endBlock, L_handler, "java/lang/Throwable");
+
+        // Normal case
+        mv.visitLabel(L_startBlock);
+        // load target
+        emitPushArgument(invoker, 0);
+        emitPushArguments(args, 1); // skip 1st argument: method handle
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", type.basicType().toMethodDescriptorString(), false);
+        mv.visitLabel(L_endBlock);
+        mv.visitJumpInsn(Opcodes.GOTO, L_done);
+
+        // Exceptional case
+        mv.visitLabel(L_handler);
+
+        // Check exception's type
+        mv.visitInsn(Opcodes.DUP);
+        // load exception class
+        emitPushArgument(invoker, 1);
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "isInstance", "(Ljava/lang/Object;)Z", false);
+        Label L_rethrow = new Label();
+        mv.visitJumpInsn(Opcodes.IFEQ, L_rethrow);
+
+        // Invoke catcher
+        // load catcher
+        emitPushArgument(invoker, 2);
+        mv.visitInsn(Opcodes.SWAP);
+        emitPushArguments(args, 1); // skip 1st argument: method handle
+        MethodType catcherType = type.insertParameterTypes(0, Throwable.class);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", catcherType.basicType().toMethodDescriptorString(), false);
+        mv.visitJumpInsn(Opcodes.GOTO, L_done);
+
+        mv.visitLabel(L_rethrow);
+        mv.visitInsn(Opcodes.ATHROW);
+
+        mv.visitLabel(L_done);
+    }
+
+    private void emitPushArguments(Name args, int start) {
+        for (int i = start; i < args.arguments.length; i++) {
+            emitPushArgument(args, i);
+        }
     }
 
     private void emitPushArgument(Name name, int paramIndex) {

@@ -76,7 +76,8 @@ final class MethodTypeForm {
             LF_GEN_INVOKER    = 12,
             LF_CS_LINKER      = 13,  // linkToCallSite_CS
             LF_MH_LINKER      = 14,  // linkToCallSite_MH
-            LF_LIMIT          = 15;
+            LF_GWC            = 15,
+            LF_LIMIT          = 16;
 
     public MethodType erasedType() {
         return erasedType;

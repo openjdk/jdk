@@ -27,7 +27,6 @@ package java.lang.invoke;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import sun.invoke.empty.Empty;
@@ -482,12 +481,26 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      * Factored in an inner class to delay initialization until first usage.
      */
     private static class Lazy {
+        private static final Class<?> MHI = MethodHandleImpl.class;
+
         static final NamedFunction NF_checkSpreadArgument;
+        static final NamedFunction NF_guardWithCatch;
+        static final NamedFunction NF_selectAlternative;
+        static final NamedFunction NF_throwException;
+
         static {
             try {
-                NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
-                        .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
+                NF_checkSpreadArgument = new NamedFunction(MHI.getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
+                NF_guardWithCatch      = new NamedFunction(MHI.getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
+                                                                                 MethodHandle.class, Object[].class));
+                NF_selectAlternative   = new NamedFunction(MHI.getDeclaredMethod("selectAlternative", boolean.class, MethodHandle.class,
+                                                                                 MethodHandle.class));
+                NF_throwException      = new NamedFunction(MHI.getDeclaredMethod("throwException", Throwable.class));
+
                 NF_checkSpreadArgument.resolve();
+                NF_guardWithCatch.resolve();
+                NF_selectAlternative.resolve();
+                NF_throwException.resolve();
             } catch (ReflectiveOperationException ex) {
                 throw newInternalError(ex);
             }
@@ -548,22 +561,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return SimpleMethodHandle.make(srcType, form);
     }
 
+    @LambdaForm.Hidden
     static
     MethodHandle selectAlternative(boolean testResult, MethodHandle target, MethodHandle fallback) {
         return testResult ? target : fallback;
-    }
-
-    static MethodHandle SELECT_ALTERNATIVE;
-    static MethodHandle selectAlternative() {
-        if (SELECT_ALTERNATIVE != null)  return SELECT_ALTERNATIVE;
-        try {
-            SELECT_ALTERNATIVE
-            = IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "selectAlternative",
-                    MethodType.methodType(MethodHandle.class, boolean.class, MethodHandle.class, MethodHandle.class));
-        } catch (ReflectiveOperationException ex) {
-            throw new RuntimeException(ex);
-        }
-        return SELECT_ALTERNATIVE;
     }
 
     static
@@ -585,7 +586,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         // call selectAlternative
         Object[] selectArgs = { names[arity + 1], target, fallback };
-        names[arity + 2] = new Name(MethodHandleImpl.selectAlternative(), selectArgs);
+        names[arity + 2] = new Name(Lazy.NF_selectAlternative, selectArgs);
         targetArgs[0] = names[arity + 2];
 
         // call target or fallback
@@ -595,167 +596,137 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return SimpleMethodHandle.make(target.type(), form);
     }
 
-    private static class GuardWithCatch {
-        private final MethodHandle target;
-        private final Class<? extends Throwable> exType;
-        private final MethodHandle catcher;
-        // FIXME: Build the control flow out of foldArguments.
-        GuardWithCatch(MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
-            this.target = target;
-            this.exType = exType;
-            this.catcher = catcher;
-        }
-        @LambdaForm.Hidden
-        private Object invoke_V(Object... av) throws Throwable {
-            try {
-                return target.invokeExact(av);
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t, av);
-            }
-        }
-        @LambdaForm.Hidden
-        private Object invoke_L0() throws Throwable {
-            try {
-                return target.invokeExact();
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t);
-            }
-        }
-        @LambdaForm.Hidden
-        private Object invoke_L1(Object a0) throws Throwable {
-            try {
-                return target.invokeExact(a0);
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t, a0);
-            }
-        }
-        @LambdaForm.Hidden
-        private Object invoke_L2(Object a0, Object a1) throws Throwable {
-            try {
-                return target.invokeExact(a0, a1);
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t, a0, a1);
-            }
-        }
-        @LambdaForm.Hidden
-        private Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
-            try {
-                return target.invokeExact(a0, a1, a2);
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t, a0, a1, a2);
-            }
-        }
-        @LambdaForm.Hidden
-        private Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
-            try {
-                return target.invokeExact(a0, a1, a2, a3);
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t, a0, a1, a2, a3);
-            }
-        }
-        @LambdaForm.Hidden
-        private Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
-            try {
-                return target.invokeExact(a0, a1, a2, a3, a4);
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t, a0, a1, a2, a3, a4);
-            }
-        }
-        @LambdaForm.Hidden
-        private Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
-            try {
-                return target.invokeExact(a0, a1, a2, a3, a4, a5);
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5);
-            }
-        }
-        @LambdaForm.Hidden
-        private Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
-            try {
-                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6);
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5, a6);
-            }
-        }
-        @LambdaForm.Hidden
-        private Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
-            try {
-                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
-            } catch (Throwable t) {
-                if (!exType.isInstance(t))  throw t;
-                return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5, a6, a7);
-            }
-        }
-        static MethodHandle[] makeInvokes() {
-            ArrayList<MethodHandle> invokes = new ArrayList<>();
-            MethodHandles.Lookup lookup = IMPL_LOOKUP;
-            for (;;) {
-                int nargs = invokes.size();
-                String name = "invoke_L"+nargs;
-                MethodHandle invoke = null;
-                try {
-                    invoke = lookup.findVirtual(GuardWithCatch.class, name, MethodType.genericMethodType(nargs));
-                } catch (ReflectiveOperationException ex) {
-                }
-                if (invoke == null)  break;
-                invokes.add(invoke);
-            }
-            assert(invokes.size() == 9);  // current number of methods
-            return invokes.toArray(new MethodHandle[0]);
-        };
-        static final MethodHandle[] INVOKES = makeInvokes();
-        // For testing use this:
-        //static final MethodHandle[] INVOKES = Arrays.copyOf(makeInvokes(), 2);
-        static final MethodHandle VARARGS_INVOKE;
-        static {
-            try {
-                VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(GuardWithCatch.class, "invoke_V", MethodType.genericMethodType(0, true));
-            } catch (ReflectiveOperationException ex) {
-                throw uncaughtException(ex);
-            }
-        }
-    }
+    /**
+     * The LambaForm shape for catchException combinator is the following:
+     * <blockquote><pre>{@code
+     *  guardWithCatch=Lambda(a0:L,a1:L,a2:L)=>{
+     *    t3:L=BoundMethodHandle$Species_LLLLL.argL0(a0:L);
+     *    t4:L=BoundMethodHandle$Species_LLLLL.argL1(a0:L);
+     *    t5:L=BoundMethodHandle$Species_LLLLL.argL2(a0:L);
+     *    t6:L=BoundMethodHandle$Species_LLLLL.argL3(a0:L);
+     *    t7:L=BoundMethodHandle$Species_LLLLL.argL4(a0:L);
+     *    t8:L=MethodHandle.invokeBasic(t6:L,a1:L,a2:L);
+     *    t9:L=MethodHandleImpl.guardWithCatch(t3:L,t4:L,t5:L,t8:L);
+     *   t10:I=MethodHandle.invokeBasic(t7:L,t9:L);t10:I}
+     * }</pre></blockquote>
+     *
+     * argL0 and argL2 are target and catcher method handles. argL1 is exception class.
+     * argL3 and argL4 are auxiliary method handles: argL3 boxes arguments and wraps them into Object[]
+     * (ValueConversions.array()) and argL4 unboxes result if necessary (ValueConversions.unbox()).
+     *
+     * Having t8 and t10 passed outside and not hardcoded into a lambda form allows to share lambda forms
+     * among catchException combinators with the same basic type.
+     */
+    private static LambdaForm makeGuardWithCatchForm(MethodType basicType) {
+        MethodType lambdaType = basicType.invokerType();
 
+        LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_GWC);
+        if (lform != null) {
+            return lform;
+        }
+        final int THIS_MH      = 0;  // the BMH_LLLLL
+        final int ARG_BASE     = 1;  // start of incoming arguments
+        final int ARG_LIMIT    = ARG_BASE + basicType.parameterCount();
+
+        int nameCursor = ARG_LIMIT;
+        final int GET_TARGET       = nameCursor++;
+        final int GET_CLASS        = nameCursor++;
+        final int GET_CATCHER      = nameCursor++;
+        final int GET_COLLECT_ARGS = nameCursor++;
+        final int GET_UNBOX_RESULT = nameCursor++;
+        final int BOXED_ARGS       = nameCursor++;
+        final int TRY_CATCH        = nameCursor++;
+        final int UNBOX_RESULT     = nameCursor++;
+
+        Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLLLL();
+        names[GET_TARGET]       = new Name(data.getterFunction(0), names[THIS_MH]);
+        names[GET_CLASS]        = new Name(data.getterFunction(1), names[THIS_MH]);
+        names[GET_CATCHER]      = new Name(data.getterFunction(2), names[THIS_MH]);
+        names[GET_COLLECT_ARGS] = new Name(data.getterFunction(3), names[THIS_MH]);
+        names[GET_UNBOX_RESULT] = new Name(data.getterFunction(4), names[THIS_MH]);
+
+        // FIXME: rework argument boxing/result unboxing logic for LF interpretation
+
+        // t_{i}:L=MethodHandle.invokeBasic(collectArgs:L,a1:L,...);
+        MethodType collectArgsType = basicType.changeReturnType(Object.class);
+        MethodHandle invokeBasic = MethodHandles.basicInvoker(collectArgsType);
+        Object[] args = new Object[invokeBasic.type().parameterCount()];
+        args[0] = names[GET_COLLECT_ARGS];
+        System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT-ARG_BASE);
+        names[BOXED_ARGS] = new Name(new NamedFunction(invokeBasic), args);
+
+        // t_{i+1}:L=MethodHandleImpl.guardWithCatch(target:L,exType:L,catcher:L,t_{i}:L);
+        Object[] gwcArgs = new Object[] {names[GET_TARGET], names[GET_CLASS], names[GET_CATCHER], names[BOXED_ARGS]};
+        names[TRY_CATCH] = new Name(Lazy.NF_guardWithCatch, gwcArgs);
+
+        // t_{i+2}:I=MethodHandle.invokeBasic(unbox:L,t_{i+1}:L);
+        MethodHandle invokeBasicUnbox = MethodHandles.basicInvoker(MethodType.methodType(basicType.rtype(), Object.class));
+        Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_CATCH]};
+        names[UNBOX_RESULT] = new Name(new NamedFunction(invokeBasicUnbox), unboxArgs);
+
+        lform = new LambdaForm("guardWithCatch", lambdaType.parameterCount(), names);
+
+        basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWC, lform);
+        return lform;
+    }
 
     static
     MethodHandle makeGuardWithCatch(MethodHandle target,
                                     Class<? extends Throwable> exType,
                                     MethodHandle catcher) {
         MethodType type = target.type();
-        MethodType ctype = catcher.type();
-        int nargs = type.parameterCount();
-        if (nargs < GuardWithCatch.INVOKES.length) {
-            MethodType gtype = type.generic();
-            MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
-            // Note: convertArguments(...2) avoids interface casts present in convertArguments(...0)
-            MethodHandle gtarget = makePairwiseConvert(target, gtype, 2);
-            MethodHandle gcatcher = makePairwiseConvert(catcher, gcatchType, 2);
-            GuardWithCatch gguard = new GuardWithCatch(gtarget, exType, gcatcher);
-            if (gtarget == null || gcatcher == null)  throw new InternalError();
-            MethodHandle ginvoker = GuardWithCatch.INVOKES[nargs].bindReceiver(gguard);
-            return makePairwiseConvert(ginvoker, type, 2);
+        LambdaForm form = makeGuardWithCatchForm(type.basicType());
+
+        // Prepare auxiliary method handles used during LambdaForm interpreation.
+        // Box arguments and wrap them into Object[]: ValueConversions.array().
+        MethodType varargsType = type.changeReturnType(Object[].class);
+        MethodHandle collectArgs = ValueConversions.varargsArray(type.parameterCount())
+                                                   .asType(varargsType);
+        // Result unboxing: ValueConversions.unbox() OR ValueConversions.identity() OR ValueConversions.ignore().
+        MethodHandle unboxResult;
+        if (type.returnType().isPrimitive()) {
+            unboxResult = ValueConversions.unbox(type.returnType());
         } else {
-            target = target.asType(type.changeReturnType(Object.class));
-            MethodHandle gtarget = makeSpreadArguments(target, Object[].class, 0, nargs);
-            MethodType catcherType = ctype.changeParameterType(0, Throwable.class)
-                                          .changeReturnType(Object.class);
-            catcher = catcher.asType(catcherType);
-            MethodHandle gcatcher = makeSpreadArguments(catcher, Object[].class, 1, nargs);
-            GuardWithCatch gguard = new GuardWithCatch(gtarget, exType, gcatcher);
-            if (gtarget == null || gcatcher == null)  throw new InternalError();
-            MethodHandle ginvoker = GuardWithCatch.VARARGS_INVOKE.bindReceiver(gguard);
-            MethodHandle gcollect = makeCollectArguments(ginvoker, ValueConversions.varargsArray(nargs), 0, false);
-            return makePairwiseConvert(gcollect, type, 2);
+            unboxResult = ValueConversions.identity();
         }
+
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLLLL();
+        BoundMethodHandle mh;
+        try {
+            mh = (BoundMethodHandle)
+                    data.constructor[0].invokeBasic(type, form, (Object) target, (Object) exType, (Object) catcher,
+                                                    (Object) collectArgs, (Object) unboxResult);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+        assert(mh.type() == type);
+        return mh;
+    }
+
+    /**
+     * Intrinsified during LambdaForm compilation
+     * (see {@link InvokerBytecodeGenerator#emitGuardWithCatch emitGuardWithCatch}).
+     */
+    @LambdaForm.Hidden
+    static Object guardWithCatch(MethodHandle target, Class exType, MethodHandle catcher,
+                                 Object... av) throws Throwable {
+        try {
+            return target.invokeWithArguments(av);
+        } catch (Throwable t) {
+            if (!exType.isInstance(t)) throw t;
+            Object[] args = prepend(t, av);
+            return catcher.invokeWithArguments(args);
+        }
+    }
+
+    /** Prepend an element {@code elem} to an {@code array}. */
+    private static Object[] prepend(Object elem, Object[] array) {
+        Object[] newArray = new Object[array.length+1];
+        newArray[0] = elem;
+        System.arraycopy(array, 0, newArray, 1, array.length);
+        return newArray;
     }
 
     static
@@ -765,23 +736,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (arity > 1) {
             return throwException(type.dropParameterTypes(1, arity)).dropArguments(type, 1, arity-1);
         }
-        return makePairwiseConvert(throwException(), type, 2);
+        return makePairwiseConvert(Lazy.NF_throwException.resolvedHandle(), type, 2);
     }
 
-    static MethodHandle THROW_EXCEPTION;
-    static MethodHandle throwException() {
-        MethodHandle mh = THROW_EXCEPTION;
-        if (mh != null)  return mh;
-        try {
-            mh
-            = IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "throwException",
-                    MethodType.methodType(Empty.class, Throwable.class));
-        } catch (ReflectiveOperationException ex) {
-            throw new RuntimeException(ex);
-        }
-        THROW_EXCEPTION = mh;
-        return mh;
-    }
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
 
     static MethodHandle[] FAKE_METHOD_HANDLE_INVOKE = new MethodHandle[2];
