@@ -49,6 +49,7 @@ typedef AwtObject* PDATA;
 
 #define JNI_CHECK_NULL_GOTO(obj, msg, where) {                            \
     if (obj == NULL) {                                                    \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, msg);                          \
         goto where;                                                       \
     }                                                                     \
@@ -65,6 +66,7 @@ typedef AwtObject* PDATA;
 
 #define JNI_CHECK_NULL_RETURN(obj, msg) {                                 \
     if (obj == NULL) {                                                    \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, msg);                          \
         return;                                                           \
     }                                                                     \
@@ -91,6 +93,7 @@ typedef AwtObject* PDATA;
 
 #define JNI_CHECK_NULL_RETURN_NULL(obj, msg) {                            \
     if (obj == NULL) {                                                    \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, msg);                          \
         return 0;                                                         \
     }                                                                     \
@@ -98,6 +101,7 @@ typedef AwtObject* PDATA;
 
 #define JNI_CHECK_NULL_RETURN_VAL(obj, msg, val) {                        \
     if (obj == NULL) {                                                    \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, msg);                          \
         return val;                                                       \
     }                                                                     \
@@ -124,6 +128,7 @@ typedef AwtObject* PDATA;
 #define THROW_NULL_PDATA_IF_NOT_DESTROYED(peer) {                         \
     jboolean destroyed = JNI_GET_DESTROYED(peer);                         \
     if (destroyed != JNI_TRUE) {                                          \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, "null pData");                 \
     }                                                                     \
 }
