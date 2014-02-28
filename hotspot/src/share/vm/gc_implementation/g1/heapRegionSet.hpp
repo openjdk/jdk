@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,11 +191,14 @@ public:
   }
 };
 
-// A set that links all the regions added to it in a singly-linked
+// A set that links all the regions added to it in a doubly-linked
 // list. We should try to avoid doing operations that iterate over
 // such lists in performance critical paths. Typically we should
-// add / remove one region at a time or concatenate two lists. All
-// those operations are done in constant time.
+// add / remove one region at a time or concatenate two lists. There are
+// two ways to treat your lists, ordered and un-ordered. All un-ordered
+// operations are done in constant time. To keep a list ordered only use
+// add_ordered() to add elements to the list. If a list is not ordered
+// from start, there is no way to sort it later.
 
 class FreeRegionListIterator;
 
@@ -205,6 +208,11 @@ class FreeRegionList : public HeapRegionSetBase {
 private:
   HeapRegion* _head;
   HeapRegion* _tail;
+
+  // _last is used to keep track of where we added an element the last
+  // time in ordered lists. It helps to improve performance when adding
+  // several ordered items in a row.
+  HeapRegion* _last;
 
   static uint _unrealistically_long_length;
 
@@ -229,6 +237,11 @@ public:
 
   static void set_unrealistically_long_length(uint len);
 
+  // Add hr to the list. The region should not be a member of another set.
+  // Assumes that the list is ordered and will preserve that order. The order
+  // is determined by hrs_index.
+  inline void add_ordered(HeapRegion* hr);
+
   // It adds hr to the list as the new head. The region should not be
   // a member of another set.
   inline void add_as_head(HeapRegion* hr);
@@ -243,6 +256,20 @@ public:
 
   // Convenience method.
   inline HeapRegion* remove_head_or_null();
+
+  // Removes and returns the last element (_tail) of the list. It assumes
+  // that the list isn't empty so that it can return a non-NULL value.
+  inline HeapRegion* remove_tail();
+
+  // Convenience method
+  inline HeapRegion* remove_tail_or_null();
+
+  // Removes from head or tail based on the given argument.
+  inline HeapRegion* remove_region(bool from_head);
+
+  // Merge two ordered lists. The result is also ordered. The order is
+  // determined by hrs_index.
+  void add_ordered(FreeRegionList* from_list);
 
   // It moves the regions from from_list to this list and empties
   // from_list. The new regions will appear in the same order as they
@@ -276,7 +303,7 @@ public:
 class FreeRegionListIterator : public StackObj {
 private:
   FreeRegionList* _list;
-  HeapRegion*           _curr;
+  HeapRegion*     _curr;
 
 public:
   bool more_available() {
@@ -296,8 +323,7 @@ public:
     return hr;
   }
 
-  FreeRegionListIterator(FreeRegionList* list)
-    : _curr(NULL), _list(list) {
+  FreeRegionListIterator(FreeRegionList* list) : _curr(NULL), _list(list) {
     _curr = list->head();
   }
 };

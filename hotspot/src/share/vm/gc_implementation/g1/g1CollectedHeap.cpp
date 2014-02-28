@@ -516,7 +516,7 @@ G1CollectedHeap* G1CollectedHeap::_g1h;
 // Private methods.
 
 HeapRegion*
-G1CollectedHeap::new_region_try_secondary_free_list() {
+G1CollectedHeap::new_region_try_secondary_free_list(bool is_old) {
   MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
   while (!_secondary_free_list.is_empty() || free_regions_coming()) {
     if (!_secondary_free_list.is_empty()) {
@@ -532,7 +532,7 @@ G1CollectedHeap::new_region_try_secondary_free_list() {
 
       assert(!_free_list.is_empty(), "if the secondary_free_list was not "
              "empty we should have moved at least one entry to the free_list");
-      HeapRegion* res = _free_list.remove_head();
+      HeapRegion* res = _free_list.remove_region(is_old);
       if (G1ConcRegionFreeingVerbose) {
         gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
                                "allocated "HR_FORMAT" from secondary_free_list",
@@ -554,7 +554,7 @@ G1CollectedHeap::new_region_try_secondary_free_list() {
   return NULL;
 }
 
-HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
+HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool is_old, bool do_expand) {
   assert(!isHumongous(word_size) || word_size <= HeapRegion::GrainWords,
          "the only time we use this to allocate a humongous region is "
          "when we are allocating a single humongous region");
@@ -566,19 +566,21 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
         gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
                                "forced to look at the secondary_free_list");
       }
-      res = new_region_try_secondary_free_list();
+      res = new_region_try_secondary_free_list(is_old);
       if (res != NULL) {
         return res;
       }
     }
   }
-  res = _free_list.remove_head_or_null();
+
+  res = _free_list.remove_region(is_old);
+
   if (res == NULL) {
     if (G1ConcRegionFreeingVerbose) {
       gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
                              "res == NULL, trying the secondary_free_list");
     }
-    res = new_region_try_secondary_free_list();
+    res = new_region_try_secondary_free_list(is_old);
   }
   if (res == NULL && do_expand && _expand_heap_after_alloc_failure) {
     // Currently, only attempts to allocate GC alloc regions set
@@ -595,12 +597,9 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
     if (expand(word_size * HeapWordSize)) {
       // Given that expand() succeeded in expanding the heap, and we
       // always expand the heap by an amount aligned to the heap
-      // region size, the free list should in theory not be empty. So
-      // it would probably be OK to use remove_head(). But the extra
-      // check for NULL is unlikely to be a performance issue here (we
-      // just expanded the heap!) so let's just be conservative and
-      // use remove_head_or_null().
-      res = _free_list.remove_head_or_null();
+      // region size, the free list should in theory not be empty.
+      // In either case remove_region() will check for NULL.
+      res = _free_list.remove_region(is_old);
     } else {
       _expand_heap_after_alloc_failure = false;
     }
@@ -618,7 +617,7 @@ uint G1CollectedHeap::humongous_obj_allocate_find_first(uint num_regions,
     // Only one region to allocate, no need to go through the slower
     // path. The caller will attempt the expansion if this fails, so
     // let's not try to expand here too.
-    HeapRegion* hr = new_region(word_size, false /* do_expand */);
+    HeapRegion* hr = new_region(word_size, true /* is_old */, false /* do_expand */);
     if (hr != NULL) {
       first = hr->hrs_index();
     } else {
@@ -5907,7 +5906,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
     _cg1r->hot_card_cache()->reset_card_counts(hr);
   }
   hr->hr_clear(par, true /* clear_space */, locked /* locked */);
-  free_list->add_as_head(hr);
+  free_list->add_ordered(hr);
 }
 
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
@@ -5947,7 +5946,7 @@ void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
   assert(list != NULL, "list can't be null");
   if (!list->is_empty()) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    _free_list.add_as_head(list);
+    _free_list.add_ordered(list);
   }
 }
 
@@ -6413,6 +6412,7 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
   bool young_list_full = g1_policy()->is_young_list_full();
   if (force || !young_list_full) {
     HeapRegion* new_alloc_region = new_region(word_size,
+                                              false /* is_old */,
                                               false /* do_expand */);
     if (new_alloc_region != NULL) {
       set_region_short_lived_locked(new_alloc_region);
@@ -6471,14 +6471,16 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
   assert(FreeList_lock->owned_by_self(), "pre-condition");
 
   if (count < g1_policy()->max_regions(ap)) {
+    bool survivor = (ap == GCAllocForSurvived);
     HeapRegion* new_alloc_region = new_region(word_size,
+                                              !survivor,
                                               true /* do_expand */);
     if (new_alloc_region != NULL) {
       // We really only need to do this for old regions given that we
       // should never scan survivors. But it doesn't hurt to do it
       // for survivors too.
       new_alloc_region->set_saved_mark();
-      if (ap == GCAllocForSurvived) {
+      if (survivor) {
         new_alloc_region->set_survivor();
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Survivor);
       } else {
