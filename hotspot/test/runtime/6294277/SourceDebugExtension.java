@@ -25,7 +25,7 @@
  * @test
  * @bug 6294277
  * @summary java -Xdebug crashes on SourceDebugExtension attribute larger than 64K
- * @run main/othervm -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n SourceDebugExtension
+ * @run main/othervm -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n SourceDebugExtension
  */
 import java.io.*;
 
