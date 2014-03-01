@@ -1464,7 +1464,19 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     // It's fine to update the thread state here because no JVMTI events
     // shall be posted for this PopFrame.
 
-    state->update_for_pop_top_frame();
+    // It is only safe to perform the direct operation on the current
+    // thread. All other usage needs to use a vm-safepoint-op for safety.
+    if (java_thread == JavaThread::current()) {
+      state->update_for_pop_top_frame();
+    } else {
+      VM_UpdateForPopTopFrame op(state);
+      VMThread::execute(&op);
+      jvmtiError err = op.result();
+      if (err != JVMTI_ERROR_NONE) {
+        return err;
+      }
+    }
+
     java_thread->set_popframe_condition(JavaThread::popframe_pending_bit);
     // Set pending step flag for this popframe and it is cleared when next
     // step event is posted.
@@ -1505,6 +1517,7 @@ JvmtiEnv::GetFrameLocation(JavaThread* java_thread, jint depth, jmethodID* metho
 // depth - pre-checked as non-negative
 jvmtiError
 JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
+  jvmtiError err = JVMTI_ERROR_NONE;
   ResourceMark rm;
   uint32_t debug_bits = 0;
 
@@ -1532,10 +1545,17 @@ JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
 
   assert(vf->frame_pointer() != NULL, "frame pointer mustn't be NULL");
 
-  int frame_number = state->count_frames() - depth;
-  state->env_thread_state(this)->set_frame_pop(frame_number);
-
-  return JVMTI_ERROR_NONE;
+  // It is only safe to perform the direct operation on the current
+  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  if (java_thread == JavaThread::current()) {
+    int frame_number = state->count_frames() - depth;
+    state->env_thread_state(this)->set_frame_pop(frame_number);
+  } else {
+    VM_SetFramePop op(this, state, depth);
+    VMThread::execute(&op);
+    err = op.result();
+  }
+  return err;
 } /* end NotifyFramePop */
 
 
