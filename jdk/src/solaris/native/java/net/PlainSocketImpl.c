@@ -670,11 +670,11 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
         /* passing a timeout of 0 to poll will return immediately,
            but in the case of ServerSocket 0 means infinite. */
         if (timeout <= 0) {
-            ret = NET_Timeout(fd, -1);
+            ret = NET_Timeout(env, fd, -1);
         } else {
-            ret = NET_Timeout(fd, timeout);
+            ret = NET_Timeout(env, fd, timeout);
         }
-
+        JNU_CHECK_EXCEPTION(env);
         if (ret == 0) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                             "Accept timed out");

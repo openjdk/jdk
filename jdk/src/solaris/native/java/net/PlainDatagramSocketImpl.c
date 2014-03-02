@@ -501,7 +501,8 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
         return -1;
     }
     if (timeout) {
-        int ret = NET_Timeout(fd, timeout);
+        int ret = NET_Timeout(env, fd, timeout);
+        JNU_CHECK_EXCEPTION_RETURN(env, -1);
         if (ret == 0) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                             "Peek timed out");
@@ -594,7 +595,8 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
     packetBufferOffset = (*env)->GetIntField(env, packet, dp_offsetID);
     packetBufferLen = (*env)->GetIntField(env, packet, dp_bufLengthID);
     if (timeout) {
-        int ret = NET_Timeout(fd, timeout);
+        int ret = NET_Timeout(env, fd, timeout);
+        JNU_CHECK_EXCEPTION_RETURN(env, -1);
         if (ret == 0) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                             "Receive timed out");
@@ -802,9 +804,11 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
         retry = JNI_FALSE;
 
         if (timeout) {
-            int ret = NET_Timeout(fd, timeout);
+            int ret = NET_Timeout(env, fd, timeout);
             if (ret <= 0) {
-                if (ret == 0) {
+                if ((*env)->ExceptionCheck(env)) {
+                    // fall-through, to potentially free, then return
+                } else if (ret == 0) {
                     JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                                     "Receive timed out");
                 } else if (ret == -1) {

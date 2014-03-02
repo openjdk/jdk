@@ -100,9 +100,11 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
     }
 
     if (timeout) {
-        nread = NET_Timeout(fd, timeout);
+        nread = NET_Timeout(env, fd, timeout);
         if (nread <= 0) {
-            if (nread == 0) {
+            if ((*env)->ExceptionCheck(env)) {
+                // fall-through, to potentially free, then return
+            } else if (nread == 0) {
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                             "Read timed out");
             } else if (nread == -1) {
