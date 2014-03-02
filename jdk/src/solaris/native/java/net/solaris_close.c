@@ -28,6 +28,8 @@
 #include <stropts.h>
 #include <unistd.h>
 
+#include "jni.h"
+
 /* Support for restartable system calls on Solaris. */
 
 #define RESTARTABLE_RETURN_INT(_cmd) do {             \
@@ -86,7 +88,7 @@ int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
     RESTARTABLE_RETURN_INT(poll(ufds, nfds, timeout));
 }
 
-int NET_Timeout(int s, long timeout) {
+int NET_Timeout(JNIEnv *unused, int s, long timeout) {
     int result;
     struct timeval t;
     long prevtime, newtime;
