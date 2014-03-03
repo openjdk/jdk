@@ -3864,6 +3864,9 @@ class CommandLineFlags {
           "Allocation less than this value will be allocated "              \
           "using malloc. Larger allocations will use mmap.")                \
                                                                             \
+  experimental(bool, AlwaysAtomicAccesses, false,                           \
+          "Accesses to all variables should always be atomic")              \
+                                                                            \
   product(bool, EnableTracing, false,                                       \
           "Enable event-based tracing")                                     \
                                                                             \
