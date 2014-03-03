@@ -31,6 +31,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -66,7 +67,6 @@ public final class WithObject extends ScriptObject implements Scope {
         this.expression = expression;
     }
 
-
     /**
      * Delete a property based on a key.
      * @param key Any valid JavaScript value.
@@ -99,7 +99,7 @@ public final class WithObject extends ScriptObject implements Scope {
 
         final boolean isNamedOperation;
         final String name;
-        if(desc.getNameTokenCount() > 2) {
+        if (desc.getNameTokenCount() > 2) {
             isNamedOperation = true;
             name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         } else {
@@ -114,7 +114,6 @@ public final class WithObject extends ScriptObject implements Scope {
 
         if (find != null) {
             link = self.lookup(desc, request);
-
             if (link != null) {
                 return fixExpressionCallSite(ndesc, link);
             }
@@ -239,21 +238,33 @@ public final class WithObject extends ScriptObject implements Scope {
     private static GuardedInvocation fixExpressionCallSite(final NashornCallSiteDescriptor desc, final GuardedInvocation link) {
         // If it's not a getMethod, just add an expression filter that converts WithObject in "this" position to its
         // expression.
-        if(!"getMethod".equals(desc.getFirstOperator())) {
+        if (!"getMethod".equals(desc.getFirstOperator())) {
             return fixReceiverType(link, WITHEXPRESSIONFILTER).filterArguments(0, WITHEXPRESSIONFILTER);
         }
 
-        final MethodHandle linkInvocation = link.getInvocation();
-        final MethodType linkType = linkInvocation.type();
-        final boolean linkReturnsFunction = ScriptFunction.class.isAssignableFrom(linkType.returnType());
+        final MethodHandle linkInvocation      = link.getInvocation();
+        final MethodType   linkType            = linkInvocation.type();
+        final boolean      linkReturnsFunction = ScriptFunction.class.isAssignableFrom(linkType.returnType());
 
         return link.replaceMethods(
                 // Make sure getMethod will bind the script functions it receives to WithObject.expression
-                MH.foldArguments(linkReturnsFunction ? BIND_TO_EXPRESSION_FN : BIND_TO_EXPRESSION_OBJ,
-                        filterReceiver(linkInvocation.asType(linkType.changeReturnType(
-                                linkReturnsFunction ? ScriptFunction.class : Object.class).changeParameterType(0, ScriptObject.class)), WITHEXPRESSIONFILTER)),
-                // No clever things for the guard -- it is still identically filtered.
-                filterGuardReceiver(link, WITHEXPRESSIONFILTER));
+                MH.foldArguments(
+                        linkReturnsFunction ?
+                                BIND_TO_EXPRESSION_FN :
+                                BIND_TO_EXPRESSION_OBJ,
+                        filterReceiver(
+                                linkInvocation.asType(
+                                        linkType.changeReturnType(
+                                                linkReturnsFunction ?
+                                                        ScriptFunction.class :
+                                                        Object.class).
+                                                            changeParameterType(
+                                                                    0,
+                                                                    ScriptObject.class)),
+                                        WITHEXPRESSIONFILTER)),
+                         filterGuardReceiver(link, WITHEXPRESSIONFILTER));
+     // No clever things for the guard -- it is still identically filtered.
+
     }
 
     private GuardedInvocation fixScopeCallSite(final GuardedInvocation link, final String name) {
@@ -271,10 +282,20 @@ public final class WithObject extends ScriptObject implements Scope {
 
     private static MethodHandle filterGuardReceiver(final GuardedInvocation link, final MethodHandle receiverFilter) {
         final MethodHandle test = link.getGuard();
-        return test == null ? null : filterReceiver(test, receiverFilter);
+        if (test == null) {
+            return null;
+        }
+
+        final Class<?> receiverType = test.type().parameterType(0);
+        final MethodHandle filter = MH.asType(receiverFilter,
+                receiverFilter.type().changeParameterType(0, receiverType).
+                changeReturnType(receiverType));
+
+        return filterReceiver(test, filter);
     }
 
     private static MethodHandle filterReceiver(final MethodHandle mh, final MethodHandle receiverFilter) {
+        //With expression filter == receiverFilter, i.e. receiver is cast to withobject and its expression returned
         return MH.filterArguments(mh, 0, receiverFilter);
     }
 

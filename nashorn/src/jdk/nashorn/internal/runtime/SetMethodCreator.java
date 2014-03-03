@@ -36,7 +36,6 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 
-
 /**
  * Instances of this class are quite ephemeral; they only exist for the duration of an invocation of
  * {@link ScriptObject#findSetMethod(CallSiteDescriptor, jdk.internal.dynalink.linker.LinkRequest)} and
@@ -49,6 +48,7 @@ final class SetMethodCreator {
     private final FindProperty       find;
     private final CallSiteDescriptor desc;
     private final Class<?>           type;
+    private final boolean            explicitInstanceOfCheck;
 
     /**
      * Creates a new property setter method creator.
@@ -57,12 +57,13 @@ final class SetMethodCreator {
      * want to create a setter for. Can be null if the property does not yet exist on the object.
      * @param desc the descriptor of the call site that triggered the property setter lookup
      */
-    SetMethodCreator(final ScriptObject sobj, final FindProperty find, final CallSiteDescriptor desc) {
+    SetMethodCreator(final ScriptObject sobj, final FindProperty find, final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck) {
         this.sobj = sobj;
         this.map  = sobj.getMap();
         this.find = find;
         this.desc = desc;
         this.type = desc.getMethodType().parameterType(1);
+        this.explicitInstanceOfCheck = explicitInstanceOfCheck;
 
     }
 
@@ -118,7 +119,7 @@ final class SetMethodCreator {
         }
 
         private MethodHandle getGuard() {
-            return needsNoGuard() ? null : NashornGuards.getMapGuard(getMap());
+            return needsNoGuard() ? null : NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck);
         }
 
         private boolean needsNoGuard() {

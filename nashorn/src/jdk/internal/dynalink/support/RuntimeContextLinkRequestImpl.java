@@ -103,14 +103,15 @@ public class RuntimeContextLinkRequestImpl extends LinkRequestImpl {
      * @param callSiteDescriptor the descriptor for the call site being linked
      * @param callSiteToken the opaque token for the call site being linked.
      * @param arguments the arguments for the invocation
+     * @param linkCount number of times callsite has been linked/relinked
      * @param callSiteUnstable true if the call site being linked is considered unstable
      * @param runtimeContextArgCount the number of the leading arguments on the stack that represent the language
      * runtime specific context arguments.
      * @throws IllegalArgumentException if runtimeContextArgCount is less than 1.
      */
     public RuntimeContextLinkRequestImpl(CallSiteDescriptor callSiteDescriptor, Object callSiteToken,
-            boolean callSiteUnstable, Object[] arguments, int runtimeContextArgCount) {
-        super(callSiteDescriptor, callSiteToken, callSiteUnstable, arguments);
+            int linkCount, boolean callSiteUnstable, Object[] arguments, int runtimeContextArgCount) {
+        super(callSiteDescriptor, callSiteToken, linkCount, callSiteUnstable, arguments);
         if(runtimeContextArgCount < 1) {
             throw new IllegalArgumentException("runtimeContextArgCount < 1");
         }
@@ -122,14 +123,14 @@ public class RuntimeContextLinkRequestImpl extends LinkRequestImpl {
         if(contextStrippedRequest == null) {
             contextStrippedRequest =
                     new LinkRequestImpl(CallSiteDescriptorFactory.dropParameterTypes(getCallSiteDescriptor(), 1,
-                            runtimeContextArgCount + 1), getCallSiteToken(), isCallSiteUnstable(), getTruncatedArguments());
+                            runtimeContextArgCount + 1), getCallSiteToken(), getLinkCount(), isCallSiteUnstable(), getTruncatedArguments());
         }
         return contextStrippedRequest;
     }
 
     @Override
     public LinkRequest replaceArguments(CallSiteDescriptor callSiteDescriptor, Object[] arguments) {
-        return new RuntimeContextLinkRequestImpl(callSiteDescriptor, getCallSiteToken(), isCallSiteUnstable(), arguments,
+        return new RuntimeContextLinkRequestImpl(callSiteDescriptor, getCallSiteToken(), getLinkCount(), isCallSiteUnstable(), arguments,
                 runtimeContextArgCount);
     }
 

@@ -25,15 +25,23 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
+
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
+import jdk.nashorn.internal.runtime.arrays.TypedArrayData;
 
 /**
  * Int8Array for the TypedArray extension
@@ -57,31 +65,96 @@ public final class NativeInt8Array extends ArrayBufferView {
         }
 
         @Override
-        public ArrayData createArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
-            return new Int8ArrayData(buffer, byteOffset, length);
+        public Int8ArrayData createArrayData(final ByteBuffer nb, final int start, final int end) {
+            return new Int8ArrayData(nb, start, end);
+        }
+
+        @Override
+        public String getClassName() {
+            return "Int8Array";
         }
     };
 
-    private static final class Int8ArrayData extends ArrayDataImpl {
-        private Int8ArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
-            super(buffer, byteOffset, elementLength);
+    private static final class Int8ArrayData extends TypedArrayData<ByteBuffer> {
+
+        private static final MethodHandle GET_ELEM = specialCall(MethodHandles.lookup(), Int8ArrayData.class, "getElem", int.class, int.class).methodHandle();
+        private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Int8ArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
+
+        private Int8ArrayData(final ByteBuffer nb, final int start, final int end) {
+            super(((ByteBuffer)nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override
-        protected int byteIndex(final int index) {
-            return index * BYTES_PER_ELEMENT + byteOffset;
+        protected MethodHandle getGetElem() {
+            return GET_ELEM;
         }
 
         @Override
-        protected int getIntImpl(final int index) {
-            return buffer.getByteArray()[byteIndex(index)];
+        protected MethodHandle getSetElem() {
+            return SET_ELEM;
+        }
+
+        private int getElem(final int index) {
+            try {
+                return nb.get(index);
+            } catch (final IndexOutOfBoundsException e) {
+                throw new ClassCastException(); //force relink - this works for unoptimistic too
+            }
+        }
+
+        private void setElem(final int index, final int elem) {
+            try {
+                nb.put(index, (byte)elem);
+            } catch (final IndexOutOfBoundsException e) {
+                //swallow valid array indexes. it's ok.
+                if (index < 0) {
+                    throw new ClassCastException();
+                }
+            }
         }
 
         @Override
-        protected void setImpl(final int index, final int value) {
-            buffer.getByteArray()[byteIndex(index)] = (byte)value;
+        public int getInt(int index) {
+            return getElem(index);
+        }
+
+        @Override
+        public long getLong(int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public double getDouble(int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public Object getObject(int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public ArrayData set(int index, Object value, boolean strict) {
+            return set(index, JSType.toInt32(value), strict);
+        }
+
+        @Override
+        public ArrayData set(int index, int value, boolean strict) {
+            setElem(index, value);
+            return this;
+        }
+
+        @Override
+        public ArrayData set(int index, long value, boolean strict) {
+            return set(index, (int)value, strict);
+        }
+
+        @Override
+        public ArrayData set(int index, double value, boolean strict) {
+            return set(index, (int)value, strict);
         }
     }
+
 
     /**
      * Constructor
@@ -94,16 +167,11 @@ public final class NativeInt8Array extends ArrayBufferView {
      */
     @Constructor(arity = 1)
     public static Object constructor(final boolean newObj, final Object self, final Object... args) {
-        return constructorImpl(args, FACTORY);
+        return constructorImpl(newObj, args, FACTORY);
     }
 
     NativeInt8Array(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
         super(buffer, byteOffset, length);
-    }
-
-    @Override
-    public String getClassName() {
-        return "Int8Array";
     }
 
     @Override

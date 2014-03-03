@@ -98,18 +98,21 @@ public class LinkRequestImpl implements LinkRequest {
     private final Object callSiteToken;
     private final Object[] arguments;
     private final boolean callSiteUnstable;
+    private final int linkCount;
 
     /**
      * Creates a new link request.
      *
      * @param callSiteDescriptor the descriptor for the call site being linked
      * @param callSiteToken the opaque token for the call site being linked.
+     * @param linkCount how many times this callsite has been linked/relinked
      * @param callSiteUnstable true if the call site being linked is considered unstable
      * @param arguments the arguments for the invocation
      */
-    public LinkRequestImpl(CallSiteDescriptor callSiteDescriptor, Object callSiteToken, boolean callSiteUnstable, Object... arguments) {
+    public LinkRequestImpl(CallSiteDescriptor callSiteDescriptor, Object callSiteToken, int linkCount, boolean callSiteUnstable, Object... arguments) {
         this.callSiteDescriptor = callSiteDescriptor;
         this.callSiteToken = callSiteToken;
+        this.linkCount = linkCount;
         this.callSiteUnstable = callSiteUnstable;
         this.arguments = arguments;
     }
@@ -140,12 +143,17 @@ public class LinkRequestImpl implements LinkRequest {
     }
 
     @Override
+    public int getLinkCount() {
+        return linkCount;
+    }
+
+    @Override
     public LinkRequest withoutRuntimeContext() {
         return this;
     }
 
     @Override
     public LinkRequest replaceArguments(CallSiteDescriptor newCallSiteDescriptor, Object[] newArguments) {
-        return new LinkRequestImpl(newCallSiteDescriptor, callSiteToken, callSiteUnstable, newArguments);
+        return new LinkRequestImpl(newCallSiteDescriptor, callSiteToken, linkCount, callSiteUnstable, newArguments);
     }
 }

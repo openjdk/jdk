@@ -108,6 +108,7 @@ public final class NativeDebug extends ScriptObject {
     /**
      * Returns true if if the two objects are both property maps, and they have identical properties in the same order,
      * but allows the properties to differ in their types.
+     * @param self self
      * @param m1 first property map
      * @param m2 second property map
      * @return true if they have identical properties in same order, with possibly different types.
@@ -119,6 +120,7 @@ public final class NativeDebug extends ScriptObject {
 
     /**
      * Returns a diagnostic string representing the difference of two property maps.
+     * @param self self
      * @param m1 first property map
      * @param m2 second property map
      * @return a diagnostic string representing the difference of two property maps.
@@ -127,7 +129,6 @@ public final class NativeDebug extends ScriptObject {
     public static Object diffPropertyMaps(final Object self, final Object m1, final Object m2) {
         return PropertyMap.diff((PropertyMap)m1, (PropertyMap)m2);
     }
-
 
     /**
      * Object util - getClass

@@ -25,9 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
-
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -119,9 +116,6 @@ public final class AccessNode extends BaseNode {
     public AccessNode setType(final TemporarySymbols ts, final Type optimisticType) {
         if (this.optimisticType == optimisticType) {
             return this;
-        }
-        if (DEBUG_FIELDS && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), optimisticType)) {
-            ObjectClassGenerator.LOG.info(getClass().getName(), " ", this, " => ", optimisticType, " instead of ", getType());
         }
         return new AccessNode(this, base, property, isFunction(), optimisticType, isOptimistic, programPoint);
     }

@@ -101,7 +101,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         } else if (self instanceof Undefined) {
             inv = Undefined.lookup(desc);
         } else {
-            throw new AssertionError(); // Should never reach here.
+            throw new AssertionError(self.getClass().getName()); // Should never reach here.
         }
 
         return inv;

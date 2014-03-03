@@ -227,8 +227,8 @@ public class DynamicLinker {
         final boolean callSiteUnstable = unstableDetectionEnabled && relinkCount >= unstableRelinkThreshold;
         final LinkRequest linkRequest =
                 runtimeContextArgCount == 0 ?
-                        new LinkRequestImpl(callSiteDescriptor, callSite, callSiteUnstable, arguments) :
-                        new RuntimeContextLinkRequestImpl(callSiteDescriptor, callSite, callSiteUnstable, arguments, runtimeContextArgCount);
+                        new LinkRequestImpl(callSiteDescriptor, callSite, relinkCount, callSiteUnstable, arguments) :
+                        new RuntimeContextLinkRequestImpl(callSiteDescriptor, callSite, relinkCount, callSiteUnstable, arguments, runtimeContextArgCount);
 
         GuardedInvocation guardedInvocation = linkerServices.getGuardedInvocation(linkRequest);
 

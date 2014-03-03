@@ -89,6 +89,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.lang.invoke.WrongMethodTypeException;
 import java.util.List;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.CatchExceptionCombinator;
 import jdk.internal.dynalink.support.Guards;
@@ -344,21 +345,44 @@ public class GuardedInvocation {
      * @return a composite method handle.
      */
     public MethodHandle compose(MethodHandle fallback) {
-        return compose(fallback, fallback);
+        return compose(fallback, fallback, fallback);
     }
 
     /**
      * Composes the invocation, switchpoint, and the guard into a composite method handle that knows how to fall back.
      * @param switchpointFallback the fallback method handle in case switchpoint is invalidated.
      * @param guardFallback the fallback method handle in case guard returns false.
+     * @param catchFallback the fallback method in case the exception handler triggers
      * @return a composite method handle.
      */
-    public MethodHandle compose(MethodHandle switchpointFallback, MethodHandle guardFallback) {
+    public MethodHandle compose(MethodHandle guardFallback, MethodHandle switchpointFallback, MethodHandle catchFallback) {
         final MethodHandle guarded =
-                guard == null ? invocation : MethodHandles.guardWithTest(guard, invocation, guardFallback);
-        final MethodHandle catchGuarded = exception == null ? guarded : catchException(guarded, exception,
-                MethodHandles.dropArguments(guardFallback, 0, exception));
-        return switchPoint == null ? catchGuarded : switchPoint.guardWithTest(catchGuarded, switchpointFallback);
+                guard == null ?
+                        invocation :
+                        MethodHandles.guardWithTest(
+                                guard,
+                                invocation,
+                                guardFallback);
+
+        final MethodHandle catchGuarded =
+                exception == null ?
+                        guarded :
+                        catchException(
+                                guarded,
+                                exception,
+                                MethodHandles.dropArguments(
+                                    catchFallback,
+                                    0,
+                                    exception));
+
+        final MethodHandle spGuarded =
+                switchPoint == null ?
+                        catchGuarded :
+                        switchPoint.guardWithTest(
+                                catchGuarded,
+                                switchpointFallback);
+
+        return spGuarded;
     }
 
     private static MethodHandle catchException(final MethodHandle target, final Class<? extends Throwable> exType, final MethodHandle handler) {
@@ -367,6 +391,7 @@ public class GuardedInvocation {
         }
         return MethodHandles.catchException(target, exType, handler);
     }
+
     private static void assertType(MethodHandle mh, MethodType type) {
         if(!mh.type().equals(type)) {
             throw new WrongMethodTypeException("Expected type: " + type + " actual type: " + mh.type());

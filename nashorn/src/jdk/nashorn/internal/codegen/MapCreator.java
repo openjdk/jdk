@@ -77,8 +77,16 @@ public class MapCreator<T> {
             final String   key         = tuple.key;
             final Symbol   symbol      = tuple.symbol;
             final Class<?> initialType = tuple.getValueType();
+
             if (symbol != null && !isValidArrayIndex(getArrayIndex(key))) {
-                properties.add(new AccessorProperty(key, getPropertyFlags(symbol, hasArguments), structure, symbol.getFieldIndex(), initialType));
+                final int      flags    = getPropertyFlags(symbol, hasArguments);
+                final Property property = new AccessorProperty(
+                        key,
+                        flags,
+                        structure,
+                        symbol.getFieldIndex(),
+                        initialType);
+                properties.add(property);
             }
         }
 
@@ -94,8 +102,14 @@ public class MapCreator<T> {
             final String key    = tuple.key;
             final Symbol symbol = tuple.symbol;
 
+            //TODO initial type is object here no matter what. Is that right?
             if (symbol != null && !isValidArrayIndex(getArrayIndex(key))) {
-                properties.add(new SpillProperty(key, getPropertyFlags(symbol, hasArguments), spillIndex++));
+                final int flags = getPropertyFlags(symbol, hasArguments);
+                properties.add(
+                        new SpillProperty(
+                                key,
+                                flags,
+                                spillIndex++));
             }
         }
 
@@ -110,11 +124,11 @@ public class MapCreator<T> {
      *
      * @return flags to use for fields
      */
-    protected int getPropertyFlags(final Symbol symbol, final boolean hasArguments) {
+    static int getPropertyFlags(final Symbol symbol, final boolean hasArguments) {
         int flags = 0;
 
         if (symbol.isParam()) {
-            flags |= Property.IS_ALWAYS_OBJECT | Property.IS_PARAMETER;
+            flags |= Property.IS_PARAMETER;
         }
 
         if (hasArguments) {

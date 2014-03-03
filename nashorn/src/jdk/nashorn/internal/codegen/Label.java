@@ -40,9 +40,9 @@ public final class Label {
     static final class Stack {
         static final int NON_LOAD = -1;
 
-        Type[] data = new Type[8];
+        Type[] data       = new Type[8];
         int[]  localLoads = new int[8];
-        int sp = 0;
+        int    sp;
 
         Stack() {
         }

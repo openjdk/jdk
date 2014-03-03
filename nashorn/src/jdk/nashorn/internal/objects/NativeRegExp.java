@@ -602,7 +602,7 @@ public final class NativeRegExp extends ScriptObject {
         for (int i = 0, lastGroupStart = matcher.start(); i <= groupCount; i++) {
             final int groupStart = matcher.start(i);
             if (lastGroupStart > groupStart
-                    || (groupsInNegativeLookahead != null && groupsInNegativeLookahead.isSet(i))) {
+                    || groupsInNegativeLookahead != null && groupsInNegativeLookahead.isSet(i)) {
                 // (1) ECMA 15.10.2.5 NOTE 3: need to clear Atom's captures each time Atom is repeated.
                 // (2) ECMA 15.10.2.8 NOTE 3: Backreferences to captures in (?!Disjunction) from elsewhere
                 // in the pattern always return undefined because the negative lookahead must fail.
@@ -750,8 +750,8 @@ public final class NativeRegExp extends ScriptObject {
                     cursor++;
                     if (cursor < replacement.length() && firstDigit < matcher.groupCount()) {
                         final int secondDigit = replacement.charAt(cursor) - '0';
-                        if ((secondDigit >= 0) && (secondDigit <= 9)) {
-                            final int newRefNum = (firstDigit * 10) + secondDigit;
+                        if (secondDigit >= 0 && secondDigit <= 9) {
+                            final int newRefNum = firstDigit * 10 + secondDigit;
                             if (newRefNum <= matcher.groupCount() && newRefNum > 0) {
                                 // $nn ($01-$99)
                                 refNum = newRefNum;
@@ -922,7 +922,6 @@ public final class NativeRegExp extends ScriptObject {
     }
 
     private static NativeRegExp checkRegExp(final Object self) {
-        Global.checkObjectCoercible(self);
         if (self instanceof NativeRegExp) {
             return (NativeRegExp)self;
         } else if (self != null && self == Global.instance().getRegExpPrototype()) {

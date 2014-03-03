@@ -83,19 +83,35 @@
 
 package jdk.internal.dynalink.linker;
 
+/**
+ * Guarded type conversion
+ */
 public class GuardedTypeConversion {
     private final GuardedInvocation conversionInvocation;
     private final boolean cacheable;
 
+    /**
+     * Constructor
+     * @param conversionInvocation guarded invocation for this type conversion
+     * @param cacheable is this invocation cacheable
+     */
     public GuardedTypeConversion(final GuardedInvocation conversionInvocation, final boolean cacheable) {
         this.conversionInvocation = conversionInvocation;
         this.cacheable = cacheable;
     }
 
+    /**
+     * Get the invocation
+     * @return invocation
+     */
     public GuardedInvocation getConversionInvocation() {
         return conversionInvocation;
     }
 
+    /**
+     * Check if invocation is cacheable
+     * @return true if cachable, false otherwise
+     */
     public boolean isCacheable() {
         return cacheable;
     }

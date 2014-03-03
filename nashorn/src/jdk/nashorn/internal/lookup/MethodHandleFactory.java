@@ -142,7 +142,7 @@ public final class MethodHandleFactory {
         final String str = "\treturn" +
                 (VOID_TAG.equals(value) ?
                     ";" :
-                    (" " + stripName(value) + "; // [type=" + (value == null ? "null" : stripName(value.getClass()) + ']')));
+                    " " + stripName(value) + "; // [type=" + (value == null ? "null" : stripName(value.getClass()) + ']'));
         logger.log(TRACE_LEVEL, str);
         logger.log(TRACE_LEVEL, Debug.firstJSFrame());
         return value;
@@ -214,7 +214,7 @@ public final class MethodHandleFactory {
 
         if (arg instanceof ScriptObject) {
             return arg.toString() +
-                " (map=" + Debug.id((((ScriptObject)arg).getMap())) +
+                " (map=" + Debug.id(((ScriptObject)arg).getMap()) +
                 ")";
         }
 
@@ -424,6 +424,15 @@ public final class MethodHandleFactory {
         public MethodHandle findStatic(final MethodHandles.Lookup explicitLookup, final Class<?> clazz, final String name, final MethodType type) {
             try {
                 return explicitLookup.findStatic(clazz, name, type);
+            } catch (final NoSuchMethodException | IllegalAccessException e) {
+                throw new LookupException(e);
+            }
+        }
+
+        @Override
+        public MethodHandle findSpecial(final MethodHandles.Lookup explicitLookup, final Class<?> clazz, final String name, final MethodType type, final Class<?> thisClass) {
+            try {
+                return explicitLookup.findSpecial(clazz, name, type, thisClass);
             } catch (final NoSuchMethodException | IllegalAccessException e) {
                 throw new LookupException(e);
             }

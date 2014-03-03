@@ -553,6 +553,48 @@ public enum CompilerConstants {
     }
 
     /**
+     * Create a special call, given an explicit lookup, looking up the method handle for it at the same time
+     *
+     * @param lookup    the lookup
+     * @param thisClass this class
+     * @param clazz     the class
+     * @param name      the name of the method
+     * @param rtype     the return type
+     * @param ptypes    the parameter types
+     *
+     * @return the call object representing the virtual call
+     */
+    public static Call specialCall0(final MethodHandles.Lookup lookup, final Class<?> thisClass, final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
+        return new Call(MH.findSpecial(lookup, clazz, name, MH.type(rtype, ptypes), thisClass), className(clazz), name, methodDescriptor(rtype, ptypes)) {
+            @Override
+            public MethodEmitter invoke(final MethodEmitter method) {
+                return method.invokespecial(className, name, descriptor);
+            }
+        };
+    }
+
+    /**
+     * Create a special call, given an explicit lookup, looking up the method handle for it at the same time.
+     * clazz is used as this class
+     *
+     * @param lookup    the lookup
+     * @param clazz     the class
+     * @param name      the name of the method
+     * @param rtype     the return type
+     * @param ptypes    the parameter types
+     *
+     * @return the call object representing the virtual call
+     */
+    public static Call specialCall(final MethodHandles.Lookup lookup, final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
+        return new Call(MH.findSpecial(lookup, clazz, name, MH.type(rtype, ptypes), clazz), className(clazz), name, methodDescriptor(rtype, ptypes)) {
+            @Override
+            public MethodEmitter invoke(final MethodEmitter method) {
+                return method.invokespecial(className, name, descriptor);
+            }
+        };
+    }
+
+    /**
      * Returns true if the passed string looks like a method name of an internally generated Nashorn method. Basically,
      * if it starts with a colon character {@code :} but is not the name of the program method {@code :program}.
      * Program function is not considered internal as we want it to show up in exception stack traces.

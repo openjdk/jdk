@@ -394,7 +394,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
                 previousWasBlock = true;
             } else {
-                if ((node instanceof WithNode && previousWasBlock) || (node instanceof FunctionNode && CodeGeneratorLexicalContext.isFunctionDynamicScope((FunctionNode)node))) {
+                if (node instanceof WithNode && previousWasBlock || node instanceof FunctionNode && CodeGeneratorLexicalContext.isFunctionDynamicScope((FunctionNode)node)) {
                     // If we hit a scope that can have symbols introduced into it at run time before finding the defining
                     // block, the symbol can't be fast scoped. A WithNode only counts if we've immediately seen a block
                     // before - its block. Otherwise, we are currently processing the WithNode's expression, and that's
@@ -963,7 +963,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     if (callNode.isEval()) {
                         evalCall(node, flags);
                     } else if (useCount <= SharedScopeCall.FAST_SCOPE_CALL_THRESHOLD
-                            || (!isFastScope(symbol) && useCount <= SharedScopeCall.SLOW_SCOPE_CALL_THRESHOLD)
+                            || !isFastScope(symbol) && useCount <= SharedScopeCall.SLOW_SCOPE_CALL_THRESHOLD
                             || CodeGenerator.this.lc.inDynamicScope()
                             || isOptimisticOrRestOf()) {
                         scopeCall(node, flags);
@@ -1186,7 +1186,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @return flags without optimism
      */
     static int nonOptimisticFlags(int flags) {
-        return flags & ~(CALLSITE_OPTIMISTIC | (-1 << CALLSITE_PROGRAM_POINT_SHIFT));
+        return flags & ~(CALLSITE_OPTIMISTIC | -1 << CALLSITE_PROGRAM_POINT_SHIFT);
     }
 
     @Override
@@ -1398,7 +1398,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         //this symbol will be put fielded, we can't initialize it as undefined with a known type
                         @Override
                         public Class<?> getValueType() {
-                            return (OBJECT_FIELDS_ONLY || value == null || value.getSymbolType().isBoolean()) ? Object.class : value.getSymbolType().getTypeClass();
+                            return OBJECT_FIELDS_ONLY || value == null || value.getSymbolType().isBoolean() ? Object.class : value.getSymbolType().getTypeClass();
                             //return OBJECT_FIELDS_ONLY ? Object.class : symbol.getSymbolType().getTypeClass();
                         }
                     });
@@ -1482,7 +1482,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         // Nested functions are not visited when we either recompile or lazily compile, only the outermost function is.
-        if (compileOutermostOnly() && (lc.getOutermostFunction() != functionNode)) {
+        if (compileOutermostOnly() && lc.getOutermostFunction() != functionNode) {
             // In case we are not generating code for the function, we must create or retrieve the function object and
             // load it on the stack here.
             newFunctionObject(functionNode, false);
@@ -1790,7 +1790,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         } else if (value instanceof String) {
             final String string = (String)value;
 
-            if (string.length() > (MethodEmitter.LARGE_STRING_THRESHOLD / 3)) { // 3 == max bytes per encoded char
+            if (string.length() > MethodEmitter.LARGE_STRING_THRESHOLD / 3) { // 3 == max bytes per encoded char
                 loadConstant(string);
             } else {
                 method.load(string);
@@ -1907,7 +1907,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             tuples.add(new MapTuple<Expression>(key, symbol, value) {
                 @Override
                 public Class<?> getValueType() {
-                    return (OBJECT_FIELDS_ONLY || value == null || value.getType().isBoolean()) ? Object.class : value.getType().getTypeClass();
+                    return OBJECT_FIELDS_ONLY || value == null || value.getType().isBoolean() ? Object.class : value.getType().getTypeClass();
                 }
             });
         }
@@ -2397,7 +2397,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     final Label   entry = caseNode.getEntry();
 
                     // Take first duplicate.
-                    if (!(tree.containsKey(value))) {
+                    if (!tree.containsKey(value)) {
                         tree.put(value, entry);
                     }
                 }
@@ -2435,7 +2435,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             // If reasonable size and not too sparse (80%), use table otherwise use lookup.
-            if (range > 0 && range < 4096 && range <= (size * 5 / 4)) {
+            if (range > 0 && range < 4096 && range <= size * 5 / 4) {
                 final Label[] table = new Label[range];
                 Arrays.fill(table, defaultLabel);
                 for (int i = 0; i < size; i++) {
@@ -2650,7 +2650,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         if (needsScope) {
             load(init);
-            int flags = CALLSITE_SCOPE | getCallSiteFlags();
+            final int flags = CALLSITE_SCOPE | getCallSiteFlags();
             if (isFastScope(identSymbol)) {
                 storeFastScopeVar(identSymbol, flags);
             } else {
@@ -2984,7 +2984,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         new Store<BinaryNode>(binaryNode, lhs) {
             @Override
             protected void evaluate() {
-                if ((lhs instanceof IdentNode) && !lhs.getSymbol().isScope()) {
+                if (lhs instanceof IdentNode && !lhs.getSymbol().isScope()) {
                     load(rhs, lhsType);
                 } else {
                     load(rhs);
@@ -4064,10 +4064,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // There are at least as many as are declared by the current blocks.
             int usedSlots = lc.getUsedSlotCount();
             // Look at every load on the stack, and bump the number of used slots up by the temporaries seen there.
-            for(int i = 0; i < localLoadsOnStack.length; ++i) {
-                final int slot = localLoadsOnStack[i];
+            for (final int slot : localLoadsOnStack) {
                 if(slot != Label.Stack.NON_LOAD) {
-                    int afterSlot = slot + localVariableTypes.get(slot).getSlots();
+                    final int afterSlot = slot + localVariableTypes.get(slot).getSlots();
                     if(afterSlot > usedSlots) {
                         usedSlots = afterSlot;
                     }
@@ -4085,8 +4084,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private static boolean everyLocalLoadIsValid(final int[] loads, int localCount) {
-        for(int i = 0; i < loads.length; ++i) {
-            if(loads[i] < 0 || loads[i] >= localCount) {
+        for (final int load : loads) {
+            if(load < 0 || load >= localCount) {
                 return false;
             }
         }
@@ -4106,8 +4105,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private static boolean everyStackValueIsLocalLoad(final int[] loads) {
-        for(int i = 0; i < loads.length; ++i) {
-            if(loads[i] == Label.Stack.NON_LOAD) {
+        for (final int load : loads) {
+            if(load == Label.Stack.NON_LOAD) {
                 return false;
             }
         }
@@ -4330,7 +4329,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         @Override
         public String toString() {
-            StringBuilder b = new StringBuilder(64).append("[HandlerSpec ").append(lvarSpec);
+            final StringBuilder b = new StringBuilder(64).append("[HandlerSpec ").append(lvarSpec);
             if(catchTarget) {
                 b.append(", catchTarget");
             }

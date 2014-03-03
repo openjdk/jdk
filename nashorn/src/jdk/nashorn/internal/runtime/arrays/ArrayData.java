@@ -26,16 +26,16 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
-import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
-import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.LinkRequest;
+
 import java.nio.ByteBuffer;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
@@ -66,7 +66,7 @@ public abstract class ArrayData {
     }*/
 
     /** Minimum chunk size for underlying arrays */
-    protected static final int CHUNK_SIZE = 16;
+    protected static final int CHUNK_SIZE = 32;
 
     /** Mask for getting a chunk */
     protected static final int CHUNK_MASK = CHUNK_SIZE - 1;
@@ -88,31 +88,6 @@ public abstract class ArrayData {
     protected static final CompilerConstants.Call THROW_UNWARRANTED = staticCall(MethodHandles.lookup(), ArrayData.class, "throwUnwarranted", void.class, ArrayData.class, int.class, int.class);
 
     /**
-     * Unwarranted thrower
-     *
-     * @param data         array data
-     * @param programPoint program point
-     * @param index        array index
-     */
-    protected static void throwUnwarranted(final ArrayData data, final int programPoint, final int index) {
-        throw new UnwarrantedOptimismException(data.getObject(index), programPoint);
-    }
-
-    /**
-     * Version of has that throws a class cast exception if element does not exist
-     * used for relinking
-     *
-     * @param index index to check - currently only int indexes
-     * @return index
-     */
-    protected int throwHas(final int index) {
-        if (!has(index)) {
-            throw new ClassCastException();
-        }
-        return index;
-    }
-
-    /**
      * Constructor
      * @param length Virtual length of the array.
      */
@@ -129,40 +104,34 @@ public abstract class ArrayData {
     }
 
     /**
-     * Return element getter for a {@link ContinuousArray}
-     * @param getHas       has getter
-     * @param returnType   return type
+     * Unwarranted thrower
+     *
+     * @param data         array data
      * @param programPoint program point
-     * @return method handle for element setter
+     * @param index        array index
      */
-    protected final static MethodHandle getContinuousElementGetter(final MethodHandle getHas, final Class<?> returnType, final int programPoint) {
-        final boolean isOptimistic = isValid(programPoint);
-        final int fti = getAccessorTypeIndex(getHas.type().returnType());
-        final int ti  = getAccessorTypeIndex(returnType);
-        MethodHandle mh = getHas;
+    protected static void throwUnwarranted(final ArrayData data, final int programPoint, final int index) {
+        throw new UnwarrantedOptimismException(data.getObject(index), programPoint);
+    }
 
-        if (isOptimistic) {
-            if (ti < fti) {
-                mh = MH.insertArguments(ArrayData.THROW_UNWARRANTED.methodHandle(), 1, programPoint);
-            }
-        }
-        mh = MH.asType(mh, mh.type().changeReturnType(returnType).changeParameterType(0, ContinuousArray.class));
-
-        if (!isOptimistic) {
-            //for example a & array[17];
-            return Lookup.filterReturnType(mh, returnType);
-        }
-        return mh;
+    private static int alignUp(final int size) {
+        return size + CHUNK_SIZE - 1 & ~(CHUNK_SIZE - 1);
     }
 
     /**
-     * Return element setter for a {@link ContinuousArray}
-     * @param setHas       set has guard
-     * @param elementType  element type
-     * @return method handle for element setter
+     * Generic invalidation hook for script object to have call sites to this array indexing
+     * relinked, e.g. when a native array is marked as non extensible
      */
-    protected final static MethodHandle getContinuousElementSetter(final MethodHandle setHas, final Class<?> elementType) {
-        return MH.asType(setHas, setHas.type().changeParameterType(2, elementType).changeParameterType(0, ContinuousArray.class));
+    public void invalidateGetters() {
+        //subclass responsibility
+    }
+
+    /**
+     * Generic invalidation hook for script object to have call sites to this array indexing
+     * relinked, e.g. when a native array is marked as non extensible
+     */
+    public void invalidateSetters() {
+        //subclass responsibility
     }
 
     /**
@@ -598,6 +567,50 @@ public abstract class ArrayData {
     }
 
     /**
+     * Push an array of items to the end of the array
+     *
+     * @param strict are we in strict mode
+     * @param item   the item
+     * @return new array data (or same)
+     */
+    public ArrayData push(final boolean strict, final Object item) {
+        return push(strict, new Object[] { item });
+    }
+
+    /**
+     * Push an array of items to the end of the array
+     *
+     * @param strict are we in strict mode
+     * @param item   the item
+     * @return new array data (or same)
+     */
+    public ArrayData push(final boolean strict, final double item) {
+        return push(strict, item);
+    }
+
+    /**
+     * Push an array of items to the end of the array
+     *
+     * @param strict are we in strict mode
+     * @param item   the item
+     * @return new array data (or same)
+     */
+    public ArrayData push(final boolean strict, final long item) {
+        return push(strict, item);
+    }
+
+    /**
+     * Push an array of items to the end of the array
+     *
+     * @param strict are we in strict mode
+     * @param item   the item
+     * @return new array data (or same)
+     */
+    public ArrayData push(final boolean strict, final int item) {
+        return push(strict, item);
+    }
+
+    /**
      * Pop an element from the end of the array
      *
      * @return the popped element
@@ -662,16 +675,7 @@ public abstract class ArrayData {
      * @return next size to allocate for internal array
      */
     protected static int nextSize(final int size) {
-        if (size == 0) {
-            return CHUNK_SIZE;
-        }
-
-        int i = size;
-        while ((i & CHUNK_MASK) != 0) {
-            i++;
-        }
-
-        return i << 1;
+        return alignUp(size + 1) * 2;
     }
 
     /**
@@ -694,6 +698,43 @@ public abstract class ArrayData {
         } catch (final Throwable t) {
             throw new RuntimeException(t);
         }
+    }
+
+    /**
+     * Find a fast property getter if one exists
+     *
+     * @param clazz    array data class
+     * @param desc     callsite descriptor
+     * @param request  link request
+     * @param operator operator
+     * @return fast property getter if one is found
+     */
+    public GuardedInvocation findFastGetMethod(final Class<? extends ArrayData> clazz, final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
+        return null;
+    }
+
+    /**
+     * Find a fast element getter if one exists
+     *
+     * @param clazz   array data class
+     * @param desc    callsite descriptor
+     * @param request link request
+     * @return fast index getter if one is found
+     */
+    public GuardedInvocation findFastGetIndexMethod(final Class<? extends ArrayData> clazz, final CallSiteDescriptor desc, final LinkRequest request) { // array, index, value
+        return null;
+    }
+
+    /**
+     * Find a fast element setter if one exists
+     *
+     * @param clazz   array data class
+     * @param desc    callsite descriptor
+     * @param request link request
+     * @return fast index getter if one is found
+     */
+    public GuardedInvocation findFastSetIndexMethod(final Class<? extends ArrayData> clazz, final CallSiteDescriptor desc, final LinkRequest request) { // array, index, value
+        return null;
     }
 
 }

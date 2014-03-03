@@ -297,6 +297,19 @@ public interface MethodHandleFunctionality {
     public MethodHandle findVirtual(MethodHandles.Lookup explicitLookup, Class<?> clazz, String name, MethodType type);
 
     /**
+     * Wrapper for {@link java.lang.invoke.MethodHandles.Lookup#findSpecial(Class, String, MethodType, Class)}
+     *
+     * @param explicitLookup explicit lookup to be used
+     * @param clazz          class to look in
+     * @param name           name of method
+     * @param type           method type
+     * @param thisClass      thisClass
+     *
+     * @return method handle for virtual method
+     */
+    public MethodHandle findSpecial(MethodHandles.Lookup explicitLookup, Class<?> clazz, String name, MethodType type, final Class<?> thisClass);
+
+    /**
      * Wrapper for SwitchPoint creation. Just like {@code new SwitchPoint()} but potentially
      * tracked
      *

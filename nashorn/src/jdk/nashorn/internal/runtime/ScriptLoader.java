@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime;
 
 import java.security.CodeSource;
-import java.security.ProtectionDomain;
 
 /**
  * Responsible for loading script generated classes.

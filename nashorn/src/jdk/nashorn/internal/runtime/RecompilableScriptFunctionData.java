@@ -118,6 +118,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
      * @param allocatorClassName name of our allocator class, will be looked up dynamically if used as a constructor
      * @param allocatorMap       allocator map to seed instances with, when constructing
      * @param nestedFunctions    nested function map
+     * @param sourceURL          source URL
      */
     public RecompilableScriptFunctionData(
         final FunctionNode functionNode,

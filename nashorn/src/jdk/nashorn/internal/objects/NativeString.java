@@ -443,22 +443,8 @@ public final class NativeString extends ScriptObject {
     public static Object fromCharCode(final Object self, final Object value) {
         if (value instanceof Integer) {
             return fromCharCode(self, (int)value);
-        } else if (value instanceof String) {
-            return "" + (char)JSType.toUint16(value);
         }
-        return fromCharCode(self, new Object[] { value });
-    }
-
-    /**
-     * fromCharCode specialization
-     *
-     * @param self  self reference
-     * @param value one argument to be interpreted as char
-     * @return string with one charcode
-     */
-    @SpecializedFunction
-    public static Object fromCharCode(final Object self, final String value) {
-        return fromCharCode(self, new Object[] { value });
+        return Character.toString((char)JSType.toUint16(value));
     }
 
     /**
@@ -469,18 +455,46 @@ public final class NativeString extends ScriptObject {
      */
     @SpecializedFunction
     public static Object fromCharCode(final Object self, final int value) {
-        return "" + (char)(value & 0xffff);
+        return Character.toString((char)(value & 0xffff));
     }
 
     /**
-     * ECMA 15.5.3.2 - specialization for one char of long type
+     * ECMA 15.5.3.2 - specialization for two chars of int type
      * @param self  self reference
-     * @param value one argument to be interpreted as char
+     * @param ch1 first char
+     * @param ch2 second char
      * @return string with one charcode
      */
     @SpecializedFunction
-    public static Object fromCharCode(final Object self, final long value) {
-        return "" + (char)((int)value & 0xffff);
+    public static Object fromCharCode(final Object self, final int ch1, final int ch2) {
+        return Character.toString((char)(ch1 & 0xffff)) + Character.toString((char)(ch2 & 0xffff));
+    }
+
+    /**
+     * ECMA 15.5.3.2 - specialization for three chars of int type
+     * @param self  self reference
+     * @param ch1 first char
+     * @param ch2 second char
+     * @param ch3 third char
+     * @return string with one charcode
+     */
+    @SpecializedFunction
+    public static Object fromCharCode(final Object self, final int ch1, final int ch2, final int ch3) {
+        return Character.toString((char)(ch1 & 0xffff)) + Character.toString((char)(ch2 & 0xffff)) + Character.toString((char)(ch3 & 0xffff));
+    }
+
+    /**
+     * ECMA 15.5.3.2 - specialization for four chars of int type
+     * @param self  self reference
+     * @param ch1 first char
+     * @param ch2 second char
+     * @param ch3 third char
+     * @param ch4 fourth char
+     * @return string with one charcode
+     */
+    @SpecializedFunction
+    public static Object fromCharCode(final Object self, final int ch1, final int ch2, final int ch3, final int ch4) {
+        return Character.toString((char)(ch1 & 0xffff)) + Character.toString((char)(ch2 & 0xffff)) + Character.toString((char)(ch3 & 0xffff)) + Character.toString((char)(ch4 & 0xffff));
     }
 
     /**
@@ -491,7 +505,7 @@ public final class NativeString extends ScriptObject {
      */
     @SpecializedFunction
     public static Object fromCharCode(final Object self, final double value) {
-        return "" + (char)JSType.toUint16(value);
+        return Character.toString((char)JSType.toUint16(value));
     }
 
     /**
@@ -548,7 +562,7 @@ public final class NativeString extends ScriptObject {
     }
 
     private static String charAtImpl(final String str, final int pos) {
-        return (pos < 0 || pos >= str.length()) ? "" : String.valueOf(str.charAt(pos));
+        return pos < 0 || pos >= str.length() ? "" : String.valueOf(str.charAt(pos));
     }
 
     /**
@@ -585,7 +599,7 @@ public final class NativeString extends ScriptObject {
     }
 
     private static double charCodeAtImpl(final String str, final int pos) {
-        return (pos < 0 || pos >= str.length()) ? Double.NaN :  str.charAt(pos);
+        return pos < 0 || pos >= str.length() ? Double.NaN : str.charAt(pos);
     }
 
     /**
@@ -820,7 +834,7 @@ public final class NativeString extends ScriptObject {
     @SpecializedFunction
     public static Object slice(final Object self, final int start) {
         final String str = checkObjectToString(self);
-        final int from = (start < 0) ? Math.max(str.length() + start, 0) : Math.min(start, str.length());
+        final int from = start < 0 ? Math.max(str.length() + start, 0) : Math.min(start, str.length());
 
         return str.substring(from);
     }
@@ -851,8 +865,8 @@ public final class NativeString extends ScriptObject {
         final String str = checkObjectToString(self);
         final int len    = str.length();
 
-        final int from = (start < 0) ? Math.max(len + start, 0) : Math.min(start, len);
-        final int to   = (end < 0)   ? Math.max(len + end, 0)   : Math.min(end, len);
+        final int from = start < 0 ? Math.max(len + start, 0) : Math.min(start, len);
+        final int to   = end < 0   ? Math.max(len + end, 0)   : Math.min(end, len);
 
         return str.substring(Math.min(from, to), to);
     }
@@ -881,7 +895,7 @@ public final class NativeString extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object split(final Object self, final Object separator, final Object limit) {
         final String str = checkObjectToString(self);
-        final long lim = (limit == UNDEFINED) ? JSType.MAX_UINT : JSType.toUint32(limit);
+        final long lim = limit == UNDEFINED ? JSType.MAX_UINT : JSType.toUint32(limit);
 
         if (separator == UNDEFINED) {
             return lim == 0 ? new NativeArray() : new NativeArray(new Object[]{str});
@@ -912,7 +926,7 @@ public final class NativeString extends ScriptObject {
         int n = 0;
 
         while (pos < strLength && n < limit) {
-            int found = str.indexOf(separator, pos);
+            final int found = str.indexOf(separator, pos);
             if (found == -1) {
                 break;
             }
@@ -945,7 +959,7 @@ public final class NativeString extends ScriptObject {
             intStart = Math.max(intStart + strLength, 0);
         }
 
-        final int intLen = Math.min(Math.max((length == UNDEFINED) ? Integer.MAX_VALUE : JSType.toInteger(length), 0), strLength - intStart);
+        final int intLen = Math.min(Math.max(length == UNDEFINED ? Integer.MAX_VALUE : JSType.toInteger(length), 0), strLength - intStart);
 
         return intLen <= 0 ? "" : str.substring(intStart, intStart + intLen);
     }
@@ -1011,8 +1025,8 @@ public final class NativeString extends ScriptObject {
     public static String substring(final Object self, final int start, final int end) {
         final String str = checkObjectToString(self);
         final int len = str.length();
-        final int validStart = start < 0 ? 0 : (start > len ? len : start);
-        final int validEnd   = end < 0 ? 0 : (end > len ? len : end);
+        final int validStart = start < 0 ? 0 : start > len ? len : start;
+        final int validEnd   = end < 0 ? 0 : end > len ? len : end;
 
         if (validStart < validEnd) {
             return str.substring(validStart, validEnd);
@@ -1105,7 +1119,7 @@ public final class NativeString extends ScriptObject {
 
         final String str = checkObjectToString(self);
         int start = 0;
-        int end   = str.length() - 1;
+        final int end   = str.length() - 1;
 
         while (start <= end && ScriptRuntime.isJSWhitespace(str.charAt(start))) {
             start++;
@@ -1123,7 +1137,7 @@ public final class NativeString extends ScriptObject {
     public static Object trimRight(final Object self) {
 
         final String str = checkObjectToString(self);
-        int start = 0;
+        final int start = 0;
         int end   = str.length() - 1;
 
         while (end >= start && ScriptRuntime.isJSWhitespace(str.charAt(end))) {
@@ -1150,7 +1164,7 @@ public final class NativeString extends ScriptObject {
      */
     @Constructor(arity = 1)
     public static Object constructor(final boolean newObj, final Object self, final Object... args) {
-        final CharSequence str = (args.length > 0) ? JSType.toCharSequence(args[0]) : "";
+        final CharSequence str = args.length > 0 ? JSType.toCharSequence(args[0]) : "";
         return newObj ? newObj(self, str) : str.toString();
     }
 

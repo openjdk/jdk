@@ -25,6 +25,13 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -35,6 +42,7 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
+import jdk.nashorn.internal.runtime.arrays.TypedArrayData;
 
 /**
  * Float32 array for the TypedArray extension
@@ -56,73 +64,103 @@ public final class NativeFloat32Array extends ArrayBufferView {
         public ArrayBufferView construct(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
             return new NativeFloat32Array(buffer, byteOffset, length);
         }
+
         @Override
-        public ArrayData createArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
-            return new Float32ArrayData(buffer, byteOffset, length);
+        public Float32ArrayData createArrayData(final ByteBuffer nb, final int start, final int end) {
+            return new Float32ArrayData(nb.asFloatBuffer(), start, end);
+        }
+
+        @Override
+        public String getClassName() {
+            return "Float32Array";
         }
     };
 
-    private static final class Float32ArrayData extends ArrayDataImpl {
-        private Float32ArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
-            super(buffer, byteOffset, elementLength);
+    private static final class Float32ArrayData extends TypedArrayData<FloatBuffer> {
+
+        private static final MethodHandle GET_ELEM = specialCall(MethodHandles.lookup(), Float32ArrayData.class, "getElem", double.class, int.class).methodHandle();
+        private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Float32ArrayData.class, "setElem", void.class, int.class, double.class).methodHandle();
+
+        private Float32ArrayData(final FloatBuffer nb, final int start, final int end) {
+            super(((FloatBuffer)nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override
-        protected int byteIndex(final int index) {
-            return index * BYTES_PER_ELEMENT + byteOffset;
+        protected MethodHandle getGetElem() {
+            return GET_ELEM;
         }
 
         @Override
-        protected double getDoubleImpl(final int index) {
-            final int byteIndex = byteIndex(index);
-            final byte[] byteArray = buffer.getByteArray();
-            final int bits = byteArray[byteIndex  ]       & 0x0000_00ff |
-                             byteArray[byteIndex+1] <<  8 & 0x0000_ff00 |
-                             byteArray[byteIndex+2] << 16 & 0x00ff_0000 |
-                             byteArray[byteIndex+3] << 24 & 0xff00_0000 ;
-            return Float.intBitsToFloat(bits);
+        protected MethodHandle getSetElem() {
+            return SET_ELEM;
+        }
+
+        private double getElem(final int index) {
+            try {
+                return nb.get(index);
+            } catch (final IndexOutOfBoundsException e) {
+                throw new ClassCastException(); //force relink - this works for unoptimistic too
+            }
+        }
+
+        private void setElem(final int index, final double elem) {
+            try {
+                nb.put(index, (float)elem);
+            } catch (final IndexOutOfBoundsException e) {
+                //swallow valid array indexes. it's ok.
+                if (index < 0) {
+                    throw new ClassCastException();
+                }
+            }
         }
 
         @Override
-        protected int getIntImpl(final int index) {
-            return (int)getDoubleImpl(index);
+        public MethodHandle getElementGetter(final Class<?> returnType, final int programPoint) {
+            if (returnType == int.class || returnType == long.class) {
+                return null;
+            }
+            return getContinuousElementGetter(getClass(), GET_ELEM, returnType, programPoint);
         }
 
         @Override
-        protected long getLongImpl(final int key) {
-            return (long)getDoubleImpl(key);
+        public int getInt(int index) {
+            return (int)getDouble(index);
         }
 
         @Override
-        protected Object getObjectImpl(final int key) {
-            return getDoubleImpl(key);
+        public long getLong(int index) {
+            return (long)getDouble(index);
         }
 
         @Override
-        protected void setImpl(final int index, final double value) {
-            final int bits = Float.floatToRawIntBits((float)value);
-            final int byteIndex = byteIndex(index);
-            @SuppressWarnings("MismatchedReadAndWriteOfArray")
-            final byte[] byteArray = buffer.getByteArray();
-            byteArray[byteIndex  ] = (byte)(bits        & 0xff);
-            byteArray[byteIndex+1] = (byte)(bits >>>  8 & 0xff);
-            byteArray[byteIndex+2] = (byte)(bits >>> 16 & 0xff);
-            byteArray[byteIndex+3] = (byte)(bits >>> 24 & 0xff);
+        public double getDouble(int index) {
+            return getElem(index);
         }
 
         @Override
-        protected void setImpl(final int key, final int value) {
-            setImpl(key, (double)value);
+        public Object getObject(int index) {
+            return getDouble(index);
         }
 
         @Override
-        protected void setImpl(final int key, final long value) {
-            setImpl(key, (double)value);
+        public ArrayData set(int index, Object value, boolean strict) {
+            return set(index, JSType.toNumber(value), strict);
         }
 
         @Override
-        protected void setImpl(final int key, final Object value) {
-            setImpl(key, JSType.toNumber(value));
+        public ArrayData set(int index, int value, boolean strict) {
+            return set(index, (double)value, strict);
+        }
+
+        @Override
+        public ArrayData set(int index, long value, boolean strict) {
+            return set(index, (double)value, strict);
+        }
+
+        @Override
+        public ArrayData set(int index, double value, boolean strict) {
+            setElem(index, value);
+            return this;
         }
     }
 
@@ -137,16 +175,11 @@ public final class NativeFloat32Array extends ArrayBufferView {
      */
     @Constructor(arity = 1)
     public static Object constructor(final boolean newObj, final Object self, final Object... args) {
-        return constructorImpl(args, FACTORY);
+        return constructorImpl(newObj, args, FACTORY);
     }
 
     NativeFloat32Array(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
         super(buffer, byteOffset, length);
-    }
-
-    @Override
-    public String getClassName() {
-        return "Float32Array";
     }
 
     @Override

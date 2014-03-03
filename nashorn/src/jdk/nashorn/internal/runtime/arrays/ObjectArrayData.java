@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCall;
+import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -39,7 +39,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Implementation of {@link ArrayData} as soon as an Object has been
  * written to the array
  */
-final class ObjectArrayData extends ArrayData implements ContinuousArray {
+final class ObjectArrayData extends ContinuousArrayData {
 
     /**
      * The wrapped array
@@ -98,23 +98,15 @@ final class ObjectArrayData extends ArrayData implements ContinuousArray {
 
     @Override
     public ArrayData ensure(final long safeIndex) {
-        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH && safeIndex >= array.length) {
+        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH) {
             return new SparseArrayData(this, safeIndex + 1);
         }
-
-        int newLength = array.length;
-
-        while (newLength <= safeIndex) {
-            newLength = ArrayData.nextSize(newLength);
+        final int alen = array.length;
+        if (safeIndex >= alen) {
+            final int newLength = ArrayData.nextSize((int)safeIndex);
+            array = Arrays.copyOf(array, newLength); //fill with undefined or OK? TODO
         }
-
-        if (array.length <= safeIndex) {
-            array = Arrays.copyOf(array, newLength);
-            Arrays.fill(array, (int) length(), newLength, ScriptRuntime.UNDEFINED);
-        }
-
         setLength(safeIndex + 1);
-
         return this;
     }
 
@@ -169,17 +161,11 @@ final class ObjectArrayData extends ArrayData implements ContinuousArray {
         return Type.OBJECT;
     }
 
-    private static final MethodHandle HAS_GET_ELEM = virtualCall(MethodHandles.lookup(), ObjectArrayData.class, UNSAFE == null ? "getElem" : "getElemUnsafe", Object.class, int.class).methodHandle();
-    private static final MethodHandle SET_ELEM     = virtualCall(MethodHandles.lookup(), ObjectArrayData.class, UNSAFE == null ? "setElem" : "setElemUnsafe", void.class, int.class, Object.class).methodHandle();
-    private static final MethodHandle HAS          = virtualCall(MethodHandles.lookup(), ObjectArrayData.class, "has", boolean.class, int.class).methodHandle();
+    private static final MethodHandle HAS_GET_ELEM = specialCall(MethodHandles.lookup(), ObjectArrayData.class, UNSAFE == null ? "getElem" : "getElemUnsafe", Object.class, int.class).methodHandle();
+    private static final MethodHandle SET_ELEM     = specialCall(MethodHandles.lookup(), ObjectArrayData.class, UNSAFE == null ? "setElem" : "setElemUnsafe", void.class, int.class, Object.class).methodHandle();
 
     private final static long UNSAFE_BASE  = UNSAFE == null ? 0L : UNSAFE.arrayBaseOffset(Object[].class);
     private final static long UNSAFE_SCALE = UNSAFE == null ? 0L : UNSAFE.arrayIndexScale(Object[].class);
-
-    @Override
-    public final MethodHandle getSetGuard() {
-        return HAS;
-    }
 
     @SuppressWarnings("unused")
     private Object getElemUnsafe(final int index) {
@@ -199,12 +185,20 @@ final class ObjectArrayData extends ArrayData implements ContinuousArray {
 
     @SuppressWarnings("unused")
     private void setElemUnsafe(final int index, final Object elem) {
-        UNSAFE.putObject(array, UNSAFE_BASE + UNSAFE_SCALE * index, elem);
+        if (hasRoomFor(index)) {
+            UNSAFE.putObject(array, UNSAFE_BASE + UNSAFE_SCALE * index, elem);
+            return;
+        }
+        throw new ClassCastException();
     }
 
     @SuppressWarnings("unused")
     private void setElem(final int index, final Object elem) {
-        array[index] = elem;
+        if (hasRoomFor(index)) {
+            array[index] = elem;
+            return;
+        }
+        throw new ClassCastException();
     }
 
     @Override
@@ -273,9 +267,20 @@ final class ObjectArrayData extends ArrayData implements ContinuousArray {
 
     @Override
     public ArrayData slice(final long from, final long to) {
-        final long start     = from < 0 ? (from + length()) : from;
+        final long start     = from < 0 ? from + length() : from;
         final long newLength = to - start;
         return new ObjectArrayData(Arrays.copyOfRange(array, (int)from, (int)to), (int)newLength);
+    }
+
+    @Override
+    public ArrayData push(final boolean strict, final Object item) {
+        final long      length = length();
+        final ArrayData newData = ensure(length);
+        if (newData == this) {
+            array[(int)length] = item;
+            return this;
+        }
+        return newData.set((int)length, item, strict);
     }
 
     @Override
@@ -285,7 +290,7 @@ final class ObjectArrayData extends ArrayData implements ContinuousArray {
         if (newLength > SparseArrayData.MAX_DENSE_LENGTH && newLength > array.length) {
             throw new UnsupportedOperationException();
         }
-        final ArrayData returnValue = (removed == 0) ?
+        final ArrayData returnValue = removed == 0 ?
                 EMPTY_ARRAY : new ObjectArrayData(Arrays.copyOfRange(array, start, start + removed), removed);
 
         if (newLength != oldLength) {

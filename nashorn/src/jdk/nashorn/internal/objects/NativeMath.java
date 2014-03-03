@@ -489,6 +489,20 @@ public final class NativeMath extends ScriptObject {
     }
 
     /**
+     * ECMA 15.8.2.11 max(x) - specialized version for two Object args
+     *
+     * @param self  self reference
+     * @param x     first argument
+     * @param y     second argument
+     *
+     * @return largest value of x and y
+     */
+    @SpecializedFunction
+    public static double max(final Object self, final Object x, final Object y) {
+        return Math.max(JSType.toNumber(x), JSType.toNumber(y));
+    }
+
+    /**
      * ECMA 15.8.2.12 min(x)
      *
      * @param self  self reference
@@ -564,6 +578,20 @@ public final class NativeMath extends ScriptObject {
     @SpecializedFunction
     public static double min(final Object self, final double x, final double y) {
         return Math.min(x, y);
+    }
+
+    /**
+     * ECMA 15.8.2.12 min(x) - specialized version for two Object args
+     *
+     * @param self  self reference
+     * @param x     first argument
+     * @param y     second argument
+     *
+     * @return smallest value of x and y
+     */
+    @SpecializedFunction
+    public static double min(final Object self, final Object x, final Object y) {
+        return Math.min(JSType.toNumber(x), JSType.toNumber(y));
     }
 
     /**

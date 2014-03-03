@@ -45,6 +45,7 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndex;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
+import static jdk.nashorn.internal.runtime.linker.NashornGuards.explicitInstanceOfCheck;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -60,6 +61,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -105,19 +107,19 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     static final String NO_SUCH_PROPERTY_NAME = "__noSuchProperty__";
 
     /** Per ScriptObject flag - is this a scope object? */
-    public static final int IS_SCOPE       = 0b0000_0001;
+    public static final int IS_SCOPE       = 1 << 0;
 
     /** Per ScriptObject flag - is this an array object? */
-    public static final int IS_ARRAY       = 0b0000_0010;
+    public static final int IS_ARRAY       = 1 << 1;
 
     /** Per ScriptObject flag - is this an arguments object? */
-    public static final int IS_ARGUMENTS   = 0b0000_0100;
+    public static final int IS_ARGUMENTS   = 1 << 2;
 
     /** Is this a prototype PropertyMap? */
-    public static final int IS_PROTOTYPE   = 0b0000_1000;
+    public static final int IS_PROTOTYPE   = 1 << 3;
 
     /** Is length property not-writable? */
-    public static final int IS_LENGTH_NOT_WRITABLE = 0b0001_0000;
+    public static final int IS_LENGTH_NOT_WRITABLE = 1 << 4;
 
     /**
      * Spill growth rate - by how many elements does {@link ScriptObject#primitiveSpill} and
@@ -252,7 +254,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private static int alignUp(final int size, final int alignment) {
-        return (((size) + ((alignment) - 1)) & ~((alignment) - 1));
+        return size + alignment - 1 & ~(alignment - 1);
     }
 
     /**
@@ -448,10 +450,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
             if (property instanceof UserAccessorProperty) {
                 return global.newAccessorDescriptor(
-                    (get != null) ?
+                    get != null ?
                         get :
                         UNDEFINED,
-                    (set != null) ?
+                    set != null ?
                         set :
                         UNDEFINED,
                     configurable,
@@ -921,7 +923,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final int slot = spillLength;
         ensureSpillSize(spillLength); //arguments=slot0, caller=slot0
         objectSpill[slot] = new UserAccessorProperty.Accessors(getter, setter);
-        PropertyMap oldMap = getMap();
+        final PropertyMap oldMap = getMap();
         Property    newProperty;
         PropertyMap newMap;
         do {
@@ -1374,16 +1376,16 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     public ScriptObject preventExtensions() {
         PropertyMap oldMap = getMap();
-
-        while (true) {
-            final PropertyMap newMap = getMap().preventExtensions();
-
-            if (!compareAndSetMap(oldMap, newMap)) {
-                oldMap = getMap();
-            } else {
-                return this;
-            }
+        while (!compareAndSetMap(oldMap,  getMap().preventExtensions())) {
+            oldMap = getMap();
         }
+
+        //invalidate any fast array setters
+        final ArrayData array = getArray();
+        if (array != null) {
+            array.invalidateSetters();
+        }
+        return this;
     }
 
     /**
@@ -1394,7 +1396,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return true if array
      */
     public static boolean isArray(final Object obj) {
-        return (obj instanceof ScriptObject) && ((ScriptObject)obj).isArray();
+        return obj instanceof ScriptObject && ((ScriptObject)obj).isArray();
     }
 
     /**
@@ -1857,17 +1859,26 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
+        final String  name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+
         if (request.isCallSiteUnstable() || hasWithScope()) {
             return findMegaMorphicGetMethod(desc, name, "getMethod".equals(operator));
         }
 
         final FindProperty find = findProperty(name, true);
-        MethodHandle methodHandle;
+        MethodHandle mh;
 
         if (find == null) {
             if (PROTO_PROPERTY_NAME.equals(name)) {
-                return new GuardedInvocation(GETPROTO, null, null, ClassCastException.class);
+                return new GuardedInvocation(
+                        GETPROTO,
+                        explicitInstanceOfCheck ?
+                                NashornGuards.getScriptObjectGuard() :
+                                null,
+                        null,
+                        explicitInstanceOfCheck ?
+                                null : ClassCastException.class);
             }
 
             switch (operator) {
@@ -1876,42 +1887,57 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             case "getMethod":
                 return noSuchMethod(desc, request);
             case "getElem":
-                return createEmptyGetter(desc, name);
+                return createEmptyGetter(desc, explicitInstanceOfCheck, name);
             default:
-                throw new AssertionError(); // never invoked with any other operation
+                throw new AssertionError(operator); // never invoked with any other operation
             }
        }
 
         final Class<?> returnType = desc.getMethodType().returnType();
-        final Property property = find.getProperty();
+        final Property property   = find.getProperty();
 
         final int programPoint = NashornCallSiteDescriptor.isOptimistic(desc) ?
                 NashornCallSiteDescriptor.getProgramPoint(desc) :
                 UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
-        methodHandle = find.getGetter(returnType, programPoint);
 
+        mh = find.getGetter(returnType, programPoint);
+        //we never need a guard if noGuard is set
         final boolean noGuard = OBJECT_FIELDS_ONLY && NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType();
         // getMap() is fine as we have the prototype switchpoint depending on where the property was found
-        final MethodHandle guard = noGuard ? null : NashornGuards.getMapGuard(getMap());
-
-        if (methodHandle != null) {
-            assert methodHandle.type().returnType().equals(returnType) : "returntype mismatch for getter " + methodHandle.type().returnType() + " != " + returnType;
-            if (find.isSelf()) {
-                return new GuardedInvocation(methodHandle, guard, null, noGuard ? null : ClassCastException.class);
-            }
-
-            if (!property.hasGetterFunction(find.getOwner())) {
-                // If not a scope bind to actual prototype as changing prototype will change the property map.
-                // For scopes we install a filter that replaces the self object with the prototype owning the property.
-                methodHandle = isScope() ?
-                        addProtoFilter(methodHandle, find.getProtoChainLength()) :
-                        bindTo(methodHandle, find.getOwner());
-            }
-            return new GuardedInvocation(methodHandle, guard, noGuard ? null : getMap().getProtoGetSwitchPoint(proto, name), noGuard ? null : ClassCastException.class);
+        final MethodHandle guard;
+        final Class<? extends Throwable> exception;
+        if (noGuard) {
+            guard     = null;
+            exception = null;
+        } else {
+            guard     = NashornGuards.getMapGuard(map, explicitInstanceOfCheck);
+            exception = explicitInstanceOfCheck ? null : ClassCastException.class;
         }
 
-        assert !NashornCallSiteDescriptor.isFastScope(desc);
-        return new GuardedInvocation(Lookup.emptyGetter(returnType), guard, getMap().getProtoGetSwitchPoint(proto, name), ClassCastException.class);
+        assert noGuard == (guard == null);
+
+        if (mh == null) {
+            mh = Lookup.emptyGetter(returnType);
+        } else {
+            assert mh.type().returnType().equals(returnType) : "returntype mismatch for getter " + mh.type().returnType() + " != " + returnType;
+             if (find.isSelf()) {
+                return new GuardedInvocation(mh, guard, null, exception);
+             }
+
+             if (!property.hasGetterFunction(find.getOwner())) {
+                 // If not a scope bind to actual prototype as changing prototype will change the property map.
+                 // For scopes we install a filter that replaces the self object with the prototype owning the property.
+                mh = isScope() ? addProtoFilter(mh,    find.getProtoChainLength()) : bindTo(mh, find.getOwner());
+             }
+         }
+
+        assert OBJECT_FIELDS_ONLY || guard != null : "we always need a map guard here";
+
+        return new GuardedInvocation(
+                mh,
+                guard,
+                getMap().getProtoGetSwitchPoint(proto, name),
+                exception);
     }
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod) {
@@ -1939,10 +1965,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findGetIndexMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        final MethodType callType    = desc.getMethodType();
-        final Class<?>   returnType  = callType.returnType();
-        final Class<?>   returnClass = returnType.isPrimitive() ? returnType : Object.class;
-        final Class<?>   keyClass    = callType.parameterType(1);
+        final MethodType callType                = desc.getMethodType();
+        final Class<?>   returnType              = callType.returnType();
+        final Class<?>   returnClass             = returnType.isPrimitive() ? returnType : Object.class;
+        final Class<?>   keyClass                = callType.parameterType(1);
+        final boolean    explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
 
         final String name;
         if (returnClass.isPrimitive()) {
@@ -1954,7 +1981,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         final MethodHandle mh = findGetIndexMethodHandle(returnClass, name, keyClass, desc);
-        return new GuardedInvocation(mh, null, null, ClassCastException.class);
+        return new GuardedInvocation(mh, NashornGuards.getScriptObjectGuard(explicitInstanceOfCheck), null, explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 
     /**
@@ -1965,7 +1992,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param desc           call site descriptor
      * @return method handle for getter
      */
-    protected MethodHandle findGetIndexMethodHandle(final Class<?> returnType, String name, final Class<?> elementType, final CallSiteDescriptor desc) {
+    protected MethodHandle findGetIndexMethodHandle(final Class<?> returnType, final String name, final Class<?> elementType, final CallSiteDescriptor desc) {
         if (!returnType.isPrimitive()) {
             return findOwnMH_V(getClass(), name, returnType, elementType);
         }
@@ -1987,12 +2014,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final String  name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         if (request.isCallSiteUnstable() || hasWithScope()) {
             return findMegaMorphicSetMethod(desc, name);
         }
 
-        final boolean scope = isScope();
+        final boolean scope                   = isScope();
+           final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
+
         /*
          * If doing property set on a scope object, we should stop proto search on the first
          * non-scope object. Without this, for example, when assigning "toString" on global scope,
@@ -2006,7 +2035,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         if (!scope && find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
             // We should still check if inherited data property is not writable
             if (isExtensible() && !find.getProperty().isWritable()) {
-                return createEmptySetMethod(desc, "property.not.writable", false);
+                return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", false);
             }
             // Otherwise, forget the found property
             find = null;
@@ -2015,27 +2044,35 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         if (find != null) {
             if (!find.getProperty().isWritable()) {
                 // Existing, non-writable property
-                return createEmptySetMethod(desc, "property.not.writable", true);
+                return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", true);
             }
         } else {
             if (PROTO_PROPERTY_NAME.equals(name)) {
-                return new GuardedInvocation(SETPROTOCHECK, null, null, ClassCastException.class);
-            } else if (! isExtensible()) {
-                return createEmptySetMethod(desc, "object.non.extensible", false);
+                return new GuardedInvocation(
+                        SETPROTOCHECK,
+                        NashornGuards.getScriptObjectGuard(explicitInstanceOfCheck),
+                        null,
+                        explicitInstanceOfCheck ? null : ClassCastException.class);
+            } else if (!isExtensible()) {
+                return createEmptySetMethod(desc, explicitInstanceOfCheck, "object.non.extensible", false);
             }
         }
 
-        return new SetMethodCreator(this, find, desc).createGuardedInvocation();
+        return new SetMethodCreator(this, find, desc, explicitInstanceOfCheck).createGuardedInvocation();
     }
 
-    private GuardedInvocation createEmptySetMethod(final CallSiteDescriptor desc, String strictErrorMessage, boolean canBeFastScope) {
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-        if (NashornCallSiteDescriptor.isStrict(desc)) {
-               throw typeError(strictErrorMessage, name, ScriptRuntime.safeToString((this)));
-           }
-           assert canBeFastScope || !NashornCallSiteDescriptor.isFastScope(desc);
-           final PropertyMap myMap = getMap();
-           return new GuardedInvocation(Lookup.EMPTY_SETTER, NashornGuards.getMapGuard(myMap), myMap.getProtoGetSwitchPoint(proto, name), ClassCastException.class);
+    private GuardedInvocation createEmptySetMethod(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final String strictErrorMessage, final boolean canBeFastScope) {
+        final String  name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+         if (NashornCallSiteDescriptor.isStrict(desc)) {
+           throw typeError(strictErrorMessage, name, ScriptRuntime.safeToString(this));
+        }
+        assert canBeFastScope || !NashornCallSiteDescriptor.isFastScope(desc);
+        final PropertyMap myMap = getMap();
+        return new GuardedInvocation(
+                Lookup.EMPTY_SETTER,
+                NashornGuards.getMapGuard(myMap, explicitInstanceOfCheck),
+                myMap.getProtoGetSwitchPoint(proto, name),
+                explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 
     @SuppressWarnings("unused")
@@ -2052,8 +2089,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private GuardedInvocation findMegaMorphicSetMethod(final CallSiteDescriptor desc, final String name) {
-        final MethodType type = desc.getMethodType().insertParameterTypes(1, Object.class);
-        final GuardedInvocation inv = findSetIndexMethod(getClass(), type, NashornCallSiteDescriptor.isStrict(desc));
+        final MethodType        type = desc.getMethodType().insertParameterTypes(1, Object.class);
+        //never bother with ClassCastExceptionGuard for megamorphic callsites
+        final GuardedInvocation inv  = findSetIndexMethod(getClass(), false, type, NashornCallSiteDescriptor.isStrict(desc));
         return inv.replaceMethods(MH.insertArguments(inv.getInvocation(), 1, name), inv.getGuard());
     }
 
@@ -2067,7 +2105,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findSetIndexMethod(final CallSiteDescriptor desc, final LinkRequest request) { // array, index, value
-        return findSetIndexMethod(getClass(), desc.getMethodType(), NashornCallSiteDescriptor.isStrict(desc));
+        return findSetIndexMethod(getClass(), explicitInstanceOfCheck(desc, request), desc.getMethodType(), NashornCallSiteDescriptor.isStrict(desc));
     }
 
     /**
@@ -2078,15 +2116,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    private static GuardedInvocation findSetIndexMethod(final Class<? extends ScriptObject> clazz, final MethodType callType, final boolean isStrict) {
+    private static GuardedInvocation findSetIndexMethod(final Class<? extends ScriptObject> clazz, final boolean explicitInstanceOfCheck, final MethodType callType, final boolean isStrict) {
         assert callType.parameterCount() == 3;
-        final Class<?>   keyClass   = callType.parameterType(1);
-        final Class<?>   valueClass = callType.parameterType(2);
+        final Class<?> keyClass   = callType.parameterType(1);
+        final Class<?> valueClass = callType.parameterType(2);
 
         MethodHandle methodHandle = findOwnMH_V(clazz, "set", void.class, keyClass, valueClass, boolean.class);
         methodHandle = MH.insertArguments(methodHandle, 3, isStrict);
 
-        return new GuardedInvocation(methodHandle, null, null, ClassCastException.class);
+        return new GuardedInvocation(methodHandle, NashornGuards.getScriptObjectGuard(explicitInstanceOfCheck), null, explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 
     /**
@@ -2104,17 +2142,26 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return noSuchProperty(desc, request);
         }
 
+        final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
+
         final Object value = getObjectValue(find);
-        if (! (value instanceof ScriptFunction)) {
-            return createEmptyGetter(desc, name);
+        if (!(value instanceof ScriptFunction)) {
+            return createEmptyGetter(desc, explicitInstanceOfCheck, name);
         }
 
         final ScriptFunction func = (ScriptFunction)value;
-        final Object thiz = scopeCall && func.isStrict() ? ScriptRuntime.UNDEFINED : this;
+        final Object         thiz = scopeCall && func.isStrict() ? ScriptRuntime.UNDEFINED : this;
         // TODO: It'd be awesome if we could bind "name" without binding "this".
-        return new GuardedInvocation(MH.dropArguments(MH.constant(ScriptFunction.class,
-                func.makeBoundFunction(thiz, new Object[] { name })), 0, Object.class),
-                NashornGuards.getMapGuard(getMap()), null, ClassCastException.class);
+        return new GuardedInvocation(
+                MH.dropArguments(
+                        MH.constant(
+                                ScriptFunction.class,
+                                func.makeBoundFunction(thiz, new Object[] { name })),
+                        0,
+                        Object.class),
+                NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck),
+                null,
+                explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 
     /**
@@ -2125,9 +2172,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     @SuppressWarnings("null")
     public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-        final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);
-        final boolean scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
+        final String       name        = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final FindProperty find        = findProperty(NO_SUCH_PROPERTY_NAME, true);
+        final boolean      scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
         if (find != null) {
             final Object   value        = getObjectValue(find);
@@ -2145,9 +2192,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 }
                 return new GuardedInvocation(
                         methodHandle,
-                        getKnownFunctionPropertyGuard(getMap(), find.getGetter(Object.class, INVALID_PROGRAM_POINT), find.getOwner(), func),
+                        //TODO this always does a scriptobject check
+                        getKnownFunctionPropertyGuard(
+                                getMap(),
+                                find.getGetter(Object.class, INVALID_PROGRAM_POINT),
+                                find.getOwner(),
+                                func),
                         find.isInherited() ? getMap().getProtoGetSwitchPoint(proto, NO_SUCH_PROPERTY_NAME) : null,
-                        ClassCastException.class);
+                        //TODO this doesn't need a ClassCastException as guard always checks script object
+                        null);
             }
         }
 
@@ -2155,12 +2208,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             throw referenceError("not.defined", name);
         }
 
-        return createEmptyGetter(desc, name);
+        return createEmptyGetter(desc, explicitInstanceOfCheck(desc, request), name);
     }
 
     /**
      * Invoke fall back if a property is not found.
      * @param name Name of property.
+     * @param programPoint program point
      * @return Result from call.
      */
     protected Object invokeNoSuchProperty(final String name, final int programPoint) {
@@ -2204,11 +2258,19 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return ((ScriptFunction)value).makeBoundFunction(this, new Object[] {name});
     }
 
-    private GuardedInvocation createEmptyGetter(final CallSiteDescriptor desc, final String name) {
-        if(NashornCallSiteDescriptor.isOptimistic(desc)) {
+    private GuardedInvocation createEmptyGetter(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final String name) {
+        if (NashornCallSiteDescriptor.isOptimistic(desc)) {
             throw new UnwarrantedOptimismException(UNDEFINED, NashornCallSiteDescriptor.getProgramPoint(desc), Type.OBJECT);
         }
-        return new GuardedInvocation(Lookup.emptyGetter(desc.getMethodType().returnType()), NashornGuards.getMapGuard(getMap()), getMap().getProtoGetSwitchPoint(proto, name), ClassCastException.class);
+
+        return new GuardedInvocation(
+                Lookup.emptyGetter(
+                        desc.getMethodType().returnType()),
+                        NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck),
+                        getMap().getProtoGetSwitchPoint(proto, name),
+                        explicitInstanceOfCheck ?
+                                null :
+                                ClassCastException.class);
     }
 
     private abstract static class ScriptObjectIterator <T extends Object> implements Iterator<T> {
@@ -2284,8 +2346,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     private Property addSpillProperty(final String key, final int propertyFlags, final Object value, final boolean hasInitialValue) {
         final PropertyMap propertyMap = getMap();
-        final int fieldCount = propertyMap.getFieldCount();
-        final int fieldMax = propertyMap.getFieldMaximum();
+        final int         fieldCount  = propertyMap.getFieldCount();
+        final int         fieldMax    = propertyMap.getFieldMaximum();
 
         Property property;
         if (fieldCount < fieldMax) {
@@ -2354,8 +2416,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final int callCount      = callType.parameterCount();
 
         final boolean isCalleeVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
-        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg.booleanValue() : (callCount > 0 &&
-                callType.parameterType(callCount - 1).isArray());
+        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg.booleanValue() : callCount > 0 &&
+                callType.parameterType(callCount - 1).isArray();
 
         if (isCalleeVarArg) {
             return isCallerVarArg ?
@@ -2443,8 +2505,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
        if (newLength > arrayLength) {
            setArray(getArray().ensure(newLength - 1));
-            if (getArray().canDelete(arrayLength, (newLength - 1), false)) {
-               setArray(getArray().delete(arrayLength, (newLength - 1)));
+            if (getArray().canDelete(arrayLength, newLength - 1, false)) {
+               setArray(getArray().delete(arrayLength, newLength - 1));
            }
            return;
        }
@@ -2869,8 +2931,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     private void doesNotHaveEnsureDelete(final long longIndex, final long oldLength, final boolean strict) {
         if (longIndex > oldLength) {
             ArrayData array = getArray();
-            if (array.canDelete(oldLength, (longIndex - 1), strict)) {
-                array = array.delete(oldLength, (longIndex - 1));
+            if (array.canDelete(oldLength, longIndex - 1, strict)) {
+                array = array.delete(oldLength, longIndex - 1);
             }
             setArray(array);
         }
@@ -3306,7 +3368,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private boolean hasOwnArrayProperty(final int index) {
-        return getArray().has(index) || (getMap().containsArrayKeys() && hasProperty(ArrayIndex.toKey(index), false));
+        return getArray().has(index) || getMap().containsArrayKeys() && hasProperty(ArrayIndex.toKey(index), false);
     }
 
     @Override

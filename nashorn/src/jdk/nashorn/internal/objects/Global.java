@@ -38,7 +38,6 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -472,7 +471,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return the global singleton
      */
     public static Global instance() {
-        ScriptObject global = Context.getGlobal();
+        final ScriptObject global = Context.getGlobal();
         if (! (global instanceof Global)) {
             throw new IllegalStateException("no current global instance");
         }
@@ -705,7 +704,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         private final int size;
         private final ReferenceQueue<Class<?>> queue;
 
-        ClassCache(int size) {
+        ClassCache(final int size) {
             super(size, 0.75f, true);
             this.size = size;
             this.queue = new ReferenceQueue<>();
@@ -721,7 +720,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         }
 
         @Override
-        public ClassReference get(Object key) {
+        public ClassReference get(final Object key) {
             for (ClassReference ref; (ref = (ClassReference)queue.poll()) != null; ) {
                 remove(ref.source);
             }
@@ -743,7 +742,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     @Override
     public Class<?> findCachedClass(final Source source) {
         assert classCache != null : "Class cache used without being initialized";
-        ClassReference ref = classCache.get(source);
+        final ClassReference ref = classCache.get(source);
         return ref != null ? ref.get() : null;
     }
 
@@ -815,7 +814,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
             return str;
         }
         final Global global = Global.instance();
-        final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
+        final ScriptObject scope = self instanceof ScriptObject ? (ScriptObject)self : global;
 
         return global.getContext().eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict));
     }
@@ -856,7 +855,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     public static Object load(final Object self, final Object source) throws IOException {
         final Global global = Global.instance();
-        final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
+        final ScriptObject scope = self instanceof ScriptObject ? (ScriptObject)self : global;
         return global.getContext().load(scope, source);
     }
 
@@ -1610,11 +1609,13 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * not the case
      *
      * @param obj and object to check
+     * @return the script object
      */
-    public static void checkObject(final Object obj) {
+    public static ScriptObject checkObject(final Object obj) {
         if (!(obj instanceof ScriptObject)) {
             throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
+        return (ScriptObject)obj;
     }
 
     /**
@@ -1665,7 +1666,8 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         // initialize global function properties
         this.eval = this.builtinEval = ScriptFunctionImpl.makeFunction("eval", EVAL);
 
-        this.parseInt           = ScriptFunctionImpl.makeFunction("parseInt",   GlobalFunctions.PARSEINT);
+        this.parseInt           = ScriptFunctionImpl.makeFunction("parseInt",   GlobalFunctions.PARSEINT,
+                new MethodHandle[] { GlobalFunctions.PARSEINT_OI, GlobalFunctions.PARSEINT_O });
         this.parseFloat         = ScriptFunctionImpl.makeFunction("parseFloat", GlobalFunctions.PARSEFLOAT);
         this.isNaN              = ScriptFunctionImpl.makeFunction("isNaN",      GlobalFunctions.IS_NAN);
         this.isFinite           = ScriptFunctionImpl.makeFunction("isFinite",   GlobalFunctions.IS_FINITE);
@@ -1751,13 +1753,12 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         copyBuiltins();
 
         // expose script (command line) arguments as "arguments" property of global
-        final List<String> arguments = env.getArguments();
-        final Object argsObj = wrapAsObject(arguments.toArray());
-        final int flags = jdk.nashorn.internal.runtime.Property.IS_ALWAYS_OBJECT | Attribute.NOT_ENUMERABLE;
-        addOwnProperty("arguments", flags, argsObj);
+        final Object argumentsObject = wrapAsObject(env.getArguments().toArray());
+        final int    argumentsFlags  = Attribute.NOT_ENUMERABLE;
+        addOwnProperty("arguments", argumentsFlags, argumentsObject);
         if (env._scripting) {
             // synonym for "arguments" in scripting mode
-            addOwnProperty("$ARG", flags, argsObj);
+            addOwnProperty("$ARG", argumentsFlags, argumentsObject);
         }
     }
 
@@ -1857,7 +1858,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     }
 
     private static void copyOptions(final ScriptObject options, final ScriptEnvironment scriptEnv) {
-        for (Field f : scriptEnv.getClass().getFields()) {
+        for (final Field f : scriptEnv.getClass().getFields()) {
             try {
                 options.set(f.getName(), f.get(scriptEnv), false);
             } catch (final IllegalArgumentException | IllegalAccessException exp) {

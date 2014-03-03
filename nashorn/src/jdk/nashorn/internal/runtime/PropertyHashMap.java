@@ -303,7 +303,7 @@ public final class PropertyHashMap implements Map <String, Property> {
      * @return The bin index.
      */
     private static int binIndex(final Element[] bins, final String key) {
-        return  key.hashCode() & (bins.length - 1);
+        return  key.hashCode() & bins.length - 1;
     }
 
     /**
@@ -315,7 +315,7 @@ public final class PropertyHashMap implements Map <String, Property> {
      */
     private static int binsNeeded(final int n) {
         // 50% padding
-        return 1 << (32 - Integer.numberOfLeadingZeros((n + (n >>> 1)) | (INITIAL_BINS - 1)));
+        return 1 << 32 - Integer.numberOfLeadingZeros(n + (n >>> 1) | INITIAL_BINS - 1);
     }
 
     /**
@@ -442,15 +442,11 @@ public final class PropertyHashMap implements Map <String, Property> {
         if (bins != null) {
             final int binIndex = binIndex(bins, key);
             Element bin = bins[binIndex];
-    //        System.err.println("oldBin = " + bin);
             bin = replaceInList(bin, key, property);
-    //        System.err.println("newBin = " + bin);
             bins[binIndex] = bin;
         }
         Element newList = list;
-        //System.err.println("oldList = " + newList);
         newList = replaceInList(newList, key, property);
-        //System.err.println("newList = " + newList);
         return new PropertyHashMap(size, bins, newList);
     }
 

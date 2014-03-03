@@ -37,6 +37,7 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
@@ -234,7 +235,6 @@ public abstract class ScriptFunctionData {
 
     private MethodHandle createGenericInvoker() {
         return makeGenericMethod(getGeneric().createComposableInvoker());
-// TODO hannes        return code.generic().getInvoker();
     }
 
     final MethodHandle getGenericConstructor() {
@@ -298,7 +298,7 @@ public abstract class ScriptFunctionData {
         final CompiledFunction bindTarget = new CompiledFunction(getGenericInvoker(), getGenericConstructor());
         boundList.add(bind(bindTarget, fn, self, allArgs));
 
-        ScriptFunctionData boundData = new FinalScriptFunctionData(name, Math.max(0, getArity() - length), boundList, isStrict(), isBuiltin(), isConstructor(), isVariableArity());
+        final ScriptFunctionData boundData = new FinalScriptFunctionData(name, Math.max(0, getArity() - length), boundList, isStrict(), isBuiltin(), isConstructor(), isVariableArity());
         return boundData;
     }
 
@@ -381,7 +381,7 @@ public abstract class ScriptFunctionData {
         } else {
             // If target is already bound, insert additional bound arguments after "this" argument, at position 1.
             final int argInsertPos = isTargetBound ? 1 : 0;
-            final Object[] boundArgs = new Object[Math.min(originalInvoker.type().parameterCount() - argInsertPos, args.length + (isTargetBound ? 0 : (needsCallee  ? 2 : 1)))];
+            final Object[] boundArgs = new Object[Math.min(originalInvoker.type().parameterCount() - argInsertPos, args.length + (isTargetBound ? 0 : needsCallee  ? 2 : 1))];
             int next = 0;
             if (!isTargetBound) {
                 if (needsCallee) {
@@ -463,7 +463,7 @@ public abstract class ScriptFunctionData {
      */
     private static MethodHandle makeGenericMethod(final MethodHandle mh) {
         final MethodType type = mh.type();
-        MethodType newType = makeGenericType(type);
+        final MethodType newType = makeGenericType(type);
         return type.equals(newType) ? mh : mh.asType(newType);
     }
 
@@ -681,7 +681,7 @@ public abstract class ScriptFunctionData {
         }
 
         final Class<?> param0 = type.parameterType(0);
-        return param0 == ScriptFunction.class || (param0 == boolean.class && length > 1 && type.parameterType(1) == ScriptFunction.class);
+        return param0 == ScriptFunction.class || param0 == boolean.class && length > 1 && type.parameterType(1) == ScriptFunction.class;
     }
 
     /**

@@ -469,6 +469,7 @@ public abstract class ScriptFunction extends ScriptObject {
         final MethodType type = desc.getMethodType();
         assert desc.getMethodType().returnType() == Object.class && !NashornCallSiteDescriptor.isOptimistic(desc);
         final GuardedInvocation bestCtorInv = data.getBestConstructor(type);
+        //TODO - ClassCastException
         return new GuardedInvocation(pairArguments(bestCtorInv.getInvocation(), type), getFunctionGuard(this), bestCtorInv.getSwitchPoint());
     }
 

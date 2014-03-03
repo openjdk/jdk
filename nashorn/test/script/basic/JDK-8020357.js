@@ -35,7 +35,7 @@ var limit = Math.pow(2, UNSIGNED_INT_BITS)/BYTES_PER_INT_32
 
 // A value over the limit should throw a RangeError.
 try {
-    Int32Array(limit)
+    new Int32Array(limit)
 } catch(e) {
     print(e)
 }

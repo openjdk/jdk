@@ -248,17 +248,17 @@ public final class MemberInfo implements Cloneable {
         if (kind == Kind.CONSTRUCTOR) {
             final Type returnType = Type.getReturnType(javaDesc);
             if (! returnType.toString().equals(OBJECT_DESC)) {
-                error("return value should be of Object type, found" + returnType);
+                error("return value should be of Object type, found " + returnType);
             }
             final Type[] argTypes = Type.getArgumentTypes(javaDesc);
             if (argTypes.length < 2) {
                 error("constructor methods should have at least 2 args");
             }
             if (! argTypes[0].equals(Type.BOOLEAN_TYPE)) {
-                error("first argument should be of boolean type, found" + argTypes[0]);
+                error("first argument should be of boolean type, found " + argTypes[0]);
             }
             if (! argTypes[1].toString().equals(OBJECT_DESC)) {
-                error("second argument should be of Object type, found" + argTypes[0]);
+                error("second argument should be of Object type, found " + argTypes[0]);
             }
 
             if (argTypes.length > 2) {
@@ -284,7 +284,7 @@ public final class MemberInfo implements Cloneable {
                 error("function methods should have at least 1 arg");
             }
             if (! argTypes[0].toString().equals(OBJECT_DESC)) {
-                error("first argument should be of Object type, found" + argTypes[0]);
+                error("first argument should be of Object type, found " + argTypes[0]);
             }
 
             if (argTypes.length > 1) {

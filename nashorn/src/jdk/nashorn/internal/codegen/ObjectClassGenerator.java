@@ -215,7 +215,7 @@ public final class ObjectClassGenerator {
      * @param clazz the JavaScript scope class.
      * @return the number of fields in the scope class.
      */
-    public static int getFieldCount(Class<?> clazz) {
+    public static int getFieldCount(final Class<?> clazz) {
         final String name = clazz.getSimpleName();
         final String prefix = JS_OBJECT_PREFIX.symbolName();
         if (prefix.equals(name)) {
@@ -247,13 +247,16 @@ public final class ObjectClassGenerator {
      * @param fieldNames fields to initialize to undefined, where applicable
      */
     private static void initializeToUndefined(final MethodEmitter init, final String className, final List<String> fieldNames) {
+        if (!OBJECT_FIELDS_ONLY) {
+            // no need to initialize anything to undefined in the dual field world
+            // - then we have a constant getter for undefined for any unknown type
+            return;
+        }
+
         if (fieldNames.isEmpty()) {
             return;
         }
 
-        // always initialize fields to undefined, even with --dual-fields. Then it's ok to
-        // remember things like "widest set type" in properties, and if it's object, don't
-        // add any special "return undefined" getters, saving an invalidation
         init.load(Type.OBJECT, JAVA_THIS.slot());
         init.loadUndefined(Type.OBJECT);
 
@@ -565,7 +568,7 @@ public final class ObjectClassGenerator {
         final boolean isPrimitiveStorage = forType != null && forType.isPrimitive();
 
         //which is the primordial getter
-        final MethodHandle getter = OBJECT_FIELDS_ONLY ? objectGetter : (isPrimitiveStorage ? primitiveGetter : objectGetter);
+        final MethodHandle getter = OBJECT_FIELDS_ONLY ? objectGetter : isPrimitiveStorage ? primitiveGetter : objectGetter;
 
         if (forType == null) {
             if (isOptimistic) {
