@@ -842,7 +842,7 @@ public class Annotate {
                                   final Env<AttrContext> env,
                                   final Symbol sym,
                                   final DiagnosticPosition deferPos) {
-
+        Assert.checkNonNull(sym);
         normal(new Annotate.Worker() {
                 @Override
                 public String toString() {

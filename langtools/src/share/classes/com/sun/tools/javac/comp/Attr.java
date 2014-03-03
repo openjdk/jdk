@@ -769,13 +769,6 @@ public class Attr extends JCTree.Visitor {
                 = deferredLintHandler.setPos(variable.pos());
 
         try {
-            // Use null as symbol to not attach the type annotation to any symbol.
-            // The initializer will later also be visited and then we'll attach
-            // to the symbol.
-            // This prevents having multiple type annotations, just because of
-            // lazy constant value evaluation.
-            annotate.annotateTypeLater(variable.init, env, null, variable.pos());
-            annotate.flush();
             Type itype = attribExpr(variable.init, env, type);
             if (itype.constValue() != null) {
                 return coerce(itype, type).constValue();
