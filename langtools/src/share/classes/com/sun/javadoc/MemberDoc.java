@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ public interface MemberDoc extends ProgramElementDoc {
 
     /**
      * Returns true if this member was synthesized by the compiler.
+     *
+     * @return true if this member was synthesized by the compiler.
      */
     boolean isSynthetic();
 }
