@@ -32,7 +32,6 @@ import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
 import java.lang.invoke.MethodHandle;
 import java.util.Objects;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
-import jdk.nashorn.internal.codegen.types.Type;
 
 /**
  * This is the abstract superclass representing a JavaScript Property.
@@ -64,7 +63,7 @@ public abstract class Property {
     /** ECMA 8.6.1 - Is this property not configurable? */
     public static final int NOT_CONFIGURABLE = 1 << 2;
 
-    private static final int MODIFY_MASK     = (NOT_WRITABLE | NOT_ENUMERABLE | NOT_CONFIGURABLE);
+    private static final int MODIFY_MASK     = NOT_WRITABLE | NOT_ENUMERABLE | NOT_CONFIGURABLE;
 
     /** Is this a function parameter? */
     public static final int IS_PARAMETER     = 1 << 3;
@@ -72,14 +71,11 @@ public abstract class Property {
     /** Is parameter accessed thru arguments? */
     public static final int HAS_ARGUMENTS    = 1 << 4;
 
-    /** Is this property always represented as an Object? See {@link ObjectClassGenerator} and dual fields flag. */
-    public static final int IS_ALWAYS_OBJECT = 1 << 5;
-
     /** Can this property be undefined? */
-    public static final int CAN_BE_UNDEFINED = 1 << 6;
+    public static final int CAN_BE_UNDEFINED = 1 << 5;
 
     /** Is this a function declaration property ? */
-    public static final int IS_FUNCTION_DECLARATION = 1 << 7;
+    public static final int IS_FUNCTION_DECLARATION = 1 << 6;
 
     /**
      * Is this is a primitive field given to us by Nasgen, i.e.
@@ -87,7 +83,7 @@ public abstract class Property {
      * is narrower than object, e.g. Math.PI which is declared
      * as a double
      */
-    public static final int IS_NASGEN_PRIMITIVE = 1 << 8;
+    public static final int IS_NASGEN_PRIMITIVE = 1 << 7;
 
     /** Property key. */
     private final String key;
@@ -287,6 +283,16 @@ public abstract class Property {
             return cloned;
         }
         return this;
+    }
+
+    /**
+     * Check if a flag is set for a property
+     * @param property property
+     * @param flag     flag to check
+     * @return true if flag is set
+     */
+    public static boolean checkFlag(final Property property, final int flag) {
+        return (property.getFlags() & flag) == flag;
     }
 
     /**
@@ -606,17 +612,6 @@ public abstract class Property {
      */
     public boolean canChangeType() {
         return false;
-    }
-
-    /**
-     * Check whether this Property is ever used as anything but an Object. If this is used only
-     * as an object, dual fields mode need not even try to represent it as a primitive at any
-     * callsite, saving map rewrites for performance.
-     *
-     * @return true if representation should always be an object field
-     */
-    public boolean isAlwaysObject() {
-        return (flags & IS_ALWAYS_OBJECT) == IS_ALWAYS_OBJECT;
     }
 
     /**

@@ -41,6 +41,7 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
+import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -156,8 +157,20 @@ public final class NativeNumber extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toFixed(final Object self, final Object fractionDigits) {
-        final int f = JSType.toInteger(fractionDigits);
-        if (f < 0 || f > 20) {
+        return toFixed(self, JSType.toInteger(fractionDigits));
+    }
+
+    /**
+     * ECMA 15.7.4.5 Number.prototype.toFixed (fractionDigits) specialized for int fractionDigits
+     *
+     * @param self           self reference
+     * @param fractionDigits how many digits should be after the decimal point, 0 if undefined
+     *
+     * @return number in decimal fixed point notation
+     */
+    @SpecializedFunction
+    public static Object toFixed(final Object self, final int fractionDigits) {
+        if (fractionDigits < 0 || fractionDigits > 20) {
             throw rangeError("invalid.fraction.digits", "toFixed");
         }
 
@@ -171,8 +184,8 @@ public final class NativeNumber extends ScriptObject {
         }
 
         final NumberFormat format = NumberFormat.getNumberInstance(Locale.US);
-        format.setMinimumFractionDigits(f);
-        format.setMaximumFractionDigits(f);
+        format.setMinimumFractionDigits(fractionDigits);
+        format.setMaximumFractionDigits(fractionDigits);
         format.setGroupingUsed(false);
 
         return format.format(x);
@@ -210,7 +223,7 @@ public final class NativeNumber extends ScriptObject {
      * ECMA 15.7.4.7 Number.prototype.toPrecision (precision)
      *
      * @param self      self reference
-     * @param precision use {@code precision - 1} digits after the significand's decimal point or call {@link NativeDate#toString} if undefined
+     * @param precision use {@code precision - 1} digits after the significand's decimal point or call {@link JSType#toString} if undefined
      *
      * @return number in decimal exponentiation notation or decimal fixed notation depending on {@code precision}
      */
@@ -220,8 +233,23 @@ public final class NativeNumber extends ScriptObject {
         if (precision == UNDEFINED) {
             return JSType.toString(x);
         }
+        return (toPrecision(x, JSType.toInteger(precision)));
+    }
 
-        final int p = JSType.toInteger(precision);
+    /**
+     * ECMA 15.7.4.7 Number.prototype.toPrecision (precision) specialized f
+     *
+     * @param self      self reference
+     * @param precision use {@code precision - 1} digits after the significand's decimal point.
+     *
+     * @return number in decimal exponentiation notation or decimal fixed notation depending on {@code precision}
+     */
+    @SpecializedFunction
+    public static Object toPrecision(Object self, final int precision) {
+        return toPrecision(getNumberValue(self), precision);
+    }
+
+    private static Object toPrecision(final double x, final int p) {
         if (Double.isNaN(x)) {
             return "NaN";
         } else if (Double.isInfinite(x)) {

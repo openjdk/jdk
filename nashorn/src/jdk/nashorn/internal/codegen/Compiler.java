@@ -136,11 +136,10 @@ public final class Compiler {
             compilationEnv.setIsStrict(true);
         }
 
-        final StringBuilder sb = new StringBuilder();
-        sb.append(functionNode.uniqueName(className)).
-                append('$').
-                append(safeSourceName(functionNode.getSource()));
-        this.scriptName = sb.toString();
+        final String name       = className + '$' + safeSourceName(functionNode.getSource());
+        final String uniqueName = functionNode.uniqueName(name);
+
+        this.scriptName = uniqueName;
     }
 
     private Compiler(final CompilationEnvironment compilationEnv, final ScriptEnvironment scriptEnv, final CodeInstaller<ScriptEnvironment> installer) {
@@ -437,11 +436,11 @@ public final class Compiler {
         }
 
         baseName = baseName.replace('.', '_').replace('-', '_');
-        if (! scriptEnv._loader_per_compile) {
+        if (!scriptEnv._loader_per_compile) {
             baseName = baseName + installer.getUniqueScriptId();
         }
-        final String mangled = NameCodec.encode(baseName);
 
+        final String mangled = NameCodec.encode(baseName);
         return mangled != null ? mangled : baseName;
     }
 

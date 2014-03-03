@@ -164,7 +164,7 @@ public final class JavaAdapterFactory {
         final StaticClass adapterClass = getAdapterClassFor(new Class<?>[] { targetType }, null, lookup);
         return MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(
                 NashornCallSiteDescriptor.get(lookup, "dyn:new",
-                        MethodType.methodType(targetType, StaticClass.class, sourceType), 0), null, false,
+                        MethodType.methodType(targetType, StaticClass.class, sourceType), 0), null, 0, false,
                         adapterClass, null)).getInvocation(), adapterClass);
     }
 

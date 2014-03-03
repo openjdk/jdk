@@ -338,6 +338,7 @@ public final class CompilationEnvironment {
      * @return most optimistic type in current environment
      */
     Type getOptimisticType(final Optimistic node) {
+
         assert useOptimisticTypes();
         final Type invalidType = invalidatedProgramPoints.get(node.getProgramPoint());
         if (invalidType != null) {

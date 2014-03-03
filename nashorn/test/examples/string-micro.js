@@ -46,10 +46,16 @@ bench("[]", function() {
     str[2];
 });
 
-bench("fromCharCode", function() {
+bench("fromCharCode 1", function() {
     String.fromCharCode(97);
     String.fromCharCode(98);
     String.fromCharCode(99);
+});
+
+bench("fromCharCode 2", function() {
+    String.fromCharCode(97, 98);
+    String.fromCharCode(97, 98, 99);
+    String.fromCharCode(97, 98, 99, 100);
 });
 
 bench("charAt 1", function() {

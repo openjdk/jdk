@@ -127,6 +127,17 @@ public interface LinkRequest {
     public Object getReceiver();
 
     /**
+     * Returns the number of times this callsite has been linked/relinked. This can be useful if you want to
+     * change e.g. exception based relinking to guard based relinking. It's probably not a good idea to keep,
+     * for example, expensive exception throwing relinkage based on failed type checks/ClassCastException in
+     * a nested callsite tree where the exception is thrown repeatedly for the common case. There it would be
+     * much more performant to use exact type guards instead.
+     *
+     * @return link count for call site
+     */
+    public int getLinkCount();
+
+    /**
      * Returns true if the call site is considered unstable, that is, it has been relinked more times than was
      * specified in {@link DynamicLinkerFactory#setUnstableRelinkThreshold(int)}. Linkers should use this as a
      * hint to prefer producing linkage that is more stable (its guard fails less frequently), even if that assumption

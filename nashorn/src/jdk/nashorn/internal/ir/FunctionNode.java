@@ -436,7 +436,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         return namespace.uniqueName(base);
     }
 
-
     @Override
     public void toString(final StringBuilder sb) {
         sb.append('[').

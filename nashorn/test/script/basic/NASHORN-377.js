@@ -194,7 +194,7 @@ function fillArray(a, start) {
 })();
 
 (function test_slice() {
-  var b = ArrayBuffer(16);
+  var b = new ArrayBuffer(16);
   fillArray(new Int8Array(b));
   print(bufstr(b));
   print("slice(4,8)=" + bufstr(b.slice(4, 8)), "slice(-8,-4)=" + bufstr(b.slice(-8, -4))); // negative index refers from the end of the array

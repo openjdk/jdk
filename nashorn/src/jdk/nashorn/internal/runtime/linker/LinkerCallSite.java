@@ -43,6 +43,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import jdk.internal.dynalink.ChainedCallSite;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -63,6 +64,9 @@ public class LinkerCallSite extends ChainedCallSite {
     private static final String PROFILEFILE = Options.getStringProperty("nashorn.profilefile", "NashornProfile.txt");
 
     private static final MethodHandle INCREASE_MISS_COUNTER = MH.findStatic(MethodHandles.lookup(), LinkerCallSite.class, "increaseMissCount", MH.type(Object.class, String.class, Object.class));
+    private static final MethodHandle ON_CATCH_INVALIDATION = MH.findStatic(MethodHandles.lookup(), LinkerCallSite.class, "onCatchInvalidation", MH.type(ChainedCallSite.class, LinkerCallSite.class));
+
+    private int catchInvalidations;
 
     LinkerCallSite(final NashornCallSiteDescriptor descriptor) {
         super(descriptor);
@@ -71,6 +75,34 @@ public class LinkerCallSite extends ChainedCallSite {
         }
     }
 
+    @Override
+    protected MethodHandle getPruneCatches() {
+        return MH.filterArguments(super.getPruneCatches(), 0, ON_CATCH_INVALIDATION);
+    }
+
+    /**
+     * Action to perform when a catch guard around a callsite triggers. Increases
+     * catch invalidation counter
+     * @param callSite callsite
+     * @return the callsite, so this can be used as argument filter
+     */
+    @SuppressWarnings("unused")
+    private static ChainedCallSite onCatchInvalidation(final LinkerCallSite callSite) {
+        ++callSite.catchInvalidations;
+        return callSite;
+    }
+
+    /**
+     * Get the number of catch invalidations that have happened at this call site so far
+     * @param callSiteToken call site token, unique to the callsite.
+     * @return number of catch invalidations, i.e. thrown exceptions caught by the linker
+     */
+    public static int getCatchInvalidationCount(final Object callSiteToken) {
+        if (callSiteToken instanceof LinkerCallSite) {
+            return ((LinkerCallSite)callSiteToken).catchInvalidations;
+        }
+        return 0;
+    }
     /**
      * Construct a new linker call site.
      * @param name     Name of method.
@@ -78,8 +110,7 @@ public class LinkerCallSite extends ChainedCallSite {
      * @param flags    Call site specific flags.
      * @return New LinkerCallSite.
      */
-    static LinkerCallSite newLinkerCallSite(final MethodHandles.Lookup lookup, final String name, final MethodType type,
-            final int flags) {
+    static LinkerCallSite newLinkerCallSite(final MethodHandles.Lookup lookup, final String name, final MethodType type, final int flags) {
         final NashornCallSiteDescriptor desc = NashornCallSiteDescriptor.get(lookup, name, type, flags);
 
         if (desc.isProfile()) {

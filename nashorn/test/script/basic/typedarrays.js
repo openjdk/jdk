@@ -83,7 +83,7 @@ all.forEach(function(instance) {
     var arr = Object.getOwnPropertyNames(instance);
     arr.forEach(function(p) {
         var val = instance[p];
-        if(!isNaN(p)){
+        if(!isNaN(p)) {
             val[p] = 99;
         }       
     });

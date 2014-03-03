@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
@@ -156,6 +157,7 @@ public class SpillProperty extends AccessorProperty {
      * @param flags  the property flags
      * @param slot   spill slot
      */
+    @SuppressWarnings("unused")
     public SpillProperty(final String key, final int flags, final int slot) {
         super(key, flags, slot, primitiveGetter(slot), primitiveSetter(slot), objectGetter(slot), objectSetter(slot));
         assert !OBJECT_FIELDS_ONLY || getCurrentType() == Object.class;

@@ -147,7 +147,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
      * @return true if this is a property name
      */
     public boolean isPropertyName() {
-        return (flags & PROPERTY_NAME) != 0;
+        return (flags & PROPERTY_NAME) == PROPERTY_NAME;
     }
 
     /**
@@ -166,7 +166,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
      * @return true if this is a future strict name
      */
     public boolean isFutureStrictName() {
-        return (flags & FUTURESTRICT_NAME) != 0;
+        return (flags & FUTURESTRICT_NAME) == FUTURESTRICT_NAME;
     }
 
     /**
@@ -185,7 +185,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
      * @return true if IdentNode is initialized on creation
      */
     public boolean isInitializedHere() {
-        return (flags & INITIALIZED_HERE) != 0;
+        return (flags & INITIALIZED_HERE) == INITIALIZED_HERE;
     }
 
     /**
@@ -211,7 +211,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
 
     @Override
     public boolean isFunction() {
-        return (flags & FUNCTION) != 0;
+        return (flags & FUNCTION) == FUNCTION;
     }
 
     @Override
@@ -219,7 +219,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
         if (this.optimisticType == callSiteType) {
             return this;
         }
-        if (DEBUG_FIELDS && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), callSiteType)) {
+        if (DEBUG_FIELDS && ObjectClassGenerator.shouldInstrument(getName()) && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), callSiteType)) {
             ObjectClassGenerator.LOG.info(getClass().getName(), " ", this, " => ", callSiteType, " instead of ", getType());
         }
         return new IdentNode(this, name, callSiteType, flags, programPoint);

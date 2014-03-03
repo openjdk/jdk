@@ -250,8 +250,7 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object defineProperty(final Object self, final Object obj, final Object prop, final Object attr) {
-        Global.checkObject(obj);
-        ((ScriptObject)obj).defineOwnProperty(JSType.toString(prop), attr, true);
+        Global.checkObject(obj).defineOwnProperty(JSType.toString(prop), attr, true);
         return obj;
     }
 
@@ -265,9 +264,7 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object defineProperties(final Object self, final Object obj, final Object props) {
-        Global.checkObject(obj);
-
-        final ScriptObject sobj     = (ScriptObject)obj;
+        final ScriptObject sobj     = Global.checkObject(obj);
         final Object       propsObj = Global.toObject(props);
 
         if (propsObj instanceof ScriptObject) {
@@ -425,7 +422,7 @@ public final class NativeObject {
 
         // Object(null), Object(undefined), Object() are same as "new Object()"
 
-        if (newObj || (type == JSType.NULL || type == JSType.UNDEFINED)) {
+        if (newObj || type == JSType.NULL || type == JSType.UNDEFINED) {
             switch (type) {
             case BOOLEAN:
             case NUMBER:
@@ -513,7 +510,7 @@ public final class NativeObject {
         final Object key = JSType.toPrimitive(v, String.class);
         final Object obj = Global.toObject(self);
 
-        return (obj instanceof ScriptObject) && ((ScriptObject)obj).hasOwnProperty(key);
+        return obj instanceof ScriptObject && ((ScriptObject)obj).hasOwnProperty(key);
     }
 
     /**
@@ -627,11 +624,9 @@ public final class NativeObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object bindProperties(final Object self, final Object target, final Object source) {
         // target object has to be a ScriptObject
-        Global.checkObject(target);
+        final ScriptObject targetObj = Global.checkObject(target);
         // check null or undefined source object
         Global.checkObjectCoercible(source);
-
-        final ScriptObject targetObj = (ScriptObject)target;
 
         if (source instanceof ScriptObject) {
             final ScriptObject sourceObj  = (ScriptObject)source;
@@ -753,7 +748,7 @@ public final class NativeObject {
                     Bootstrap.bindDynamicMethod(methodGetter.invoke(source), source)), 0, Object.class);
         } catch(RuntimeException|Error e) {
             throw e;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
     }
@@ -766,7 +761,7 @@ public final class NativeObject {
             assert passesGuard(source, inv.getGuard());
         } catch(RuntimeException|Error e) {
             throw e;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
         assert inv.getSwitchPoint() == null; // Linkers in Dynalink's beans package don't use switchpoints.
@@ -780,6 +775,6 @@ public final class NativeObject {
 
     private static LinkRequest createLinkRequest(String operation, MethodType methodType, Object source) {
         return new LinkRequestImpl(CallSiteDescriptorFactory.create(MethodHandles.publicLookup(), operation,
-                methodType), null, false, source);
+                methodType), null, 0, false, source);
     }
 }

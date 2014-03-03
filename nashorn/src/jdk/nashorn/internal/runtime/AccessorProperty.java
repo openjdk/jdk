@@ -184,13 +184,21 @@ public class AccessorProperty extends Property {
      * @param primitiveGetter
      * @param primitiveSetter
      */
-    protected AccessorProperty(final String key, final int flags, final int slot, final MethodHandle primitiveGetter, final MethodHandle primitiveSetter, final MethodHandle objectGetter, final MethodHandle objectSetter) {
+    protected AccessorProperty(
+            final String key,
+            final int flags,
+            final int slot,
+            final MethodHandle primitiveGetter,
+            final MethodHandle primitiveSetter,
+            final MethodHandle objectGetter,
+            final MethodHandle objectSetter) {
         super(key, flags, slot);
         assert getClass() != AccessorProperty.class;
         this.primitiveGetter = primitiveGetter;
         this.primitiveSetter = primitiveSetter;
         this.objectGetter    = objectGetter;
         this.objectSetter    = objectSetter;
+//        setCurrentType(OBJECT_FIELDS_ONLY ? Object.class : initialType);
         initializeType();
     }
 
@@ -357,13 +365,15 @@ public class AccessorProperty extends Property {
      */
     protected final void initializeType() {
         Class<?> initialType = null;
-        if (OBJECT_FIELDS_ONLY || isAlwaysObject()) {
+        if (OBJECT_FIELDS_ONLY) {
             initialType = Object.class;
         } else {
             if (!canBeUndefined()) { //todo if !canBeUndefined it means that we have an exact initialType
                 initialType = int.class;
             }
-            info(getKey(), canBeUndefined() ? " can be undefined" : " is always defined");
+            if (shouldInstrument(getKey())) {
+                info(getKey(), canBeUndefined() ? " can be undefined" : " is always defined");
+            }
         }
         setCurrentType(initialType);
     }
