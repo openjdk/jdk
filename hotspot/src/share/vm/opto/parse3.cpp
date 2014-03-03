@@ -233,7 +233,8 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   // Build the load.
   //
   MemNode::MemOrd mo = is_vol ? MemNode::acquire : MemNode::unordered;
-  Node* ld = make_load(NULL, adr, type, bt, adr_type, mo, is_vol);
+  bool needs_atomic_access = is_vol || AlwaysAtomicAccesses;
+  Node* ld = make_load(NULL, adr, type, bt, adr_type, mo, needs_atomic_access);
 
   // Adjust Java stack
   if (type2size[bt] == 1)
@@ -314,7 +315,8 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
     }
     store = store_oop_to_object(control(), obj, adr, adr_type, val, field_type, bt, mo);
   } else {
-    store = store_to_memory(control(), adr, val, bt, adr_type, mo, is_vol);
+    bool needs_atomic_access = is_vol || AlwaysAtomicAccesses;
+    store = store_to_memory(control(), adr, val, bt, adr_type, mo, needs_atomic_access);
   }
 
   // If reference is volatile, prevent following volatiles ops from
