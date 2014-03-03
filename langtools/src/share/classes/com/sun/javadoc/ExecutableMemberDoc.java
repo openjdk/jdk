@@ -103,8 +103,8 @@ public interface ExecutableMemberDoc extends MemberDoc {
     /**
      * Return the throws tags in this method.
      *
-     * @return an array of ThrowTag containing all {@code &#64;exception}
-     * and {@code &#64;throws} tags.
+     * @return an array of ThrowTag containing all {@code @exception}
+     * and {@code @throws} tags.
      */
     ThrowsTag[] throwsTags();
 
@@ -112,7 +112,7 @@ public interface ExecutableMemberDoc extends MemberDoc {
      * Return the param tags in this method, excluding the type
      * parameter tags.
      *
-     * @return an array of ParamTag containing all {@code &#64;param} tags
+     * @return an array of ParamTag containing all {@code @param} tags
      * corresponding to the parameters of this method.
      */
     ParamTag[] paramTags();
@@ -120,7 +120,7 @@ public interface ExecutableMemberDoc extends MemberDoc {
     /**
      * Return the type parameter tags in this method.
      *
-     * @return an array of ParamTag containing all {@code &#64;param} tags
+     * @return an array of ParamTag containing all {@code @param} tags
      * corresponding to the type parameters of this method.
      * @since 1.5
      */
