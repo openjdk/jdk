@@ -370,36 +370,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     private ScriptFunction typeErrorThrower;
 
-    private PropertyMap    accessorPropertyDescriptorMap;
-    private PropertyMap    arrayBufferViewMap;
-    private PropertyMap    dataPropertyDescriptorMap;
-    private PropertyMap    genericPropertyDescriptorMap;
-    private PropertyMap    nativeArgumentsMap;
-    private PropertyMap    nativeArrayMap;
-    private PropertyMap    nativeArrayBufferMap;
-    private PropertyMap    nativeBooleanMap;
-    private PropertyMap    nativeDateMap;
-    private PropertyMap    nativeErrorMap;
-    private PropertyMap    nativeEvalErrorMap;
-    private PropertyMap    nativeJSAdapterMap;
-    private PropertyMap    nativeJavaImporterMap;
-    private PropertyMap    nativeNumberMap;
-    private PropertyMap    nativeRangeErrorMap;
-    private PropertyMap    nativeReferenceErrorMap;
-    private PropertyMap    nativeRegExpMap;
-    private PropertyMap    nativeRegExpExecResultMap;
-    private PropertyMap    nativeStrictArgumentsMap;
-    private PropertyMap    nativeStringMap;
-    private PropertyMap    nativeSyntaxErrorMap;
-    private PropertyMap    nativeTypeErrorMap;
-    private PropertyMap    nativeURIErrorMap;
-    private PropertyMap    prototypeObjectMap;
-    private PropertyMap    objectMap;
-    private PropertyMap    functionMap;
-    private PropertyMap    anonymousFunctionMap;
-    private PropertyMap    strictFunctionMap;
-    private PropertyMap    boundFunctionMap;
-
     // Flag to indicate that a split method issued a return statement
     private int splitState = -1;
 
@@ -557,7 +527,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     @Override
     public ScriptObject newObject() {
-        return new JO(getObjectPrototype(), getObjectMap());
+        return new JO(getObjectPrototype(), JO.getInitialMap());
     }
 
     @Override
@@ -997,123 +967,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     ScriptObject getFloat64ArrayPrototype() {
         return ScriptFunction.getPrototype(builtinFloat64Array);
-    }
-
-    // Builtin PropertyMap accessors
-    PropertyMap getAccessorPropertyDescriptorMap() {
-        return accessorPropertyDescriptorMap;
-    }
-
-    PropertyMap getArrayBufferViewMap() {
-        return arrayBufferViewMap;
-    }
-
-    PropertyMap getDataPropertyDescriptorMap() {
-        return dataPropertyDescriptorMap;
-    }
-
-    PropertyMap getGenericPropertyDescriptorMap() {
-        return genericPropertyDescriptorMap;
-    }
-
-    PropertyMap getArgumentsMap() {
-        return nativeArgumentsMap;
-    }
-
-    PropertyMap getArrayMap() {
-        return nativeArrayMap;
-    }
-
-    PropertyMap getArrayBufferMap() {
-        return nativeArrayBufferMap;
-    }
-
-    PropertyMap getBooleanMap() {
-        return nativeBooleanMap;
-    }
-
-    PropertyMap getDateMap() {
-        return nativeDateMap;
-    }
-
-    PropertyMap getErrorMap() {
-        return nativeErrorMap;
-    }
-
-    PropertyMap getEvalErrorMap() {
-        return nativeEvalErrorMap;
-    }
-
-    PropertyMap getJSAdapterMap() {
-        return nativeJSAdapterMap;
-    }
-
-    PropertyMap getJavaImporterMap() {
-        return nativeJavaImporterMap;
-    }
-
-    PropertyMap getNumberMap() {
-        return nativeNumberMap;
-    }
-
-    PropertyMap getRangeErrorMap() {
-        return nativeRangeErrorMap;
-    }
-
-    PropertyMap getReferenceErrorMap() {
-        return nativeReferenceErrorMap;
-    }
-
-    PropertyMap getRegExpMap() {
-        return nativeRegExpMap;
-    }
-
-    PropertyMap getRegExpExecResultMap() {
-        return nativeRegExpExecResultMap;
-    }
-
-    PropertyMap getStrictArgumentsMap() {
-        return nativeStrictArgumentsMap;
-    }
-
-    PropertyMap getStringMap() {
-        return nativeStringMap;
-    }
-
-    PropertyMap getSyntaxErrorMap() {
-        return nativeSyntaxErrorMap;
-    }
-
-    PropertyMap getTypeErrorMap() {
-        return nativeTypeErrorMap;
-    }
-
-    PropertyMap getURIErrorMap() {
-        return nativeURIErrorMap;
-    }
-
-    PropertyMap getPrototypeObjectMap() {
-        return prototypeObjectMap;
-    }
-
-    PropertyMap getObjectMap() {
-        return objectMap;
-    }
-
-    PropertyMap getFunctionMap() {
-        return functionMap;
-    }
-
-    PropertyMap getAnonymousFunctionMap() {
-        return anonymousFunctionMap;
-    }
-
-    PropertyMap getStrictFunctionMap() {
-        return strictFunctionMap;
-    }
-
-    PropertyMap getBoundFunctionMap() {
-        return boundFunctionMap;
     }
 
     private ScriptFunction getBuiltinArray() {
@@ -1631,14 +1484,11 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         final ScriptEnvironment env = getContext().getEnv();
 
-        // duplicate PropertyMaps of Native* classes
-        copyInitialMaps(env);
-
         // initialize Function and Object constructor
         initFunctionAndObject();
 
         // Now fix Global's own proto.
-        this.setProto(getObjectPrototype());
+        this.setInitialProto(getObjectPrototype());
 
         // initialize global function properties
         this.eval = this.builtinEval = ScriptFunctionImpl.makeFunction("eval", EVAL);
@@ -1783,7 +1633,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final ScriptObject prototype = ScriptFunction.getPrototype(cons);
         prototype.set(NativeError.NAME, name, false);
         prototype.set(NativeError.MESSAGE, "", false);
-        prototype.setProto(errorProto);
+        prototype.setInitialProto(errorProto);
         return (ScriptFunction)cons;
     }
 
@@ -1955,53 +1805,13 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
             }
 
             if (res.getProto() == null) {
-                res.setProto(getObjectPrototype());
+                res.setInitialProto(getObjectPrototype());
             }
 
             return res;
 
         } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private void copyInitialMaps(final ScriptEnvironment env) {
-        this.accessorPropertyDescriptorMap = AccessorPropertyDescriptor.getInitialMap().duplicate();
-        this.dataPropertyDescriptorMap = DataPropertyDescriptor.getInitialMap().duplicate();
-        this.genericPropertyDescriptorMap = GenericPropertyDescriptor.getInitialMap().duplicate();
-        this.nativeArgumentsMap = NativeArguments.getInitialMap().duplicate();
-        this.nativeArrayMap = NativeArray.getInitialMap().duplicate();
-        this.nativeBooleanMap = NativeBoolean.getInitialMap().duplicate();
-        this.nativeDateMap = NativeDate.getInitialMap().duplicate();
-        this.nativeErrorMap = NativeError.getInitialMap().duplicate();
-        this.nativeEvalErrorMap = NativeEvalError.getInitialMap().duplicate();
-        this.nativeJSAdapterMap = NativeJSAdapter.getInitialMap().duplicate();
-        this.nativeNumberMap = NativeNumber.getInitialMap().duplicate();
-        this.nativeRangeErrorMap = NativeRangeError.getInitialMap().duplicate();
-        this.nativeReferenceErrorMap = NativeReferenceError.getInitialMap().duplicate();
-        this.nativeRegExpMap = NativeRegExp.getInitialMap().duplicate();
-        this.nativeRegExpExecResultMap = NativeRegExpExecResult.getInitialMap().duplicate();
-        this.nativeStrictArgumentsMap = NativeStrictArguments.getInitialMap().duplicate();
-        this.nativeStringMap = NativeString.getInitialMap().duplicate();
-        this.nativeSyntaxErrorMap = NativeSyntaxError.getInitialMap().duplicate();
-        this.nativeTypeErrorMap = NativeTypeError.getInitialMap().duplicate();
-        this.nativeURIErrorMap = NativeURIError.getInitialMap().duplicate();
-        this.prototypeObjectMap = PrototypeObject.getInitialMap().duplicate();
-        this.objectMap = JO.getInitialMap().duplicate();
-        this.functionMap = ScriptFunctionImpl.getInitialMap().duplicate();
-        this.anonymousFunctionMap = ScriptFunctionImpl.getInitialAnonymousMap().duplicate();
-        this.strictFunctionMap = ScriptFunctionImpl.getInitialStrictMap().duplicate();
-        this.boundFunctionMap = ScriptFunctionImpl.getInitialBoundMap().duplicate();
-
-        // java
-        if (! env._no_java) {
-            this.nativeJavaImporterMap = NativeJavaImporter.getInitialMap().duplicate();
-        }
-
-        // typed arrays
-        if (! env._no_typed_arrays) {
-            this.arrayBufferViewMap = ArrayBufferView.getInitialMap().duplicate();
-            this.nativeArrayBufferMap = NativeArrayBuffer.getInitialMap().duplicate();
         }
     }
 
@@ -2022,7 +1832,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         // Function.prototype === Object.getPrototypeOf(Function) ===
         // <anon-function>
-        builtinFunction.setProto(anon);
+        builtinFunction.setInitialProto(anon);
         builtinFunction.setPrototype(anon);
         anon.set("constructor", builtinFunction, false);
         anon.deleteOwnProperty(anon.getMap().findProperty("prototype"));
@@ -2038,7 +1848,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.builtinObject = (ScriptFunction)initConstructor("Object");
         final ScriptObject ObjectPrototype = getObjectPrototype();
         // Object.getPrototypeOf(Function.prototype) === Object.prototype
-        anon.setProto(ObjectPrototype);
+        anon.setInitialProto(ObjectPrototype);
 
         // Function valued properties of Function.prototype were not properly
         // initialized. Because, these were created before global.function and
@@ -2050,10 +1860,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
             if (value instanceof ScriptFunction && value != anon) {
                 final ScriptFunction func = (ScriptFunction)value;
-                func.setProto(getFunctionPrototype());
+                func.setInitialProto(getFunctionPrototype());
                 final ScriptObject prototype = ScriptFunction.getPrototype(func);
                 if (prototype != null) {
-                    prototype.setProto(ObjectPrototype);
+                    prototype.setInitialProto(ObjectPrototype);
                 }
             }
         }
@@ -2068,7 +1878,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
                 final ScriptFunction func = (ScriptFunction)value;
                 final ScriptObject prototype = ScriptFunction.getPrototype(func);
                 if (prototype != null) {
-                    prototype.setProto(ObjectPrototype);
+                    prototype.setInitialProto(ObjectPrototype);
                 }
             }
         }
@@ -2086,7 +1896,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
                 final ScriptFunction func = (ScriptFunction)value;
                 final ScriptObject prototype = ScriptFunction.getPrototype(func);
                 if (prototype != null) {
-                    prototype.setProto(ObjectPrototype);
+                    prototype.setInitialProto(ObjectPrototype);
                 }
             }
         }
