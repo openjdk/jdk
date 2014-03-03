@@ -32,7 +32,6 @@ import javax.swing.*;
 import javax.swing.plaf.*;
 import sun.swing.SwingUtilities2;
 import sun.swing.PrintColorUIResource;
-import sun.swing.SwingLazyValue;
 
 /**
  * The default theme for the {@code MetalLookAndFeel}.
@@ -129,9 +128,8 @@ public class OceanTheme extends DefaultMetalTheme {
      * @throws NullPointerException if {@code table} is {@code null}
      */
     public void addCustomEntriesToTable(UIDefaults table) {
-        Object focusBorder = new SwingLazyValue(
-                      "javax.swing.plaf.BorderUIResource$LineBorderUIResource",
-                      new Object[] {getPrimary1()});
+        UIDefaults.LazyValue focusBorder = t ->
+            new BorderUIResource.LineBorderUIResource(getPrimary1());
         // .30 0 DDE8F3 white secondary2
         java.util.List buttonGradient = Arrays.asList(
                  new Object[] {new Float(.3f), new Float(0f),
