@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,16 @@ public interface Parameter {
 
     /**
      * Get the type of this parameter.
+     *
+     * @return the type of this parameter.
      */
     Type type();
 
     /**
      * Get local name of this parameter.
      * For example if parameter is the short 'index', returns "index".
+     *
+     * @return the name of this parameter as a string.
      */
     String name();
 
@@ -51,6 +55,8 @@ public interface Parameter {
      * This method returns a complete string
      * representation of the type, including the dimensions of arrays and
      * the type arguments of parameterized types.  Names are qualified.
+     *
+     * @return a complete string representation of the type.
      */
     String typeName();
 

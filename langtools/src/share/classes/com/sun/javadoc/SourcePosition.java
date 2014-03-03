@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,25 @@ import java.io.File;
  */
 public interface SourcePosition {
     /** The source file. Returns null if no file information is
-     *  available. */
+     *  available.
+     *
+     *  @return the source file as a File.
+     */
     File file();
 
     /** The line in the source file. The first line is numbered 1;
-     *  0 means no line number information is available. */
+     *  0 means no line number information is available.
+     *
+     *  @return the line number in the source file as an integer.
+     */
     int line();
 
     /** The column in the source file. The first column is
      *  numbered 1; 0 means no column information is available.
      *  Columns count characters in the input stream; a tab
      *  advances the column number to the next 8-column tab stop.
+     *
+     *  @return the column on the source line as an integer.
      */
     int column();
 

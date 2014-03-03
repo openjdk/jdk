@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,10 @@ public interface ProgramElementDoc extends Doc {
 
     /**
      * Get the fully qualified name of this program element.
-     * For example, for the class <code>java.util.Hashtable</code>,
+     * For example, for the class {@code java.util.Hashtable},
      * return "java.util.Hashtable".
      * <p>
-     * For the method <code>bar()</code> in class <code>Foo</code>
+     * For the method {@code bar()} in class {@code Foo}
      * in the unnamed package, return "Foo.bar".
      *
      * @return the qualified name of the program element as a String.
@@ -71,6 +71,8 @@ public interface ProgramElementDoc extends Doc {
      * Get the modifier specifier integer.
      *
      * @see java.lang.reflect.Modifier
+     *
+     * @return Get the modifier specifier integer.
      */
     int modifierSpecifier();
 
@@ -82,6 +84,8 @@ public interface ProgramElementDoc extends Doc {
      * </pre>
      * return "public abstract".
      * Annotations are not included.
+     *
+     * @return "public abstract".
      */
     String modifiers();
 
@@ -96,30 +100,42 @@ public interface ProgramElementDoc extends Doc {
 
     /**
      * Return true if this program element is public.
+     *
+     * @return true if this program element is public.
      */
     boolean isPublic();
 
     /**
      * Return true if this program element is protected.
+     *
+     * @return true if this program element is protected.
      */
     boolean isProtected();
 
     /**
      * Return true if this program element is private.
+     *
+     * @return true if this program element is private.
      */
     boolean isPrivate();
 
     /**
      * Return true if this program element is package private.
+     *
+     * @return true if this program element is package private.
      */
     boolean isPackagePrivate();
     /**
      * Return true if this program element is static.
+     *
+     * @return true if this program element is static.
      */
     boolean isStatic();
 
     /**
      * Return true if this program element is final.
+     *
+     * @return true if this program element is final.
      */
     boolean isFinal();
 }
