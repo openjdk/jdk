@@ -87,8 +87,9 @@ public class TestInterfaces {
                 continue;
             }
 
-            // JDK-8022963, Skip (Windows) Teredo Tunneling seudo-Interface
-            if (isWindows && ni.getDisplayName().contains("Teredo"))
+            // JDK-8022963, Skip (Windows) Teredo Tunneling Pseudo-Interface
+            String dName = ni.getDisplayName();
+            if (isWindows && dName != null && dName.contains("Teredo"))
                 continue;
 
             NetworkInterface curr = soc.getNetworkInterface();
