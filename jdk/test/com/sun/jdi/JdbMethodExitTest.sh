@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ dojdbCmds()
     cmd cont
     jdbFailIfNotPresent "instance of JdbMethodExitTest"
     jdbFailIfNotPresent "return value = 8"
-    
+
     # Get out of bkpt back to the call to traceMethods
     cmd step up
 
@@ -253,7 +253,7 @@ dojdbCmds()
     jdbFailIfNotPresent 'Method exited: .* JdbMethodExitTest.traceMethods1'
     cmd untrace
     cmd step up
-    
+
 
     cmd trace method exits $threadid
     cmd cont
@@ -282,7 +282,6 @@ dojdbCmds()
     cmd trace go method exit $threadid
     cmd cont
     jdbFailIfNotPresent 'Method exited: .*JdbMethodExitTest.traceExit1'
-    cmd quit
 }
 
 
