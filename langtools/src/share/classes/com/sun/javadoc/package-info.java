@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,32 +91,32 @@ classes:
 <pre>
 import com.sun.javadoc.*;
 
-public class ListParams extends <font style="color:red;">Doclet</font> {
+public class ListParams extends <span style="color:red" >Doclet</span> {
 
-    public static boolean start(<font style="color:red;">RootDoc</font> root) {
-        <font style="color:red;">ClassDoc</font>[] classes = root.<font style="color:red;">classes</font>();
+    public static boolean start(<span style="color:red" >RootDoc</span> root) {
+        <span style="color:red" >ClassDoc</span>[] classes = root.<span style="color:red" >classes</span>();
         for (int i = 0; i &lt; classes.length; ++i) {
-            <font style="color:red;">ClassDoc</font> cd = classes[i];
-            printMembers(cd.<font style="color:red;">constructors</font>());
-            printMembers(cd.<font style="color:red;">methods</font>());
+            <span style="color:red" >ClassDoc</span> cd = classes[i];
+            printMembers(cd.<span style="color:red" >constructors</span>());
+            printMembers(cd.<span style="color:red" >methods</span>());
         }
         return true;
     }
 
-    static void printMembers(<font style="color:red;">ExecutableMemberDoc</font>[] mems) {
+    static void printMembers(<span style="color:red" >ExecutableMemberDoc</span>[] mems) {
         for (int i = 0; i &lt; mems.length; ++i) {
-            <font style="color:red;">ParamTag</font>[] params = mems[i].<font style="color:red;">paramTags</font>();
-            System.out.println(mems[i].<font style="color:red;">qualifiedName</font>());
+            <span style="color:red" >ParamTag</span>[] params = mems[i].<span style="color:red" >paramTags</span>();
+            System.out.println(mems[i].<span style="color:red" >qualifiedName</span>());
             for (int j = 0; j &lt; params.length; ++j) {
-                System.out.println("   " + params[j].<font style="color:red;">parameterName</font>()
-                    + " - " + params[j].<font style="color:red;">parameterComment</font>());
+                System.out.println("   " + params[j].<span style="color:red" >parameterName</span>()
+                    + " - " + params[j].<span style="color:red" >parameterComment</span>());
             }
         }
     }
 }
 </pre>
 Interfaces and methods from the Javadoc API are marked in
-<font style="color:red;">red</font>.
+<span style="color:red" >red</span>.
 {@link com.sun.javadoc.Doclet Doclet} is an abstract class that specifies
 the invocation interface for doclets,
 {@link com.sun.javadoc.Doclet Doclet} holds class or interface information,
