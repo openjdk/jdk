@@ -53,8 +53,8 @@ information can be extracted.
 When calling javadoc, you pass in package names and source file names --
 these are called the <em>specified</em> packages and classes.
 You also pass in Javadoc options; the <em>access control</em> Javadoc options
-(<code>-public</code>, <code>-protected</code>, <code>-package</code>,
-and <code>-private</code>) filter program elements, producing a
+({@code -public}, {@code -protected}, {@code -package},
+and {@code -private}) filter program elements, producing a
 result set, called the <em>included</em> set, or "documented" set.
 (The unfiltered set is also available through
 {@link com.sun.javadoc.PackageDoc#allClasses(boolean) allClasses(false)}.)
@@ -78,15 +78,15 @@ describes explicitly which meaning is being used.
 
 <a name="qualified"></a>
 A <em>qualified</em> class or interface name is one that has its package
-name prepended to it, such as <code>java.lang.String</code>.  A non-qualified
-name has no package name, such as <code>String</code>.
+name prepended to it, such as {@code java.lang.String}.  A non-qualified
+name has no package name, such as {@code String}.
 <p>
 
 <a name="example"></a>
 <h3>Example</h3>
 
 The following is an example doclet that
-displays information in the <code>@param</code> tags of the processed
+displays information in the {@code @param} tags of the processed
 classes:
 <pre>
 import com.sun.javadoc.*;
@@ -124,7 +124,7 @@ the invocation interface for doclets,
 superinterface of {@link com.sun.javadoc.MethodDoc} and
 {@link com.sun.javadoc.ConstructorDoc},
 and {@link com.sun.javadoc.ParamTag} holds information
-from "<code>@param</code>" tags.
+from "{@code @param}" tags.
 <p>
 This doclet when invoked with a command line like:
 <pre>

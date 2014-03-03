@@ -31,7 +31,7 @@ package com.sun.javadoc;
  * plain text.  (The plain text might be a reference
  * to something not online, such as a printed book, or be a hard-coded
  * HTML link.)  The reference can either be inline with the comment,
- * using {@code &#123;@link}}, or a separate block comment,
+ * using {@code {@link}}, or a separate block comment,
  * using {@code @see}.
  * Method {@code name()} returns "@link" (no curly braces) or
  * "@see", depending on the tag.
@@ -86,10 +86,10 @@ public interface SeeTag extends Tag {
      * return "java.lang.String".
      * For "{@code @see java.lang}", return "java.lang".
      * Return null if {@code @see} references a non-element, such as
-     * {@code @see &lt;a href="java.sun.com"&gt;}.
+     * {@code @see <a href="java.sun.com">}.
      *
      * @return null if {@code @see} references a non-element, such as
-     * {@code @see &lt;a href="java.sun.com"&gt;}.
+     * {@code @see <a href="java.sun.com">}.
      */
     String referencedClassName();
 

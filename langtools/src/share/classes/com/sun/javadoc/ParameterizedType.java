@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,10 +97,10 @@ public interface ParameterizedType extends Type {
      * Return null is this is a top-level type.
      *
      * <p> For example, the containing type of
-     * {@code AnInterface.Nested<Number>} is the <code>ClassDoc</code>
+     * {@code AnInterface.Nested<Number>} is the {@code ClassDoc}
      * representing {@code AnInterface}, and the containing type of
      * {@code Outer<String>.Inner<Number>} is the
-     * <code>ParameterizedType</code> representing {@code Outer<String>}.
+     * {@code ParameterizedType} representing {@code Outer<String>}.
      *
      * @return the type that contains this type as a member.
      */
