@@ -72,7 +72,7 @@ public final class AccessorPropertyDescriptor extends ScriptObject implements Pr
     }
 
     AccessorPropertyDescriptor(final boolean configurable, final boolean enumerable, final Object get, final Object set, final Global global) {
-        super(global.getObjectPrototype(), global.getAccessorPropertyDescriptorMap());
+        super(global.getObjectPrototype(), getInitialMap());
         this.configurable = configurable;
         this.enumerable   = enumerable;
         this.get          = get;

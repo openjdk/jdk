@@ -32,10 +32,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.V1_7;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.DEFAULT_INIT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.INIT;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_DESC;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_DUPLICATE;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_DUPLICATE_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_FIELD_NAME;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_TYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROTOTYPEOBJECT_TYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROTOTYPE_SUFFIX;
@@ -129,7 +126,6 @@ public class PrototypeGenerator extends ClassGenerator {
             mi.getStatic(className, PROPERTYMAP_FIELD_NAME, PROPERTYMAP_DESC);
             // make sure we use duplicated PropertyMap so that original map
             // stays intact and so can be used for many global.
-            mi.invokeVirtual(PROPERTYMAP_TYPE, PROPERTYMAP_DUPLICATE, PROPERTYMAP_DUPLICATE_DESC);
             mi.invokeSpecial(PROTOTYPEOBJECT_TYPE, INIT, SCRIPTOBJECT_INIT_DESC);
             // initialize Function type fields
             initFunctionFields(mi);

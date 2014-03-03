@@ -60,9 +60,9 @@ public final class NativeStrictArguments extends ScriptObject {
         // In strict mode, the caller and callee properties should throw TypeError
         // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
-        map = map.addProperty(map.newUserAccessors("caller", flags));
-        map = map.addProperty(map.newUserAccessors("callee", flags));
-        map$ = map.setIsShared();
+        map = map.addPropertyNoHistory(map.newUserAccessors("caller", flags));
+        map = map.addPropertyNoHistory(map.newUserAccessors("callee", flags));
+        map$ = map;
     }
 
     static PropertyMap getInitialMap() {

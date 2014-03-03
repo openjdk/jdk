@@ -83,7 +83,7 @@ public final class NativeString extends ScriptObject {
     }
 
     NativeString(final CharSequence value, final Global global) {
-        this(value, global.getStringPrototype(), global.getStringMap());
+        this(value, global.getStringPrototype(), getInitialMap());
     }
 
     private NativeString(final CharSequence value, final ScriptObject proto, final PropertyMap map) {

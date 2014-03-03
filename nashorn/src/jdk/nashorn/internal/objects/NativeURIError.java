@@ -67,7 +67,7 @@ public final class NativeURIError extends ScriptObject {
 
     @SuppressWarnings("LeakingThisInConstructor")
     NativeURIError(final Object msg, final Global global) {
-        super(global.getURIErrorPrototype(), global.getURIErrorMap());
+        super(global.getURIErrorPrototype(), getInitialMap());
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {

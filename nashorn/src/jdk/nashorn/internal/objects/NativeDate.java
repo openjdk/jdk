@@ -127,7 +127,7 @@ public final class NativeDate extends ScriptObject {
     }
 
     NativeDate(final double time, final Global global) {
-        this(time, global.getDatePrototype(), global.getDateMap());
+        this(time, global.getDatePrototype(), getInitialMap());
     }
 
     private NativeDate (final double time) {

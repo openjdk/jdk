@@ -160,10 +160,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    ScriptObject allocate() {
+    ScriptObject allocate(final PropertyMap map) {
         try {
             ensureHasAllocator(); //if allocatorClass name is set to null (e.g. for bound functions) we don't even try
-            return allocator == null ? null : (ScriptObject)allocator.invokeExact(allocatorMap);
+            return allocator == null ? null : (ScriptObject)allocator.invokeExact(map);
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
@@ -175,6 +175,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         if (allocator == null && allocatorClassName != null) {
             this.allocator = MH.findStatic(LOOKUP, Context.forStructureClass(allocatorClassName), CompilerConstants.ALLOCATE.symbolName(), MH.type(ScriptObject.class, PropertyMap.class));
         }
+    }
+
+    @Override
+    PropertyMap getAllocatorMap() {
+        return allocatorMap;
     }
 
     @Override

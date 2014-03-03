@@ -37,7 +37,6 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.AccessorProperty;
 
 /**
@@ -76,7 +75,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
     private static final Object LAZY_PROTOTYPE = new Object();
 
     private ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final MethodHandle[] specs, final Global global) {
-        super(name, invokeHandle, global.getFunctionMap(), null, specs, false, true, true);
+        super(name, invokeHandle, getInitialMap(), null, specs, false, true, true);
         init(global);
     }
 
@@ -93,7 +92,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     private ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final PropertyMap map, final MethodHandle[] specs, final Global global) {
-        super(name, invokeHandle, map.addAll(global.getFunctionMap()), null, specs, false, true, true);
+        super(name, invokeHandle, map.addAll(getInitialMap()), null, specs, false, true, true);
         init(global);
     }
 
@@ -151,7 +150,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param global the global object
      */
     ScriptFunctionImpl(final ScriptFunctionData data, final Global global) {
-        super(data, global.getBoundFunctionMap(), null);
+        super(data, getInitialBoundMap(), null);
         init(global);
     }
 
@@ -163,25 +162,20 @@ public class ScriptFunctionImpl extends ScriptFunction {
         map$ = PropertyMap.newMap(properties);
         strictmodemap$ = createStrictModeMap(map$);
         boundfunctionmap$ = createBoundFunctionMap(strictmodemap$);
-        // There are order dependencies between normal map, struct map and bound map
-        // We can make these 'shared' only after initialization of all three.
-        map$.setIsShared();
-        strictmodemap$.setIsShared();
-        boundfunctionmap$.setIsShared();
     }
 
     private static PropertyMap createStrictModeMap(final PropertyMap map) {
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
         PropertyMap newMap = map;
         // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.
-        newMap = newMap.addProperty(map.newUserAccessors("arguments", flags));
-        newMap = newMap.addProperty(map.newUserAccessors("caller", flags));
+        newMap = newMap.addPropertyNoHistory(map.newUserAccessors("arguments", flags));
+        newMap = newMap.addPropertyNoHistory(map.newUserAccessors("caller", flags));
         return newMap;
     }
 
     // Choose the map based on strict mode!
     private static PropertyMap getMap(final Global global, final boolean strict) {
-        return strict ? global.getStrictFunctionMap() : global.getFunctionMap();
+        return strict ? getInitialStrictMap() : getInitialMap();
     }
 
     private static PropertyMap createBoundFunctionMap(final PropertyMap strictModeMap) {
@@ -193,14 +187,14 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // Instance of this class is used as global anonymous function which
     // serves as Function.prototype object.
     private static class AnonymousFunction extends ScriptFunctionImpl {
-        private static final PropertyMap anonmap$ = PropertyMap.newMap().setIsShared();
+        private static final PropertyMap anonmap$ = PropertyMap.newMap();
 
         static PropertyMap getInitialMap() {
             return anonmap$;
         }
 
         AnonymousFunction(final Global global) {
-            super("", GlobalFunctions.ANONYMOUS, global.getAnonymousFunctionMap(), null);
+            super("", GlobalFunctions.ANONYMOUS, getInitialAnonymousMap(), null);
         }
     }
 
@@ -281,13 +275,17 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     @Override
-    public final void setPrototype(final Object prototype) {
-        this.prototype = prototype;
+    public final void setPrototype(final Object newProto) {
+        if (newProto instanceof ScriptObject && newProto != this.prototype && allocatorMap != null) {
+            // Replace our current allocator map with one that is associated with the new prototype.
+            allocatorMap = allocatorMap.changeProto((ScriptObject)newProto);
+        }
+        this.prototype = newProto;
     }
 
     // Internals below..
     private void init(final Global global) {
-        this.setProto(global.getFunctionPrototype());
+        this.setInitialProto(global.getFunctionPrototype());
         this.prototype = LAZY_PROTOTYPE;
 
         // We have to fill user accessor functions late as these are stored
