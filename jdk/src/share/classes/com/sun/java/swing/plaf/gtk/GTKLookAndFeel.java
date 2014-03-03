@@ -336,10 +336,9 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         // populate the table with the values from basic.
         super.initComponentDefaults(table);
 
-        Integer zero =  Integer.valueOf(0);
-        Object zeroBorder = new sun.swing.SwingLazyValue(
-            "javax.swing.plaf.BorderUIResource$EmptyBorderUIResource",
-            new Object[] {zero, zero, zero, zero});
+        UIDefaults.LazyValue zeroBorder =
+            t -> new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
+
         Object focusBorder = new GTKStyle.GTKLazyValue(
             "com.sun.java.swing.plaf.gtk.GTKPainter$ListTableFocusBorder",
             "getUnselectedCellBorder");

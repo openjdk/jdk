@@ -32,8 +32,9 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.*;
+import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.plaf.basic.BasicLookAndFeel;
-
+import static javax.swing.UIDefaults.LazyValue;
 import sun.swing.*;
 import apple.laf.*;
 
@@ -43,8 +44,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
     // for lazy initalizers. Following the pattern from metal.
     private static final String PKG_PREFIX = "com.apple.laf.";
-    private static final String kAquaImageFactoryName = PKG_PREFIX + "AquaImageFactory";
-    private static final String kAquaFontsName = PKG_PREFIX + "AquaFonts";
 
     /**
      * Return a short string that identifies this look and feel, e.g.
@@ -320,17 +319,21 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         // our launch times of Swing apps.
 
         // *** Text value objects
-        final Object marginBorder = new SwingLazyValue("javax.swing.plaf.basic.BasicBorders$MarginBorder");
+        final LazyValue marginBorder = t -> new BasicBorders.MarginBorder();
 
-        final Object zero = new Integer(0);
+        final int zero = 0;
         final Object editorMargin = zeroInsets; // this is not correct - look at TextEdit to determine the right margin
-        final Object textCaretBlinkRate = new Integer(500);
-        final Object textFieldBorder = new SwingLazyValue(PKG_PREFIX + "AquaTextFieldBorder", "getTextFieldBorder");
+        final int textCaretBlinkRate = 500;
+        final LazyValue textFieldBorder = t ->
+            AquaTextFieldBorder.getTextFieldBorder();
         final Object textAreaBorder = marginBorder; // text areas have no real border - radar 311073
 
-        final Object scollListBorder = new SwingLazyValue(PKG_PREFIX + "AquaScrollRegionBorder", "getScrollRegionBorder");
-        final Object aquaTitledBorder = new SwingLazyValue(PKG_PREFIX + "AquaGroupBorder", "getBorderForTitledBorder");
-        final Object aquaInsetBorder = new SwingLazyValue(PKG_PREFIX + "AquaGroupBorder", "getTitlelessBorder");
+        final LazyValue scollListBorder = t ->
+            AquaScrollRegionBorder.getScrollRegionBorder();
+        final LazyValue aquaTitledBorder = t ->
+            AquaGroupBorder.getBorderForTitledBorder();
+        final LazyValue aquaInsetBorder = t ->
+            AquaGroupBorder.getTitlelessBorder();
 
         final Border listHeaderBorder = AquaTableHeaderBorder.getListHeaderBorder();
         final Border zeroBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
@@ -352,7 +355,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         final Color textPasswordFieldCapsLockIconColor = mediumTranslucentBlack;
 
-        final Object internalFrameBorder = new SwingLazyValue("javax.swing.plaf.basic.BasicBorders", "getInternalFrameBorder");
+        final LazyValue internalFrameBorder = t ->
+            BasicBorders.getInternalFrameBorder();
         final Color desktopBackgroundColor = new ColorUIResource(new Color(65, 105, 170));//SystemColor.desktop
 
         final Color focusRingColor = AquaImageFactory.getFocusRingColorUIResource();
@@ -363,11 +367,12 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color tabBackgroundColor = windowBackgroundColor;
         final Color controlBackgroundColor = windowBackgroundColor;
 
-        final Object controlFont = new SwingLazyValue(kAquaFontsName, "getControlTextFont");
-        final Object controlSmallFont = new SwingLazyValue(kAquaFontsName, "getControlTextSmallFont");
-        final Object alertHeaderFont = new SwingLazyValue(kAquaFontsName, "getAlertHeaderFont");
-        final Object menuFont = new SwingLazyValue(kAquaFontsName, "getMenuFont");
-        final Object viewFont = new SwingLazyValue(kAquaFontsName, "getViewFont");
+        final LazyValue controlFont = t -> AquaFonts.getControlTextFont();
+        final LazyValue controlSmallFont = t ->
+            AquaFonts.getControlTextSmallFont();
+        final LazyValue alertHeaderFont = t -> AquaFonts.getAlertHeaderFont();
+        final LazyValue menuFont = t -> AquaFonts.getMenuFont();
+        final LazyValue viewFont = t -> AquaFonts.getViewFont();
 
         final Color menuBackgroundColor = new ColorUIResource(Color.white);
         final Color menuForegroundColor = black;
@@ -389,10 +394,14 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         });
 
         // sja testing
-        final Object confirmIcon = new SwingLazyValue(kAquaImageFactoryName, "getConfirmImageIcon"); // AquaImageFactory.getConfirmImageIcon();
-        final Object cautionIcon = new SwingLazyValue(kAquaImageFactoryName, "getCautionImageIcon"); // AquaImageFactory.getCautionImageIcon();
-        final Object stopIcon = new SwingLazyValue(kAquaImageFactoryName, "getStopImageIcon"); // AquaImageFactory.getStopImageIcon();
-        final Object securityIcon = new SwingLazyValue(kAquaImageFactoryName, "getLockImageIcon"); // AquaImageFactory.getLockImageIcon();
+        final LazyValue confirmIcon = t ->
+            AquaImageFactory.getConfirmImageIcon();
+        final LazyValue cautionIcon = t ->
+            AquaImageFactory.getCautionImageIcon();
+        final LazyValue stopIcon = t ->
+            AquaImageFactory.getStopImageIcon();
+        final LazyValue securityIcon = t ->
+            AquaImageFactory.getLockImageIcon();
 
         final AquaKeyBindings aquaKeyBindings = AquaKeyBindings.instance();
 
@@ -404,7 +413,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Button.foreground", black,
             "Button.disabledText", disabled,
             "Button.select", selected,
-            "Button.border", new SwingLazyValue(PKG_PREFIX + "AquaButtonBorder", "getDynamicButtonBorder"),
+            "Button.border",(LazyValue) t -> AquaButtonBorder.getDynamicButtonBorder(),
             "Button.font", controlFont,
             "Button.textIconGap", new Integer(4),
             "Button.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
@@ -416,7 +425,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "CheckBox.foreground", black,
             "CheckBox.disabledText", disabled,
             "CheckBox.select", selected,
-            "CheckBox.icon", new SwingLazyValue(PKG_PREFIX + "AquaButtonCheckBoxUI", "getSizingCheckBoxIcon"),
+            "CheckBox.icon",(LazyValue) t -> AquaButtonCheckBoxUI.getSizingCheckBoxIcon(),
             "CheckBox.font", controlFont,
             "CheckBox.border", AquaButtonBorder.getBevelButtonBorder(),
             "CheckBox.margin", new InsetsUIResource(1, 1, 0, 1),
@@ -441,8 +450,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "CheckBoxMenuItem.border", menuBorder, // for inset calculation
             "CheckBoxMenuItem.margin", menuItemMargin,
             "CheckBoxMenuItem.borderPainted", Boolean.TRUE,
-            "CheckBoxMenuItem.checkIcon", new SwingLazyValue(kAquaImageFactoryName, "getMenuItemCheckIcon"),
-            "CheckBoxMenuItem.dashIcon", new SwingLazyValue(kAquaImageFactoryName, "getMenuItemDashIcon"),
+            "CheckBoxMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
+            "CheckBoxMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
             //"CheckBoxMenuItem.arrowIcon", null,
 
             "ColorChooser.background", panelBackgroundColor,
@@ -538,10 +547,10 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
             /* Default frame icons are undefined for Basic. */
 
-            "InternalFrame.closeIcon", new SwingLazyValue(PKG_PREFIX + "AquaInternalFrameUI", "exportCloseIcon"),
-            "InternalFrame.maximizeIcon", new SwingLazyValue(PKG_PREFIX + "AquaInternalFrameUI", "exportZoomIcon"),
-            "InternalFrame.iconifyIcon", new SwingLazyValue(PKG_PREFIX + "AquaInternalFrameUI", "exportMinimizeIcon"),
-            "InternalFrame.minimizeIcon", new SwingLazyValue(PKG_PREFIX + "AquaInternalFrameUI", "exportMinimizeIcon"),
+            "InternalFrame.closeIcon",(LazyValue) t -> AquaInternalFrameUI.exportCloseIcon(),
+            "InternalFrame.maximizeIcon",(LazyValue) t -> AquaInternalFrameUI.exportZoomIcon(),
+            "InternalFrame.iconifyIcon",(LazyValue) t -> AquaInternalFrameUI.exportMinimizeIcon(),
+            "InternalFrame.minimizeIcon",(LazyValue) t -> AquaInternalFrameUI.exportMinimizeIcon(),
             // this could be either grow or icon
             // we decided to make it icon so that anyone who uses
             // these for ui will have different icons for max and min
@@ -595,11 +604,11 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "List.border", null,
             "List.cellRenderer", listCellRendererActiveValue,
 
-            "List.sourceListBackgroundPainter", new SwingLazyValue(PKG_PREFIX + "AquaListUI", "getSourceListBackgroundPainter"),
-            "List.sourceListSelectionBackgroundPainter", new SwingLazyValue(PKG_PREFIX + "AquaListUI", "getSourceListSelectionBackgroundPainter"),
-            "List.sourceListFocusedSelectionBackgroundPainter", new SwingLazyValue(PKG_PREFIX + "AquaListUI", "getSourceListFocusedSelectionBackgroundPainter"),
-            "List.evenRowBackgroundPainter", new SwingLazyValue(PKG_PREFIX + "AquaListUI", "getListEvenBackgroundPainter"),
-            "List.oddRowBackgroundPainter", new SwingLazyValue(PKG_PREFIX + "AquaListUI", "getListOddBackgroundPainter"),
+            "List.sourceListBackgroundPainter",(LazyValue) t -> AquaListUI.getSourceListBackgroundPainter(),
+            "List.sourceListSelectionBackgroundPainter",(LazyValue) t -> AquaListUI.getSourceListSelectionBackgroundPainter(),
+            "List.sourceListFocusedSelectionBackgroundPainter",(LazyValue) t -> AquaListUI.getSourceListFocusedSelectionBackgroundPainter(),
+            "List.evenRowBackgroundPainter",(LazyValue) t -> AquaListUI.getListEvenBackgroundPainter(),
+            "List.oddRowBackgroundPainter",(LazyValue) t -> AquaListUI.getListOddBackgroundPainter(),
 
             // <rdar://Problem/3743210> The modifier for the Mac is meta, not control.
             "List.focusInputMap", aquaKeyBindings.getListInputMap(),
@@ -623,7 +632,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Menu.borderPainted", Boolean.FALSE,
             "Menu.margin", menuItemMargin,
             //"Menu.checkIcon", emptyCheckIcon, // A non-drawing GlyphIcon to make the spacing consistent
-            "Menu.arrowIcon", new SwingLazyValue(kAquaImageFactoryName, "getMenuArrowIcon"),
+            "Menu.arrowIcon",(LazyValue) t -> AquaImageFactory.getMenuArrowIcon(),
             "Menu.consumesTabs", Boolean.TRUE,
             "Menu.menuPopupOffsetY", new Integer(1),
             "Menu.submenuPopupOffsetY", new Integer(-4),
@@ -637,8 +646,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "MenuBar.selectionForeground", menuSelectedForegroundColor,
             "MenuBar.disabledBackground", menuDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
             "MenuBar.disabledForeground", menuDisabledForegroundColor,
-            "MenuBar.backgroundPainter", new SwingLazyValue(PKG_PREFIX + "AquaMenuPainter", "getMenuBarPainter"),
-            "MenuBar.selectedBackgroundPainter", new SwingLazyValue(PKG_PREFIX + "AquaMenuPainter", "getSelectedMenuBarItemPainter"),
+            "MenuBar.backgroundPainter",(LazyValue) t -> AquaMenuPainter.getMenuBarPainter(),
+            "MenuBar.selectedBackgroundPainter",(LazyValue) t -> AquaMenuPainter.getSelectedMenuBarItemPainter(),
 
             "MenuItem.font", menuFont,
             "MenuItem.acceleratorFont", menuFont,
@@ -656,7 +665,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "MenuItem.borderPainted", Boolean.TRUE,
             //"MenuItem.checkIcon", emptyCheckIcon, // A non-drawing GlyphIcon to make the spacing consistent
             //"MenuItem.arrowIcon", null,
-            "MenuItem.selectedBackgroundPainter", new SwingLazyValue(PKG_PREFIX + "AquaMenuPainter", "getSelectedMenuItemPainter"),
+            "MenuItem.selectedBackgroundPainter",(LazyValue) t -> AquaMenuPainter.getSelectedMenuItemPainter(),
 
             // *** OptionPane
             // You can additionaly define OptionPane.messageFont which will
@@ -732,7 +741,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "RadioButton.foreground", black,
             "RadioButton.disabledText", disabled,
             "RadioButton.select", selected,
-            "RadioButton.icon", new SwingLazyValue(PKG_PREFIX + "AquaButtonRadioUI", "getSizingRadioButtonIcon"),
+            "RadioButton.icon",(LazyValue) t -> AquaButtonRadioUI.getSizingRadioButtonIcon(),
             "RadioButton.font", controlFont,
             "RadioButton.border", AquaButtonBorder.getBevelButtonBorder(),
             "RadioButton.margin", new InsetsUIResource(1, 1, 0, 1),
@@ -752,8 +761,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "RadioButtonMenuItem.border", menuBorder, // for inset calculation
             "RadioButtonMenuItem.margin", menuItemMargin,
             "RadioButtonMenuItem.borderPainted", Boolean.TRUE,
-            "RadioButtonMenuItem.checkIcon", new SwingLazyValue(kAquaImageFactoryName, "getMenuItemCheckIcon"),
-            "RadioButtonMenuItem.dashIcon", new SwingLazyValue(kAquaImageFactoryName, "getMenuItemDashIcon"),
+            "RadioButtonMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
+            "RadioButtonMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
             //"RadioButtonMenuItem.arrowIcon", null,
 
             "Separator.background", null,
@@ -808,7 +817,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "SplitPane.border", scollListBorder,
             "SplitPane.dividerSize", new Integer(9), //$
             "SplitPaneDivider.border", null, // AquaSplitPaneDividerUI draws it
-            "SplitPaneDivider.horizontalGradientVariant", new SwingLazyValue(PKG_PREFIX + "AquaSplitPaneDividerUI", "getHorizontalSplitDividerGradientVariant"),
+            "SplitPaneDivider.horizontalGradientVariant",(LazyValue) t -> AquaSplitPaneDividerUI.getHorizontalSplitDividerGradientVariant(),
 
             // *** TabbedPane
             "TabbedPane.font", controlFont,
@@ -918,7 +927,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //    "ToggleButton.disabledBackground", getControl(),
             //    "ToggleButton.disabledSelectedBackground", getControlShadow(),
             //"ToggleButton.focus", getFocusColor(),
-            "ToggleButton.border", new SwingLazyValue(PKG_PREFIX + "AquaButtonBorder", "getDynamicButtonBorder"), // sja make this lazy!
+            "ToggleButton.border",(LazyValue) t -> AquaButtonBorder.getDynamicButtonBorder(), // sja make this lazy!
             "ToggleButton.font", controlFont,
             "ToggleButton.focusInputMap", controlFocusInputMap,
             "ToggleButton.margin", new InsetsUIResource(2, 2, 2, 2),
@@ -931,7 +940,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "ToolBar.dockingForeground", selectionBackground,
             "ToolBar.floatingBackground", panelBackgroundColor,
             "ToolBar.floatingForeground", new ColorUIResource(Color.darkGray),
-            "ToolBar.border", new SwingLazyValue(PKG_PREFIX + "AquaToolBarUI", "getToolBarBorder"),
+            "ToolBar.border",(LazyValue) t -> AquaToolBarUI.getToolBarBorder(),
             "ToolBar.borderHandleColor", toolbarDragHandleColor,
             //"ToolBar.separatorSize", new DimensionUIResource( 10, 10 ),
             "ToolBar.separatorSize", null,
@@ -967,12 +976,12 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Tree.rightChildIndent", new Integer(13),//$
             "Tree.rowHeight", new Integer(19),// iconHeight + 3, to match finder - a zero would have the renderer decide, except that leaves the icons touching
             "Tree.scrollsOnExpand", Boolean.FALSE,
-            "Tree.openIcon", new SwingLazyValue(kAquaImageFactoryName, "getTreeOpenFolderIcon"), // Open folder icon
-            "Tree.closedIcon", new SwingLazyValue(kAquaImageFactoryName, "getTreeFolderIcon"), // Closed folder icon
-            "Tree.leafIcon", new SwingLazyValue(kAquaImageFactoryName, "getTreeDocumentIcon"), // Document icon
-            "Tree.expandedIcon", new SwingLazyValue(kAquaImageFactoryName, "getTreeExpandedIcon"),
-            "Tree.collapsedIcon", new SwingLazyValue(kAquaImageFactoryName, "getTreeCollapsedIcon"),
-            "Tree.rightToLeftCollapsedIcon", new SwingLazyValue(kAquaImageFactoryName, "getTreeRightToLeftCollapsedIcon"),
+            "Tree.openIcon",(LazyValue) t -> AquaImageFactory.getTreeOpenFolderIcon(), // Open folder icon
+            "Tree.closedIcon",(LazyValue) t -> AquaImageFactory.getTreeFolderIcon(), // Closed folder icon
+            "Tree.leafIcon",(LazyValue) t -> AquaImageFactory.getTreeDocumentIcon(), // Document icon
+            "Tree.expandedIcon",(LazyValue) t -> AquaImageFactory.getTreeExpandedIcon(),
+            "Tree.collapsedIcon",(LazyValue) t -> AquaImageFactory.getTreeCollapsedIcon(),
+            "Tree.rightToLeftCollapsedIcon",(LazyValue) t -> AquaImageFactory.getTreeRightToLeftCollapsedIcon(),
             "Tree.changeSelectionWithFocus", Boolean.TRUE,
             "Tree.drawsFocusBorderAroundIcon", Boolean.FALSE,
 
