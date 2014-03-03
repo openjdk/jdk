@@ -535,6 +535,9 @@ class CommandLineFlags {
   develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
           "Clean the chunk pool asynchronously")                            \
                                                                             \
+  experimental(bool, AlwaysSafeConstructors, false,                         \
+          "Force safe construction, as if all fields are final.")           \
+                                                                            \
   /* Temporary: See 6948537 */                                              \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \
