@@ -38,8 +38,6 @@
 #include <errno.h>
 #include <sys/poll.h>
 
-#include "jni_util.h"
-
 /*
  * Stack allocated by thread when doing blocking operation
  */
@@ -333,7 +331,7 @@ int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
  * Auto restarts with adjusted timeout if interrupted by
  * signal other than our wakeup signal.
  */
-int NET_Timeout(JNIEnv *env, int s, long timeout) {
+int NET_Timeout(int s, long timeout) {
     long prevtime = 0, newtime;
     struct timeval t, *tp = &t;
     fd_set fds;
@@ -376,8 +374,7 @@ int NET_Timeout(JNIEnv *env, int s, long timeout) {
         int length = (howmany(s+1, NFDBITS)) * sizeof(int);
         fdsp = (fd_set *) calloc(1, length);
         if (fdsp == NULL) {
-            JNU_ThrowOutOfMemoryError(env, "NET_Select native heap allocation failed");
-            return 0;
+            return -1;   // errno will be set to ENOMEM
         }
         allocated = 1;
     }

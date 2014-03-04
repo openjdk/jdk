@@ -34,7 +34,7 @@
 
 #include <sys/poll.h>
 
-int NET_Timeout(JNIEnv *env, int s, long timeout);
+int NET_Timeout(int s, long timeout);
 int NET_Read(int s, void* buf, size_t len);
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
                  struct sockaddr *from, socklen_t *fromlen);
