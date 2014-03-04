@@ -67,7 +67,7 @@ public class LowMemoryTest2 {
 
         static int count = 100000;
 
-        Class loadNext() throws ClassNotFoundException {
+        Class loadNext() {
 
             // public class TestNNNNNN extends java.lang.Object{
             // public TestNNNNNN();
@@ -135,63 +135,49 @@ public class LowMemoryTest2 {
         }
 
         /*
-         * Run method for thread that continuously loads classes.
-         *
-         * Note: Once the usage threshold has been exceeded the low memory
-         * detector thread will attempt to deliver its notification - this can
-         * potentially create a race condition with this thread contining to
-         * fill up metaspace. To avoid the low memory detector getting an
-         * OutOfMemory we throttle this thread once the threshold has been
-         * exceeded.
+         * Load classes until MemoryPoolMXBean.getUsageThresholdCount() > 0.
+         * Then wait for the memory threshold notification to be received.
          */
         public void run() {
-            List pools = ManagementFactory.getMemoryPoolMXBeans();
+            List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
             boolean thresholdExceeded = false;
 
-            for (;;) {
-                try {
-                    // the classes are small so we load 10 at a time
-                    for (int i=0; i<10; i++) {
-                        loadNext();
-                    }
-                } catch (ClassNotFoundException x) {
-                    return;
-                }
-                if (listenerInvoked) {
-                    return;
+            // Load classes until MemoryPoolMXBean.getUsageThresholdCount() > 0
+            while (!thresholdExceeded) {
+                // the classes are small so we load 10 at a time
+                for (int i=0; i<10; i++) {
+                    loadNext();
                 }
 
-                // if threshold has been exceeded we put in a delay to allow
-                // the low memory detector do its job.
-                if (thresholdExceeded) {
-                    try {
-                        Thread.currentThread().sleep(100);
-                    } catch (InterruptedException x) { }
-                } else {
-                    // check if the threshold has been exceeded
-                    ListIterator i = pools.listIterator();
-                    while (i.hasNext()) {
-                        MemoryPoolMXBean p = (MemoryPoolMXBean) i.next();
-                        if (p.getType() == MemoryType.NON_HEAP &&
-                            p.isUsageThresholdSupported())
-                        {
-                            thresholdExceeded = p.isUsageThresholdExceeded();
-                        }
+                // check if the threshold has been exceeded
+                for (MemoryPoolMXBean p : pools) {
+                    if (p.getType() == MemoryType.NON_HEAP &&
+                        p.isUsageThresholdSupported() &&
+                        p.getUsageThresholdCount() > 0)
+                    {
+                        thresholdExceeded = true;
+                        break;
                     }
                 }
+            }
+
+            System.out.println("thresholdExceeded. Waiting for notification");
+            while (!listenerInvoked) {
+                try {
+                    Thread.currentThread().sleep(10);
+                } catch (InterruptedException x) {}
             }
         }
     }
 
     public static void main(String args[]) {
-        ListIterator iter = ManagementFactory.getMemoryPoolMXBeans().listIterator();
+        List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
 
         // Set threshold of 80% of all NON_HEAP memory pools
         // In the Hotspot implementation this means we should get a notification
         // if the CodeCache or metaspace fills up.
 
-        while (iter.hasNext()) {
-            MemoryPoolMXBean p = (MemoryPoolMXBean) iter.next();
+        for (MemoryPoolMXBean p : pools) {
             if (p.getType() == MemoryType.NON_HEAP && p.isUsageThresholdSupported()) {
 
                 // set threshold
