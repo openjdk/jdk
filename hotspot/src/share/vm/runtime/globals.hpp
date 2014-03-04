@@ -2987,7 +2987,8 @@ class CommandLineFlags {
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
   develop(intx, MaxForceInlineLevel, 100,                                   \
-          "maximum number of nested @ForceInline calls that are inlined")   \
+          "maximum number of nested calls that are forced for inlining "    \
+          "(using CompilerOracle or marked w/ @ForceInline)")               \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \

@@ -3771,11 +3771,14 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   }
 
   // now perform tests that are based on flag settings
-  if (callee->force_inline()) {
-    if (inline_level() > MaxForceInlineLevel) INLINE_BAILOUT("MaxForceInlineLevel");
-    print_inlining(callee, "force inline by annotation");
-  } else if (callee->should_inline()) {
-    print_inlining(callee, "force inline by CompileOracle");
+  if (callee->force_inline() || callee->should_inline()) {
+    if (inline_level() > MaxForceInlineLevel                    ) INLINE_BAILOUT("MaxForceInlineLevel");
+    if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");
+
+    const char* msg = "";
+    if (callee->force_inline())  msg = "force inline by annotation";
+    if (callee->should_inline()) msg = "force inline by CompileOracle";
+    print_inlining(callee, msg);
   } else {
     // use heuristic controls on inlining
     if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("inlining too deep");
