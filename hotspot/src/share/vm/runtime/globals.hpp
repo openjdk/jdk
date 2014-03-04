@@ -3799,8 +3799,8 @@ class CommandLineFlags {
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
                                                                             \
-  experimental(bool, FoldStableValues, false,                               \
-          "Private flag to control optimizations for stable variables")     \
+  diagnostic(bool, FoldStableValues, true,                                  \
+          "Optimize loads from stable fields (marked w/ @Stable)")          \
                                                                             \
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \
