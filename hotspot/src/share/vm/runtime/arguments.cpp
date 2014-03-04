@@ -1699,7 +1699,8 @@ void Arguments::set_heap_size() {
       // HeapBaseMinAddress can be greater than default but not less than.
       if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
         if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
-          if (PrintMiscellaneous && Verbose) {  // matches compressed oops printing flags
+          // matches compressed oops printing flags
+          if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
             jio_fprintf(defaultStream::error_stream(),
                         "HeapBaseMinAddress must be at least " UINTX_FORMAT
                         " (" UINTX_FORMAT "G) which is greater than value given "
