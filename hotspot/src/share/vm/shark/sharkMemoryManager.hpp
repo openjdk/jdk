@@ -69,23 +69,32 @@ class SharkMemoryManager : public llvm::JITMemoryManager {
   void endFunctionBody(const llvm::Function* F,
                        unsigned char* FunctionStart,
                        unsigned char* FunctionEnd);
-  unsigned char* startExceptionTable(const llvm::Function* F,
-                                     uintptr_t& ActualSize);
-  void endExceptionTable(const llvm::Function* F,
-                         unsigned char* TableStart,
-                         unsigned char* TableEnd,
-                         unsigned char* FrameRegister);
+
   void *getPointerToNamedFunction(const std::string &Name, bool AbortOnFailure = true);
-  uint8_t *allocateCodeSection(uintptr_t Size, unsigned Alignment, unsigned SectionID);
-  uint8_t *allocateDataSection(uintptr_t Size, unsigned Alignment, unsigned SectionID);
   void setPoisonMemory(bool);
   uint8_t* allocateGlobal(uintptr_t, unsigned int);
   void setMemoryWritable();
   void setMemoryExecutable();
-  void deallocateExceptionTable(void *ptr);
   void deallocateFunctionBody(void *ptr);
   unsigned char *allocateSpace(intptr_t Size,
                                unsigned int Alignment);
+
+#if SHARK_LLVM_VERSION <= 32
+uint8_t *allocateCodeSection(uintptr_t Size, unsigned Alignment, unsigned SectionID);
+uint8_t *allocateDataSection(uintptr_t Size, unsigned Alignment, unsigned SectionID);
+unsigned char* startExceptionTable(const llvm::Function* F,
+                                   uintptr_t& ActualSize);
+void deallocateExceptionTable(void *ptr);
+void endExceptionTable(const llvm::Function* F,
+                       unsigned char* TableStart,
+                       unsigned char* TableEnd,
+                       unsigned char* FrameRegister);
+#else
+uint8_t *allocateCodeSection(uintptr_t Size, unsigned Alignment, unsigned SectionID, llvm::StringRef SectionName);
+uint8_t *allocateDataSection(uintptr_t Size, unsigned Alignment, unsigned SectionID, llvm::StringRef SectionName, bool IsReadOnly);
+bool finalizeMemory(std::string *ErrMsg = 0);
+#endif
+
 };
 
 #endif // SHARE_VM_SHARK_SHARKMEMORYMANAGER_HPP
