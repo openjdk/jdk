@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  */
 
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+
 /*
  * @test
  * @bug 4416068 4478803 4479736
@@ -30,10 +33,7 @@
  *                  session
  *          4701722 protocol mismatch exceptions should be consistent between
  *                  SSLv3 and TLSv1
- * @run main/othervm testEnabledProtocols
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
+ * @run main/othervm TestEnabledProtocols
  * @author Ram Marti
  */
 
@@ -44,7 +44,7 @@ import java.security.*;
 import javax.net.ssl.*;
 import java.security.cert.*;
 
-public class testEnabledProtocols {
+public class TestEnabledProtocols {
 
     /*
      * For each of the valid protocols combinations, start a server thread
@@ -135,10 +135,10 @@ public class testEnabledProtocols {
         if (debug)
             System.setProperty("javax.net.debug", "all");
 
-        new testEnabledProtocols();
+        new TestEnabledProtocols();
     }
 
-    testEnabledProtocols() throws Exception  {
+    TestEnabledProtocols() throws Exception  {
         /*
          * Start the tests.
          */
