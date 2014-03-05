@@ -734,7 +734,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      * (see {@link InvokerBytecodeGenerator#emitGuardWithCatch emitGuardWithCatch}).
      */
     @LambdaForm.Hidden
-    static Object guardWithCatch(MethodHandle target, Class exType, MethodHandle catcher,
+    static Object guardWithCatch(MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher,
                                  Object... av) throws Throwable {
         try {
             return target.invokeWithArguments(av);
