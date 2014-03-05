@@ -54,11 +54,11 @@ EOF
 dojdbCmds()
 {
    #set -x
-   cmd stop at badscope:4	; $sleepcmd
-   runToBkpt			; $sleepcmd
-   cmd next			; $sleepcmd
-   cmd next			; $sleepcmd
-   cmd locals			; $sleepcmd
+   cmd stop at badscope:4   ; $sleepcmd
+   runToBkpt                ; $sleepcmd
+   cmd next                 ; $sleepcmd
+   cmd next                 ; $sleepcmd
+   cmd locals               ; $sleepcmd
    cmd allowExit cont
 }
 

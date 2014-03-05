@@ -219,7 +219,7 @@ if [ ! -r c:/ ] ; then
       echo "Unable to make file unreadable, so test will fail. chmod: $HOME/jdb.ini"
       if grep -q "uid=0" $HOME/jdb.ini  ; then
         echo "The test is running as root. Fix infrastructure!"
-      fi	
+      fi
     fi  
     doit
     failIfNot 1 "open: $HOME/jdb.ini"
