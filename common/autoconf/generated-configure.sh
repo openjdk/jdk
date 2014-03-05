@@ -4221,7 +4221,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1393867368
+DATE_WHEN_GENERATED=1394011255
 
 ###############################################################################
 #
@@ -41327,11 +41327,11 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 
   # Optimization levels
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    CC_HIGHEST="$CC_HIGHEST -fns -fsimple -fsingle -xalias_level=basic -xbuiltin=%all -xdepend -xrestrict -xlibmil"
+    CC_HIGHEST="$CC_HIGHEST -fns -fsimple -fsingle -xbuiltin=%all -xdepend -xrestrict -xlibmil"
 
     if test "x$OPENJDK_TARGET_CPU_ARCH" = "xx86"; then
       # FIXME: seems we always set -xregs=no%frameptr; put it elsewhere more global?
-      C_O_FLAG_HIGHEST="-xO4 -Wu,-O4~yz $CC_HIGHEST -xregs=no%frameptr"
+      C_O_FLAG_HIGHEST="-xO4 -Wu,-O4~yz $CC_HIGHEST -xalias_level=basic -xregs=no%frameptr"
       C_O_FLAG_HI="-xO4 -Wu,-O4~yz -xregs=no%frameptr"
       C_O_FLAG_NORM="-xO2 -Wu,-O2~yz -xregs=no%frameptr"
       C_O_FLAG_NONE="-xregs=no%frameptr"
@@ -41344,7 +41344,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
         CXX_O_FLAG_HIGHEST="$CXX_O_FLAG_HIGHEST -xchip=pentium"
       fi
     elif test "x$OPENJDK_TARGET_CPU_ARCH" = "xsparc"; then
-      C_O_FLAG_HIGHEST="-xO4 -Wc,-Qrm-s -Wc,-Qiselect-T0 $CC_HIGHEST -xprefetch=auto,explicit -xchip=ultra"
+      C_O_FLAG_HIGHEST="-xO4 -Wc,-Qrm-s -Wc,-Qiselect-T0 $CC_HIGHEST -xalias_level=basic -xprefetch=auto,explicit -xchip=ultra"
       C_O_FLAG_HI="-xO4 -Wc,-Qrm-s -Wc,-Qiselect-T0"
       C_O_FLAG_NORM="-xO2 -Wc,-Qrm-s -Wc,-Qiselect-T0"
       C_O_FLAG_NONE=""
