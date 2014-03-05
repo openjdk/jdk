@@ -452,7 +452,7 @@
   product(bool, EliminateAutoBox, true,                                     \
           "Control optimizations for autobox elimination")                  \
                                                                             \
-  experimental(bool, UseImplicitStableValues, false,                        \
+  diagnostic(bool, UseImplicitStableValues, true,                           \
           "Mark well-known stable fields as such (e.g. String.value)")      \
                                                                             \
   product(intx, AutoBoxCacheMax, 128,                                       \
