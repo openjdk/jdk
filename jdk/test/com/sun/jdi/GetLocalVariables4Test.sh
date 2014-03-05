@@ -39,12 +39,12 @@ createJavaFile()
 public class GetLocalVariables4Targ {
     public static void main(String[] args) {
         System.out.println("Howdy!");
-	int i = 0;
-	try {
-	    i = 16 / i;
-	} catch(Exception e) {
-	    System.out.println("e should be visible");    // @1 breakpoint
-	}
+        int i = 0;
+        try {
+            i = 16 / i;
+        } catch(Exception e) {
+            System.out.println("e should be visible");    // @1 breakpoint
+        }
         System.out.println("Goodbye from GetLocalVariables4Targ!");
     }
 }

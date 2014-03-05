@@ -42,15 +42,15 @@ createJavaFile()
 public final class $1 {
 
     public int m1(int i) {
-	// @1 uncomment System.out.println("I'm here");
-	return m2(i, 1000);
+        // @1 uncomment System.out.println("I'm here");
+        return m2(i, 1000);
     }
 
     public int m2(int i, int j) {
-	if (i < 0 || j < 0) {	// @1 breakpoint
+        if (i < 0 || j < 0) {   // @1 breakpoint
             throw new IllegalArgumentException();
-	}
-	return i+j;
+        }
+        return i+j;
     }
 
     $1() {
@@ -59,7 +59,7 @@ public final class $1 {
     }
 
     public static void main(String args[]) {
-	new $1();
+        new $1();
     }
 }
 EOF

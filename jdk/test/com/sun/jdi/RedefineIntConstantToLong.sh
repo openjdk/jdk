@@ -44,18 +44,18 @@ public final class $1 {
     public long m1(int i) {
         long r=0;
         r = m2(i * 2); // @1 commentout
-	// @1 uncomment      r =m2(i * 2L);
+        // @1 uncomment      r =m2(i * 2L);
         return r;
     }
 
     public long m2(int j) {
-	System.out.println(System.getProperty("line.separator") + 
+        System.out.println(System.getProperty("line.separator") + 
                            "**** public long m2(int j) with value: " + j);
         return j;
     }
 
     public long m2(long j) {
-	System.out.println(System.getProperty("line.separator") + 
+        System.out.println(System.getProperty("line.separator") + 
                            "**** public long m2(long j) with value: " + j);
         return j;
     }
@@ -66,7 +66,7 @@ public final class $1 {
         r1 = m1(1000);
         r2 = 0;         // @1 breakpoint
         r2 = m1(1000);
-        if (r1 != r2) {	// @1 breakpoint
+        if (r1 != r2) { // @1 breakpoint
              throw new Exception("FAILURE: Expected value: " + r1 + " Actual value: " + r2);
         } else {
              System.out.println("SUCCESS: Expected value: " + r1 + " Actual value: " + r2);
@@ -74,7 +74,7 @@ public final class $1 {
     }
 
     public static void main(String args[]) throws Exception {
-	new $1().doit();
+        new $1().doit();
     }
 }
 EOF
