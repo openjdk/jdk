@@ -536,7 +536,6 @@ public class AccessorProperty extends Property {
 
         //all this does is add a return value filter for object fields only
         if (GETTER_CACHE[i] == null) {
-            //System.err.println(this + " needs new getter for " + type);
             GETTER_CACHE[i] = debug(
                 createGetter(
                     getCurrentType(),

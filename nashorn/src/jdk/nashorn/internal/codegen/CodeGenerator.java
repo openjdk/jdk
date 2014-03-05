@@ -1320,7 +1320,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         lc.nextFreeSlot(block);
 
         final boolean isFunctionBody = lc.isFunctionBody();
-
         final FunctionNode function = lc.getCurrentFunction();
         if (isFunctionBody) {
             if (method.hasScope()) {

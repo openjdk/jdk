@@ -386,7 +386,7 @@ public class ClassEmitter implements Emitter {
                     return Context.getContext();
                 }
             });
-            TraceClassVisitor tcv = new TraceClassVisitor(null, new NashornTextifier(ctx.getEnv(), cr), pw);
+            final TraceClassVisitor tcv = new TraceClassVisitor(null, new NashornTextifier(ctx.getEnv(), cr), pw);
             cr.accept(tcv, 0);
         }
 
