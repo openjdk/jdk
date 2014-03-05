@@ -105,7 +105,7 @@ public class PropertyListenerManager implements PropertyListener {
      */
     protected synchronized final void notifyPropertyAdded(final ScriptObject object, final Property prop) {
         if (listeners != null) {
-            for (PropertyListener listener : listeners.keySet()) {
+            for (final PropertyListener listener : listeners.keySet()) {
                 listener.propertyAdded(object, prop);
             }
         }
@@ -119,7 +119,7 @@ public class PropertyListenerManager implements PropertyListener {
      */
     protected synchronized final void notifyPropertyDeleted(final ScriptObject object, final Property prop) {
         if (listeners != null) {
-            for (PropertyListener listener : listeners.keySet()) {
+            for (final PropertyListener listener : listeners.keySet()) {
                 listener.propertyDeleted(object, prop);
             }
         }
@@ -134,7 +134,7 @@ public class PropertyListenerManager implements PropertyListener {
      */
     protected synchronized final void notifyPropertyModified(final ScriptObject object, final Property oldProp, final Property newProp) {
         if (listeners != null) {
-            for (PropertyListener listener : listeners.keySet()) {
+            for (final PropertyListener listener : listeners.keySet()) {
                 listener.propertyModified(object, oldProp, newProp);
             }
         }
@@ -149,7 +149,7 @@ public class PropertyListenerManager implements PropertyListener {
      */
     protected synchronized final void notifyProtoChanged(final ScriptObject object, final ScriptObject oldProto, final ScriptObject newProto) {
         if (listeners != null) {
-            for (PropertyListener listener : listeners.keySet()) {
+            for (final PropertyListener listener : listeners.keySet()) {
                 listener.protoChanged(object, oldProto, newProto);
             }
         }

@@ -71,7 +71,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
     private int fieldCount;
 
     /** Number of fields available. */
-    private int fieldMaximum;
+    private final int fieldMaximum;
 
     /** Length of spill in use. */
     private int spillLength;
@@ -167,7 +167,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * @return New {@link PropertyMap}.
      */
     public static PropertyMap newMap(final Collection<Property> properties, final int fieldCount, final int fieldMaximum,  final int spillLength) {
-        PropertyHashMap newProperties = EMPTY_HASHMAP.immutableAdd(properties);
+        final PropertyHashMap newProperties = EMPTY_HASHMAP.immutableAdd(properties);
         return new PropertyMap(newProperties, fieldCount, fieldMaximum, spillLength, false);
     }
 
@@ -181,7 +181,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * @return New {@link PropertyMap}.
      */
     public static PropertyMap newMap(final Collection<Property> properties) {
-        return (properties == null || properties.isEmpty())? newMap() : newMap(properties, 0, 0, 0);
+        return properties == null || properties.isEmpty()? newMap() : newMap(properties, 0, 0, 0);
     }
 
     /**
@@ -356,10 +356,10 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
          * the old property is an AccessorProperty and the new one is a UserAccessorProperty property.
          */
 
-        final boolean sameType = (oldProperty.getClass() == newProperty.getClass());
+        final boolean sameType = oldProperty.getClass() == newProperty.getClass();
         assert sameType ||
-                (oldProperty instanceof AccessorProperty &&
-                newProperty instanceof UserAccessorProperty) :
+                oldProperty instanceof AccessorProperty &&
+                newProperty instanceof UserAccessorProperty :
             "arbitrary replaceProperty attempted " + sameType + " oldProperty=" + oldProperty.getClass() + " newProperty=" + newProperty.getClass() + " [" + oldProperty.getCurrentType() + " => " + newProperty.getCurrentType() + "]";
 
         newMap.flags = getClonedFlags();
@@ -468,7 +468,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
     PropertyMap freeze() {
         PropertyHashMap newProperties = EMPTY_HASHMAP;
 
-        for (Property oldProperty : properties.getProperties()) {
+        for (final Property oldProperty : properties.getProperties()) {
             int propertyFlags = Property.NOT_CONFIGURABLE;
 
             if (!(oldProperty instanceof UserAccessorProperty)) {
@@ -553,7 +553,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
         final PropertyMap cachedMap;
         if (protoHistory != null) {
             final WeakReference<PropertyMap> weakMap = protoHistory.get(newProto);
-            cachedMap = (weakMap != null ? weakMap.get() : null);
+            cachedMap = weakMap != null ? weakMap.get() : null;
         } else {
             cachedMap = null;
         }
@@ -608,7 +608,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      */
     private PropertyMap checkHistory(final Property property) {
         if (history != null) {
-            PropertyMap historicMap = history.get(property);
+            final PropertyMap historicMap = history.get(property);
 
             if (historicMap != null) {
                 if (Context.DEBUG) {

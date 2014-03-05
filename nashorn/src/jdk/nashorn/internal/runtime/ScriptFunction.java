@@ -237,12 +237,13 @@ public abstract class ScriptFunction extends ScriptObject {
         if (Context.DEBUG) {
             allocations++;
         }
+
         assert !isBoundFunction(); // allocate never invoked on bound functions
 
         final ScriptObject object = data.allocate();
 
         if (object != null) {
-            Object prototype = getPrototype();
+            final Object prototype = getPrototype();
             if (prototype instanceof ScriptObject) {
                 object.setProto((ScriptObject)prototype);
             }
@@ -378,7 +379,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return self's prototype
      */
     public static Object G$prototype(final Object self) {
-        return (self instanceof ScriptFunction) ?
+        return self instanceof ScriptFunction ?
             ((ScriptFunction)self).getPrototype() :
             UNDEFINED;
     }
@@ -610,7 +611,7 @@ public abstract class ScriptFunction extends ScriptObject {
         // Create the same arguments for the delegate linking request that would be passed in an actual apply'd invocation
         final Object[] appliedArgs = new Object[isApply ? 3 : appliedType.parameterCount()];
         appliedArgs[0] = appliedFn;
-        appliedArgs[1] = passesThis ? (appliedFnNeedsWrappedThis ? ScriptFunctionData.wrapThis(args[2]) : args[2]) : ScriptRuntime.UNDEFINED;
+        appliedArgs[1] = passesThis ? appliedFnNeedsWrappedThis ? ScriptFunctionData.wrapThis(args[2]) : args[2] : ScriptRuntime.UNDEFINED;
         if(isApply) {
             appliedArgs[2] = passesArgs ? NativeFunction.toApplyArgs(args[3]) : ScriptRuntime.EMPTY_ARRAY;
         } else {
@@ -757,7 +758,7 @@ public abstract class ScriptFunction extends ScriptObject {
     @SuppressWarnings("unused")
     private static Object[] addZerothElement(final Object[] args, final Object value) {
         // extends input array with by adding new zeroth element
-        final Object[] src = (args == null)? ScriptRuntime.EMPTY_ARRAY : args;
+        final Object[] src = args == null? ScriptRuntime.EMPTY_ARRAY : args;
         final Object[] result = new Object[src.length + 1];
         System.arraycopy(src, 0, result, 1, src.length);
         result[0] = value;

@@ -306,16 +306,16 @@ public final class ObjectClassGenerator {
 
         addFields(classEmitter, fieldCount);
 
-        final MethodEmitter init = newInitMethod(classEmitter);
+        final MethodEmitter init = newInitMethod(className, classEmitter);
         init.returnVoid();
         init.end();
 
-        final MethodEmitter initWithSpillArrays = newInitWithSpillArraysMethod(classEmitter, ScriptObject.class);
+        final MethodEmitter initWithSpillArrays = newInitWithSpillArraysMethod(className, classEmitter, ScriptObject.class);
         initWithSpillArrays.returnVoid();
         initWithSpillArrays.end();
 
-        newEmptyInit(classEmitter, className);
-        newAllocate(classEmitter, className);
+        newEmptyInit(className, classEmitter);
+        newAllocate(className, classEmitter);
 
         return toByteArray(classEmitter);
     }
@@ -335,17 +335,17 @@ public final class ObjectClassGenerator {
         final ClassEmitter classEmitter = newClassEmitter(className, superName);
         final List<String> initFields   = addFields(classEmitter, fieldCount);
 
-        final MethodEmitter init = newInitScopeMethod(classEmitter);
+        final MethodEmitter init = newInitScopeMethod(className, classEmitter);
         initializeToUndefined(init, className, initFields);
         init.returnVoid();
         init.end();
 
-        final MethodEmitter initWithSpillArrays = newInitWithSpillArraysMethod(classEmitter, FunctionScope.class);
+        final MethodEmitter initWithSpillArrays = newInitWithSpillArraysMethod(className, classEmitter, FunctionScope.class);
         initializeToUndefined(initWithSpillArrays, className, initFields);
         initWithSpillArrays.returnVoid();
         initWithSpillArrays.end();
 
-        final MethodEmitter initWithArguments = newInitScopeWithArgumentsMethod(classEmitter);
+        final MethodEmitter initWithArguments = newInitScopeWithArgumentsMethod(className, classEmitter);
         initializeToUndefined(initWithArguments, className, initFields);
         initWithArguments.returnVoid();
         initWithArguments.end();
@@ -399,7 +399,7 @@ public final class ObjectClassGenerator {
      *
      * @return Open method emitter.
      */
-    private static MethodEmitter newInitMethod(final ClassEmitter classEmitter) {
+    private static MethodEmitter newInitMethod(final String className, final ClassEmitter classEmitter) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
@@ -409,7 +409,7 @@ public final class ObjectClassGenerator {
         return init;
     }
 
-     private static MethodEmitter newInitWithSpillArraysMethod(final ClassEmitter classEmitter, final Class<?> superClass) {
+     private static MethodEmitter newInitWithSpillArraysMethod(final String className, final ClassEmitter classEmitter, final Class<?> superClass) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, long[].class, Object[].class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
@@ -426,7 +426,7 @@ public final class ObjectClassGenerator {
      * @param classEmitter  Open class emitter.
      * @return Open method emitter.
      */
-    private static MethodEmitter newInitScopeMethod(final ClassEmitter classEmitter) {
+    private static MethodEmitter newInitScopeMethod(final String className, final ClassEmitter classEmitter) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
@@ -442,7 +442,7 @@ public final class ObjectClassGenerator {
      * @param classEmitter  Open class emitter.
      * @return Open method emitter.
      */
-    private static MethodEmitter newInitScopeWithArgumentsMethod(final ClassEmitter classEmitter) {
+    private static MethodEmitter newInitScopeWithArgumentsMethod(final String className, final ClassEmitter classEmitter) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class, ScriptObject.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
@@ -460,7 +460,7 @@ public final class ObjectClassGenerator {
      * @param classEmitter Open class emitter.
      * @param className    Name of JavaScript class.
      */
-    private static void newEmptyInit(final ClassEmitter classEmitter, final String className) {
+    private static void newEmptyInit(final String className, final ClassEmitter classEmitter) {
         final MethodEmitter emptyInit = classEmitter.init();
         emptyInit.begin();
         emptyInit.load(Type.OBJECT, JAVA_THIS.slot());
@@ -476,7 +476,7 @@ public final class ObjectClassGenerator {
      * @param classEmitter Open class emitter.
      * @param className    Name of JavaScript class.
      */
-    private static void newAllocate(final ClassEmitter classEmitter, final String className) {
+    private static void newAllocate(final String className, final ClassEmitter classEmitter) {
         final MethodEmitter allocate = classEmitter.method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), ALLOCATE.symbolName(), ScriptObject.class, PropertyMap.class);
         allocate.begin();
         allocate._new(className, Type.typeFor(ScriptObject.class));

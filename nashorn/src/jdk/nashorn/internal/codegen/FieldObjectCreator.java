@@ -101,7 +101,6 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
     @Override
     protected void makeObject(final MethodEmitter method) {
         makeMap();
-
         final String className = getClassName();
         try {
             // NOTE: we must load the actual structure class here, because the API operates with Nashorn Type objects,
@@ -166,13 +165,15 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
     private void putField(final MethodEmitter method, final String key, final int fieldIndex, final MapTuple<T> tuple) {
         method.dup();
 
-        loadTuple(method, tuple);
-
-        final boolean isPrimitive = tuple.isPrimitive();
-        final Type    fieldType   = isPrimitive ? PRIMITIVE_FIELD_TYPE : Type.OBJECT;
+        final Type    fieldType   = tuple.isPrimitive() ? PRIMITIVE_FIELD_TYPE : Type.OBJECT;
         final String  fieldClass  = getClassName();
         final String  fieldName   = getFieldName(fieldIndex, fieldType);
         final String  fieldDesc   = typeDescriptor(fieldType.getTypeClass());
+
+        assert fieldName.equals(getFieldName(fieldIndex, PRIMITIVE_FIELD_TYPE)) || fieldType.isObject() :    key + " object keys must store to L*-fields";
+        assert fieldName.equals(getFieldName(fieldIndex, Type.OBJECT))          || fieldType.isPrimitive() : key + " primitive keys must store to J*-fields";
+
+        loadTuple(method, tuple);
 
         method.putField(fieldClass, fieldName, fieldDesc);
     }

@@ -1840,7 +1840,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final int listIndex = depth - 1; // We don't need 0-deep walker
         MethodHandle filter = listIndex < PROTO_FILTERS.size() ? PROTO_FILTERS.get(listIndex) : null;
 
-        if(filter == null) {
+        if (filter == null) {
             filter = addProtoFilter(GETPROTO, depth - 1);
             PROTO_FILTERS.add(null);
             PROTO_FILTERS.set(listIndex, filter);
@@ -1874,7 +1874,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 return new GuardedInvocation(
                         GETPROTO,
                         explicitInstanceOfCheck ?
-                                NashornGuards.getScriptObjectGuard() :
+                                getScriptObjectGuard(desc.getMethodType(), explicitInstanceOfCheck) :
                                 null,
                         null,
                         explicitInstanceOfCheck ?
@@ -1902,9 +1902,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         mh = find.getGetter(returnType, programPoint);
         //we never need a guard if noGuard is set
-        final boolean noGuard = OBJECT_FIELDS_ONLY && NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType();
+        final boolean noGuard =/* OBJECT_FIELDS_ONLY &&*/ NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType();
         // getMap() is fine as we have the prototype switchpoint depending on where the property was found
-        final MethodHandle guard;
+        MethodHandle guard;
         final Class<? extends Throwable> exception;
         if (noGuard) {
             guard     = null;
@@ -1925,9 +1925,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
              }
 
              if (!property.hasGetterFunction(find.getOwner())) {
-                 // If not a scope bind to actual prototype as changing prototype will change the property map.
-                 // For scopes we install a filter that replaces the self object with the prototype owning the property.
-                mh = isScope() ? addProtoFilter(mh,    find.getProtoChainLength()) : bindTo(mh, find.getOwner());
+                 if (isScope()) {
+                     mh = addProtoFilter(mh, find.getProtoChainLength());
+                     guard = NashornGuards.getMapGuard(find.getOwner().getMap(), explicitInstanceOfCheck);
+                     guard = addProtoFilter(guard, find.getProtoChainLength());
+                 } else {
+                     mh = bindTo(mh, find.getOwner());
+                 }
              }
          }
 
@@ -1942,13 +1946,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod) {
         ObjectClassGenerator.LOG.warning("Megamorphic getter: " + desc + " " + name + " " +isMethod);
-        return new GuardedInvocation(MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod), null, null, ClassCastException.class);
+        return new GuardedInvocation(MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod), getScriptObjectGuard(desc.getMethodType(), true), null, null);
     }
 
     @SuppressWarnings("unused")
     private Object megamorphicGet(final String key, final boolean isMethod) {
         final FindProperty find = findProperty(key, true);
-
         if (find != null) {
             return getObjectValue(find);
         }
@@ -1981,7 +1984,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         final MethodHandle mh = findGetIndexMethodHandle(returnClass, name, keyClass, desc);
-        return new GuardedInvocation(mh, NashornGuards.getScriptObjectGuard(explicitInstanceOfCheck), null, explicitInstanceOfCheck ? null : ClassCastException.class);
+        return new GuardedInvocation(mh, getScriptObjectGuard(callType, explicitInstanceOfCheck), null, explicitInstanceOfCheck ? null : ClassCastException.class);
+    }
+
+    private static MethodHandle getScriptObjectGuard(final MethodType type, final boolean explicitInstanceOfCheck) {
+        return ScriptObject.class.isAssignableFrom(type.parameterType(0)) ? null : NashornGuards.getScriptObjectGuard(explicitInstanceOfCheck);
     }
 
     /**
@@ -2014,13 +2021,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        final String  name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+
         if (request.isCallSiteUnstable() || hasWithScope()) {
             return findMegaMorphicSetMethod(desc, name);
         }
 
         final boolean scope                   = isScope();
-           final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
+        final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
 
         /*
          * If doing property set on a scope object, we should stop proto search on the first
@@ -2050,7 +2058,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             if (PROTO_PROPERTY_NAME.equals(name)) {
                 return new GuardedInvocation(
                         SETPROTOCHECK,
-                        NashornGuards.getScriptObjectGuard(explicitInstanceOfCheck),
+                        getScriptObjectGuard(desc.getMethodType(), explicitInstanceOfCheck),
                         null,
                         explicitInstanceOfCheck ? null : ClassCastException.class);
             } else if (!isExtensible()) {
@@ -2124,7 +2132,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         MethodHandle methodHandle = findOwnMH_V(clazz, "set", void.class, keyClass, valueClass, boolean.class);
         methodHandle = MH.insertArguments(methodHandle, 3, isStrict);
 
-        return new GuardedInvocation(methodHandle, NashornGuards.getScriptObjectGuard(explicitInstanceOfCheck), null, explicitInstanceOfCheck ? null : ClassCastException.class);
+        return new GuardedInvocation(methodHandle, getScriptObjectGuard(callType, explicitInstanceOfCheck), null, explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 
     /**
