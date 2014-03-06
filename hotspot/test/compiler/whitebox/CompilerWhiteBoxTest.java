@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,6 +402,20 @@ public abstract class CompilerWhiteBoxTest {
 
         /** flag for OSR test case */
         boolean isOsr();
+    }
+
+    /**
+     * @return {@code true} if the current test case is OSR and the mode is
+     *          Xcomp, otherwise {@code false}
+     */
+    protected boolean skipXcompOSR() {
+        boolean result =  testCase.isOsr()
+                && CompilerWhiteBoxTest.MODE.startsWith("compiled ");
+        if (result && IS_VERBOSE) {
+            System.err.printf("Warning: %s is not applicable in %s%n",
+                    testCase.name(), CompilerWhiteBoxTest.MODE);
+        }
+        return result;
     }
 }
 
