@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,18 @@ public class RMID extends JavaVM {
         }
         if (!TestParams.testClasses.equals("")) {
             args += " -C-Dtest.classes=" + TestParams.testClasses;
+        }
+
+        if (!TestParams.testJavaOpts.equals("")) {
+            for (String a : TestParams.testJavaOpts.split(" +")) {
+                args += " -C" + a;
+            }
+        }
+
+        if (!TestParams.testVmOpts.equals("")) {
+            for (String a : TestParams.testVmOpts.split(" +")) {
+                args += " -C" + a;
+            }
         }
 
         args += " -C-Djava.rmi.server.useCodebaseOnly=false ";
