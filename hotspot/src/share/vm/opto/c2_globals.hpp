@@ -650,7 +650,7 @@
   experimental(bool, ReplaceInParentMaps, false,                            \
           "Propagate type improvements in callers of inlinee if possible")  \
                                                                             \
-  experimental(bool, UseTypeSpeculation, false,                             \
+  product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
                                                                             \
   diagnostic(bool, UseInlineDepthForSpeculativeTypes, true,                 \
