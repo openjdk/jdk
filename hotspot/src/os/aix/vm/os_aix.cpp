@@ -1135,15 +1135,10 @@ jlong os::javaTimeNanos() {
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  {
-    // gettimeofday - based on time in seconds since the Epoch thus does not wrap
-    info_ptr->max_value = ALL_64_BITS;
-
-    // gettimeofday is a real time clock so it skips
-    info_ptr->may_skip_backward = true;
-    info_ptr->may_skip_forward = true;
-  }
-
+  info_ptr->max_value = ALL_64_BITS;
+  // mread_real_time() is monotonic (see 'os::javaTimeNanos()')
+  info_ptr->may_skip_backward = false;
+  info_ptr->may_skip_forward = false;
   info_ptr->kind = JVMTI_TIMER_ELAPSED;    // elapsed not CPU time
 }
 
@@ -2799,105 +2794,6 @@ size_t os::read(int fd, void *buf, unsigned int nBytes) {
   return ::read(fd, buf, nBytes);
 }
 
-#define NANOSECS_PER_MILLISEC 1000000
-
-int os::sleep(Thread* thread, jlong millis, bool interruptible) {
-  assert(thread == Thread::current(), "thread consistency check");
-
-  // Prevent nasty overflow in deadline calculation
-  // by handling long sleeps similar to solaris or windows.
-  const jlong limit = INT_MAX;
-  int result;
-  while (millis > limit) {
-    if ((result = os::sleep(thread, limit, interruptible)) != OS_OK) {
-      return result;
-    }
-    millis -= limit;
-  }
-
-  ParkEvent * const slp = thread->_SleepEvent;
-  slp->reset();
-  OrderAccess::fence();
-
-  if (interruptible) {
-    jlong prevtime = javaTimeNanos();
-
-    // Prevent precision loss and too long sleeps
-    jlong deadline = prevtime + millis * NANOSECS_PER_MILLISEC;
-
-    for (;;) {
-      if (os::is_interrupted(thread, true)) {
-        return OS_INTRPT;
-      }
-
-      jlong newtime = javaTimeNanos();
-
-      assert(newtime >= prevtime, "time moving backwards");
-      // Doing prevtime and newtime in microseconds doesn't help precision,
-      // and trying to round up to avoid lost milliseconds can result in a
-      // too-short delay.
-      millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
-
-      if (millis <= 0) {
-        return OS_OK;
-      }
-
-      // Stop sleeping if we passed the deadline
-      if (newtime >= deadline) {
-        return OS_OK;
-      }
-
-      prevtime = newtime;
-
-      {
-        assert(thread->is_Java_thread(), "sanity check");
-        JavaThread *jt = (JavaThread *) thread;
-        ThreadBlockInVM tbivm(jt);
-        OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
-
-        jt->set_suspend_equivalent();
-
-        slp->park(millis);
-
-        // were we externally suspended while we were waiting?
-        jt->check_and_wait_while_suspended();
-      }
-    }
-  } else {
-    OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-    jlong prevtime = javaTimeNanos();
-
-    // Prevent precision loss and too long sleeps
-    jlong deadline = prevtime + millis * NANOSECS_PER_MILLISEC;
-
-    for (;;) {
-      // It'd be nice to avoid the back-to-back javaTimeNanos() calls on
-      // the 1st iteration ...
-      jlong newtime = javaTimeNanos();
-
-      if (newtime - prevtime < 0) {
-        // time moving backwards, should only happen if no monotonic clock
-        // not a guarantee() because JVM should not abort on kernel/glibc bugs
-        // - HS14 Commented out as not implemented.
-        // - TODO Maybe we should implement it?
-        //assert(!Aix::supports_monotonic_clock(), "time moving backwards");
-      } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
-      }
-
-      if (millis <= 0) break;
-
-      if (newtime >= deadline) {
-        break;
-      }
-
-      prevtime = newtime;
-      slp->park(millis);
-    }
-    return OS_OK;
-  }
-}
-
 void os::naked_short_sleep(jlong ms) {
   struct timespec req;
 
@@ -3244,50 +3140,6 @@ static void do_resume(OSThread* osthread) {
   }
 
   guarantee(osthread->sr.is_running(), "Must be running!");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// interrupt support
-
-void os::interrupt(Thread* thread) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(),
-    "possibility of dangling Thread pointer");
-
-  OSThread* osthread = thread->osthread();
-
-  if (!osthread->interrupted()) {
-    osthread->set_interrupted(true);
-    // More than one thread can get here with the same value of osthread,
-    // resulting in multiple notifications.  We do, however, want the store
-    // to interrupted() to be visible to other threads before we execute unpark().
-    OrderAccess::fence();
-    ParkEvent * const slp = thread->_SleepEvent;
-    if (slp != NULL) slp->unpark();
-  }
-
-  // For JSR166. Unpark even if interrupt status already was set
-  if (thread->is_Java_thread())
-    ((JavaThread*)thread)->parker()->unpark();
-
-  ParkEvent * ev = thread->_ParkEvent;
-  if (ev != NULL) ev->unpark();
-
-}
-
-bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(),
-    "possibility of dangling Thread pointer");
-
-  OSThread* osthread = thread->osthread();
-
-  bool interrupted = osthread->interrupted();
-
-  if (interrupted && clear_interrupted) {
-    osthread->set_interrupted(false);
-    // consider thread->_SleepEvent->reset() ... optional optimization
-  }
-
-  return interrupted;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
