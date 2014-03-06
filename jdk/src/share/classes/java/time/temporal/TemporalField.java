@@ -116,7 +116,7 @@ public interface TemporalField {
      * For example, in the field 'MonthOfYear', the unit is 'Months'.
      * See also {@link #getRangeUnit()}.
      *
-     * @return the period unit defining the base unit of the field, not null
+     * @return the unit defining the base unit of the field, not null
      */
     TemporalUnit getBaseUnit();
 
@@ -130,7 +130,7 @@ public interface TemporalField {
      * The range is never null. For example, the 'Year' field is shorthand for
      * 'YearOfForever'. It therefore has a unit of 'Years' and a range of 'Forever'.
      *
-     * @return the period unit defining the range of the field, not null
+     * @return the unit defining the range of the field, not null
      */
     TemporalUnit getRangeUnit();
 
@@ -179,7 +179,7 @@ public interface TemporalField {
      * Checks if this field is supported by the temporal object.
      * <p>
      * This determines whether the temporal accessor supports this field.
-     * If this returns false, the the temporal cannot be queried for this field.
+     * If this returns false, then the temporal cannot be queried for this field.
      * <p>
      * There are two equivalent ways of using this method.
      * The first is to invoke this method directly.

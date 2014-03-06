@@ -90,8 +90,8 @@ import java.util.Objects;
  * A month-day in the ISO-8601 calendar system, such as {@code --12-03}.
  * <p>
  * {@code MonthDay} is an immutable date-time object that represents the combination
- * of a year and month. Any field that can be derived from a month and day, such as
- * quarter-of-year, can be obtained.
+ * of a month and day-of-month. Any field that can be derived from a month and day,
+ * such as quarter-of-year, can be obtained.
  * <p>
  * This class does not store or represent a year, time or time-zone.
  * For example, the value "December 3rd" can be stored in a {@code MonthDay}.
@@ -154,7 +154,7 @@ public final class MonthDay
     /**
      * Obtains the current month-day from the system clock in the default time-zone.
      * <p>
-     * This will query the {@link java.time.Clock#systemDefaultZone() system clock} in the default
+     * This will query the {@link Clock#systemDefaultZone() system clock} in the default
      * time-zone to obtain the current month-day.
      * <p>
      * Using this method will prevent the ability to use an alternate clock for testing
@@ -169,7 +169,7 @@ public final class MonthDay
     /**
      * Obtains the current month-day from the system clock in the specified time-zone.
      * <p>
-     * This will query the {@link Clock#system(java.time.ZoneId) system clock} to obtain the current month-day.
+     * This will query the {@link Clock#system(ZoneId) system clock} to obtain the current month-day.
      * Specifying the time-zone avoids dependence on the default time-zone.
      * <p>
      * Using this method will prevent the ability to use an alternate clock for testing
@@ -258,7 +258,7 @@ public final class MonthDay
      * chronology, or can be converted to a {@code LocalDate}.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code MonthDay::from}.
+     * allowing it to be used as a query via method reference, {@code MonthDay::from}.
      *
      * @param temporal  the temporal object to convert, not null
      * @return the month-day, not null
@@ -389,7 +389,7 @@ public final class MonthDay
     /**
      * Gets the value of the specified field from this month-day as an {@code int}.
      * <p>
-     * This queries this month-day for the value for the specified field.
+     * This queries this month-day for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -420,7 +420,7 @@ public final class MonthDay
     /**
      * Gets the value of the specified field from this month-day as a {@code long}.
      * <p>
-     * This queries this month-day for the value for the specified field.
+     * This queries this month-day for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -501,7 +501,7 @@ public final class MonthDay
      * This method checks whether this month and day and the input year form
      * a valid date. This can only return false for February 29th.
      *
-     * @param year  the year to validate, an out of range value returns false
+     * @param year  the year to validate
      * @return true if the year is valid for this month-day
      * @see Year#isValidMonthDay(MonthDay)
      */
@@ -685,7 +685,7 @@ public final class MonthDay
     }
 
     /**
-     * Is this month-day after the specified month-day.
+     * Checks if this month-day is after the specified month-day.
      *
      * @param other  the other month-day to compare to, not null
      * @return true if this is after the specified month-day
@@ -695,7 +695,7 @@ public final class MonthDay
     }
 
     /**
-     * Is this month-day before the specified month-day.
+     * Checks if this month-day is before the specified month-day.
      *
      * @param other  the other month-day to compare to, not null
      * @return true if this point is before the specified month-day
