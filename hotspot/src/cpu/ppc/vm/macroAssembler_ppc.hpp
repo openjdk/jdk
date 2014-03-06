@@ -279,12 +279,12 @@ class MacroAssembler: public Assembler {
   // Push a frame of size `bytes'. No abi space provided.
   void push_frame(unsigned int bytes, Register tmp);
 
-  // Push a frame of size `bytes' plus abi112 on top.
-  void push_frame_abi112(unsigned int bytes, Register tmp);
+  // Push a frame of size `bytes' plus abi_reg_args on top.
+  void push_frame_reg_args(unsigned int bytes, Register tmp);
 
   // Setup up a new C frame with a spill area for non-volatile GPRs and additional
   // space for local variables
-  void push_frame_abi112_nonvolatiles(unsigned int bytes, Register tmp);
+  void push_frame_reg_args_nonvolatiles(unsigned int bytes, Register tmp);
 
   // pop current C frame
   void pop_frame();
@@ -296,17 +296,31 @@ class MacroAssembler: public Assembler {
  private:
   address _last_calls_return_pc;
 
+#if defined(ABI_ELFv2)
+  // Generic version of a call to C function.
+  // Updates and returns _last_calls_return_pc.
+  address branch_to(Register function_entry, bool and_link);
+#else
   // Generic version of a call to C function via a function descriptor
   // with variable support for C calling conventions (TOC, ENV, etc.).
   // updates and returns _last_calls_return_pc.
   address branch_to(Register function_descriptor, bool and_link, bool save_toc_before_call,
                     bool restore_toc_after_call, bool load_toc_of_callee, bool load_env_of_callee);
+#endif
 
  public:
 
   // Get the pc where the last call will return to. returns _last_calls_return_pc.
   inline address last_calls_return_pc();
 
+#if defined(ABI_ELFv2)
+  // Call a C function via a function descriptor and use full C
+  // calling conventions. Updates and returns _last_calls_return_pc.
+  address call_c(Register function_entry);
+  // For tail calls: only branch, don't link, so callee returns to caller of this function.
+  address call_c_and_return_to_caller(Register function_entry);
+  address call_c(address function_entry, relocInfo::relocType rt);
+#else
   // Call a C function via a function descriptor and use full C
   // calling conventions. Updates and returns _last_calls_return_pc.
   address call_c(Register function_descriptor);
@@ -315,6 +329,7 @@ class MacroAssembler: public Assembler {
   address call_c(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt);
   address call_c_using_toc(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt,
                            Register toc);
+#endif
 
  protected:
 
@@ -648,6 +663,11 @@ class MacroAssembler: public Assembler {
   // TODO: verify method and klass metadata (compare against vptr?)
   void _verify_method_ptr(Register reg, const char * msg, const char * file, int line) {}
   void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line) {}
+
+  // Convenience method returning function entry. For the ELFv1 case
+  // creates function descriptor at the current address and returs
+  // the pointer to it. For the ELFv2 case returns the current address.
+  inline address function_entry();
 
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)

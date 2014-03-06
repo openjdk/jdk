@@ -1136,7 +1136,9 @@ address CppInterpreterGenerator::generate_native_entry(void) {
   // (outgoing C args), R3_ARG1 to R10_ARG8, and F1_ARG1 to
   // F13_ARG13.
   __ mr(R3_ARG1, R18_locals);
+#if !defined(ABI_ELFv2)
   __ ld(signature_handler_fd, 0, signature_handler_fd);
+#endif
   __ call_stub(signature_handler_fd);
   // reload method
   __ ld(R19_method, state_(_method));
@@ -1295,8 +1297,13 @@ address CppInterpreterGenerator::generate_native_entry(void) {
   // native result acrosss the call. No oop is present
 
   __ mr(R3_ARG1, R16_thread);
+#if defined(ABI_ELFv2)
+  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans),
+            relocInfo::none);
+#else
   __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, JavaThread::check_special_condition_for_native_trans),
             relocInfo::none);
+#endif
   __ bind(sync_check_done);
 
   //=============================================================================
@@ -1413,7 +1420,7 @@ address CppInterpreterGenerator::generate_native_entry(void) {
   // First, pop to caller's frame.
   __ pop_interpreter_frame(R11_scratch1, R12_scratch2, R21_tmp1  /* set to return pc */, R22_tmp2);
 
-  __ push_frame_abi112(0, R11_scratch1);
+  __ push_frame_reg_args(0, R11_scratch1);
   // Get the address of the exception handler.
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address),
                   R16_thread,
@@ -2545,7 +2552,7 @@ address CppInterpreterGenerator::generate_normal_entry(void) {
   __ mr(R4_ARG2, R3_ARG1);  // ARG2 := ARG1
 
   // Find the address of the "catch_exception" stub.
-  __ push_frame_abi112(0, R11_scratch1);
+  __ push_frame_reg_args(0, R11_scratch1);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address),
                   R16_thread,
                   R4_ARG2);
