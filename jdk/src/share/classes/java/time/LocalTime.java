@@ -838,9 +838,9 @@ public final class LocalTime
                 case NANO_OF_SECOND: return withNano((int) newValue);
                 case NANO_OF_DAY: return LocalTime.ofNanoOfDay(newValue);
                 case MICRO_OF_SECOND: return withNano((int) newValue * 1000);
-                case MICRO_OF_DAY: return plusNanos((newValue - toNanoOfDay() / 1000) * 1000);
+                case MICRO_OF_DAY: return LocalTime.ofNanoOfDay(newValue * 1000);
                 case MILLI_OF_SECOND: return withNano((int) newValue * 1000_000);
-                case MILLI_OF_DAY: return plusNanos((newValue - toNanoOfDay() / 1000_000) * 1000_000);
+                case MILLI_OF_DAY: return LocalTime.ofNanoOfDay(newValue * 1000_000);
                 case SECOND_OF_MINUTE: return withSecond((int) newValue);
                 case SECOND_OF_DAY: return plusSeconds(newValue - toSecondOfDay());
                 case MINUTE_OF_HOUR: return withMinute((int) newValue);
