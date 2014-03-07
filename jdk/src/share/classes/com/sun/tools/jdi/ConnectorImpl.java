@@ -144,6 +144,7 @@ abstract class ConnectorImpl implements Connector {
         return string;
     }
 
+    @SuppressWarnings("serial") // JDK implementation class
     abstract class ArgumentImpl implements Connector.Argument, Cloneable, Serializable {
         private String name;
         private String label;

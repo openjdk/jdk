@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ package javax.sound.sampled;
  * @serial exclude
  */
 public class LineEvent extends java.util.EventObject {
+    private static final long serialVersionUID = -1274246333383880410L;
 
     // INSTANCE VARIABLES
 

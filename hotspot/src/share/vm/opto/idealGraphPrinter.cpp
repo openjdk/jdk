@@ -404,7 +404,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
     Node *node = n;
 #ifndef PRODUCT
-    node->_in_dump_cnt++;
+    Compile::current()->_in_dump_cnt++;
     print_prop(NODE_NAME_PROPERTY, (const char *)node->Name());
     const Type *t = node->bottom_type();
     print_prop("type", t->msg());
@@ -623,7 +623,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       print_prop("lrg", lrg_id);
     }
 
-    node->_in_dump_cnt--;
+    Compile::current()->_in_dump_cnt--;
 #endif
 
     tail(PROPERTIES_ELEMENT);

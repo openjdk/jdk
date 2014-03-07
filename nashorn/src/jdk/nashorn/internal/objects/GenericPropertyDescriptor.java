@@ -60,7 +60,7 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
     }
 
     GenericPropertyDescriptor(final boolean configurable, final boolean enumerable, final Global global) {
-        super(global.getObjectPrototype(), global.getGenericPropertyDescriptorMap());
+        super(global.getObjectPrototype(), getInitialMap());
         this.configurable = configurable;
         this.enumerable   = enumerable;
     }

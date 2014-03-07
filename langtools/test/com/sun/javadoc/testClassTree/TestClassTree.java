@@ -42,7 +42,7 @@ public class TestClassTree extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-source",  "1.5","-sourcepath", SRC_DIR, "pkg"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.

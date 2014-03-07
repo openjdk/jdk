@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,21 @@
 #
 
 #
+
+OS=`uname -s`
+case "$OS" in
+  SunOS | Linux | Darwin )
+    FS="/"
+    CHMOD="${FS}bin${FS}chmod"
+    ;;
+  Windows* | CYGWIN* )
+    CHMOD="chmod"
+    ;;
+  * )
+    echo "Unrecognized system!"
+    exit 1;
+    ;;
+esac
 
 if [ "${TESTSRC}" = "" ]
 then
@@ -50,6 +65,7 @@ echo "CLASSPATH=${CLASSPATH}"
 cp ${TESTSRC}/Assert.java .
 cp -R ${TESTSRC}/package1 .
 cp -R ${TESTSRC}/package2 .
+${CHMOD} -R u+w *
 
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} Assert.java 
 

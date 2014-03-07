@@ -31,8 +31,6 @@ import sun.invoke.util.*;
 import sun.misc.Unsafe;
 
 import static java.lang.invoke.MethodHandleStatics.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A method handle is a typed, directly executable reference to an underlying method,

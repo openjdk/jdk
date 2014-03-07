@@ -106,7 +106,7 @@ cp ${NSS}${FS}db${FS}secmod.db .
 chmod u+w key3.db
 chmod u+w cert8.db
 
-echo | ${TESTJAVA}${FS}bin${FS}java -Dnss \
+echo | ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dnss \
    -Dnss.lib=${LIBNAME} \
    KeyToolTest
 status=$?

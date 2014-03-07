@@ -29,7 +29,7 @@ package java.nio.charset;
  * charsets are guaranteed to be available on every implementation of the Java
  * platform.
  *
- * @see <a href="Charset#standard">Standard Charsets</a>
+ * @see <a href="Charset.html#standard">Standard Charsets</a>
  * @since 1.7
  */
 public final class StandardCharsets {

@@ -184,8 +184,7 @@ public class ProfileOptionTest {
                 com.sun.security.auth.PolicyFile.class); // specifically included in 3
 
         init(Profile.DEFAULT,
-                java.beans.BeanInfo.class,
-                javax.management.remote.rmi._RMIServer_Stub.class); // specifically excluded in 3
+                java.beans.BeanInfo.class);
     }
 
     void init(Profile p, Class<?>... classes) {

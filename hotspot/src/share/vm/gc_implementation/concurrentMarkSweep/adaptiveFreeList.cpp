@@ -122,7 +122,7 @@ void AdaptiveFreeList<Chunk>::return_chunk_at_head(Chunk* chunk, bool record_ret
 
 template <class Chunk>
 void AdaptiveFreeList<Chunk>::return_chunk_at_tail(Chunk* chunk) {
-  return_chunk_at_tail(chunk, true);
+  AdaptiveFreeList<Chunk>::return_chunk_at_tail(chunk, true);
 }
 
 template <class Chunk>

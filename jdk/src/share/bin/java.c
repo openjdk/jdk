@@ -345,10 +345,10 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         } \
     } while (JNI_FALSE)
 
-#define CHECK_EXCEPTION_RETURN(CER_return_value) \
+#define CHECK_EXCEPTION_RETURN() \
     do { \
         if ((*env)->ExceptionOccurred(env)) { \
-            return CER_return_value; \
+            return; \
         } \
     } while (JNI_FALSE)
 
@@ -1258,7 +1258,6 @@ static jclass
 GetApplicationClass(JNIEnv *env)
 {
     jmethodID mid;
-    jobject result;
     jclass cls = GetLauncherHelperClass(env);
     NULL_CHECK0(cls);
     NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,

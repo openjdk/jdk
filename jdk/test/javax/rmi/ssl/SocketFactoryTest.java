@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 4932837 6582235
  * @summary Test SslRMI[Client|Server]SocketFactory equals() and hashCode().
+ *          This test does not affect VM global state, so othervm is
+ *          not required.
  * @author Daniel Fuchs
  *
  * @run main SocketFactoryTest

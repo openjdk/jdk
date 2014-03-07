@@ -112,29 +112,6 @@
 
 // Only bother with this argument setup if dtrace is available
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL(hotspot, vm__init__begin);
-HS_DTRACE_PROBE_DECL(hotspot, vm__init__end);
-HS_DTRACE_PROBE_DECL5(hotspot, thread__start, char*, intptr_t,
-  intptr_t, intptr_t, bool);
-HS_DTRACE_PROBE_DECL5(hotspot, thread__stop, char*, intptr_t,
-  intptr_t, intptr_t, bool);
-
-#define DTRACE_THREAD_PROBE(probe, javathread)                             \
-  {                                                                        \
-    ResourceMark rm(this);                                                 \
-    int len = 0;                                                           \
-    const char* name = (javathread)->get_thread_name();                    \
-    len = strlen(name);                                                    \
-    HS_DTRACE_PROBE5(hotspot, thread__##probe,                             \
-      name, len,                                                           \
-      java_lang_Thread::thread_id((javathread)->threadObj()),              \
-      (javathread)->osthread()->thread_id(),                               \
-      java_lang_Thread::is_daemon((javathread)->threadObj()));             \
-  }
-
-#else /* USDT2 */
-
 #define HOTSPOT_THREAD_PROBE_start HOTSPOT_THREAD_START
 #define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_STOP
 
@@ -150,8 +127,6 @@ HS_DTRACE_PROBE_DECL5(hotspot, thread__stop, char*, intptr_t,
       (uintptr_t) (javathread)->osthread()->thread_id(),                               \
       java_lang_Thread::is_daemon((javathread)->threadObj()));             \
   }
-
-#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -312,6 +287,9 @@ void Thread::initialize_thread_local_storage() {
 void Thread::record_stack_base_and_size() {
   set_stack_base(os::current_stack_base());
   set_stack_size(os::current_stack_size());
+  if (is_Java_thread()) {
+    ((JavaThread*) this)->set_stack_overflow_limit();
+  }
   // CR 7190089: on Solaris, primordial thread's stack is adjusted
   // in initialize_thread(). Without the adjustment, stack size is
   // incorrect if stack is set to unlimited (ulimit -s unlimited).
@@ -826,7 +804,7 @@ bool Thread::claim_oops_do_par_case(int strong_roots_parity) {
   return false;
 }
 
-void Thread::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {
+void Thread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   active_handles()->oops_do(f);
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
@@ -2722,7 +2700,7 @@ public:
   }
 };
 
-void JavaThread::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {
+void JavaThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");
 
@@ -3245,7 +3223,7 @@ CompilerThread::CompilerThread(CompileQueue* queue, CompilerCounters* counters)
 #endif
 }
 
-void CompilerThread::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {
+void CompilerThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   JavaThread::oops_do(f, cld_f, cf);
   if (_scanned_nmethod != NULL && cf != NULL) {
     // Safepoints can occur when the sweeper is scanning an nmethod so
@@ -3391,11 +3369,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     os::pause();
   }
 
-#ifndef USDT2
-  HS_DTRACE_PROBE(hotspot, vm__init__begin);
-#else /* USDT2 */
   HOTSPOT_VM_INIT_BEGIN();
-#endif /* USDT2 */
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -3557,11 +3531,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
 
-#ifndef USDT2
-  HS_DTRACE_PROBE(hotspot, vm__init__end);
-#else /* USDT2 */
   HOTSPOT_VM_INIT_END();
-#endif /* USDT2 */
 
   // record VM initialization completion time
 #if INCLUDE_MANAGEMENT
@@ -4141,14 +4111,14 @@ bool Threads::includes(JavaThread* p) {
 // uses the Threads_lock to guarantee this property. It also makes sure that
 // all threads gets blocked when exiting or starting).
 
-void Threads::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {
+void Threads::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {
     p->oops_do(f, cld_f, cf);
   }
   VMThread::vm_thread()->oops_do(f, cld_f, cf);
 }
 
-void Threads::possibly_parallel_oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {
+void Threads::possibly_parallel_oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   // Introduce a mechanism allowing parallel threads to claim threads as
   // root groups.  Overhead should be small enough to use all the time,
   // even in sequential code.

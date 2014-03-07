@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ dojdbCmds()
    cmd ignore caught   java.lang.IndexOutOfBoundsException
    cmd catch  uncaught java.lang.IndexOutOfBoundsException
    cmd ignore uncaught java.lang.IndexOutOfBoundsException
-   cmd cont
+   cmd allowExit cont
 }
 
 mysetup()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class CpuTimesDefineClassTest {
         DemoRun hprof;
 
         /* Run JVMTI hprof agent with cpu=times */
-        hprof = new DemoRun("hprof", "cpu=times");
+        hprof = new DemoRun("hprof", "cpu=times,file=cputimedefineclass.txt");
         hprof.runit(args[0]);
 
         /* Make sure patterns in output look ok */

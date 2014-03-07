@@ -26,8 +26,9 @@
  * @test
  * @bug 8032024
  * @bug 8025937
+ * @bug 8033528
  * @summary [JDK 8] Test invokespecial and invokeinterface with the same JVM_CONSTANT_InterfaceMethodref
- * @run main InvokespecialInterface
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+StressRewriter InvokespecialInterface
  */
 import java.util.function.*;
 import java.util.*;

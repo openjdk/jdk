@@ -101,7 +101,7 @@ jdk_nio = \
 
 jdk_net = \
     java/net \
-    com/sun/net \
+    com/sun/net/httpserver \
     com/oracle/net \
     sun/net
 
@@ -126,6 +126,9 @@ jdk_security3 = \
     com/sun/security \
     com/sun/org/apache/xml/internal/security \
     sun/security \
+    javax/net \
+    sun/net/www/protocol/https \
+    com/sun/net/ssl \
     lib/security
 
 jdk_security = \
@@ -489,7 +492,7 @@ needs_compact3 = \
   sun/security/provider/PolicyFile/Alias.java \
   sun/security/provider/PolicyFile/Comparator.java \
   sun/security/provider/PolicyFile/SelfWildcard.java \
-  sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/SSLEngineDeadlock.java \
+  sun/security/ssl/SSLEngineImpl/SSLEngineDeadlock.java \
   sun/security/util/Oid/OidFormat.java \
   sun/security/util/Resources/Format.java \
   sun/security/util/Resources/NewNamesFormat.java
@@ -587,8 +590,8 @@ needs_compact2 = \
   java/util/zip/ZipFile/DeleteTempJar.java \
   javax/crypto/Cipher/CipherStreamClose.java \
   sun/misc/URLClassPath/ClassnameCharTest.java \
-  sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/HttpsCreateSockTest.java \
-  sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/HttpsSocketFacTest.java 
+  sun/net/www/protocol/https/HttpsURLConnection/HttpsCreateSockTest.java \
+  sun/net/www/protocol/https/HttpsURLConnection/HttpsSocketFacTest.java 
 
 # Compact 1 adds full VM tests
 #

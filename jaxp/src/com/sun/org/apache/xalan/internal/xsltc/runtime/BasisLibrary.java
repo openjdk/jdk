@@ -1660,5 +1660,14 @@ public final class BasisLibrary {
 
     }
 
+    /**
+     *  Utility method to calculate string-length as a number of code points,
+     *  to avoid possible errors with string that contains
+     *  complementary characters
+     */
+    public static int getStringLength(String str) {
+        return str.codePointCount(0,str.length());
+    }
+
     //-- End utility functions
 }

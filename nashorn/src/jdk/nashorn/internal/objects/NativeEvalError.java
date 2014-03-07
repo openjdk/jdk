@@ -78,7 +78,7 @@ public final class NativeEvalError extends ScriptObject {
     }
 
     NativeEvalError(final Object msg, final Global global) {
-        this(msg, global.getEvalErrorPrototype(), global.getEvalErrorMap());
+        this(msg, global.getEvalErrorPrototype(), getInitialMap());
     }
 
     private NativeEvalError(final Object msg) {
