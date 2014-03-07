@@ -117,10 +117,10 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
   jvmtiCapabilities jc;
 
   memset(&jc, 0, sizeof(jc));
-#ifndef CC_INTERP
+#ifndef ZERO
   jc.can_pop_frame = 1;
   jc.can_force_early_return = 1;
-#endif // !CC_INTERP
+#endif // !ZERO
   jc.can_get_source_debug_extension = 1;
   jc.can_access_local_variables = 1;
   jc.can_maintain_original_method_order = 1;

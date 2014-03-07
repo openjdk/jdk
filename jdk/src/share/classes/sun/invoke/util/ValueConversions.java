@@ -443,20 +443,6 @@ public class ValueConversions {
         return x;
     }
 
-    /**
-     * Identity function, with reference cast.
-     * @param t an arbitrary reference type
-     * @param x an arbitrary reference value
-     * @return the same value x
-     */
-    @SuppressWarnings("unchecked")
-    static <T,U> T castReference(Class<? extends T> t, U x) {
-        // inlined Class.cast because we can't ForceInline it
-        if (x != null && !t.isInstance(x))
-            throw newClassCastException(t, x);
-        return (T) x;
-    }
-
     private static ClassCastException newClassCastException(Class<?> t, Object obj) {
         return new ClassCastException("Cannot cast " + obj.getClass().getName() + " to " + t.getName());
     }
@@ -466,12 +452,10 @@ public class ValueConversions {
     static {
         try {
             MethodType idType = MethodType.genericMethodType(1);
-            MethodType castType = idType.insertParameterTypes(0, Class.class);
             MethodType ignoreType = idType.changeReturnType(void.class);
             MethodType zeroObjectType = MethodType.genericMethodType(0);
             IDENTITY = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", idType);
-            //CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
-            CAST_REFERENCE = IMPL_LOOKUP.findStatic(THIS_CLASS, "castReference", castType);
+            CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
             ZERO_OBJECT = IMPL_LOOKUP.findStatic(THIS_CLASS, "zeroObject", zeroObjectType);
             IGNORE = IMPL_LOOKUP.findStatic(THIS_CLASS, "ignore", ignoreType);
             EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
@@ -509,6 +493,9 @@ public class ValueConversions {
      *  and returns it as the given type.
      */
     public static MethodHandle cast(Class<?> type) {
+        return cast(type, CAST_REFERENCE);
+    }
+    public static MethodHandle cast(Class<?> type, MethodHandle castReference) {
         if (type.isPrimitive())  throw new IllegalArgumentException("cannot cast primitive type "+type);
         MethodHandle mh;
         Wrapper wrap = null;
@@ -519,7 +506,7 @@ public class ValueConversions {
             mh = cache.get(wrap);
             if (mh != null)  return mh;
         }
-        mh = MethodHandles.insertArguments(CAST_REFERENCE, 0, type);
+        mh = MethodHandles.insertArguments(castReference, 0, type);
         if (cache != null)
             cache.put(wrap, mh);
         return mh;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,15 @@
 package com.sun.tools.javac.comp;
 
 import java.util.AbstractQueue;
-import com.sun.tools.javac.util.Context;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import javax.tools.JavaFileObject;
+
+import com.sun.tools.javac.util.Context;
 
 /** A queue of all as yet unattributed classes.
  *
@@ -79,6 +81,22 @@ public class Todo extends AbstractQueue<Env<AttrContext>> {
             return true;
         } else {
             return false;
+        }
+    }
+
+    /**
+     * Removes all unattributed classes except those belonging to the given
+     * collection of files.
+     *
+     * @param sourceFiles The source files of the classes to keep.
+     */
+    public void retainFiles(Collection<? extends JavaFileObject> sourceFiles) {
+        for (Iterator<Env<AttrContext>> it = contents.iterator(); it.hasNext(); ) {
+            Env<AttrContext> env = it.next();
+            if (!sourceFiles.contains(env.toplevel.sourcefile)) {
+                if (contentsByFile != null) removeByFile(env);
+                it.remove();
+            }
         }
     }
 

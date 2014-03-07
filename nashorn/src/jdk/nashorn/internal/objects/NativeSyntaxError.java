@@ -68,7 +68,7 @@ public final class NativeSyntaxError extends ScriptObject {
 
     @SuppressWarnings("LeakingThisInConstructor")
     NativeSyntaxError(final Object msg, final Global global) {
-        super(global.getSyntaxErrorPrototype(), global.getSyntaxErrorMap());
+        super(global.getSyntaxErrorPrototype(), getInitialMap());
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {

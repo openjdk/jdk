@@ -40,8 +40,9 @@ public class IndexTest {
         NetworkInterface nif;
         while (netifs.hasMoreElements()) {
             nif = netifs.nextElement();
-            // JDK-8022212, Skip (Windows) Teredo Tunneling seudo-Interface
-            if (nif.getDisplayName().contains("Teredo") && isWindows)
+            // JDK-8022212, Skip (Windows) Teredo Tunneling Pseudo-Interface
+            String dName = nif.getDisplayName();
+            if (isWindows && dName != null && dName.contains("Teredo"))
                 continue;
             int index = nif.getIndex();
             if (index >= 0) {

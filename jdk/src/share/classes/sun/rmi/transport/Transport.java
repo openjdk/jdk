@@ -37,6 +37,7 @@ import java.rmi.server.RemoteCall;
 import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlContext;
+import java.security.PrivilegedAction;
 import sun.rmi.runtime.Log;
 import sun.rmi.server.Dispatcher;
 import sun.rmi.server.UnicastServerRef;
@@ -55,7 +56,7 @@ public abstract class Transport {
 
     private static String getLogLevel() {
         return java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.rmi.transport.logLevel"));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.transport.logLevel"));
     }
 
     /* transport package log */

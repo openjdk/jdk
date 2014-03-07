@@ -26,18 +26,18 @@
 package sun.tools.jinfo;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.io.IOException;
 import java.io.InputStream;
 
 import com.sun.tools.attach.VirtualMachine;
+
 import sun.tools.attach.HotSpotVirtualMachine;
 
 /*
  * This class is the main class for the JInfo utility. It parses its arguments
  * and decides if the command should be satisfied using the VM attach mechanism
- * or an SA tool. At this time the only option that uses the VM attach
- * mechanism is the -flag option to set or print a command line option of a
- * running application. All other options are mapped to SA tools.
+ * or an SA tool.
  */
 public class JInfo {
 
@@ -46,62 +46,95 @@ public class JInfo {
             usage(1); // no arguments
         }
 
-        boolean useSA = true;
-        String arg1 = args[0];
-        if (arg1.startsWith("-")) {
-            if (arg1.equals("-flags") ||
-                arg1.equals("-sysprops")) {
-                // SA JInfo needs <pid> or <server> or
-                // (<executable> and <code file>). So, total
-                // argument count including option has to 2 or 3.
-                if (args.length != 2 && args.length != 3) {
-                    usage(1);
+        // First determine if we should launch SA or not
+        boolean useSA = false;
+        if (args[0].equals("-F")) {
+            // delete the -F
+            args = Arrays.copyOfRange(args, 1, args.length);
+            useSA = true;
+        } else if (args[0].equals("-flags")
+            || args[0].equals("-sysprops"))
+        {
+            if (args.length == 2) {
+                if (!args[1].matches("[0-9]+")) {
+                    // If args[1] doesn't parse to a number then
+                    // it must be the SA debug server
+                    // (otherwise it is the pid)
+                    useSA = true;
                 }
-            } else if (arg1.equals("-flag")) {
-                // do not use SA, use attach-on-demand
-                useSA = false;
-            } else {
-                // unknown option or -h or -help, print help
-                int exit;
-                if (arg1.equals("-help") || arg1.equals("-h")) {
-                    exit = 0;
-                } else {
-                    exit = 1;
-                }
-                usage(exit);
             }
+            if (args.length == 3) {
+                // arguments include an executable and a core file
+                useSA = true;
+            }
+        } else if (!args[0].startsWith("-")) {
+            if (args.length == 2) {
+                // the only arguments are an executable and a core file
+                useSA = true;
+            }
+        } else if (args[0].equals("-h")
+                || args[0].equals("-help")) {
+            usage(0);
         }
 
         if (useSA) {
+            // invoke SA which does it's own argument parsing
             runTool(args);
         } else {
-            if (args.length == 3) {
-                String pid = args[2];
-                String option = args[1];
-                flag(pid, option);
-            } else {
-                int exit;
-                if (arg1.equals("-help") || arg1.equals("-h")) {
-                    exit = 0;
-                } else {
-                    exit = 1;
+            // Now we can parse arguments for the non-SA case
+            String pid = null;
+
+            switch(args[0]) {
+            case "-flag":
+                if (args.length != 3) {
+                    usage(1);
                 }
-                usage(exit);
+                String option = args[1];
+                pid = args[2];
+                flag(pid, option);
+                break;
+            case "-flags":
+                if (args.length != 2) {
+                    usage(1);
+                }
+                pid = args[1];
+                flags(pid);
+                break;
+            case "-sysprops":
+                if (args.length != 2) {
+                    usage(1);
+                }
+                pid = args[1];
+                sysprops(pid);
+                break;
+            case "-help":
+            case "-h":
+                usage(0);
+            default:
+               if (args.length == 1) {
+                   // no flags specified, we do -sysprops and -flags
+                   pid = args[0];
+                   sysprops(pid);
+                   System.out.println();
+                   flags(pid);
+               } else {
+                   usage(1);
+               }
             }
         }
     }
 
-    // Invoke SA tool  with the given arguments
+    // Invoke SA tool with the given arguments
     private static void runTool(String args[]) throws Exception {
         String tool = "sun.jvm.hotspot.tools.JInfo";
-        // Tool not available on this  platform.
+        // Tool not available on this platform.
         Class<?> c = loadClass(tool);
         if (c == null) {
             usage(1);
         }
 
         // invoke the main method with the arguments
-        Class[] argTypes = { String[].class } ;
+        Class<?>[] argTypes = { String[].class } ;
         Method m = c.getDeclaredMethod("main", argTypes);
 
         Object[] invokeArgs = { args };
@@ -111,7 +144,7 @@ public class JInfo {
     // loads the given class using the system class loader
     private static Class<?> loadClass(String name) {
         //
-        // We specify the system clas loader so as to cater for development
+        // We specify the system class loader so as to cater for development
         // environments where this class is on the boot class path but sa-jdi.jar
         // is on the system class path. Once the JDK is deployed then both
         // tools.jar and sa-jdi.jar are on the system class path.
@@ -124,32 +157,46 @@ public class JInfo {
     }
 
     private static void flag(String pid, String option) throws IOException {
-        VirtualMachine vm = attach(pid);
+        HotSpotVirtualMachine vm = (HotSpotVirtualMachine) attach(pid);
         String flag;
         InputStream in;
         int index = option.indexOf('=');
         if (index != -1) {
             flag = option.substring(0, index);
             String value = option.substring(index + 1);
-            in = ((HotSpotVirtualMachine)vm).setFlag(flag, value);
+            in = vm.setFlag(flag, value);
         } else {
             char c = option.charAt(0);
             switch (c) {
                 case '+':
                     flag = option.substring(1);
-                    in = ((HotSpotVirtualMachine)vm).setFlag(flag, "1");
+                    in = vm.setFlag(flag, "1");
                     break;
                 case '-':
                     flag = option.substring(1);
-                    in = ((HotSpotVirtualMachine)vm).setFlag(flag, "0");
+                    in = vm.setFlag(flag, "0");
                     break;
                 default:
                     flag = option;
-                    in = ((HotSpotVirtualMachine)vm).printFlag(flag);
+                    in = vm.printFlag(flag);
                     break;
             }
         }
 
+        drain(vm, in);
+    }
+
+    private static void flags(String pid) throws IOException {
+        HotSpotVirtualMachine vm = (HotSpotVirtualMachine) attach(pid);
+        InputStream in = vm.executeJCmd("VM.flags");
+        System.out.println("VM Flags:");
+        drain(vm, in);
+    }
+
+    private static void sysprops(String pid) throws IOException {
+        HotSpotVirtualMachine vm = (HotSpotVirtualMachine) attach(pid);
+        InputStream in = vm.executeJCmd("VM.system_properties");
+        System.out.println("Java System Properties:");
         drain(vm, in);
     }
 
@@ -195,7 +242,9 @@ public class JInfo {
         System.err.println("Usage:");
         if (usageSA) {
             System.err.println("    jinfo [option] <pid>");
-            System.err.println("        (to connect to running process)");
+            System.err.println("        (to connect to a running process)");
+            System.err.println("    jinfo -F [option] <pid>");
+            System.err.println("        (to connect to a hung process)");
             System.err.println("    jinfo [option] <executable> <core>");
             System.err.println("        (to connect to a core file)");
             System.err.println("    jinfo [option] [server_id@]<remote server IP or hostname>");
@@ -206,10 +255,10 @@ public class JInfo {
             System.err.println("    -flag <name>         to print the value of the named VM flag");
             System.err.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
             System.err.println("    -flag <name>=<value> to set the named VM flag to the given value");
-            System.err.println("  for running processes and core files:");
+            System.err.println("  for running or hung processes and core files:");
             System.err.println("    -flags               to print VM flags");
             System.err.println("    -sysprops            to print Java system properties");
-            System.err.println("    <no option>          to print both of the above");
+            System.err.println("    <no option>          to print both VM flags and system properties");
             System.err.println("    -h | -help           to print this help message");
         } else {
             System.err.println("    jinfo <option> <pid>");
@@ -219,6 +268,9 @@ public class JInfo {
             System.err.println("    -flag <name>         to print the value of the named VM flag");
             System.err.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
             System.err.println("    -flag <name>=<value> to set the named VM flag to the given value");
+            System.err.println("    -flags               to print VM flags");
+            System.err.println("    -sysprops            to print Java system properties");
+            System.err.println("    <no option>          to print both VM flags and system properties");
             System.err.println("    -h | -help           to print this help message");
         }
 

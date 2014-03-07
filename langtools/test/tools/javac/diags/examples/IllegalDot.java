@@ -22,8 +22,6 @@
  */
 
 // key: compiler.err.illegal.dot
-// key: compiler.err.expected
-// key: compiler.err.illegal.start.of.type
 
 class X {
     void m(Object.. args) { }

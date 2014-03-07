@@ -37,8 +37,7 @@ include CommonCorba.gmk
 $(eval $(call SetupJavaCompilation,BUILD_CORBA, \
     SETUP := GENERATE_NEWBYTECODE, \
     SRC := $(CORBA_TOPDIR)/src/share/classes $(CORBA_OUTPUTDIR)/gensrc, \
-    EXCLUDES := com/sun/corba/se/PortableActivationIDL \
-        com/sun/tools/corba/se/logutil, \
+    EXCLUDES := com/sun/corba/se/PortableActivationIDL, \
     EXCLUDE_FILES := com/sun/corba/se/impl/presentation/rmi/JNDIStateFactoryImpl.java \
         com/sun/corba/se/spi/presentation/rmi/StubWrapper.java \
         com/sun/org/omg/CORBA/IDLTypeOperations.java \

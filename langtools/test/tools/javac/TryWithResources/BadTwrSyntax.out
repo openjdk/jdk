@@ -1,7 +1,2 @@
 BadTwrSyntax.java:14:43: compiler.err.illegal.start.of.type
-BadTwrSyntax.java:14:44: compiler.err.expected: =
-BadTwrSyntax.java:14:45: compiler.err.expected: ')'
-BadTwrSyntax.java:14:47: compiler.err.expected: '{'
-BadTwrSyntax.java:15:19: compiler.err.illegal.start.of.expr
-BadTwrSyntax.java:15:23: compiler.err.expected: ';'
-6 errors
+1 error

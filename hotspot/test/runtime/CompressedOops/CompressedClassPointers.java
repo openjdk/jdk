@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,18 @@ public class CompressedClassPointers {
         output.shouldHaveExitValue(0);
     }
 
+    public static void heapBaseMinAddressTest() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:HeapBaseMinAddress=1m",
+            "-XX:+PrintMiscellaneous",
+            "-XX:+Verbose",
+            "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("HeapBaseMinAddress must be at least");
+        output.shouldContain("HotSpot");
+        output.shouldHaveExitValue(0);
+    }
+
     public static void sharingTest() throws Exception {
         // Test small heaps
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
@@ -113,24 +125,25 @@ public class CompressedClassPointers {
         }
     }
 
-  public static void main(String[] args) throws Exception {
-      if (!Platform.is64bit()) {
-          // Can't test this on 32 bit, just pass
-          System.out.println("Skipping test on 32bit");
-          return;
-      }
-      // Solaris 10 can't mmap compressed oops space without a base
-      if (Platform.isSolaris()) {
-           String name = System.getProperty("os.version");
-           if (name.equals("5.10")) {
-               System.out.println("Skipping test on Solaris 10");
-               return;
-           }
-      }
-      smallHeapTest();
-      smallHeapTestWith3G();
-      largeHeapTest();
-      largePagesTest();
-      sharingTest();
-  }
+    public static void main(String[] args) throws Exception {
+        if (!Platform.is64bit()) {
+            // Can't test this on 32 bit, just pass
+            System.out.println("Skipping test on 32bit");
+            return;
+        }
+        // Solaris 10 can't mmap compressed oops space without a base
+        if (Platform.isSolaris()) {
+             String name = System.getProperty("os.version");
+             if (name.equals("5.10")) {
+                 System.out.println("Skipping test on Solaris 10");
+                 return;
+             }
+        }
+        smallHeapTest();
+        smallHeapTestWith3G();
+        largeHeapTest();
+        largePagesTest();
+        heapBaseMinAddressTest();
+        sharingTest();
+    }
 }

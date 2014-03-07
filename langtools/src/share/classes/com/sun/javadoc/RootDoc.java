@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public interface RootDoc extends Doc, DocErrorReporter {
      * Return the packages
      * <a href="package-summary.html#included">specified</a>
      * on the command line.
-     * If <code>-subpackages</code> and <code>-exclude</code> options
+     * If {@code -subpackages} and {@code -exclude} options
      * are used, return all the non-excluded packages.
      *
      * @return packages specified on the command line.

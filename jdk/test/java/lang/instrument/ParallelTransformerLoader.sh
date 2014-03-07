@@ -23,7 +23,6 @@
 
 # @test
 # @bug 5088398
-# @ignore until bug 6835233 dealt with
 # @summary Test parallel class loading by parallel transformers.
 # @author Daniel D. Daugherty as modified from the code of Daryl Puryear @ Wily
 #

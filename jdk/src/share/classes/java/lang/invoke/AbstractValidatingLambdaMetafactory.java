@@ -200,6 +200,13 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                                   implIsInstanceMethod ? "instance" : "static", implInfo,
                                   instantiatedArity, samArity));
         }
+        for (MethodType bridgeMT : additionalBridges) {
+            if (bridgeMT.parameterCount() != samArity) {
+                throw new LambdaConversionException(
+                        String.format("Incorrect number of parameters for bridge signature %s; incompatible with %s",
+                                      bridgeMT, samMethodType));
+            }
+        }
 
         // If instance: first captured arg (receiver) must be subtype of class where impl method is defined
         final int capturedStart;
@@ -232,7 +239,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                throw new LambdaConversionException(
                        String.format("Invalid receiver type %s; not a subtype of implementation receiver type %s",
                                      receiverClass, implReceiverClass));
-             }
+            }
         } else {
             // no receiver
             capturedStart = 0;
@@ -274,10 +281,17 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                     String.format("Type mismatch for lambda return: %s is not convertible to %s",
                                   actualReturnType, expectedType));
         }
-        if (!isAdaptableToAsReturn(expectedType, samReturnType)) {
+        if (!isAdaptableToAsReturnStrict(expectedType, samReturnType)) {
             throw new LambdaConversionException(
                     String.format("Type mismatch for lambda expected return: %s is not convertible to %s",
                                   expectedType, samReturnType));
+        }
+        for (MethodType bridgeMT : additionalBridges) {
+            if (!isAdaptableToAsReturnStrict(expectedType, bridgeMT.returnType())) {
+                throw new LambdaConversionException(
+                        String.format("Type mismatch for lambda expected return: %s is not convertible to %s",
+                                      expectedType, bridgeMT.returnType()));
+            }
         }
      }
 
@@ -329,6 +343,10 @@ import static sun.invoke.util.Wrapper.isWrapperType;
     private boolean isAdaptableToAsReturn(Class<?> fromType, Class<?> toType) {
         return toType.equals(void.class)
                || !fromType.equals(void.class) && isAdaptableTo(fromType, toType, false);
+    }
+    private boolean isAdaptableToAsReturnStrict(Class<?> fromType, Class<?> toType) {
+        if (fromType.equals(void.class)) return toType.equals(void.class);
+        return isAdaptableTo(fromType, toType, true);
     }
 
 

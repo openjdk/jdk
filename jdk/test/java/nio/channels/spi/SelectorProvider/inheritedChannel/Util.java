@@ -22,8 +22,6 @@
  */
 
 /*
- *
- *
  * A collection of utility methods used by the SelectorProvider.inheritedChannel
  * unit tests.
  */
@@ -91,26 +89,9 @@ public class Util {
     /*
      * Return the "java" command and any initial arguments to start the runtime
      * in the current configuration.
-     *
-     * Typically it will return something like :-
-     *      cmd[0] = "/usr/local/java/solaris-sparc/bin/java"
-     * or
-     *      cmd[0] = "/usr/local/java/solaris-sparc/bin/sparcv9/java"
-     *      cmd[1] = "-d64"
      */
-    public static String[] javaCommand() {
-        String exe = System.getProperty("java.home") + File.separator + "bin" +
-            File.separator;
-        String arch = System.getProperty("os.arch");
-        if (arch.equals("sparcv9")) {
-            String cmd[] = new String[2];
-            cmd[0] = exe + "sparcv9/java";
-            cmd[1] = "-d64";
-            return cmd;
-        } else {
-            String cmd[] = new String[1];
-            cmd[0] = exe += "java";
-            return cmd;
-        }
+    public static String javaCommand() {
+        return System.getProperty("java.home") + File.separator + "bin" +
+            File.separator + "java";
     }
 }

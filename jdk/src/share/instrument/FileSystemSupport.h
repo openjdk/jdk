@@ -65,9 +65,3 @@ int isAbsolute(const char * path);
  * Resolve the child pathname string against the parent.
  */
 char* resolve(const char* parent, const char* child);
-
-/**
- * Convert a pathname to canonical form.
- * -- compiled in from src/<platform>/native/java/io/canonicalize_md.c
- */
-int canonicalize(char *original, char *resolved, int len);

@@ -188,7 +188,7 @@ Node *CMoveNode::Identity( PhaseTransform *phase ) {
 const Type *CMoveNode::Value( PhaseTransform *phase ) const {
   if( phase->type(in(Condition)) == Type::TOP )
     return Type::TOP;
-  return phase->type(in(IfFalse))->meet(phase->type(in(IfTrue)));
+  return phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
 }
 
 //------------------------------make-------------------------------------------
@@ -392,14 +392,14 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
 Node *ConstraintCastNode::Identity( PhaseTransform *phase ) {
-  return phase->type(in(1))->higher_equal(_type) ? in(1) : this;
+  return phase->type(in(1))->higher_equal_speculative(_type) ? in(1) : this;
 }
 
 //------------------------------Value------------------------------------------
 // Take 'join' of input and cast-up type
 const Type *ConstraintCastNode::Value( PhaseTransform *phase ) const {
   if( in(0) && phase->type(in(0)) == Type::TOP ) return Type::TOP;
-  const Type* ft = phase->type(in(1))->filter(_type);
+const Type* ft = phase->type(in(1))->filter_speculative(_type);
 
 #ifdef ASSERT
   // Previous versions of this function had some special case logic,
@@ -409,7 +409,7 @@ const Type *ConstraintCastNode::Value( PhaseTransform *phase ) const {
     {
       const Type* t1 = phase->type(in(1));
       if( t1 == Type::TOP )  assert(ft == Type::TOP, "special case #1");
-      const Type* rt = t1->join(_type);
+      const Type* rt = t1->join_speculative(_type);
       if (rt->empty())       assert(ft == Type::TOP, "special case #2");
       break;
     }

@@ -83,7 +83,7 @@ public:
 #define LOCALS_ADDR(offset)    ((address)locals[-(offset)])
 #define LOCALS_INT(offset)     (*((jint*)&locals[-(offset)]))
 #define LOCALS_FLOAT(offset)   (*((jfloat*)&locals[-(offset)]))
-#define LOCALS_OBJECT(offset)  ((oop)locals[-(offset)])
+#define LOCALS_OBJECT(offset)  (cast_to_oop(locals[-(offset)]))
 #define LOCALS_DOUBLE(offset)  (((VMJavaVal64*)&locals[-((offset) + 1)])->d)
 #define LOCALS_LONG(offset)    (((VMJavaVal64*)&locals[-((offset) + 1)])->l)
 #define LOCALS_LONG_AT(offset) (((address)&locals[-((offset) + 1)]))

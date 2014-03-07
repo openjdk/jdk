@@ -69,6 +69,7 @@ private:
   bool  _jvmti_can_hotswap_or_post_breakpoint;
   bool  _jvmti_can_access_local_variables;
   bool  _jvmti_can_post_on_exceptions;
+  bool  _jvmti_can_pop_frame;
 
   // Cache DTrace flags
   bool  _dtrace_extended_probes;
@@ -332,8 +333,9 @@ public:
 
   // Cache Jvmti state
   void  cache_jvmti_state();
+  bool  jvmti_state_changed() const;
+  bool  should_retain_local_variables() const;
   bool  jvmti_can_hotswap_or_post_breakpoint() const { return _jvmti_can_hotswap_or_post_breakpoint; }
-  bool  jvmti_can_access_local_variables()     const { return _jvmti_can_access_local_variables; }
   bool  jvmti_can_post_on_exceptions()         const { return _jvmti_can_post_on_exceptions; }
 
   // Cache DTrace flags

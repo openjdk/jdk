@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,10 @@ void *findFunction(JNIEnv *env, void *hModule, char *functionName) {
 JNIEXPORT void JNICALL Java_sun_security_smartcardio_PlatformPCSC_initialize
         (JNIEnv *env, jclass thisClass, jstring jLibName) {
     const char *libName = (*env)->GetStringUTFChars(env, jLibName, NULL);
+    if (libName == NULL) {
+        throwNullPointerException(env, "PCSC library name is null");
+        return;
+    }
     hModule = dlopen(libName, RTLD_LAZY);
     (*env)->ReleaseStringUTFChars(env, jLibName, libName);
 
@@ -97,13 +101,40 @@ JNIEXPORT void JNICALL Java_sun_security_smartcardio_PlatformPCSC_initialize
         return;
     }
     scardEstablishContext = (FPTR_SCardEstablishContext)findFunction(env, hModule, "SCardEstablishContext");
+    if ((*env)->ExceptionCheck(env)) {
+         return;
+    }
     scardConnect          = (FPTR_SCardConnect)         findFunction(env, hModule, "SCardConnect");
+    if ((*env)->ExceptionCheck(env)) {
+         return;
+    }
     scardDisconnect       = (FPTR_SCardDisconnect)      findFunction(env, hModule, "SCardDisconnect");
+    if ((*env)->ExceptionCheck(env)) {
+         return;
+    }
     scardStatus           = (FPTR_SCardStatus)          findFunction(env, hModule, "SCardStatus");
+    if ((*env)->ExceptionCheck(env)) {
+         return;
+    }
     scardGetStatusChange  = (FPTR_SCardGetStatusChange) findFunction(env, hModule, "SCardGetStatusChange");
+    if ((*env)->ExceptionCheck(env)) {
+         return;
+    }
     scardTransmit         = (FPTR_SCardTransmit)        findFunction(env, hModule, "SCardTransmit");
+    if ((*env)->ExceptionCheck(env)) {
+         return;
+    }
     scardListReaders      = (FPTR_SCardListReaders)     findFunction(env, hModule, "SCardListReaders");
+    if ((*env)->ExceptionCheck(env)) {
+         return;
+    }
     scardBeginTransaction = (FPTR_SCardBeginTransaction)findFunction(env, hModule, "SCardBeginTransaction");
+    if ((*env)->ExceptionCheck(env)) {
+         return;
+    }
     scardEndTransaction   = (FPTR_SCardEndTransaction)  findFunction(env, hModule, "SCardEndTransaction");
+    if ((*env)->ExceptionCheck(env)) {
+         return;
+    }
     scardControl          = (FPTR_SCardControl)         findFunction(env, hModule, "SCardControl");
 }

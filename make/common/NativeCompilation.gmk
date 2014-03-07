@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ ifeq (,$(_MAKEBASE_GMK))
   $(error You must include MakeBase.gmk prior to including NativeCompilation.gmk)
 endif
 
-ifeq ($(COMPILER_TYPE),CC)
+ifneq ($(TOOLCHAIN_TYPE), microsoft)
   COMPILING_MSG=echo $(LOG_INFO) "Compiling $(notdir $1) (for $(notdir $2))"
   LINKING_MSG=echo $(LOG_INFO) "Linking $1"
   LINKING_EXE_MSG=echo $(LOG_INFO) "Linking executable $1"
@@ -86,18 +86,18 @@ define add_native_source
       # Include previously generated dependency information. (if it exists)
       -include $$($1_$2_DEP)
 
-      ifeq ($(COMPILER_TYPE),CL)
+      ifeq ($(TOOLCHAIN_TYPE), microsoft)
         $1_$2_DEBUG_OUT_FLAGS:=-Fd$$(patsubst %$(OBJ_SUFFIX),%.pdb,$$($1_$2_OBJ)) \
             -Fm$$(patsubst %$(OBJ_SUFFIX),%.map,$$($1_$2_OBJ))
       endif
     endif
 
     $$($1_$2_OBJ) : $2
-        ifeq ($(COMPILER_TYPE),CC)
+        ifneq ($(TOOLCHAIN_TYPE), microsoft)
 	  $$(call COMPILING_MSG,$2,$$($1_TARGET))
-          # The Sun studio compiler doesn't output the full path to the object file in the
+          # The Solaris studio compiler doesn't output the full path to the object file in the
           # generated deps files. Fixing it with sed. If compiling assembly, don't try this.
-          ifeq ($(COMPILER_NAME)$$(filter %.s,$2),ossc)
+          ifeq ($(TOOLCHAIN_TYPE)$$(filter %.s,$2), solstudio)
 	    $$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP).tmp $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
 	    $(SED) 's|^$$(@F):|$$@:|' $$($1_$2_DEP).tmp > $$($1_$2_DEP)
           else
@@ -107,7 +107,7 @@ define add_native_source
         # The Visual Studio compiler lacks a feature for generating make dependencies, but by
         # setting -showIncludes, all included files are printed. These are filtered out and
         # parsed into make dependences.
-        ifeq ($(COMPILER_TYPE),CL)
+        ifeq ($(TOOLCHAIN_TYPE), microsoft)
 	  ($$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) \
 	      $(CC_OUT_OPTION)$$($1_$2_OBJ) $2 ; echo $$$$? > $$($1_$2_DEP).exitvalue) \
 	      | $(TEE) $$($1_$2_DEP).raw | $(GREP) -v "^Note: including file:" \

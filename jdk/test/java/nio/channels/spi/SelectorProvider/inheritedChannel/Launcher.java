@@ -22,8 +22,6 @@
  */
 
 /*
- *
- *
  * A Launcher to launch a java process with its standard input, output,
  * and error streams connected to a socket.
  */
@@ -40,24 +38,23 @@ public class Launcher {
     private static native void launch0(String cmdarray[], int fd) throws IOException;
 
     private static void launch(String className, String options[], String args[], int fd) throws IOException {
-        String[] javacmd = Util.javaCommand();
-        int options_len = (options == null) ? 0 : options.length;
-        int args_len = (args == null) ? 0 : args.length;
-
         // java [-options] class [args...]
-        int len = javacmd.length + options_len + 1 + args_len;
-
+        int optsLen = (options == null) ? 0 : options.length;
+        int argsLen = (args == null) ? 0 : args.length;
+        int len = 1 + optsLen + 1 + argsLen;
         String cmdarray[] = new String[len];
         int pos = 0;
-        for (int i=0; i<javacmd.length; i++) {
-            cmdarray[pos++] = javacmd[i];
-        }
-        for (int i=0; i<options_len; i++) {
-            cmdarray[pos++] = options[i];
+        cmdarray[pos++] = Util.javaCommand();
+        if (options != null) {
+            for (String opt: options) {
+                cmdarray[pos++] = opt;
+            }
         }
         cmdarray[pos++] = className;
-        for (int i=0; i<args_len; i++) {
-            cmdarray[pos++] = args[i];
+        if (args != null) {
+            for (String arg: args) {
+                cmdarray[pos++] = arg;
+            }
         }
         launch0(cmdarray, fd);
     }

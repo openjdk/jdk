@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,24 +39,24 @@
 class AltHashing : AllStatic {
 
   // utility function copied from java/lang/Integer
-  static jint Integer_rotateLeft(jint i, int distance) {
-    return (i << distance) | (((juint)i) >> (32-distance));
+  static juint Integer_rotateLeft(juint i, int distance) {
+    return (i << distance) | (i >> (32-distance));
   }
-  static jint murmur3_32(const int* data, int len);
-  static jint murmur3_32(jint seed, const int* data, int len);
+  static juint murmur3_32(const int* data, int len);
+  static juint murmur3_32(juint seed, const int* data, int len);
 
 #ifndef PRODUCT
   // Hashing functions used for internal testing
-  static jint murmur3_32(const jbyte* data, int len);
-  static jint murmur3_32(const jchar* data, int len);
+  static juint murmur3_32(const jbyte* data, int len);
+  static juint murmur3_32(const jchar* data, int len);
   static void testMurmur3_32_ByteArray();
   static void testEquivalentHashes();
 #endif // PRODUCT
 
  public:
-  static jint compute_seed();
-  static jint murmur3_32(jint seed, const jbyte* data, int len);
-  static jint murmur3_32(jint seed, const jchar* data, int len);
+  static juint compute_seed();
+  static juint murmur3_32(juint seed, const jbyte* data, int len);
+  static juint murmur3_32(juint seed, const jchar* data, int len);
   NOT_PRODUCT(static void test_alt_hash();)
 };
 #endif // SHARE_VM_CLASSFILE_ALTHASHING_HPP

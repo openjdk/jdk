@@ -26,6 +26,31 @@
  * @bug     6507179
  * @summary Ensure that "-source" option isn't ignored.
  * @author  Scott Seligman
+ * @run main/fail SourceOption 7
+ * @run main      SourceOption 9
+ * @run main      SourceOption
+ */
+
+/*
+ * TEST NOTE
+ * With JDK9, this test has been transformed into a NEGATIVE test.
+ *
+ * Generally speaking, this test should check a feature not in at least
+ * one of the currently supported previous versions.  In this manner,
+ * a failure of the -source option to be honored would mean a pass of
+ * the test, and therefore a failure of the -source option.
+ *
+ * For JDK9 and JDK10, both support 1.7, which did not support javac's
+ * lambda construct.  So we set "-source 1.7" to compile a .java file
+ * containing the lambda construct.  javac should fail, thus showing
+ * -source to be working.  Thus the test passes.
+ *
+ * The second jtreg @run command checks to make sure that the source
+ * provided is valid for the current release of the JDK.
+ *
+ *  fixVersion: JDK11
+ *      replace ./p/LambdaConstructTest.java with a missing from
+ *      JDK8, JDK9, or JDK10.  Set -source below appropriately.
  */
 
 import com.sun.javadoc.*;
@@ -33,12 +58,22 @@ import com.sun.javadoc.*;
 public class SourceOption extends Doclet {
 
     public static void main(String[] args) {
+        String[] params;
+        if ((args == null) || (args.length==0)) {
+            params = new String[]{"p"};
+            System.out.println("NOTE : -source not provided, default taken");
+        } else {
+            params = new String[]{"-source", args[0], "p"};
+            System.out.println("NOTE : -source will be: " + args[0]);
+        }
+
         if (com.sun.tools.javadoc.Main.execute(
                 "javadoc",
                 "SourceOption",
                 SourceOption.class.getClassLoader(),
-                new String[] {"-source", "1.3", "p"}) != 0)
-            throw new Error("Javadoc encountered warnings or errors.");
+                params) != 0)
+        throw new Error("Javadoc encountered warnings or errors.");
+
     }
 
     public static boolean start(RootDoc root) {

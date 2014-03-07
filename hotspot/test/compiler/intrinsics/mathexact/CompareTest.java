@@ -26,7 +26,7 @@
  * @bug 8026722
  * @summary Verify that the compare after addExact is a signed compare
  * @compile CompareTest.java
- * @run main CompareTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main CompareTest
  *
  */
 

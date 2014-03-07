@@ -1465,6 +1465,33 @@ class LambdaForm {
             return false;
         }
 
+        /** Return the index of the last occurrence of n in the argument array.
+         *  Return -1 if the name is not used.
+         */
+        int lastUseIndex(Name n) {
+            if (arguments == null)  return -1;
+            for (int i = arguments.length; --i >= 0; ) {
+                if (arguments[i] == n)  return i;
+            }
+            return -1;
+        }
+
+        /** Return the number of occurrences of n in the argument array.
+         *  Return 0 if the name is not used.
+         */
+        int useCount(Name n) {
+            if (arguments == null)  return 0;
+            int count = 0;
+            for (int i = arguments.length; --i >= 0; ) {
+                if (arguments[i] == n)  ++count;
+            }
+            return count;
+        }
+
+        boolean contains(Name n) {
+            return this == n || lastUseIndex(n) >= 0;
+        }
+
         public boolean equals(Name that) {
             if (this == that)  return true;
             if (isParam())
@@ -1486,6 +1513,35 @@ class LambdaForm {
                 return index | (type << 8);
             return function.hashCode() ^ Arrays.hashCode(arguments);
         }
+    }
+
+    /** Return the index of the last name which contains n as an argument.
+     *  Return -1 if the name is not used.  Return names.length if it is the return value.
+     */
+    int lastUseIndex(Name n) {
+        int ni = n.index, nmax = names.length;
+        assert(names[ni] == n);
+        if (result == ni)  return nmax;  // live all the way beyond the end
+        for (int i = nmax; --i > ni; ) {
+            if (names[i].lastUseIndex(n) >= 0)
+                return i;
+        }
+        return -1;
+    }
+
+    /** Return the number of times n is used as an argument or return value. */
+    int useCount(Name n) {
+        int ni = n.index, nmax = names.length;
+        int end = lastUseIndex(n);
+        if (end < 0)  return 0;
+        int count = 0;
+        if (end == nmax) { count++; end--; }
+        int beg = n.index() + 1;
+        if (beg < arity)  beg = arity;
+        for (int i = beg; i <= end; i++) {
+            count += names[i].useCount(n);
+        }
+        return count;
     }
 
     static Name argument(int which, char type) {

@@ -34,6 +34,30 @@ protected:
   static void print_libversion_info(outputStream* st);
   static void print_load_average(outputStream* st);
 
+public:
+
+  // Returns true if signal is valid.
+  static bool is_valid_signal(int sig);
+
+  // Helper function, returns a string (e.g. "SIGILL") for a signal.
+  // Returned string is a constant. For unknown signals "UNKNOWN" is returned.
+  static const char* get_signal_name(int sig, char* out, size_t outlen);
+
+  // Returns one-line short description of a signal set in a user provided buffer.
+  static const char* describe_signal_set_short(const sigset_t* set, char* buffer, size_t size);
+
+  // Prints a short one-line description of a signal set.
+  static void print_signal_set_short(outputStream* st, const sigset_t* set);
+
+  // Writes a one-line description of a combination of sigaction.sa_flags
+  // into a user provided buffer. Returns that buffer.
+  static const char* describe_sa_flags(int flags, char* buffer, size_t size);
+
+  // Prints a one-line description of a combination of sigaction.sa_flags.
+  static void print_sa_flags(outputStream* st, int flags);
+
+  // A POSIX conform, platform-independend siginfo print routine.
+  static void print_siginfo_brief(outputStream* os, const siginfo_t* si);
 
 };
 
@@ -57,4 +81,4 @@ private:
   sigjmp_buf _jmpbuf;
 };
 
-#endif
+#endif // OS_POSIX_VM_OS_POSIX_HPP

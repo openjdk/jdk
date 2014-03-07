@@ -214,7 +214,7 @@ public class TestWarnErrorCount extends JavacTestingAbstractProcessor {
                 javaWarnsExpected = 0;
                 break;
             case JAVA:
-                errsExpected = 2;
+                errsExpected = 1;
                 msgrWarnsExpected = mwk.count(1, ERROR_ROUND + 1);
                 javaWarnsExpected = 0;
                 break;
