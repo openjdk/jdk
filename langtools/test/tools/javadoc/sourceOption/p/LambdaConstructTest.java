@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,17 @@
  * questions.
  */
 
-package p;
+public class LambdaConstructTest {
+   public static void main(String[] args) {
 
-public class A {
-    boolean assert;     // illegal since 1.4
-    boolean enum;       // illegal since 5
+     System.out.println("=== LambdaConstructTest ===");
+
+     // Lambda Runnable
+     Runnable lambda = () -> System.out.println("it's a Lambda world!");
+
+     // Run it!
+     lambda.run();
+
+  }
 }
+
