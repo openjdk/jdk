@@ -47,6 +47,7 @@ import java.security.PermissionCollection;
 import java.security.Policy;
 import java.security.ProtectionDomain;
 import java.rmi.server.LogStream;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -57,7 +58,6 @@ import java.util.StringTokenizer;
 import java.util.WeakHashMap;
 import sun.reflect.misc.ReflectUtil;
 import sun.rmi.runtime.Log;
-import sun.security.action.GetPropertyAction;
 
 /**
  * <code>LoaderHandler</code> provides the implementation of the static
@@ -73,7 +73,7 @@ public final class LoaderHandler {
     /** RMI class loader log level */
     static final int logLevel = LogStream.parseLevel(
         java.security.AccessController.doPrivileged(
-            new GetPropertyAction("sun.rmi.loader.logLevel")));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.loader.logLevel")));
 
     /* loader system log */
     static final Log loaderLog =
@@ -86,7 +86,7 @@ public final class LoaderHandler {
     private static String codebaseProperty = null;
     static {
         String prop = java.security.AccessController.doPrivileged(
-            new GetPropertyAction("java.rmi.server.codebase"));
+            (PrivilegedAction<String>) () -> System.getProperty("java.rmi.server.codebase"));
         if (prop != null && prop.trim().length() > 0) {
             codebaseProperty = prop;
         }

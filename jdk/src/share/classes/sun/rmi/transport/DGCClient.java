@@ -44,7 +44,6 @@ import sun.misc.GC;
 import sun.rmi.runtime.NewThreadAction;
 import sun.rmi.server.UnicastRef;
 import sun.rmi.server.Util;
-import sun.security.action.GetLongAction;
 
 /**
  * DGCClient implements the client-side of the RMI distributed garbage
@@ -85,21 +84,18 @@ final class DGCClient {
 
     /** lease duration to request (usually ignored by server) */
     private static final long leaseValue =              // default 10 minutes
-        AccessController.doPrivileged(
-            new GetLongAction("java.rmi.dgc.leaseValue",
-                              600000)).longValue();
+        AccessController.doPrivileged((PrivilegedAction<Long>) () ->
+            Long.getLong("java.rmi.dgc.leaseValue", 600000));
 
     /** maximum interval between retries of failed clean calls */
     private static final long cleanInterval =           // default 3 minutes
-        AccessController.doPrivileged(
-            new GetLongAction("sun.rmi.dgc.cleanInterval",
-                              180000)).longValue();
+        AccessController.doPrivileged((PrivilegedAction<Long>) () ->
+            Long.getLong("sun.rmi.dgc.cleanInterval", 180000));
 
     /** maximum interval between complete garbage collections of local heap */
     private static final long gcInterval =              // default 1 hour
-        AccessController.doPrivileged(
-            new GetLongAction("sun.rmi.dgc.client.gcInterval",
-                              3600000)).longValue();
+        AccessController.doPrivileged((PrivilegedAction<Long>) () ->
+            Long.getLong("sun.rmi.dgc.client.gcInterval", 3600000));
 
     /** minimum retry count for dirty calls that fail */
     private static final int dirtyFailureRetries = 5;

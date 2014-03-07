@@ -33,7 +33,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import sun.security.action.GetIntegerAction;
 
 /**
  * RMI runtime implementation utilities.
@@ -54,8 +53,8 @@ public final class RuntimeUtil {
 
     /** number of scheduler threads */
     private static final int schedulerThreads =         // default 1
-        AccessController.doPrivileged(
-            new GetIntegerAction("sun.rmi.runtime.schedulerThreads", 1));
+        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+            Integer.getInteger("sun.rmi.runtime.schedulerThreads", 1));
 
     /** permission required to get instance */
     private static final Permission GET_INSTANCE_PERMISSION =
