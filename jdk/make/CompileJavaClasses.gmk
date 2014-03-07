@@ -307,12 +307,6 @@ ifeq ($(OPENJDK_TARGET_OS),aix)
       $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java
 endif
 
-# The exception handling of swing beaninfo
-# These resources violates the convention of having code and resources together under
-# $(JDK_TOPDIR)/src/.../classes directories
-$(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%.gif: $(JDK_TOPDIR)/make/data/swingbeaninfo/images/%.gif
-	$(call install-file)
-
 # The JDK_USER_DEFINED_FILTER is a poor man's incremental build: by specifying
 # JDK_FILTER at the make command line, only a subset of the JDK java files will
 # be recompiled. If multiple paths are separated by comma, convert that into a
@@ -341,6 +335,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
     BIN:=$(JDK_OUTPUTDIR)/classes,\
     COPY:=$(COPY_PATTERNS),\
     COPY_FILES:=$(COPY_FILES),\
+    CLEAN_FILES:=$(CLEAN_FILES),\
     HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers,\
     ADD_JAVAC_FLAGS:=$(BUILD_JDK_SOURCEPATH)))
 
