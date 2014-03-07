@@ -27,7 +27,7 @@
  * @summary StackOverflowError from javac
  * @author gafter
  *
- * @compile -source 1.5 -target 1.5 JsrRet.java
+ * @compile JsrRet.java
  */
 
 package jsr.ret;
