@@ -26,6 +26,7 @@ package sun.rmi.transport.proxy;
 
 import java.io.*;
 import java.net.*;
+import java.security.PrivilegedAction;
 
 import sun.rmi.runtime.Log;
 
@@ -79,7 +80,7 @@ class HttpSendSocket extends Socket implements RMISocketInfo {
      */
     private String lineSeparator =
         java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("line.separator"));
+            (PrivilegedAction<String>) () -> System.getProperty("line.separator"));
 
     /**
      * Create a stream socket and connect it to the specified port on

@@ -38,6 +38,7 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.RMISocketFactory;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,9 +51,6 @@ import sun.rmi.transport.Channel;
 import sun.rmi.transport.Endpoint;
 import sun.rmi.transport.Target;
 import sun.rmi.transport.Transport;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetPropertyAction;
 
 /**
  * TCPEndpoint represents some communication endpoint for an address
@@ -82,12 +80,14 @@ public class TCPEndpoint implements Endpoint {
 
     // this should be a *private* method since it is privileged
     private static int getInt(String name, int def) {
-        return AccessController.doPrivileged(new GetIntegerAction(name, def));
+        return AccessController.doPrivileged(
+                (PrivilegedAction<Integer>) () -> Integer.getInteger(name, def));
     }
 
     // this should be a *private* method since it is privileged
     private static boolean getBoolean(String name) {
-        return AccessController.doPrivileged(new GetBooleanAction(name));
+        return AccessController.doPrivileged(
+                (PrivilegedAction<Boolean>) () -> Boolean.getBoolean(name));
     }
 
     /**
@@ -95,7 +95,7 @@ public class TCPEndpoint implements Endpoint {
      */
     private static String getHostnameProperty() {
         return AccessController.doPrivileged(
-            new GetPropertyAction("java.rmi.server.hostname"));
+            (PrivilegedAction<String>) () -> System.getProperty("java.rmi.server.hostname"));
     }
 
     /**
