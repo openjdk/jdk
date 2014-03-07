@@ -2407,6 +2407,8 @@ bool Arguments::check_vm_args_consistency() {
 
   status &= verify_interval(NmethodSweepFraction, 1, ReservedCodeCacheSize/K, "NmethodSweepFraction");
   status &= verify_interval(NmethodSweepActivity, 0, 2000, "NmethodSweepActivity");
+  status &= verify_interval(CodeCacheMinBlockLength, 1, 100, "CodeCacheMinBlockLength");
+  status &= verify_interval(CodeCacheSegmentSize, 1, 1024, "CodeCacheSegmentSize");
 
   // TieredCompilation needs at least 2 compiler threads.
   const int num_min_compiler_threads = (TieredCompilation && (TieredStopAtLevel >= CompLevel_full_optimization)) ? 2 : 1;

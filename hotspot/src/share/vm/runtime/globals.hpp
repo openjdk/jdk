@@ -814,8 +814,8 @@ class CommandLineFlags {
   product(bool, PrintOopAddress, false,                                     \
           "Always print the location of the oop")                           \
                                                                             \
-  notproduct(bool, VerifyCodeCacheOften, false,                             \
-          "Verify compiled-code cache often")                               \
+  notproduct(bool, VerifyCodeCache, false,                                  \
+          "Verify code cache on memory allocation/deallocation")            \
                                                                             \
   develop(bool, ZapDeadCompiledLocals, false,                               \
           "Zap dead locals in compiler frames")                             \
@@ -3296,8 +3296,8 @@ class CommandLineFlags {
           "disable this feature")                                           \
                                                                             \
   /* code cache parameters */                                               \
-  /* ppc64 has large code-entry alignment. */                               \
-  develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64),                  \
+  /* ppc64/tiered compilation has large code-entry alignment. */            \
+  develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),\
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
                                                                             \
