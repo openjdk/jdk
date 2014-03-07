@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,18 +39,18 @@ intptr_t object_hash(Klass* k) {
 }
 
 // Seed value used for each alternative hash calculated.
-jint AltHashing::compute_seed() {
+juint AltHashing::compute_seed() {
   jlong nanos = os::javaTimeNanos();
   jlong now = os::javaTimeMillis();
-  jint SEED_MATERIAL[8] = {
-            (jint) object_hash(SystemDictionary::String_klass()),
-            (jint) object_hash(SystemDictionary::System_klass()),
-            (jint) os::random(),  // current thread isn't a java thread
-            (jint) (((julong)nanos) >> 32),
-            (jint) nanos,
-            (jint) (((julong)now) >> 32),
-            (jint) now,
-            (jint) (os::javaTimeNanos() >> 2)
+  int SEED_MATERIAL[8] = {
+            (int) object_hash(SystemDictionary::String_klass()),
+            (int) object_hash(SystemDictionary::System_klass()),
+            (int) os::random(),  // current thread isn't a java thread
+            (int) (((julong)nanos) >> 32),
+            (int) nanos,
+            (int) (((julong)now) >> 32),
+            (int) now,
+            (int) (os::javaTimeNanos() >> 2)
   };
 
   return murmur3_32(SEED_MATERIAL, 8);
@@ -58,14 +58,14 @@ jint AltHashing::compute_seed() {
 
 
 // Murmur3 hashing for Symbol
-jint AltHashing::murmur3_32(jint seed, const jbyte* data, int len) {
-  jint h1 = seed;
+juint AltHashing::murmur3_32(juint seed, const jbyte* data, int len) {
+  juint h1 = seed;
   int count = len;
   int offset = 0;
 
   // body
   while (count >= 4) {
-    jint k1 = (data[offset] & 0x0FF)
+    juint k1 = (data[offset] & 0x0FF)
         | (data[offset + 1] & 0x0FF) << 8
         | (data[offset + 2] & 0x0FF) << 16
         | data[offset + 3] << 24;
@@ -85,7 +85,7 @@ jint AltHashing::murmur3_32(jint seed, const jbyte* data, int len) {
   // tail
 
   if (count > 0) {
-    jint k1 = 0;
+    juint k1 = 0;
 
     switch (count) {
       case 3:
@@ -109,18 +109,18 @@ jint AltHashing::murmur3_32(jint seed, const jbyte* data, int len) {
   h1 ^= len;
 
   // finalization mix force all bits of a hash block to avalanche
-  h1 ^= ((unsigned int)h1) >> 16;
+  h1 ^= h1 >> 16;
   h1 *= 0x85ebca6b;
-  h1 ^= ((unsigned int)h1) >> 13;
+  h1 ^= h1 >> 13;
   h1 *= 0xc2b2ae35;
-  h1 ^= ((unsigned int)h1) >> 16;
+  h1 ^= h1 >> 16;
 
   return h1;
 }
 
 // Murmur3 hashing for Strings
-jint AltHashing::murmur3_32(jint seed, const jchar* data, int len) {
-  jint h1 = seed;
+juint AltHashing::murmur3_32(juint seed, const jchar* data, int len) {
+  juint h1 = seed;
 
   int off = 0;
   int count = len;
@@ -129,7 +129,7 @@ jint AltHashing::murmur3_32(jint seed, const jchar* data, int len) {
   while (count >= 2) {
     jchar d1 = data[off++] & 0xFFFF;
     jchar d2 = data[off++];
-    jint k1 = (d1 | d2 << 16);
+    juint k1 = (d1 | d2 << 16);
 
     count -= 2;
 
@@ -145,7 +145,7 @@ jint AltHashing::murmur3_32(jint seed, const jchar* data, int len) {
   // tail
 
   if (count > 0) {
-    int k1 = data[off];
+    juint k1 = (juint)data[off];
 
     k1 *= 0xcc9e2d51;
     k1 = Integer_rotateLeft(k1, 15);
@@ -157,25 +157,25 @@ jint AltHashing::murmur3_32(jint seed, const jchar* data, int len) {
   h1 ^= len * 2; // (Character.SIZE / Byte.SIZE);
 
   // finalization mix force all bits of a hash block to avalanche
-  h1 ^= ((unsigned int)h1) >> 16;
+  h1 ^= h1 >> 16;
   h1 *= 0x85ebca6b;
-  h1 ^= ((unsigned int)h1) >> 13;
+  h1 ^= h1 >> 13;
   h1 *= 0xc2b2ae35;
-  h1 ^= ((unsigned int)h1) >> 16;
+  h1 ^= h1 >> 16;
 
   return h1;
 }
 
 // Hash used for the seed.
-jint AltHashing::murmur3_32(jint seed, const int* data, int len) {
-  jint h1 = seed;
+juint AltHashing::murmur3_32(juint seed, const int* data, int len) {
+  juint h1 = seed;
 
   int off = 0;
   int end = len;
 
   // body
   while (off < end) {
-    jint k1 = data[off++];
+    juint k1 = (juint)data[off++];
 
     k1 *= 0xcc9e2d51;
     k1 = Integer_rotateLeft(k1, 15);
@@ -193,26 +193,26 @@ jint AltHashing::murmur3_32(jint seed, const int* data, int len) {
   h1 ^= len * 4; // (Integer.SIZE / Byte.SIZE);
 
   // finalization mix force all bits of a hash block to avalanche
-  h1 ^= ((juint)h1) >> 16;
+  h1 ^= h1 >> 16;
   h1 *= 0x85ebca6b;
-  h1 ^= ((juint)h1) >> 13;
+  h1 ^= h1 >> 13;
   h1 *= 0xc2b2ae35;
-  h1 ^= ((juint)h1) >> 16;
+  h1 ^= h1 >> 16;
 
   return h1;
 }
 
-jint AltHashing::murmur3_32(const int* data, int len) {
+juint AltHashing::murmur3_32(const int* data, int len) {
   return murmur3_32(0, data, len);
 }
 
 #ifndef PRODUCT
 // Overloaded versions for internal test.
-jint AltHashing::murmur3_32(const jbyte* data, int len) {
+juint AltHashing::murmur3_32(const jbyte* data, int len) {
   return murmur3_32(0, data, len);
 }
 
-jint AltHashing::murmur3_32(const jchar* data, int len) {
+juint AltHashing::murmur3_32(const jchar* data, int len) {
   return murmur3_32(0, data, len);
 }
 
@@ -251,11 +251,11 @@ void AltHashing::testMurmur3_32_ByteArray() {
 
   // Hash subranges {}, {0}, {0,1}, {0,1,2}, ..., {0,...,255}
   for (int i = 0; i < 256; i++) {
-    jint hash = murmur3_32(256 - i, vector, i);
+    juint hash = murmur3_32(256 - i, vector, i);
     hashes[i * 4] = (jbyte) hash;
-    hashes[i * 4 + 1] = (jbyte) (((juint)hash) >> 8);
-    hashes[i * 4 + 2] = (jbyte) (((juint)hash) >> 16);
-    hashes[i * 4 + 3] = (jbyte) (((juint)hash) >> 24);
+    hashes[i * 4 + 1] = (jbyte)(hash >> 8);
+    hashes[i * 4 + 2] = (jbyte)(hash >> 16);
+    hashes[i * 4 + 3] = (jbyte)(hash >> 24);
   }
 
   // hash to get const result.
@@ -269,7 +269,7 @@ void AltHashing::testMurmur3_32_ByteArray() {
 }
 
 void AltHashing::testEquivalentHashes() {
-  jint jbytes, jchars, ints;
+  juint jbytes, jchars, ints;
 
   // printf("testEquivalentHashes\n");
 

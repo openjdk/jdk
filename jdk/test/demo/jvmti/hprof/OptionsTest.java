@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ public class OptionsTest {
         DemoRun hprof;
         List<String> options = new LinkedList<String>();
 
-        options.add("cpu=samples,depth=0");
-        options.add("cpu=times,depth=0");
-        options.add("cpu=old,depth=0");
-        options.add("depth=0");
+        options.add("cpu=samples,depth=0,file=options0.txt");
+        options.add("cpu=times,depth=0,file=options1.txt");
+        options.add("cpu=old,depth=0,file=options2.txt");
+        options.add("depth=0,file=options3.txt");
 
         for(String option: options) {
             /* Run JVMTI hprof agent with various options */

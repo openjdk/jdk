@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 # @test
 # @bug 5088398
-# @ignore until bug 6835233 dealt with
 # @summary Test parallel class loading by parallel transformers.
 # @author Daniel D. Daugherty as modified from the code of Daryl Puryear @ Wily
 #

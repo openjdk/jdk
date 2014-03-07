@@ -68,6 +68,10 @@ public class LocaleProviders {
                 bug8013903Test();
                 break;
 
+            case "bug8027289Test":
+                bug8027289Test(args[1]);
+                break;
+
             default:
                 throw new RuntimeException("Test method '"+methodName+"' not found.");
         }
@@ -230,6 +234,16 @@ public class LocaleProviders {
                         result + "\", expected: \"" + fallbackResult);
                 }
             }
+        }
+    }
+
+    static void bug8027289Test(String expectedCodePoint) {
+        char[] expectedSymbol = Character.toChars(Integer.valueOf(expectedCodePoint, 16));
+        NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.CHINA);
+        char formatted = nf.format(7000).charAt(0);
+        System.out.println("returned: " + formatted + ", expected: " + expectedSymbol[0]);
+        if (formatted != expectedSymbol[0]) {
+            throw new RuntimeException("Unexpected Chinese currency symbol. returned: " + formatted + ", expected: " + expectedSymbol[0]);
         }
     }
 }

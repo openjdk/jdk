@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,12 @@
 
 package com.sun.jndi.dns;
 
+import javax.naming.CommunicationException;
 import javax.naming.InvalidNameException;
+
+import java.io.IOException;
+
+import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -84,6 +89,11 @@ public class ResourceRecord {
         null, "IN", null, null, "HS"
     };
 
+    /*
+     * Maximum number of compression references in labels.
+     * Used to detect compression loops.
+     */
+    private static final int MAXIMUM_COMPRESSION_REFERENCES = 16;
 
     byte[] msg;                 // DNS message
     int msgLen;                 // msg size (in octets)
@@ -110,12 +120,12 @@ public class ResourceRecord {
      * false, the rdata is not decoded (and getRdata() will return null)
      * unless this is an SOA record.
      *
-     * @throws InvalidNameException if a decoded domain name isn't valid.
+     * @throws CommunicationException if a decoded domain name isn't valid.
      * @throws ArrayIndexOutOfBoundsException given certain other corrupt data.
      */
     ResourceRecord(byte[] msg, int msgLen, int offset,
                    boolean qSection, boolean decodeRdata)
-            throws InvalidNameException {
+            throws CommunicationException {
 
         this.msg = msg;
         this.msgLen = msgLen;
@@ -235,7 +245,7 @@ public class ResourceRecord {
      * Decodes the binary format of the RR.
      * May throw ArrayIndexOutOfBoundsException given corrupt data.
      */
-    private void decode(boolean decodeRdata) throws InvalidNameException {
+    private void decode(boolean decodeRdata) throws CommunicationException {
         int pos = offset;       // index of next unread octet
 
         name = new DnsName();                           // NAME
@@ -316,7 +326,7 @@ public class ResourceRecord {
     /*
      * Returns the name encoded at msg[pos], including the root label.
      */
-    private DnsName decodeName(int pos) throws InvalidNameException {
+    private DnsName decodeName(int pos) throws CommunicationException {
         DnsName n = new DnsName();
         decodeName(pos, n);
         return n;
@@ -326,22 +336,39 @@ public class ResourceRecord {
      * Prepends to "n" the domain name encoded at msg[pos], including the root
      * label.  Returns the index into "msg" following the name.
      */
-    private int decodeName(int pos, DnsName n) throws InvalidNameException {
-        if (msg[pos] == 0) {                            // end of name
-            n.add(0, "");
-            return (pos + 1);
-        } else if ((msg[pos] & 0xC0) != 0) {            // name compression
-            decodeName(getUShort(pos) & 0x3FFF, n);
-            return (pos + 2);
-        } else {                                        // append a label
-            int len = msg[pos++];
-            try {
-                n.add(0, new String(msg, pos, len, "ISO-8859-1"));
-            } catch (java.io.UnsupportedEncodingException e) {
-                // assert false : "ISO-Latin-1 charset unavailable";
+    private int decodeName(int pos, DnsName n) throws CommunicationException {
+        int endPos = -1;
+        int level = 0;
+        try {
+            while (true) {
+                if (level > MAXIMUM_COMPRESSION_REFERENCES)
+                    throw new IOException("Too many compression references");
+                int typeAndLen = msg[pos] & 0xFF;
+                if (typeAndLen == 0) {                  // end of name
+                    ++pos;
+                    n.add(0, "");
+                    break;
+                } else if (typeAndLen <= 63) {          // regular label
+                    ++pos;
+                    n.add(0, new String(msg, pos, typeAndLen,
+                        StandardCharsets.ISO_8859_1));
+                    pos += typeAndLen;
+                } else if ((typeAndLen & 0xC0) == 0xC0) { // name compression
+                    ++level;
+                    endPos = pos + 2;
+                    pos = getUShort(pos) & 0x3FFF;
+                } else
+                    throw new IOException("Invalid label type: " + typeAndLen);
             }
-            return decodeName(pos + len, n);
+        } catch (IOException | InvalidNameException e) {
+            CommunicationException ce =new CommunicationException(
+                "DNS error: malformed packet");
+            ce.initCause(e);
+            throw ce;
         }
+        if (endPos == -1)
+            endPos = pos;
+        return endPos;
     }
 
     /*
@@ -352,7 +379,7 @@ public class ResourceRecord {
      * The rdata of records with unknown type/class combinations is
      * returned in a newly-allocated byte array.
      */
-    private Object decodeRdata(int pos) throws InvalidNameException {
+    private Object decodeRdata(int pos) throws CommunicationException {
         if (rrclass == CLASS_INTERNET) {
             switch (rrtype) {
             case TYPE_A:
@@ -386,7 +413,7 @@ public class ResourceRecord {
     /*
      * Returns the rdata of an MX record that is encoded at msg[pos].
      */
-    private String decodeMx(int pos) throws InvalidNameException {
+    private String decodeMx(int pos) throws CommunicationException {
         int preference = getUShort(pos);
         pos += 2;
         DnsName name = decodeName(pos);
@@ -396,7 +423,7 @@ public class ResourceRecord {
     /*
      * Returns the rdata of an SOA record that is encoded at msg[pos].
      */
-    private String decodeSoa(int pos) throws InvalidNameException {
+    private String decodeSoa(int pos) throws CommunicationException {
         DnsName mname = new DnsName();
         pos = decodeName(pos, mname);
         DnsName rname = new DnsName();
@@ -421,7 +448,7 @@ public class ResourceRecord {
      * Returns the rdata of an SRV record that is encoded at msg[pos].
      * See RFC 2782.
      */
-    private String decodeSrv(int pos) throws InvalidNameException {
+    private String decodeSrv(int pos) throws CommunicationException {
         int priority = getUShort(pos);
         pos += 2;
         int weight =   getUShort(pos);
@@ -436,7 +463,7 @@ public class ResourceRecord {
      * Returns the rdata of an NAPTR record that is encoded at msg[pos].
      * See RFC 2915.
      */
-    private String decodeNaptr(int pos) throws InvalidNameException {
+    private String decodeNaptr(int pos) throws CommunicationException {
         int order = getUShort(pos);
         pos += 2;
         int preference = getUShort(pos);

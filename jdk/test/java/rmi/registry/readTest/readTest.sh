@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,13 @@ case "$OS" in
   SunOS | Linux | Darwin | AIX )
     PS=":"
     FS="/"
+    CHMOD="${FS}bin${FS}chmod"
     FILEURL="file:"
     ;;
   Windows* )
     PS=";"
     FS="\\"
+    CHMOD="chmod"
     FILEURL="file:/"
     if [ "$VER" -eq "5" ]; then
         ARGS="-Djdk.net.ephemeralPortRange.low=1024 -Djdk.net.ephemeralPortRange.high=65000"
@@ -51,6 +53,7 @@ case "$OS" in
   CYGWIN* )
     PS=";"
     FS="/"
+    CHMOD="chmod"
     FILEURL="file:/"
     if [ "$VER" -eq "5" ]; then
         ARGS="-Djdk.net.ephemeralPortRange.low=1024 -Djdk.net.ephemeralPortRange.high=65000"
@@ -65,6 +68,7 @@ esac
 
 TEST_CLASSPATH=.$PS${TESTCLASSPATH:-$TESTCLASSES}
 cp -r ${TESTSRC}${FS}* .
+${CHMOD} -R u+w *
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} testPkg${FS}*java
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -cp $TEST_CLASSPATH readTest.java
 

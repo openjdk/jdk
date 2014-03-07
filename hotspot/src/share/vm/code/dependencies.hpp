@@ -32,6 +32,7 @@
 #include "code/compressedStream.hpp"
 #include "code/nmethod.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashtable.hpp"
 
 //** Dependencies represent assertions (approximate invariants) within
 // the runtime system, e.g. class hierarchy changes.  An example is an
@@ -526,12 +527,11 @@ class Dependencies: public ResourceObj {
 };
 
 
-class DependencySignature : public ResourceObj {
+class DependencySignature : public GenericHashtableEntry<DependencySignature, ResourceObj> {
  private:
   int                   _args_count;
   uintptr_t             _argument_hash[Dependencies::max_arg_count];
   Dependencies::DepType _type;
-
 
  public:
   DependencySignature(Dependencies::DepStream& dep) {
@@ -542,21 +542,14 @@ class DependencySignature : public ResourceObj {
     }
   }
 
-  bool equals(const DependencySignature& sig) const;
+  bool equals(DependencySignature* sig) const;
+  uintptr_t key() const { return _argument_hash[0] >> 2; }
 
   int args_count()             const { return _args_count; }
   uintptr_t arg(int idx)       const { return _argument_hash[idx]; }
   Dependencies::DepType type() const { return _type; }
 };
 
-class DependencySignatureBuffer : public StackObj {
- private:
-  GrowableArray<DependencySignature*>**  _signatures;
-
- public:
-  DependencySignatureBuffer();
-  bool add_if_missing(const DependencySignature& sig);
-};
 
 // Every particular DepChange is a sub-class of this class.
 class DepChange : public StackObj {

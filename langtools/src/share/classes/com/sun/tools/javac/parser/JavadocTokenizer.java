@@ -107,6 +107,10 @@ public class JavadocTokenizer extends JavaTokenizer {
           */
          int pp = 0;
 
+         /** The buffer index of the last double backslash sequence
+          */
+         private int doubleBackslashBp = -1;
+
          DocReader(ScannerFactory fac, char[] input, int inputLength, int startPos) {
              super(fac, input, inputLength);
              this.startPos = startPos;
@@ -149,8 +153,8 @@ public class JavadocTokenizer extends JavaTokenizer {
              scanChar();
              if (ch == '\\') {
                  if (peekChar() == '\\' && !isUnicode()) {
-                     putChar(ch, false);
                      bp++; col++;
+                     doubleBackslashBp = bp;
                  } else {
                      convertUnicode();
                  }
@@ -204,6 +208,13 @@ public class JavadocTokenizer extends JavaTokenizer {
              }
              super.putChar(ch, scan);
          }
+
+         /** Whether the ch represents a sequence of two backslashes. */
+         boolean isDoubleBackslash() {
+             return doubleBackslashBp == bp;
+         }
+
+
      }
 
      protected static class JavadocComment extends JavaTokenizer.BasicComment<DocReader> {
@@ -375,6 +386,13 @@ public class JavadocTokenizer extends JavaTokenizer {
                              // the buffer.
                              comment_reader.putChar('*', false);
                              break;
+                         case '\\':
+                             comment_reader.putChar('\\', false);
+                             // If a double backslash was found, write two
+                             if (comment_reader.isDoubleBackslash()) {
+                                 comment_reader.putChar('\\', false);
+                             }
+                             comment_reader.scanCommentChar();
                          case ' ':
                          case '\t':
                              comment_reader.putChar(comment_reader.ch, false);

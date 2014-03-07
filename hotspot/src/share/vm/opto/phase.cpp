@@ -26,6 +26,7 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
 #include "opto/compile.hpp"
+#include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/phase.hpp"
 
@@ -55,6 +56,7 @@ elapsedTimer Phase::_t_blockOrdering;
 elapsedTimer Phase::_t_macroEliminate;
 elapsedTimer Phase::_t_macroExpand;
 elapsedTimer Phase::_t_peephole;
+elapsedTimer Phase::_t_postalloc_expand;
 elapsedTimer Phase::_t_codeGeneration;
 elapsedTimer Phase::_t_registerMethod;
 elapsedTimer Phase::_t_temporaryTimer1;
@@ -144,6 +146,9 @@ void Phase::print_timers() {
   }
   tty->print_cr ("    blockOrdering  : %3.3f sec", Phase::_t_blockOrdering.seconds());
   tty->print_cr ("    peephole       : %3.3f sec", Phase::_t_peephole.seconds());
+  if (Matcher::require_postalloc_expand) {
+    tty->print_cr ("    postalloc_expand: %3.3f sec", Phase::_t_postalloc_expand.seconds());
+  }
   tty->print_cr ("    codeGen        : %3.3f sec", Phase::_t_codeGeneration.seconds());
   tty->print_cr ("    install_code   : %3.3f sec", Phase::_t_registerMethod.seconds());
   tty->print_cr ("    -------------- : ----------");

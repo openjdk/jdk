@@ -91,6 +91,7 @@ protected:
   static elapsedTimer _t_macroEliminate;
   static elapsedTimer _t_macroExpand;
   static elapsedTimer _t_peephole;
+  static elapsedTimer _t_postalloc_expand;
   static elapsedTimer _t_codeGeneration;
   static elapsedTimer _t_registerMethod;
   static elapsedTimer _t_temporaryTimer1;

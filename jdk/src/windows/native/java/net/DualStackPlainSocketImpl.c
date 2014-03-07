@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_bind0
     rv = NET_WinBind(fd, (struct sockaddr *)&sa, sa_len, exclBind);
 
     if (rv == SOCKET_ERROR)
-        NET_ThrowNew(env, WSAGetLastError(), "JVM_Bind");
+        NET_ThrowNew(env, WSAGetLastError(), "NET_Bind");
 }
 
 /*
@@ -451,10 +451,8 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_sendOOB
     unsigned char d = (unsigned char) data & 0xff;
 
     n = send(fd, (char *)&data, 1, MSG_OOB);
-    if (n == JVM_IO_ERR) {
+    if (n == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "send");
-    } else if (n == JVM_IO_INTR) {
-        JNU_ThrowByName(env, "java/io/InterruptedIOException", 0);
     }
 }
 

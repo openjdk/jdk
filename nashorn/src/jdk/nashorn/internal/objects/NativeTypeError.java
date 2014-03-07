@@ -68,7 +68,7 @@ public final class NativeTypeError extends ScriptObject {
 
     @SuppressWarnings("LeakingThisInConstructor")
     NativeTypeError(final Object msg, final Global global) {
-        super(global.getTypeErrorPrototype(), global.getTypeErrorMap());
+        super(global.getTypeErrorPrototype(), getInitialMap());
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {

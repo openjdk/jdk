@@ -42,7 +42,6 @@ void* JDK_FindJvmEntry(const char* name) {
 JNIEXPORT HMODULE JDK_LoadSystemLibrary(const char* name) {
     HMODULE handle = NULL;
     char path[MAX_PATH];
-    int ret;
 
     if (GetSystemDirectory(path, sizeof(path)) != 0) {
         strcat(path, "\\");

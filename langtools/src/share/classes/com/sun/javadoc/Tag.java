@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Locale;
  * Given a tag (e.g. "@since 1.2"), holds tag name (e.g. "@since")
  * and tag text (e.g. "1.2").  Tags with structure or which require
  * special processing are handled by subclasses such as ParamTag
- * (for @param), SeeTag (for @see and {&#064;link}), and ThrowsTag
+ * (for @param), SeeTag (for @see and {@link}), and ThrowsTag
  * (for @throws).
  *
  * @author Robert Field
@@ -50,10 +50,10 @@ public interface Tag {
     /**
      * Return the name of this tag.  The name is the string
      * starting with "@" that is used in a doc comment, such as
-     * <code>@return</code>.  For inline tags, such as
-     * <code>{&#064;link}</code>, the curly brackets
+     * {@code @return}.  For inline tags, such as
+     * {@code {@link}}, the curly brackets
      * are not part of the name, so in this example the name
-     * would be simply <code>@link</code>.
+     * would be simply {@code @link}.
      *
      * @return the name of this tag
      */
@@ -69,7 +69,7 @@ public interface Tag {
     /**
      * Return the kind of this tag.
      * For most tags,
-     * <code>kind()&nbsp;==&nbsp;name()</code>;
+     * {@code kind() == name()};
      * the following table lists those cases where there is more
      * than one tag of a given kind:
      *
@@ -101,27 +101,27 @@ public interface Tag {
     String toString();
 
     /**
-     * For a documentation comment with embedded <code>{&#064;link}</code>
-     * tags, return an array of <code>Tag</code> objects.  The entire
+     * For a documentation comment with embedded {@code {@link}}
+     * tags, return an array of {@code Tag} objects.  The entire
      * doc comment is broken down into strings separated by
-     * <code>{&#064;link}</code> tags, where each successive element
+     * {@code {@link}} tags, where each successive element
      * of the array represents either a string or
-     * <code>{&#064;link}</code> tag, in order, from start to end.
-     * Each string is represented by a <code>Tag</code> object of
+     * {@code {@link}} tag, in order, from start to end.
+     * Each string is represented by a {@code Tag} object of
      * name "Text", where {@link #text()} returns the string.  Each
-     * <code>{&#064;link}</code> tag is represented by a
+     * {@code {@link}} tag is represented by a
      * {@link SeeTag} of name "@link" and kind "@see".
      * For example, given the following comment
      * tag:
      * <p>
-     *  <code>This is a {&#064;link Doc commentlabel} example.</code>
+     *  {@code This is a {@link Doc commentlabel} example.}
      * <p>
      * return an array of Tag objects:
      * <ul>
      *    <li> tags[0] is a {@link Tag} with name "Text" and text consisting
      *         of "This is a "
      *    <li> tags[1] is a {@link SeeTag} with name "@link", referenced
-     *         class <code>Doc</code> and label "commentlabel"
+     *         class {@code Doc} and label "commentlabel"
      *    <li> tags[2] is a {@link Tag} with name "Text" and text consisting
      *         of " example."
      * </ul>

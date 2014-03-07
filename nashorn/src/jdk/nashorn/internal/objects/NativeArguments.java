@@ -68,7 +68,7 @@ public final class NativeArguments extends ScriptObject {
         final ArrayList<Property> properties = new ArrayList<>(2);
         properties.add(AccessorProperty.create("length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH));
         properties.add(AccessorProperty.create("callee", Property.NOT_ENUMERABLE, G$CALLEE, S$CALLEE));
-        map$ = PropertyMap.newMap(properties).setIsShared();
+        map$ = PropertyMap.newMap(properties);
     }
 
     static PropertyMap getInitialMap() {
@@ -267,9 +267,9 @@ public final class NativeArguments extends ScriptObject {
         final Global global = Global.instance();
         final ScriptObject proto = global.getObjectPrototype();
         if (isStrict) {
-            return new NativeStrictArguments(arguments, numParams, proto, global.getStrictArgumentsMap());
+            return new NativeStrictArguments(arguments, numParams, proto, NativeStrictArguments.getInitialMap());
         }
-        return new NativeArguments(arguments, callee, numParams, proto, global.getArgumentsMap());
+        return new NativeArguments(arguments, callee, numParams, proto, NativeArguments.getInitialMap());
     }
 
     /**
