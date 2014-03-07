@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,17 +76,14 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "jvm_windows.h"
 #endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "jvm_aix.h"
+#endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "jvm_bsd.h"
 #endif
 
 #include <errno.h>
-
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL1(hotspot, thread__sleep__begin, long long);
-HS_DTRACE_PROBE_DECL1(hotspot, thread__sleep__end, int);
-HS_DTRACE_PROBE_DECL0(hotspot, thread__yield);
-#endif /* !USDT2 */
 
 /*
   NOTE about use of any ctor or function call that can trigger a safepoint/GC:
@@ -518,6 +515,12 @@ JVM_ENTRY(void, JVM_MonitorWait(JNIEnv* env, jobject handle, jlong ms))
   JavaThreadInObjectWaitState jtiows(thread, ms != 0);
   if (JvmtiExport::should_post_monitor_wait()) {
     JvmtiExport::post_monitor_wait((JavaThread *)THREAD, (oop)obj(), ms);
+
+    // The current thread already owns the monitor and it has not yet
+    // been added to the wait queue so the current thread cannot be
+    // made the successor. This means that the JVMTI_EVENT_MONITOR_WAIT
+    // event handler cannot accidentally consume an unpark() meant for
+    // the ParkEvent associated with this ObjectMonitor.
   }
   ObjectSynchronizer::wait(obj, ms, CHECK);
 JVM_END
@@ -1238,7 +1241,11 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
   if (HAS_PENDING_EXCEPTION) {
     pending_exception = Handle(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
-
+    // JVMTI has already reported the pending exception
+    // JVMTI internal flag reset is needed in order to report PrivilegedActionException
+    if (THREAD->is_Java_thread()) {
+      JvmtiExport::clear_detected_exception((JavaThread*) THREAD);
+    }
     if ( pending_exception->is_a(SystemDictionary::Exception_klass()) &&
         !pending_exception->is_a(SystemDictionary::RuntimeException_klass())) {
       // Throw a java.security.PrivilegedActionException(Exception e) exception
@@ -2875,10 +2882,10 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     if (JvmtiExport::should_post_resource_exhausted()) {
       JvmtiExport::post_resource_exhausted(
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_THREADS,
-        "unable to create new native thread");
+        os::native_thread_creation_failed_msg());
     }
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
-              "unable to create new native thread");
+              os::native_thread_creation_failed_msg());
   }
 
   Thread::start(native_thread);
@@ -3002,11 +3009,8 @@ JVM_END
 JVM_ENTRY(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   JVMWrapper("JVM_Yield");
   if (os::dont_yield()) return;
-#ifndef USDT2
-  HS_DTRACE_PROBE0(hotspot, thread__yield);
-#else /* USDT2 */
   HOTSPOT_THREAD_YIELD();
-#endif /* USDT2 */
+
   // When ConvertYieldToSleep is off (default), this matches the classic VM use of yield.
   // Critical for similar threading behaviour
   if (ConvertYieldToSleep) {
@@ -3032,12 +3036,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
   // And set new thread state to SLEEPING.
   JavaThreadSleepState jtss(thread);
 
-#ifndef USDT2
-  HS_DTRACE_PROBE1(hotspot, thread__sleep__begin, millis);
-#else /* USDT2 */
-  HOTSPOT_THREAD_SLEEP_BEGIN(
-                             millis);
-#endif /* USDT2 */
+  HOTSPOT_THREAD_SLEEP_BEGIN(millis);
 
   EventThreadSleep event;
 
@@ -3065,12 +3064,8 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
           event.set_time(millis);
           event.commit();
         }
-#ifndef USDT2
-        HS_DTRACE_PROBE1(hotspot, thread__sleep__end,1);
-#else /* USDT2 */
-        HOTSPOT_THREAD_SLEEP_END(
-                                 1);
-#endif /* USDT2 */
+        HOTSPOT_THREAD_SLEEP_END(1);
+
         // TODO-FIXME: THROW_MSG returns which means we will not call set_state()
         // to properly restore the thread state.  That's likely wrong.
         THROW_MSG(vmSymbols::java_lang_InterruptedException(), "sleep interrupted");
@@ -3082,12 +3077,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
     event.set_time(millis);
     event.commit();
   }
-#ifndef USDT2
-  HS_DTRACE_PROBE1(hotspot, thread__sleep__end,0);
-#else /* USDT2 */
-  HOTSPOT_THREAD_SLEEP_END(
-                           0);
-#endif /* USDT2 */
+  HOTSPOT_THREAD_SLEEP_END(0);
 JVM_END
 
 JVM_ENTRY(jobject, JVM_CurrentThread(JNIEnv* env, jclass threadClass))

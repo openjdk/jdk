@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,7 +579,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      *
      * @param columnIndex the first column is 1, the second is 2, and so on;
      *        must be between <code>1</code> and the number of columns, inclusive
-     * @return <code>true</code> if if a value in the designated column is a signed
+     * @return <code>true</code> if a value in the designated column is a signed
      *         number; <code>false</code> otherwise
      * @throws SQLException if a database access error occurs
      *         or the given column number is out of bounds

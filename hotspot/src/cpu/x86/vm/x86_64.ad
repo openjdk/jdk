@@ -688,6 +688,11 @@ int Compile::ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
+bool MachConstantBaseNode::requires_postalloc_expand() const { return false; }
+void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
+  ShouldNotReachHere();
+}
+
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
@@ -1542,6 +1547,9 @@ const int Matcher::long_cmove_cost() { return 0; }
 // No CMOVF/CMOVD with SSE2
 const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
 
+// Does the CPU require late expand (see block.cpp for description of late expand)?
+const bool Matcher::require_postalloc_expand = false;
+
 // Should the Matcher clone shifts on addressing modes, expecting them
 // to be subsumed into complex addressing expressions or compute them
 // into registers?  True for Intel but false for most RISCs
@@ -1647,18 +1655,6 @@ RegMask Matcher::modL_proj_mask() {
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return PTR_RBP_REG_mask();
-}
-
-const RegMask Matcher::mathExactI_result_proj_mask() {
-  return INT_RAX_REG_mask();
-}
-
-const RegMask Matcher::mathExactL_result_proj_mask() {
-  return LONG_RAX_REG_mask();
-}
-
-const RegMask Matcher::mathExactI_flags_proj_mask() {
-  return INT_FLAGS_mask();
 }
 
 %}
@@ -2591,231 +2587,6 @@ encode %{
   %}
 
 
-  // obj: object to lock
-  // box: box address (header location) -- killed
-  // tmp: rax -- killed
-  // scr: rbx -- killed
-  //
-  // What follows is a direct transliteration of fast_lock() and fast_unlock()
-  // from i486.ad.  See that file for comments.
-  // TODO: where possible switch from movq (r, 0) to movl(r,0) and
-  // use the shorter encoding.  (Movl clears the high-order 32-bits).
-
-
-  enc_class Fast_Lock(rRegP obj, rRegP box, rax_RegI tmp, rRegP scr)
-  %{
-    Register objReg = as_Register((int)$obj$$reg);
-    Register boxReg = as_Register((int)$box$$reg);
-    Register tmpReg = as_Register($tmp$$reg);
-    Register scrReg = as_Register($scr$$reg);
-    MacroAssembler masm(&cbuf);
-
-    // Verify uniqueness of register assignments -- necessary but not sufficient
-    assert (objReg != boxReg && objReg != tmpReg &&
-            objReg != scrReg && tmpReg != scrReg, "invariant") ;
-
-    if (_counters != NULL) {
-      masm.atomic_incl(ExternalAddress((address) _counters->total_entry_count_addr()));
-    }
-    if (EmitSync & 1) {
-        // Without cast to int32_t a movptr will destroy r10 which is typically obj
-        masm.movptr (Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark())) ;
-        masm.cmpptr(rsp, (int32_t)NULL_WORD) ;
-    } else
-    if (EmitSync & 2) {
-        Label DONE_LABEL;
-        if (UseBiasedLocking) {
-           // Note: tmpReg maps to the swap_reg argument and scrReg to the tmp_reg argument.
-          masm.biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, _counters);
-        }
-        // QQQ was movl...
-        masm.movptr(tmpReg, 0x1);
-        masm.orptr(tmpReg, Address(objReg, 0));
-        masm.movptr(Address(boxReg, 0), tmpReg);
-        if (os::is_MP()) {
-          masm.lock();
-        }
-        masm.cmpxchgptr(boxReg, Address(objReg, 0)); // Updates tmpReg
-        masm.jcc(Assembler::equal, DONE_LABEL);
-
-        // Recursive locking
-        masm.subptr(tmpReg, rsp);
-        masm.andptr(tmpReg, 7 - os::vm_page_size());
-        masm.movptr(Address(boxReg, 0), tmpReg);
-
-        masm.bind(DONE_LABEL);
-        masm.nop(); // avoid branch to branch
-    } else {
-        Label DONE_LABEL, IsInflated, Egress;
-
-        masm.movptr(tmpReg, Address(objReg, 0)) ;
-        masm.testl (tmpReg, 0x02) ;         // inflated vs stack-locked|neutral|biased
-        masm.jcc   (Assembler::notZero, IsInflated) ;
-
-        // it's stack-locked, biased or neutral
-        // TODO: optimize markword triage order to reduce the number of
-        // conditional branches in the most common cases.
-        // Beware -- there's a subtle invariant that fetch of the markword
-        // at [FETCH], below, will never observe a biased encoding (*101b).
-        // If this invariant is not held we'll suffer exclusion (safety) failure.
-
-        if (UseBiasedLocking && !UseOptoBiasInlining) {
-          masm.biased_locking_enter(boxReg, objReg, tmpReg, scrReg, true, DONE_LABEL, NULL, _counters);
-          masm.movptr(tmpReg, Address(objReg, 0)) ;        // [FETCH]
-        }
-
-        // was q will it destroy high?
-        masm.orl   (tmpReg, 1) ;
-        masm.movptr(Address(boxReg, 0), tmpReg) ;
-        if (os::is_MP()) { masm.lock(); }
-        masm.cmpxchgptr(boxReg, Address(objReg, 0)); // Updates tmpReg
-        if (_counters != NULL) {
-           masm.cond_inc32(Assembler::equal,
-                           ExternalAddress((address) _counters->fast_path_entry_count_addr()));
-        }
-        masm.jcc   (Assembler::equal, DONE_LABEL);
-
-        // Recursive locking
-        masm.subptr(tmpReg, rsp);
-        masm.andptr(tmpReg, 7 - os::vm_page_size());
-        masm.movptr(Address(boxReg, 0), tmpReg);
-        if (_counters != NULL) {
-           masm.cond_inc32(Assembler::equal,
-                           ExternalAddress((address) _counters->fast_path_entry_count_addr()));
-        }
-        masm.jmp   (DONE_LABEL) ;
-
-        masm.bind  (IsInflated) ;
-        // It's inflated
-
-        // TODO: someday avoid the ST-before-CAS penalty by
-        // relocating (deferring) the following ST.
-        // We should also think about trying a CAS without having
-        // fetched _owner.  If the CAS is successful we may
-        // avoid an RTO->RTS upgrade on the $line.
-        // Without cast to int32_t a movptr will destroy r10 which is typically obj
-        masm.movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark())) ;
-
-        masm.mov    (boxReg, tmpReg) ;
-        masm.movptr (tmpReg, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
-        masm.testptr(tmpReg, tmpReg) ;
-        masm.jcc    (Assembler::notZero, DONE_LABEL) ;
-
-        // It's inflated and appears unlocked
-        if (os::is_MP()) { masm.lock(); }
-        masm.cmpxchgptr(r15_thread, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
-        // Intentional fall-through into DONE_LABEL ...
-
-        masm.bind  (DONE_LABEL) ;
-        masm.nop   () ;                 // avoid jmp to jmp
-    }
-  %}
-
-  // obj: object to unlock
-  // box: box address (displaced header location), killed
-  // RBX: killed tmp; cannot be obj nor box
-  enc_class Fast_Unlock(rRegP obj, rax_RegP box, rRegP tmp)
-  %{
-
-    Register objReg = as_Register($obj$$reg);
-    Register boxReg = as_Register($box$$reg);
-    Register tmpReg = as_Register($tmp$$reg);
-    MacroAssembler masm(&cbuf);
-
-    if (EmitSync & 4) {
-       masm.cmpptr(rsp, 0) ;
-    } else
-    if (EmitSync & 8) {
-       Label DONE_LABEL;
-       if (UseBiasedLocking) {
-         masm.biased_locking_exit(objReg, tmpReg, DONE_LABEL);
-       }
-
-       // Check whether the displaced header is 0
-       //(=> recursive unlock)
-       masm.movptr(tmpReg, Address(boxReg, 0));
-       masm.testptr(tmpReg, tmpReg);
-       masm.jcc(Assembler::zero, DONE_LABEL);
-
-       // If not recursive lock, reset the header to displaced header
-       if (os::is_MP()) {
-         masm.lock();
-       }
-       masm.cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses RAX which is box
-       masm.bind(DONE_LABEL);
-       masm.nop(); // avoid branch to branch
-    } else {
-       Label DONE_LABEL, Stacked, CheckSucc ;
-
-       if (UseBiasedLocking && !UseOptoBiasInlining) {
-         masm.biased_locking_exit(objReg, tmpReg, DONE_LABEL);
-       }
-
-       masm.movptr(tmpReg, Address(objReg, 0)) ;
-       masm.cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD) ;
-       masm.jcc   (Assembler::zero, DONE_LABEL) ;
-       masm.testl (tmpReg, 0x02) ;
-       masm.jcc   (Assembler::zero, Stacked) ;
-
-       // It's inflated
-       masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
-       masm.xorptr(boxReg, r15_thread) ;
-       masm.orptr (boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2)) ;
-       masm.jcc   (Assembler::notZero, DONE_LABEL) ;
-       masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2)) ;
-       masm.orptr (boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2)) ;
-       masm.jcc   (Assembler::notZero, CheckSucc) ;
-       masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD) ;
-       masm.jmp   (DONE_LABEL) ;
-
-       if ((EmitSync & 65536) == 0) {
-         Label LSuccess, LGoSlowPath ;
-         masm.bind  (CheckSucc) ;
-         masm.cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD) ;
-         masm.jcc   (Assembler::zero, LGoSlowPath) ;
-
-         // I'd much rather use lock:andl m->_owner, 0 as it's faster than the
-         // the explicit ST;MEMBAR combination, but masm doesn't currently support
-         // "ANDQ M,IMM".  Don't use MFENCE here.  lock:add to TOS, xchg, etc
-         // are all faster when the write buffer is populated.
-         masm.movptr (Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD) ;
-         if (os::is_MP()) {
-            masm.lock () ; masm.addl (Address(rsp, 0), 0) ;
-         }
-         masm.cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD) ;
-         masm.jcc   (Assembler::notZero, LSuccess) ;
-
-         masm.movptr (boxReg, (int32_t)NULL_WORD) ;                   // box is really EAX
-         if (os::is_MP()) { masm.lock(); }
-         masm.cmpxchgptr(r15_thread, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
-         masm.jcc   (Assembler::notEqual, LSuccess) ;
-         // Intentional fall-through into slow-path
-
-         masm.bind  (LGoSlowPath) ;
-         masm.orl   (boxReg, 1) ;                      // set ICC.ZF=0 to indicate failure
-         masm.jmp   (DONE_LABEL) ;
-
-         masm.bind  (LSuccess) ;
-         masm.testl (boxReg, 0) ;                      // set ICC.ZF=1 to indicate success
-         masm.jmp   (DONE_LABEL) ;
-       }
-
-       masm.bind  (Stacked) ;
-       masm.movptr(tmpReg, Address (boxReg, 0)) ;      // re-fetch
-       if (os::is_MP()) { masm.lock(); }
-       masm.cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses RAX which is box
-
-       if (EmitSync & 65536) {
-          masm.bind (CheckSucc) ;
-       }
-       masm.bind(DONE_LABEL);
-       if (EmitSync & 32768) {
-          masm.nop();                      // avoid branch to branch
-       }
-    }
-  %}
-
-
   enc_class enc_rethrow()
   %{
     cbuf.set_insts_mark();
@@ -2953,7 +2724,7 @@ frame
   c_calling_convention
   %{
     // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, length);
+    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
   %}
 
   // Location of compiled Java return values.  Same as C for now.
@@ -6348,6 +6119,7 @@ instruct popCountL_mem(rRegI dst, memory mem, rFlagsReg cr) %{
 instruct membar_acquire()
 %{
   match(MemBarAcquire);
+  match(LoadFence);
   ins_cost(0);
 
   size(0);
@@ -6370,6 +6142,7 @@ instruct membar_acquire_lock()
 instruct membar_release()
 %{
   match(MemBarRelease);
+  match(StoreFence);
   ins_cost(0);
 
   size(0);
@@ -6952,82 +6725,6 @@ instruct cmovD_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, regD dst, regD src) %{
 
 //----------Arithmetic Instructions--------------------------------------------
 //----------Addition Instructions----------------------------------------------
-
-instruct addExactI_rReg(rax_RegI dst, rRegI src, rFlagsReg cr)
-%{
-  match(AddExactI dst src);
-  effect(DEF cr);
-
-  format %{ "addl    $dst, $src\t# addExact int" %}
-  ins_encode %{
-    __ addl($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct addExactI_rReg_imm(rax_RegI dst, immI src, rFlagsReg cr)
-%{
-  match(AddExactI dst src);
-  effect(DEF cr);
-
-  format %{ "addl    $dst, $src\t# addExact int" %}
-  ins_encode %{
-    __ addl($dst$$Register, $src$$constant);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct addExactI_rReg_mem(rax_RegI dst, memory src, rFlagsReg cr)
-%{
-  match(AddExactI dst (LoadI src));
-  effect(DEF cr);
-
-  ins_cost(125); // XXX
-  format %{ "addl    $dst, $src\t# addExact int" %}
-  ins_encode %{
-    __ addl($dst$$Register, $src$$Address);
-  %}
-
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct addExactL_rReg(rax_RegL dst, rRegL src, rFlagsReg cr)
-%{
-  match(AddExactL dst src);
-  effect(DEF cr);
-
-  format %{ "addq    $dst, $src\t# addExact long" %}
-  ins_encode %{
-    __ addq($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct addExactL_rReg_imm(rax_RegL dst, immL32 src, rFlagsReg cr)
-%{
-  match(AddExactL dst src);
-  effect(DEF cr);
-
-  format %{ "addq    $dst, $src\t# addExact long" %}
-  ins_encode %{
-    __ addq($dst$$Register, $src$$constant);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct addExactL_rReg_mem(rax_RegL dst, memory src, rFlagsReg cr)
-%{
-  match(AddExactL dst (LoadL src));
-  effect(DEF cr);
-
-  ins_cost(125); // XXX
-  format %{ "addq    $dst, $src\t# addExact long" %}
-  ins_encode %{
-    __ addq($dst$$Register, $src$$Address);
-  %}
-
-  ins_pipe(ialu_reg_mem);
-%}
 
 instruct addI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
 %{
@@ -7641,80 +7338,6 @@ instruct subI_mem_imm(memory dst, immI src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
-instruct subExactI_rReg(rax_RegI dst, rRegI src, rFlagsReg cr)
-%{
-  match(SubExactI dst src);
-  effect(DEF cr);
-
-  format %{ "subl    $dst, $src\t# subExact int" %}
-  ins_encode %{
-    __ subl($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct subExactI_rReg_imm(rax_RegI dst, immI src, rFlagsReg cr)
-%{
-  match(SubExactI dst src);
-  effect(DEF cr);
-
-  format %{ "subl    $dst, $src\t# subExact int" %}
-  ins_encode %{
-    __ subl($dst$$Register, $src$$constant);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct subExactI_rReg_mem(rax_RegI dst, memory src, rFlagsReg cr)
-%{
-  match(SubExactI dst (LoadI src));
-  effect(DEF cr);
-
-  ins_cost(125);
-  format %{ "subl    $dst, $src\t# subExact int" %}
-  ins_encode %{
-    __ subl($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct subExactL_rReg(rax_RegL dst, rRegL src, rFlagsReg cr)
-%{
-  match(SubExactL dst src);
-  effect(DEF cr);
-
-  format %{ "subq    $dst, $src\t# subExact long" %}
-  ins_encode %{
-    __ subq($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct subExactL_rReg_imm(rax_RegL dst, immL32 src, rFlagsReg cr)
-%{
-  match(SubExactL dst (LoadL src));
-  effect(DEF cr);
-
-  format %{ "subq    $dst, $src\t# subExact long" %}
-  ins_encode %{
-    __ subq($dst$$Register, $src$$constant);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct subExactL_rReg_mem(rax_RegI dst, memory src, rFlagsReg cr)
-%{
-  match(SubExactI dst src);
-  effect(DEF cr);
-
-  ins_cost(125);
-  format %{ "subq    $dst, $src\t# subExact long" %}
-  ins_encode %{
-    __ subq($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
 instruct subL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
 %{
   match(Set dst (SubL dst src));
@@ -7831,31 +7454,6 @@ instruct negL_mem(memory dst, immL0 zero, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negExactI_rReg(rax_RegI dst, rFlagsReg cr)
-%{
-  match(NegExactI dst);
-  effect(KILL cr);
-
-  format %{ "negl    $dst\t# negExact int" %}
-  ins_encode %{
-    __ negl($dst$$Register);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
-instruct negExactL_rReg(rax_RegL dst, rFlagsReg cr)
-%{
-  match(NegExactL dst);
-  effect(KILL cr);
-
-  format %{ "negq    $dst\t# negExact long" %}
-  ins_encode %{
-    __ negq($dst$$Register);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
-
 //----------Multiplication/Division Instructions-------------------------------
 // Integer Multiplication Instructions
 // Multiply Register
@@ -7970,86 +7568,6 @@ instruct mulHiL_rReg(rdx_RegL dst, no_rax_RegL src, rax_RegL rax, rFlagsReg cr)
   opcode(0xF7, 0x5); /* Opcode F7 /5 */
   ins_encode(REX_reg_wide(src), OpcP, reg_opc(src));
   ins_pipe(ialu_reg_reg_alu0);
-%}
-
-
-instruct mulExactI_rReg(rax_RegI dst, rRegI src, rFlagsReg cr)
-%{
-  match(MulExactI dst src);
-  effect(DEF cr);
-
-  ins_cost(300);
-  format %{ "imull   $dst, $src\t# mulExact int" %}
-  ins_encode %{
-    __ imull($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg_reg_alu0);
-%}
-
-
-instruct mulExactI_rReg_imm(rax_RegI dst, rRegI src, immI imm, rFlagsReg cr)
-%{
-  match(MulExactI src imm);
-  effect(DEF cr);
-
-  ins_cost(300);
-  format %{ "imull   $dst, $src, $imm\t# mulExact int" %}
-  ins_encode %{
-    __ imull($dst$$Register, $src$$Register, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_reg_alu0);
-%}
-
-instruct mulExactI_rReg_mem(rax_RegI dst, memory src, rFlagsReg cr)
-%{
-  match(MulExactI dst (LoadI src));
-  effect(DEF cr);
-
-  ins_cost(350);
-  format %{ "imull   $dst, $src\t# mulExact int" %}
-  ins_encode %{
-    __ imull($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem_alu0);
-%}
-
-instruct mulExactL_rReg(rax_RegL dst, rRegL src, rFlagsReg cr)
-%{
-  match(MulExactL dst src);
-  effect(DEF cr);
-
-  ins_cost(300);
-  format %{ "imulq   $dst, $src\t# mulExact long" %}
-  ins_encode %{
-    __ imulq($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg_reg_alu0);
-%}
-
-instruct mulExactL_rReg_imm(rax_RegL dst, rRegL src, immL32 imm, rFlagsReg cr)
-%{
-  match(MulExactL src imm);
-  effect(DEF cr);
-
-  ins_cost(300);
-  format %{ "imulq   $dst, $src, $imm\t# mulExact long" %}
-  ins_encode %{
-    __ imulq($dst$$Register, $src$$Register, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_reg_alu0);
-%}
-
-instruct mulExactL_rReg_mem(rax_RegL dst, memory src, rFlagsReg cr)
-%{
-  match(MulExactL dst (LoadL src));
-  effect(DEF cr);
-
-  ins_cost(350);
-  format %{ "imulq   $dst, $src\t# mulExact long" %}
-  ins_encode %{
-    __ imulq($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem_alu0);
 %}
 
 instruct divI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
@@ -10660,6 +10178,174 @@ instruct encode_iso_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
   ins_pipe( pipe_slow );
 %}
 
+//----------Overflow Math Instructions-----------------------------------------
+
+instruct overflowAddI_rReg(rFlagsReg cr, rax_RegI op1, rRegI op2)
+%{
+  match(Set cr (OverflowAddI op1 op2));
+  effect(DEF cr, USE_KILL op1, USE op2);
+
+  format %{ "addl    $op1, $op2\t# overflow check int" %}
+
+  ins_encode %{
+    __ addl($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowAddI_rReg_imm(rFlagsReg cr, rax_RegI op1, immI op2)
+%{
+  match(Set cr (OverflowAddI op1 op2));
+  effect(DEF cr, USE_KILL op1, USE op2);
+
+  format %{ "addl    $op1, $op2\t# overflow check int" %}
+
+  ins_encode %{
+    __ addl($op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowAddL_rReg(rFlagsReg cr, rax_RegL op1, rRegL op2)
+%{
+  match(Set cr (OverflowAddL op1 op2));
+  effect(DEF cr, USE_KILL op1, USE op2);
+
+  format %{ "addq    $op1, $op2\t# overflow check long" %}
+  ins_encode %{
+    __ addq($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowAddL_rReg_imm(rFlagsReg cr, rax_RegL op1, immL32 op2)
+%{
+  match(Set cr (OverflowAddL op1 op2));
+  effect(DEF cr, USE_KILL op1, USE op2);
+
+  format %{ "addq    $op1, $op2\t# overflow check long" %}
+  ins_encode %{
+    __ addq($op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowSubI_rReg(rFlagsReg cr, rRegI op1, rRegI op2)
+%{
+  match(Set cr (OverflowSubI op1 op2));
+
+  format %{ "cmpl    $op1, $op2\t# overflow check int" %}
+  ins_encode %{
+    __ cmpl($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowSubI_rReg_imm(rFlagsReg cr, rRegI op1, immI op2)
+%{
+  match(Set cr (OverflowSubI op1 op2));
+
+  format %{ "cmpl    $op1, $op2\t# overflow check int" %}
+  ins_encode %{
+    __ cmpl($op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowSubL_rReg(rFlagsReg cr, rRegL op1, rRegL op2)
+%{
+  match(Set cr (OverflowSubL op1 op2));
+
+  format %{ "cmpq    $op1, $op2\t# overflow check long" %}
+  ins_encode %{
+    __ cmpq($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowSubL_rReg_imm(rFlagsReg cr, rRegL op1, immL32 op2)
+%{
+  match(Set cr (OverflowSubL op1 op2));
+
+  format %{ "cmpq    $op1, $op2\t# overflow check long" %}
+  ins_encode %{
+    __ cmpq($op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowNegI_rReg(rFlagsReg cr, immI0 zero, rax_RegI op2)
+%{
+  match(Set cr (OverflowSubI zero op2));
+  effect(DEF cr, USE_KILL op2);
+
+  format %{ "negl    $op2\t# overflow check int" %}
+  ins_encode %{
+    __ negl($op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowNegL_rReg(rFlagsReg cr, immL0 zero, rax_RegL op2)
+%{
+  match(Set cr (OverflowSubL zero op2));
+  effect(DEF cr, USE_KILL op2);
+
+  format %{ "negq    $op2\t# overflow check long" %}
+  ins_encode %{
+    __ negq($op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowMulI_rReg(rFlagsReg cr, rax_RegI op1, rRegI op2)
+%{
+  match(Set cr (OverflowMulI op1 op2));
+  effect(DEF cr, USE_KILL op1, USE op2);
+
+  format %{ "imull    $op1, $op2\t# overflow check int" %}
+  ins_encode %{
+    __ imull($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct overflowMulI_rReg_imm(rFlagsReg cr, rRegI op1, immI op2, rRegI tmp)
+%{
+  match(Set cr (OverflowMulI op1 op2));
+  effect(DEF cr, TEMP tmp, USE op1, USE op2);
+
+  format %{ "imull    $tmp, $op1, $op2\t# overflow check int" %}
+  ins_encode %{
+    __ imull($tmp$$Register, $op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct overflowMulL_rReg(rFlagsReg cr, rax_RegL op1, rRegL op2)
+%{
+  match(Set cr (OverflowMulL op1 op2));
+  effect(DEF cr, USE_KILL op1, USE op2);
+
+  format %{ "imulq    $op1, $op2\t# overflow check long" %}
+  ins_encode %{
+    __ imulq($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct overflowMulL_rReg_imm(rFlagsReg cr, rRegL op1, immL32 op2, rRegL tmp)
+%{
+  match(Set cr (OverflowMulL op1 op2));
+  effect(DEF cr, TEMP tmp, USE op1, USE op2);
+
+  format %{ "imulq    $tmp, $op1, $op2\t# overflow check long" %}
+  ins_encode %{
+    __ imulq($tmp$$Register, $op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
 
 //----------Control Flow Instructions------------------------------------------
 // Signed compare Instructions
@@ -11443,27 +11129,25 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLock(rFlagsReg cr,
-                     rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr)
-%{
+instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box);
-
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
-  ins_encode(Fast_Lock(object, box, tmp, scr));
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $scr$$Register, _counters);
+  %}
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastUnlock(rFlagsReg cr,
-                       rRegP object, rax_RegP box, rRegP tmp)
-%{
+instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, USE_KILL box);
-
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
-  ins_encode(Fast_Unlock(object, box, tmp));
+  ins_encode %{
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register);
+  %}
   ins_pipe(pipe_slow);
 %}
 

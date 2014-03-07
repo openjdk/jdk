@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,44 +35,44 @@ createJavaFile()
     cat <<EOF > $classname.java.1
 public class $classname {
     public void bark(int i) {
-	System.out.println(" bark: " + i);
-	switch (i) {
-	case 0:
-	    throw new IllegalArgumentException("IllegalArgumentException");
-	case 1:
-	    throw new ArithmeticException("ArithmeticException");
-	case 2:
-	    throw new IllegalMonitorStateException("IllegalMonitorStateException");
-	case 3:
-	    throw new IndexOutOfBoundsException("IndexOutOfBoundsException");
-	default:
-	    throw new Error("should not happen");
-	}
+        System.out.println(" bark: " + i);
+        switch (i) {
+        case 0:
+            throw new IllegalArgumentException("IllegalArgumentException");
+        case 1:
+            throw new ArithmeticException("ArithmeticException");
+        case 2:
+            throw new IllegalMonitorStateException("IllegalMonitorStateException");
+        case 3:
+            throw new IndexOutOfBoundsException("IndexOutOfBoundsException");
+        default:
+            throw new Error("should not happen");
+        }
     }
     public void loop(int max) {
-	for (int i = 0; i <= max; i++) {
-	    try {
-		bark(i);
-	    } catch(RuntimeException re) {
-		System.out.println(" loop: " + re.getMessage() +
-				   " caught and ignored.");
-	    }
-	}
+        for (int i = 0; i <= max; i++) {
+            try {
+                bark(i);
+            } catch(RuntimeException re) {
+                System.out.println(" loop: " + re.getMessage() +
+                       " caught and ignored.");
+            }
+        }
     }
     public void partOne() {
         loop(2);
-	System.out.println("partOne completed");
+        System.out.println("partOne completed");
     }
     public void partTwo() {
         loop(3);
-	System.out.println("partTwo completed");
+        System.out.println("partTwo completed");
     }
     public static void main(String[] args) {
-	System.out.println("Howdy!");
+        System.out.println("Howdy!");
         $classname my = new $classname();
-	my.partOne();
-	my.partTwo();
-	System.out.println("Goodbye from $classname!");
+        my.partOne();
+        my.partTwo();
+        System.out.println("Goodbye from $classname!");
     }
 }
 EOF
@@ -91,8 +91,7 @@ dojdbCmds()
    cmd cont
    cmd cont
    cmd ignore all java.lang.I*
-   cmd cont
-   cmd quit
+   cmd allowExit cont
 }
 
 mysetup()

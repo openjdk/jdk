@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public interface ParamTag extends Tag {
 
     /**
      * Return the name of the parameter or type parameter
-     * associated with this <code>ParamTag</code>.
+     * associated with this {@code ParamTag}.
      * The angle brackets delimiting a type parameter are not part of
      * its name.
      *
@@ -48,18 +48,18 @@ public interface ParamTag extends Tag {
 
     /**
      * Return the parameter comment
-     * associated with this <code>ParamTag</code>.
+     * associated with this {@code ParamTag}.
      *
      * @return the parameter comment.
      */
     String parameterComment();
 
     /**
-     * Return true if this <code>ParamTag</code> corresponds to a type
+     * Return true if this {@code ParamTag} corresponds to a type
      * parameter.  Return false if it corresponds to an ordinary parameter
      * of a method or constructor.
      *
-     * @return true if this <code>ParamTag</code> corresponds to a type
+     * @return true if this {@code ParamTag} corresponds to a type
      * parameter.
      * @since 1.5
      */

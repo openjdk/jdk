@@ -487,6 +487,11 @@ int Compile::ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
+bool MachConstantBaseNode::requires_postalloc_expand() const { return false; }
+void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
+  ShouldNotReachHere();
+}
+
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
@@ -1389,6 +1394,9 @@ const int Matcher::long_cmove_cost() { return 1; }
 // No CMOVF/CMOVD with SSE/SSE2
 const int Matcher::float_cmove_cost() { return (UseSSE>=1) ? ConditionalMoveLimit : 0; }
 
+// Does the CPU require late expand (see block.cpp for description of late expand)?
+const bool Matcher::require_postalloc_expand = false;
+
 // Should the Matcher clone shifts on addressing modes, expecting them to
 // be subsumed into complex addressing expressions or compute them into
 // registers?  True for Intel but false for most RISCs
@@ -1532,19 +1540,6 @@ RegMask Matcher::modL_proj_mask() {
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return EBP_REG_mask();
-}
-
-const RegMask Matcher::mathExactI_result_proj_mask() {
-  return EAX_REG_mask();
-}
-
-const RegMask Matcher::mathExactL_result_proj_mask() {
-  ShouldNotReachHere();
-  return RegMask();
-}
-
-const RegMask Matcher::mathExactI_flags_proj_mask() {
-  return INT_FLAGS_mask();
 }
 
 // Returns true if the high 32 bits of the value is known to be zero.
@@ -2910,542 +2905,6 @@ encode %{
     emit_d8    (cbuf,0 );
   %}
 
-
-  // Because the transitions from emitted code to the runtime
-  // monitorenter/exit helper stubs are so slow it's critical that
-  // we inline both the stack-locking fast-path and the inflated fast path.
-  //
-  // See also: cmpFastLock and cmpFastUnlock.
-  //
-  // What follows is a specialized inline transliteration of the code
-  // in slow_enter() and slow_exit().  If we're concerned about I$ bloat
-  // another option would be to emit TrySlowEnter and TrySlowExit methods
-  // at startup-time.  These methods would accept arguments as
-  // (rax,=Obj, rbx=Self, rcx=box, rdx=Scratch) and return success-failure
-  // indications in the icc.ZFlag.  Fast_Lock and Fast_Unlock would simply
-  // marshal the arguments and emit calls to TrySlowEnter and TrySlowExit.
-  // In practice, however, the # of lock sites is bounded and is usually small.
-  // Besides the call overhead, TrySlowEnter and TrySlowExit might suffer
-  // if the processor uses simple bimodal branch predictors keyed by EIP
-  // Since the helper routines would be called from multiple synchronization
-  // sites.
-  //
-  // An even better approach would be write "MonitorEnter()" and "MonitorExit()"
-  // in java - using j.u.c and unsafe - and just bind the lock and unlock sites
-  // to those specialized methods.  That'd give us a mostly platform-independent
-  // implementation that the JITs could optimize and inline at their pleasure.
-  // Done correctly, the only time we'd need to cross to native could would be
-  // to park() or unpark() threads.  We'd also need a few more unsafe operators
-  // to (a) prevent compiler-JIT reordering of non-volatile accesses, and
-  // (b) explicit barriers or fence operations.
-  //
-  // TODO:
-  //
-  // *  Arrange for C2 to pass "Self" into Fast_Lock and Fast_Unlock in one of the registers (scr).
-  //    This avoids manifesting the Self pointer in the Fast_Lock and Fast_Unlock terminals.
-  //    Given TLAB allocation, Self is usually manifested in a register, so passing it into
-  //    the lock operators would typically be faster than reifying Self.
-  //
-  // *  Ideally I'd define the primitives as:
-  //       fast_lock   (nax Obj, nax box, EAX tmp, nax scr) where box, tmp and scr are KILLED.
-  //       fast_unlock (nax Obj, EAX box, nax tmp) where box and tmp are KILLED
-  //    Unfortunately ADLC bugs prevent us from expressing the ideal form.
-  //    Instead, we're stuck with a rather awkward and brittle register assignments below.
-  //    Furthermore the register assignments are overconstrained, possibly resulting in
-  //    sub-optimal code near the synchronization site.
-  //
-  // *  Eliminate the sp-proximity tests and just use "== Self" tests instead.
-  //    Alternately, use a better sp-proximity test.
-  //
-  // *  Currently ObjectMonitor._Owner can hold either an sp value or a (THREAD *) value.
-  //    Either one is sufficient to uniquely identify a thread.
-  //    TODO: eliminate use of sp in _owner and use get_thread(tr) instead.
-  //
-  // *  Intrinsify notify() and notifyAll() for the common cases where the
-  //    object is locked by the calling thread but the waitlist is empty.
-  //    avoid the expensive JNI call to JVM_Notify() and JVM_NotifyAll().
-  //
-  // *  use jccb and jmpb instead of jcc and jmp to improve code density.
-  //    But beware of excessive branch density on AMD Opterons.
-  //
-  // *  Both Fast_Lock and Fast_Unlock set the ICC.ZF to indicate success
-  //    or failure of the fast-path.  If the fast-path fails then we pass
-  //    control to the slow-path, typically in C.  In Fast_Lock and
-  //    Fast_Unlock we often branch to DONE_LABEL, just to find that C2
-  //    will emit a conditional branch immediately after the node.
-  //    So we have branches to branches and lots of ICC.ZF games.
-  //    Instead, it might be better to have C2 pass a "FailureLabel"
-  //    into Fast_Lock and Fast_Unlock.  In the case of success, control
-  //    will drop through the node.  ICC.ZF is undefined at exit.
-  //    In the case of failure, the node will branch directly to the
-  //    FailureLabel
-
-
-  // obj: object to lock
-  // box: on-stack box address (displaced header location) - KILLED
-  // rax,: tmp -- KILLED
-  // scr: tmp -- KILLED
-  enc_class Fast_Lock( eRegP obj, eRegP box, eAXRegI tmp, eRegP scr ) %{
-
-    Register objReg = as_Register($obj$$reg);
-    Register boxReg = as_Register($box$$reg);
-    Register tmpReg = as_Register($tmp$$reg);
-    Register scrReg = as_Register($scr$$reg);
-
-    // Ensure the register assignents are disjoint
-    guarantee (objReg != boxReg, "") ;
-    guarantee (objReg != tmpReg, "") ;
-    guarantee (objReg != scrReg, "") ;
-    guarantee (boxReg != tmpReg, "") ;
-    guarantee (boxReg != scrReg, "") ;
-    guarantee (tmpReg == as_Register(EAX_enc), "") ;
-
-    MacroAssembler masm(&cbuf);
-
-    if (_counters != NULL) {
-      masm.atomic_incl(ExternalAddress((address) _counters->total_entry_count_addr()));
-    }
-    if (EmitSync & 1) {
-        // set box->dhw = unused_mark (3)
-        // Force all sync thru slow-path: slow_enter() and slow_exit() 
-        masm.movptr (Address(boxReg, 0), int32_t(markOopDesc::unused_mark())) ;             
-        masm.cmpptr (rsp, (int32_t)0) ;                        
-    } else 
-    if (EmitSync & 2) { 
-        Label DONE_LABEL ;           
-        if (UseBiasedLocking) {
-           // Note: tmpReg maps to the swap_reg argument and scrReg to the tmp_reg argument.
-           masm.biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, _counters);
-        }
-
-        masm.movptr(tmpReg, Address(objReg, 0)) ;          // fetch markword 
-        masm.orptr (tmpReg, 0x1);
-        masm.movptr(Address(boxReg, 0), tmpReg);           // Anticipate successful CAS 
-        if (os::is_MP()) { masm.lock();  }
-        masm.cmpxchgptr(boxReg, Address(objReg, 0));          // Updates tmpReg
-        masm.jcc(Assembler::equal, DONE_LABEL);
-        // Recursive locking
-        masm.subptr(tmpReg, rsp);
-        masm.andptr(tmpReg, (int32_t) 0xFFFFF003 );
-        masm.movptr(Address(boxReg, 0), tmpReg);
-        masm.bind(DONE_LABEL) ; 
-    } else {  
-      // Possible cases that we'll encounter in fast_lock 
-      // ------------------------------------------------
-      // * Inflated
-      //    -- unlocked
-      //    -- Locked
-      //       = by self
-      //       = by other
-      // * biased
-      //    -- by Self
-      //    -- by other
-      // * neutral
-      // * stack-locked
-      //    -- by self
-      //       = sp-proximity test hits
-      //       = sp-proximity test generates false-negative
-      //    -- by other
-      //
-
-      Label IsInflated, DONE_LABEL, PopDone ;
-
-      // TODO: optimize away redundant LDs of obj->mark and improve the markword triage
-      // order to reduce the number of conditional branches in the most common cases.
-      // Beware -- there's a subtle invariant that fetch of the markword
-      // at [FETCH], below, will never observe a biased encoding (*101b).
-      // If this invariant is not held we risk exclusion (safety) failure.
-      if (UseBiasedLocking && !UseOptoBiasInlining) {
-        masm.biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, _counters);
-      }
-
-      masm.movptr(tmpReg, Address(objReg, 0)) ;         // [FETCH]
-      masm.testptr(tmpReg, 0x02) ;                      // Inflated v (Stack-locked or neutral)
-      masm.jccb  (Assembler::notZero, IsInflated) ;
-
-      // Attempt stack-locking ...
-      masm.orptr (tmpReg, 0x1);
-      masm.movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
-      if (os::is_MP()) { masm.lock();  }
-      masm.cmpxchgptr(boxReg, Address(objReg, 0));           // Updates tmpReg
-      if (_counters != NULL) {
-        masm.cond_inc32(Assembler::equal,
-                        ExternalAddress((address)_counters->fast_path_entry_count_addr()));
-      }
-      masm.jccb (Assembler::equal, DONE_LABEL);
-
-      // Recursive locking
-      masm.subptr(tmpReg, rsp);
-      masm.andptr(tmpReg, 0xFFFFF003 );
-      masm.movptr(Address(boxReg, 0), tmpReg);
-      if (_counters != NULL) {
-        masm.cond_inc32(Assembler::equal,
-                        ExternalAddress((address)_counters->fast_path_entry_count_addr()));
-      }
-      masm.jmp  (DONE_LABEL) ;
-
-      masm.bind (IsInflated) ;
-
-      // The object is inflated.
-      //
-      // TODO-FIXME: eliminate the ugly use of manifest constants:
-      //   Use markOopDesc::monitor_value instead of "2".
-      //   use markOop::unused_mark() instead of "3".
-      // The tmpReg value is an objectMonitor reference ORed with
-      // markOopDesc::monitor_value (2).   We can either convert tmpReg to an
-      // objectmonitor pointer by masking off the "2" bit or we can just
-      // use tmpReg as an objectmonitor pointer but bias the objectmonitor
-      // field offsets with "-2" to compensate for and annul the low-order tag bit.
-      //
-      // I use the latter as it avoids AGI stalls.
-      // As such, we write "mov r, [tmpReg+OFFSETOF(Owner)-2]"
-      // instead of "mov r, [tmpReg+OFFSETOF(Owner)]".
-      //
-      #define OFFSET_SKEWED(f) ((ObjectMonitor::f ## _offset_in_bytes())-2)
-
-      // boxReg refers to the on-stack BasicLock in the current frame.
-      // We'd like to write:
-      //   set box->_displaced_header = markOop::unused_mark().  Any non-0 value suffices.
-      // This is convenient but results a ST-before-CAS penalty.  The following CAS suffers
-      // additional latency as we have another ST in the store buffer that must drain.
-
-      if (EmitSync & 8192) { 
-         masm.movptr(Address(boxReg, 0), 3) ;            // results in ST-before-CAS penalty
-         masm.get_thread (scrReg) ; 
-         masm.movptr(boxReg, tmpReg);                    // consider: LEA box, [tmp-2] 
-         masm.movptr(tmpReg, NULL_WORD);                 // consider: xor vs mov
-         if (os::is_MP()) { masm.lock(); } 
-         masm.cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2)) ; 
-      } else 
-      if ((EmitSync & 128) == 0) {                      // avoid ST-before-CAS
-         masm.movptr(scrReg, boxReg) ; 
-         masm.movptr(boxReg, tmpReg);                   // consider: LEA box, [tmp-2] 
-
-         // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
-         if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
-            // prefetchw [eax + Offset(_owner)-2]
-            masm.prefetchw(Address(rax, ObjectMonitor::owner_offset_in_bytes()-2));
-         }
-
-         if ((EmitSync & 64) == 0) {
-           // Optimistic form: consider XORL tmpReg,tmpReg
-           masm.movptr(tmpReg, NULL_WORD) ; 
-         } else { 
-           // Can suffer RTS->RTO upgrades on shared or cold $ lines
-           // Test-And-CAS instead of CAS
-           masm.movptr(tmpReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;   // rax, = m->_owner
-           masm.testptr(tmpReg, tmpReg) ;                   // Locked ? 
-           masm.jccb  (Assembler::notZero, DONE_LABEL) ;                   
-         }
-
-         // Appears unlocked - try to swing _owner from null to non-null.
-         // Ideally, I'd manifest "Self" with get_thread and then attempt
-         // to CAS the register containing Self into m->Owner.
-         // But we don't have enough registers, so instead we can either try to CAS
-         // rsp or the address of the box (in scr) into &m->owner.  If the CAS succeeds
-         // we later store "Self" into m->Owner.  Transiently storing a stack address
-         // (rsp or the address of the box) into  m->owner is harmless.
-         // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
-         if (os::is_MP()) { masm.lock();  }
-         masm.cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2)) ; 
-         masm.movptr(Address(scrReg, 0), 3) ;          // box->_displaced_header = 3
-         masm.jccb  (Assembler::notZero, DONE_LABEL) ; 
-         masm.get_thread (scrReg) ;                    // beware: clobbers ICCs
-         masm.movptr(Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2), scrReg) ; 
-         masm.xorptr(boxReg, boxReg) ;                 // set icc.ZFlag = 1 to indicate success
-                       
-         // If the CAS fails we can either retry or pass control to the slow-path.  
-         // We use the latter tactic.  
-         // Pass the CAS result in the icc.ZFlag into DONE_LABEL
-         // If the CAS was successful ...
-         //   Self has acquired the lock
-         //   Invariant: m->_recursions should already be 0, so we don't need to explicitly set it.
-         // Intentional fall-through into DONE_LABEL ...
-      } else {
-         masm.movptr(Address(boxReg, 0), 3) ;       // results in ST-before-CAS penalty
-         masm.movptr(boxReg, tmpReg) ; 
-
-         // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
-         if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
-            // prefetchw [eax + Offset(_owner)-2]
-            masm.prefetchw(Address(rax, ObjectMonitor::owner_offset_in_bytes()-2));
-         }
-
-         if ((EmitSync & 64) == 0) {
-           // Optimistic form
-           masm.xorptr  (tmpReg, tmpReg) ; 
-         } else { 
-           // Can suffer RTS->RTO upgrades on shared or cold $ lines
-           masm.movptr(tmpReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;   // rax, = m->_owner
-           masm.testptr(tmpReg, tmpReg) ;                   // Locked ? 
-           masm.jccb  (Assembler::notZero, DONE_LABEL) ;                   
-         }
-
-         // Appears unlocked - try to swing _owner from null to non-null.
-         // Use either "Self" (in scr) or rsp as thread identity in _owner.
-         // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
-         masm.get_thread (scrReg) ;
-         if (os::is_MP()) { masm.lock(); }
-         masm.cmpxchgptr(scrReg, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
-
-         // If the CAS fails we can either retry or pass control to the slow-path.
-         // We use the latter tactic.
-         // Pass the CAS result in the icc.ZFlag into DONE_LABEL
-         // If the CAS was successful ...
-         //   Self has acquired the lock
-         //   Invariant: m->_recursions should already be 0, so we don't need to explicitly set it.
-         // Intentional fall-through into DONE_LABEL ...
-      }
-
-      // DONE_LABEL is a hot target - we'd really like to place it at the
-      // start of cache line by padding with NOPs.
-      // See the AMD and Intel software optimization manuals for the
-      // most efficient "long" NOP encodings.
-      // Unfortunately none of our alignment mechanisms suffice.
-      masm.bind(DONE_LABEL);
-
-      // Avoid branch-to-branch on AMD processors
-      // This appears to be superstition.
-      if (EmitSync & 32) masm.nop() ;
-
-
-      // At DONE_LABEL the icc ZFlag is set as follows ...
-      // Fast_Unlock uses the same protocol.
-      // ZFlag == 1 -> Success
-      // ZFlag == 0 -> Failure - force control through the slow-path
-    }
-  %}
-
-  // obj: object to unlock
-  // box: box address (displaced header location), killed.  Must be EAX.
-  // rbx,: killed tmp; cannot be obj nor box.
-  //
-  // Some commentary on balanced locking:
-  //
-  // Fast_Lock and Fast_Unlock are emitted only for provably balanced lock sites.
-  // Methods that don't have provably balanced locking are forced to run in the
-  // interpreter - such methods won't be compiled to use fast_lock and fast_unlock.
-  // The interpreter provides two properties:
-  // I1:  At return-time the interpreter automatically and quietly unlocks any
-  //      objects acquired the current activation (frame).  Recall that the
-  //      interpreter maintains an on-stack list of locks currently held by
-  //      a frame.
-  // I2:  If a method attempts to unlock an object that is not held by the
-  //      the frame the interpreter throws IMSX.
-  //
-  // Lets say A(), which has provably balanced locking, acquires O and then calls B().
-  // B() doesn't have provably balanced locking so it runs in the interpreter.
-  // Control returns to A() and A() unlocks O.  By I1 and I2, above, we know that O
-  // is still locked by A().
-  //
-  // The only other source of unbalanced locking would be JNI.  The "Java Native Interface:
-  // Programmer's Guide and Specification" claims that an object locked by jni_monitorenter
-  // should not be unlocked by "normal" java-level locking and vice-versa.  The specification
-  // doesn't specify what will occur if a program engages in such mixed-mode locking, however.
-
-  enc_class Fast_Unlock( nabxRegP obj, eAXRegP box, eRegP tmp) %{
-
-    Register objReg = as_Register($obj$$reg);
-    Register boxReg = as_Register($box$$reg);
-    Register tmpReg = as_Register($tmp$$reg);
-
-    guarantee (objReg != boxReg, "") ;
-    guarantee (objReg != tmpReg, "") ;
-    guarantee (boxReg != tmpReg, "") ;
-    guarantee (boxReg == as_Register(EAX_enc), "") ;
-    MacroAssembler masm(&cbuf);
-
-    if (EmitSync & 4) {
-      // Disable - inhibit all inlining.  Force control through the slow-path
-      masm.cmpptr (rsp, 0) ; 
-    } else 
-    if (EmitSync & 8) {
-      Label DONE_LABEL ;
-      if (UseBiasedLocking) {
-         masm.biased_locking_exit(objReg, tmpReg, DONE_LABEL);
-      }
-      // classic stack-locking code ...
-      masm.movptr(tmpReg, Address(boxReg, 0)) ;
-      masm.testptr(tmpReg, tmpReg) ;
-      masm.jcc   (Assembler::zero, DONE_LABEL) ;
-      if (os::is_MP()) { masm.lock(); }
-      masm.cmpxchgptr(tmpReg, Address(objReg, 0));          // Uses EAX which is box
-      masm.bind(DONE_LABEL);
-    } else {
-      Label DONE_LABEL, Stacked, CheckSucc, Inflated ;
-
-      // Critically, the biased locking test must have precedence over
-      // and appear before the (box->dhw == 0) recursive stack-lock test.
-      if (UseBiasedLocking && !UseOptoBiasInlining) {
-         masm.biased_locking_exit(objReg, tmpReg, DONE_LABEL);
-      }
-      
-      masm.cmpptr(Address(boxReg, 0), 0) ;            // Examine the displaced header
-      masm.movptr(tmpReg, Address(objReg, 0)) ;       // Examine the object's markword
-      masm.jccb  (Assembler::zero, DONE_LABEL) ;      // 0 indicates recursive stack-lock
-
-      masm.testptr(tmpReg, 0x02) ;                     // Inflated? 
-      masm.jccb  (Assembler::zero, Stacked) ;
-
-      masm.bind  (Inflated) ;
-      // It's inflated.
-      // Despite our balanced locking property we still check that m->_owner == Self
-      // as java routines or native JNI code called by this thread might
-      // have released the lock.
-      // Refer to the comments in synchronizer.cpp for how we might encode extra
-      // state in _succ so we can avoid fetching EntryList|cxq.
-      //
-      // I'd like to add more cases in fast_lock() and fast_unlock() --
-      // such as recursive enter and exit -- but we have to be wary of
-      // I$ bloat, T$ effects and BP$ effects.
-      //
-      // If there's no contention try a 1-0 exit.  That is, exit without
-      // a costly MEMBAR or CAS.  See synchronizer.cpp for details on how
-      // we detect and recover from the race that the 1-0 exit admits.
-      //
-      // Conceptually Fast_Unlock() must execute a STST|LDST "release" barrier
-      // before it STs null into _owner, releasing the lock.  Updates
-      // to data protected by the critical section must be visible before
-      // we drop the lock (and thus before any other thread could acquire
-      // the lock and observe the fields protected by the lock).
-      // IA32's memory-model is SPO, so STs are ordered with respect to
-      // each other and there's no need for an explicit barrier (fence).
-      // See also http://gee.cs.oswego.edu/dl/jmm/cookbook.html.
-
-      masm.get_thread (boxReg) ;
-      if ((EmitSync & 4096) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
-        // prefetchw [ebx + Offset(_owner)-2]
-        masm.prefetchw(Address(rbx, ObjectMonitor::owner_offset_in_bytes()-2));
-      }
-
-      // Note that we could employ various encoding schemes to reduce
-      // the number of loads below (currently 4) to just 2 or 3.
-      // Refer to the comments in synchronizer.cpp.
-      // In practice the chain of fetches doesn't seem to impact performance, however.
-      if ((EmitSync & 65536) == 0 && (EmitSync & 256)) {
-         // Attempt to reduce branch density - AMD's branch predictor.
-         masm.xorptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;  
-         masm.orptr(boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2)) ;
-         masm.orptr(boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2)) ; 
-         masm.orptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2)) ; 
-         masm.jccb  (Assembler::notZero, DONE_LABEL) ; 
-         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD) ; 
-         masm.jmpb  (DONE_LABEL) ; 
-      } else { 
-         masm.xorptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;  
-         masm.orptr(boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2)) ;
-         masm.jccb  (Assembler::notZero, DONE_LABEL) ; 
-         masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2)) ; 
-         masm.orptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2)) ; 
-         masm.jccb  (Assembler::notZero, CheckSucc) ; 
-         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD) ; 
-         masm.jmpb  (DONE_LABEL) ; 
-      }
-
-      // The Following code fragment (EmitSync & 65536) improves the performance of
-      // contended applications and contended synchronization microbenchmarks.
-      // Unfortunately the emission of the code - even though not executed - causes regressions
-      // in scimark and jetstream, evidently because of $ effects.  Replacing the code
-      // with an equal number of never-executed NOPs results in the same regression.
-      // We leave it off by default.
-
-      if ((EmitSync & 65536) != 0) {
-         Label LSuccess, LGoSlowPath ;
-
-         masm.bind  (CheckSucc) ;
-
-         // Optional pre-test ... it's safe to elide this
-         if ((EmitSync & 16) == 0) { 
-            masm.cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), 0) ; 
-            masm.jccb  (Assembler::zero, LGoSlowPath) ; 
-         }
-
-         // We have a classic Dekker-style idiom:
-         //    ST m->_owner = 0 ; MEMBAR; LD m->_succ
-         // There are a number of ways to implement the barrier:
-         // (1) lock:andl &m->_owner, 0
-         //     is fast, but mask doesn't currently support the "ANDL M,IMM32" form.
-         //     LOCK: ANDL [ebx+Offset(_Owner)-2], 0
-         //     Encodes as 81 31 OFF32 IMM32 or 83 63 OFF8 IMM8
-         // (2) If supported, an explicit MFENCE is appealing.
-         //     In older IA32 processors MFENCE is slower than lock:add or xchg
-         //     particularly if the write-buffer is full as might be the case if
-         //     if stores closely precede the fence or fence-equivalent instruction.
-         //     In more modern implementations MFENCE appears faster, however.
-         // (3) In lieu of an explicit fence, use lock:addl to the top-of-stack
-         //     The $lines underlying the top-of-stack should be in M-state.
-         //     The locked add instruction is serializing, of course.
-         // (4) Use xchg, which is serializing
-         //     mov boxReg, 0; xchgl boxReg, [tmpReg + Offset(_owner)-2] also works
-         // (5) ST m->_owner = 0 and then execute lock:orl &m->_succ, 0.
-         //     The integer condition codes will tell us if succ was 0.
-         //     Since _succ and _owner should reside in the same $line and
-         //     we just stored into _owner, it's likely that the $line
-         //     remains in M-state for the lock:orl.
-         //
-         // We currently use (3), although it's likely that switching to (2)
-         // is correct for the future.
-            
-         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), NULL_WORD) ; 
-         if (os::is_MP()) { 
-            if (VM_Version::supports_sse2() && 1 == FenceInstruction) { 
-              masm.mfence();
-            } else { 
-              masm.lock () ; masm.addptr(Address(rsp, 0), 0) ; 
-            }
-         }
-         // Ratify _succ remains non-null
-         masm.cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), 0) ; 
-         masm.jccb  (Assembler::notZero, LSuccess) ; 
-
-         masm.xorptr(boxReg, boxReg) ;                  // box is really EAX
-         if (os::is_MP()) { masm.lock(); }
-         masm.cmpxchgptr(rsp, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
-         masm.jccb  (Assembler::notEqual, LSuccess) ;
-         // Since we're low on registers we installed rsp as a placeholding in _owner.
-         // Now install Self over rsp.  This is safe as we're transitioning from
-         // non-null to non=null
-         masm.get_thread (boxReg) ;
-         masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), boxReg) ;
-         // Intentional fall-through into LGoSlowPath ...
-
-         masm.bind  (LGoSlowPath) ; 
-         masm.orptr(boxReg, 1) ;                      // set ICC.ZF=0 to indicate failure
-         masm.jmpb  (DONE_LABEL) ; 
-
-         masm.bind  (LSuccess) ; 
-         masm.xorptr(boxReg, boxReg) ;                 // set ICC.ZF=1 to indicate success
-         masm.jmpb  (DONE_LABEL) ; 
-      }
-
-      masm.bind (Stacked) ;
-      // It's not inflated and it's not recursively stack-locked and it's not biased.
-      // It must be stack-locked.
-      // Try to reset the header to displaced header.
-      // The "box" value on the stack is stable, so we can reload
-      // and be assured we observe the same value as above.
-      masm.movptr(tmpReg, Address(boxReg, 0)) ;
-      if (os::is_MP()) {   masm.lock();    }
-      masm.cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses EAX which is box
-      // Intention fall-thru into DONE_LABEL
-
-
-      // DONE_LABEL is a hot target - we'd really like to place it at the
-      // start of cache line by padding with NOPs.
-      // See the AMD and Intel software optimization manuals for the
-      // most efficient "long" NOP encodings.
-      // Unfortunately none of our alignment mechanisms suffice.
-      if ((EmitSync & 65536) == 0) {
-         masm.bind (CheckSucc) ;
-      }
-      masm.bind(DONE_LABEL);
-
-      // Avoid branch to branch on AMD processors
-      if (EmitSync & 32768) { masm.nop() ; }
-    }
-  %}
-
-
   enc_class enc_pop_rdx() %{
     emit_opcode(cbuf,0x5A);
   %}
@@ -3768,7 +3227,7 @@ frame %{
   // automatically biased by the preserve_stack_slots field above.
   c_calling_convention %{
     // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, length);
+    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
   %}
 
   // Location of C & interpreter return values
@@ -7099,6 +6558,7 @@ instruct storeSSL(stackSlotL dst, eRegL src) %{
 
 instruct membar_acquire() %{
   match(MemBarAcquire);
+  match(LoadFence);
   ins_cost(400);
 
   size(0);
@@ -7119,6 +6579,7 @@ instruct membar_acquire_lock() %{
 
 instruct membar_release() %{
   match(MemBarRelease);
+  match(StoreFence);
   ins_cost(400);
 
   size(0);
@@ -7535,44 +6996,6 @@ instruct cmovL_regUCF(cmpOpUCF cop, eFlagsRegUCF cr, eRegL dst, eRegL src) %{
 //----------Arithmetic Instructions--------------------------------------------
 //----------Addition Instructions----------------------------------------------
 
-instruct addExactI_eReg(eAXRegI dst, rRegI src, eFlagsReg cr)
-%{
-  match(AddExactI dst src);
-  effect(DEF cr);
-
-  format %{ "ADD    $dst, $src\t# addExact int" %}
-  ins_encode %{
-    __ addl($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct addExactI_eReg_imm(eAXRegI dst, immI src, eFlagsReg cr)
-%{
-  match(AddExactI dst src);
-  effect(DEF cr);
-
-  format %{ "ADD    $dst, $src\t# addExact int" %}
-  ins_encode %{
-    __ addl($dst$$Register, $src$$constant);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct addExactI_eReg_mem(eAXRegI dst, memory src, eFlagsReg cr)
-%{
-  match(AddExactI dst (LoadI src));
-  effect(DEF cr);
-
-  ins_cost(125);
-  format %{ "ADD    $dst,$src\t# addExact int" %}
-  ins_encode %{
-    __ addl($dst$$Register, $src$$Address);
-  %}
-  ins_pipe( ialu_reg_mem );
-%}
-
-
 // Integer Addition Instructions
 instruct addI_eReg(rRegI dst, rRegI src, eFlagsReg cr) %{
   match(Set dst (AddI dst src));
@@ -7882,43 +7305,6 @@ instruct xchgP( memory mem, pRegP newval) %{
 
 //----------Subtraction Instructions-------------------------------------------
 
-instruct subExactI_eReg(eAXRegI dst, rRegI src, eFlagsReg cr)
-%{
-  match(SubExactI dst src);
-  effect(DEF cr);
-
-  format %{ "SUB    $dst, $src\t# subExact int" %}
-  ins_encode %{
-    __ subl($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct subExactI_eReg_imm(eAXRegI dst, immI src, eFlagsReg cr)
-%{
-  match(SubExactI dst src);
-  effect(DEF cr);
-
-  format %{ "SUB    $dst, $src\t# subExact int" %}
-  ins_encode %{
-    __ subl($dst$$Register, $src$$constant);
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct subExactI_eReg_mem(eAXRegI dst, memory src, eFlagsReg cr)
-%{
-  match(SubExactI dst (LoadI src));
-  effect(DEF cr);
-
-  ins_cost(125);
-  format %{ "SUB    $dst,$src\t# subExact int" %}
-  ins_encode %{
-    __ subl($dst$$Register, $src$$Address);
-  %}
-  ins_pipe( ialu_reg_mem );
-%}
-
 // Integer Subtraction Instructions
 instruct subI_eReg(rRegI dst, rRegI src, eFlagsReg cr) %{
   match(Set dst (SubI dst src));
@@ -7985,17 +7371,6 @@ instruct negI_eReg(rRegI dst, immI0 zero, eFlagsReg cr) %{
   opcode(0xF7,0x03);  // Opcode F7 /3
   ins_encode( OpcP, RegOpc( dst ) );
   ins_pipe( ialu_reg );
-%}
-
-instruct negExactI_eReg(eAXRegI dst, eFlagsReg cr) %{
-  match(NegExactI dst);
-  effect(DEF cr);
-
-  format %{ "NEG    $dst\t# negExact int"%}
-  ins_encode %{
-    __ negl($dst$$Register);
-  %}
-  ins_pipe(ialu_reg);
 %}
 
 //----------Multiplication/Division Instructions-------------------------------
@@ -8208,46 +7583,6 @@ instruct mulL_eReg_con(eADXRegL dst, immL_127 src, rRegI tmp, eFlagsReg cr) %{
   ins_encode( long_multiply_con( dst, src, tmp ) );
   ins_pipe( pipe_slow );
 %}
-
-instruct mulExactI_eReg(eAXRegI dst, rRegI src, eFlagsReg cr)
-%{
-  match(MulExactI dst src);
-  effect(DEF cr);
-
-  ins_cost(300);
-  format %{ "IMUL   $dst, $src\t# mulExact int" %}
-  ins_encode %{
-    __ imull($dst$$Register, $src$$Register);
-  %}
-  ins_pipe(ialu_reg_reg_alu0);
-%}
-
-instruct mulExactI_eReg_imm(eAXRegI dst, rRegI src, immI imm, eFlagsReg cr)
-%{
-  match(MulExactI src imm);
-  effect(DEF cr);
-
-  ins_cost(300);
-  format %{ "IMUL   $dst, $src, $imm\t# mulExact int" %}
-  ins_encode %{
-    __ imull($dst$$Register, $src$$Register, $imm$$constant);
-  %}
-  ins_pipe(ialu_reg_reg_alu0);
-%}
-
-instruct mulExactI_eReg_mem(eAXRegI dst, memory src, eFlagsReg cr)
-%{
-  match(MulExactI dst (LoadI src));
-  effect(DEF cr);
-
-  ins_cost(350);
-  format %{ "IMUL   $dst, $src\t# mulExact int" %}
-  ins_encode %{
-    __ imull($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem_alu0);
-%}
-
 
 // Integer DIV with Register
 instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
@@ -9114,6 +8449,91 @@ instruct and_cmpLTMask(rRegI p, rRegI q, rRegI y, eFlagsReg cr) %{
 instruct cadd_cmpLTMask_mem(ncxRegI p, ncxRegI q, memory y, eCXRegI tmp, eFlagsReg cr) %{
   match(Set p (AddI (AndI (CmpLTMask p q) (LoadI y)) (SubI p q)));
 */
+//----------Overflow Math Instructions-----------------------------------------
+
+instruct overflowAddI_eReg(eFlagsReg cr, eAXRegI op1, rRegI op2)
+%{
+  match(Set cr (OverflowAddI op1 op2));
+  effect(DEF cr, USE_KILL op1, USE op2);
+
+  format %{ "ADD    $op1, $op2\t# overflow check int" %}
+
+  ins_encode %{
+    __ addl($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowAddI_rReg_imm(eFlagsReg cr, eAXRegI op1, immI op2)
+%{
+  match(Set cr (OverflowAddI op1 op2));
+  effect(DEF cr, USE_KILL op1, USE op2);
+
+  format %{ "ADD    $op1, $op2\t# overflow check int" %}
+
+  ins_encode %{
+    __ addl($op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowSubI_rReg(eFlagsReg cr, rRegI op1, rRegI op2)
+%{
+  match(Set cr (OverflowSubI op1 op2));
+
+  format %{ "CMP    $op1, $op2\t# overflow check int" %}
+  ins_encode %{
+    __ cmpl($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowSubI_rReg_imm(eFlagsReg cr, rRegI op1, immI op2)
+%{
+  match(Set cr (OverflowSubI op1 op2));
+
+  format %{ "CMP    $op1, $op2\t# overflow check int" %}
+  ins_encode %{
+    __ cmpl($op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowNegI_rReg(eFlagsReg cr, immI0 zero, eAXRegI op2)
+%{
+  match(Set cr (OverflowSubI zero op2));
+  effect(DEF cr, USE_KILL op2);
+
+  format %{ "NEG    $op2\t# overflow check int" %}
+  ins_encode %{
+    __ negl($op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct overflowMulI_rReg(eFlagsReg cr, eAXRegI op1, rRegI op2)
+%{
+  match(Set cr (OverflowMulI op1 op2));
+  effect(DEF cr, USE_KILL op1, USE op2);
+
+  format %{ "IMUL    $op1, $op2\t# overflow check int" %}
+  ins_encode %{
+    __ imull($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct overflowMulI_rReg_imm(eFlagsReg cr, rRegI op1, immI op2, rRegI tmp)
+%{
+  match(Set cr (OverflowMulI op1 op2));
+  effect(DEF cr, TEMP tmp, USE op1, USE op2);
+
+  format %{ "IMUL    $tmp, $op1, $op2\t# overflow check int" %}
+  ins_encode %{
+    __ imull($tmp$$Register, $op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
 
 //----------Long Instructions------------------------------------------------
 // Add Long Register with Register
@@ -13147,23 +12567,26 @@ instruct RethrowException()
 
 // inlined locking and unlocking
 
-
-instruct cmpFastLock( eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr) %{
-  match( Set cr (FastLock object box) );
-  effect( TEMP tmp, TEMP scr, USE_KILL box );
+instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr) %{
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
-  ins_encode( Fast_Lock(object,box,tmp,scr) );
-  ins_pipe( pipe_slow );
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $scr$$Register, _counters);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastUnlock( eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
-  match( Set cr (FastUnlock object box) );
-  effect( TEMP tmp, USE_KILL box );
+instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
+  match(Set cr (FastUnlock object box));
+  effect(TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "FASTUNLOCK $object,$box\t! kills $box,$tmp" %}
-  ins_encode( Fast_Unlock(object,box,tmp) );
-  ins_pipe( pipe_slow );
+  ins_encode %{
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 

@@ -40,10 +40,10 @@ public class StackMapTableTest {
         DemoRun hprof;
         List<String> options = new LinkedList<String>();
 
-        options.add("cpu=samples");
-        options.add("cpu=times");
-        options.add("heap=sites");
-        options.add("");
+        options.add("cpu=samples,file=stackmaptable0.txt");
+        options.add("cpu=times,file=stackmaptable1.txt");
+        options.add("heap=sites,file=stackmaptable2.txt");
+        options.add("file=stackmaptable3.txt");
 
         for(String option: options) {
             /* Run JVMTI hprof agent with various options */

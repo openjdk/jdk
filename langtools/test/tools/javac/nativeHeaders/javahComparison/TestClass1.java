@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,50 +129,52 @@ public class TestClass1 {
     native List<String>[] gaamn();
 
     // overloaded Java methods
-    byte bm1() { return 0; }
-    short sm1() { return 0; }
-    int im1() { return 0; }
-    long lm1() { return 0; }
-    float fm1() { return 0; }
-    double dm1() { return 0; }
-    Object om1() { return null; }
-    String tm1() { return ""; }
-    List<String> gm1() { return null; }
-    void vm1() { }
+    byte bmo() { return 0; }
+    short smo() { return 0; }
+    int imo() { return 0; }
+    long lmo() { return 0; }
+    float fmo() { return 0; }
+    double dmo() { return 0; }
+    Object omo() { return null; }
+    String tmo() { return ""; }
+    List<String> gmo() { return null; }
+    void vmo() { }
 
-    byte bm2(int i) { return 0; }
-    short sm2(int i) { return 0; }
-    int im2(int i) { return 0; }
-    long lm2(int i) { return 0; }
-    float fm2(int i) { return 0; }
-    double dm2(int i) { return 0; }
-    Object om2(int i) { return null; }
-    String tm2(int i) { return ""; }
-    List<String> gm2(int i) { return null; }
-    void vm2(int i) { }
+    byte bmo(int i) { return 0; }
+    short smo(int i) { return 0; }
+    int imo(int i) { return 0; }
+    long lmo(int i) { return 0; }
+    float fmo(int i) { return 0; }
+    double dmo(int i) { return 0; }
+    Object omo(int i) { return null; }
+    String tmo(int i) { return ""; }
+    List<String> gmo(int i) { return null; }
+    void vmo(int i) { }
 
     // overloaded native methods
-    native byte bmn1();
-    native short smn1();
-    native int imn1();
-    native long lmn1();
-    native float fmn1();
-    native double dmn1();
-    native Object omn1();
-    native String tmn1();
-    native List<String> gmn1();
-    native void vmn1();
+    native byte bmno();
+    native short smno();
+    native int imno();
+    native long lmno();
+    native float fmno();
+    native double dmno();
+    native Object omno();
+    native String tmno();
+    native List<String> gmno();
+    native void vmno();
+    native Inner1 icmno();
 
-    native byte bmn2(int i);
-    native short smn2(int i);
-    native int imn2(int i);
-    native long lmn2(int i);
-    native float fmn2(int i);
-    native double dmn2(int i);
-    native Object omn2(int i);
-    native String tmn2(int i);
-    native List<String> gmn2(int i);
-    native void vmn2(int i);
+    native byte bmno(int i);
+    native short smno(int i);
+    native int imno(int i);
+    native long lmno(int i);
+    native float fmno(int i);
+    native double dmno(int i);
+    native Object omno(int i);
+    native String tmno(int i);
+    native List<String> gmno(int i);
+    native void vmno(int i);
+    native Inner1 icmno(Inner1 in1);
 
     // arg types for Java methods
     void mb(byte b) { }
@@ -266,50 +268,50 @@ public class TestClass1 {
         native void vmn();
 
         // overloaded Java methods
-        byte bm1() { return 0; }
-        short sm1() { return 0; }
-        int im1() { return 0; }
-        long lm1() { return 0; }
-        float fm1() { return 0; }
-        double dm1() { return 0; }
-        Object om1() { return null; }
-        String tm1() { return ""; }
-        List<String> gm1() { return null; }
-        void vm1() { }
+        byte bmo() { return 0; }
+        short smo() { return 0; }
+        int imo() { return 0; }
+        long lmo() { return 0; }
+        float fmo() { return 0; }
+        double dmo() { return 0; }
+        Object omo() { return null; }
+        String tmo() { return ""; }
+        List<String> gmo() { return null; }
+        void vmo() { }
 
-        byte bm2(int i) { return 0; }
-        short sm2(int i) { return 0; }
-        int im2(int i) { return 0; }
-        long lm2(int i) { return 0; }
-        float fm2(int i) { return 0; }
-        double dm2(int i) { return 0; }
-        Object om2(int i) { return null; }
-        String tm2(int i) { return ""; }
-        List<String> gm2(int i) { return null; }
-        void vm2(int i) { }
+        byte bmo(int i) { return 0; }
+        short smo(int i) { return 0; }
+        int imo(int i) { return 0; }
+        long lmo(int i) { return 0; }
+        float fmo(int i) { return 0; }
+        double dmo(int i) { return 0; }
+        Object omo(int i) { return null; }
+        String tmo(int i) { return ""; }
+        List<String> gmo(int i) { return null; }
+        void vmo(int i) { }
 
         // overloaded native methods
-        native byte bmn1();
-        native short smn1();
-        native int imn1();
-        native long lmn1();
-        native float fmn1();
-        native double dmn1();
-        native Object omn1();
-        native String tmn1();
-        native List<String> gmn1();
-        native void vmn1();
+        native byte bmno();
+        native short smno();
+        native int imno();
+        native long lmno();
+        native float fmno();
+        native double dmno();
+        native Object omno();
+        native String tmno();
+        native List<String> gmno();
+        native void vmno();
 
-        native byte bmn2(int i);
-        native short smn2(int i);
-        native int imn2(int i);
-        native long lmn2(int i);
-        native float fmn2(int i);
-        native double dmn2(int i);
-        native Object omn2(int i);
-        native String tmn2(int i);
-        native List<String> gmn2(int i);
-        native void vmn2(int i);
+        native byte bmno(int i);
+        native short smno(int i);
+        native int imno(int i);
+        native long lmno(int i);
+        native float fmno(int i);
+        native double dmno(int i);
+        native Object omno(int i);
+        native String tmno(int i);
+        native List<String> gmno(int i);
+        native void vmno(int i);
 
         // arg types for Java methods
         void mb(byte b) { }

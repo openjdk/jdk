@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,12 +109,13 @@ class oopDesc {
   int size_given_klass(Klass* klass);
 
   // type test operations (inlined in oop.inline.h)
-  bool is_instance()           const;
-  bool is_instanceMirror()     const;
-  bool is_instanceRef()        const;
-  bool is_array()              const;
-  bool is_objArray()           const;
-  bool is_typeArray()          const;
+  bool is_instance()            const;
+  bool is_instanceMirror()      const;
+  bool is_instanceClassLoader() const;
+  bool is_instanceRef()         const;
+  bool is_array()               const;
+  bool is_objArray()            const;
+  bool is_typeArray()           const;
 
  private:
   // field addresses in oop
@@ -362,7 +363,7 @@ class oopDesc {
   intptr_t slow_identity_hash();
 
   // Alternate hashing code if string table is rehashed
-  unsigned int new_hash(jint seed);
+  unsigned int new_hash(juint seed);
 
   // marks are forwarded to stack when object is locked
   bool     has_displaced_mark() const;

@@ -159,7 +159,6 @@ define SetupLauncher
           -DFULL_VERSION='"$(FULL_VERSION)"' \
           -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
           -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"' \
-          -DLIBARCHNAME='"$(OPENJDK_TARGET_CPU_LEGACY)"' \
           -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' $(DPACKAGEPATH) \
           $2, \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,16 +37,22 @@ public interface FieldDoc extends MemberDoc {
 
     /**
      * Get type of this field.
+     *
+     * @return the type of this field.
      */
     Type type();
 
     /**
      * Return true if this field is transient
+     *
+     * @return true if this field is transient
      */
     boolean isTransient();
 
     /**
      * Return true if this field is volatile
+     *
+     * @return true if this field is volatile
      */
     boolean isVolatile();
 
@@ -54,7 +60,7 @@ public interface FieldDoc extends MemberDoc {
      * Return the serialField tags in this FieldDoc item.
      *
      * @return an array of <tt>SerialFieldTag</tt> objects containing
-     *         all <code>@serialField</code> tags.
+     *         all {@code @serialField} tags.
      */
     SerialFieldTag[] serialFieldTags();
 

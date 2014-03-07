@@ -37,18 +37,18 @@
 // A TreeList is a FreeList which can be used to maintain a
 // binary tree of free lists.
 
-template <class Chunk_t, template <class> class FreeList_t> class TreeChunk;
-template <class Chunk_t, template <class> class FreeList_t> class BinaryTreeDictionary;
-template <class Chunk_t, template <class> class FreeList_t> class AscendTreeCensusClosure;
-template <class Chunk_t, template <class> class FreeList_t> class DescendTreeCensusClosure;
-template <class Chunk_t, template <class> class FreeList_t> class DescendTreeSearchClosure;
+template <class Chunk_t, class FreeList_t> class TreeChunk;
+template <class Chunk_t, class FreeList_t> class BinaryTreeDictionary;
+template <class Chunk_t, class FreeList_t> class AscendTreeCensusClosure;
+template <class Chunk_t, class FreeList_t> class DescendTreeCensusClosure;
+template <class Chunk_t, class FreeList_t> class DescendTreeSearchClosure;
 
 class FreeChunk;
 template <class> class AdaptiveFreeList;
-typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList> AFLBinaryTreeDictionary;
+typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList<FreeChunk> > AFLBinaryTreeDictionary;
 
-template <class Chunk_t, template <class> class FreeList_t>
-class TreeList : public FreeList_t<Chunk_t> {
+template <class Chunk_t, class FreeList_t>
+class TreeList : public FreeList_t {
   friend class TreeChunk<Chunk_t, FreeList_t>;
   friend class BinaryTreeDictionary<Chunk_t, FreeList_t>;
   friend class AscendTreeCensusClosure<Chunk_t, FreeList_t>;
@@ -66,12 +66,12 @@ class TreeList : public FreeList_t<Chunk_t> {
   TreeList<Chunk_t, FreeList_t>* right()  const { return _right;  }
 
   // Wrapper on call to base class, to get the template to compile.
-  Chunk_t* head() const { return FreeList_t<Chunk_t>::head(); }
-  Chunk_t* tail() const { return FreeList_t<Chunk_t>::tail(); }
-  void set_head(Chunk_t* head) { FreeList_t<Chunk_t>::set_head(head); }
-  void set_tail(Chunk_t* tail) { FreeList_t<Chunk_t>::set_tail(tail); }
+  Chunk_t* head() const { return FreeList_t::head(); }
+  Chunk_t* tail() const { return FreeList_t::tail(); }
+  void set_head(Chunk_t* head) { FreeList_t::set_head(head); }
+  void set_tail(Chunk_t* tail) { FreeList_t::set_tail(tail); }
 
-  size_t size() const { return FreeList_t<Chunk_t>::size(); }
+  size_t size() const { return FreeList_t::size(); }
 
   // Accessors for links in tree.
 
@@ -90,7 +90,7 @@ class TreeList : public FreeList_t<Chunk_t> {
   void clear_left()               { _left = NULL;   }
   void clear_right()              { _right = NULL;  }
   void clear_parent()             { _parent = NULL; }
-  void initialize()               { clear_left(); clear_right(), clear_parent(); FreeList_t<Chunk_t>::initialize(); }
+  void initialize()               { clear_left(); clear_right(), clear_parent(); FreeList_t::initialize(); }
 
   // For constructing a TreeList from a Tree chunk or
   // address and size.
@@ -139,7 +139,7 @@ class TreeList : public FreeList_t<Chunk_t> {
 // on the free list for a node in the tree and is only removed if
 // it is the last chunk on the free list.
 
-template <class Chunk_t, template <class> class FreeList_t>
+template <class Chunk_t, class FreeList_t>
 class TreeChunk : public Chunk_t {
   friend class TreeList<Chunk_t, FreeList_t>;
   TreeList<Chunk_t, FreeList_t>* _list;
@@ -173,7 +173,7 @@ class TreeChunk : public Chunk_t {
 };
 
 
-template <class Chunk_t, template <class> class FreeList_t>
+template <class Chunk_t, class FreeList_t>
 class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
   friend class VMStructs;
   size_t     _total_size;

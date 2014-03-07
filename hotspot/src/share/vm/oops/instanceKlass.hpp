@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,7 @@ class InstanceKlass: public Klass {
   //   three cases:
   //     NULL: no implementor.
   //     A Klass* that's not itself: one implementor.
-  //     Itsef: more than one implementors.
+  //     Itself: more than one implementors.
   // embedded host klass follows here
   //   The embedded host klass only exists in an anonymous class for
   //   dynamic language support (JSR 292 enabled). The host class grants
@@ -554,6 +554,7 @@ class InstanceKlass: public Klass {
     if (hk == NULL) {
       return NULL;
     } else {
+      assert(*hk != NULL, "host klass should always be set if the address is not null");
       return *hk;
     }
   }
@@ -1086,7 +1087,7 @@ public:
   const char* internal_name() const;
 
   // Verification
-  void verify_on(outputStream* st, bool check_dictionary);
+  void verify_on(outputStream* st);
 
   void oop_verify_on(oop obj, outputStream* st);
 };

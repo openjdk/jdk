@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -91,13 +91,13 @@ endif
 install_jsig: $(LIBJSIG)
 	@echo "Copying $(LIBJSIG) to $(DEST_JSIG)"
 ifeq ($(OS_VENDOR), Darwin)
-	$(QUIETLY) test -d $(LIBJSIG_DEBUGINFO) && \
+	$(QUIETLY) test ! -d $(LIBJSIG_DEBUGINFO) || \
 	    cp -f -r $(LIBJSIG_DEBUGINFO) $(DEST_JSIG_DEBUGINFO)
 else
-	$(QUIETLY) test -f $(LIBJSIG_DEBUGINFO) && \
+	$(QUIETLY) test ! -f $(LIBJSIG_DEBUGINFO) || \
 	    cp -f $(LIBJSIG_DEBUGINFO) $(DEST_JSIG_DEBUGINFO)
 endif
-	$(QUIETLY) test -f $(LIBJSIG_DIZ) && \
+	$(QUIETLY) test ! -f $(LIBJSIG_DIZ) || \
 	    cp -f $(LIBJSIG_DIZ) $(DEST_JSIG_DIZ)
 	$(QUIETLY) cp -f $(LIBJSIG) $(DEST_JSIG) && echo "Done"
 
