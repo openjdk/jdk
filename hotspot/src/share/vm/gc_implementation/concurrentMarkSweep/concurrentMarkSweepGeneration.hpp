@@ -1383,13 +1383,6 @@ class ASConcurrentMarkSweepGeneration : public ConcurrentMarkSweepGeneration {
 // Closures of various sorts used by CMS to accomplish its work
 //
 
-// This closure is used to check that a certain set of oops is empty.
-class FalseClosure: public OopClosure {
- public:
-  void do_oop(oop* p)       { guarantee(false, "Should be an empty set"); }
-  void do_oop(narrowOop* p) { guarantee(false, "Should be an empty set"); }
-};
-
 // This closure is used to do concurrent marking from the roots
 // following the first checkpoint.
 class MarkFromRootsClosure: public BitMapClosure {

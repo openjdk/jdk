@@ -895,7 +895,7 @@ oop* frame::interpreter_callee_receiver_addr(Symbol* signature) {
 }
 
 
-void frame::oops_interpreted_do(OopClosure* f, CLDToOopClosure* cld_f,
+void frame::oops_interpreted_do(OopClosure* f, CLDClosure* cld_f,
     const RegisterMap* map, bool query_oop_map_cache) {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   assert(map != NULL, "map must be set");
@@ -933,20 +933,9 @@ void frame::oops_interpreted_do(OopClosure* f, CLDToOopClosure* cld_f,
     cld_f->do_cld(m->method_holder()->class_loader_data());
   }
 
-#if !defined(PPC) || defined(ZERO)
-  if (m->is_native()) {
-#ifdef CC_INTERP
-    interpreterState istate = get_interpreterState();
-    f->do_oop((oop*)&istate->_oop_temp);
-#else
-    f->do_oop((oop*)( fp() + interpreter_frame_oop_temp_offset ));
-#endif /* CC_INTERP */
+  if (m->is_native() PPC32_ONLY(&& m->is_static())) {
+    f->do_oop(interpreter_frame_temp_oop_addr());
   }
-#else // PPC
-  if (m->is_native() && m->is_static()) {
-    f->do_oop(interpreter_frame_mirror_addr());
-  }
-#endif // PPC
 
   int max_locals = m->is_native() ? m->size_of_parameters() : m->max_locals();
 
@@ -1146,7 +1135,7 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) {
 }
 
 
-void frame::oops_do_internal(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
+void frame::oops_do_internal(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
   if (CrashGCForDumpingJavaThread) {

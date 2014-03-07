@@ -60,7 +60,7 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
     }
 
     GenericPropertyDescriptor(final boolean configurable, final boolean enumerable, final Global global) {
-        super(global.getObjectPrototype(), global.getGenericPropertyDescriptorMap());
+        super(global.getObjectPrototype(), getInitialMap());
         this.configurable = configurable;
         this.enumerable   = enumerable;
     }
@@ -146,6 +146,23 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
     @Override
     public int type() {
         return GENERIC;
+    }
+
+    @Override
+    public boolean hasAndEquals(final PropertyDescriptor other) {
+        if (has(CONFIGURABLE) && other.has(CONFIGURABLE)) {
+            if (isConfigurable() != other.isConfigurable()) {
+                return false;
+            }
+        }
+
+        if (has(ENUMERABLE) && other.has(ENUMERABLE)) {
+            if (isEnumerable() != other.isEnumerable()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override

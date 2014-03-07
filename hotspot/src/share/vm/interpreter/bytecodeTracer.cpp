@@ -596,7 +596,7 @@ void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
     if (data != NULL) {
       st->print("  %d", mdo->dp_to_di(data->dp()));
       st->fill_to(6);
-      data->print_data_on(st);
+      data->print_data_on(st, mdo);
     }
   }
 }

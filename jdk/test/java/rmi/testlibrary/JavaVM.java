@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,11 @@ public class JavaVM {
             addOptions(new String[] { option });
         }
 
-        addOptions(new String[] { getCodeCoverageOptions() });
+        addOptions(new String[] {
+            getCodeCoverageOptions(),
+            TestParams.testJavaOpts,
+            TestParams.testVmOpts
+        });
 
         StringTokenizer optionsTokenizer = new StringTokenizer(options);
         StringTokenizer argsTokenizer = new StringTokenizer(args);

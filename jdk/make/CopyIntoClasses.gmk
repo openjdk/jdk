@@ -25,120 +25,52 @@
 
 # Copy icu and _dict files used by the text break iterator
 
-COPY_PATTERNS = .icu _dict
+COPY_PATTERNS := .icu _dict .dat _options .js aliasmap .spp .wav .css \
+    .png .gif .xml .dtd .txt oqlhelp.html
 
-# Copy config files for com.sun.org.apache.xml.internal.security
+# These directories should not be copied at all
+EXCLUDES += \
+    com/sun/org/apache/xml/internal/security/resource/schema \
+    java/awt/doc-files \
+    java/lang/doc-files \
+    javax/swing/doc-files \
+    javax/swing/text/doc-files \
+    javax/swing/plaf/synth/doc-files \
+    javax/swing/undo/doc-files \
+    sun/awt/X11/doc-files \
+    sun/util/cldr/resources \
+    #
 
-XMLSECURITY_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/com/sun/org/apache/xml/internal/security/resource
-COPY_FILES += \
-    $(XMLSECURITY_RESOURCEDIR)/config.dtd \
-    $(XMLSECURITY_RESOURCEDIR)/config.xml
+# These files should never be included
+EXFILES += build.xml README.txt version.txt
 
-# Copy sun/tools related files into the classes directory.
-
-# Extra jstat files
-JSTAT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/sun/tools/jstat/resources
-COPY_FILES += \
-    $(JSTAT_RESOURCEDIR)/jstat_options \
-    $(JSTAT_RESOURCEDIR)/jstat_unsupported_options
-
-# Extra jhat files
-JHAT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/com/sun/tools/hat/resources
-COPY_FILES += \
-    $(JHAT_RESOURCEDIR)/hat.js \
-    $(JHAT_RESOURCEDIR)/oqlhelp.html \
-    $(JHAT_RESOURCEDIR)/platform_names.txt
-
-# Extra jrunscript files
-JRUNSCRIPT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/com/sun/tools/script/shell
-COPY_FILES += \
-    $(JRUNSCRIPT_RESOURCEDIR)/init.js \
-    $(JRUNSCRIPT_RESOURCEDIR)/messages.properties
-
-# Extra jvmstat files
-COPY_FILES += \
-    $(JDK_TOPDIR)/src/share/classes/sun/jvmstat/perfdata/resources/aliasmap
-
-# JConsole resources
-JCONSOLE_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/sun/tools/jconsole/resources
-COPY_FILES += \
-    $(wildcard $(JCONSOLE_RESOURCES_DIR)/*.png) \
-    $(wildcard $(JCONSOLE_RESOURCES_DIR)/*.gif)
-
-# Print resources
-PRINT_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/sun/print/resources
-COPY_FILES += \
-    $(wildcard $(PRINT_RESOURCES_DIR)/*.png)
-
-# IDN resources
-COPY_FILES += \
-    $(JDK_TOPDIR)/src/share/classes/sun/net/idn/uidna.spp
-
-#
-# Swing plaf resources
-#
-SWING_PLAF_WINDOWS_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows
-COPY_FILES += \
-    $(wildcard $(SWING_PLAF_WINDOWS_RESOURCES_DIR)/icons/*.gif) \
-    $(wildcard $(SWING_PLAF_WINDOWS_RESOURCES_DIR)/icons/*.png)
+# These icons are handled in GensrcIcons.gmk
+EXFILES += \
+    sun/awt/X11/java-icon16.png \
+    sun/awt/X11/java-icon24.png \
+    sun/awt/X11/java-icon32.png \
+    sun/awt/X11/java-icon48.png \
+    $(wildcard $(JDK_TOPDIR)/src/share/classes/sun/awt/resources/*.png) \
+    #
 
 ifndef OPENJDK
-  SWING_PLAF_WINDOWS_RESOURCES_DIR_CLOSED = $(JDK_TOPDIR)/src/closed/share/classes/com/sun/java/swing/plaf/windows
-  # Filter out JavaCup32.png from OpenJDK
-  COPY_FILES := $(filter-out $(SWING_PLAF_WINDOWS_RESOURCES_DIR)/icons/JavaCup32.png, $(COPY_FILES))
-  # Alter JavaCup32.png from ClosedJDK
-  COPY_FILES += \
-      $(SWING_PLAF_WINDOWS_RESOURCES_DIR_CLOSED)/icons/JavaCup32.png
+  # Theses icons have closed replacements
+  SWING_PLAF_MOTIF_RESOURCES_DIR := $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif
+  EXFILES += \
+      $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/icons/JavaCup32.png \
+      $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/basic/icons/JavaCup16.png \
+      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR)/icons/*.gif) \
+      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR)/icons/*.png) \
+      #
+
+  EXFILES += mib_core.txt
 endif
 
 ifeq ($(ENABLE_JFR), true)
-  JFR_CONFIGURATION_DIR_CLOSED = $(JDK_TOPDIR)/src/closed/share/classes/oracle/jrockit/jfr/settings
+  JFR_CONFIGURATION_DIR_CLOSED := $(JDK_TOPDIR)/src/closed/share/classes/oracle/jrockit/jfr/settings
   COPY_FILES += \
       $(JFR_CONFIGURATION_DIR_CLOSED)/jfc.xsd
 endif
-
-SWING_PLAF_BASIC_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/basic
-COPY_FILES += \
-    $(wildcard $(SWING_PLAF_BASIC_RESOURCES_DIR)/icons/*.png)
-
-ifndef OPENJDK
-  SWING_PLAF_BASIC_RESOURCES_DIR_CLOSED = $(JDK_TOPDIR)/src/closed/share/classes/javax/swing/plaf/basic
-  # Filter out JavaCup16.png from OpenJDK
-  COPY_FILES := $(filter-out $(SWING_PLAF_BASIC_RESOURCES_DIR)/icons/JavaCup16.png, $(COPY_FILES))
-  # Alter JavaCup16.png from ClosedJDK
-  COPY_FILES += \
-      $(SWING_PLAF_BASIC_RESOURCES_DIR_CLOSED)/icons/JavaCup16.png
-endif
-
-ifdef OPENJDK
-  SWING_PLAF_MOTIF_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif
-  COPY_FILES += \
-      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR)/icons/*.gif) \
-      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR)/icons/*.png)
-else
-  SWING_PLAF_MOTIF_RESOURCES_DIR_CLOSED = $(JDK_TOPDIR)/src/closed/share/classes/com/sun/java/swing/plaf/motif
-  COPY_FILES += \
-      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR_CLOSED)/icons/*.gif) \
-      $(wildcard $(SWING_PLAF_MOTIF_RESOURCES_DIR_CLOSED)/icons/*.png)
-endif
-
-SWING_PLAF_METAL_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/metal
-COPY_FILES += \
-    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/icons/*.gif) \
-    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/icons/*.png) \
-    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/icons/ocean/*.gif) \
-    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/icons/ocean/*.png) \
-    $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/sounds/*.wav)
-
-ifneq ($(OPENJDK_TARGET_OS), windows)
-  # Only copy GTK resources on Solaris/Linux
-  SWING_PLAF_GTK_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk
-  COPY_FILES += \
-      $(wildcard $(SWING_PLAF_GTK_RESOURCES_DIR)/icons/*.gif) \
-      $(wildcard $(SWING_PLAF_GTK_RESOURCES_DIR)/icons/*.png) \
-      $(wildcard $(SWING_PLAF_GTK_RESOURCES_DIR)/resources/metacity/SwingFallbackTheme/metacity-1/*.xml)
-endif
-# END: Swing plaf resources
 
 SWING_BEANINFO_RESOURCES_SRC_DIR = $(JDK_TOPDIR)/make/data/swingbeaninfo/images
 SWING_BEANINFO_RESOURCES_SRC = $(wildcard $(SWING_BEANINFO_RESOURCES_SRC_DIR)/*.gif)
@@ -147,13 +79,13 @@ OUT_BEANINFO_RESOURCES = $(patsubst $(SWING_BEANINFO_RESOURCES_SRC_DIR)%, \
     $(SWING_BEANINFO_RESOURCES_SRC))
 
 COPY_EXTRA += $(OUT_BEANINFO_RESOURCES)
-# END: Swing beaninfo resources
 
-# Swing text resources
-SWING_TEXT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/javax/swing/text
-COPY_FILES += \
-    $(SWING_TEXT_RESOURCEDIR)/html/default.css \
-    $(wildcard $(SWING_TEXT_RESOURCEDIR)/rtf/charsets/*.txt)
+# The exception handling of swing beaninfo
+# These resources violates the convention of having code and resources together under
+# $(JDK_TOPDIR)/src/.../classes directories
+$(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%.gif: \
+    $(JDK_TOPDIR)/make/data/swingbeaninfo/images/%.gif
+	$(call install-file)
 
 ##########################################################################################
 #
@@ -222,14 +154,7 @@ $(foreach i, $(META-INF_RULES_SERVICES), $(eval $(call addto_meta-inf_services, 
 COPY_EXTRA += $(OUT_SERVICES_FILES)
 COPY_EXTRA += $(OUT_SERVICES_FILES_PRINT)
 
-###
-
-$(JDK_OUTPUTDIR)/classes/sun/nio/cs/ext/sjis0213.dat: $(JDK_OUTPUTDIR)/gensrc/sun/nio/cs/ext/sjis0213.dat
-	$(call install-file)
-
-COPY_EXTRA += $(JDK_OUTPUTDIR)/classes/sun/nio/cs/ext/sjis0213.dat
-
-###
+################################################################################
 
 JAVAX_SOUND_SRC := $(JDK_TOPDIR)/src/share/classes/com/sun/media/sound/services
 
@@ -248,3 +173,30 @@ COPY_EXTRA += $(addprefix $(JDK_OUTPUTDIR)/classes/META-INF/services/, $(JAVAX_S
 JAVAX_SOUND_RULES := $(foreach F, $(JAVAX_SOUND_SRC_FILES), $(JDK_OUTPUTDIR)/classes/META-INF/services/$(notdir $F):$(JAVAX_SOUND_SRC)/$F)
 
 $(foreach R, $(JAVAX_SOUND_RULES), $(eval $(call addto_meta-inf_services, $R)))
+
+################################################################################
+
+CLEAN_FILES := $(wildcard \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/imageio/plugins/common/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/java/util/jar/pack/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/jndi/cosnaming/jndiprovider.properties \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/jndi/ldap/jndiprovider.properties \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/org/apache/xml/internal/security/resource/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/rowset/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/tools/script/shell/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/javax/sql/rowset/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/sun/rmi/registry/resources/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/sun/rmi/rmic/resources/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/sun/rmi/server/resources/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/sun/tools/javac/resources/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/sun/tools/jconsole/resources/*.properties \
+    $(JDK_TOPDIR)/src/share/classes/sun/tools/serialver/resources/*.properties \
+    )
+
+# Copy zh_HK files from zh_TW
+
+$(JDK_OUTPUTDIR)/classes/%_zh_HK.properties: $(JDK_OUTPUTDIR)/classes/%_zh_TW.properties
+	$(install-file)
+
+COPY_EXTRA += $(patsubst $(JDK_TOPDIR)/src/share/classes/%, $(JDK_OUTPUTDIR)/classes/%, \
+    $(subst _zh_TW,_zh_HK, $(filter %_zh_TW.properties, $(CLEAN_FILES))))

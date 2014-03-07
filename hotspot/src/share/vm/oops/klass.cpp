@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,7 +638,7 @@ void Klass::collect_statistics(KlassSizeStats *sz) const {
 
 // Verification
 
-void Klass::verify_on(outputStream* st, bool check_dictionary) {
+void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
@@ -689,6 +689,24 @@ bool Klass::verify_itable_index(int i) {
   int method_count = klassItable::method_count_for_interface(this);
   assert(i >= 0 && i < method_count, "index out of bounds");
   return true;
+}
+
+#endif
+
+/////////////// Unit tests ///////////////
+
+#ifndef PRODUCT
+
+class TestKlass {
+ public:
+  static void test_oop_is_instanceClassLoader() {
+    assert(SystemDictionary::ClassLoader_klass()->oop_is_instanceClassLoader(), "assert");
+    assert(!SystemDictionary::String_klass()->oop_is_instanceClassLoader(), "assert");
+  }
+};
+
+void TestKlass_test() {
+  TestKlass::test_oop_is_instanceClassLoader();
 }
 
 #endif

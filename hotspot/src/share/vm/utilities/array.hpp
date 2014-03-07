@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ class ResourceArray: public ResourceObj {
 
   void initialize(size_t esize, int length) {
     assert(length >= 0, "illegal length");
-    assert(_data == NULL, "must be new object");
+    assert(StressRewriter || _data == NULL, "must be new object");
     _length  = length;
     _data    = resource_allocate_bytes(esize * length);
     DEBUG_ONLY(init_nesting();)

@@ -22,7 +22,7 @@
 #  
 #
 
-# Sets make macros for making optimized version of Gamma VM
+# Sets make macros for making optimized version of HotSpot VM
 # (This is the "product", not the "release" version.)
 
 # Compiler specific OPT_CFLAGS are passed in from gcc.make, sparcWorks.make

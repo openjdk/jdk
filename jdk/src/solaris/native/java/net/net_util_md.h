@@ -32,9 +32,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#ifndef USE_SELECT
 #include <sys/poll.h>
-#endif
 
 int NET_Timeout(int s, long timeout);
 int NET_Read(int s, void* buf, size_t len);
@@ -43,54 +41,26 @@ int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
 int NET_ReadV(int s, const struct iovec * vector, int count);
 int NET_Send(int s, void *msg, int len, unsigned int flags);
 int NET_SendTo(int s, const void *msg, int len,  unsigned  int
-       flags, const struct sockaddr *to, int tolen);
+               flags, const struct sockaddr *to, int tolen);
 int NET_Writev(int s, const struct iovec * vector, int count);
 int NET_Connect(int s, struct sockaddr *addr, int addrlen);
 int NET_Accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 int NET_SocketClose(int s);
 int NET_Dup2(int oldfd, int newfd);
-#ifdef USE_SELECT
-extern int NET_Select(int s, fd_set *readfds, fd_set *writefds,
-               fd_set *exceptfds, struct timeval *timeout);
-#else
-extern int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout);
-#endif
-
+int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout);
 int NET_SocketAvailable(int s, jint *pbytes);
 
-#if defined(__linux__) && defined(AF_INET6)
-int getDefaultIPv6Interface(struct in6_addr *target_addr);
-#endif
+void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
+                                               const char* hostname,
+                                               int gai_error);
+void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
+                                  const char *defaultDetail);
 
-#ifdef __solaris__
-extern int net_getParam(char *driver, char *param);
-#endif
+#define NET_WAIT_READ    0x01
+#define NET_WAIT_WRITE   0x02
+#define NET_WAIT_CONNECT 0x04
 
-/* needed from libsocket on Solaris 8 */
-
-typedef int (*getaddrinfo_f)(const char *nodename, const char *servname,
-    const struct addrinfo *hints, struct addrinfo **res);
-
-typedef void (*freeaddrinfo_f)(struct addrinfo *);
-
-typedef const char * (*gai_strerror_f)(int ecode);
-
-typedef int (*getnameinfo_f)(const struct sockaddr *, size_t,
-    char *, size_t, char *, size_t, int);
-
-extern getaddrinfo_f getaddrinfo_ptr;
-extern freeaddrinfo_f freeaddrinfo_ptr;
-extern getnameinfo_f getnameinfo_ptr;
-
-void ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
-                                           const char* hostname,
-                                           int gai_error);
-
-#define NET_WAIT_READ   0x01
-#define NET_WAIT_WRITE  0x02
-#define NET_WAIT_CONNECT        0x04
-
-extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
+jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 
 /************************************************************************
  * Macros and constants
@@ -127,12 +97,16 @@ extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 /************************************************************************
  *  Utilities
  */
+
 #ifdef __linux__
-extern int kernelIsV24();
+int kernelIsV24();
+#ifdef AF_INET6
+int getDefaultIPv6Interface(struct in6_addr *target_addr);
+#endif
 #endif
 
-void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
-                   const char *defaultDetail);
-
+#ifdef __solaris__
+int net_getParam(char *driver, char *param);
+#endif
 
 #endif /* NET_UTILS_MD_H */

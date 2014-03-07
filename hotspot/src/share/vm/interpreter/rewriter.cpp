@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,8 +250,8 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // We will reverse the bytecode rewriting _after_ adjusting them.
     // Adjust the cache index by offset to the invokedynamic entries in the
     // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
-    cache_index = cp_cache_delta() + _first_iteration_cp_cache_limit;
-    int cp_index = invokedynamic_cp_cache_entry_pool_index(cache_index);
+    int adjustment = cp_cache_delta() + _first_iteration_cp_cache_limit;
+    int cp_index = invokedynamic_cp_cache_entry_pool_index(cache_index - adjustment);
     assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
     // zero out 4 bytes
     Bytes::put_Java_u4(p, 0);
@@ -453,18 +453,7 @@ methodHandle Rewriter::rewrite_jsrs(methodHandle method, TRAPS) {
   return method;
 }
 
-void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
-  ResourceMark rm(THREAD);
-  Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
-  // (That's all, folks.)
-}
-
-
-Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Method*>* methods, TRAPS)
-  : _klass(klass),
-    _pool(cpool),
-    _methods(methods)
-{
+void Rewriter::rewrite_bytecodes(TRAPS) {
   assert(_pool->cache() == NULL, "constant pool cache must not be set yet");
 
   // determine index maps for Method* rewriting
@@ -508,6 +497,29 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
   // May have to fix invokedynamic bytecodes if invokestatic/InterfaceMethodref
   // entries had to be added.
   patch_invokedynamic_bytecodes();
+}
+
+void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
+  ResourceMark rm(THREAD);
+  Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
+  // (That's all, folks.)
+}
+
+
+Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Method*>* methods, TRAPS)
+  : _klass(klass),
+    _pool(cpool),
+    _methods(methods)
+{
+
+  // Rewrite bytecodes - exception here exits.
+  rewrite_bytecodes(CHECK);
+
+  // Stress restoring bytecodes
+  if (StressRewriter) {
+    restore_bytecodes();
+    rewrite_bytecodes(CHECK);
+  }
 
   // allocate constant pool cache, now that we've seen all the bytecodes
   make_constant_pool_cache(THREAD);
@@ -523,6 +535,7 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
   // so methods with jsrs in custom class lists in aren't attempted to be
   // rewritten in the RO section of the shared archive.
   // Relocated bytecodes don't have to be restored, only the cp cache entries
+  int len = _methods->length();
   for (int i = len-1; i >= 0; i--) {
     methodHandle m(THREAD, _methods->at(i));
 
