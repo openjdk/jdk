@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
@@ -77,51 +78,6 @@
 
 #ifdef DTRACE_ENABLED
 
-#ifndef USDT2
-
-HS_DTRACE_PROBE_DECL4(hotspot, class__initialization__required,
-  char*, intptr_t, oop, intptr_t);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__recursive,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__concurrent,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__erroneous,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__super__failed,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__clinit,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__error,
-  char*, intptr_t, oop, intptr_t, int);
-HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
-  char*, intptr_t, oop, intptr_t, int);
-
-#define DTRACE_CLASSINIT_PROBE(type, clss, thread_type)          \
-  {                                                              \
-    char* data = NULL;                                           \
-    int len = 0;                                                 \
-    Symbol* name = (clss)->name();                               \
-    if (name != NULL) {                                          \
-      data = (char*)name->bytes();                               \
-      len = name->utf8_length();                                 \
-    }                                                            \
-    HS_DTRACE_PROBE4(hotspot, class__initialization__##type,     \
-      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type);           \
-  }
-
-#define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
-  {                                                              \
-    char* data = NULL;                                           \
-    int len = 0;                                                 \
-    Symbol* name = (clss)->name();                               \
-    if (name != NULL) {                                          \
-      data = (char*)name->bytes();                               \
-      len = name->utf8_length();                                 \
-    }                                                            \
-    HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
-      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type, wait);     \
-  }
-#else /* USDT2 */
 
 #define HOTSPOT_CLASS_INITIALIZATION_required HOTSPOT_CLASS_INITIALIZATION_REQUIRED
 #define HOTSPOT_CLASS_INITIALIZATION_recursive HOTSPOT_CLASS_INITIALIZATION_RECURSIVE
@@ -156,7 +112,6 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
     HOTSPOT_CLASS_INITIALIZATION_##type(                         \
       data, len, (clss)->class_loader(), thread_type, wait);     \
   }
-#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -908,10 +863,16 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     // Step 10 and 11
     Handle e(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
+    // JVMTI has already reported the pending exception
+    // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
+    JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
     {
       EXCEPTION_MARK;
       this_oop->set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
+      // JVMTI has already reported the pending exception
+      // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
+      JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
     }
     DTRACE_CLASSINIT_PROBE_WAIT(error, InstanceKlass::cast(this_oop()), -1,wait);
     if (e->is_a(SystemDictionary::Error_klass())) {
@@ -1203,7 +1164,11 @@ void InstanceKlass::mask_for(methodHandle method, int bci,
     MutexLocker x(OopMapCacheAlloc_lock);
     // First time use. Allocate a cache in C heap
     if (_oop_map_cache == NULL) {
-      _oop_map_cache = new OopMapCache();
+      // Release stores from OopMapCache constructor before assignment
+      // to _oop_map_cache. C++ compilers on ppc do not emit the
+      // required memory barrier only because of the volatile
+      // qualifier of _oop_map_cache.
+      OrderAccess::release_store_ptr(&_oop_map_cache, new OopMapCache());
     }
   }
   // _oop_map_cache is constant after init; lookup below does is own locking.
@@ -2234,15 +2199,7 @@ void InstanceKlass::clean_method_data(BoolObjectClosure* is_alive) {
   for (int m = 0; m < methods()->length(); m++) {
     MethodData* mdo = methods()->at(m)->method_data();
     if (mdo != NULL) {
-      for (ProfileData* data = mdo->first_data();
-           mdo->is_valid(data);
-           data = mdo->next_data(data)) {
-        data->clean_weak_klass_links(is_alive);
-      }
-      ParametersTypeData* parameters = mdo->parameters_type_data();
-      if (parameters != NULL) {
-        parameters->clean_weak_klass_links(is_alive);
-      }
+      mdo->clean_method_data(is_alive);
     }
   }
 }
@@ -2761,7 +2718,7 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
   Method* m = n->method();
   // Search for match
   while(cur != NULL && cur != n) {
-    if (TieredCompilation) {
+    if (TieredCompilation && m == cur->method()) {
       // Find max level before n
       max_level = MAX2(max_level, cur->comp_level());
     }
@@ -2783,7 +2740,9 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
     cur = next;
     while (cur != NULL) {
       // Find max level after n
-      max_level = MAX2(max_level, cur->comp_level());
+      if (m == cur->method()) {
+        max_level = MAX2(max_level, cur->comp_level());
+      }
       cur = cur->osr_link();
     }
     m->set_highest_osr_comp_level(max_level);
@@ -3029,8 +2988,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
         offset          <= (juint) value->length() &&
         offset + length <= (juint) value->length()) {
       st->print(BULLET"string: ");
-      Handle h_obj(obj);
-      java_lang_String::print(h_obj, st);
+      java_lang_String::print(obj, st);
       st->cr();
       if (!WizardMode)  return;  // that is enough
     }
@@ -3180,7 +3138,7 @@ class VerifyFieldClosure: public OopClosure {
   virtual void do_oop(narrowOop* p) { VerifyFieldClosure::do_oop_work(p); }
 };
 
-void InstanceKlass::verify_on(outputStream* st, bool check_dictionary) {
+void InstanceKlass::verify_on(outputStream* st) {
 #ifndef PRODUCT
   // Avoid redundant verifies, this really should be in product.
   if (_verify_count == Universe::verify_count()) return;
@@ -3188,14 +3146,11 @@ void InstanceKlass::verify_on(outputStream* st, bool check_dictionary) {
 #endif
 
   // Verify Klass
-  Klass::verify_on(st, check_dictionary);
+  Klass::verify_on(st);
 
-  // Verify that klass is present in SystemDictionary if not already
-  // verifying the SystemDictionary.
-  if (is_loaded() && !is_anonymous() && check_dictionary) {
-    Symbol* h_name = name();
-    SystemDictionary::verify_obj_klass_present(h_name, class_loader_data());
-  }
+  // Verify that klass is present in ClassLoaderData
+  guarantee(class_loader_data()->contains_klass(this),
+            "this class isn't found in class loader data");
 
   // Verify vtables
   if (is_linked()) {

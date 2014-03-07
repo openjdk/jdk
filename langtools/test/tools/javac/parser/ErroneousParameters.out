@@ -1,14 +1,6 @@
 ErroneousParameters.java:10:36: compiler.err.varargs.must.be.last
 ErroneousParameters.java:11:39: compiler.err.expected3: ',', ')', '['
-ErroneousParameters.java:11:42: compiler.err.illegal.start.of.type
-ErroneousParameters.java:11:43: compiler.err.expected: token.identifier
-ErroneousParameters.java:11:45: compiler.err.expected: ';'
 ErroneousParameters.java:12:40: compiler.err.illegal.start.of.type
-ErroneousParameters.java:12:41: compiler.err.expected3: ',', ')', '['
-ErroneousParameters.java:12:43: compiler.err.expected: ';'
 ErroneousParameters.java:13:41: compiler.err.expected: ']'
 ErroneousParameters.java:14:38: compiler.err.expected3: ',', ')', '['
-ErroneousParameters.java:14:39: compiler.err.illegal.start.of.type
-ErroneousParameters.java:14:40: compiler.err.expected: token.identifier
-ErroneousParameters.java:14:42: compiler.err.expected: ';'
-13 errors
+5 errors

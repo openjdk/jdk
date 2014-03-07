@@ -45,11 +45,9 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 @SuppressWarnings("javadoc")
 public interface StringConstants {
     // standard jdk types, methods
-    static final Type TYPE_METHOD             = Type.getType(Method.class);
     static final Type TYPE_METHODHANDLE       = Type.getType(MethodHandle.class);
     static final Type TYPE_METHODHANDLE_ARRAY = Type.getType(MethodHandle[].class);
     static final Type TYPE_OBJECT             = Type.getType(Object.class);
-    static final Type TYPE_CLASS              = Type.getType(Class.class);
     static final Type TYPE_STRING             = Type.getType(String.class);
     static final Type TYPE_COLLECTION         = Type.getType(Collection.class);
     static final Type TYPE_COLLECTIONS        = Type.getType(Collections.class);
@@ -104,10 +102,6 @@ public interface StringConstants {
     static final String PROPERTYMAP_DESC = TYPE_PROPERTYMAP.getDescriptor();
     static final String PROPERTYMAP_NEWMAP = "newMap";
     static final String PROPERTYMAP_NEWMAP_DESC = Type.getMethodDescriptor(TYPE_PROPERTYMAP, TYPE_COLLECTION);
-    static final String PROPERTYMAP_DUPLICATE = "duplicate";
-    static final String PROPERTYMAP_DUPLICATE_DESC = Type.getMethodDescriptor(TYPE_PROPERTYMAP);
-    static final String PROPERTYMAP_SETISSHARED = "setIsShared";
-    static final String PROPERTYMAP_SETISSHARED_DESC = Type.getMethodDescriptor(TYPE_PROPERTYMAP);
 
     // PrototypeObject
     static final String PROTOTYPEOBJECT_TYPE = TYPE_PROTOTYPEOBJECT.getInternalName();

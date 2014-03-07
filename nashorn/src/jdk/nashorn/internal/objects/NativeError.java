@@ -108,7 +108,7 @@ public final class NativeError extends ScriptObject {
     }
 
     NativeError(final Object msg, final Global global) {
-        this(msg, global.getErrorPrototype(), global.getErrorMap());
+        this(msg, global.getErrorPrototype(), getInitialMap());
     }
 
     private NativeError(final Object msg) {

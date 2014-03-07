@@ -25,6 +25,9 @@
 
 package jdk.nashorn.internal.codegen;
 
+import jdk.nashorn.internal.runtime.Property;
+import jdk.nashorn.internal.runtime.PropertyMap;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -110,6 +113,43 @@ class ConstantData {
     }
 
     /**
+     * {@link PropertyMap} wrapper class that provides implementations for the {@code hashCode} and {@code equals}
+     * methods that are based on the map layout. {@code PropertyMap} itself inherits the identity based implementations
+     * from {@code java.lang.Object}.
+     */
+    private static class PropertyMapWrapper {
+        private final PropertyMap propertyMap;
+        private final int hashCode;
+
+        public PropertyMapWrapper(final PropertyMap map) {
+            int hash = 0;
+            for (final Property property : map.getProperties()) {
+                hash = hash << 7 ^ hash >> 7;
+                hash ^= property.hashCode();
+            }
+            this.hashCode = hash;
+            this.propertyMap = map;
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
+
+        @Override
+        public boolean equals(final Object other) {
+            if (!(other instanceof PropertyMapWrapper)) {
+                return false;
+            }
+
+            final Property[] ownProperties = propertyMap.getProperties();
+            final Property[] otherProperties = ((PropertyMapWrapper) other).propertyMap.getProperties();
+
+            return Arrays.equals(ownProperties, otherProperties);
+        }
+    }
+
+    /**
      * Constructor
      */
     ConstantData() {
@@ -145,7 +185,14 @@ class ConstantData {
      * @return the index in the constant pool that the object was given
      */
     public int add(final Object object) {
-        final Object  entry = object.getClass().isArray() ? new ArrayWrapper(object) : object;
+        final Object  entry;
+        if (object.getClass().isArray()) {
+            entry = new ArrayWrapper(object);
+        } else if (object instanceof PropertyMap) {
+            entry = new PropertyMapWrapper((PropertyMap) object);
+        } else {
+            entry = object;
+        }
         final Integer value = objectMap.get(entry);
 
         if (value != null) {

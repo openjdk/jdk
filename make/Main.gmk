@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ include $(SPEC)
 # Load the vital tools for all the makefiles.
 include $(SRC_ROOT)/make/common/MakeBase.gmk
 
-# Include the corresponding custom file, if present.
--include $(CUSTOM_MAKE_DIR)/Main.gmk
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , Main.gmk))
 
 ### Clean up from previous run
 
@@ -71,8 +71,9 @@ all: images docs
 # Setup a rule for SPEC file that fails if executed. This check makes sure the configuration
 # is up to date after changes to configure
 $(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
-	@$(ECHO) ERROR: $(SPEC) is not up to date
-	@$(ECHO) Please rerun configure!
+	@$(ECHO) "ERROR: $(SPEC) is not up to date."
+	@$(ECHO) "Please rerun configure! Easiest way to do this is by running"
+	@$(ECHO) "'make reconfigure'."
 	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
 
 start-make: $(SPEC)
@@ -235,6 +236,14 @@ clean-docs:
 	$(call CleanComponent,docstemp)
 clean-test:
 	$(call CleanComponent,testoutput)
+	
+reconfigure:
+        ifneq ($(CONFIGURE_COMMAND_LINE), )
+	  @$(ECHO) "Re-running configure using arguments '$(CONFIGURE_COMMAND_LINE)'"
+        else
+	  @$(ECHO) "Re-running configure using default settings"
+        endif
+	@( cd $(OUTPUT_ROOT) && $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
 
 .PHONY: langtools corba jaxp jaxws hotspot jdk nashorn images overlay-images install test docs
 .PHONY: langtools-only corba-only jaxp-only jaxws-only hotspot-only jdk-only nashorn-only images-only overlay-images-only install-only test-only docs-only

@@ -2276,7 +2276,7 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
   if (!has_handler() && (!instruction->needs_exception_state() || instruction->exception_state() != NULL)) {
     assert(instruction->exception_state() == NULL
            || instruction->exception_state()->kind() == ValueStack::EmptyExceptionState
-           || (instruction->exception_state()->kind() == ValueStack::ExceptionState && _compilation->env()->jvmti_can_access_local_variables()),
+           || (instruction->exception_state()->kind() == ValueStack::ExceptionState && _compilation->env()->should_retain_local_variables()),
            "exception_state should be of exception kind");
     return new XHandlers();
   }
@@ -2367,7 +2367,7 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
       // This scope and all callees do not handle exceptions, so the local
       // variables of this scope are not needed. However, the scope itself is
       // required for a correct exception stack trace -> clear out the locals.
-      if (_compilation->env()->jvmti_can_access_local_variables()) {
+      if (_compilation->env()->should_retain_local_variables()) {
         cur_state = cur_state->copy(ValueStack::ExceptionState, cur_state->bci());
       } else {
         cur_state = cur_state->copy(ValueStack::EmptyExceptionState, cur_state->bci());
@@ -3251,7 +3251,7 @@ ValueStack* GraphBuilder::copy_state_exhandling_with_bci(int bci) {
 ValueStack* GraphBuilder::copy_state_for_exception_with_bci(int bci) {
   ValueStack* s = copy_state_exhandling_with_bci(bci);
   if (s == NULL) {
-    if (_compilation->env()->jvmti_can_access_local_variables()) {
+    if (_compilation->env()->should_retain_local_variables()) {
       s = state()->copy(ValueStack::ExceptionState, bci);
     } else {
       s = state()->copy(ValueStack::EmptyExceptionState, bci);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6868539 6868548
+ * @bug 6868539 6868548 8035364
  * @summary javap should use current names for constant pool entries,
  *              remove spurious ';' from constant pool entries
  */
@@ -41,17 +41,17 @@ public class T6868539
     void run() {
         String output = javap("T6868539");
         verify(output, "Utf8 +java/lang/String");                                   // 1: Utf8
-                                                                                        // 2: currently unused
+                                                                                    // 2: currently unused
         verify(output, "Integer +123456");                                          // 3: Integer
         verify(output, "Float +123456.0f");                                         // 4: Float
         verify(output, "Long +123456l");                                            // 5: Long
         verify(output, "Double +123456.0d");                                        // 6: Double
-        verify(output, "Class +#[0-9]+ +// + T6868539");                            // 7: Class
-        verify(output, "String +#[0-9]+ +// + not found");                          // 8: String
+        verify(output, "Class +#[0-9]+ +// +T6868539");                             // 7: Class
+        verify(output, "String +#[0-9]+ +// +not found");                           // 8: String
         verify(output, "Fieldref +#[0-9]+\\.#[0-9]+ +// +T6868539.errors:I");       // 9: Fieldref
         verify(output, "Methodref +#[0-9]+\\.#[0-9]+ +// +T6868539.run:\\(\\)V");   // 10: Methodref
         verify(output, "InterfaceMethodref +#[0-9]+\\.#[0-9]+ +// +java/lang/Runnable\\.run:\\(\\)V");
-                                                                                        // 11: InterfaceMethodref
+                                                                                    // 11: InterfaceMethodref
         verify(output, "NameAndType +#[0-9]+:#[0-9]+ +// +run:\\(\\)V");            // 12: NameAndType
         if (errors > 0)
             throw new Error(errors + " found.");

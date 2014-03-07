@@ -250,7 +250,7 @@ process_chunk_boundaries(Space* sp,
       // right neighbor (up to the end of the first object).
       if (last_card_of_cur_chunk < last_card_of_first_obj) {
         tty->print_cr(" LNC: BEWARE!!! first obj straddles past right end of chunk:\n"
-                      "   might be efficient to get value from right neighbour?");
+                      "   might be efficient to get value from right neighbor?");
       }
     })
   } else {

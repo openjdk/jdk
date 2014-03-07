@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ class ObjectSynchronizer : AllStatic {
   static void jni_exit    (oop obj,    Thread* THREAD);
 
   // Handle all interpreter, compiler and jni cases
-  static void wait               (Handle obj, jlong millis, TRAPS);
+  static int  wait               (Handle obj, jlong millis, TRAPS);
   static void notify             (Handle obj,               TRAPS);
   static void notifyall          (Handle obj,               TRAPS);
 

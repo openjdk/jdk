@@ -37,10 +37,10 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * Constructor of method handles used to guard call sites.
  */
 public final class NashornGuards {
-    private static final MethodHandle IS_SCRIPTOBJECT          = findOwnMH("isScriptObject", boolean.class, Object.class);
-    private static final MethodHandle IS_SCRIPTFUNCTION        = findOwnMH("isScriptFunction", boolean.class, Object.class);
-    private static final MethodHandle IS_MAP                   = findOwnMH("isMap", boolean.class, Object.class, PropertyMap.class);
-    private static final MethodHandle IS_INSTANCEOF_2          = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
+    private static final MethodHandle IS_SCRIPTOBJECT   = findOwnMH("isScriptObject", boolean.class, Object.class);
+    private static final MethodHandle IS_SCRIPTFUNCTION = findOwnMH("isScriptFunction", boolean.class, Object.class);
+    private static final MethodHandle IS_MAP            = findOwnMH("isMap", boolean.class, Object.class, PropertyMap.class);
+    private static final MethodHandle IS_INSTANCEOF_2   = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
 
     // don't create me!
     private NashornGuards() {
@@ -83,6 +83,17 @@ public final class NashornGuards {
      */
     public static MethodHandle getInstanceOf2Guard(final Class<?> class1, final Class<?> class2) {
         return MH.insertArguments(IS_INSTANCEOF_2, 1, class1, class2);
+    }
+
+    /**
+     * Combine two method handles of type {@code (Object)boolean} using logical AND.
+     *
+     * @param guard1 the first guard
+     * @param guard2 the second guard, only invoked if guard1 returns true
+     * @return true if both guard1 and guard2 returned true
+     */
+    public static MethodHandle combineGuards(final MethodHandle guard1, final MethodHandle guard2) {
+        return MH.guardWithTest(guard1, guard2, MH.dropArguments(MH.constant(boolean.class, false), 0, Object.class));
     }
 
     @SuppressWarnings("unused")

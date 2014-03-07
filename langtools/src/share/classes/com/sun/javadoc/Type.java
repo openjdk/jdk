@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package com.sun.javadoc;
 /**
  * Represents a type.  A type can be a class or interface, an
  * invocation (like {@code List<String>}) of a generic class or interface,
- * a type variable, a wildcard type ("<code>?</code>"),
- * or a primitive data type (like <code>char</code>).
+ * a type variable, a wildcard type ("{@code ?}"),
+ * or a primitive data type (like {@code char}).
  *
  * @since 1.2
  * @author Kaiyang Liu (original)
@@ -42,7 +42,8 @@ public interface Type {
      * Return unqualified name of type excluding any dimension information.
      * <p>
      * For example, a two dimensional array of String returns
-     * "<code>String</code>".
+     * "{@code String}".
+     * @return unqualified name of type excluding any dimension information.
      */
     String typeName();
 
@@ -50,7 +51,8 @@ public interface Type {
      * Return qualified name of type excluding any dimension information.
      *<p>
      * For example, a two dimensional array of String
-     * returns "<code>java.lang.String</code>".
+     * returns "{@code java.lang.String}".
+     * @return qualified name of this type excluding any dimension information.
      */
     String qualifiedTypeName();
 
@@ -60,9 +62,10 @@ public interface Type {
      * only the identifier of the innermost type is included.
      * <p>
      * For example, the class {@code Outer.Inner} returns
-     * "<code>Inner</code>".
+     * "{@code Inner}".
      *
      * @since 1.5
+     * @return the simple name of this type excluding any dimension information.
      */
     String simpleTypeName();
 
@@ -70,7 +73,8 @@ public interface Type {
      * Return the type's dimension information, as a string.
      * <p>
      * For example, a two dimensional array of String returns
-     * "<code>[][]</code>".
+     * "{@code [][]}".
+     * @return the type's dimension information as a string.
      */
     String dimension();
 
@@ -79,7 +83,7 @@ public interface Type {
      * This includes any dimension information and type arguments.
      * <p>
      * For example, a two dimensional array of String may return
-     * "<code>java.lang.String[][]</code>",
+     * "{@code java.lang.String[][]}",
      * and the parameterized type {@code List<Integer>} may return
      * "{@code java.util.List<java.lang.Integer>}".
      *
@@ -96,66 +100,66 @@ public interface Type {
     boolean isPrimitive();
 
     /**
-     * Return this type as a <code>ClassDoc</code> if it represents a class
+     * Return this type as a {@code ClassDoc} if it represents a class
      * or interface.  Array dimensions are ignored.
-     * If this type is a <code>ParameterizedType</code>,
-     * <code>TypeVariable</code>, or <code>WildcardType</code>, return
-     * the <code>ClassDoc</code> of the type's erasure.  If this is an
-     * <code>AnnotationTypeDoc</code>, return this as a <code>ClassDoc</code>
+     * If this type is a {@code ParameterizedType},
+     * {@code TypeVariable}, or {@code WildcardType}, return
+     * the {@code ClassDoc} of the type's erasure.  If this is an
+     * {@code AnnotationTypeDoc}, return this as a {@code ClassDoc}
      * (but see {@link #asAnnotationTypeDoc()}).
      * If this is a primitive type, return null.
      *
-     * @return the <code>ClassDoc</code> of this type,
+     * @return the {@code ClassDoc} of this type,
      *         or null if it is a primitive type.
      */
     ClassDoc asClassDoc();
 
     /**
-     * Return this type as a <code>ParameterizedType</code> if it represents
+     * Return this type as a {@code ParameterizedType} if it represents
      * an invocation of a generic class or interface.  Array dimensions
      * are ignored.
      *
-     * @return a <code>ParameterizedType</code> if the type is an
+     * @return a {@code ParameterizedType} if the type is an
      *         invocation of a generic type, or null if it is not.
      * @since 1.5
      */
     ParameterizedType asParameterizedType();
 
     /**
-     * Return this type as a <code>TypeVariable</code> if it represents
+     * Return this type as a {@code TypeVariable} if it represents
      * a type variable.  Array dimensions are ignored.
      *
-     * @return a <code>TypeVariable</code> if the type is a type variable,
+     * @return a {@code TypeVariable} if the type is a type variable,
      *         or null if it is not.
      * @since 1.5
      */
     TypeVariable asTypeVariable();
 
     /**
-     * Return this type as a <code>WildcardType</code> if it represents
+     * Return this type as a {@code WildcardType} if it represents
      * a wildcard type.
      *
-     * @return a <code>WildcardType</code> if the type is a wildcard type,
+     * @return a {@code WildcardType} if the type is a wildcard type,
      *         or null if it is not.
      * @since 1.5
      */
     WildcardType asWildcardType();
 
     /**
-     * Returns this type as a <code>AnnotatedType</code> if it represents
+     * Returns this type as a {@code AnnotatedType} if it represents
      * an annotated type.
      *
-     * @return a <code>AnnotatedType</code> if the type if an annotated type,
+     * @return a {@code AnnotatedType} if the type if an annotated type,
      *         or null if it is not
      * @since 1.8
      */
     AnnotatedType asAnnotatedType();
 
     /**
-     * Return this type as an <code>AnnotationTypeDoc</code> if it represents
+     * Return this type as an {@code AnnotationTypeDoc} if it represents
      * an annotation type.  Array dimensions are ignored.
      *
-     * @return an <code>AnnotationTypeDoc</code> if the type is an annotation
+     * @return an {@code AnnotationTypeDoc} if the type is an annotation
      *         type, or null if it is not.
      * @since 1.5
      */
@@ -165,7 +169,7 @@ public interface Type {
      * If this type is an array type, return the element type of the
      * array. Otherwise, return null.
      *
-     * @return a <code>Type</code> representing the element type or null.
+     * @return a {@code Type} representing the element type or null.
      * @since 1.8
      */
     Type getElementType();

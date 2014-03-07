@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ public interface Doc extends Comparable<Object> {
     /**
      * Return the text of the comment for this doc item.
      * Tags have been removed.
+     *
+     * @return the text of the comment for this doc item.
      */
     String commentText();
 
@@ -119,6 +121,8 @@ public interface Doc extends Comparable<Object> {
      * Return the full unprocessed text of the comment.  Tags
      * are included as text.  Used mainly for store and retrieve
      * operations like internalization.
+     *
+     * @return the full unprocessed text of the comment.
      */
     String getRawCommentText();
 
@@ -126,6 +130,8 @@ public interface Doc extends Comparable<Object> {
      * Set the full unprocessed text of the comment.  Tags
      * are included as text.  Used mainly for store and retrieve
      * operations like internalization.
+     *
+     * @param rawDocumentation A String containing the full unprocessed text of the comment.
      */
     void setRawCommentText(String rawDocumentation);
 
@@ -143,7 +149,7 @@ public interface Doc extends Comparable<Object> {
      * <p>
      * This method satisfies the {@link java.lang.Comparable} interface.
      *
-     * @param   obj  the <code>Object</code> to be compared.
+     * @param   obj  the {@code Object} to be compared.
      * @return  a negative integer, zero, or a positive integer as this Object
      *      is less than, equal to, or greater than the given Object.
      * @exception ClassCastException the specified Object's type prevents it
@@ -250,6 +256,10 @@ public interface Doc extends Comparable<Object> {
      * Return true if this Doc item is
      * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
      * in the result set.
+     *
+     * @return true if this Doc item is
+     *         <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     *         in the result set.
      */
     boolean isIncluded();
 
@@ -260,6 +270,10 @@ public interface Doc extends Comparable<Object> {
      * null because it has no location in the source file.
      *
      * @since 1.4
+     * @return the source positino of the first line of the
+     *         corresponding declaration, or null if
+     *         no position is available.  A default constructor returns
+     *         null because it has no location in the source file.
      */
     SourcePosition position();
 }

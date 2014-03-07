@@ -107,9 +107,6 @@ import sun.rmi.registry.RegistryImpl;
 import sun.rmi.runtime.NewThreadAction;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.transport.LiveRef;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetPropertyAction;
 import sun.security.provider.PolicyFile;
 import com.sun.rmi.rmid.ExecPermission;
 import com.sun.rmi.rmid.ExecOptionPermission;
@@ -184,7 +181,8 @@ public class Activation implements Serializable {
 
     // this should be a *private* method since it is privileged
     private static int getInt(String name, int def) {
-        return AccessController.doPrivileged(new GetIntegerAction(name, def));
+        return AccessController.doPrivileged(
+                (PrivilegedAction<Integer>) () -> Integer.getInteger(name, def));
     }
 
     private transient Activator activator;
@@ -2042,13 +2040,13 @@ public class Activation implements Serializable {
             }
 
             debugExec = AccessController.doPrivileged(
-                new GetBooleanAction("sun.rmi.server.activation.debugExec"));
+                (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("sun.rmi.server.activation.debugExec"));
 
             /**
              * Determine class name for activation exec policy (if any).
              */
             String execPolicyClassName = AccessController.doPrivileged(
-                new GetPropertyAction("sun.rmi.activation.execPolicy", null));
+                (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.activation.execPolicy"));
             if (execPolicyClassName == null) {
                 if (!stop) {
                     DefaultExecPolicy.checkConfiguration();
@@ -2387,7 +2385,7 @@ class PipeWriter implements Runnable {
 
     static {
         lineSeparator = AccessController.doPrivileged(
-            new GetPropertyAction("line.separator"));
+           (PrivilegedAction<String>) () -> System.getProperty("line.separator"));
         lineSeparatorLength = lineSeparator.length();
     }
 
