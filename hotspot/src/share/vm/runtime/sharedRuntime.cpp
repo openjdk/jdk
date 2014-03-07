@@ -127,14 +127,6 @@ void SharedRuntime::generate_stubs() {
 
 #include <math.h>
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL4(hotspot, object__alloc, Thread*, char*, int, size_t);
-HS_DTRACE_PROBE_DECL7(hotspot, method__entry, int,
-                      char*, int, char*, int, char*, int);
-HS_DTRACE_PROBE_DECL7(hotspot, method__return, int,
-                      char*, int, char*, int, char*, int);
-#endif /* !USDT2 */
-
 // Implementation of SharedRuntime
 
 #ifndef PRODUCT
@@ -408,7 +400,7 @@ double SharedRuntime::dabs(double f)  {
 
 #endif
 
-#if defined(__SOFTFP__) || defined(PPC)
+#if defined(__SOFTFP__) || defined(PPC32)
 double SharedRuntime::dsqrt(double f) {
   return sqrt(f);
 }
@@ -969,14 +961,9 @@ int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
   Klass* klass = o->klass();
   int size = o->size();
   Symbol* name = klass->name();
-#ifndef USDT2
-  HS_DTRACE_PROBE4(hotspot, object__alloc, get_java_tid(thread),
-                   name->bytes(), name->utf8_length(), size * HeapWordSize);
-#else /* USDT2 */
   HOTSPOT_OBJECT_ALLOC(
                    get_java_tid(thread),
                    (char *) name->bytes(), name->utf8_length(), size * HeapWordSize);
-#endif /* USDT2 */
   return 0;
 }
 
@@ -986,18 +973,11 @@ JRT_LEAF(int, SharedRuntime::dtrace_method_entry(
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
   Symbol* sig = method->signature();
-#ifndef USDT2
-  HS_DTRACE_PROBE7(hotspot, method__entry, get_java_tid(thread),
-      kname->bytes(), kname->utf8_length(),
-      name->bytes(), name->utf8_length(),
-      sig->bytes(), sig->utf8_length());
-#else /* USDT2 */
   HOTSPOT_METHOD_ENTRY(
       get_java_tid(thread),
       (char *) kname->bytes(), kname->utf8_length(),
       (char *) name->bytes(), name->utf8_length(),
       (char *) sig->bytes(), sig->utf8_length());
-#endif /* USDT2 */
   return 0;
 JRT_END
 
@@ -1007,18 +987,11 @@ JRT_LEAF(int, SharedRuntime::dtrace_method_exit(
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
   Symbol* sig = method->signature();
-#ifndef USDT2
-  HS_DTRACE_PROBE7(hotspot, method__return, get_java_tid(thread),
-      kname->bytes(), kname->utf8_length(),
-      name->bytes(), name->utf8_length(),
-      sig->bytes(), sig->utf8_length());
-#else /* USDT2 */
   HOTSPOT_METHOD_RETURN(
       get_java_tid(thread),
       (char *) kname->bytes(), kname->utf8_length(),
       (char *) name->bytes(), name->utf8_length(),
       (char *) sig->bytes(), sig->utf8_length());
-#endif /* USDT2 */
   return 0;
 JRT_END
 
@@ -2750,6 +2723,71 @@ void SharedRuntime::get_utf(oopDesc* src, address dst) {
   (void) UNICODE::as_utf8(jlsPos, jlsLen, (char *)dst, max_dtrace_string_size);
 }
 #endif // ndef HAVE_DTRACE_H
+
+int SharedRuntime::convert_ints_to_longints_argcnt(int in_args_count, BasicType* in_sig_bt) {
+  int argcnt = in_args_count;
+  if (CCallingConventionRequiresIntsAsLongs) {
+    for (int in = 0; in < in_args_count; in++) {
+      BasicType bt = in_sig_bt[in];
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR:
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          argcnt++;
+          break;
+        default:
+          break;
+      }
+    }
+  } else {
+    assert(0, "This should not be needed on this platform");
+  }
+
+  return argcnt;
+}
+
+void SharedRuntime::convert_ints_to_longints(int i2l_argcnt, int& in_args_count,
+                                             BasicType*& in_sig_bt, VMRegPair*& in_regs) {
+  if (CCallingConventionRequiresIntsAsLongs) {
+    VMRegPair *new_in_regs   = NEW_RESOURCE_ARRAY(VMRegPair, i2l_argcnt);
+    BasicType *new_in_sig_bt = NEW_RESOURCE_ARRAY(BasicType, i2l_argcnt);
+
+    int argcnt = 0;
+    for (int in = 0; in < in_args_count; in++, argcnt++) {
+      BasicType bt  = in_sig_bt[in];
+      VMRegPair reg = in_regs[in];
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR:
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          // Convert (bt) to (T_LONG,bt).
+          new_in_sig_bt[argcnt  ] = T_LONG;
+          new_in_sig_bt[argcnt+1] = bt;
+          assert(reg.first()->is_valid() && !reg.second()->is_valid(), "");
+          new_in_regs[argcnt  ].set2(reg.first());
+          new_in_regs[argcnt+1].set_bad();
+          argcnt++;
+          break;
+        default:
+          // No conversion needed.
+          new_in_sig_bt[argcnt] = bt;
+          new_in_regs[argcnt]   = reg;
+          break;
+      }
+    }
+    assert(argcnt == i2l_argcnt, "must match");
+
+    in_regs = new_in_regs;
+    in_sig_bt = new_in_sig_bt;
+    in_args_count = i2l_argcnt;
+  } else {
+    assert(0, "This should not be needed on this platform");
+  }
+}
 
 // -------------------------------------------------------------------------
 // Java-Java calling convention

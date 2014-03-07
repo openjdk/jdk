@@ -38,7 +38,7 @@ public class TestDeprecatedDocs extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-source", "1.5", "-sourcepath", SRC_DIR, "pkg"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
     };
 
     private static final String TARGET_FILE  =

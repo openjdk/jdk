@@ -23,6 +23,6 @@
 
 // key: compiler.err.varargs.must.be.last
 
-class VarargMustBeFinal {
+class VarargMustBeLast {
     public void invalidVarArg(String... invalidVarArg, String extra) { }
 }

@@ -48,7 +48,7 @@ public class Block extends VMObject {
     preOrderField = new CIntField(type.getCIntegerField("_pre_order"), 0);
     domDepthField = new CIntField(type.getCIntegerField("_dom_depth"), 0);
     idomField = type.getAddressField("_idom");
-    freqField = type.getJFloatField("_freq");
+    freqField = type.getJDoubleField("_freq");
   }
 
   private static AddressField nodesField;
@@ -57,7 +57,7 @@ public class Block extends VMObject {
   private static CIntField preOrderField;
   private static CIntField domDepthField;
   private static AddressField idomField;
-  private static JFloatField freqField;
+  private static JDoubleField freqField;
 
   public Block(Address addr) {
     super(addr);
@@ -67,8 +67,8 @@ public class Block extends VMObject {
     return (int)preOrderField.getValue(getAddress());
   }
 
-  public float freq() {
-    return (float)freqField.getValue(getAddress());
+  public double freq() {
+    return (double)freqField.getValue(getAddress());
   }
 
   public Node_List nodes() {

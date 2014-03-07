@@ -55,6 +55,7 @@ JVMOFFS.o = $(JVMOFFS).o
 GENOFFS = generate$(JVMOFFS)
 
 DTRACE_SRCDIR = $(GAMMADIR)/src/os/$(Platform_os_family)/dtrace
+DTRACE_COMMON_SRCDIR = $(GAMMADIR)/src/os/posix/dtrace
 DTRACE = dtrace
 DTRACE.o = $(DTRACE).o
 
@@ -253,8 +254,8 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   endif
 endif
 
-$(DTRACE).d: $(DTRACE_SRCDIR)/hotspot.d $(DTRACE_SRCDIR)/hotspot_jni.d \
-             $(DTRACE_SRCDIR)/hs_private.d $(DTRACE_SRCDIR)/jhelper.d
+$(DTRACE).d: $(DTRACE_COMMON_SRCDIR)/hotspot.d $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d \
+             $(DTRACE_COMMON_SRCDIR)/hs_private.d $(DTRACE_SRCDIR)/jhelper.d
 	$(QUIETLY) cat $^ > $@
 
 DTraced_Files = ciEnv.o \
@@ -332,14 +333,14 @@ $(DTRACE.o): $(DTRACE).d $(JVMOFFS).h $(JVMOFFS)Index.h $(DTraced_Files)
 $(DtraceOutDir):
 	mkdir $(DtraceOutDir)
 
-$(DtraceOutDir)/hotspot.h: $(DTRACE_SRCDIR)/hotspot.d | $(DtraceOutDir)
-	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_SRCDIR)/hotspot.d
+$(DtraceOutDir)/hotspot.h: $(DTRACE_COMMON_SRCDIR)/hotspot.d | $(DtraceOutDir)
+	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_COMMON_SRCDIR)/hotspot.d
 
-$(DtraceOutDir)/hotspot_jni.h: $(DTRACE_SRCDIR)/hotspot_jni.d | $(DtraceOutDir)
-	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_SRCDIR)/hotspot_jni.d
+$(DtraceOutDir)/hotspot_jni.h: $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d | $(DtraceOutDir)
+	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d
 
-$(DtraceOutDir)/hs_private.h: $(DTRACE_SRCDIR)/hs_private.d | $(DtraceOutDir)
-	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_SRCDIR)/hs_private.d
+$(DtraceOutDir)/hs_private.h: $(DTRACE_COMMON_SRCDIR)/hs_private.d | $(DtraceOutDir)
+	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_COMMON_SRCDIR)/hs_private.d
 
 dtrace_gen_headers: $(DtraceOutDir)/hotspot.h $(DtraceOutDir)/hotspot_jni.h $(DtraceOutDir)/hs_private.h
 

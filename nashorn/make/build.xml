@@ -282,6 +282,11 @@ grant codeBase "file:/${basedir}/test/script/trusted/*" {
     permission java.security.AllPermission;
 };
 
+grant codeBase "file:/${basedir}/test/script/maptests/*" {
+    permission java.io.FilePermission "${basedir}/test/script/maptests/*","read";
+    permission java.lang.RuntimePermission "nashorn.debugMode";
+};
+
 grant codeBase "file:/${basedir}/test/script/basic/*" {
     permission java.io.FilePermission "${basedir}/test/script/-", "read";
     permission java.io.FilePermission "$${user.dir}", "read";

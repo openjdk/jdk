@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test repeating subtractExact
  * @compile SubExactIRepeatTest.java Verify.java
- * @run main SubExactIRepeatTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main SubExactIRepeatTest
  *
  */
 

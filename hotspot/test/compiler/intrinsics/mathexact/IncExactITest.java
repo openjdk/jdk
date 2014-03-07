@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test incrementExact
  * @compile IncExactITest.java Verify.java
- * @run main IncExactITest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main IncExactITest
  *
  */
 

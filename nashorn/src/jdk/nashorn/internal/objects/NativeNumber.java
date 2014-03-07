@@ -98,7 +98,7 @@ public final class NativeNumber extends ScriptObject {
     }
 
     NativeNumber(final double value, final Global global) {
-        this(value, global.getNumberPrototype(), global.getNumberMap());
+        this(value, global.getNumberPrototype(), getInitialMap());
     }
 
     private NativeNumber(final double value) {

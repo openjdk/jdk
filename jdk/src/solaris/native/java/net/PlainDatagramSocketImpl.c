@@ -509,6 +509,8 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
         } else if (ret == -1) {
             if (errno == EBADF) {
                  JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
+            } else if (errno == ENOMEM) {
+                 JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
             } else {
                  NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Peek failed");
             }
@@ -600,15 +602,18 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
                             "Receive timed out");
             return -1;
         } else if (ret == -1) {
+            if (errno == ENOMEM) {
+                JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
 #ifdef __linux__
-            if (errno == EBADF) {
+            } else if (errno == EBADF) {
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
             } else {
                 NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
-            }
 #else
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
+            } else {
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
 #endif
+            }
             return -1;
         }
     }
@@ -808,15 +813,18 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
                     JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                                     "Receive timed out");
                 } else if (ret == -1) {
+                    if (errno == ENOMEM) {
+                        JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
 #ifdef __linux__
-                    if (errno == EBADF) {
+                    } else if (errno == EBADF) {
                          JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
-                     } else {
-                         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
-                     }
+                    } else {
+                        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
 #else
-                     JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
+                    } else {
+                        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
 #endif
+                    }
                 }
 
                 if (mallocedPacket) {

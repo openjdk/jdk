@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,20 +269,7 @@ public class JavacTrees extends DocTrees {
     }
 
     public JCTree getTree(Element element) {
-        Symbol symbol = (Symbol) element;
-        TypeSymbol enclosing = symbol.enclClass();
-        Env<AttrContext> env = enter.getEnv(enclosing);
-        if (env == null)
-            return null;
-        JCClassDecl classNode = env.enclClass;
-        if (classNode != null) {
-            if (TreeInfo.symbolFor(classNode) == element)
-                return classNode;
-            for (JCTree node : classNode.getMembers())
-                if (TreeInfo.symbolFor(node) == element)
-                    return node;
-        }
-        return null;
+        return getTree(element, null);
     }
 
     public JCTree getTree(Element e, AnnotationMirror a) {

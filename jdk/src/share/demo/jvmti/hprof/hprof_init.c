@@ -237,7 +237,7 @@ list_all_tables(void)
  * such a connection can't be made.
  */
 static int
-connect_to_socket(char *hostname, unsigned short port)
+connect_to_socket(char *hostname, int port)
 {
     int fd;
 
@@ -251,7 +251,7 @@ connect_to_socket(char *hostname, unsigned short port)
     }
 
     /* create a socket */
-    fd = md_connect(hostname, port);
+    fd = md_connect(hostname, (unsigned short)port);
     return fd;
 }
 
@@ -817,7 +817,7 @@ parse_options(char *command_line_options)
 
     if ( gdata->net_port > 0 ) {
         LOG2("Agent_OnLoad", "Connecting to socket");
-        gdata->fd = connect_to_socket(gdata->net_hostname, (unsigned short)gdata->net_port);
+        gdata->fd = connect_to_socket(gdata->net_hostname, gdata->net_port);
         if (gdata->fd <= 0) {
             char errmsg[120];
 

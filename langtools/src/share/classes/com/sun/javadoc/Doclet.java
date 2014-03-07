@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,15 @@ package com.sun.javadoc;
  * This is an example of a starting class for a doclet,
  * showing the entry-point methods.  A starting class must
  * import com.sun.javadoc.* and implement the
- * <code>start(RootDoc)</code> method, as described in the
+ * {@code start(RootDoc)} method, as described in the
  * <a href="package-summary.html#package_description">package
  * description</a>.  If the doclet takes command line options,
- * it must also implement <code>optionLength</code> and
- * <code>validOptions</code>.
+ * it must also implement {@code optionLength} and
+ * {@code validOptions}.
  *
  * <p> A doclet supporting the language features added since 1.1
  * (such as generics and annotations) should indicate this
- * by implementing <code>languageVersion</code>.  In the absence of
+ * by implementing {@code languageVersion}.  In the absence of
  * this the doclet should not invoke any of the Doclet API methods
  * added since 1.5, and
  * the results of several other methods are modified so as
@@ -45,7 +45,7 @@ package com.sun.javadoc;
  * the doclet.
  *
  * <p> To start the doclet, pass
- * <code>-doclet</code> followed by the fully-qualified
+ * {@code -doclet} followed by the fully-qualified
  * name of the starting class on the javadoc tool command line.
  */
 public abstract class Doclet {
@@ -54,6 +54,7 @@ public abstract class Doclet {
      * Generate documentation here.
      * This method is required for all doclets.
      *
+     * @param root Supply the RootDoc to the method.
      * @return true on success.
      */
     public static boolean start(RootDoc root) {
@@ -69,6 +70,7 @@ public abstract class Doclet {
      * If this method is missing, Javadoc will print an invalid flag
      * error for every option.
      *
+     * @param option the option for which the number of arguements is returned.
      * @return number of arguments on the command line for an option
      *         including the option name itself.  Zero return means
      *         option not known.  Negative value means error occurred.
@@ -88,6 +90,8 @@ public abstract class Doclet {
      * Printing option related error messages (using the provided
      * DocErrorReporter) is the responsibility of this method.
      *
+     * @param options Supply valid options as an array of Strings.
+     * @param reporter The DocErrorReporter responsible for these options.
      * @return true if the options are valid.
      */
     public static boolean validOptions(String options[][],

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -28,5 +28,5 @@
  * @run
  */
 
-print(new java.awt.Color(1, 1, 1)) // creates Color[r=1,g=1,b=1]
-print(new java.awt.Color(1.0, 1.0, 1.0)) // Color[r=255,g=255,b=255]
+print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1))
+print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1.0))

@@ -1713,9 +1713,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     //might be missing '>' character because the href has an inline tag.
                     break;
                 }
-                if (textBuff.substring(begin, end).contains("\"")){
-                    begin = textBuff.indexOf("\"", begin) + 1;
-                    end = textBuff.indexOf("\"", begin +1);
+
+                String quote = textBuff.substring(begin, end);
+                quote = quote.contains("\"") ? "\"" :
+                        quote.contains("\'") ? "\'" : null;
+                if (quote != null) {
+                    begin = textBuff.indexOf(quote, begin) + 1;
+                    end = textBuff.indexOf(quote, begin +1);
                     if (begin == 0 || end == -1){
                         //Link is missing a quote.
                         break;

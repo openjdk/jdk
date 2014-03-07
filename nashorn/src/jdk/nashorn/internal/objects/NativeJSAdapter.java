@@ -163,7 +163,7 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     private static ScriptObject wrapAdaptee(final ScriptObject adaptee) {
-        return new JO(adaptee, Global.instance().getObjectMap());
+        return new JO(adaptee, JO.getInitialMap());
     }
 
     @Override
@@ -577,7 +577,7 @@ public final class NativeJSAdapter extends ScriptObject {
             proto = global.getJSAdapterPrototype();
         }
 
-        return new NativeJSAdapter(overrides, (ScriptObject)adaptee, (ScriptObject)proto, global.getJSAdapterMap());
+        return new NativeJSAdapter(overrides, (ScriptObject)adaptee, (ScriptObject)proto, getInitialMap());
     }
 
     @Override
@@ -629,7 +629,7 @@ public final class NativeJSAdapter extends ScriptObject {
                     // to name. Probably not a big deal, but if we can ever make it leaner, it'd be nice.
                     return new GuardedInvocation(MH.dropArguments(MH.constant(Object.class,
                             func.makeBoundFunction(this, new Object[] { name })), 0, Object.class),
-                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), __call__),
+                            adaptee.getProtoSwitchPoint(__call__, find.getOwner()),
                             testJSAdaptor(adaptee, null, null, null));
                 }
             }
@@ -700,7 +700,7 @@ public final class NativeJSAdapter extends ScriptObject {
                 if (methodHandle != null) {
                     return new GuardedInvocation(
                             methodHandle,
-                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), hook),
+                            adaptee.getProtoSwitchPoint(hook, findData.getOwner()),
                             testJSAdaptor(adaptee, findData.getGetter(Object.class), findData.getOwner(), func));
                 }
              }
@@ -713,7 +713,7 @@ public final class NativeJSAdapter extends ScriptObject {
             final MethodHandle methodHandle = hook.equals(__put__) ?
             MH.asType(Lookup.EMPTY_SETTER, type) :
             Lookup.emptyGetter(type.returnType());
-            return new GuardedInvocation(methodHandle, adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), hook), testJSAdaptor(adaptee, null, null, null));
+            return new GuardedInvocation(methodHandle, adaptee.getProtoSwitchPoint(hook, null), testJSAdaptor(adaptee, null, null, null));
         }
     }
 

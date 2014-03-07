@@ -348,16 +348,21 @@ class Method : public Metadata {
   }
 
   void set_method_data(MethodData* data)       {
-    _method_data = data;
+    // The store into method must be released. On platforms without
+    // total store order (TSO) the reference may become visible before
+    // the initialization of data otherwise.
+    OrderAccess::release_store_ptr((volatile void *)&_method_data, data);
   }
 
   MethodCounters* method_counters() const {
     return _method_counters;
   }
 
-
   void set_method_counters(MethodCounters* counters) {
-    _method_counters = counters;
+    // The store into method must be released. On platforms without
+    // total store order (TSO) the reference may become visible before
+    // the initialization of data otherwise.
+    OrderAccess::release_store_ptr((volatile void *)&_method_counters, counters);
   }
 
 #ifdef TIERED

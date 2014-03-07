@@ -4,6 +4,7 @@
 ## @test Test6929067.sh
 ## @bug 6929067
 ## @bug 8021296
+## @bug 8025519
 ## @summary Stack guard pages should be removed when thread is detached
 ## @run shell Test6929067.sh
 ##
@@ -113,7 +114,7 @@ LD_LIBRARY_PATH=.:${COMPILEJAVA}/jre/lib/${ARCH}/${VMTYPE}:/usr/lib:$LD_LIBRARY_
 export LD_LIBRARY_PATH
 
 cp ${TESTSRC}${FS}*.java ${THIS_DIR}
-${TESTJAVA}${FS}bin${FS}javac *.java
+${COMPILEJAVA}${FS}bin${FS}javac *.java
 
 echo "Architecture: ${ARCH}"
 echo "Compilation flag: ${COMP_FLAG}"
@@ -123,8 +124,8 @@ echo "VM type: ${VMTYPE}"
 # for /usr/lib/`uname -m`-linux-gnu version ensure to add that path to below compilation.
 
 $gcc_cmd -DLINUX ${COMP_FLAG} -o invoke \
-    -I${TESTJAVA}/include -I${TESTJAVA}/include/linux \
-    -L${TESTJAVA}/jre/lib/${ARCH}/${VMTYPE} \
+    -I${COMPILEJAVA}/include -I${COMPILEJAVA}/include/linux \
+    -L${COMPILEJAVA}/jre/lib/${ARCH}/${VMTYPE} \
      ${TESTSRC}${FS}invoke.c -ljvm -lpthread
 
 ./invoke

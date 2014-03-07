@@ -61,9 +61,6 @@ TOOL_COMPILEFONTCONFIG = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 TOOL_COMPILEPROPERTIES = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.compileproperties.CompileProperties
 
-TOOL_STRIPPROPERTIES = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
-    build.tools.stripproperties.StripProperties
-
 TOOL_JARREORDER = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.jarreorder.JarReorder
 

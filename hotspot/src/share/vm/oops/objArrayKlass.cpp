@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -674,8 +674,8 @@ const char* ObjArrayKlass::internal_name() const {
 
 // Verification
 
-void ObjArrayKlass::verify_on(outputStream* st, bool check_dictionary) {
-  ArrayKlass::verify_on(st, check_dictionary);
+void ObjArrayKlass::verify_on(outputStream* st) {
+  ArrayKlass::verify_on(st);
   guarantee(element_klass()->is_klass(), "should be klass");
   guarantee(bottom_klass()->is_klass(), "should be klass");
   Klass* bk = bottom_klass();

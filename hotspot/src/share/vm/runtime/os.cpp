@@ -362,7 +362,7 @@ void os::signal_init() {
       // exceptions anyway, check and abort if this fails.
       if (signal_thread == NULL || signal_thread->osthread() == NULL) {
         vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                      "unable to create new native thread");
+                                      os::native_thread_creation_failed_msg());
       }
 
       java_lang_Thread::set_thread(thread_oop(), signal_thread);
@@ -1101,7 +1101,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 // if C stack is walkable beyond current frame. The check for fp() is not
 // necessary on Sparc, but it's harmless.
 bool os::is_first_C_frame(frame* fr) {
-#if defined(IA64) && !defined(_WIN32)
+#if (defined(IA64) && !defined(AIX)) && !defined(_WIN32)
   // On IA64 we have to check if the callers bsp is still valid
   // (i.e. within the register stack bounds).
   // Notice: this only works for threads created by the VM and only if
@@ -1197,7 +1197,7 @@ char* os::format_boot_path(const char* format_string,
                            char fileSep,
                            char pathSep) {
     assert((fileSep == '/' && pathSep == ':') ||
-           (fileSep == '\\' && pathSep == ';'), "unexpected seperator chars");
+           (fileSep == '\\' && pathSep == ';'), "unexpected separator chars");
 
     // Scan the format string to determine the length of the actual
     // boot classpath, and handle platform dependencies as well.

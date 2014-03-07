@@ -114,8 +114,11 @@ class StubRoutines: AllStatic {
 #ifdef TARGET_ARCH_MODEL_arm
 # include "stubRoutines_arm.hpp"
 #endif
-#ifdef TARGET_ARCH_MODEL_ppc
-# include "stubRoutines_ppc.hpp"
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "stubRoutines_ppc_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc_64
+# include "stubRoutines_ppc_64.hpp"
 #endif
 
 

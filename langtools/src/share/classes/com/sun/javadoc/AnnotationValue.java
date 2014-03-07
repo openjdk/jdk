@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@ public interface AnnotationValue {
      * Returns the value.
      * The type of the returned object is one of the following:
      * <ul><li> a wrapper class for a primitive type
-     *     <li> <code>String</code>
-     *     <li> <code>Type</code> (representing a class literal)
-     *     <li> <code>FieldDoc</code> (representing an enum constant)
-     *     <li> <code>AnnotationDesc</code>
-     *     <li> <code>AnnotationValue[]</code>
+     *     <li> {@code String}
+     *     <li> {@code Type} (representing a class literal)
+     *     <li> {@code FieldDoc} (representing an enum constant)
+     *     <li> {@code AnnotationDesc}
+     *     <li> {@code AnnotationValue[]}
      * </ul>
      *
      * @return the value.

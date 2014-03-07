@@ -80,7 +80,7 @@ final class SetMethodCreator {
     }
 
     /**
-     * This class encapsulates the results of looking up a setter method; it's basically a triple of a method hanle,
+     * This class encapsulates the results of looking up a setter method; it's basically a triple of a method handle,
      * a Property object, and flags for invocation.
      *
      */
@@ -170,7 +170,10 @@ final class SetMethodCreator {
 
     private SetMethod createNewPropertySetter() {
         final SetMethod sm = map.getFieldCount() < map.getFieldMaximum() ? createNewFieldSetter() : createNewSpillPropertySetter();
-        sobj.notifyPropertyAdded(sobj, sm.property);
+        final PropertyListeners listeners = map.getListeners();
+        if (listeners != null) {
+            listeners.propertyAdded(sm.property);
+        }
         return sm;
     }
 

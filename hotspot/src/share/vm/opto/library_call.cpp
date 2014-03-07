@@ -203,7 +203,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_trig(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
-  void inline_math_mathExact(Node* math);
+  template <typename OverflowOp>
+  bool inline_math_overflow(Node* arg1, Node* arg2);
+  void inline_math_mathExact(Node* math, Node* test);
   bool inline_math_addExactI(bool is_increment);
   bool inline_math_addExactL(bool is_increment);
   bool inline_math_multiplyExactI();
@@ -517,31 +519,31 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
 
   case vmIntrinsics::_incrementExactI:
   case vmIntrinsics::_addExactI:
-    if (!Matcher::match_rule_supported(Op_AddExactI) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowAddI) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_incrementExactL:
   case vmIntrinsics::_addExactL:
-    if (!Matcher::match_rule_supported(Op_AddExactL) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowAddL) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_decrementExactI:
   case vmIntrinsics::_subtractExactI:
-    if (!Matcher::match_rule_supported(Op_SubExactI) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowSubI) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_decrementExactL:
   case vmIntrinsics::_subtractExactL:
-    if (!Matcher::match_rule_supported(Op_SubExactL) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowSubL) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_negateExactI:
-    if (!Matcher::match_rule_supported(Op_NegExactI) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowSubI) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_negateExactL:
-    if (!Matcher::match_rule_supported(Op_NegExactL) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowSubL) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_multiplyExactI:
-    if (!Matcher::match_rule_supported(Op_MulExactI) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowMulI) || !UseMathExactIntrinsics) return NULL;
     break;
   case vmIntrinsics::_multiplyExactL:
-    if (!Matcher::match_rule_supported(Op_MulExactL) || !UseMathExactIntrinsics) return NULL;
+    if (!Matcher::match_rule_supported(Op_OverflowMulL) || !UseMathExactIntrinsics) return NULL;
     break;
 
  default:
@@ -1058,7 +1060,7 @@ Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
   const Type* thread_type  = TypeOopPtr::make_from_klass(thread_klass)->cast_to_ptr_type(TypePtr::NotNull);
   Node* thread = _gvn.transform(new (C) ThreadLocalNode());
   Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::threadObj_offset()));
-  Node* threadObj = make_load(NULL, p, thread_type, T_OBJECT);
+  Node* threadObj = make_load(NULL, p, thread_type, T_OBJECT, MemNode::unordered);
   tls_output = thread;
   return threadObj;
 }
@@ -1937,7 +1939,7 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
     runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
 
     // These intrinsics are supported on all hardware
-  case vmIntrinsics::_dsqrt:  return Matcher::has_match_rule(Op_SqrtD)  ? inline_math(id) : false;
+  case vmIntrinsics::_dsqrt:  return Matcher::match_rule_supported(Op_SqrtD) ? inline_math(id) : false;
   case vmIntrinsics::_dabs:   return Matcher::has_match_rule(Op_AbsD)   ? inline_math(id) : false;
 
   case vmIntrinsics::_dexp:   return Matcher::has_match_rule(Op_ExpD)   ? inline_exp()    :
@@ -1970,18 +1972,8 @@ bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   return true;
 }
 
-void LibraryCallKit::inline_math_mathExact(Node* math) {
-  // If we didn't get the expected opcode it means we have optimized
-  // the node to something else and don't need the exception edge.
-  if (!math->is_MathExact()) {
-    set_result(math);
-    return;
-  }
-
-  Node* result = _gvn.transform( new(C) ProjNode(math, MathExactNode::result_proj_node));
-  Node* flags = _gvn.transform( new(C) FlagsProjNode(math, MathExactNode::flags_proj_node));
-
-  Node* bol = _gvn.transform( new (C) BoolNode(flags, BoolTest::overflow) );
+void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
+  Node* bol = _gvn.transform( new (C) BoolNode(test, BoolTest::overflow) );
   IfNode* check = create_and_map_if(control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
   Node* fast_path = _gvn.transform( new (C) IfFalseNode(check));
   Node* slow_path = _gvn.transform( new (C) IfTrueNode(check) );
@@ -1999,108 +1991,50 @@ void LibraryCallKit::inline_math_mathExact(Node* math) {
   }
 
   set_control(fast_path);
-  set_result(result);
+  set_result(math);
+}
+
+template <typename OverflowOp>
+bool LibraryCallKit::inline_math_overflow(Node* arg1, Node* arg2) {
+  typedef typename OverflowOp::MathOp MathOp;
+
+  MathOp* mathOp = new(C) MathOp(arg1, arg2);
+  Node* operation = _gvn.transform( mathOp );
+  Node* ofcheck = _gvn.transform( new(C) OverflowOp(arg1, arg2) );
+  inline_math_mathExact(operation, ofcheck);
+  return true;
 }
 
 bool LibraryCallKit::inline_math_addExactI(bool is_increment) {
-  Node* arg1 = argument(0);
-  Node* arg2 = NULL;
-
-  if (is_increment) {
-    arg2 = intcon(1);
-  } else {
-    arg2 = argument(1);
-  }
-
-  Node* add = _gvn.transform( new(C) AddExactINode(NULL, arg1, arg2) );
-  inline_math_mathExact(add);
-  return true;
+  return inline_math_overflow<OverflowAddINode>(argument(0), is_increment ? intcon(1) : argument(1));
 }
 
 bool LibraryCallKit::inline_math_addExactL(bool is_increment) {
-  Node* arg1 = argument(0); // type long
-  // argument(1) == TOP
-  Node* arg2 = NULL;
-
-  if (is_increment) {
-    arg2 = longcon(1);
-  } else {
-    arg2 = argument(2); // type long
-    // argument(3) == TOP
-  }
-
-  Node* add = _gvn.transform(new(C) AddExactLNode(NULL, arg1, arg2));
-  inline_math_mathExact(add);
-  return true;
+  return inline_math_overflow<OverflowAddLNode>(argument(0), is_increment ? longcon(1) : argument(2));
 }
 
 bool LibraryCallKit::inline_math_subtractExactI(bool is_decrement) {
-  Node* arg1 = argument(0);
-  Node* arg2 = NULL;
-
-  if (is_decrement) {
-    arg2 = intcon(1);
-  } else {
-    arg2 = argument(1);
-  }
-
-  Node* sub = _gvn.transform(new(C) SubExactINode(NULL, arg1, arg2));
-  inline_math_mathExact(sub);
-  return true;
+  return inline_math_overflow<OverflowSubINode>(argument(0), is_decrement ? intcon(1) : argument(1));
 }
 
 bool LibraryCallKit::inline_math_subtractExactL(bool is_decrement) {
-  Node* arg1 = argument(0); // type long
-  // argument(1) == TOP
-  Node* arg2 = NULL;
-
-  if (is_decrement) {
-    arg2 = longcon(1);
-  } else {
-    arg2 = argument(2); // type long
-    // argument(3) == TOP
-  }
-
-  Node* sub = _gvn.transform(new(C) SubExactLNode(NULL, arg1, arg2));
-  inline_math_mathExact(sub);
-  return true;
+  return inline_math_overflow<OverflowSubLNode>(argument(0), is_decrement ? longcon(1) : argument(2));
 }
 
 bool LibraryCallKit::inline_math_negateExactI() {
-  Node* arg1 = argument(0);
-
-  Node* neg = _gvn.transform(new(C) NegExactINode(NULL, arg1));
-  inline_math_mathExact(neg);
-  return true;
+  return inline_math_overflow<OverflowSubINode>(intcon(0), argument(0));
 }
 
 bool LibraryCallKit::inline_math_negateExactL() {
-  Node* arg1 = argument(0);
-  // argument(1) == TOP
-
-  Node* neg = _gvn.transform(new(C) NegExactLNode(NULL, arg1));
-  inline_math_mathExact(neg);
-  return true;
+  return inline_math_overflow<OverflowSubLNode>(longcon(0), argument(0));
 }
 
 bool LibraryCallKit::inline_math_multiplyExactI() {
-  Node* arg1 = argument(0);
-  Node* arg2 = argument(1);
-
-  Node* mul = _gvn.transform(new(C) MulExactINode(NULL, arg1, arg2));
-  inline_math_mathExact(mul);
-  return true;
+  return inline_math_overflow<OverflowMulINode>(argument(0), argument(1));
 }
 
 bool LibraryCallKit::inline_math_multiplyExactL() {
-  Node* arg1 = argument(0);
-  // argument(1) == TOP
-  Node* arg2 = argument(2);
-  // argument(3) == TOP
-
-  Node* mul = _gvn.transform(new(C) MulExactLNode(NULL, arg1, arg2));
-  inline_math_mathExact(mul);
-  return true;
+  return inline_math_overflow<OverflowMulLNode>(argument(0), argument(2));
 }
 
 Node*
@@ -2628,8 +2562,13 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
     // rough approximation of type.
     need_mem_bar = true;
     // For Stores, place a memory ordering barrier now.
-    if (is_store)
+    if (is_store) {
       insert_mem_bar(Op_MemBarRelease);
+    } else {
+      if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+        insert_mem_bar(Op_MemBarVolatile);
+      }
+    }
   }
 
   // Memory barrier to prevent normal and 'unsafe' accesses from
@@ -2641,7 +2580,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
 
   if (!is_store) {
-    Node* p = make_load(control(), adr, value_type, type, adr_type, is_volatile);
+    Node* p = make_load(control(), adr, value_type, type, adr_type, MemNode::unordered, is_volatile);
     // load value
     switch (type) {
     case T_BOOLEAN:
@@ -2685,13 +2624,14 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
       break;
     }
 
+    MemNode::MemOrd mo = is_volatile ? MemNode::release : MemNode::unordered;
     if (type != T_OBJECT ) {
-      (void) store_to_memory(control(), adr, val, type, adr_type, is_volatile);
+      (void) store_to_memory(control(), adr, val, type, adr_type, mo, is_volatile);
     } else {
       // Possibly an oop being stored to Java heap or native memory
       if (!TypePtr::NULL_PTR->higher_equal(_gvn.type(heap_base_oop))) {
         // oop to Java heap.
-        (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type);
+        (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type, mo);
       } else {
         // We can't tell at compile time if we are storing in the Java heap or outside
         // of it. So we need to emit code to conditionally do the proper type of
@@ -2703,11 +2643,11 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
         __ if_then(heap_base_oop, BoolTest::ne, null(), PROB_UNLIKELY(0.999)); {
           // Sync IdealKit and graphKit.
           sync_kit(ideal);
-          Node* st = store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type);
+          Node* st = store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type, mo);
           // Update IdealKit memory.
           __ sync_kit(this);
         } __ else_(); {
-          __ store(__ ctrl(), adr, val, type, alias_type->index(), is_volatile);
+          __ store(__ ctrl(), adr, val, type, alias_type->index(), mo, is_volatile);
         } __ end_if();
         // Final sync IdealKit and GraphKit.
         final_sync(ideal);
@@ -2717,10 +2657,13 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   }
 
   if (is_volatile) {
-    if (!is_store)
+    if (!is_store) {
       insert_mem_bar(Op_MemBarAcquire);
-    else
-      insert_mem_bar(Op_MemBarVolatile);
+    } else {
+      if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
+        insert_mem_bar(Op_MemBarVolatile);
+      }
+    }
   }
 
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
@@ -2980,12 +2923,12 @@ bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind
       Node *newval_enc = _gvn.transform(new (C) EncodePNode(newval, newval->bottom_type()->make_narrowoop()));
       if (kind == LS_xchg) {
         load_store = _gvn.transform(new (C) GetAndSetNNode(control(), mem, adr,
-                                                              newval_enc, adr_type, value_type->make_narrowoop()));
+                                                           newval_enc, adr_type, value_type->make_narrowoop()));
       } else {
         assert(kind == LS_cmpxchg, "wrong LoadStore operation");
         Node *oldval_enc = _gvn.transform(new (C) EncodePNode(oldval, oldval->bottom_type()->make_narrowoop()));
         load_store = _gvn.transform(new (C) CompareAndSwapNNode(control(), mem, adr,
-                                                                   newval_enc, oldval_enc));
+                                                                newval_enc, oldval_enc));
       }
     } else
 #endif
@@ -3091,9 +3034,9 @@ bool LibraryCallKit::inline_unsafe_ordered_store(BasicType type) {
   const bool require_atomic_access = true;
   Node* store;
   if (type == T_OBJECT) // reference stores need a store barrier.
-    store = store_oop_to_unknown(control(), base, adr, adr_type, val, type);
+    store = store_oop_to_unknown(control(), base, adr, adr_type, val, type, MemNode::release);
   else {
-    store = store_to_memory(control(), adr, val, type, adr_type, require_atomic_access);
+    store = store_to_memory(control(), adr, val, type, adr_type, MemNode::release, require_atomic_access);
   }
   insert_mem_bar(Op_MemBarCPUOrder);
   return true;
@@ -3105,10 +3048,10 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
   insert_mem_bar(Op_MemBarCPUOrder);
   switch(id) {
     case vmIntrinsics::_loadFence:
-      insert_mem_bar(Op_MemBarAcquire);
+      insert_mem_bar(Op_LoadFence);
       return true;
     case vmIntrinsics::_storeFence:
-      insert_mem_bar(Op_MemBarRelease);
+      insert_mem_bar(Op_StoreFence);
       return true;
     case vmIntrinsics::_fullFence:
       insert_mem_bar(Op_MemBarVolatile);
@@ -3153,7 +3096,7 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     Node* insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
     // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
     // can generate code to load it as unsigned byte.
-    Node* inst = make_load(NULL, insp, TypeInt::UBYTE, T_BOOLEAN);
+    Node* inst = make_load(NULL, insp, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
     Node* bits = intcon(InstanceKlass::fully_initialized);
     test = _gvn.transform(new (C) SubINode(inst, bits));
     // The 'test' is non-zero if we need to take a slow path.
@@ -3177,14 +3120,14 @@ bool LibraryCallKit::inline_native_classID() {
   kls = null_check(kls, T_OBJECT);
   ByteSize offset = TRACE_ID_OFFSET;
   Node* insp = basic_plus_adr(kls, in_bytes(offset));
-  Node* tvalue = make_load(NULL, insp, TypeLong::LONG, T_LONG);
+  Node* tvalue = make_load(NULL, insp, TypeLong::LONG, T_LONG, MemNode::unordered);
   Node* bits = longcon(~0x03l); // ignore bit 0 & 1
   Node* andl = _gvn.transform(new (C) AndLNode(tvalue, bits));
   Node* clsused = longcon(0x01l); // set the class bit
   Node* orl = _gvn.transform(new (C) OrLNode(tvalue, clsused));
 
   const TypePtr *adr_type = _gvn.type(insp)->isa_ptr();
-  store_to_memory(control(), insp, orl, T_LONG, adr_type);
+  store_to_memory(control(), insp, orl, T_LONG, adr_type, MemNode::unordered);
   set_result(andl);
   return true;
 }
@@ -3193,15 +3136,15 @@ bool LibraryCallKit::inline_native_threadID() {
   Node* tls_ptr = NULL;
   Node* cur_thr = generate_current_thread(tls_ptr);
   Node* p = basic_plus_adr(top()/*!oop*/, tls_ptr, in_bytes(JavaThread::osthread_offset()));
-  Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS);
+  Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered);
   p = basic_plus_adr(top()/*!oop*/, osthread, in_bytes(OSThread::thread_id_offset()));
 
   Node* threadid = NULL;
   size_t thread_id_size = OSThread::thread_id_size();
   if (thread_id_size == (size_t) BytesPerLong) {
-    threadid = ConvL2I(make_load(control(), p, TypeLong::LONG, T_LONG));
+    threadid = ConvL2I(make_load(control(), p, TypeLong::LONG, T_LONG, MemNode::unordered));
   } else if (thread_id_size == (size_t) BytesPerInt) {
-    threadid = make_load(control(), p, TypeInt::INT, T_INT);
+    threadid = make_load(control(), p, TypeInt::INT, T_INT, MemNode::unordered);
   } else {
     ShouldNotReachHere();
   }
@@ -3276,11 +3219,11 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 
   // (b) Interrupt bit on TLS must be false.
   Node* p = basic_plus_adr(top()/*!oop*/, tls_ptr, in_bytes(JavaThread::osthread_offset()));
-  Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS);
+  Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered);
   p = basic_plus_adr(top()/*!oop*/, osthread, in_bytes(OSThread::interrupted_offset()));
 
   // Set the control input on the field _interrupted read to prevent it floating up.
-  Node* int_bit = make_load(control(), p, TypeInt::BOOL, T_INT);
+  Node* int_bit = make_load(control(), p, TypeInt::BOOL, T_INT, MemNode::unordered);
   Node* cmp_bit = _gvn.transform(new (C) CmpINode(int_bit, intcon(0)));
   Node* bol_bit = _gvn.transform(new (C) BoolNode(cmp_bit, BoolTest::ne));
 
@@ -3348,7 +3291,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 // Given a klass oop, load its java mirror (a java.lang.Class oop).
 Node* LibraryCallKit::load_mirror_from_klass(Node* klass) {
   Node* p = basic_plus_adr(klass, in_bytes(Klass::java_mirror_offset()));
-  return make_load(NULL, p, TypeInstPtr::MIRROR, T_OBJECT);
+  return make_load(NULL, p, TypeInstPtr::MIRROR, T_OBJECT, MemNode::unordered);
 }
 
 //-----------------------load_klass_from_mirror_common-------------------------
@@ -3385,7 +3328,7 @@ Node* LibraryCallKit::generate_access_flags_guard(Node* kls, int modifier_mask, 
   // Branch around if the given klass has the given modifier bit set.
   // Like generate_guard, adds a new path onto the region.
   Node* modp = basic_plus_adr(kls, in_bytes(Klass::access_flags_offset()));
-  Node* mods = make_load(NULL, modp, TypeInt::INT, T_INT);
+  Node* mods = make_load(NULL, modp, TypeInt::INT, T_INT, MemNode::unordered);
   Node* mask = intcon(modifier_mask);
   Node* bits = intcon(modifier_bits);
   Node* mbit = _gvn.transform(new (C) AndINode(mods, mask));
@@ -3502,7 +3445,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
 
   case vmIntrinsics::_getModifiers:
     p = basic_plus_adr(kls, in_bytes(Klass::modifier_flags_offset()));
-    query_value = make_load(NULL, p, TypeInt::INT, T_INT);
+    query_value = make_load(NULL, p, TypeInt::INT, T_INT, MemNode::unordered);
     break;
 
   case vmIntrinsics::_isInterface:
@@ -3560,7 +3503,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
       // Be sure to pin the oop load to the guard edge just created:
       Node* is_array_ctrl = region->in(region->req()-1);
       Node* cma = basic_plus_adr(kls, in_bytes(ArrayKlass::component_mirror_offset()));
-      Node* cmo = make_load(is_array_ctrl, cma, TypeInstPtr::MIRROR, T_OBJECT);
+      Node* cmo = make_load(is_array_ctrl, cma, TypeInstPtr::MIRROR, T_OBJECT, MemNode::unordered);
       phi->add_req(cmo);
     }
     query_value = null();  // non-array case is null
@@ -3568,7 +3511,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
 
   case vmIntrinsics::_getClassAccessFlags:
     p = basic_plus_adr(kls, in_bytes(Klass::access_flags_offset()));
-    query_value = make_load(NULL, p, TypeInt::INT, T_INT);
+    query_value = make_load(NULL, p, TypeInt::INT, T_INT, MemNode::unordered);
     break;
 
   default:
@@ -3934,7 +3877,7 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
                      vtable_index*vtableEntry::size()) * wordSize +
                      vtableEntry::method_offset_in_bytes();
   Node* entry_addr  = basic_plus_adr(obj_klass, entry_offset);
-  Node* target_call = make_load(NULL, entry_addr, TypePtr::NOTNULL, T_ADDRESS);
+  Node* target_call = make_load(NULL, entry_addr, TypePtr::NOTNULL, T_ADDRESS, MemNode::unordered);
 
   // Compare the target method with the expected method (e.g., Object.hashCode).
   const TypePtr* native_call_addr = TypeMetadataPtr::make(method);
@@ -4060,7 +4003,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
   // Get the header out of the object, use LoadMarkNode when available
   Node* header_addr = basic_plus_adr(obj, oopDesc::mark_offset_in_bytes());
-  Node* header = make_load(control(), header_addr, TypeX_X, TypeX_X->basic_type());
+  Node* header = make_load(control(), header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
   // Test the header to see if it is unlocked.
   Node *lock_mask      = _gvn.MakeConX(markOopDesc::biased_lock_mask_in_place);
@@ -5481,7 +5424,7 @@ LibraryCallKit::generate_clear_array(const TypePtr* adr_type,
         // Store a zero to the immediately preceding jint:
         Node* x1 = _gvn.transform(new(C) AddXNode(start, MakeConX(-bump_bit)));
         Node* p1 = basic_plus_adr(dest, x1);
-        mem = StoreNode::make(_gvn, control(), mem, p1, adr_type, intcon(0), T_INT);
+        mem = StoreNode::make(_gvn, control(), mem, p1, adr_type, intcon(0), T_INT, MemNode::unordered);
         mem = _gvn.transform(mem);
       }
     }
@@ -5531,8 +5474,8 @@ LibraryCallKit::generate_block_arraycopy(const TypePtr* adr_type,
         ((src_off ^ dest_off) & (BytesPerLong-1)) == 0) {
       Node* sptr = basic_plus_adr(src,  src_off);
       Node* dptr = basic_plus_adr(dest, dest_off);
-      Node* sval = make_load(control(), sptr, TypeInt::INT, T_INT, adr_type);
-      store_to_memory(control(), dptr, sval, T_INT, adr_type);
+      Node* sval = make_load(control(), sptr, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
+      store_to_memory(control(), dptr, sval, T_INT, adr_type, MemNode::unordered);
       src_off += BytesPerInt;
       dest_off += BytesPerInt;
     } else {
@@ -5597,7 +5540,7 @@ LibraryCallKit::generate_checkcast_arraycopy(const TypePtr* adr_type,
   // super_check_offset, for the desired klass.
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
   Node* p3 = basic_plus_adr(dest_elem_klass, sco_offset);
-  Node* n3 = new(C) LoadINode(NULL, memory(p3), p3, _gvn.type(p3)->is_ptr());
+  Node* n3 = new(C) LoadINode(NULL, memory(p3), p3, _gvn.type(p3)->is_ptr(), TypeInt::INT, MemNode::unordered);
   Node* check_offset = ConvI2X(_gvn.transform(n3));
   Node* check_value  = dest_elem_klass;
 
@@ -5738,7 +5681,7 @@ bool LibraryCallKit::inline_updateCRC32() {
   Node* base = makecon(TypeRawPtr::make(StubRoutines::crc_table_addr()));
   Node* offset = _gvn.transform(new (C) LShiftINode(result, intcon(0x2)));
   Node* adr = basic_plus_adr(top(), base, ConvI2X(offset));
-  result = make_load(control(), adr, TypeInt::INT, T_INT);
+  result = make_load(control(), adr, TypeInt::INT, T_INT, MemNode::unordered);
 
   crc = _gvn.transform(new (C) URShiftINode(crc, intcon(8)));
   result = _gvn.transform(new (C) XorINode(crc, result));
@@ -5839,7 +5782,7 @@ bool LibraryCallKit::inline_reference_get() {
   const TypeOopPtr* object_type = TypeOopPtr::make_from_klass(klass);
 
   Node* no_ctrl = NULL;
-  Node* result = make_load(no_ctrl, adr, object_type, T_OBJECT);
+  Node* result = make_load(no_ctrl, adr, object_type, T_OBJECT, MemNode::unordered);
 
   // Use the pre-barrier to record the value in the referent field
   pre_barrier(false /* do_load */,
@@ -5886,7 +5829,7 @@ Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * field
   const Type *type = TypeOopPtr::make_from_klass(field_klass->as_klass());
 
   // Build the load.
-  Node* loadedField = make_load(NULL, adr, type, bt, adr_type, is_vol);
+  Node* loadedField = make_load(NULL, adr, type, bt, adr_type, MemNode::unordered, is_vol);
   return loadedField;
 }
 
