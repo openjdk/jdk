@@ -49,11 +49,11 @@ public class TestPrivateClasses extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS1 = new String[] {
-        "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR, "-source", "1.5", "pkg", "pkg2"
+        "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR, "pkg", "pkg2"
     };
     private static final String[] ARGS2 = new String[] {
         "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR, "-private",
-            "-source", "1.5", "pkg", "pkg2"
+            "pkg", "pkg2"
     };
 
     // Test output when -private flag is not used.

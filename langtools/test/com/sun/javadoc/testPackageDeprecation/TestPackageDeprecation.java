@@ -38,11 +38,11 @@ public class TestPackageDeprecation extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS1 = new String[]{
-        "-d", BUG_ID + "-1", "-source", "1.5", "-sourcepath", SRC_DIR, "-use", "pkg", "pkg1",
+        "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR, "-use", "pkg", "pkg1",
         SRC_DIR + FS + "C2.java", SRC_DIR + FS + "FooDepr.java"
     };
     private static final String[] ARGS2 = new String[]{
-        "-d", BUG_ID + "-2", "-source", "1.5", "-sourcepath", SRC_DIR, "-use", "-nodeprecated",
+        "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR, "-use", "-nodeprecated",
         "pkg", "pkg1", SRC_DIR + FS + "C2.java", SRC_DIR + FS + "FooDepr.java"
     };
 
