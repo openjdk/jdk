@@ -342,7 +342,7 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
       st->print(" %s%d]=#"INT32_FORMAT,msg,i,t->is_int()->get_con());
       break;
     case Type::AnyPtr:
-      assert( t == TypePtr::NULL_PTR, "" );
+      assert( t == TypePtr::NULL_PTR || n->in_dump(), "" );
       st->print(" %s%d]=#NULL",msg,i);
       break;
     case Type::AryPtr:
@@ -592,6 +592,18 @@ JVMState* JVMState::clone_deep(Compile* C) const {
 void JVMState::set_map_deep(SafePointNode* map) {
   for (JVMState* p = this; p->_caller != NULL; p = p->_caller) {
     p->set_map(map);
+  }
+}
+
+// Adapt offsets in in-array after adding or removing an edge.
+// Prerequisite is that the JVMState is used by only one node.
+void JVMState::adapt_position(int delta) {
+  for (JVMState* jvms = this; jvms != NULL; jvms = jvms->caller()) {
+    jvms->set_locoff(jvms->locoff() + delta);
+    jvms->set_stkoff(jvms->stkoff() + delta);
+    jvms->set_monoff(jvms->monoff() + delta);
+    jvms->set_scloff(jvms->scloff() + delta);
+    jvms->set_endoff(jvms->endoff() + delta);
   }
 }
 
@@ -887,7 +899,7 @@ int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
   if (!(call->req() > TypeFunc::Parms &&
         call->in(TypeFunc::Parms) != NULL &&
         call->in(TypeFunc::Parms)->is_Con())) {
-    assert(_in_dump_cnt != 0, "OK if dumping");
+    assert(in_dump() != 0, "OK if dumping");
     tty->print("[bad uncommon trap]");
     return 0;
   }

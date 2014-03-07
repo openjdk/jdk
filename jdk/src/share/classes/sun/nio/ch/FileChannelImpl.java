@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,20 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.FileLockInterruptionException;
+import java.nio.channels.NonReadableChannelException;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.List;
-import java.security.AccessController;
+
 import sun.misc.Cleaner;
 import sun.security.action.GetPropertyAction;
 
@@ -56,13 +66,17 @@ public class FileChannelImpl
     // Required to prevent finalization of creating stream (immutable)
     private final Object parent;
 
+    // The path of the referenced file
+    // (null if the parent stream is created with a file descriptor)
+    private final String path;
+
     // Thread-safe set of IDs of native threads, for signalling
     private final NativeThreadSet threads = new NativeThreadSet(2);
 
     // Lock for operations involving position and size
     private final Object positionLock = new Object();
 
-    private FileChannelImpl(FileDescriptor fd, boolean readable,
+    private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
                             boolean writable, boolean append, Object parent)
     {
         this.fd = fd;
@@ -70,23 +84,24 @@ public class FileChannelImpl
         this.writable = writable;
         this.append = append;
         this.parent = parent;
+        this.path = path;
         this.nd = new FileDispatcherImpl(append);
     }
 
     // Used by FileInputStream.getChannel() and RandomAccessFile.getChannel()
-    public static FileChannel open(FileDescriptor fd,
+    public static FileChannel open(FileDescriptor fd, String path,
                                    boolean readable, boolean writable,
                                    Object parent)
     {
-        return new FileChannelImpl(fd, readable, writable, false, parent);
+        return new FileChannelImpl(fd, path, readable, writable, false, parent);
     }
 
     // Used by FileOutputStream.getChannel
-    public static FileChannel open(FileDescriptor fd,
+    public static FileChannel open(FileDescriptor fd, String path,
                                    boolean readable, boolean writable,
                                    boolean append, Object parent)
     {
-        return new FileChannelImpl(fd, readable, writable, append, parent);
+        return new FileChannelImpl(fd, path, readable, writable, append, parent);
     }
 
     private void ensureOpen() throws IOException {

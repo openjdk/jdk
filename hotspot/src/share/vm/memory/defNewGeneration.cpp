@@ -626,7 +626,6 @@ void DefNewGeneration::collect(bool   full,
                                 true,  // activate StrongRootsScope
                                 SharedHeap::ScanningOption(so),
                                 &fsc_with_no_gc_barrier,
-                                true,   // walk *all* scavengable nmethods
                                 &fsc_with_gc_barrier,
                                 &klass_scan_closure);
 

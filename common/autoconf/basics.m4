@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
       done
       IFS="$IFS_save"
     else
-      AC_MSG_NOTICE([Resolving $1 (as $path) failed, using $path directly.])
+      # This is an absolute path, we can use it without further modifications.
       new_path="$path"
     fi
 
@@ -418,14 +418,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
-  # Locate the directory of this script.
-  SCRIPT="[$]0"
-  AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD -L`
-
-  # Where is the source? It is located two levels above the configure script.
+  # Save the current directory this script was started from
   CURDIR="$PWD"
-  cd "$AUTOCONF_DIR/../.."
-  SRC_ROOT="`$THEPWDCMD -L`"
 
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     PATH_SEP=";"
@@ -433,13 +427,21 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   else
     PATH_SEP=":"
   fi
-
-  AC_SUBST(SRC_ROOT)
   AC_SUBST(PATH_SEP)
-  cd "$CURDIR"
 
-  BASIC_FIXUP_PATH(SRC_ROOT)
+  # We get the top-level directory from the supporting wrappers.
+  AC_MSG_CHECKING([for top-level directory])
+  AC_MSG_RESULT([$TOPDIR])
+  AC_SUBST(TOPDIR)
+
+  # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
   BASIC_FIXUP_PATH(CURDIR)
+  BASIC_FIXUP_PATH(TOPDIR)
+  # SRC_ROOT is a traditional alias for TOPDIR.
+  SRC_ROOT=$TOPDIR
+
+  # Locate the directory of this script.
+  AUTOCONF_DIR=$TOPDIR/common/autoconf
 
   if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
     # Add extra search paths on solaris for utilities like ar and as etc...
@@ -487,13 +489,17 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       [ CONF_NAME=${with_conf_name} ])
 
   # Test from where we are running configure, in or outside of src root.
+  AC_MSG_CHECKING([where to store configuration])
   if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
       || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" \
       || test "x$CURDIR" = "x$SRC_ROOT/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
+      AC_MSG_RESULT([in default location])
       CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JDK_VARIANT}-${ANDED_JVM_VARIANTS}-${DEBUG_LEVEL}"
+    else
+      AC_MSG_RESULT([in build directory with custom name])
     fi
     OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
     $MKDIR -p "$OUTPUT_ROOT"
@@ -509,6 +515,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${SRC_ROOT}/build/!!"`
     fi
     OUTPUT_ROOT="$CURDIR"
+    AC_MSG_RESULT([in current directory])
 
     # WARNING: This might be a bad thing to do. You need to be sure you want to
     # have a configuration in this directory. Do some sanity checks!
@@ -558,9 +565,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   # You can run make from the OUTPUT_ROOT, or from the top-level Makefile
   # which will look for generated configurations
   AC_CONFIG_FILES([$OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in])
-
-  # Save the arguments given to us
-  echo "$CONFIGURE_COMMAND_LINE" > $OUTPUT_ROOT/configure-arguments
 ])
 
 AC_DEFUN_ONCE([BASIC_SETUP_LOGGING],

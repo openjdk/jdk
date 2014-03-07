@@ -69,7 +69,7 @@ public final class DataPropertyDescriptor extends ScriptObject implements Proper
     }
 
     DataPropertyDescriptor(final boolean configurable, final boolean enumerable, final boolean writable, final Object value, final Global global) {
-        super(global.getObjectPrototype(), global.getDataPropertyDescriptorMap());
+        super(global.getObjectPrototype(), getInitialMap());
         this.configurable = configurable;
         this.enumerable   = enumerable;
         this.writable     = writable;

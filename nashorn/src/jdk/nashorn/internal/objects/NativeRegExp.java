@@ -75,7 +75,7 @@ public final class NativeRegExp extends ScriptObject {
     }
 
     private NativeRegExp(final Global global) {
-        super(global.getRegExpPrototype(), global.getRegExpMap());
+        super(global.getRegExpPrototype(), getInitialMap());
         this.globalObject = global;
     }
 

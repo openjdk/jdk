@@ -48,6 +48,9 @@ define NEWLINE
 
 endef
 
+# The command line given to configure.
+CONFIGURE_COMMAND_LINE:=@CONFIGURE_COMMAND_LINE@
+
 # A self-referential reference to this file.
 SPEC:=@SPEC@
 
@@ -67,8 +70,8 @@ ifeq (,$(findstring -R,$(MAKE)))
 endif
 
 # Specify where the common include directory for makefiles is.
-ifeq (,$(findstring -I @SRC_ROOT@/make/common,$(MAKE)))
-  MAKE:=$(MAKE) -I @SRC_ROOT@/make/common
+ifeq (,$(findstring -I @TOPDIR@/make/common,$(MAKE)))
+  MAKE:=$(MAKE) -I @TOPDIR@/make/common
 endif
 
 # The "human readable" name of this configuration
@@ -133,10 +136,13 @@ endif
 SYS_ROOT:=@SYS_ROOT@
 
 # Paths to the source code
-SRC_ROOT:=@SRC_ROOT@
 ADD_SRC_ROOT:=@ADD_SRC_ROOT@
 OVERRIDE_SRC_ROOT:=@OVERRIDE_SRC_ROOT@
-TOPDIR:=@SRC_ROOT@
+
+# The top-level directory of the forest (SRC_ROOT is a traditional alias)
+TOPDIR:=@TOPDIR@
+SRC_ROOT:=@TOPDIR@
+
 OUTPUT_ROOT:=@OUTPUT_ROOT@
 JDK_TOPDIR:=@JDK_TOPDIR@
 LANGTOOLS_TOPDIR:=@LANGTOOLS_TOPDIR@
@@ -146,9 +152,6 @@ JAXWS_TOPDIR:=@JAXWS_TOPDIR@
 HOTSPOT_TOPDIR:=@HOTSPOT_TOPDIR@
 NASHORN_TOPDIR:=@NASHORN_TOPDIR@
 COPYRIGHT_YEAR:=@COPYRIGHT_YEAR@
-
-# Location where build customization files may be found
-CUSTOM_MAKE_DIR:=@CUSTOM_MAKE_DIR@
 
 # Information gathered from the version.numbers file.
 JDK_MAJOR_VERSION:=@JDK_MAJOR_VERSION@
@@ -172,7 +175,7 @@ RUNTIME_NAME=$(PRODUCT_NAME) $(PRODUCT_SUFFIX)
 COOKED_BUILD_NUMBER:=@COOKED_BUILD_NUMBER@
 # These variables need to be generated here so that MILESTONE and
 # JDK_BUILD_NUMBER can be overridden on the make command line.
-ifeq ($(MILESTONE),)
+ifeq ($(MILESTONE), fcs)
   RELEASE=$(JDK_VERSION)$(BUILD_VARIANT_RELEASE)
 else
   RELEASE=$(JDK_VERSION)-$(MILESTONE)$(BUILD_VARIANT_RELEASE)
@@ -286,6 +289,9 @@ CACERTS_FILE=@CACERTS_FILE@
 # Enable unlimited crypto policy
 UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@
 
+# Enable RMIConnector IIOP transport
+RMICONNECTOR_IIOP=@RMICONNECTOR_IIOP@
+
 # Necessary additional compiler flags to compile X11
 X_CFLAGS:=@X_CFLAGS@
 X_LIBS:=@X_LIBS@
@@ -294,11 +300,8 @@ OPENWIN_HOME:=@OPENWIN_HOME@
 # The lowest required version of macosx to enforce compatiblity for
 MACOSX_VERSION_MIN=@MACOSX_VERSION_MIN@
 
-# There are two types: CC or CL
-# CC is gcc and others behaving reasonably similar.
-# CL is cl.exe only.
-COMPILER_TYPE:=@COMPILER_TYPE@
-COMPILER_NAME:=@COMPILER_NAME@
+# Toolchain type: gcc, clang, solstudio, lxc, microsoft...
+TOOLCHAIN_TYPE:=@TOOLCHAIN_TYPE@
 
 # Option used to tell the compiler whether to create 32- or 64-bit executables
 COMPILER_TARGET_BITS_FLAG:=@COMPILER_TARGET_BITS_FLAG@
@@ -438,7 +441,7 @@ OBJ_SUFFIX:=@OBJ_SUFFIX@
 POST_STRIP_CMD:=@POST_STRIP_CMD@
 POST_MCS_CMD:=@POST_MCS_CMD@
 
-JAVA_FLAGS:=@BOOT_JDK_JVMARGS@
+JAVA_FLAGS:=@JAVA_FLAGS@
 
 JAVA=@FIXPATH@ @JAVA@ $(JAVA_FLAGS)
 
@@ -673,6 +676,15 @@ JDK_BUNDLE_SUBDIR=j2sdk-bundle/jdk$(JDK_VERSION).jdk/Contents
 JRE_BUNDLE_SUBDIR=j2re-bundle/jre$(JDK_VERSION).jre/Contents
 JDK_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_BUNDLE_SUBDIR)
 JRE_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_BUNDLE_SUBDIR)
+
+# This macro is called to allow inclusion of closed source counterparts.
+# Unless overridden in closed sources, it expands to nothing.
+# Usage: This function is called in an open makefile, with the following 
+# arguments:
+# $1 the name of the repo, or empty if the top-level repo.
+# $2 the name of the makefile
+define IncludeCustomExtension
+endef
 
 # Include the custom-spec.gmk file if it exists
 -include $(dir @SPEC@)/custom-spec.gmk

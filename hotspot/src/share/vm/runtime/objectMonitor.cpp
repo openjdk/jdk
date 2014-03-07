@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
 # include "os_bsd.inline.hpp"
 #endif
 
-#if defined(__GNUC__) && !defined(IA64)
+#if defined(__GNUC__) && !defined(IA64) && !defined(PPC64)
   // Need to inhibit inlining for older versions of GCC to avoid build-time failures
   #define ATTR __attribute__((noinline))
 #else
@@ -77,39 +77,6 @@
     bytes = (char*)klassname->bytes();                                     \
     len = klassname->utf8_length();                                        \
   }
-
-#ifndef USDT2
-
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__notify,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__notifyAll,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__enter,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__entered,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__exit,
-  jlong, uintptr_t, char*, int);
-
-#define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)       \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                       \
-      HS_DTRACE_PROBE5(hotspot, monitor__wait, jtid,                       \
-                       (monitor), bytes, len, (millis));                   \
-    }                                                                      \
-  }
-
-#define DTRACE_MONITOR_PROBE(probe, monitor, obj, thread)             \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                       \
-      HS_DTRACE_PROBE4(hotspot, monitor__##probe, jtid,                    \
-                       (uintptr_t)(monitor), bytes, len);                  \
-    }                                                                      \
-  }
-
-#else /* USDT2 */
 
 #define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)            \
   {                                                                        \
@@ -135,7 +102,6 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__exit,
     }                                                                      \
   }
 
-#endif /* USDT2 */
 #else //  ndef DTRACE_ENABLED
 
 #define DTRACE_MONITOR_WAIT_PROBE(obj, thread, millis, mon)    {;}
@@ -382,6 +348,12 @@ void ATTR ObjectMonitor::enter(TRAPS) {
     DTRACE_MONITOR_PROBE(contended__enter, this, object(), jt);
     if (JvmtiExport::should_post_monitor_contended_enter()) {
       JvmtiExport::post_monitor_contended_enter(jt, this);
+
+      // The current thread does not yet own the monitor and does not
+      // yet appear on any queues that would get it made the successor.
+      // This means that the JVMTI_EVENT_MONITOR_CONTENDED_ENTER event
+      // handler cannot accidentally consume an unpark() meant for the
+      // ParkEvent associated with this ObjectMonitor.
     }
 
     OSThreadContendState osts(Self->osthread());
@@ -439,6 +411,12 @@ void ATTR ObjectMonitor::enter(TRAPS) {
   DTRACE_MONITOR_PROBE(contended__entered, this, object(), jt);
   if (JvmtiExport::should_post_monitor_contended_entered()) {
     JvmtiExport::post_monitor_contended_entered(jt, this);
+
+    // The current thread already owns the monitor and is not going to
+    // call park() for the remainder of the monitor enter protocol. So
+    // it doesn't matter if the JVMTI_EVENT_MONITOR_CONTENDED_ENTERED
+    // event handler consumed an unpark() issued by the thread that
+    // just exited the monitor.
   }
 
   if (event.should_commit()) {
@@ -1456,6 +1434,14 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         // Note: 'false' parameter is passed here because the
         // wait was not timed out due to thread interrupt.
         JvmtiExport::post_monitor_waited(jt, this, false);
+
+        // In this short circuit of the monitor wait protocol, the
+        // current thread never drops ownership of the monitor and
+        // never gets added to the wait queue so the current thread
+        // cannot be made the successor. This means that the
+        // JVMTI_EVENT_MONITOR_WAITED event handler cannot accidentally
+        // consume an unpark() meant for the ParkEvent associated with
+        // this ObjectMonitor.
      }
      if (event.should_commit()) {
        post_monitor_wait_event(&event, 0, millis, false);
@@ -1498,21 +1484,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
    _recursions = 0;             // set the recursion level to be 1
    exit (true, Self) ;                    // exit the monitor
    guarantee (_owner != Self, "invariant") ;
-
-   // As soon as the ObjectMonitor's ownership is dropped in the exit()
-   // call above, another thread can enter() the ObjectMonitor, do the
-   // notify(), and exit() the ObjectMonitor. If the other thread's
-   // exit() call chooses this thread as the successor and the unpark()
-   // call happens to occur while this thread is posting a
-   // MONITOR_CONTENDED_EXIT event, then we run the risk of the event
-   // handler using RawMonitors and consuming the unpark().
-   //
-   // To avoid the problem, we re-post the event. This does no harm
-   // even if the original unpark() was not consumed because we are the
-   // chosen successor for this monitor.
-   if (node._notified != 0 && _succ == Self) {
-      node._event->unpark();
-   }
 
    // The thread is on the WaitSet list - now park() it.
    // On MP systems it's conceivable that a brief spin before we park
@@ -1595,6 +1566,25 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
      // post monitor waited event. Note that this is past-tense, we are done waiting.
      if (JvmtiExport::should_post_monitor_waited()) {
        JvmtiExport::post_monitor_waited(jt, this, ret == OS_TIMEOUT);
+
+       if (node._notified != 0 && _succ == Self) {
+         // In this part of the monitor wait-notify-reenter protocol it
+         // is possible (and normal) for another thread to do a fastpath
+         // monitor enter-exit while this thread is still trying to get
+         // to the reenter portion of the protocol.
+         //
+         // The ObjectMonitor was notified and the current thread is
+         // the successor which also means that an unpark() has already
+         // been done. The JVMTI_EVENT_MONITOR_WAITED event handler can
+         // consume the unpark() that was done when the successor was
+         // set because the same ParkEvent is shared between Java
+         // monitors and JVM/TI RawMonitors (for now).
+         //
+         // We redo the unpark() to ensure forward progress, i.e., we
+         // don't want all pending threads hanging (parked) with none
+         // entering the unlocked monitor.
+         node._event->unpark();
+       }
      }
 
      if (event.should_commit()) {

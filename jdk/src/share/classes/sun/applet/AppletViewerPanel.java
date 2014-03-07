@@ -31,7 +31,6 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.awt.*;
 import java.applet.*;
-import sun.tools.jar.*;
 
 
 /**

@@ -89,21 +89,25 @@ GENCLASSES += $(RMI_11)
 # For RMI/IIOP call rmic a second time with -standardPackage option
 # so that *_tie classes are generated in package without the prefix
 # org.omg.stub (6375696)
-JMAN_RMI_CLASSES := javax.management.remote.rmi.RMIConnectionImpl \
+JMX_RMI_CLASSES := javax.management.remote.rmi.RMIConnectionImpl \
     javax.management.remote.rmi.RMIServerImpl
+GENRMIIIOPCLASSES :=
+ifneq ($(RMICONNECTOR_IIOP), false)
+  GENRMIIIOPCLASSES := $(RMICONNECTOR_IIOP)
+endif
 $(eval $(call SetupRMICompilation,RMI_IIOP, \
-    CLASSES := $(JMAN_RMI_CLASSES), \
+    CLASSES := $(JMX_RMI_CLASSES), \
     CLASSES_DIR := $(CLASSES_DIR), \
     STUB_CLASSES_DIR := $(STUB_CLASSES_DIR), \
     RUN_V12 := true, \
-    RUN_IIOP := true, \
-    RUN_IIOP_STDPKG := true))
+    RUN_IIOP := $(GENRMIIIOPCLASSES), \
+    RUN_IIOP_STDPKG := $(GENRMIIIOPCLASSES)))
 GENCLASSES += $(RMI_IIOP)
 
 # Keep generated RMI/JRMP Stub source files and copy them to RMIC_GENSRC_DIR
 # so that javadoc can include them in the API (4997471)
 $(eval $(call SetupRMICompilation,RMI_SRC, \
-    CLASSES := $(JMAN_RMI_CLASSES), \
+    CLASSES := $(JMX_RMI_CLASSES), \
     CLASSES_DIR := $(CLASSES_DIR), \
     STUB_CLASSES_DIR := $(RMIC_GENSRC_DIR), \
     RUN_V12 := true, \

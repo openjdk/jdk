@@ -78,6 +78,35 @@ ciMethodData::ciMethodData() : ciMetadata(NULL) {
   _parameters = NULL;
 }
 
+void ciMethodData::load_extra_data() {
+  MethodData* mdo = get_MethodData();
+
+  // speculative trap entries also hold a pointer to a Method so need to be translated
+  DataLayout* dp_src  = mdo->extra_data_base();
+  DataLayout* end_src = mdo->extra_data_limit();
+  DataLayout* dp_dst  = extra_data_base();
+  for (;; dp_src = MethodData::next_extra(dp_src), dp_dst = MethodData::next_extra(dp_dst)) {
+    assert(dp_src < end_src, "moved past end of extra data");
+    assert(dp_src->tag() == dp_dst->tag(), err_msg("should be same tags %d != %d", dp_src->tag(), dp_dst->tag()));
+    switch(dp_src->tag()) {
+    case DataLayout::speculative_trap_data_tag: {
+      ciSpeculativeTrapData* data_dst = new ciSpeculativeTrapData(dp_dst);
+      SpeculativeTrapData* data_src = new SpeculativeTrapData(dp_src);
+      data_dst->translate_from(data_src);
+      break;
+    }
+    case DataLayout::bit_data_tag:
+      break;
+    case DataLayout::no_tag:
+    case DataLayout::arg_info_data_tag:
+      // An empty slot or ArgInfoData entry marks the end of the trap data
+      return;
+    default:
+      fatal(err_msg("bad tag = %d", dp_src->tag()));
+    }
+  }
+}
+
 void ciMethodData::load_data() {
   MethodData* mdo = get_MethodData();
   if (mdo == NULL) {
@@ -115,6 +144,8 @@ void ciMethodData::load_data() {
     ciParametersTypeData* parameters = new ciParametersTypeData(_parameters);
     parameters->translate_from(mdo->parameters_type_data());
   }
+
+  load_extra_data();
 
   // Note:  Extra data are all BitData, and do not need translation.
   _current_mileage = MethodData::mileage_of(mdo->method());
@@ -154,6 +185,12 @@ void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries
 void ciReturnTypeEntry::translate_type_data_from(const ReturnTypeEntry* ret) {
   intptr_t k = ret->type();
   set_type(translate_klass(k));
+}
+
+void ciSpeculativeTrapData::translate_from(const ProfileData* data) {
+  Method* m = data->as_SpeculativeTrapData()->method();
+  ciMethod* ci_m = CURRENT_ENV->get_method(m);
+  set_method(ci_m);
 }
 
 // Get the data at an arbitrary (sort of) data index.
@@ -203,32 +240,64 @@ ciProfileData* ciMethodData::next_data(ciProfileData* current) {
   return next;
 }
 
-// Translate a bci to its corresponding data, or NULL.
-ciProfileData* ciMethodData::bci_to_data(int bci) {
-  ciProfileData* data = data_before(bci);
-  for ( ; is_valid(data); data = next_data(data)) {
-    if (data->bci() == bci) {
-      set_hint_di(dp_to_di(data->dp()));
-      return data;
-    } else if (data->bci() > bci) {
-      break;
-    }
-  }
+ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots) {
   // bci_to_extra_data(bci) ...
   DataLayout* dp  = data_layout_at(data_size());
   DataLayout* end = data_layout_at(data_size() + extra_data_size());
-  for (; dp < end; dp = MethodData::next_extra(dp)) {
-    if (dp->tag() == DataLayout::no_tag) {
+  two_free_slots = false;
+  for (;dp < end; dp = MethodData::next_extra(dp)) {
+    switch(dp->tag()) {
+    case DataLayout::no_tag:
       _saw_free_extra_data = true;  // observed an empty slot (common case)
+      two_free_slots = (MethodData::next_extra(dp)->tag() == DataLayout::no_tag);
       return NULL;
+    case DataLayout::arg_info_data_tag:
+      return NULL; // ArgInfoData is at the end of extra data section.
+    case DataLayout::bit_data_tag:
+      if (m == NULL && dp->bci() == bci) {
+        return new ciBitData(dp);
+      }
+      break;
+    case DataLayout::speculative_trap_data_tag: {
+      ciSpeculativeTrapData* data = new ciSpeculativeTrapData(dp);
+      // data->method() might be null if the MDO is snapshotted
+      // concurrently with a trap
+      if (m != NULL && data->method() == m && dp->bci() == bci) {
+        return data;
+      }
+      break;
     }
-    if (dp->tag() == DataLayout::arg_info_data_tag) {
-      break; // ArgInfoData is at the end of extra data section.
+    default:
+      fatal(err_msg("bad tag = %d", dp->tag()));
     }
-    if (dp->bci() == bci) {
-      assert(dp->tag() == DataLayout::bit_data_tag, "sane");
-      return new ciBitData(dp);
+  }
+  return NULL;
+}
+
+// Translate a bci to its corresponding data, or NULL.
+ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
+  // If m is not NULL we look for a SpeculativeTrapData entry
+  if (m == NULL) {
+    ciProfileData* data = data_before(bci);
+    for ( ; is_valid(data); data = next_data(data)) {
+      if (data->bci() == bci) {
+        set_hint_di(dp_to_di(data->dp()));
+        return data;
+      } else if (data->bci() > bci) {
+        break;
+      }
     }
+  }
+  bool two_free_slots = false;
+  ciProfileData* result = bci_to_extra_data(bci, m, two_free_slots);
+  if (result != NULL) {
+    return result;
+  }
+  if (m != NULL && !two_free_slots) {
+    // We were looking for a SpeculativeTrapData entry we didn't
+    // find. Room is not available for more SpeculativeTrapData
+    // entries, look in the non SpeculativeTrapData entries.
+    return bci_to_data(bci, NULL);
   }
   return NULL;
 }
@@ -525,18 +594,25 @@ void ciMethodData::print_data_on(outputStream* st) {
   st->print_cr("--- Extra data:");
   DataLayout* dp  = data_layout_at(data_size());
   DataLayout* end = data_layout_at(data_size() + extra_data_size());
-  for (; dp < end; dp = MethodData::next_extra(dp)) {
-    if (dp->tag() == DataLayout::no_tag)  continue;
-    if (dp->tag() == DataLayout::bit_data_tag) {
+  for (;; dp = MethodData::next_extra(dp)) {
+    assert(dp < end, "moved past end of extra data");
+    switch (dp->tag()) {
+    case DataLayout::no_tag:
+      continue;
+    case DataLayout::bit_data_tag:
       data = new BitData(dp);
-    } else {
-      assert(dp->tag() == DataLayout::arg_info_data_tag, "must be BitData or ArgInfo");
+      break;
+    case DataLayout::arg_info_data_tag:
       data = new ciArgInfoData(dp);
       dp = end; // ArgInfoData is at the end of extra data section.
+      break;
+    default:
+      fatal(err_msg("unexpected tag %d", dp->tag()));
     }
     st->print("%d", dp_to_di(data->dp()));
     st->fill_to(6);
     data->print_data_on(st);
+    if (dp >= end) return;
   }
 }
 
@@ -569,8 +645,8 @@ void ciReturnTypeEntry::print_data_on(outputStream* st) const {
   st->cr();
 }
 
-void ciCallTypeData::print_data_on(outputStream* st) const {
-  print_shared(st, "ciCallTypeData");
+void ciCallTypeData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ciCallTypeData", extra);
   if (has_arguments()) {
     tab(st, true);
     st->print("argument types");
@@ -599,18 +675,18 @@ void ciReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   }
 }
 
-void ciReceiverTypeData::print_data_on(outputStream* st) const {
-  print_shared(st, "ciReceiverTypeData");
+void ciReceiverTypeData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ciReceiverTypeData", extra);
   print_receiver_data_on(st);
 }
 
-void ciVirtualCallData::print_data_on(outputStream* st) const {
-  print_shared(st, "ciVirtualCallData");
+void ciVirtualCallData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ciVirtualCallData", extra);
   rtd_super()->print_receiver_data_on(st);
 }
 
-void ciVirtualCallTypeData::print_data_on(outputStream* st) const {
-  print_shared(st, "ciVirtualCallTypeData");
+void ciVirtualCallTypeData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ciVirtualCallTypeData", extra);
   rtd_super()->print_receiver_data_on(st);
   if (has_arguments()) {
     tab(st, true);
@@ -624,8 +700,15 @@ void ciVirtualCallTypeData::print_data_on(outputStream* st) const {
   }
 }
 
-void ciParametersTypeData::print_data_on(outputStream* st) const {
-  st->print_cr("Parametertypes");
+void ciParametersTypeData::print_data_on(outputStream* st, const char* extra) const {
+  st->print_cr("ciParametersTypeData");
   parameters()->print_data_on(st);
+}
+
+void ciSpeculativeTrapData::print_data_on(outputStream* st, const char* extra) const {
+  st->print_cr("ciSpeculativeTrapData");
+  tab(st);
+  method()->print_short_name(st);
+  st->cr();
 }
 #endif

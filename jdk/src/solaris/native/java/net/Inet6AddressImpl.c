@@ -66,27 +66,27 @@
  */
 JNIEXPORT jstring JNICALL
 Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
+    int ret;
     char hostname[NI_MAXHOST+1];
 
     hostname[0] = '\0';
-    if (JVM_GetHostName(hostname, sizeof(hostname))) {
+    ret = gethostname(hostname, NI_MAXHOST);
+    if (ret == -1) {
         /* Something went wrong, maybe networking is not setup? */
         strcpy(hostname, "localhost");
     } else {
         // ensure null-terminated
         hostname[NI_MAXHOST] = '\0';
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
-        /* On Linux/FreeBSD gethostname() says "host.domain.sun.com".  On
-         * Solaris gethostname() says "host", so extra work is needed.
-         */
-#else
+    }
+
+#if defined(__solaris__) && defined(AF_INET6)
+    if (ret == 0) {
         /* Solaris doesn't want to give us a fully qualified domain name.
          * We do a reverse lookup to try and get one.  This works
          * if DNS occurs before NIS in /etc/resolv.conf, but fails
          * if NIS comes first (it still gets only a partial name).
          * We use thread-safe system calls.
          */
-#ifdef AF_INET6
         struct addrinfo  hints, *res;
         int error;
 
@@ -111,9 +111,9 @@ Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
 
             freeaddrinfo(res);
         }
-#endif /* AF_INET6 */
-#endif /* __linux__ || _ALLBSD_SOURCE */
     }
+#endif
+
     return (*env)->NewStringUTF(env, hostname);
 }
 
@@ -140,7 +140,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
      * the name (if the name actually matches something in DNS etc.
      */
     myhostname[0] = '\0';
-    if (JVM_GetHostName(myhostname, NI_MAXHOST)) {
+    if (gethostname(myhostname, NI_MAXHOST) == -1) {
         /* Something went wrong, maybe networking is not setup? */
         return NULL;
     }
@@ -305,7 +305,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     if (error) {
         /* report error */
-        ThrowUnknownHostExceptionWithGaiError(env, hostname, error);
+        NET_ThrowUnknownHostExceptionWithGaiError(env, hostname, error);
         JNU_ReleaseStringPlatformChars(env, host, hostname);
         return NULL;
     } else {
@@ -402,7 +402,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         }
 
         while (iterator != NULL) {
-            int ret1;
+            jboolean ret1;
             if (iterator->ai_family == AF_INET) {
                 jobject iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
                 if (IS_NULL(iaObj)) {
@@ -422,7 +422,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                     goto cleanupAndReturn;
                 }
                 ret1 = setInet6Address_ipaddress(env, iaObj, (char *)&(((struct sockaddr_in6*)iterator->ai_addr)->sin6_addr));
-                if (!ret1) {
+                if (ret1 == JNI_FALSE) {
                     ret = NULL;
                     goto cleanupAndReturn;
                 }
@@ -711,15 +711,15 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
      * or the echo service has been disabled.
      */
 
-    fd = JVM_Socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+    fd = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 
     if (fd != -1) { /* Good to go, let's do a ping */
         return ping6(env, fd, &him6, timeout, netif, ttl);
     }
 
     /* No good, let's fall back on TCP */
-    fd = JVM_Socket(AF_INET6, SOCK_STREAM, 0);
-    if (fd == JVM_IO_ERR) {
+    fd = socket(AF_INET6, SOCK_STREAM, 0);
+    if (fd == -1) {
         /* note: if you run out of fds, you may not be able to load
          * the exception class, and get a NoClassDefFoundError
          * instead.
@@ -743,9 +743,8 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
     }
     SET_NONBLOCKING(fd);
 
-    /* no need to use NET_Connect as non-blocking */
     him6.sin6_port = htons((short) 7); /* Echo port */
-    connect_rv = JVM_Connect(fd, (struct sockaddr *)&him6, len);
+    connect_rv = NET_Connect(fd, (struct sockaddr *)&him6, len);
 
     /**
      * connection established or refused immediately, either way it means
@@ -755,7 +754,7 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
         close(fd);
         return JNI_TRUE;
     } else {
-        int optlen;
+        socklen_t optlen = (socklen_t)sizeof(connect_rv);
 
         switch (errno) {
         case ENETUNREACH: /* Network Unreachable */
@@ -786,9 +785,8 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
 
         if (timeout >= 0) {
           /* has connection been established */
-          optlen = sizeof(connect_rv);
-          if (JVM_GetSockOpt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
-                             &optlen) <0) {
+          if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
+                         &optlen) <0) {
             connect_rv = errno;
           }
           if (connect_rv == 0 || ECONNREFUSED) {

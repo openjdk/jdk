@@ -37,7 +37,7 @@ extern "C" {
   extern OM_uint32 getGSSTime(jint);
   extern void checkStatus(JNIEnv *, jobject, OM_uint32, OM_uint32, char*);
   extern jint checkTime(OM_uint32);
-  extern void initGSSBuffer(JNIEnv *, jbyteArray, gss_buffer_t);
+  extern jint initGSSBuffer(JNIEnv *, jbyteArray, gss_buffer_t);
   extern void resetGSSBuffer(JNIEnv *, jbyteArray, gss_buffer_t);
 
   extern gss_OID newGSSOID(JNIEnv *, jobject);

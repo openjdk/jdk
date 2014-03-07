@@ -292,7 +292,7 @@ public:
   // these functions here for performance.
 protected:
   void write_ref_field_work(oop obj, size_t offset, oop newVal);
-  virtual void write_ref_field_work(void* field, oop newVal);
+  virtual void write_ref_field_work(void* field, oop newVal, bool release = false);
 public:
 
   bool has_write_ref_array_opt() { return true; }
@@ -324,9 +324,14 @@ public:
 
   template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal) {}
 
-  template <class T> inline void inline_write_ref_field(T* field, oop newVal) {
+  template <class T> inline void inline_write_ref_field(T* field, oop newVal, bool release) {
     jbyte* byte = byte_for((void*)field);
-    *byte = dirty_card;
+    if (release) {
+      // Perform a releasing store if requested.
+      OrderAccess::release_store((volatile jbyte*) byte, dirty_card);
+    } else {
+      *byte = dirty_card;
+    }
   }
 
   // These are used by G1, when it uses the card table as a temporary data

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,16 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
-import java.util.Date;
-
+import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509CertSelector;
 import java.security.cert.CertificateException;
+import java.util.Arrays;
+import java.util.Date;
 
+import sun.security.util.Debug;
+import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
 import sun.security.x509.SerialNumber;
 import sun.security.x509.KeyIdentifier;
@@ -40,26 +43,27 @@ import sun.security.x509.AuthorityKeyIdentifierExtension;
 
 /**
  * An adaptable X509 certificate selector for forward certification path
- * building.
+ * building. This selector overrides the default X509CertSelector matching
+ * rules for the subjectKeyIdentifier and serialNumber criteria, and adds
+ * additional rules for certificate validity.
  *
  * @since 1.7
  */
 class AdaptableX509CertSelector extends X509CertSelector {
+
+    private static final Debug debug = Debug.getInstance("certpath");
+
     // The start date of a validity period.
     private Date startDate;
 
     // The end date of a validity period.
     private Date endDate;
 
-    // Is subject key identifier sensitive?
-    private boolean isSKIDSensitive = false;
+    // The subject key identifier
+    private byte[] ski;
 
-    // Is serial number sensitive?
-    private boolean isSNSensitive = false;
-
-    AdaptableX509CertSelector() {
-        super();
-    }
+    // The serial number
+    private BigInteger serial;
 
     /**
      * Sets the criterion of the X509Certificate validity period.
@@ -86,50 +90,69 @@ class AdaptableX509CertSelector extends X509CertSelector {
     }
 
     /**
-     * Parse the authority key identifier extension.
-     *
-     * If the keyIdentifier field of the extension is non-null, set the
-     * subjectKeyIdentifier criterion. If the authorityCertSerialNumber
-     * field is non-null, set the serialNumber criterion.
-     *
-     * Note that we will not set the subject criterion according to the
-     * authorityCertIssuer field of the extension. The caller MUST set
-     * the subject criterion before call match().
-     *
-     * @param akidext the authorityKeyIdentifier extension
+     * This selector overrides the subjectKeyIdentifier matching rules of
+     * X509CertSelector, so it throws IllegalArgumentException if this method
+     * is ever called.
      */
-    void parseAuthorityKeyIdentifierExtension(
-            AuthorityKeyIdentifierExtension akidext) throws IOException {
-        if (akidext != null) {
-            KeyIdentifier akid = (KeyIdentifier)akidext.get(
-                    AuthorityKeyIdentifierExtension.KEY_ID);
+    @Override
+    public void setSubjectKeyIdentifier(byte[] subjectKeyID) {
+        throw new IllegalArgumentException();
+    }
+
+    /**
+     * This selector overrides the serialNumber matching rules of
+     * X509CertSelector, so it throws IllegalArgumentException if this method
+     * is ever called.
+     */
+    @Override
+    public void setSerialNumber(BigInteger serial) {
+        throw new IllegalArgumentException();
+    }
+
+    /**
+     * Sets the subjectKeyIdentifier and serialNumber criteria from the
+     * authority key identifier extension.
+     *
+     * The subjectKeyIdentifier criterion is set to the keyIdentifier field
+     * of the extension, or null if it is empty. The serialNumber criterion
+     * is set to the authorityCertSerialNumber field, or null if it is empty.
+     *
+     * Note that we do not set the subject criterion to the
+     * authorityCertIssuer field of the extension. The caller MUST set
+     * the subject criterion before calling match().
+     *
+     * @param ext the authorityKeyIdentifier extension
+     * @throws IOException if there is an error parsing the extension
+     */
+    void setSkiAndSerialNumber(AuthorityKeyIdentifierExtension ext)
+        throws IOException {
+
+        ski = null;
+        serial = null;
+
+        if (ext != null) {
+            KeyIdentifier akid = (KeyIdentifier)ext.get(
+                AuthorityKeyIdentifierExtension.KEY_ID);
             if (akid != null) {
-                // Do not override the previous setting for initial selection.
-                if (isSKIDSensitive || getSubjectKeyIdentifier() == null) {
-                    DerOutputStream derout = new DerOutputStream();
-                    derout.putOctetString(akid.getIdentifier());
-                    super.setSubjectKeyIdentifier(derout.toByteArray());
-
-                    isSKIDSensitive = true;
-                }
+                DerOutputStream derout = new DerOutputStream();
+                derout.putOctetString(akid.getIdentifier());
+                ski = derout.toByteArray();
             }
-
-            SerialNumber asn = (SerialNumber)akidext.get(
-                    AuthorityKeyIdentifierExtension.SERIAL_NUMBER);
+            SerialNumber asn = (SerialNumber)ext.get(
+                AuthorityKeyIdentifierExtension.SERIAL_NUMBER);
             if (asn != null) {
-                // Do not override the previous setting for initial selection.
-                if (isSNSensitive || getSerialNumber() == null) {
-                    super.setSerialNumber(asn.getNumber());
-                    isSNSensitive = true;
-                }
+                serial = asn.getNumber();
             }
-
-            // the subject criterion should be set by the caller.
+            // the subject criterion should be set by the caller
         }
     }
 
     /**
      * Decides whether a <code>Certificate</code> should be selected.
+     *
+     * This method overrides the matching rules for the subjectKeyIdentifier
+     * and serialNumber criteria and adds additional rules for certificate
+     * validity.
      *
      * For the purpose of compatibility, when a certificate is of
      * version 1 and version 2, or the certificate does not include
@@ -138,12 +161,28 @@ class AdaptableX509CertSelector extends X509CertSelector {
      */
     @Override
     public boolean match(Certificate cert) {
-        if (!(cert instanceof X509Certificate)) {
+        X509Certificate xcert = (X509Certificate)cert;
+
+        // match subject key identifier
+        if (!matchSubjectKeyID(xcert)) {
             return false;
         }
 
-        X509Certificate xcert = (X509Certificate)cert;
+        // In practice, a CA may replace its root certificate and require that
+        // the existing certificate is still valid, even if the AKID extension
+        // does not match the replacement root certificate fields.
+        //
+        // Conservatively, we only support the replacement for version 1 and
+        // version 2 certificate. As for version 3, the certificate extension
+        // may contain sensitive information (for example, policies), the
+        // AKID need to be respected to seek the exact certificate in case
+        // of key or certificate abuse.
         int version = xcert.getVersion();
+        if (serial != null && version > 2) {
+            if (!serial.equals(xcert.getSerialNumber())) {
+                return false;
+            }
+        }
 
         // Check the validity period for version 1 and 2 certificate.
         if (version < 3) {
@@ -154,7 +193,6 @@ class AdaptableX509CertSelector extends X509CertSelector {
                     return false;
                 }
             }
-
             if (endDate != null) {
                 try {
                     xcert.checkValidity(endDate);
@@ -164,26 +202,50 @@ class AdaptableX509CertSelector extends X509CertSelector {
             }
         }
 
-        // If no SubjectKeyIdentifier extension, don't bother to check it.
-        if (isSKIDSensitive &&
-            (version < 3 || xcert.getExtensionValue("2.5.29.14") == null)) {
-            setSubjectKeyIdentifier(null);
+
+        if (!super.match(cert)) {
+            return false;
         }
 
-        // In practice, a CA may replace its root certificate and require that
-        // the existing certificate is still valid, even if the AKID extension
-        // does not match the replacement root certificate fields.
-        //
-        // Conservatively, we only support the replacement for version 1 and
-        // version 2 certificate. As for version 2, the certificate extension
-        // may contain sensitive information (for example, policies), the
-        // AKID need to be respected to seek the exact certificate in case
-        // of key or certificate abuse.
-        if (isSNSensitive && version < 3) {
-            setSerialNumber(null);
-        }
+        return true;
+    }
 
-        return super.match(cert);
+    /*
+     * Match on subject key identifier extension value. These matching rules
+     * are identical to X509CertSelector except that if the certificate does
+     * not have a subject key identifier extension, it returns true.
+     */
+    private boolean matchSubjectKeyID(X509Certificate xcert) {
+        if (ski == null) {
+            return true;
+        }
+        try {
+            byte[] extVal = xcert.getExtensionValue("2.5.29.14");
+            if (extVal == null) {
+                if (debug != null) {
+                    debug.println("AdaptableX509CertSelector.match: "
+                        + "no subject key ID extension");
+                }
+                return true;
+            }
+            DerInputStream in = new DerInputStream(extVal);
+            byte[] certSubjectKeyID = in.getOctetString();
+            if (certSubjectKeyID == null ||
+                    !Arrays.equals(ski, certSubjectKeyID)) {
+                if (debug != null) {
+                    debug.println("AdaptableX509CertSelector.match: "
+                        + "subject key IDs don't match");
+                }
+                return false;
+            }
+        } catch (IOException ex) {
+            if (debug != null) {
+                debug.println("AdaptableX509CertSelector.match: "
+                    + "exception in subject key ID check");
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -198,6 +260,9 @@ class AdaptableX509CertSelector extends X509CertSelector {
             copy.endDate = (Date)endDate.clone();
         }
 
+        if (ski != null) {
+            copy.ski = ski.clone();
+        }
         return copy;
     }
 }

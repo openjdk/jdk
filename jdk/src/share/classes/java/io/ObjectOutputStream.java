@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
-import java.io.SerialCallbackContext;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -458,7 +457,7 @@ public class ObjectOutputStream
             if (ctx == null) {
                 throw new NotActiveException("not in call to writeObject");
             }
-            Object curObj = ctx.getObj();
+            ctx.checkAndSetUsed();
             ObjectStreamClass curDesc = ctx.getDesc();
             curPut = new PutFieldImpl(curDesc);
         }
@@ -1527,29 +1526,34 @@ public class ObjectOutputStream
         desc.checkDefaultSerialize();
 
         int primDataSize = desc.getPrimDataSize();
-        if (primVals == null || primVals.length < primDataSize) {
-            primVals = new byte[primDataSize];
-        }
-        desc.getPrimFieldValues(obj, primVals);
-        bout.write(primVals, 0, primDataSize, false);
-
-        ObjectStreamField[] fields = desc.getFields(false);
-        Object[] objVals = new Object[desc.getNumObjFields()];
-        int numPrimFields = fields.length - objVals.length;
-        desc.getObjFieldValues(obj, objVals);
-        for (int i = 0; i < objVals.length; i++) {
-            if (extendedDebugInfo) {
-                debugInfoStack.push(
-                    "field (class \"" + desc.getName() + "\", name: \"" +
-                    fields[numPrimFields + i].getName() + "\", type: \"" +
-                    fields[numPrimFields + i].getType() + "\")");
+        if (primDataSize > 0) {
+            if (primVals == null || primVals.length < primDataSize) {
+                primVals = new byte[primDataSize];
             }
-            try {
-                writeObject0(objVals[i],
-                             fields[numPrimFields + i].isUnshared());
-            } finally {
+            desc.getPrimFieldValues(obj, primVals);
+            bout.write(primVals, 0, primDataSize, false);
+        }
+
+        int numObjFields = desc.getNumObjFields();
+        if (numObjFields > 0) {
+            ObjectStreamField[] fields = desc.getFields(false);
+            Object[] objVals = new Object[numObjFields];
+            int numPrimFields = fields.length - objVals.length;
+            desc.getObjFieldValues(obj, objVals);
+            for (int i = 0; i < objVals.length; i++) {
                 if (extendedDebugInfo) {
-                    debugInfoStack.pop();
+                    debugInfoStack.push(
+                        "field (class \"" + desc.getName() + "\", name: \"" +
+                        fields[numPrimFields + i].getName() + "\", type: \"" +
+                        fields[numPrimFields + i].getType() + "\")");
+                }
+                try {
+                    writeObject0(objVals[i],
+                                 fields[numPrimFields + i].isUnshared());
+                } finally {
+                    if (extendedDebugInfo) {
+                        debugInfoStack.pop();
+                    }
                 }
             }
         }
@@ -2464,7 +2468,9 @@ public class ObjectOutputStream
             StringBuilder buffer = new StringBuilder();
             if (!stack.isEmpty()) {
                 for(int i = stack.size(); i > 0; i-- ) {
-                    buffer.append(stack.get(i-1) + ((i != 1) ? "\n" : ""));
+                    buffer.append(stack.get(i - 1));
+                    if (i != 1)
+                        buffer.append('\n');
                 }
             }
             return buffer.toString();

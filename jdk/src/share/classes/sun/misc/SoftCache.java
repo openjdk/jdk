@@ -309,7 +309,7 @@ public class SoftCache extends AbstractMap<Object, Object> implements Map<Object
      *                mapped
      *
      * @return  The previous value to which this key was mapped, or
-     *          <code>null</code> if if there was no mapping for the key
+     *          <code>null</code> if there was no mapping for the key
      */
     public Object put(Object key, Object value) {
         processQueue();

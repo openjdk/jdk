@@ -211,7 +211,8 @@ mkdir ./test_classes
 # split application classes and test plugin classes
 mv ./UserPluginMetadataFormatTest*.class ./test_classes
 
-$TESTJAVA/bin/java MetadataFormatTest test_classes UserPluginMetadataFormatTest
+$TESTJAVA/bin/java ${TESTVMOPTS} \
+    MetadataFormatTest test_classes UserPluginMetadataFormatTest
 
 ###############  END YOUR TEST CODE !!!!! ############
 status=$?

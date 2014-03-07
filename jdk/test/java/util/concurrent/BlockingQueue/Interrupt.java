@@ -25,7 +25,6 @@
  * @test
  * @bug 6384064
  * @summary Check proper handling of interrupts
- * @run main/othervm -XX:-UseVMInterruptibleIO Interrupt
  * @author Martin Buchholz
  */
 

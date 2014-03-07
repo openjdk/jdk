@@ -53,8 +53,11 @@
 #ifdef TARGET_ARCH_MODEL_arm
 # include "adfiles/ad_arm.hpp"
 #endif
-#ifdef TARGET_ARCH_MODEL_ppc
-# include "adfiles/ad_ppc.hpp"
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "adfiles/ad_ppc_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc_64
+# include "adfiles/ad_ppc_64.hpp"
 #endif
 
 OptoReg::Name OptoReg::c_frame_pointer;
@@ -842,16 +845,15 @@ void Matcher::init_spill_mask( Node *ret ) {
 
   // Compute generic short-offset Loads
 #ifdef _LP64
-  MachNode *spillCP = match_tree(new (C) LoadNNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM));
+  MachNode *spillCP = match_tree(new (C) LoadNNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM,MemNode::unordered));
 #endif
-  MachNode *spillI  = match_tree(new (C) LoadINode(NULL,mem,fp,atp));
-  MachNode *spillL  = match_tree(new (C) LoadLNode(NULL,mem,fp,atp));
-  MachNode *spillF  = match_tree(new (C) LoadFNode(NULL,mem,fp,atp));
-  MachNode *spillD  = match_tree(new (C) LoadDNode(NULL,mem,fp,atp));
-  MachNode *spillP  = match_tree(new (C) LoadPNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM));
+  MachNode *spillI  = match_tree(new (C) LoadINode(NULL,mem,fp,atp,TypeInt::INT,MemNode::unordered));
+  MachNode *spillL  = match_tree(new (C) LoadLNode(NULL,mem,fp,atp,TypeLong::LONG,MemNode::unordered,false));
+  MachNode *spillF  = match_tree(new (C) LoadFNode(NULL,mem,fp,atp,Type::FLOAT,MemNode::unordered));
+  MachNode *spillD  = match_tree(new (C) LoadDNode(NULL,mem,fp,atp,Type::DOUBLE,MemNode::unordered));
+  MachNode *spillP  = match_tree(new (C) LoadPNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM,MemNode::unordered));
   assert(spillI != NULL && spillL != NULL && spillF != NULL &&
          spillD != NULL && spillP != NULL, "");
-
   // Get the ADLC notion of the right regmask, for each basic type.
 #ifdef _LP64
   idealreg2regmask[Op_RegN] = &spillCP->out_RegMask();
@@ -1336,11 +1338,23 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   }
 
   // Debug inputs begin just after the last incoming parameter
-  assert( (mcall == NULL) || (mcall->jvms() == NULL) ||
-          (mcall->jvms()->debug_start() + mcall->_jvmadj == mcall->tf()->domain()->cnt()), "" );
+  assert((mcall == NULL) || (mcall->jvms() == NULL) ||
+         (mcall->jvms()->debug_start() + mcall->_jvmadj == mcall->tf()->domain()->cnt()), "");
 
   // Move the OopMap
   msfpt->_oop_map = sfpt->_oop_map;
+
+  // Add additional edges.
+  if (msfpt->mach_constant_base_node_input() != (uint)-1 && !msfpt->is_MachCallLeaf()) {
+    // For these calls we can not add MachConstantBase in expand(), as the
+    // ins are not complete then.
+    msfpt->ins_req(msfpt->mach_constant_base_node_input(), C->mach_constant_base_node());
+    if (msfpt->jvms() &&
+        msfpt->mach_constant_base_node_input() <= msfpt->jvms()->debug_start() + msfpt->_jvmadj) {
+      // We added an edge before jvms, so we must adapt the position of the ins.
+      msfpt->jvms()->adapt_position(+1);
+    }
+  }
 
   // Registers killed by the call are set in the local scheduling pass
   // of Global Code Motion.
@@ -1984,7 +1998,6 @@ void Matcher::find_shared( Node *n ) {
       case Op_Catch:
       case Op_CatchProj:
       case Op_CProj:
-      case Op_FlagsProj:
       case Op_JumpProj:
       case Op_JProj:
       case Op_NeverBranch:
@@ -2331,7 +2344,7 @@ void Matcher::validate_null_checks( ) {
 bool Matcher::post_store_load_barrier(const Node* vmb) {
   Compile* C = Compile::current();
   assert(vmb->is_MemBar(), "");
-  assert(vmb->Opcode() != Op_MemBarAcquire, "");
+  assert(vmb->Opcode() != Op_MemBarAcquire && vmb->Opcode() != Op_LoadFence, "");
   const MemBarNode* membar = vmb->as_MemBar();
 
   // Get the Ideal Proj node, ctrl, that can be used to iterate forward
@@ -2376,7 +2389,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
     if (x->is_MemBar()) {
       // We must retain this membar if there is an upcoming volatile
       // load, which will be followed by acquire membar.
-      if (xop == Op_MemBarAcquire) {
+      if (xop == Op_MemBarAcquire || xop == Op_LoadFence) {
         return false;
       } else {
         // For other kinds of barriers, check by pretending we
@@ -2390,6 +2403,69 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
       return false;
     }
   }
+  return false;
+}
+
+// Check whether node n is a branch to an uncommon trap that we could
+// optimize as test with very high branch costs in case of going to
+// the uncommon trap. The code must be able to be recompiled to use
+// a cheaper test.
+bool Matcher::branches_to_uncommon_trap(const Node *n) {
+  // Don't do it for natives, adapters, or runtime stubs
+  Compile *C = Compile::current();
+  if (!C->is_method_compilation()) return false;
+
+  assert(n->is_If(), "You should only call this on if nodes.");
+  IfNode *ifn = n->as_If();
+
+  Node *ifFalse = NULL;
+  for (DUIterator_Fast imax, i = ifn->fast_outs(imax); i < imax; i++) {
+    if (ifn->fast_out(i)->is_IfFalse()) {
+      ifFalse = ifn->fast_out(i);
+      break;
+    }
+  }
+  assert(ifFalse, "An If should have an ifFalse. Graph is broken.");
+
+  Node *reg = ifFalse;
+  int cnt = 4; // We must protect against cycles.  Limit to 4 iterations.
+               // Alternatively use visited set?  Seems too expensive.
+  while (reg != NULL && cnt > 0) {
+    CallNode *call = NULL;
+    RegionNode *nxt_reg = NULL;
+    for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
+      Node *o = reg->fast_out(i);
+      if (o->is_Call()) {
+        call = o->as_Call();
+      }
+      if (o->is_Region()) {
+        nxt_reg = o->as_Region();
+      }
+    }
+
+    if (call &&
+        call->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
+      const Type* trtype = call->in(TypeFunc::Parms)->bottom_type();
+      if (trtype->isa_int() && trtype->is_int()->is_con()) {
+        jint tr_con = trtype->is_int()->get_con();
+        Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(tr_con);
+        Deoptimization::DeoptAction action = Deoptimization::trap_request_action(tr_con);
+        assert((int)reason < (int)BitsPerInt, "recode bit map");
+
+        if (is_set_nth_bit(C->allowed_deopt_reasons(), (int)reason)
+            && action != Deoptimization::Action_none) {
+          // This uncommon trap is sure to recompile, eventually.
+          // When that happens, C->too_many_traps will prevent
+          // this transformation from happening again.
+          return true;
+        }
+      }
+    }
+
+    reg = nxt_reg;
+    cnt--;
+  }
+
   return false;
 }
 
