@@ -2412,7 +2412,8 @@ void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, R
 #ifdef CC_INTERP
   ld(tmp1/*pc*/, _top_ijava_frame_abi(frame_manager_lr), sp);
 #else
-  Unimplemented();
+  address entry = pc();
+  load_const_optimized(tmp1, entry);
 #endif
 
   set_last_Java_frame(/*sp=*/sp, /*pc=*/tmp1);
@@ -2469,6 +2470,16 @@ void MacroAssembler::store_klass(Register dst_oop, Register klass, Register ck) 
     stw(ck, oopDesc::klass_offset_in_bytes(), dst_oop);
   } else {
     std(klass, oopDesc::klass_offset_in_bytes(), dst_oop);
+  }
+}
+
+void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
+  if (UseCompressedClassPointers) {
+    if (val == noreg) {
+      val = R0;
+      li(val, 0);
+    }
+    stw(val, oopDesc::klass_gap_offset_in_bytes(), dst_oop); // klass gap if compressed
   }
 }
 
@@ -3143,3 +3154,15 @@ void MacroAssembler::zap_from_to(Register low, int before, Register high, int af
 }
 
 #endif // !PRODUCT
+
+SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
+  int simm16_offset = masm->load_const_optimized(temp, (address)flag_addr, R0, true);
+  assert(sizeof(bool) == 1, "PowerPC ABI");
+  masm->lbz(temp, simm16_offset, temp);
+  masm->cmpwi(CCR0, temp, 0);
+  masm->beq(CCR0, _label);
+}
+
+SkipIfEqualZero::~SkipIfEqualZero() {
+  _masm->bind(_label);
+}

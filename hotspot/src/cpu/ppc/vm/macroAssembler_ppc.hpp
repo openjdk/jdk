@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,12 +566,14 @@ class MacroAssembler: public Assembler {
 
   // Load heap oop and decompress. Loaded oop may not be null.
   inline void load_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1 = noreg);
+  inline void store_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1,
+                                      /*specify if d must stay uncompressed*/ Register tmp = noreg);
 
   // Null allowed.
   inline void load_heap_oop(Register d, RegisterOrConstant offs, Register s1 = noreg);
 
   // Encode/decode heap oop. Oop may not be null, else en/decoding goes wrong.
-  inline void encode_heap_oop_not_null(Register d);
+  inline Register encode_heap_oop_not_null(Register d, Register src = noreg);
   inline void decode_heap_oop_not_null(Register d);
 
   // Null allowed.
@@ -581,6 +583,7 @@ class MacroAssembler: public Assembler {
   void load_klass(Register dst, Register src);
   void load_klass_with_trap_null_check(Register dst, Register src);
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
+  void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
   static int instr_size_for_decode_klass_not_null();
   void decode_klass_not_null(Register dst, Register src = noreg);
   void encode_klass_not_null(Register dst, Register src = noreg);
@@ -691,6 +694,23 @@ class MacroAssembler: public Assembler {
   void should_not_reach_here()                         { stop(stop_shouldnotreachhere,  "", -1); }
 
   void zap_from_to(Register low, int before, Register high, int after, Register val, Register addr) PRODUCT_RETURN;
+};
+
+// class SkipIfEqualZero:
+//
+// Instantiating this class will result in assembly code being output that will
+// jump around any code emitted between the creation of the instance and it's
+// automatic destruction at the end of a scope block, depending on the value of
+// the flag passed to the constructor, which will be checked at run-time.
+class SkipIfEqualZero : public StackObj {
+ private:
+  MacroAssembler* _masm;
+  Label _label;
+
+ public:
+   // 'Temp' is a temp register that this object can use (and trash).
+   explicit SkipIfEqualZero(MacroAssembler*, Register temp, const bool* flag_addr);
+   ~SkipIfEqualZero();
 };
 
 #endif // CPU_PPC_VM_MACROASSEMBLER_PPC_HPP

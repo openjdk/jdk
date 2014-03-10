@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2013, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,19 @@
  *
  */
 
-#ifndef CPU_PPC_VM_INTERPRETER_PPC_HPP
-#define CPU_PPC_VM_INTERPRETER_PPC_HPP
+#ifndef CPU_PPC_VM_TEMPLATEINTERPRETER_PPC_HPP
+#define CPU_PPC_VM_TEMPLATEINTERPRETER_PPC_HPP
 
- public:
+ protected:
 
-  // Stack index relative to tos (which points at value).
-  static int expr_index_at(int i) {
-    return stackElementWords * i;
-  }
+  // Size of interpreter code.  Increase if too small.  Interpreter will
+  // fail with a guarantee ("not enough space for interpreter generation");
+  // if too small.
+  // Run with +PrintInterpreter to get the VM to print out the size.
+  // Max size with JVMTI
 
-  // Already negated by c++ interpreter.
-  static int local_index_at(int i) {
-    assert(i <= 0, "local direction already negated");
-    return stackElementWords * i;
-  }
+  const static int InterpreterCodeSize = 210*K;
 
-#ifndef CC_INTERP
-  // The offset in bytes to access a expression stack slot
-  // relative to the esp pointer.
-  static int expr_offset_in_bytes(int slot) {
-    return stackElementSize * slot + wordSize;
-  }
-#endif
+#endif // CPU_PPC_VM_TEMPLATEINTERPRETER_PPC_HPP
 
-#endif // CPU_PPC_VM_INTERPRETER_PPC_PP
+

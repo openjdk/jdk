@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,6 @@
 
 #include "runtime/synchronizer.hpp"
 #include "utilities/top.hpp"
-
-#ifndef CC_INTERP
-#error "CC_INTERP must be defined on PPC64"
-#endif
 
   //  C frame layout on PPC-64.
   //
@@ -197,7 +193,85 @@
   #define _spill_nonvolatiles_neg(_component) \
      (int)(-frame::spill_nonvolatiles_size + offset_of(frame::spill_nonvolatiles, _component))
 
-  //  Frame layout for the Java interpreter on PPC64.
+
+
+#ifndef CC_INTERP
+  //  Frame layout for the Java template interpreter on PPC64.
+  //
+  //  Diffs to the CC_INTERP are marked with 'X'.
+  //
+  //  TOP_IJAVA_FRAME:
+  //
+  //    0       [TOP_IJAVA_FRAME_ABI]
+  //            alignment (optional)
+  //            [operand stack]
+  //            [monitors] (optional)
+  //           X[IJAVA_STATE]
+  //            note: own locals are located in the caller frame.
+  //
+  //  PARENT_IJAVA_FRAME:
+  //
+  //    0       [PARENT_IJAVA_FRAME_ABI]
+  //            alignment (optional)
+  //            [callee's Java result]
+  //            [callee's locals w/o arguments]
+  //            [outgoing arguments]
+  //            [used part of operand stack w/o arguments]
+  //            [monitors]      (optional)
+  //           X[IJAVA_STATE]
+  //
+
+  struct parent_ijava_frame_abi : abi_minframe {
+  };
+
+  enum {
+    parent_ijava_frame_abi_size = sizeof(parent_ijava_frame_abi)
+  };
+
+#define _parent_ijava_frame_abi(_component) \
+        (offset_of(frame::parent_ijava_frame_abi, _component))
+
+  struct top_ijava_frame_abi : abi_reg_args {
+  };
+
+  enum {
+    top_ijava_frame_abi_size = sizeof(top_ijava_frame_abi)
+  };
+
+#define _top_ijava_frame_abi(_component) \
+        (offset_of(frame::top_ijava_frame_abi, _component))
+
+  struct ijava_state {
+#ifdef ASSERT
+    uint64_t ijava_reserved;  // Used for assertion.
+    uint64_t ijava_reserved2; // Inserted for alignment.
+#endif
+    uint64_t method;
+    uint64_t locals;
+    uint64_t monitors;
+    uint64_t cpoolCache;
+    uint64_t bcp;
+    uint64_t esp;
+    uint64_t mdx;
+    uint64_t top_frame_sp; // Maybe define parent_frame_abi and move there.
+    uint64_t sender_sp;
+    // Slots only needed for native calls. Maybe better to move elsewhere.
+    uint64_t oop_tmp;
+    uint64_t lresult;
+    uint64_t fresult;
+    // Aligned to frame::alignment_in_bytes (16).
+  };
+
+  enum {
+    ijava_state_size = sizeof(ijava_state)
+  };
+
+#define _ijava_state_neg(_component) \
+        (int) (-frame::ijava_state_size + offset_of(frame::ijava_state, _component))
+
+#else // CC_INTERP:
+
+  //  Frame layout for the Java C++ interpreter on PPC64.
   //
   //  This frame layout provides a C-like frame for every Java frame.
   //
@@ -299,6 +373,8 @@
 
   #define _top_ijava_frame_abi(_component) \
           (offset_of(frame::top_ijava_frame_abi, _component))
+
+#endif // CC_INTERP
 
   // ENTRY_FRAME
 
@@ -423,6 +499,14 @@
 #ifdef CC_INTERP
   // Additional interface for interpreter frames:
   inline interpreterState get_interpreterState() const;
+#else
+  inline ijava_state* get_ijava_state() const;
+  // Some convenient register frame setters/getters for deoptimization.
+  inline intptr_t* interpreter_frame_esp() const;
+  inline void interpreter_frame_set_cpcache(ConstantPoolCache* cp);
+  inline void interpreter_frame_set_esp(intptr_t* esp);
+  inline void interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp);
+  inline void interpreter_frame_set_sender_sp(intptr_t* sender_sp);
 #endif // CC_INTERP
 
   // Size of a monitor in bytes.

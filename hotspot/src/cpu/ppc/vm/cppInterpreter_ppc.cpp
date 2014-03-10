@@ -1353,9 +1353,9 @@ address CppInterpreterGenerator::generate_native_entry(void) {
   // notify here, we'll drop it on the floor.
 
   __ notify_method_exit(true/*native method*/,
-                        ilgl /*illegal state (not used for native methods)*/);
-
-
+                        ilgl /*illegal state (not used for native methods)*/,
+                        InterpreterMacroAssembler::NotifyJVMTI,
+                        false /*check_exceptions*/);
 
   //=============================================================================
   // Handle exceptions
