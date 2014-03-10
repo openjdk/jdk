@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,24 @@
 // #define SECMOD_DEBUG
 
 #include "j2secmod.h"
+#include "jni_util.h"
 
 
 JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssVersionCheck
   (JNIEnv *env, jclass thisClass, jlong jHandle, jstring jVersion)
 {
-    const char *requiredVersion = (*env)->GetStringUTFChars(env, jVersion, NULL);
-    int res;
-    FPTR_VersionCheck versionCheck =
-        (FPTR_VersionCheck)findFunction(env, jHandle, "NSS_VersionCheck");
+    int res = 0;
+    FPTR_VersionCheck versionCheck;
+    const char *requiredVersion;
 
+    versionCheck = (FPTR_VersionCheck)findFunction(env, jHandle,
+        "NSS_VersionCheck");
     if (versionCheck == NULL) {
+        return JNI_FALSE;
+    }
+
+    requiredVersion = (*env)->GetStringUTFChars(env, jVersion, NULL);
+    if (requiredVersion == NULL)  {
         return JNI_FALSE;
     }
 
@@ -59,55 +66,73 @@ JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssVersionCheck
 JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssInitialize
   (JNIEnv *env, jclass thisClass, jstring jFunctionName, jlong jHandle, jstring jConfigDir, jboolean jNssOptimizeSpace)
 {
-    const char *functionName =
-        (*env)->GetStringUTFChars(env, jFunctionName, NULL);
-    const char *configDir = (jConfigDir == NULL)
-        ? NULL : (*env)->GetStringUTFChars(env, jConfigDir, NULL);
+    int res = 0;
     FPTR_Initialize initialize =
         (FPTR_Initialize)findFunction(env, jHandle, "NSS_Initialize");
-    int res = 0;
     unsigned int flags = 0x00;
+    const char *configDir = NULL;
+    const char *functionName = NULL;
+
+    /* If we cannot initialize, exit now */
+    if (initialize == NULL) {
+        res = 1;
+        goto cleanup;
+    }
+
+    functionName = (*env)->GetStringUTFChars(env, jFunctionName, NULL);
+    if (functionName == NULL) {
+        res = 1;
+        goto cleanup;
+    }
+
+    if (jConfigDir != NULL) {
+        configDir = (*env)->GetStringUTFChars(env, jConfigDir, NULL);
+        if (!configDir) {
+            res = 1;
+            goto cleanup;
+        }
+    }
 
     if (jNssOptimizeSpace == JNI_TRUE) {
         flags = 0x20; // NSS_INIT_OPTIMIZESPACE flag
     }
 
-    if (initialize != NULL) {
-        /*
-         * If the NSS_Init function is requested then call NSS_Initialize to
-         * open the Cert, Key and Security Module databases, read only.
-         */
-        if (strcmp("NSS_Init", functionName) == 0) {
-            flags = flags | 0x01; // NSS_INIT_READONLY flag
-            res = initialize(configDir, "", "", "secmod.db", flags);
+    /*
+     * If the NSS_Init function is requested then call NSS_Initialize to
+     * open the Cert, Key and Security Module databases, read only.
+     */
+    if (strcmp("NSS_Init", functionName) == 0) {
+        flags = flags | 0x01; // NSS_INIT_READONLY flag
+        res = initialize(configDir, "", "", "secmod.db", flags);
 
-        /*
-         * If the NSS_InitReadWrite function is requested then call
-         * NSS_Initialize to open the Cert, Key and Security Module databases,
-         * read/write.
-         */
-        } else if (strcmp("NSS_InitReadWrite", functionName) == 0) {
-            res = initialize(configDir, "", "", "secmod.db", flags);
+    /*
+     * If the NSS_InitReadWrite function is requested then call
+     * NSS_Initialize to open the Cert, Key and Security Module databases,
+     * read/write.
+     */
+    } else if (strcmp("NSS_InitReadWrite", functionName) == 0) {
+        res = initialize(configDir, "", "", "secmod.db", flags);
 
-        /*
-         * If the NSS_NoDB_Init function is requested then call
-         * NSS_Initialize without creating Cert, Key or Security Module
-         * databases.
-         */
-        } else if (strcmp("NSS_NoDB_Init", functionName) == 0) {
-            flags = flags | 0x02  // NSS_INIT_NOCERTDB flag
-                          | 0x04  // NSS_INIT_NOMODDB flag
-                          | 0x08  // NSS_INIT_FORCEOPEN flag
-                          | 0x10; // NSS_INIT_NOROOTINIT flag
-            res = initialize("", "", "", "", flags);
+    /*
+     * If the NSS_NoDB_Init function is requested then call
+     * NSS_Initialize without creating Cert, Key or Security Module
+     * databases.
+     */
+    } else if (strcmp("NSS_NoDB_Init", functionName) == 0) {
+        flags = flags | 0x02  // NSS_INIT_NOCERTDB flag
+                      | 0x04  // NSS_INIT_NOMODDB flag
+                      | 0x08  // NSS_INIT_FORCEOPEN flag
+                      | 0x10; // NSS_INIT_NOROOTINIT flag
+        res = initialize("", "", "", "", flags);
 
-        } else {
-            res = 2;
-        }
     } else {
-        res = 1;
+        res = 2;
     }
-    (*env)->ReleaseStringUTFChars(env, jFunctionName, functionName);
+
+cleanup:
+    if (functionName != NULL) {
+        (*env)->ReleaseStringUTFChars(env, jFunctionName, functionName);
+    }
     if (configDir != NULL) {
         (*env)->ReleaseStringUTFChars(env, jConfigDir, configDir);
     }
@@ -142,13 +167,30 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_Secmod_nssGetModuleList
     }
 
     jListClass = (*env)->FindClass(env, "java/util/ArrayList");
+    if (jListClass == NULL) {
+        return NULL;
+    }
     jListConstructor = (*env)->GetMethodID(env, jListClass, "<init>", "()V");
+    if (jListConstructor == NULL) {
+        return NULL;
+    }
     jAdd = (*env)->GetMethodID(env, jListClass, "add", "(Ljava/lang/Object;)Z");
+    if (jAdd == NULL) {
+        return NULL;
+    }
     jList = (*env)->NewObject(env, jListClass, jListConstructor);
-
+    if (jList == NULL) {
+        return NULL;
+    }
     jModuleClass = (*env)->FindClass(env, "sun/security/pkcs11/Secmod$Module");
+    if (jModuleClass == NULL) {
+        return NULL;
+    }
     jModuleConstructor = (*env)->GetMethodID(env, jModuleClass, "<init>",
         "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZI)V");
+    if (jModuleConstructor == NULL) {
+        return NULL;
+    }
 
     while (list != NULL) {
         module = list->module;
@@ -160,16 +202,28 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_Secmod_nssGetModuleList
         dprintf1("-internal: %d\n", module->internal);
         dprintf1("-fips: %d\n", module->isFIPS);
         jCommonName = (*env)->NewStringUTF(env, module->commonName);
+        if (jCommonName == NULL) {
+            return NULL;
+        }
         if (module->dllName == NULL) {
             jDllName = NULL;
         } else {
             jDllName = (*env)->NewStringUTF(env, module->dllName);
+            if (jDllName == NULL) {
+                return NULL;
+            }
         }
         jFIPS = module->isFIPS;
         for (i = 0; i < module->slotCount; i++ ) {
             jModule = (*env)->NewObject(env, jModuleClass, jModuleConstructor,
                 jLibDir, jDllName, jCommonName, jFIPS, i);
+            if (jModule == NULL) {
+                return NULL;
+            }
             (*env)->CallVoidMethod(env, jList, jAdd, jModule);
+            if ((*env)->ExceptionCheck(env)) {
+                return NULL;
+            }
         }
         list = list->next;
     }
