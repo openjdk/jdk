@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.*;
  *
  * @author Jeff Dinkins
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class MotifTreeCellRenderer extends DefaultTreeCellRenderer
 {
     static final int LEAF_SIZE = 13;
@@ -69,6 +70,7 @@ public class MotifTreeCellRenderer extends DefaultTreeCellRenderer
      * version of Swing.  A future release of Swing will provide support for
      * long term persistence.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class TreeLeafIcon implements Icon, Serializable {
 
         Color bg;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ import com.sun.java.swing.plaf.windows.WindowsIconFactory.VistaMenuItemCheckIcon
  *
  * @author unattributed
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class WindowsLookAndFeel extends BasicLookAndFeel
 {
     /**
@@ -2018,6 +2019,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      *
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class AudioAction extends AbstractAction {
         private Runnable audioRunnable;
         private String audioResource;
