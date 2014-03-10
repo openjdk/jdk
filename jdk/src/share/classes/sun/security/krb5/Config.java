@@ -549,12 +549,11 @@ public class Config {
                             previous = line.substring(1).trim();
                         }
                     } else {
-                        if (previous == null) {
-                            throw new KrbException(
-                                "Config file must starts with a section");
+                        // Lines before the first section are ignored
+                        if (previous != null) {
+                            v.add(previous);
+                            previous = line;
                         }
-                        v.add(previous);
-                        previous = line;
                     }
                 }
                 if (previous != null) {
