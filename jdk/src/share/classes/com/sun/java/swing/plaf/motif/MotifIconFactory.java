@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.io.Serializable;
  * 1.20 04/27/99
  * @author Georges Saab
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class MotifIconFactory implements Serializable
 {
     private static Icon checkBoxIcon;
@@ -90,6 +91,7 @@ public class MotifIconFactory implements Serializable
         return radioButtonIcon;
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class CheckBoxIcon implements Icon, UIResource, Serializable  {
         final static int csize = 13;
 
@@ -264,6 +266,7 @@ public class MotifIconFactory implements Serializable
             }
     } // end class CheckBoxIcon
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class RadioButtonIcon implements Icon, UIResource, Serializable {
         private Color dot = UIManager.getColor("activeCaptionBorder");
         private Color highlight = UIManager.getColor("controlHighlight");
@@ -355,6 +358,7 @@ public class MotifIconFactory implements Serializable
         }
     } // end class RadioButtonIcon
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class MenuItemCheckIcon implements Icon, UIResource, Serializable
     {
         public void paintIcon(Component c,Graphics g, int x, int y)
@@ -365,6 +369,7 @@ public class MotifIconFactory implements Serializable
     }  // end class MenuItemCheckIcon
 
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class MenuItemArrowIcon implements Icon, UIResource, Serializable
     {
         public void paintIcon(Component c,Graphics g, int x, int y)
@@ -374,6 +379,7 @@ public class MotifIconFactory implements Serializable
         public int getIconHeight() { return 0; }
     }  // end class MenuItemArrowIcon
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class MenuArrowIcon implements Icon, UIResource, Serializable
     {
         private Color focus = UIManager.getColor("windowBorder");

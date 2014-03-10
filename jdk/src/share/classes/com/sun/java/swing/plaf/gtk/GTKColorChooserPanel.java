@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.swing.plaf.*;
  *
  * @author Scott Violet
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 class GTKColorChooserPanel extends AbstractColorChooserPanel implements
               ChangeListener {
     private static final float PI_3 = (float)(Math.PI / 3);
@@ -535,6 +536,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
     /**
      * Class responsible for rendering a color wheel and color triangle.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class ColorTriangle extends JPanel {
         /**
          * Cached image of the wheel.
@@ -1229,6 +1231,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
     /**
      * Action class used for colors.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class ColorAction extends AbstractAction {
         private int type;
 
@@ -1294,7 +1297,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         }
     }
 
-
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class OpaqueLabel extends JLabel {
         public boolean isOpaque() {
             return true;
