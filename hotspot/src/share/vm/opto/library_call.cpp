@@ -3180,7 +3180,8 @@ bool LibraryCallKit::inline_native_currentThread() {
 // private native boolean java.lang.Thread.isInterrupted(boolean ClearInterrupted);
 bool LibraryCallKit::inline_native_isInterrupted() {
   // Add a fast path to t.isInterrupted(clear_int):
-  //   (t == Thread.current() && (!TLS._osthread._interrupted || !clear_int))
+  //   (t == Thread.current() &&
+  //    (!TLS._osthread._interrupted || WINDOWS_ONLY(false) NOT_WINDOWS(!clear_int)))
   //   ? TLS._osthread._interrupted : /*slow path:*/ t.isInterrupted(clear_int)
   // So, in the common case that the interrupt bit is false,
   // we avoid making a call into the VM.  Even if the interrupt bit
@@ -3237,6 +3238,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   // drop through to next case
   set_control( _gvn.transform(new (C) IfTrueNode(iff_bit)));
 
+#ifndef TARGET_OS_FAMILY_windows
   // (c) Or, if interrupt bit is set and clear_int is false, use 2nd fast path.
   Node* clr_arg = argument(1);
   Node* cmp_arg = _gvn.transform(new (C) CmpINode(clr_arg, intcon(0)));
@@ -3250,6 +3252,10 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 
   // drop through to next case
   set_control( _gvn.transform(new (C) IfTrueNode(iff_arg)));
+#else
+  // To return true on Windows you must read the _interrupted field
+  // and check the the event state i.e. take the slow path.
+#endif // TARGET_OS_FAMILY_windows
 
   // (d) Otherwise, go to the slow path.
   slow_region->add_req(control());
