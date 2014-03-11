@@ -166,6 +166,9 @@ public class Locks {
     private static CheckerThread checker;
     static class WaitingThread extends Thread {
         private final Phaser p;
+
+        volatile boolean waiting = false;
+
         public WaitingThread(Phaser p) {
             super("WaitingThread");
             this.p = p;
@@ -175,7 +178,9 @@ public class Locks {
                 System.out.println("WaitingThread about to wait on objC");
                 try {
                     // Signal checker thread, about to wait on objC.
+                    waiting = false;
                     p.arriveAndAwaitAdvance(); // Phase 1 (waiting)
+                    waiting = true;
                     objC.wait();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -194,7 +199,9 @@ public class Locks {
             synchronized(objC) {
                 try {
                     // signal checker thread, about to wait on objC
+                    waiting = false;
                     p.arriveAndAwaitAdvance(); // Phase 3 (waiting)
+                    waiting = true;
                     objC.wait();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -203,25 +210,35 @@ public class Locks {
             }
             System.out.println("WaitingThread about to exit waiting on objC 2");
         }
-    }
-    static class CheckerThread extends Thread {
-        private final Phaser p;
-        public CheckerThread(Phaser p) {
-            super("CheckerThread");
-            this.p = p;
+
+        public void waitForWaiting() {
+            p.arriveAndAwaitAdvance();
+            while (!waiting) {
+                goSleep(10);
+            }
+            waitForState(State.WAITING);
+        }
+
+        public void waitForBlocked() {
+            p.arriveAndAwaitAdvance();
+            waitForState(State.BLOCKED);
         }
 
         private void waitForState(Thread.State state) {
-            p.arriveAndAwaitAdvance();
             while (!waiter.isInterrupted() && waiter.getState() != state) {
-                goSleep(10);
+                Thread.yield();
             }
+        }
+    }
+    static class CheckerThread extends Thread {
+        public CheckerThread() {
+            super("CheckerThread");
         }
 
         public void run() {
             synchronized (ready) {
                 // wait until WaitingThread about to wait for objC
-                waitForState(Thread.State.WAITING); // Phase 1 (waiting)
+                waiter.waitForWaiting(); // Phase 1 (waiting)
                 checkBlockedObject(waiter, objC, null, Thread.State.WAITING);
 
                 synchronized (objC) {
@@ -230,13 +247,13 @@ public class Locks {
 
                 // wait for waiter thread to about to enter
                 // synchronized object ready.
-                waitForState(Thread.State.BLOCKED); // Phase 2 (waiting)
+                waiter.waitForBlocked(); // Phase 2 (waiting)
                 checkBlockedObject(waiter, ready, this, Thread.State.BLOCKED);
             }
 
             // wait for signal from waiting thread that it is about
             // wait for objC.
-            waitForState(Thread.State.WAITING); // Phase 3 (waiting)
+            waiter.waitForWaiting(); // Phase 3 (waiting)
             synchronized(objC) {
                 checkBlockedObject(waiter, objC, Thread.currentThread(), Thread.State.WAITING);
                 objC.notify();
@@ -284,7 +301,7 @@ public class Locks {
         waiter = new WaitingThread(p);
         waiter.start();
 
-        checker = new CheckerThread(p);
+        checker = new CheckerThread();
         checker.start();
 
         try {
