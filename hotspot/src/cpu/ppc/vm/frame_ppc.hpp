@@ -50,7 +50,7 @@
   //            [C_FRAME]
   //
   //  C_FRAME:
-  //    0       [ABI_112]
+  //    0       [ABI_REG_ARGS]
   //    112     CARG_9: outgoing arg 9 (arg_1 ... arg_8 via gpr_3 ... gpr_{10})
   //            ...
   //    40+M*8  CARG_M: outgoing arg M (M is the maximum of outgoing args taken over all call sites in the procedure)
@@ -77,7 +77,7 @@
   //    32      reserved
   //    40      space for TOC (=R2) register for next call
   //
-  //  ABI_112:
+  //  ABI_REG_ARGS:
   //    0       [ABI_48]
   //    48      CARG_1: spill slot for outgoing arg 1. used by next callee.
   //    ...     ...
@@ -95,23 +95,25 @@
     log_2_of_alignment_in_bits = 7
   };
 
-  // ABI_48:
-  struct abi_48 {
+  // ABI_MINFRAME:
+  struct abi_minframe {
     uint64_t callers_sp;
     uint64_t cr;                                  //_16
     uint64_t lr;
+#if !defined(ABI_ELFv2)
     uint64_t reserved1;                           //_16
     uint64_t reserved2;
+#endif
     uint64_t toc;                                 //_16
     // nothing to add here!
     // aligned to frame::alignment_in_bytes (16)
   };
 
   enum {
-    abi_48_size = sizeof(abi_48)
+    abi_minframe_size = sizeof(abi_minframe)
   };
 
-  struct abi_112 : abi_48 {
+  struct abi_reg_args : abi_minframe {
     uint64_t carg_1;
     uint64_t carg_2;                              //_16
     uint64_t carg_3;
@@ -124,13 +126,13 @@
   };
 
   enum {
-    abi_112_size = sizeof(abi_112)
+    abi_reg_args_size = sizeof(abi_reg_args)
   };
 
   #define _abi(_component) \
-          (offset_of(frame::abi_112, _component))
+          (offset_of(frame::abi_reg_args, _component))
 
-  struct abi_112_spill : abi_112 {
+  struct abi_reg_args_spill : abi_reg_args {
     // additional spill slots
     uint64_t spill_ret;
     uint64_t spill_fret;                          //_16
@@ -138,11 +140,11 @@
   };
 
   enum {
-    abi_112_spill_size = sizeof(abi_112_spill)
+    abi_reg_args_spill_size = sizeof(abi_reg_args_spill)
   };
 
-  #define _abi_112_spill(_component) \
-          (offset_of(frame::abi_112_spill, _component))
+  #define _abi_reg_args_spill(_component) \
+          (offset_of(frame::abi_reg_args_spill, _component))
 
   // non-volatile GPRs:
 
@@ -242,7 +244,7 @@
   //            [ENTRY_FRAME_LOCALS]
   //
   //  PARENT_IJAVA_FRAME_ABI:
-  //    0       [ABI_48]
+  //    0       [ABI_MINFRAME]
   //            top_frame_sp
   //            initial_caller_sp
   //
@@ -258,7 +260,7 @@
 
   // PARENT_IJAVA_FRAME_ABI
 
-  struct parent_ijava_frame_abi : abi_48 {
+  struct parent_ijava_frame_abi : abi_minframe {
     // SOE registers.
     // C2i adapters spill their top-frame stack-pointer here.
     uint64_t top_frame_sp;                        //      carg_1
@@ -285,7 +287,7 @@
     uint64_t carg_6_unused;                       //_16   carg_6
     uint64_t carg_7_unused;                       //      carg_7
     // Use arg8 for storing frame_manager_lr. The size of
-    // top_ijava_frame_abi must match abi_112.
+    // top_ijava_frame_abi must match abi_reg_args.
     uint64_t frame_manager_lr;                    //_16   carg_8
     // nothing to add here!
     // aligned to frame::alignment_in_bytes (16)
@@ -395,8 +397,8 @@
   intptr_t* fp() const { return _fp; }
 
   // Accessors for ABIs
-  inline abi_48* own_abi()     const { return (abi_48*) _sp; }
-  inline abi_48* callers_abi() const { return (abi_48*) _fp; }
+  inline abi_minframe* own_abi()     const { return (abi_minframe*) _sp; }
+  inline abi_minframe* callers_abi() const { return (abi_minframe*) _fp; }
 
  private:
 

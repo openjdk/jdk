@@ -128,13 +128,13 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
   const Register target_sp      = R28_tmp8;
   const FloatRegister floatSlot = F0;
 
-  address entry = __ emit_fd();
+  address entry = __ function_entry();
 
   __ save_LR_CR(R0);
   __ save_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
   // We use target_sp for storing arguments in the C frame.
   __ mr(target_sp, R1_SP);
-  __ push_frame_abi112_nonvolatiles(0, R11_scratch1);
+  __ push_frame_reg_args_nonvolatiles(0, R11_scratch1);
 
   __ mr(arg_java, R3_ARG1);
 
@@ -474,7 +474,7 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 
   // Push a new C frame and save LR.
   __ save_LR_CR(R0);
-  __ push_frame_abi112(0, R11_scratch1);
+  __ push_frame_reg_args(0, R11_scratch1);
 
   // This is not a leaf but we have a JavaFrameAnchor now and we will
   // check (create) exceptions afterward so this is ok.

@@ -594,7 +594,13 @@ void MacroAssembler::bxx64_patchable(address dest, relocInfo::relocType rt, bool
            "can't identify emitted call");
   } else {
     // variant 1:
-
+#if defined(ABI_ELFv2)
+    nop();
+    calculate_address_from_global_toc(R12, dest, true, true, false);
+    mtctr(R12);
+    nop();
+    nop();
+#else
     mr(R0, R11);  // spill R11 -> R0.
 
     // Load the destination address into CTR,
@@ -604,6 +610,7 @@ void MacroAssembler::bxx64_patchable(address dest, relocInfo::relocType rt, bool
     mtctr(R11);
     mr(R11, R0);  // spill R11 <- R0.
     nop();
+#endif
 
     // do the call/jump
     if (link) {
@@ -912,16 +919,16 @@ void MacroAssembler::push_frame(unsigned int bytes, Register tmp) {
   }
 }
 
-// Push a frame of size `bytes' plus abi112 on top.
-void MacroAssembler::push_frame_abi112(unsigned int bytes, Register tmp) {
-  push_frame(bytes + frame::abi_112_size, tmp);
+// Push a frame of size `bytes' plus abi_reg_args on top.
+void MacroAssembler::push_frame_reg_args(unsigned int bytes, Register tmp) {
+  push_frame(bytes + frame::abi_reg_args_size, tmp);
 }
 
 // Setup up a new C frame with a spill area for non-volatile GPRs and
 // additional space for local variables.
-void MacroAssembler::push_frame_abi112_nonvolatiles(unsigned int bytes,
-                                                    Register tmp) {
-  push_frame(bytes + frame::abi_112_size + frame::spill_nonvolatiles_size, tmp);
+void MacroAssembler::push_frame_reg_args_nonvolatiles(unsigned int bytes,
+                                                      Register tmp) {
+  push_frame(bytes + frame::abi_reg_args_size + frame::spill_nonvolatiles_size, tmp);
 }
 
 // Pop current C frame.
@@ -929,6 +936,42 @@ void MacroAssembler::pop_frame() {
   ld(R1_SP, _abi(callers_sp), R1_SP);
 }
 
+#if defined(ABI_ELFv2)
+address MacroAssembler::branch_to(Register r_function_entry, bool and_link) {
+  // TODO(asmundak): make sure the caller uses R12 as function descriptor
+  // most of the times.
+  if (R12 != r_function_entry) {
+    mr(R12, r_function_entry);
+  }
+  mtctr(R12);
+  // Do a call or a branch.
+  if (and_link) {
+    bctrl();
+  } else {
+    bctr();
+  }
+  _last_calls_return_pc = pc();
+
+  return _last_calls_return_pc;
+}
+
+// Call a C function via a function descriptor and use full C
+// calling conventions. Updates and returns _last_calls_return_pc.
+address MacroAssembler::call_c(Register r_function_entry) {
+  return branch_to(r_function_entry, /*and_link=*/true);
+}
+
+// For tail calls: only branch, don't link, so callee returns to caller of this function.
+address MacroAssembler::call_c_and_return_to_caller(Register r_function_entry) {
+  return branch_to(r_function_entry, /*and_link=*/false);
+}
+
+address MacroAssembler::call_c(address function_entry, relocInfo::relocType rt) {
+  load_const(R12, function_entry, R0);
+  return branch_to(R12,  /*and_link=*/true);
+}
+
+#else
 // Generic version of a call to C function via a function descriptor
 // with variable support for C calling conventions (TOC, ENV, etc.).
 // Updates and returns _last_calls_return_pc.
@@ -1077,6 +1120,7 @@ address MacroAssembler::call_c_using_toc(const FunctionDescriptor* fd,
   }
   return _last_calls_return_pc;
 }
+#endif
 
 void MacroAssembler::call_VM_base(Register oop_result,
                                   Register last_java_sp,
@@ -1091,8 +1135,11 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // ARG1 must hold thread address.
   mr(R3_ARG1, R16_thread);
-
+#if defined(ABI_ELFv2)
+  address return_pc = call_c(entry_point, relocInfo::none);
+#else
   address return_pc = call_c((FunctionDescriptor*)entry_point, relocInfo::none);
+#endif
 
   reset_last_Java_frame();
 
@@ -1113,7 +1160,11 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
 void MacroAssembler::call_VM_leaf_base(address entry_point) {
   BLOCK_COMMENT("call_VM_leaf {");
+#if defined(ABI_ELFv2)
+  call_c(entry_point, relocInfo::none);
+#else
   call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, entry_point), relocInfo::none);
+#endif
   BLOCK_COMMENT("} call_VM_leaf");
 }
 
@@ -2227,7 +2278,7 @@ void MacroAssembler::g1_write_barrier_pre(Register Robj, RegisterOrConstant offs
   // VM call need frame to access(write) O register.
   if (needs_frame) {
     save_LR_CR(Rtmp1);
-    push_frame_abi112(0, Rtmp2);
+    push_frame_reg_args(0, Rtmp2);
   }
 
   if (Rpre_val->is_volatile() && Robj == noreg) mr(R31, Rpre_val); // Save pre_val across C call if it was preloaded.
@@ -3006,13 +3057,13 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
   mr(R0, tmp);
   // kill tmp
   save_LR_CR(tmp);
-  push_frame_abi112(nbytes_save, tmp);
+  push_frame_reg_args(nbytes_save, tmp);
   // restore tmp
   mr(tmp, R0);
   save_volatile_gprs(R1_SP, 112); // except R0
-  // load FunctionDescriptor**
+  // load FunctionDescriptor** / entry_address *
   load_const(tmp, fd);
-  // load FunctionDescriptor*
+  // load FunctionDescriptor* / entry_address
   ld(tmp, 0, tmp);
   mr(R4_ARG2, oop);
   load_const(R3_ARG1, (address)msg);
