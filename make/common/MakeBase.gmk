@@ -380,11 +380,23 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
   # On Solaris, if the target is a symlink and exists, cp won't overwrite.
   # Cp has to operate in recursive mode to allow for -P flag, to preserve soft links. If the
   # name of the target file differs from the source file, rename after copy.
+  # If the source and target parent directories are the same, recursive copy doesn't work
+  # so we fall back on regular copy, which isn't preserving symlinks.
   define install-file
 	$(MKDIR) -p $(@D)
 	$(RM) '$@'
-	$(CP) -f -r -P '$<' '$(@D)'
-	if [ "$(@F)" != "$(<F)" ]; then $(MV) '$(@D)/$(<F)' '$@'; fi
+	if [ "$(@D)" != "$(<D)" ]; then \
+	  $(CP) -f -r -P '$<' '$(@D)'; \
+	  if [ "$(@F)" != "$(<F)" ]; then \
+	    $(MV) '$(@D)/$(<F)' '$@'; \
+	  fi; \
+	else \
+	  if [ -L '$<' ]; then \
+	    $(ECHO) "Source file is a symlink and target is in the same directory: $< $@" ; \
+	    exit 1; \
+	  fi; \
+	  $(CP) -f '$<' '$@'; \
+	fi
   endef
 else ifeq ($(OPENJDK_TARGET_OS),macosx)
   # On mac, extended attributes sometimes creep into the source files, which may later
