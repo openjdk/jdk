@@ -172,11 +172,13 @@ Java_sun_awt_windows_WPrintDialogPeer_initIDs(JNIEnv *env, jclass cls)
 
     AwtPrintDialog::parentID =
         env->GetFieldID(cls, "parent", "Lsun/awt/windows/WComponentPeer;");
+    DASSERT(AwtPrintDialog::parentID != NULL);
+    CHECK_NULL(AwtPrintDialog::parentID);
+
     AwtPrintDialog::setHWndMID =
         env->GetMethodID(cls, "setHWnd", "(J)V");
-
-    DASSERT(AwtPrintDialog::parentID != NULL);
     DASSERT(AwtPrintDialog::setHWndMID != NULL);
+    CHECK_NULL(AwtPrintDialog::setHWndMID);
 
     CATCH_BAD_ALLOC;
 }
