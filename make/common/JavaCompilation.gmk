@@ -364,7 +364,7 @@ define add_file_to_clean
 	    | $(SED) -e '/^#/d' -e '/^$$$$/d' \
 	        -e :a -e '/\\$$$$/N; s/\\\n//; ta' \
 	        -e 's/^[ \t]*//;s/[ \t]*$$$$//' \
-	        -e 's/\\=/=/' | LANG=C $(SORT) > $$@
+	        -e 's/\\=/=/' | LC_ALL=C $(SORT) > $$@
 	$(CHMOD) -f ug+w $$@
 
   # And do not forget this target
