@@ -385,4 +385,10 @@ inline void MacroAssembler::trap_range_check_ge(Register a, int si16) {
   twi(traptoEqual | traptoGreaterThanUnsigned, a/*reg a*/, si16);
 }
 
+#if defined(ABI_ELFv2)
+inline address MacroAssembler::function_entry() { return pc(); }
+#else
+inline address MacroAssembler::function_entry() { return emit_fd(); }
+#endif
+
 #endif // CPU_PPC_VM_MACROASSEMBLER_PPC_INLINE_HPP

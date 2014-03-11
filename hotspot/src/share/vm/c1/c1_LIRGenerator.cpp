@@ -1734,7 +1734,8 @@ void LIRGenerator::do_StoreField(StoreField* x) {
                 (info ? new CodeEmitInfo(info) : NULL));
   }
 
-  if (is_volatile && !needs_patching) {
+  bool needs_atomic_access = is_volatile || AlwaysAtomicAccesses;
+  if (needs_atomic_access && !needs_patching) {
     volatile_field_store(value.result(), address, info);
   } else {
     LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;
@@ -1807,7 +1808,8 @@ void LIRGenerator::do_LoadField(LoadField* x) {
     address = generate_address(object.result(), x->offset(), field_type);
   }
 
-  if (is_volatile && !needs_patching) {
+  bool needs_atomic_access = is_volatile || AlwaysAtomicAccesses;
+  if (needs_atomic_access && !needs_patching) {
     volatile_field_load(address, reg, info);
   } else {
     LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;

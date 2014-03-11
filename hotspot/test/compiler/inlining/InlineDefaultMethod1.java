@@ -23,41 +23,36 @@
 
 /*
  * @test
- * @bug 8027422
- * @summary type methods shouldn't always operate on speculative part
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:TypeProfileLevel=222 -XX:+UseTypeSpeculation -XX:-BackgroundCompilation TestSpeculationFailedHigherEqual
- *
+ * @bug 8036100
+ * @summary Default method returns true for a while, and then returns false
+ * @run main/othervm -Xcomp -XX:CompileOnly=InlineDefaultMethod1::test
+ *                   -XX:CompileOnly=I1::m -XX:CompileOnly=I2::m
+ *                   InlineDefaultMethod1
  */
+interface I1 {
+    default public int m() { return 0; }
+}
 
-public class TestSpeculationFailedHigherEqual {
+interface I2 extends I1 {
+    default public int m() { return 1; }
+}
 
-    static class A {
-        void m() {}
-        int i;
-    }
+abstract class A implements I1 {
+}
 
-    static class C extends A {
-    }
+class B extends A implements I2 {
+}
 
-    static C c;
-
-    static A m1(A a, boolean cond) {
-        // speculative type for a is C not null
-        if (cond ) {
-            a = c;
+public class InlineDefaultMethod1 {
+    public static void test(A obj) {
+        int id = obj.m();
+        if (id != 1) {
+            throw new AssertionError("Called wrong method: 1 != "+id);
         }
-        // speculative type for a is C (may be null)
-        int i = a.i;
-        return a;
     }
 
-    static public void main(String[] args) {
-        C c = new C();
-        TestSpeculationFailedHigherEqual.c = c;
-        for (int i = 0; i < 20000; i++) {
-            m1(c, i%2 == 0);
-        }
-
+    public static void main(String[] args) throws InterruptedException {
+        test(new B());
         System.out.println("TEST PASSED");
     }
 }
