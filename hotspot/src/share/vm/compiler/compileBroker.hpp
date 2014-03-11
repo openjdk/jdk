@@ -196,7 +196,11 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   CompileTask* _first;
   CompileTask* _last;
 
+  CompileTask* _first_stale;
+
   int _size;
+
+  void purge_stale_tasks();
  public:
   CompileQueue(const char* name, Monitor* lock) {
     _name = name;
@@ -204,6 +208,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
     _first = NULL;
     _last = NULL;
     _size = 0;
+    _first_stale = NULL;
   }
 
   const char*  name() const                      { return _name; }
@@ -211,6 +216,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   void         add(CompileTask* task);
   void         remove(CompileTask* task);
+  void         remove_and_mark_stale(CompileTask* task);
   CompileTask* first()                           { return _first; }
   CompileTask* last()                            { return _last;  }
 
@@ -218,6 +224,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   bool         is_empty() const                  { return _first == NULL; }
   int          size()     const                  { return _size;          }
+
 
   // Redefine Classes support
   void mark_on_stack();

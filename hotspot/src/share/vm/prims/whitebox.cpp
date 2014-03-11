@@ -495,8 +495,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
 
 #ifdef TIERED
     mcs->set_rate(0.0F);
-    mh->set_prev_event_count(0, THREAD);
-    mh->set_prev_time(0, THREAD);
+    mh->set_prev_event_count(0);
+    mh->set_prev_time(0);
 #endif
   }
 WB_END

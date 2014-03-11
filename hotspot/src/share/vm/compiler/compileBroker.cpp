@@ -704,13 +704,39 @@ CompileTask* CompileQueue::get() {
     return NULL;
   }
 
-  CompileTask* task = CompilationPolicy::policy()->select_task(this);
+  CompileTask* task;
+  {
+    No_Safepoint_Verifier nsv;
+    task = CompilationPolicy::policy()->select_task(this);
+  }
   remove(task);
+  purge_stale_tasks(); // may temporarily release MCQ lock
   return task;
 }
 
-void CompileQueue::remove(CompileTask* task)
-{
+// Clean & deallocate stale compile tasks.
+// Temporarily releases MethodCompileQueue lock.
+void CompileQueue::purge_stale_tasks() {
+  assert(lock()->owned_by_self(), "must own lock");
+  if (_first_stale != NULL) {
+    // Stale tasks are purged when MCQ lock is released,
+    // but _first_stale updates are protected by MCQ lock.
+    // Once task processing starts and MCQ lock is released,
+    // other compiler threads can reuse _first_stale.
+    CompileTask* head = _first_stale;
+    _first_stale = NULL;
+    {
+      MutexUnlocker ul(lock());
+      for (CompileTask* task = head; task != NULL; ) {
+        CompileTask* next_task = task->next();
+        CompileTaskWrapper ctw(task); // Frees the task
+        task = next_task;
+      }
+    }
+  }
+}
+
+void CompileQueue::remove(CompileTask* task) {
    assert(lock()->owned_by_self(), "must own lock");
   if (task->prev() != NULL) {
     task->prev()->set_next(task->next());
@@ -728,6 +754,16 @@ void CompileQueue::remove(CompileTask* task)
     _last = task->prev();
   }
   --_size;
+}
+
+void CompileQueue::remove_and_mark_stale(CompileTask* task) {
+  assert(lock()->owned_by_self(), "must own lock");
+  remove(task);
+
+  // Enqueue the task for reclamation (should be done outside MCQ lock)
+  task->set_next(_first_stale);
+  task->set_prev(NULL);
+  _first_stale = task;
 }
 
 // methods in the compile queue need to be marked as used on the stack
@@ -2006,7 +2042,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   // Note that the queued_for_compilation bits are cleared without
   // protection of a mutex. [They were set by the requester thread,
-  // when adding the task to the complie queue -- at which time the
+  // when adding the task to the compile queue -- at which time the
   // compile queue lock was held. Subsequently, we acquired the compile
   // queue lock to get this task off the compile queue; thus (to belabour
   // the point somewhat) our clearing of the bits must be occurring
