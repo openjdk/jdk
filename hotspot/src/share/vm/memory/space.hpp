@@ -204,17 +204,6 @@ class Space: public CHeapObj<mtGC> {
   // objects whose internal references point to objects in the space.
   virtual void safe_object_iterate(ObjectClosure* blk) = 0;
 
-  // Iterate over as many initialized objects in the space as possible,
-  // calling "cl.do_object_careful" on each. Return NULL if all objects
-  // in the space (at the start of the iteration) were iterated over.
-  // Return an address indicating the extent of the iteration in the
-  // event that the iteration had to return because of finding an
-  // uninitialized object in the space, or if the closure "cl"
-  // signaled early termination.
-  virtual HeapWord* object_iterate_careful(ObjectClosureCareful* cl);
-  virtual HeapWord* object_iterate_careful_m(MemRegion mr,
-                                             ObjectClosureCareful* cl);
-
   // Create and return a new dirty card to oop closure. Can be
   // overridden to return the appropriate type of closure
   // depending on the type of space in which the closure will
@@ -833,7 +822,14 @@ class ContiguousSpace: public CompactibleSpace {
   // For contiguous spaces this method will iterate safely over objects
   // in the space (i.e., between bottom and top) when at a safepoint.
   void safe_object_iterate(ObjectClosure* blk);
-  // iterates on objects up to the safe limit
+
+  // Iterate over as many initialized objects in the space as possible,
+  // calling "cl.do_object_careful" on each. Return NULL if all objects
+  // in the space (at the start of the iteration) were iterated over.
+  // Return an address indicating the extent of the iteration in the
+  // event that the iteration had to return because of finding an
+  // uninitialized object in the space, or if the closure "cl"
+  // signaled early termination.
   HeapWord* object_iterate_careful(ObjectClosureCareful* cl);
   HeapWord* concurrent_iteration_safe_limit() {
     assert(_concurrent_iteration_safe_limit <= top(),

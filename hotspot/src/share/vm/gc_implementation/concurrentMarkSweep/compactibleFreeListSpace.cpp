@@ -905,39 +905,6 @@ void CompactibleFreeListSpace::object_iterate_mem(MemRegion mr,
   }
 }
 
-// Callers of this iterator beware: The closure application should
-// be robust in the face of uninitialized objects and should (always)
-// return a correct size so that the next addr + size below gives us a
-// valid block boundary. [See for instance,
-// ScanMarkedObjectsAgainCarefullyClosure::do_object_careful()
-// in ConcurrentMarkSweepGeneration.cpp.]
-HeapWord*
-CompactibleFreeListSpace::object_iterate_careful(ObjectClosureCareful* cl) {
-  assert_lock_strong(freelistLock());
-  HeapWord *addr, *last;
-  size_t size;
-  for (addr = bottom(), last  = end();
-       addr < last; addr += size) {
-    FreeChunk* fc = (FreeChunk*)addr;
-    if (fc->is_free()) {
-      // Since we hold the free list lock, which protects direct
-      // allocation in this generation by mutators, a free object
-      // will remain free throughout this iteration code.
-      size = fc->size();
-    } else {
-      // Note that the object need not necessarily be initialized,
-      // because (for instance) the free list lock does NOT protect
-      // object initialization. The closure application below must
-      // therefore be correct in the face of uninitialized objects.
-      size = cl->do_object_careful(oop(addr));
-      if (size == 0) {
-        // An unparsable object found. Signal early termination.
-        return addr;
-      }
-    }
-  }
-  return NULL;
-}
 
 // Callers of this iterator beware: The closure application should
 // be robust in the face of uninitialized objects and should (always)
