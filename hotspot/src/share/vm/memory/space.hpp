@@ -204,13 +204,6 @@ class Space: public CHeapObj<mtGC> {
   // objects whose internal references point to objects in the space.
   virtual void safe_object_iterate(ObjectClosure* blk) = 0;
 
-  // Iterate over all objects that intersect with mr, calling "cl->do_object"
-  // on each.  There is an exception to this: if this closure has already
-  // been invoked on an object, it may skip such objects in some cases.  This is
-  // Most likely to happen in an "upwards" (ascending address) iteration of
-  // MemRegions.
-  virtual void object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl);
-
   // Iterate over as many initialized objects in the space as possible,
   // calling "cl.do_object_careful" on each. Return NULL if all objects
   // in the space (at the start of the iteration) were iterated over.
@@ -840,7 +833,6 @@ class ContiguousSpace: public CompactibleSpace {
   // For contiguous spaces this method will iterate safely over objects
   // in the space (i.e., between bottom and top) when at a safepoint.
   void safe_object_iterate(ObjectClosure* blk);
-  void object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl);
   // iterates on objects up to the safe limit
   HeapWord* object_iterate_careful(ObjectClosureCareful* cl);
   HeapWord* concurrent_iteration_safe_limit() {

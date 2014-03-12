@@ -363,6 +363,12 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // obj_is_alive() to determine whether it is safe to iterate of
   // an object.
   void safe_object_iterate(ObjectClosure* blk);
+
+  // Iterate over all objects that intersect with mr, calling "cl->do_object"
+  // on each.  There is an exception to this: if this closure has already
+  // been invoked on an object, it may skip such objects in some cases.  This is
+  // Most likely to happen in an "upwards" (ascending address) iteration of
+  // MemRegions.
   void object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl);
 
   // Requires that "mr" be entirely within the space.
