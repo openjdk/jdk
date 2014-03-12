@@ -547,17 +547,6 @@ void Space::oop_iterate(ExtendedOopClosure* blk) {
   object_iterate(&blk2);
 }
 
-HeapWord* Space::object_iterate_careful(ObjectClosureCareful* cl) {
-  guarantee(false, "NYI");
-  return bottom();
-}
-
-HeapWord* Space::object_iterate_careful_m(MemRegion mr,
-                                          ObjectClosureCareful* cl) {
-  guarantee(false, "NYI");
-  return bottom();
-}
-
 bool Space::obj_is_alive(const HeapWord* p) const {
   assert (block_is_obj(p), "The address should point to an object");
   return true;
