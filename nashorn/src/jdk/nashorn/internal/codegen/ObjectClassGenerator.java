@@ -150,7 +150,7 @@ public final class ObjectClassGenerator {
             LOG.warning("Running with primitive fields - there is untested functionality!");
             FIELD_TYPES.add(PRIMITIVE_FIELD_TYPE);
         } else {
-            System.err.println("Running with object fields only");
+            LOG.warning("Running with object fields only - this is a deprecated configuration.");
         }
         FIELD_TYPES.add(Type.OBJECT);
     }
