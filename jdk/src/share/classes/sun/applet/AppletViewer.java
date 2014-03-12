@@ -46,6 +46,7 @@ import java.lang.ref.WeakReference;
 /**
  * A frame to show the applet tag in.
  */
+@SuppressWarnings("serial") // JDK-implementation class
 class TextFrame extends Frame {
 
     /**
@@ -115,6 +116,7 @@ class StdAppletViewerFactory implements AppletViewerFactory
  * (The document named appletviewertags.html in the JDK's docs/tooldocs directory,
  *  once the JDK docs have been installed.)
  */
+@SuppressWarnings("serial") // JDK implementation class
 public class AppletViewer extends Frame implements AppletContext,
                                                    Printable {
 
