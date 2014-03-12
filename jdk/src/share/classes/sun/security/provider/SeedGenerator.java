@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,8 +179,8 @@ abstract class SeedGenerator {
                             md.update(p.getProperty(s).getBytes());
                         }
 
-                        md.update
-                            (InetAddress.getLocalHost().toString().getBytes());
+                        // Include network adapter names (and a Mac address)
+                        addNetworkAdapterInfo(md);
 
                         // The temporary dir
                         File f = new File(p.getProperty("java.io.tmpdir"));
@@ -219,6 +219,31 @@ abstract class SeedGenerator {
                 }
             });
         return md.digest();
+    }
+
+    /*
+     * Include network adapter names and, if available, a Mac address
+     *
+     * See also java.util.concurrent.ThreadLocalRandom.initialSeed()
+     */
+    private static void addNetworkAdapterInfo(MessageDigest md) {
+
+        try {
+            Enumeration<NetworkInterface> ifcs =
+                NetworkInterface.getNetworkInterfaces();
+            while (ifcs.hasMoreElements()) {
+                NetworkInterface ifc = ifcs.nextElement();
+                md.update(ifc.toString().getBytes());
+                if (!ifc.isVirtual()) { // skip fake addresses
+                    byte[] bs = ifc.getHardwareAddress();
+                    if (bs != null) {
+                        md.update(bs);
+                        break;
+                    }
+                }
+            }
+        } catch (Exception ignore) {
+        }
     }
 
     /**
