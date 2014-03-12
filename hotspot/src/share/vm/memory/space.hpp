@@ -120,6 +120,12 @@ class Space: public CHeapObj<mtGC> {
 
   void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
 
+  // Returns true if this object has been allocated since a
+  // generation's "save_marks" call.
+  virtual bool obj_allocated_since_save_marks(const oop obj) const {
+    return (HeapWord*)obj >= saved_mark_word();
+  }
+
   MemRegionClosure* preconsumptionDirtyCardClosure() const {
     return _preconsumptionDirtyCardClosure;
   }
@@ -127,9 +133,9 @@ class Space: public CHeapObj<mtGC> {
     _preconsumptionDirtyCardClosure = cl;
   }
 
-  // Returns a subregion of the space containing all the objects in
+  // Returns a subregion of the space containing only the allocated objects in
   // the space.
-  virtual MemRegion used_region() const { return MemRegion(bottom(), end()); }
+  virtual MemRegion used_region() const = 0;
 
   // Returns a region that is guaranteed to contain (at least) all objects
   // allocated at the time of the last call to "save_marks".  If the space
@@ -139,7 +145,7 @@ class Space: public CHeapObj<mtGC> {
   // saved mark.  Otherwise, the "obj_allocated_since_save_marks" method of
   // the space must distinguish between objects in the region allocated before
   // and after the call to save marks.
-  virtual MemRegion used_region_at_save_marks() const {
+  MemRegion used_region_at_save_marks() const {
     return MemRegion(bottom(), saved_mark_word());
   }
 
@@ -172,7 +178,9 @@ class Space: public CHeapObj<mtGC> {
   // expensive operation. To prevent performance problems
   // on account of its inadvertent use in product jvm's,
   // we restrict its use to assertion checks only.
-  virtual bool is_in(const void* p) const = 0;
+  bool is_in(const void* p) const {
+    return used_region().contains(p);
+  }
 
   // Returns true iff the given reserved memory of the space contains the
   // given address.
@@ -243,10 +251,6 @@ class Space: public CHeapObj<mtGC> {
 
   // Allocation (return NULL if full).  Enforces mutual exclusion internally.
   virtual HeapWord* par_allocate(size_t word_size) = 0;
-
-  // Returns true if this object has been allocated since a
-  // generation's "save_marks" call.
-  virtual bool obj_allocated_since_save_marks(const oop obj) const = 0;
 
   // Mark-sweep-compact support: all spaces can update pointers to objects
   // moving as a part of compaction.
@@ -379,7 +383,7 @@ public:
 
   // Perform operations on the space needed after a compaction
   // has been performed.
-  virtual void reset_after_compaction() {}
+  virtual void reset_after_compaction() = 0;
 
   // Returns the next space (in the current generation) to be compacted in
   // the global compaction order.  Also is used to select the next
@@ -444,7 +448,7 @@ protected:
   HeapWord* _end_of_live;
 
   // Minimum size of a free block.
-  virtual size_t minimum_free_block_size() const = 0;
+  virtual size_t minimum_free_block_size() const { return 0; }
 
   // This the function is invoked when an allocation of an object covering
   // "start" to "end occurs crosses the threshold; returns the next
@@ -760,7 +764,7 @@ class ContiguousSpace: public CompactibleSpace {
   HeapWord* top() const            { return _top;    }
   void set_top(HeapWord* value)    { _top = value; }
 
-  virtual void set_saved_mark()    { _saved_mark_word = top();    }
+  void set_saved_mark()            { _saved_mark_word = top();    }
   void reset_saved_mark()          { _saved_mark_word = bottom(); }
 
   WaterMark bottom_mark()     { return WaterMark(this, bottom()); }
@@ -795,26 +799,15 @@ class ContiguousSpace: public CompactibleSpace {
   size_t used() const            { return byte_size(bottom(), top()); }
   size_t free() const            { return byte_size(top(),    end()); }
 
-  // Override from space.
-  bool is_in(const void* p) const;
-
   virtual bool is_free_block(const HeapWord* p) const;
 
   // In a contiguous space we have a more obvious bound on what parts
   // contain objects.
   MemRegion used_region() const { return MemRegion(bottom(), top()); }
 
-  MemRegion used_region_at_save_marks() const {
-    return MemRegion(bottom(), saved_mark_word());
-  }
-
   // Allocation (return NULL if full)
   virtual HeapWord* allocate(size_t word_size);
   virtual HeapWord* par_allocate(size_t word_size);
-
-  virtual bool obj_allocated_since_save_marks(const oop obj) const {
-    return (HeapWord*)obj >= saved_mark_word();
-  }
 
   // Iteration
   void oop_iterate(ExtendedOopClosure* cl);
@@ -860,7 +853,6 @@ class ContiguousSpace: public CompactibleSpace {
     // set new iteration safe limit
     set_concurrent_iteration_safe_limit(compaction_top());
   }
-  virtual size_t minimum_free_block_size() const { return 0; }
 
   // Override.
   DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,

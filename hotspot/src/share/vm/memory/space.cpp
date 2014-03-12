@@ -302,10 +302,6 @@ void ContiguousSpace::clear(bool mangle_space) {
   CompactibleSpace::clear(mangle_space);
 }
 
-bool ContiguousSpace::is_in(const void* p) const {
-  return _bottom <= p && p < _top;
-}
-
 bool ContiguousSpace::is_free_block(const HeapWord* p) const {
   return p >= _top;
 }
