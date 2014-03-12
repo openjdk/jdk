@@ -112,7 +112,7 @@ public final class ScriptEnvironment {
         ERROR
     }
 
-    private static final boolean GLOBAL_OPTIMISTIC = Options.getBooleanProperty("nashorn.optimistic");
+    private static final boolean GLOBAL_OPTIMISTIC = Options.getBooleanProperty("nashorn.optimistic", true);
 
     /**
      * What is the default optimistic compilation policy?
@@ -261,11 +261,11 @@ public final class ScriptEnvironment {
         String func = null;
         final String pc = options.getString("print.code");
         if (pc != null) {
-            StringTokenizer st = new StringTokenizer(pc, ",");
+            final StringTokenizer st = new StringTokenizer(pc, ",");
             while (st.hasMoreTokens()) {
-                StringTokenizer st2 = new StringTokenizer(st.nextToken(), ":");
+                final StringTokenizer st2 = new StringTokenizer(st.nextToken(), ":");
                 while (st2.hasMoreTokens()) {
-                    String cmd = st2.nextToken();
+                    final String cmd = st2.nextToken();
                     if ("dir".equals(cmd)) {
                         dir = st2.nextToken();
                     } else if ("function".equals(cmd)) {

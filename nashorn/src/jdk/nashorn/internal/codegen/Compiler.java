@@ -107,8 +107,8 @@ public final class Compiler {
     public static final DebugLogger LOG = new DebugLogger("compiler");
 
     static {
-        if (ScriptEnvironment.globalOptimistic()) {
-            LOG.warning("Running with optimistic types. This is experimental. To switch off, use -Dnashorn.optimistic=false");
+        if (!ScriptEnvironment.globalOptimistic()) {
+            LOG.warning("Running without optimistic types. This is a configuration that may be deprecated.");
         }
     }
 
@@ -229,7 +229,7 @@ public final class Compiler {
     public FunctionNode compile(final String className, final FunctionNode functionNode) throws CompilationException {
         try {
             return compileInternal(className, functionNode);
-        } catch(AssertionError e) {
+        } catch(final AssertionError e) {
             throw new AssertionError("Assertion failure compiling " + functionNode.getSource(), e);
         }
     }
@@ -255,7 +255,7 @@ public final class Compiler {
                 printMemoryUsage(phase.toString(), newFunctionNode);
             }
 
-            final long duration = Timing.isEnabled() ? (phase.getEndTime() - phase.getStartTime()) : 0L;
+            final long duration = Timing.isEnabled() ? phase.getEndTime() - phase.getStartTime() : 0L;
             time += duration;
 
             if (fine) {

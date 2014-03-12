@@ -12,7 +12,6 @@ $JAVA_HOME/bin/java \
 $FLAGS \
 -ea \
 -esa \
--Dnashorn.optimistic \
 -Xbootclasspath/p:$FAST_CATCH_COMBINATOR:$NASHORN_JAR \
 -Xms2G -Xmx2G \
 -XX:+UnlockCommercialFeatures \
@@ -26,7 +25,6 @@ $FLAGS \
 -cp $CLASSPATH:../build/test/classes/ \
 jdk.nashorn.tools.Shell ${@}
 
-#-XX:+UnlockDiagnosticVMOptions \
 #-XX:+ShowHiddenFrames \
 #-XX:+PrintOptoAssembly \
 #-XX:-TieredCompilation \

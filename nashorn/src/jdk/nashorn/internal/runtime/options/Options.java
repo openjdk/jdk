@@ -137,9 +137,10 @@ public final class Options {
      * Convenience function for getting system properties in a safe way
 
      * @param name of boolean property
-     * @return true if set to true, false if unset or set to false
+     * @param defValue default value of boolean property
+     * @return true if set to true, default value if unset or set to false
      */
-    public static boolean getBooleanProperty(final String name) {
+    public static boolean getBooleanProperty(final String name, final Boolean defValue) {
         name.getClass(); // null check
         if (!name.startsWith("nashorn.")) {
             throw new IllegalArgumentException(name);
@@ -151,6 +152,9 @@ public final class Options {
                     public Boolean run() {
                         try {
                             final String property = System.getProperty(name);
+                            if (property == null && defValue != null) {
+                                return defValue;
+                            }
                             return property != null && !"false".equalsIgnoreCase(property);
                         } catch (final SecurityException e) {
                             // if no permission to read, assume false
@@ -158,6 +162,16 @@ public final class Options {
                         }
                     }
                 }, READ_PROPERTY_ACC_CTXT);
+    }
+
+    /**
+     * Convenience function for getting system properties in a safe way
+
+     * @param name of boolean property
+     * @return true if set to true, false if unset or set to false
+     */
+    public static boolean getBooleanProperty(final String name) {
+        return getBooleanProperty(name, null);
     }
 
     /**
@@ -525,7 +539,7 @@ public final class Options {
             return new Option<>(value != null && Boolean.parseBoolean(value));
         case "integer":
             try {
-                return new Option<>((value == null) ? 0 : Integer.parseInt(value));
+                return new Option<>(value == null ? 0 : Integer.parseInt(value));
             } catch (final NumberFormatException nfe) {
                 throw new IllegalOptionException(t);
             }
