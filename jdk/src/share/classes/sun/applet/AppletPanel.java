@@ -62,6 +62,7 @@ import sun.security.util.SecurityConstants;
  *
  * @author      Arthur van Hoff
  */
+@SuppressWarnings("serial") // JDK implementation class
 public
 abstract class AppletPanel extends Panel implements AppletStub, Runnable {
 
