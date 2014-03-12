@@ -103,9 +103,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     public RecompilableScriptFunctionData(final FunctionNode functionNode, final CodeInstaller<ScriptEnvironment> installer, final String allocatorClassName, final PropertyMap allocatorMap) {
         super(functionName(functionNode),
               functionNode.getParameters().size(),
-              functionNode.isStrict(),
-              false,
-              true);
+              getFlags(functionNode));
 
         this.functionNode       = functionNode;
         this.source             = functionNode.getSource();
@@ -129,10 +127,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         final StringBuilder sb = new StringBuilder();
 
         if (source != null) {
-            sb.append(source.getName())
-                .append(':')
-                .append(functionNode.getLineNumber())
-                .append(' ');
+            sb.append(source.getName());
+            if (functionNode != null) {
+                sb.append(':').append(functionNode.getLineNumber());
+            }
+            sb.append(' ');
         }
 
         return sb.toString() + super.toString();
@@ -159,6 +158,20 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return Token.toDesc(TokenType.FUNCTION, position, length);
     }
 
+    private static int getFlags(final FunctionNode functionNode) {
+        int flags = IS_CONSTRUCTOR;
+        if (functionNode.isStrict()) {
+            flags |= IS_STRICT;
+        }
+        if (functionNode.needsCallee()) {
+            flags |= NEEDS_CALLEE;
+        }
+        if (functionNode.usesThis() || functionNode.hasEval()) {
+            flags |= USES_THIS;
+        }
+        return flags;
+    }
+
     @Override
     ScriptObject allocate(final PropertyMap map) {
         try {
@@ -182,41 +195,42 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return allocatorMap;
     }
 
+
+    @Override
+    protected void ensureCompiled() {
+        if (functionNode != null && functionNode.isLazy()) {
+            Compiler.LOG.info("Trampoline hit: need to do lazy compilation of '", functionNode.getName(), "'");
+            final Compiler compiler = new Compiler(installer);
+            functionNode = compiler.compile(functionNode);
+            assert !functionNode.isLazy();
+            compiler.install(functionNode);
+            flags = getFlags(functionNode);
+        }
+    }
+
     @Override
     protected synchronized void ensureCodeGenerated() {
-         if (!code.isEmpty()) {
-             return; // nothing to do, we have code, at least some.
-         }
+        if (!code.isEmpty()) {
+            return; // nothing to do, we have code, at least some.
+        }
 
-         if (functionNode.isLazy()) {
-             Compiler.LOG.info("Trampoline hit: need to do lazy compilation of '", functionNode.getName(), "'");
-             final Compiler compiler = new Compiler(installer);
-             functionNode = compiler.compile(functionNode);
-             assert !functionNode.isLazy();
-             compiler.install(functionNode);
+        ensureCompiled();
 
-             /*
-              * We don't need to update any flags - varArgs and needsCallee are instrincic
-              * in the function world we need to get a destination node from the compile instead
-              * and replace it with our function node. TODO
-              */
-         }
+        /*
+         * We can't get to this program point unless we have bytecode, either from
+         * eager compilation or from running a lazy compile on the lines above
+         */
 
-         /*
-          * We can't get to this program point unless we have bytecode, either from
-          * eager compilation or from running a lazy compile on the lines above
-          */
+        assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " " + functionNode.getState() + " " + Debug.id(functionNode);
 
-         assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " " + functionNode.getState() + " " + Debug.id(functionNode);
+        // code exists - look it up and add it into the automatically sorted invoker list
+        addCode(functionNode);
 
-         // code exists - look it up and add it into the automatically sorted invoker list
-         addCode(functionNode);
-
-         if (! functionNode.canSpecialize()) {
-             // allow GC to claim IR stuff that is not needed anymore
-             functionNode = null;
-             installer = null;
-         }
+        if (! functionNode.canSpecialize()) {
+            // allow GC to claim IR stuff that is not needed anymore
+            functionNode = null;
+            installer = null;
+        }
     }
 
     private MethodHandle addCode(final FunctionNode fn) {

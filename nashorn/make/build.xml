@@ -253,6 +253,10 @@
        <fileset dir="${test.src.dir}/jdk/nashorn/internal/runtime/resources"/>
     </copy>
 
+    <copy todir="${build.test.classes.dir}/jdk/nashorn/api/scripting/resources">
+       <fileset dir="${test.src.dir}/jdk/nashorn/api/scripting/resources"/>
+    </copy>
+
     <!-- tests that check nashorn internals and internal API -->
     <jar jarfile="${nashorn.internal.tests.jar}">
       <fileset dir="${build.test.classes.dir}" excludes="**/api/**"/>

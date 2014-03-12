@@ -622,7 +622,7 @@ public final class NativeJSAdapter extends ScriptObject {
         case "getMethod":
             final FindProperty find = adaptee.findProperty(__call__, true);
             if (find != null) {
-                final Object value = getObjectValue(find);
+                final Object value = find.getObjectValue();
                 if (value instanceof ScriptFunction) {
                     final ScriptFunctionImpl func = (ScriptFunctionImpl)value;
                     // TODO: It's a shame we need to produce a function bound to this and name, when we'd only need it bound
@@ -691,7 +691,7 @@ public final class NativeJSAdapter extends ScriptObject {
         final MethodType type = desc.getMethodType();
         if (findData != null) {
             final String name = desc.getNameTokenCount() > 2 ? desc.getNameToken(2) : null;
-            final Object value = getObjectValue(findData);
+            final Object value = findData.getObjectValue();
             if (value instanceof ScriptFunction) {
                 final ScriptFunction func = (ScriptFunction)value;
 

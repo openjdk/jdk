@@ -156,7 +156,7 @@ class SharedScopeCall {
         if (isCall) {
             method.convert(Type.OBJECT);
             // ScriptFunction will see CALLSITE_SCOPE and will bind scope accordingly.
-            method.loadNull();
+            method.loadUndefined(Type.OBJECT);
             int slot = 2;
             for (final Type type : paramTypes) {
                 method.load(type, slot++);

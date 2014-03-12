@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -46,6 +48,7 @@ import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -154,6 +157,9 @@ public final class Context {
     public static final boolean DEBUG = Options.getBooleanProperty("nashorn.debug");
 
     private static final ThreadLocal<ScriptObject> currentGlobal = new ThreadLocal<>();
+
+    // class cache
+    private ClassCache classCache;
 
     /**
      * Get the current global scope
@@ -346,6 +352,11 @@ public final class Context {
             this.classPathLoader = NashornLoader.createClassLoader(classPath);
         } else {
             this.classPathLoader = null;
+        }
+
+        final int cacheSize = env._class_cache_size;
+        if (cacheSize > 0) {
+            classCache = new ClassCache(cacheSize);
         }
 
         // print version info if asked.
@@ -659,7 +670,7 @@ public final class Context {
     public static void checkPackageAccess(final String pkgName) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            checkPackageAccess(sm, pkgName.endsWith(".")? pkgName : pkgName + ".");
+            checkPackageAccess(sm, pkgName.endsWith(".") ? pkgName : pkgName + ".");
         }
     }
 
@@ -925,16 +936,10 @@ public final class Context {
         // start with no errors, no warnings.
         errMan.reset();
 
-        GlobalObject global = null;
-        Class<?> script;
-
-        if (env._class_cache_size > 0) {
-            global = (GlobalObject)Context.getGlobalTrusted();
-            script = global.findCachedClass(source);
-            if (script != null) {
-                Compiler.LOG.fine("Code cache hit for ", source, " avoiding recompile.");
-                return script;
-            }
+        Class<?> script = findCachedClass(source);
+        if (script != null) {
+            Compiler.LOG.fine("Code cache hit for ", source, " avoiding recompile.");
+            return script;
         }
 
         final FunctionNode functionNode = new Parser(env, source, errMan, strict).parse();
@@ -963,10 +968,7 @@ public final class Context {
 
         final FunctionNode newFunctionNode = compiler.compile(functionNode);
         script = compiler.install(newFunctionNode);
-
-        if (global != null) {
-            global.cacheClass(source, script);
-        }
+        cacheClass(source, script);
 
         return script;
     }
@@ -988,4 +990,60 @@ public final class Context {
     private long getUniqueScriptId() {
         return uniqueScriptId.getAndIncrement();
     }
+
+    /**
+     * Cache for compiled script classes.
+     */
+    @SuppressWarnings("serial")
+    private static class ClassCache extends LinkedHashMap<Source, ClassReference> {
+        private final int size;
+        private final ReferenceQueue<Class<?>> queue;
+
+        ClassCache(int size) {
+            super(size, 0.75f, true);
+            this.size = size;
+            this.queue = new ReferenceQueue<>();
+        }
+
+        void cache(final Source source, final Class<?> clazz) {
+            put(source, new ClassReference(clazz, queue, source));
+        }
+
+        @Override
+        protected boolean removeEldestEntry(final Map.Entry<Source, ClassReference> eldest) {
+            return size() > size;
+        }
+
+        @Override
+        public ClassReference get(Object key) {
+            for (ClassReference ref; (ref = (ClassReference)queue.poll()) != null; ) {
+                remove(ref.source);
+            }
+            return super.get(key);
+        }
+
+    }
+
+    private static class ClassReference extends SoftReference<Class<?>> {
+        private final Source source;
+
+        ClassReference(final Class<?> clazz, final ReferenceQueue<Class<?>> queue, final Source source) {
+            super(clazz, queue);
+            this.source = source;
+        }
+    }
+
+    // Class cache management
+    private Class<?> findCachedClass(final Source source) {
+        ClassReference ref = classCache == null ? null : classCache.get(source);
+        return ref != null ? ref.get() : null;
+    }
+
+    private void cacheClass(final Source source, final Class<?> clazz) {
+        if (classCache != null) {
+            classCache.cache(source, clazz);
+        }
+    }
+
+
 }

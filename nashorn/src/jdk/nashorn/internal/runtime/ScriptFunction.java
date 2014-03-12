@@ -66,6 +66,8 @@ public abstract class ScriptFunction extends ScriptObject {
 
     private static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", Object.class, Object.class);
 
+    private static final MethodHandle GLOBALFILTER = findOwnMH("globalFilter", Object.class, Object.class);
+
     /** method handle to scope getter for this ScriptFunction */
     public static final Call GET_SCOPE = virtualCallNoLookup(ScriptFunction.class, "getScope", ScriptObject.class);
 
@@ -91,9 +93,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param map           property map
      * @param scope         scope
      * @param specs         specialized version of this function - other method handles
-     * @param strict        is this a strict mode function?
-     * @param builtin       is this a built in function?
-     * @param isConstructor is this a constructor?
+     * @param flags         {@link ScriptFunctionData} flags
      */
     protected ScriptFunction(
             final String name,
@@ -101,11 +101,9 @@ public abstract class ScriptFunction extends ScriptObject {
             final PropertyMap map,
             final ScriptObject scope,
             final MethodHandle[] specs,
-            final boolean strict,
-            final boolean builtin,
-            final boolean isConstructor) {
+            final int flags) {
 
-        this(new FinalScriptFunctionData(name, methodHandle, specs, strict, builtin, isConstructor), map, scope);
+        this(new FinalScriptFunctionData(name, methodHandle, specs, flags), map, scope);
     }
 
     /**
@@ -480,6 +478,13 @@ public abstract class ScriptFunction extends ScriptObject {
         return ((GlobalObject)Context.getGlobalTrusted()).wrapAsObject(obj);
     }
 
+
+    @SuppressWarnings("unused")
+    private static Object globalFilter(final Object object) {
+        // replace whatever we get with the current global object
+        return Context.getGlobalTrusted();
+    }
+
     /**
      * dyn:call call site signature: (callee, thiz, [args...])
      * generated method signature:   (callee, thiz, [args...])
@@ -495,11 +500,11 @@ public abstract class ScriptFunction extends ScriptObject {
     @Override
     protected GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final MethodType type = desc.getMethodType();
+        final boolean scopeCall = NashornCallSiteDescriptor.isScope(desc);
 
         if (request.isCallSiteUnstable()) {
-            // (this, callee, args...) => (this, callee, args[])
-            final MethodHandle collector = MH.asCollector(ScriptRuntime.APPLY.methodHandle(), Object[].class,
-                    type.parameterCount() - 2);
+            // (callee, this, args...) => (callee, this, args[])
+            final MethodHandle collector = MH.asCollector(ScriptRuntime.APPLY.methodHandle(), Object[].class, type.parameterCount() - 2);
 
             // If call site is statically typed to take a ScriptFunction, we don't need a guard, otherwise we need a
             // generic "is this a ScriptFunction?" guard.
@@ -510,17 +515,12 @@ public abstract class ScriptFunction extends ScriptObject {
         MethodHandle boundHandle;
         MethodHandle guard = null;
 
-        final boolean scopeCall = NashornCallSiteDescriptor.isScope(desc);
-
         if (data.needsCallee()) {
             final MethodHandle callHandle = getBestInvoker(type, request.getArguments());
-            if (scopeCall) {
+            if (scopeCall && needsWrappedThis()) {
                 // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
-                // (callee, this, args...) => (callee, args...)
-                boundHandle = MH.insertArguments(callHandle, 1, needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
-                // (callee, args...) => (callee, [this], args...)
-                boundHandle = MH.dropArguments(boundHandle, 1, Object.class);
-
+                // (callee, this, args...) => (callee, [this], args...)
+                boundHandle = MH.filterArguments(callHandle, 1, GLOBALFILTER);
             } else {
                 // It's already (callee, this, args...), just what we need
                 boundHandle = callHandle;
@@ -531,12 +531,12 @@ public abstract class ScriptFunction extends ScriptObject {
                 // NOTE: the only built-in named "extend" is NativeJava.extend. As a special-case we're binding the
                 // current lookup as its "this" so it can do security-sensitive creation of adapter classes.
                 boundHandle = MH.dropArguments(MH.bindTo(callHandle, desc.getLookup()), 0, Object.class, Object.class);
-            } else if (scopeCall) {
+            } else if (scopeCall && needsWrappedThis()) {
                 // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
-                // (this, args...) => (args...)
-                boundHandle = MH.bindTo(callHandle, needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
-                // (args...) => ([callee], [this], args...)
-                boundHandle = MH.dropArguments(boundHandle, 0, Object.class, Object.class);
+                // (this, args...) => ([this], args...)
+                boundHandle = MH.filterArguments(callHandle, 0, GLOBALFILTER);
+                // ([this], args...) => ([callee], [this], args...)
+                boundHandle = MH.dropArguments(boundHandle, 0, Object.class);
             } else {
                 // (this, args...) => ([callee], this, args...)
                 boundHandle = MH.dropArguments(callHandle, 0, Object.class);
