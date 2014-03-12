@@ -33,11 +33,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -59,10 +56,10 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
-import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
@@ -373,9 +370,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     // Flag to indicate that a split method issued a return statement
     private int splitState = -1;
 
-    // class cache
-    private ClassCache classCache;
-
     // Used to store the last RegExp result to support deprecated RegExp constructor properties
     private RegExpResult lastRegExpResult;
 
@@ -426,11 +420,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         super(checkAndGetMap(context));
         this.context = context;
         this.setIsScope();
-
-        final int cacheSize = context.getEnv()._class_cache_size;
-        if (cacheSize > 0) {
-            classCache = new ClassCache(cacheSize);
-        }
     }
 
     /**
@@ -488,7 +477,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     @Override
     public ScriptFunction newScriptFunction(final String name, final MethodHandle handle, final ScriptObject scope, final boolean strict) {
-        return new ScriptFunctionImpl(name, handle, scope, null, strict, false, true);
+        return new ScriptFunctionImpl(name, handle, scope, null, strict ? ScriptFunctionData.IS_STRICT_CONSTRUCTOR : ScriptFunctionData.IS_CONSTRUCTOR);
     }
 
     @Override
@@ -663,62 +652,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         return desc;
     }
 
-
-    /**
-     * Cache for compiled script classes.
-     */
-    @SuppressWarnings("serial")
-    private static class ClassCache extends LinkedHashMap<Source, ClassReference> {
-        private final int size;
-        private final ReferenceQueue<Class<?>> queue;
-
-        ClassCache(int size) {
-            super(size, 0.75f, true);
-            this.size = size;
-            this.queue = new ReferenceQueue<>();
-        }
-
-        void cache(final Source source, final Class<?> clazz) {
-            put(source, new ClassReference(clazz, queue, source));
-        }
-
-        @Override
-        protected boolean removeEldestEntry(final Map.Entry<Source, ClassReference> eldest) {
-            return size() > size;
-        }
-
-        @Override
-        public ClassReference get(Object key) {
-            for (ClassReference ref; (ref = (ClassReference)queue.poll()) != null; ) {
-                remove(ref.source);
-            }
-            return super.get(key);
-        }
-
-    }
-
-    private static class ClassReference extends SoftReference<Class<?>> {
-        private final Source source;
-
-        ClassReference(final Class<?> clazz, final ReferenceQueue<Class<?>> queue, final Source source) {
-            super(clazz, queue);
-            this.source = source;
-        }
-    }
-
-    // Class cache management
-    @Override
-    public Class<?> findCachedClass(final Source source) {
-        assert classCache != null : "Class cache used without being initialized";
-        ClassReference ref = classCache.get(source);
-        return ref != null ? ref.get() : null;
-    }
-
-    @Override
-    public void cacheClass(final Source source, final Class<?> clazz) {
-        assert classCache != null : "Class cache used without being initialized";
-        classCache.cache(source, clazz);
-    }
 
     private static <T> T getLazilyCreatedValue(final Object key, final Callable<T> creator, final Map<Object, T> map) {
         final T obj = map.get(key);
@@ -1838,7 +1771,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         anon.deleteOwnProperty(anon.getMap().findProperty("prototype"));
 
         // use "getter" so that [[ThrowTypeError]] function's arity is 0 - as specified in step 10 of section 13.2.3
-        this.typeErrorThrower = new ScriptFunctionImpl("TypeErrorThrower", Lookup.TYPE_ERROR_THROWER_GETTER, null, null, false, false, false);
+        this.typeErrorThrower = new ScriptFunctionImpl("TypeErrorThrower", Lookup.TYPE_ERROR_THROWER_GETTER, null, null, 0);
         typeErrorThrower.setPrototype(UNDEFINED);
         // Non-constructor built-in functions do not have "prototype" property
         typeErrorThrower.deleteOwnProperty(typeErrorThrower.getMap().findProperty("prototype"));

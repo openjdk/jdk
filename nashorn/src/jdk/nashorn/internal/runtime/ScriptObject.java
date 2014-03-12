@@ -66,6 +66,7 @@ import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.AccessorPropertyDescriptor;
 import jdk.nashorn.internal.objects.DataPropertyDescriptor;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
@@ -131,7 +132,8 @@ public abstract class ScriptObject implements PropertyAccess {
 
     static final MethodHandle GETPROTO           = findOwnMH("getProto", ScriptObject.class);
     static final MethodHandle SETPROTOCHECK      = findOwnMH("setProtoCheck", void.class, Object.class);
-    static final MethodHandle MEGAMORPHIC_GET    = findOwnMH("megamorphicGet", Object.class, String.class, boolean.class);
+    static final MethodHandle MEGAMORPHIC_GET    = findOwnMH("megamorphicGet", Object.class, String.class, boolean.class, boolean.class);
+    static final MethodHandle GLOBALFILTER       = findOwnMH("globalFilter", Object.class, Object.class);
 
     static final MethodHandle SETFIELD           = findOwnMH("setField",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, MethodHandle.class, Object.class, Object.class);
     static final MethodHandle SETSPILL           = findOwnMH("setSpill",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, Object.class, Object.class);
@@ -225,6 +227,7 @@ public abstract class ScriptObject implements PropertyAccess {
             final Property oldProp = newMap.findProperty(key);
             if (oldProp == null) {
                 if (property instanceof UserAccessorProperty) {
+                    // Note: we copy accessor functions to this object which is semantically different from binding.
                     final UserAccessorProperty prop = this.newUserAccessors(key, property.getFlags(), property.getGetterFunction(source), property.getSetterFunction(source));
                     newMap = newMap.addPropertyNoHistory(prop);
                 } else {
@@ -975,17 +978,6 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     /**
-      * Get the object value of a property
-      *
-      * @param find {@link FindProperty} lookup result
-      *
-      * @return the value of the property
-      */
-    protected static Object getObjectValue(final FindProperty find) {
-        return find.getObjectValue();
-    }
-
-    /**
      * Return methodHandle of value function for call.
      *
      * @param find      data from find property.
@@ -995,7 +987,7 @@ public abstract class ScriptObject implements PropertyAccess {
      * @return value of property as a MethodHandle or null.
      */
     protected MethodHandle getCallMethodHandle(final FindProperty find, final MethodType type, final String bindName) {
-        return getCallMethodHandle(getObjectValue(find), type, bindName);
+        return getCallMethodHandle(find.getObjectValue(), type, bindName);
     }
 
     /**
@@ -1019,7 +1011,7 @@ public abstract class ScriptObject implements PropertyAccess {
      * @return Value of property.
      */
     public final Object getWithProperty(final Property property) {
-        return getObjectValue(new FindProperty(this, this, property));
+        return new FindProperty(this, this, property).getObjectValue();
     }
 
     /**
@@ -1740,7 +1732,7 @@ public abstract class ScriptObject implements PropertyAccess {
     protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         if (request.isCallSiteUnstable() || hasWithScope()) {
-            return findMegaMorphicGetMethod(desc, name, "getMethod".equals(operator));
+            return findMegaMorphicGetMethod(desc, name, "getMethod".equals(operator), isScope() && NashornCallSiteDescriptor.isScope(desc));
         }
 
         final FindProperty find = findProperty(name, true);
@@ -1765,9 +1757,8 @@ public abstract class ScriptObject implements PropertyAccess {
         final Property property = find.getProperty();
         methodHandle = find.getGetter(returnType);
 
-        final boolean noGuard = ObjectClassGenerator.OBJECT_FIELDS_ONLY && NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType();
-        // getMap() is fine as we have the prototype switchpoint depending on where the property was found
-        final MethodHandle guard = noGuard ? null : NashornGuards.getMapGuard(getMap());
+        // Get the appropriate guard for this callsite and property.
+        final MethodHandle guard = NashornGuards.getGuard(this, property, desc);
         final ScriptObject owner = find.getOwner();
 
         if (methodHandle != null) {
@@ -1777,31 +1768,32 @@ public abstract class ScriptObject implements PropertyAccess {
             }
 
             if (!property.hasGetterFunction(owner)) {
-                // If not a scope bind to actual prototype as changing prototype will change the property map.
-                // For scopes we install a filter that replaces the self object with the prototype owning the property.
-                methodHandle = isScope() ?
-                        addProtoFilter(methodHandle, find.getProtoChainLength()) :
-                        bindTo(methodHandle, owner);
+                // Add a filter that replaces the self object with the prototype owning the property.
+                methodHandle = addProtoFilter(methodHandle, find.getProtoChainLength());
             }
-            return new GuardedInvocation(methodHandle, noGuard ? null : getProtoSwitchPoint(name, owner), guard);
+            return new GuardedInvocation(methodHandle, guard == null ? null : getProtoSwitchPoint(name, owner), guard);
         }
 
         assert !NashornCallSiteDescriptor.isFastScope(desc);
         return new GuardedInvocation(Lookup.emptyGetter(returnType), getProtoSwitchPoint(name, owner), guard);
     }
 
-    private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod) {
-        final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod);
+    private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name,
+                                                              final boolean isMethod, final boolean isScope) {
+        final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod, isScope);
         final MethodHandle guard = getScriptObjectGuard(desc.getMethodType());
         return new GuardedInvocation(invoker, guard);
     }
 
     @SuppressWarnings("unused")
-    private Object megamorphicGet(final String key, final boolean isMethod) {
+    private Object megamorphicGet(final String key, final boolean isMethod, final boolean isScope) {
         final FindProperty find = findProperty(key, true);
 
         if (find != null) {
-            return getObjectValue(find);
+            return find.getObjectValue();
+        }
+        if (isScope) {
+            throw referenceError("not.defined", key);
         }
 
         return isMethod ? getNoSuchMethod(key) : invokeNoSuchProperty(key);
@@ -1996,6 +1988,15 @@ public abstract class ScriptObject implements PropertyAccess {
         }
     }
 
+    @SuppressWarnings("unused")
+    private static Object globalFilter(final Object object) {
+        ScriptObject sobj = (ScriptObject) object;
+        while (sobj != null && !(sobj instanceof Global)) {
+            sobj = sobj.getProto();
+        }
+        return sobj;
+    }
+
     private static GuardedInvocation findMegaMorphicSetMethod(final CallSiteDescriptor desc, final String name) {
         final MethodType type = desc.getMethodType().insertParameterTypes(1, Object.class);
         final GuardedInvocation inv = findSetIndexMethod(type, NashornCallSiteDescriptor.isStrict(desc));
@@ -2041,7 +2042,7 @@ public abstract class ScriptObject implements PropertyAccess {
             return noSuchProperty(desc, request);
         }
 
-        final Object value = getObjectValue(find);
+        final Object value = find.getObjectValue();
         if (! (value instanceof ScriptFunction)) {
             return createEmptyGetter(desc, name);
         }
@@ -2067,7 +2068,7 @@ public abstract class ScriptObject implements PropertyAccess {
         final boolean scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
         if (find != null) {
-            final Object   value        = getObjectValue(find);
+            final Object   value        = find.getObjectValue();
             ScriptFunction func         = null;
             MethodHandle   methodHandle = null;
 
@@ -2102,7 +2103,7 @@ public abstract class ScriptObject implements PropertyAccess {
         final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);
 
         if (find != null) {
-            final Object func = getObjectValue(find);
+            final Object func = find.getObjectValue();
 
             if (func instanceof ScriptFunction) {
                 return ScriptRuntime.apply((ScriptFunction)func, this, name);
@@ -2124,7 +2125,7 @@ public abstract class ScriptObject implements PropertyAccess {
             return invokeNoSuchProperty(name);
         }
 
-        final Object value = getObjectValue(find);
+        final Object value = find.getObjectValue();
         if (! (value instanceof ScriptFunction)) {
             return UNDEFINED;
         }
@@ -2664,7 +2665,7 @@ public abstract class ScriptObject implements PropertyAccess {
                     final FindProperty find = object.findProperty(key, false, false, this);
 
                     if (find != null) {
-                        return getObjectValue(find);
+                        return find.getObjectValue();
                     }
                 }
 
@@ -2682,7 +2683,7 @@ public abstract class ScriptObject implements PropertyAccess {
             final FindProperty find = findProperty(key, true);
 
             if (find != null) {
-                return getObjectValue(find);
+                return find.getObjectValue();
             }
         }
 
@@ -2823,7 +2824,15 @@ public abstract class ScriptObject implements PropertyAccess {
                 throw typeError("object.non.extensible", key, ScriptRuntime.safeToString(this));
             }
         } else {
-            spill(key, value);
+            ScriptObject sobj = this;
+            // undefined scope properties are set in the global object.
+            if (isScope()) {
+                while (sobj != null && !(sobj instanceof Global)) {
+                    sobj = sobj.getProto();
+                }
+                assert sobj != null : "no parent global object in scope";
+            }
+            sobj.spill(key, value);
         }
     }
 

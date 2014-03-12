@@ -75,7 +75,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
     private static final Object LAZY_PROTOTYPE = new Object();
 
     private ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final MethodHandle[] specs, final Global global) {
-        super(name, invokeHandle, getInitialMap(), null, specs, false, true, true);
+        super(name, invokeHandle, getInitialMap(), null, specs, ScriptFunctionData.IS_BUILTIN_CONSTRUCTOR);
         init(global);
     }
 
@@ -92,7 +92,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     private ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final PropertyMap map, final MethodHandle[] specs, final Global global) {
-        super(name, invokeHandle, map.addAll(getInitialMap()), null, specs, false, true, true);
+        super(name, invokeHandle, map.addAll(getInitialMap()), null, specs, ScriptFunctionData.IS_BUILTIN_CONSTRUCTOR);
         init(global);
     }
 
@@ -109,8 +109,8 @@ public class ScriptFunctionImpl extends ScriptFunction {
         this(name, invokeHandle, map, specs, Global.instance());
     }
 
-    private ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor, final Global global) {
-        super(name, methodHandle, getMap(global, isStrict), scope, specs, isStrict, isBuiltin, isConstructor);
+    private ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final int flags, final Global global) {
+        super(name, methodHandle, getMap(global, isStrict(flags)), scope, specs, flags);
         init(global);
     }
 
@@ -121,12 +121,10 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param methodHandle handle for invocation
      * @param scope scope object
      * @param specs specialized versions of this method, if available, null otherwise
-     * @param isStrict are we in strict mode
-     * @param isBuiltin is this a built-in function
-     * @param isConstructor can the function be used as a constructor (most can; some built-ins are restricted).
+     * @param flags {@link ScriptFunctionData} flags
      */
-    ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
-        this(name, methodHandle, scope, specs, isStrict, isBuiltin, isConstructor, Global.instance());
+    ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final int flags) {
+        this(name, methodHandle, scope, specs, flags, Global.instance());
     }
 
     private ScriptFunctionImpl(final RecompilableScriptFunctionData data, final ScriptObject scope, final Global global) {
@@ -173,6 +171,10 @@ public class ScriptFunctionImpl extends ScriptFunction {
         return newMap;
     }
 
+    private static boolean isStrict(final int flags) {
+        return (flags & ScriptFunctionData.IS_STRICT) != 0;
+    }
+
     // Choose the map based on strict mode!
     private static PropertyMap getMap(final Global global, final boolean strict) {
         return strict ? getInitialStrictMap() : getInitialMap();
@@ -211,7 +213,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @return new ScriptFunction
      */
     static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle, final MethodHandle[] specs) {
-        final ScriptFunctionImpl func = new ScriptFunctionImpl(name, methodHandle, null, specs, false, true, false);
+        final ScriptFunctionImpl func = new ScriptFunctionImpl(name, methodHandle, null, specs, ScriptFunctionData.IS_BUILTIN);
         func.setPrototype(UNDEFINED);
         // Non-constructor built-in functions do not have "prototype" property
         func.deleteOwnProperty(func.getMap().findProperty("prototype"));

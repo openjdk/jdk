@@ -211,22 +211,6 @@ public interface GlobalObject {
     public Object getDefaultValue(ScriptObject sobj, Class<?> typeHint);
 
     /**
-     * Find the compiled Class for the given script source, if available
-     *
-     * @param source Source object of the script
-     * @return compiled Class object or null
-     */
-    public Class<?> findCachedClass(Source source);
-
-    /**
-     * Put the Source associated Class object in the Source-to-Class cache
-     *
-     * @param source Source of the script
-     * @param clazz compiled Class object for the source
-     */
-    public void cacheClass(Source source, Class<?> clazz);
-
-    /**
      * Get cached InvokeByName object for the given key
      * @param key key to be associated with InvokeByName object
      * @param creator if InvokeByName is absent 'creator' is called to make one (lazy init)

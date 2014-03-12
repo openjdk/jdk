@@ -84,8 +84,12 @@ public abstract class Property {
     /** Can this property be undefined? */
     public static final int CAN_BE_UNDEFINED = 1 << 8;
 
-    /* Is this a function declaration property ? */
+    /** Is this a function declaration property ? */
     public static final int IS_FUNCTION_DECLARATION = 1 << 9;
+
+    /** Is this property bound to a receiver? This means get/set operations will be delegated to
+     *  a statically defined object instead of the object passed as callsite parameter. */
+    public static final int IS_BOUND = 1 << 10;
 
     /** Property key. */
     private final String key;
@@ -249,6 +253,16 @@ public abstract class Property {
      */
     public boolean isSpill() {
         return (flags & IS_SPILL) == IS_SPILL;
+    }
+
+    /**
+     * Is this property bound to a receiver? If this method returns {@code true} get and set operations
+     * will be delegated to a statically bound object instead of the object passed as parameter.
+     *
+     * @return true if this is a bound property
+     */
+    public boolean isBound() {
+        return (flags & IS_BOUND) == IS_BOUND;
     }
 
     /**

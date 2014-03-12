@@ -35,6 +35,7 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
@@ -61,8 +62,9 @@ public final class PrimitiveLookup {
      * type {@code receiverClass}.
      */
     public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Class<?> receiverClass,
-                                                    final ScriptObject wrappedReceiver, final MethodHandle wrapFilter) {
-        return lookupPrimitive(request, Guards.getInstanceOfGuard(receiverClass), wrappedReceiver, wrapFilter);
+                                                    final ScriptObject wrappedReceiver, final MethodHandle wrapFilter,
+                                                    final MethodHandle protoFilter) {
+        return lookupPrimitive(request, Guards.getInstanceOfGuard(receiverClass), wrappedReceiver, wrapFilter, protoFilter);
     }
 
     /**
@@ -79,7 +81,8 @@ public final class PrimitiveLookup {
      * type (that is implied by both {@code guard} and {@code wrappedReceiver}).
      */
     public static GuardedInvocation lookupPrimitive(final LinkRequest request, final MethodHandle guard,
-                                                    final ScriptObject wrappedReceiver, final MethodHandle wrapFilter) {
+                                                    final ScriptObject wrappedReceiver, final MethodHandle wrapFilter,
+                                                    final MethodHandle protoFilter) {
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
         final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
         if ("setProp".equals(operator) || "setElem".equals(operator)) {
@@ -93,9 +96,23 @@ public final class PrimitiveLookup {
 
         if(desc.getNameTokenCount() > 2) {
             final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-            if(wrappedReceiver.findProperty(name, true) == null) {
+            final FindProperty find = wrappedReceiver.findProperty(name, true);
+            if(find == null) {
                 // Give up early, give chance to BeanLinker and NashornBottomLinker to deal with it.
                 return null;
+            } else if (find.isInherited() && !find.getProperty().hasGetterFunction(find.getOwner())) {
+                // If property is found in the prototype object bind the method handle directly to
+                // the proto filter instead of going through wrapper instantiation below.
+                final ScriptObject proto = wrappedReceiver.getProto();
+                final GuardedInvocation link = proto.lookup(desc, request);
+
+                if (link != null) {
+                    final MethodHandle invocation = link.getInvocation();
+                    final MethodHandle adaptedInvocation = MH.asType(invocation, invocation.type().changeParameterType(0, Object.class));
+                    final MethodHandle method = MH.filterArguments(adaptedInvocation, 0, protoFilter);
+                    final MethodHandle protoGuard = MH.filterArguments(link.getGuard(), 0, protoFilter);
+                    return new GuardedInvocation(method, NashornGuards.combineGuards(guard, protoGuard));
+                }
             }
         }
         final GuardedInvocation link = wrappedReceiver.lookup(desc, request);
