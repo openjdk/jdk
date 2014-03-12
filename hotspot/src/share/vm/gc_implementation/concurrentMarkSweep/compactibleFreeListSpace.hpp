@@ -338,10 +338,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
                      unallocated_block() : end());
   }
 
-  bool is_in(const void* p) const {
-    return used_region().contains(p);
-  }
-
   virtual bool is_free_block(const HeapWord* p) const;
 
   // Resizing support
