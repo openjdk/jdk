@@ -226,6 +226,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     @Property(name = "ArrayBuffer", attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object arrayBuffer;
 
+    /** DataView object */
+    @Property(name = "DataView", attributes = Attribute.NOT_ENUMERABLE)
+    public volatile Object dataView;
+
     /** TypedArray (int8) */
     @Property(name = "Int8Array", attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object int8Array;
@@ -352,6 +356,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private ScriptObject   builtinJavaImporter;
     private ScriptObject   builtinJavaApi;
     private ScriptObject   builtinArrayBuffer;
+    private ScriptObject   builtinDataView;
     private ScriptObject   builtinInt8Array;
     private ScriptObject   builtinUint8Array;
     private ScriptObject   builtinUint8ClampedArray;
@@ -864,6 +869,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     ScriptObject getArrayBufferPrototype() {
         return ScriptFunction.getPrototype(builtinArrayBuffer);
+    }
+
+    ScriptObject getDataViewPrototype() {
+        return ScriptFunction.getPrototype(builtinDataView);
     }
 
     ScriptObject getInt8ArrayPrototype() {
@@ -1634,6 +1643,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     private void initTypedArray() {
         this.builtinArrayBuffer       = initConstructor("ArrayBuffer");
+        this.builtinDataView          = initConstructor("DataView");
         this.builtinInt8Array         = initConstructor("Int8Array");
         this.builtinUint8Array        = initConstructor("Uint8Array");
         this.builtinUint8ClampedArray = initConstructor("Uint8ClampedArray");
@@ -1674,6 +1684,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.typeError         = this.builtinTypeError;
         this.uriError          = this.builtinURIError;
         this.arrayBuffer       = this.builtinArrayBuffer;
+        this.dataView          = this.builtinDataView;
         this.int8Array         = this.builtinInt8Array;
         this.uint8Array        = this.builtinUint8Array;
         this.uint8ClampedArray = this.builtinUint8ClampedArray;

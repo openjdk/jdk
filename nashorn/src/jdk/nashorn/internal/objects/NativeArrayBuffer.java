@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.objects;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
@@ -127,5 +128,17 @@ final class NativeArrayBuffer extends ScriptObject {
 
     public int getByteLength() {
         return buffer.length;
+    }
+
+    ByteBuffer getBuffer() {
+       return ByteBuffer.wrap(buffer);
+    }
+
+    ByteBuffer getBuffer(final int offset) {
+        return ByteBuffer.wrap(buffer, offset, buffer.length - offset);
+    }
+
+    ByteBuffer getBuffer(final int offset, final int length) {
+        return ByteBuffer.wrap(buffer, offset, length);
     }
 }
