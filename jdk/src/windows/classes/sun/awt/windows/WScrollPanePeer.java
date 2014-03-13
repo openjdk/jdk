@@ -1,4 +1,4 @@
-/*
+h/*
  * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -164,6 +164,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
      * scroll bar thumbs and paint the exposed area in one synchronous
      * operation.
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     class ScrollEvent extends PeerEvent {
         ScrollEvent(Object source, Runnable runnable) {
             super(source, runnable, 0L);

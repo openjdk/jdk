@@ -35,6 +35,7 @@ import sun.security.action.GetPropertyAction;
 import java.security.PrivilegedAction;
 import  java.security.AccessController;
 
+@SuppressWarnings("serial") // JDK-implementation class
 public class WEmbeddedFrame extends EmbeddedFrame {
 
     static {
