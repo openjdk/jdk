@@ -436,7 +436,8 @@ not-containing = $(foreach v,$2,$(if $(findstring $1,$v),,$v))
 # Param 1 - Dir to find in
 ifeq ($(OPENJDK_BUILD_OS),windows)
   define FillCacheFind
-    FIND_CACHE_DIR += $1
+    # Remove any trailing slash from dirs in the cache dir list
+    FIND_CACHE_DIR += $$(patsubst %/,%, $1)
     FIND_CACHE := $$(sort $$(FIND_CACHE) $$(shell $(FIND) $1 -type f -o -type l))
   endef
 else
@@ -451,7 +452,7 @@ endif
 # The extra - is needed when FIND_CACHE_DIR is empty but should be harmless.
 # Param 1 - Dirs to find in
 define CacheFind
-  $(if $(filter-out $(addsuffix %,- $(FIND_CACHE_DIR)),$1), \
+  $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIR)) $(FIND_CACHE_DIR),$1), \
     $(shell $(FIND) $1 -type f -o -type l), \
     $(filter $(addsuffix %,$1),$(FIND_CACHE)))
 endef
