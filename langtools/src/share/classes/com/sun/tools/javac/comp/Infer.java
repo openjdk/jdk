@@ -2173,6 +2173,12 @@ public class Infer {
             //back-door to infer
             return Infer.this;
         }
+
+        @Override
+        public String toString() {
+            return "Inference vars: " + inferencevars + '\n' +
+                   "Undet vars: " + undetvars;
+        }
     }
 
     final InferenceContext emptyContext = new InferenceContext(List.<Type>nil());
