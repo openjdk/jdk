@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,6 +248,7 @@ public class AquaImageFactory {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
         Icon invertedImage;
         public InvertableImageIcon(final Image image) {
@@ -480,6 +481,7 @@ public class AquaImageFactory {
 
     // when we use SystemColors, we need to proxy the color with something that implements UIResource,
     // so that it will be uninstalled when the look and feel is changed.
+    @SuppressWarnings("serial") // JDK implementation class
     private static class SystemColorProxy extends Color implements UIResource {
         final Color color;
         public SystemColorProxy(final Color color) {

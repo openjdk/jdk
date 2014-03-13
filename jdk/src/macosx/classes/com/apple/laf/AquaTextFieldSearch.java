@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,6 +249,7 @@ public class AquaTextFieldSearch {
         label.setText(promptText);
     }
 
+    @SuppressWarnings("serial") // anonymous class inside
     protected static JButton getCancelButton(final JTextComponent c) {
         final JButton b = createButton(c, getCancelIcon());
         b.setName("cancel");
@@ -325,6 +326,7 @@ public class AquaTextFieldSearch {
         }
 
         protected boolean doingLayout;
+        @SuppressWarnings("serial") // anonymous class inside
         protected LayoutManager getCustomLayout() {
             // unfortunately, the default behavior of BorderLayout, which accommodates for margins
             // is not what we want, so we "turn off margins" for layout for layout out our buttons

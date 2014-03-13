@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class Dock extends JComponent implements Border {
         static final int DOCK_EDGE_SLACK = 8;
 
@@ -185,6 +186,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         }
     }
 
+    @SuppressWarnings("serial") // JDK implementation class
     class AquaDockingDesktopManager extends AquaInternalFrameManager {
         public void openFrame(final JInternalFrame f) {
             final JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();

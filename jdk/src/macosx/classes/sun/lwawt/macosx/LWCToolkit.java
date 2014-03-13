@@ -51,6 +51,7 @@ import sun.awt.image.MultiResolutionImage;
 
 import sun.util.CoreResourceBundleControl;
 
+@SuppressWarnings("serial") // JDK implementation class
 final class NamedCursor extends Cursor {
     NamedCursor(String name) {
         super(name);
@@ -141,6 +142,7 @@ public final class LWCToolkit extends LWToolkit {
         loadNativeColors(systemColors, appleColors);
     }
 
+    @SuppressWarnings("serial") // JDK implementation class
     private static class AppleSpecificColor extends Color {
         private final int index;
         AppleSpecificColor(int index) {
