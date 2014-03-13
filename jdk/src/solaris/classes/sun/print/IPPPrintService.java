@@ -772,6 +772,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     }
 
     //This class is for getting all pre-defined Finishings
+    @SuppressWarnings("serial") // JDK implementation class
     private class ExtFinishing extends Finishings {
         ExtFinishing(int value) {
             super(100); // 100 to avoid any conflicts with predefined values.
