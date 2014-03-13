@@ -38,6 +38,7 @@ import static javax.swing.UIDefaults.LazyValue;
 import sun.swing.*;
 import apple.laf.*;
 
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaLookAndFeel extends BasicLookAndFeel {
     static final String sOldPropertyPrefix = "com.apple.macos."; // old prefix for things like 'useScreenMenuBar'
     static final String sPropertyPrefix = "apple.laf."; // new prefix for things like 'useScreenMenuBar'

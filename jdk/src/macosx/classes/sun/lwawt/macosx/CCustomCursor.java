@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.lwawt.macosx;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
+@SuppressWarnings("serial") // JDK implementation class
 public class CCustomCursor extends Cursor {
     static Dimension sMaxCursorSize;
     static Dimension getMaxCursorSize() {
