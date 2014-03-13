@@ -158,6 +158,10 @@ define SetupArchive
       $1_DEPS+=$$(call CacheFind,$$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
     endif
   endif
+  # The dependency list should never be empty
+  ifeq ($$(strip $$($1_DEPS)), )
+    $$(warning No dependencies found for $1)
+  endif
 
   # Utility macros, to make the shell script receipt somewhat easier to decipher.
 
