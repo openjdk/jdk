@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ public class DerInputStream {
         if (buffer.read() != DerValue.tag_Integer) {
             throw new IOException("DER input, Integer tag error");
         }
-        return buffer.getInteger(getLength(buffer));
+        return buffer.getInteger(getDefiniteLength(buffer));
     }
 
     /**
@@ -179,7 +179,7 @@ public class DerInputStream {
         if (buffer.read() != DerValue.tag_Integer) {
             throw new IOException("DER input, Integer tag error");
         }
-        return buffer.getBigInteger(getLength(buffer), false);
+        return buffer.getBigInteger(getDefiniteLength(buffer), false);
     }
 
     /**
@@ -193,7 +193,7 @@ public class DerInputStream {
         if (buffer.read() != DerValue.tag_Integer) {
             throw new IOException("DER input, Integer tag error");
         }
-        return buffer.getBigInteger(getLength(buffer), true);
+        return buffer.getBigInteger(getDefiniteLength(buffer), true);
     }
 
     /**
@@ -205,7 +205,7 @@ public class DerInputStream {
         if (buffer.read() != DerValue.tag_Enumerated) {
             throw new IOException("DER input, Enumerated tag error");
         }
-        return buffer.getInteger(getLength(buffer));
+        return buffer.getInteger(getDefiniteLength(buffer));
     }
 
     /**
@@ -216,7 +216,7 @@ public class DerInputStream {
         if (buffer.read() != DerValue.tag_BitString)
             throw new IOException("DER input not an bit string");
 
-        return buffer.getBitString(getLength(buffer));
+        return buffer.getBitString(getDefiniteLength(buffer));
     }
 
     /**
@@ -224,21 +224,32 @@ public class DerInputStream {
      * not be byte-aligned.
      */
     public BitArray getUnalignedBitString() throws IOException {
-        if (buffer.read() != DerValue.tag_BitString)
+        if (buffer.read() != DerValue.tag_BitString) {
             throw new IOException("DER input not a bit string");
+        }
 
-        int length = getLength(buffer) - 1;
+        int length = getDefiniteLength(buffer);
+
+        if (length == 0) {
+            return new BitArray(0);
+        }
 
         /*
          * First byte = number of excess bits in the last octet of the
          * representation.
          */
+        length--;
         int validBits = length*8 - buffer.read();
+        if (validBits < 0) {
+            throw new IOException("valid bits of bit string invalid");
+        }
 
         byte[] repn = new byte[length];
 
-        if ((length != 0) && (buffer.read(repn) != length))
+        if ((length != 0) && (buffer.read(repn) != length)) {
             throw new IOException("short read of DER bit string");
+        }
+
         return new BitArray(validBits, repn);
     }
 
@@ -249,7 +260,7 @@ public class DerInputStream {
         if (buffer.read() != DerValue.tag_OctetString)
             throw new IOException("DER input not an octet string");
 
-        int length = getLength(buffer);
+        int length = getDefiniteLength(buffer);
         byte[] retval = new byte[length];
         if ((length != 0) && (buffer.read(retval) != length))
             throw new IOException("short read of DER octet string");
@@ -363,7 +374,7 @@ public class DerInputStream {
            if (tag != buffer.read())
                 throw new IOException("Indefinite length encoding" +
                         " not supported");
-           len = DerInputStream.getLength(buffer);
+           len = DerInputStream.getDefiniteLength(buffer);
         }
 
         if (len == 0)
@@ -480,7 +491,7 @@ public class DerInputStream {
             throw new IOException("DER input not a " +
                                   stringName + " string");
 
-        int length = getLength(buffer);
+        int length = getDefiniteLength(buffer);
         byte[] retval = new byte[length];
         if ((length != 0) && (buffer.read(retval) != length))
             throw new IOException("short read of DER " +
@@ -495,7 +506,7 @@ public class DerInputStream {
     public Date getUTCTime() throws IOException {
         if (buffer.read() != DerValue.tag_UtcTime)
             throw new IOException("DER input, UTCtime tag invalid ");
-        return buffer.getUTCTime(getLength(buffer));
+        return buffer.getUTCTime(getDefiniteLength(buffer));
     }
 
     /**
@@ -504,7 +515,7 @@ public class DerInputStream {
     public Date getGeneralizedTime() throws IOException {
         if (buffer.read() != DerValue.tag_GeneralizedTime)
             throw new IOException("DER input, GeneralizedTime tag invalid ");
-        return buffer.getGeneralizedTime(getLength(buffer));
+        return buffer.getGeneralizedTime(getDefiniteLength(buffer));
     }
 
     /*
@@ -568,6 +579,24 @@ public class DerInputStream {
             }
         }
         return value;
+    }
+
+    int getDefiniteLength() throws IOException {
+        return getDefiniteLength(buffer);
+    }
+
+    /*
+     * Get a length from the input stream.
+     *
+     * @return the length
+     * @exception IOException on parsing error or if indefinite length found.
+     */
+    static int getDefiniteLength(InputStream in) throws IOException {
+        int len = getLength(in);
+        if (len < 0) {
+            throw new IOException("Indefinite length encoding not supported");
+        }
+        return len;
     }
 
     /**
