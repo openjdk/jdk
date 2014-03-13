@@ -182,6 +182,11 @@ static int checkChannelOffsets(RasterS_t *rasterP, int dataArrayLength) {
 int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
     jobject joffs = NULL;
     /* int status;*/
+    jclass singlePixelPackedSampleModelClass = NULL;
+    jclass integerComponentRasterClass = NULL;
+    jclass byteComponentRasterClass = NULL;
+    jclass shortComponentRasterClass = NULL;
+    jclass bytePackedRasterClass = NULL;
 
     if (JNU_IsNull(env, jraster)) {
         JNU_ThrowNullPointerException(env, "null Raster object");
@@ -226,7 +231,7 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
 
     rasterP->sppsm.isUsed = 0;
 
-    jclass singlePixelPackedSampleModelClass = (*env)->FindClass(env,
+    singlePixelPackedSampleModelClass = (*env)->FindClass(env,
                             "java/awt/image/SinglePixelPackedSampleModel");
     CHECK_NULL_RETURN(singlePixelPackedSampleModelClass, -1);
     if ((*env)->IsInstanceOf(env, rasterP->jsampleModel,
@@ -264,17 +269,13 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
                                                     rasterP->jsampleModel,
                                                     g_SMHeightID);
 
-    jclass integerComponentRasterClass = (*env)->FindClass(env,
-                                    "sun/awt/image/IntegerComponentRaster");
+    integerComponentRasterClass = (*env)->FindClass(env, "sun/awt/image/IntegerComponentRaster");
     CHECK_NULL_RETURN(integerComponentRasterClass, -1);
-    jclass byteComponentRasterClass = (*env)->FindClass(env,
-                                    "sun/awt/image/ByteComponentRaster");
+    byteComponentRasterClass = (*env)->FindClass(env, "sun/awt/image/ByteComponentRaster");
     CHECK_NULL_RETURN(byteComponentRasterClass, -1);
-    jclass shortComponentRasterClass = (*env)->FindClass(env,
-                                    "sun/awt/image/ShortComponentRaster");
+    shortComponentRasterClass = (*env)->FindClass(env,"sun/awt/image/ShortComponentRaster");
     CHECK_NULL_RETURN(shortComponentRasterClass, -1);
-    jclass bytePackedRasterClass = (*env)->FindClass(env,
-                                    "sun/awt/image/BytePackedRaster");
+    bytePackedRasterClass = (*env)->FindClass(env, "sun/awt/image/BytePackedRaster");
     CHECK_NULL_RETURN(bytePackedRasterClass, -1);
     if ((*env)->IsInstanceOf(env, jraster, integerComponentRasterClass)){
         rasterP->jdata = (*env)->GetObjectField(env, jraster, g_ICRdataID);
