@@ -648,7 +648,7 @@ public final class Context {
      * Checks that the given Class can be accessed from no permissions context.
      *
      * @param clazz Class object
-     * @throw SecurityException if not accessible
+     * @throws SecurityException if not accessible
      */
     public static void checkPackageAccess(final Class<?> clazz) {
         final SecurityManager sm = System.getSecurityManager();
@@ -665,7 +665,7 @@ public final class Context {
      * Checks that the given package name can be accessed from no permissions context.
      *
      * @param pkgName package name
-     * @throw SecurityException if not accessible
+     * @throws SecurityException if not accessible
      */
     public static void checkPackageAccess(final String pkgName) {
         final SecurityManager sm = System.getSecurityManager();
