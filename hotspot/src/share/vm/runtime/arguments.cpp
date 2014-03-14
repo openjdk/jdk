@@ -305,6 +305,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "DesiredMethodLimit",
                            JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
 #endif // PRODUCT
+  { "UseVMInterruptibleIO",          JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -3224,11 +3225,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, MaxDirectMemorySize, max_direct_memory_size);
-    } else if (match_option(option, "-XX:+UseVMInterruptibleIO", &tail)) {
-      // NOTE! In JDK 9, the UseVMInterruptibleIO flag will completely go
-      //       away and will cause VM initialization failures!
-      warning("-XX:+UseVMInterruptibleIO is obsolete and will be removed in a future release.");
-      FLAG_SET_CMDLINE(bool, UseVMInterruptibleIO, true);
 #if !INCLUDE_MANAGEMENT
     } else if (match_option(option, "-XX:+ManagementServer", &tail)) {
         jio_fprintf(defaultStream::error_stream(),

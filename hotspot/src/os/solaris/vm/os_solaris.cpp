@@ -311,33 +311,6 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
   return localtime_r(clock, res);
 }
 
-// interruptible infrastructure
-
-// setup_interruptible saves the thread state before going into an
-// interruptible system call.
-// The saved state is used to restore the thread to
-// its former state whether or not an interrupt is received.
-// Used by classloader os::read
-// os::restartable_read calls skip this layer and stay in _thread_in_native
-
-void os::Solaris::setup_interruptible(JavaThread* thread) {
-
-  JavaThreadState thread_state = thread->thread_state();
-
-  assert(thread_state != _thread_blocked, "Coming from the wrong thread");
-  assert(thread_state != _thread_in_native, "Native threads skip setup_interruptible");
-  OSThread* osthread = thread->osthread();
-  osthread->set_saved_interrupt_thread_state(thread_state);
-  thread->frame_anchor()->make_walkable(thread);
-  ThreadStateTransition::transition(thread, thread_state, _thread_blocked);
-}
-
-JavaThread* os::Solaris::setup_interruptible() {
-  JavaThread* thread = (JavaThread*)ThreadLocalStorage::thread();
-  setup_interruptible(thread);
-  return thread;
-}
-
 void os::Solaris::try_enable_extended_io() {
   typedef int (*enable_extended_FILE_stdio_t)(int, int);
 
@@ -351,41 +324,6 @@ void os::Solaris::try_enable_extended_io() {
   if (enabler) {
     enabler(-1, -1);
   }
-}
-
-
-#ifdef ASSERT
-
-JavaThread* os::Solaris::setup_interruptible_native() {
-  JavaThread* thread = (JavaThread*)ThreadLocalStorage::thread();
-  JavaThreadState thread_state = thread->thread_state();
-  assert(thread_state == _thread_in_native, "Assumed thread_in_native");
-  return thread;
-}
-
-void os::Solaris::cleanup_interruptible_native(JavaThread* thread) {
-  JavaThreadState thread_state = thread->thread_state();
-  assert(thread_state == _thread_in_native, "Assumed thread_in_native");
-}
-#endif
-
-// cleanup_interruptible reverses the effects of setup_interruptible
-// setup_interruptible_already_blocked() does not need any cleanup.
-
-void os::Solaris::cleanup_interruptible(JavaThread* thread) {
-  OSThread* osthread = thread->osthread();
-
-  ThreadStateTransition::transition(thread, _thread_blocked, osthread->saved_interrupt_thread_state());
-}
-
-// I/O interruption related counters called in _INTERRUPTIBLE
-
-void os::Solaris::bump_interrupted_before_count() {
-  RuntimeService::record_interrupted_before_count();
-}
-
-void os::Solaris::bump_interrupted_during_count() {
-  RuntimeService::record_interrupted_during_count();
 }
 
 static int _processors_online = 0;
@@ -3366,11 +3304,20 @@ bool os::can_execute_large_page_memory() {
 
 // Read calls from inside the vm need to perform state transitions
 size_t os::read(int fd, void *buf, unsigned int nBytes) {
-  INTERRUPTIBLE_RETURN_INT_VM(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
+  size_t res;
+  JavaThread* thread = (JavaThread*)Thread::current();
+  assert(thread->thread_state() == _thread_in_vm, "Assumed _thread_in_vm");
+  ThreadBlockInVM tbiv(thread);
+  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
+  return res;
 }
 
 size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
-  INTERRUPTIBLE_RETURN_INT(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
+  size_t res;
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
+  return res;
 }
 
 void os::naked_short_sleep(jlong ms) {
@@ -5305,6 +5252,8 @@ int os::fsync(int fd)  {
 }
 
 int os::available(int fd, jlong *bytes) {
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
   jlong cur, end;
   int mode;
   struct stat64 buf64;
@@ -5312,14 +5261,9 @@ int os::available(int fd, jlong *bytes) {
   if (::fstat64(fd, &buf64) >= 0) {
     mode = buf64.st_mode;
     if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      /*
-      * XXX: is the following call interruptible? If so, this might
-      * need to go through the INTERRUPT_IO() wrapper as for other
-      * blocking, interruptible calls in this file.
-      */
       int n,ioctl_return;
 
-      INTERRUPTIBLE(::ioctl(fd, FIONREAD, &n),ioctl_return,os::Solaris::clear_interrupted);
+      RESTARTABLE(::ioctl(fd, FIONREAD, &n), ioctl_return);
       if (ioctl_return>= 0) {
           *bytes = n;
         return 1;
@@ -6250,7 +6194,11 @@ bool os::is_headless_jre() {
 }
 
 size_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  INTERRUPTIBLE_RETURN_INT(::write(fd, buf, nBytes), os::Solaris::clear_interrupted);
+  size_t res;
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+  return res;
 }
 
 int os::close(int fd) {
@@ -6262,11 +6210,15 @@ int os::socket_close(int fd) {
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
-  INTERRUPTIBLE_RETURN_INT((int)::recv(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::recv(fd, buf, nBytes, flags));
 }
 
 int os::send(int fd, char* buf, size_t nBytes, uint flags) {
-  INTERRUPTIBLE_RETURN_INT((int)::send(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::send(fd, buf, nBytes, flags));
 }
 
 int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
@@ -6287,11 +6239,14 @@ int os::timeout(int fd, long timeout) {
   pfd.fd = fd;
   pfd.events = POLLIN;
 
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+
   gettimeofday(&t, &aNull);
   prevtime = ((julong)t.tv_sec * 1000)  +  t.tv_usec / 1000;
 
   for(;;) {
-    INTERRUPTIBLE_NORESTART(::poll(&pfd, 1, timeout), res, os::Solaris::clear_interrupted);
+    res = ::poll(&pfd, 1, timeout);
     if(res == OS_ERR && errno == EINTR) {
         if(timeout != -1) {
           gettimeofday(&t, &aNull);
@@ -6307,17 +6262,30 @@ int os::timeout(int fd, long timeout) {
 
 int os::connect(int fd, struct sockaddr *him, socklen_t len) {
   int _result;
-  INTERRUPTIBLE_NORESTART(::connect(fd, him, len), _result,\
-                          os::Solaris::clear_interrupted);
+  _result = ::connect(fd, him, len);
 
-  // Depending on when thread interruption is reset, _result could be
-  // one of two values when errno == EINTR
-
-  if (((_result == OS_INTRPT) || (_result == OS_ERR))
-      && (errno == EINTR)) {
+  // On Solaris, when a connect() call is interrupted, the connection
+  // can be established asynchronously (see 6343810). Subsequent calls
+  // to connect() must check the errno value which has the semantic
+  // described below (copied from the connect() man page). Handling
+  // of asynchronously established connections is required for both
+  // blocking and non-blocking sockets.
+  //     EINTR            The  connection  attempt  was   interrupted
+  //                      before  any data arrived by the delivery of
+  //                      a signal. The connection, however, will  be
+  //                      established asynchronously.
+  //
+  //     EINPROGRESS      The socket is non-blocking, and the connec-
+  //                      tion  cannot  be completed immediately.
+  //
+  //     EALREADY         The socket is non-blocking,  and a previous
+  //                      connection  attempt  has  not yet been com-
+  //                      pleted.
+  //
+  //     EISCONN          The socket is already connected.
+  if (_result == OS_ERR && errno == EINTR) {
      /* restarting a connect() changes its errno semantics */
-     INTERRUPTIBLE(::connect(fd, him, len), _result,\
-                   os::Solaris::clear_interrupted);
+     RESTARTABLE(::connect(fd, him, len), _result);
      /* undo these changes */
      if (_result == OS_ERR) {
        if (errno == EALREADY) {
@@ -6335,20 +6303,23 @@ int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
   if (fd < 0) {
     return OS_ERR;
   }
-  INTERRUPTIBLE_RETURN_INT((int)::accept(fd, him, len),\
-                           os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::accept(fd, him, len));
 }
 
 int os::recvfrom(int fd, char* buf, size_t nBytes, uint flags,
                  sockaddr* from, socklen_t* fromlen) {
-  INTERRUPTIBLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen),\
-                           os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen));
 }
 
 int os::sendto(int fd, char* buf, size_t len, uint flags,
                struct sockaddr* to, socklen_t tolen) {
-  INTERRUPTIBLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen),\
-                           os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen));
 }
 
 int os::socket_available(int fd, jint *pbytes) {
@@ -6363,8 +6334,9 @@ int os::socket_available(int fd, jint *pbytes) {
 }
 
 int os::bind(int fd, struct sockaddr* him, socklen_t len) {
-   INTERRUPTIBLE_RETURN_INT_NORESTART(::bind(fd, him, len),\
-                                      os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+   return ::bind(fd, him, len);
 }
 
 // Get the default path to the core file
