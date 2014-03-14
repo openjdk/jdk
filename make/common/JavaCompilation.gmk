@@ -143,6 +143,9 @@ define SetupArchive
   ifneq (,$2)
     $1_DEPS:=$2
   else
+    # Add all source roots to the find cache since we are likely going to run find 
+    # on these more than once. The cache will only be updated if necessary.
+    $$(eval $$(call FillCacheFind, $$($1_FIND_LIST)))
     $1_DEPS:=$$(filter $$(addprefix %,$$($1_SUFFIXES)), \
         $$(call CacheFind,$$($1_SRCS)))
     ifneq (,$$($1_GREP_INCLUDE_PATTERNS))
@@ -424,6 +427,9 @@ define SetupJavaCompilation
   # Make sure the dirs exist.
   $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupJavaCompilation $1 contains missing directory $$d)))
   $$(eval $$(call MakeDir,$$($1_BIN)))
+  # Add all source roots to the find cache since we are likely going to run find 
+  # on these more than once. The cache will only be updated if necessary.
+  $$(eval $$(call FillCacheFind,$$($1_SRC)))
   # Find all files in the source trees.
   $1_ALL_SRCS += $$(filter-out $(OVR_SRCS),$$(call CacheFind,$$($1_SRC)))
   # Extract the java files.

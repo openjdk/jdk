@@ -420,6 +420,7 @@ endif
 containing = $(foreach v,$2,$(if $(findstring $1,$v),$v))
 not-containing = $(foreach v,$2,$(if $(findstring $1,$v),,$v))
 
+ifneq ($(DISABLE_CACHE_FIND), true)
 ################################################################################
 # In Cygwin, finds are very costly, both because of expensive forks and because
 # of bad file system caching. Find is used extensively in $(shell) commands to
@@ -433,17 +434,23 @@ not-containing = $(foreach v,$2,$(if $(findstring $1,$v),,$v))
 #
 # Needs to be called with $(eval )
 #
+  # Even if the performance benifit is negligible on other platforms, keep the
+  # functionality active unless explicitly disabled to exercise it more.
+  #
+  # Initialize FIND_CACHE_DIRS with := to make it a non recursively-expanded variable
+  FIND_CACHE_DIRS :=
 # Param 1 - Dir to find in
-ifeq ($(OPENJDK_BUILD_OS),windows)
   define FillCacheFind
-    # Remove any trailing slash from dirs in the cache dir list
-    FIND_CACHE_DIR += $$(patsubst %/,%, $1)
-    FIND_CACHE := $$(sort $$(FIND_CACHE) $$(shell $(FIND) $1 -type f -o -type l))
+    # Filter out already cached dirs. The - is needed when FIND_CACHE_DIR is empty
+    # since filter out will then return empty.
+    FIND_CACHE_NEW_DIRS := $$(filter-out $$(addsuffix /%,\
+        - $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS), $1)
+    ifneq ($$(FIND_CACHE_NEW_DIRS), )
+      # Remove any trailing slash from dirs in the cache dir list
+      FIND_CACHE_DIRS += $$(patsubst %/,%, $$(FIND_CACHE_NEW_DIRS))
+      FIND_CACHE := $$(sort $$(FIND_CACHE) $$(shell $(FIND) $$(FIND_CACHE_NEW_DIRS) -type f -o -type l))
+    endif
   endef
-else
-  define FillCacheFind
-  endef
-endif
 
 # Mimics find by looking in the cache if all of the directories have been cached.
 # Otherwise reverts to shell find. This is safe to call on all platforms, even if
@@ -452,10 +459,16 @@ endif
 # The extra - is needed when FIND_CACHE_DIR is empty but should be harmless.
 # Param 1 - Dirs to find in
 define CacheFind
-  $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIR)) $(FIND_CACHE_DIR),$1), \
+    $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS),$1), \
     $(shell $(FIND) $1 -type f -o -type l), \
     $(filter $(addsuffix %,$1),$(FIND_CACHE)))
 endef
+else
+  # If CacheFind is disabled, just run the find command.
+  define CacheFind
+    $(shell $(FIND) $1 -type f -o -type l)
+  endef
+endif
 
 ################################################################################
 
