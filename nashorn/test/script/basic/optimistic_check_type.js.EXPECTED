@@ -1,0 +1,20 @@
+undefined value multiplication by undefined value: double
+undefined value division by undefined value: double
+int multiplication by int: int
+int division by int without remainder: int
+int division by int with remainder: double
+int modulus by int: int
+int plus int: int
+max value multiplication by max value: double
+infinity multiplication by infinity: double
+-1 division by infinity: double
+infinity division by zero: double
+infinity division by String: double
+outer local variable: int
+global variable: int
+outer local variable multiplication by outer local variable: int
+global variable multiplication by global variable undefined: double
+c: undefined
+a+b: double
+d: double
+d: undefined
