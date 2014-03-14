@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,12 @@ import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
-// Mirror class for HeapRegionSetBase. Represents a group of regions.
+// Mirror class for HeapRegionSetCount. Represents a group of regions.
 
-public class HeapRegionSetBase extends VMObject {
+public class HeapRegionSetCount extends VMObject {
 
-    static private long countField;
+    static private CIntegerField lengthField;
+    static private CIntegerField capacityField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -52,18 +53,21 @@ public class HeapRegionSetBase extends VMObject {
     }
 
     static private synchronized void initialize(TypeDataBase db) {
-        Type type = db.lookupType("HeapRegionSetBase");
+        Type type = db.lookupType("HeapRegionSetCount");
 
-        countField = type.getField("_count").getOffset();
+        lengthField   = type.getCIntegerField("_length");
+        capacityField = type.getCIntegerField("_capacity");
     }
 
-
-    public HeapRegionSetCount count() {
-        Address countFieldAddr = addr.addOffsetTo(countField);
-        return (HeapRegionSetCount) VMObjectFactory.newObject(HeapRegionSetCount.class, countFieldAddr);
+    public long length() {
+        return lengthField.getValue(addr);
     }
 
-    public HeapRegionSetBase(Address addr) {
+    public long capacity() {
+        return capacityField.getValue(addr);
+    }
+
+    public HeapRegionSetCount(Address addr) {
         super(addr);
     }
 }

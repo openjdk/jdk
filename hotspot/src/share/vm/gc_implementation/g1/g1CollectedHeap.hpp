@@ -34,7 +34,7 @@
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/g1YCTypes.hpp"
 #include "gc_implementation/g1/heapRegionSeq.hpp"
-#include "gc_implementation/g1/heapRegionSets.hpp"
+#include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "memory/barrierSet.hpp"
@@ -243,18 +243,18 @@ private:
   MemRegion _g1_committed;
 
   // The master free list. It will satisfy all new region allocations.
-  MasterFreeRegionList      _free_list;
+  FreeRegionList _free_list;
 
   // The secondary free list which contains regions that have been
   // freed up during the cleanup process. This will be appended to the
   // master free list when appropriate.
-  SecondaryFreeRegionList   _secondary_free_list;
+  FreeRegionList _secondary_free_list;
 
   // It keeps track of the old regions.
-  MasterOldRegionSet        _old_set;
+  HeapRegionSet _old_set;
 
   // It keeps track of the humongous regions.
-  MasterHumongousRegionSet  _humongous_set;
+  HeapRegionSet _humongous_set;
 
   // The number of regions we could create by expansion.
   uint _expansion_regions;
@@ -757,6 +757,26 @@ public:
 
   G1HRPrinter* hr_printer() { return &_hr_printer; }
 
+  // Frees a non-humongous region by initializing its contents and
+  // adding it to the free list that's passed as a parameter (this is
+  // usually a local list which will be appended to the master free
+  // list later). The used bytes of freed regions are accumulated in
+  // pre_used. If par is true, the region's RSet will not be freed
+  // up. The assumption is that this will be done later.
+  void free_region(HeapRegion* hr,
+                   FreeRegionList* free_list,
+                   bool par);
+
+  // Frees a humongous region by collapsing it into individual regions
+  // and calling free_region() for each of them. The freed regions
+  // will be added to the free list that's passed as a parameter (this
+  // is usually a local list which will be appended to the master free
+  // list later). The used bytes of freed regions are accumulated in
+  // pre_used. If par is true, the region's RSet will not be freed
+  // up. The assumption is that this will be done later.
+  void free_humongous_region(HeapRegion* hr,
+                             FreeRegionList* free_list,
+                             bool par);
 protected:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
@@ -834,30 +854,6 @@ protected:
                                OopsInHeapRegionClosure* scan_rs,
                                G1KlassScanClosure* scan_klasses,
                                int worker_i);
-
-  // Frees a non-humongous region by initializing its contents and
-  // adding it to the free list that's passed as a parameter (this is
-  // usually a local list which will be appended to the master free
-  // list later). The used bytes of freed regions are accumulated in
-  // pre_used. If par is true, the region's RSet will not be freed
-  // up. The assumption is that this will be done later.
-  void free_region(HeapRegion* hr,
-                   size_t* pre_used,
-                   FreeRegionList* free_list,
-                   bool par);
-
-  // Frees a humongous region by collapsing it into individual regions
-  // and calling free_region() for each of them. The freed regions
-  // will be added to the free list that's passed as a parameter (this
-  // is usually a local list which will be appended to the master free
-  // list later). The used bytes of freed regions are accumulated in
-  // pre_used. If par is true, the region's RSet will not be freed
-  // up. The assumption is that this will be done later.
-  void free_humongous_region(HeapRegion* hr,
-                             size_t* pre_used,
-                             FreeRegionList* free_list,
-                             HumongousRegionSet* humongous_proxy_set,
-                             bool par);
 
   // Notifies all the necessary spaces that the committed space has
   // been updated (either expanded or shrunk). It should be called
@@ -1228,10 +1224,6 @@ public:
   bool is_on_master_free_list(HeapRegion* hr) {
     return hr->containing_set() == &_free_list;
   }
-
-  bool is_in_humongous_set(HeapRegion* hr) {
-    return hr->containing_set() == &_humongous_set;
-  }
 #endif // ASSERT
 
   // Wrapper for the region list operations that can be called from
@@ -1284,27 +1276,9 @@ public:
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
 
-  // It will free a region if it has allocated objects in it that are
-  // all dead. It calls either free_region() or
-  // free_humongous_region() depending on the type of the region that
-  // is passed to it.
-  void free_region_if_empty(HeapRegion* hr,
-                            size_t* pre_used,
-                            FreeRegionList* free_list,
-                            OldRegionSet* old_proxy_set,
-                            HumongousRegionSet* humongous_proxy_set,
-                            HRRSCleanupTask* hrrs_cleanup_task,
-                            bool par);
-
-  // It appends the free list to the master free list and updates the
-  // master humongous list according to the contents of the proxy
-  // list. It also adjusts the total used bytes according to pre_used
-  // (if par is true, it will do so by taking the ParGCRareEvent_lock).
-  void update_sets_after_freeing_regions(size_t pre_used,
-                                       FreeRegionList* free_list,
-                                       OldRegionSet* old_proxy_set,
-                                       HumongousRegionSet* humongous_proxy_set,
-                                       bool par);
+  void remove_from_old_sets(const HeapRegionSetCount& old_regions_removed, const HeapRegionSetCount& humongous_regions_removed);
+  void prepend_to_freelist(FreeRegionList* list);
+  void decrement_summary_bytes(size_t bytes);
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
   virtual bool is_in(const void* p) const;
