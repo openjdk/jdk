@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class RegisterSaver {
     return_pc_is_thread_saved_exception_pc
   };
 
-  static OopMap* push_frame_abi112_and_save_live_registers(MacroAssembler* masm,
+  static OopMap* push_frame_reg_args_and_save_live_registers(MacroAssembler* masm,
                          int* out_frame_size_in_bytes,
                          bool generate_oop_map,
                          int return_pc_adjustment,
@@ -200,12 +200,12 @@ static const RegisterSaver::LiveRegType RegisterSaver_LiveRegs[] = {
   RegisterSaver_LiveIntReg(   R30 ), // r30 must be the last register
 };
 
-OopMap* RegisterSaver::push_frame_abi112_and_save_live_registers(MacroAssembler* masm,
+OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssembler* masm,
                          int* out_frame_size_in_bytes,
                          bool generate_oop_map,
                          int return_pc_adjustment,
                          ReturnPCLocation return_pc_location) {
-  // Push an abi112-frame and store all registers which may be live.
+  // Push an abi_reg_args-frame and store all registers which may be live.
   // If requested, create an OopMap: Record volatile registers as
   // callee-save values in an OopMap so their save locations will be
   // propagated to the RegisterMap of the caller frame during
@@ -221,7 +221,7 @@ OopMap* RegisterSaver::push_frame_abi112_and_save_live_registers(MacroAssembler*
                                    sizeof(RegisterSaver::LiveRegType);
   const int register_save_size   = regstosave_num * reg_size;
   const int frame_size_in_bytes  = round_to(register_save_size, frame::alignment_in_bytes)
-                                   + frame::abi_112_size;
+                                   + frame::abi_reg_args_size;
   *out_frame_size_in_bytes       = frame_size_in_bytes;
   const int frame_size_in_slots  = frame_size_in_bytes / sizeof(jint);
   const int register_save_offset = frame_size_in_bytes - register_save_size;
@@ -229,7 +229,7 @@ OopMap* RegisterSaver::push_frame_abi112_and_save_live_registers(MacroAssembler*
   // OopMap frame size is in c2 stack slots (sizeof(jint)) not bytes or words.
   OopMap* map = generate_oop_map ? new OopMap(frame_size_in_slots, 0) : NULL;
 
-  BLOCK_COMMENT("push_frame_abi112_and_save_live_registers {");
+  BLOCK_COMMENT("push_frame_reg_args_and_save_live_registers {");
 
   // Save r30 in the last slot of the not yet pushed frame so that we
   // can use it as scratch reg.
@@ -294,7 +294,7 @@ OopMap* RegisterSaver::push_frame_abi112_and_save_live_registers(MacroAssembler*
     offset += reg_size;
   }
 
-  BLOCK_COMMENT("} push_frame_abi112_and_save_live_registers");
+  BLOCK_COMMENT("} push_frame_reg_args_and_save_live_registers");
 
   // And we're done.
   return map;
@@ -699,15 +699,19 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 
   int i;
   VMReg reg;
-  // Leave room for C-compatible ABI_112.
-  int stk = (frame::abi_112_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size;
+  // Leave room for C-compatible ABI_REG_ARGS.
+  int stk = (frame::abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size;
   int arg = 0;
   int freg = 0;
 
   // Avoid passing C arguments in the wrong stack slots.
+#if defined(ABI_ELFv2)
+  assert((SharedRuntime::out_preserve_stack_slots() + stk) * VMRegImpl::stack_slot_size == 96,
+         "passing C arguments in wrong stack slots");
+#else
   assert((SharedRuntime::out_preserve_stack_slots() + stk) * VMRegImpl::stack_slot_size == 112,
          "passing C arguments in wrong stack slots");
-
+#endif
   // We fill-out regs AND regs2 if an argument must be passed in a
   // register AND in a stack slot. If regs2 is NULL in such a
   // situation, we bail-out with a fatal error.
@@ -953,6 +957,9 @@ static address gen_c2i_adapter(MacroAssembler *masm,
 
 #ifdef CC_INTERP
   const Register tos = R17_tos;
+#else
+  const Register tos = R15_esp;
+  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
 #endif
 
   // load TOS
@@ -971,7 +978,7 @@ static void gen_i2c_adapter(MacroAssembler *masm,
                             const BasicType *sig_bt,
                             const VMRegPair *regs) {
 
-  // Load method's entry-point from methodOop.
+  // Load method's entry-point from method.
   __ ld(R12_scratch2, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(R12_scratch2);
 
@@ -992,7 +999,10 @@ static void gen_i2c_adapter(MacroAssembler *masm,
 
 #ifdef CC_INTERP
   const Register ld_ptr = R17_tos;
+#else
+  const Register ld_ptr = R15_esp;
 #endif
+
   const Register value_regs[] = { R22_tmp2, R23_tmp3, R24_tmp4, R25_tmp5, R26_tmp6 };
   const int num_value_regs = sizeof(value_regs) / sizeof(Register);
   int value_regs_index = 0;
@@ -1083,8 +1093,8 @@ static void gen_i2c_adapter(MacroAssembler *masm,
     }
   }
 
-  BLOCK_COMMENT("Store method oop");
-  // Store method oop into thread->callee_target.
+  BLOCK_COMMENT("Store method");
+  // Store method into thread->callee_target.
   // We might end up in handle_wrong_method if the callee is
   // deoptimized as we race thru here. If that happens we don't want
   // to take a safepoint because the caller frame will look
@@ -1504,7 +1514,11 @@ static void check_needs_gc_for_critical_native(MacroAssembler* masm,
 
   __ block_comment("block_for_jni_critical");
   address entry_point = CAST_FROM_FN_PTR(address, SharedRuntime::block_for_jni_critical);
+#if defined(ABI_ELFv2)
+  __ call_c(entry_point, relocInfo::runtime_call_type);
+#else
   __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, entry_point), relocInfo::runtime_call_type);
+#endif
   address start           = __ pc() - __ offset(),
           calls_return_pc = __ last_calls_return_pc();
   oop_maps->add_gc_map(calls_return_pc - start, map);
@@ -1877,7 +1891,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // Layout of the native wrapper frame:
   // (stack grows upwards, memory grows downwards)
   //
-  // NW     [ABI_112]                  <-- 1) R1_SP
+  // NW     [ABI_REG_ARGS]             <-- 1) R1_SP
   //        [outgoing arguments]       <-- 2) R1_SP + out_arg_slot_offset
   //        [oopHandle area]           <-- 3) R1_SP + oop_handle_offset (save area for critical natives)
   //        klass                      <-- 4) R1_SP + klass_offset
@@ -2211,8 +2225,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // slow case of monitor enter. Inline a special case of call_VM that
     // disallows any pending_exception.
 
-    // Save argument registers and leave room for C-compatible ABI_112.
-    int frame_size = frame::abi_112_size +
+    // Save argument registers and leave room for C-compatible ABI_REG_ARGS.
+    int frame_size = frame::abi_reg_args_size +
                      round_to(total_c_args * wordSize, frame::alignment_in_bytes);
     __ mr(R11_scratch1, R1_SP);
     RegisterSaver::push_frame_and_save_argument_registers(masm, R12_scratch2, frame_size, total_c_args, out_regs, out_regs2);
@@ -2250,9 +2264,12 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // The JNI call
   // --------------------------------------------------------------------------
-
+#if defined(ABI_ELFv2)
+  __ call_c(native_func, relocInfo::runtime_call_type);
+#else
   FunctionDescriptor* fd_native_method = (FunctionDescriptor*) native_func;
   __ call_c(fd_native_method, relocInfo::runtime_call_type);
+#endif
 
 
   // Now, we are back from the native code.
@@ -2606,8 +2623,12 @@ static void push_skeleton_frame(MacroAssembler* masm, bool deopt,
 #ifdef CC_INTERP
   __ std(R1_SP, _parent_ijava_frame_abi(initial_caller_sp), R1_SP);
 #else
-  Unimplemented();
+#ifdef ASSERT
+  __ load_const_optimized(pc_reg, 0x5afe);
+  __ std(pc_reg, _ijava_state_neg(ijava_reserved), R1_SP);
 #endif
+  __ std(R1_SP, _ijava_state_neg(sender_sp), R1_SP);
+#endif // CC_INTERP
   __ addi(number_of_frames_reg, number_of_frames_reg, -1);
   __ addi(frame_sizes_reg, frame_sizes_reg, wordSize);
   __ addi(pcs_reg, pcs_reg, wordSize);
@@ -2679,7 +2700,15 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   __ std(R12_scratch2, _abi(lr), R1_SP);
 
   // Initialize initial_caller_sp.
+#ifdef CC_INTERP
   __ std(frame_size_reg/*old_sp*/, _parent_ijava_frame_abi(initial_caller_sp), R1_SP);
+#else
+#ifdef ASSERT
+ __ load_const_optimized(pc_reg, 0x5afe);
+ __ std(pc_reg, _ijava_state_neg(ijava_reserved), R1_SP);
+#endif
+ __ std(frame_size_reg, _ijava_state_neg(sender_sp), R1_SP);
+#endif // CC_INTERP
 
 #ifdef ASSERT
   // Make sure that there is at least one entry in the array.
@@ -2724,7 +2753,7 @@ void SharedRuntime::generate_deopt_blob() {
   OopMapSet *oop_maps = new OopMapSet();
 
   // size of ABI112 plus spill slots for R3_RET and F1_RET.
-  const int frame_size_in_bytes = frame::abi_112_spill_size;
+  const int frame_size_in_bytes = frame::abi_reg_args_spill_size;
   const int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
   int first_frame_size_in_bytes = 0; // frame size of "unpack frame" for call to fetch_unroll_info.
 
@@ -2757,11 +2786,11 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Push the "unpack frame"
   // Save everything in sight.
-  map = RegisterSaver::push_frame_abi112_and_save_live_registers(masm,
-                                                                 &first_frame_size_in_bytes,
-                                                                 /*generate_oop_map=*/ true,
-                                                                 return_pc_adjustment_no_exception,
-                                                                 RegisterSaver::return_pc_is_lr);
+  map = RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
+                                                                   &first_frame_size_in_bytes,
+                                                                   /*generate_oop_map=*/ true,
+                                                                   return_pc_adjustment_no_exception,
+                                                                   RegisterSaver::return_pc_is_lr);
   assert(map != NULL, "OopMap must have been created");
 
   __ li(exec_mode_reg, Deoptimization::Unpack_deopt);
@@ -2787,11 +2816,11 @@ void SharedRuntime::generate_deopt_blob() {
   // Push the "unpack frame".
   // Save everything in sight.
   assert(R4 == R4_ARG2, "exception pc must be in r4");
-  RegisterSaver::push_frame_abi112_and_save_live_registers(masm,
-                                                           &first_frame_size_in_bytes,
-                                                           /*generate_oop_map=*/ false,
-                                                           return_pc_adjustment_exception,
-                                                           RegisterSaver::return_pc_is_r4);
+  RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
+                                                             &first_frame_size_in_bytes,
+                                                             /*generate_oop_map=*/ false,
+                                                             return_pc_adjustment_exception,
+                                                             RegisterSaver::return_pc_is_r4);
 
   // Deopt during an exception. Save exec mode for unpack_frames.
   __ li(exec_mode_reg, Deoptimization::Unpack_exception);
@@ -2876,8 +2905,8 @@ void SharedRuntime::generate_deopt_blob() {
   // ...).
 
   // Spill live volatile registers since we'll do a call.
-  __ std( R3_RET,  _abi_112_spill(spill_ret),  R1_SP);
-  __ stfd(F1_RET, _abi_112_spill(spill_fret), R1_SP);
+  __ std( R3_RET, _abi_reg_args_spill(spill_ret),  R1_SP);
+  __ stfd(F1_RET, _abi_reg_args_spill(spill_fret), R1_SP);
 
   // Let the unpacker layout information in the skeletal frames just
   // allocated.
@@ -2889,8 +2918,8 @@ void SharedRuntime::generate_deopt_blob() {
   __ reset_last_Java_frame();
 
   // Restore the volatiles saved above.
-  __ ld( R3_RET, _abi_112_spill(spill_ret),  R1_SP);
-  __ lfd(F1_RET, _abi_112_spill(spill_fret), R1_SP);
+  __ ld( R3_RET, _abi_reg_args_spill(spill_ret),  R1_SP);
+  __ lfd(F1_RET, _abi_reg_args_spill(spill_fret), R1_SP);
 
   // Pop the unpack frame.
   __ pop_frame();
@@ -2900,10 +2929,16 @@ void SharedRuntime::generate_deopt_blob() {
   // optional c2i, caller of deoptee, ...).
 
   // Initialize R14_state.
+#ifdef CC_INTERP
   __ ld(R14_state, 0, R1_SP);
   __ addi(R14_state, R14_state, -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
   // Also inititialize R15_prev_state.
   __ restore_prev_state();
+#else
+  __ restore_interpreter_state(R11_scratch1);
+  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
+#endif // CC_INTERP
+
 
   // Return to the interpreter entry point.
   __ blr();
@@ -2930,7 +2965,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   Register unc_trap_reg     = R23_tmp3;
 
   OopMapSet* oop_maps = new OopMapSet();
-  int frame_size_in_bytes = frame::abi_112_size;
+  int frame_size_in_bytes = frame::abi_reg_args_size;
   OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
   // stack: (deoptee, optional i2c, caller_of_deoptee, ...).
@@ -2943,7 +2978,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ save_LR_CR(R11_scratch1);
 
   // Push an "uncommon_trap" frame.
-  __ push_frame_abi112(0, R11_scratch1);
+  __ push_frame_reg_args(0, R11_scratch1);
 
   // stack: (unpack frame, deoptee, optional i2c, caller_of_deoptee, ...).
 
@@ -2996,7 +3031,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // interpreter frames just created.
 
   // Push a simple "unpack frame" here.
-  __ push_frame_abi112(0, R11_scratch1);
+  __ push_frame_reg_args(0, R11_scratch1);
 
   // stack: (unpack frame, skeletal interpreter frame, ..., optional
   // skeletal interpreter frame, optional c2i, caller of deoptee,
@@ -3022,11 +3057,17 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).
 
+#ifdef CC_INTERP
   // Initialize R14_state, ...
   __ ld(R11_scratch1, 0, R1_SP);
   __ addi(R14_state, R11_scratch1, -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
   // also initialize R15_prev_state.
   __ restore_prev_state();
+#else
+  __ restore_interpreter_state(R11_scratch1);
+  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
+#endif // CC_INTERP
+
   // Return to the interpreter entry point.
   __ blr();
 
@@ -3064,11 +3105,11 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   }
 
   // Save registers, fpu state, and flags.
-  map = RegisterSaver::push_frame_abi112_and_save_live_registers(masm,
-                                                                 &frame_size_in_bytes,
-                                                                 /*generate_oop_map=*/ true,
-                                                                 /*return_pc_adjustment=*/0,
-                                                                 return_pc_location);
+  map = RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
+                                                                   &frame_size_in_bytes,
+                                                                   /*generate_oop_map=*/ true,
+                                                                   /*return_pc_adjustment=*/0,
+                                                                   return_pc_location);
 
   // The following is basically a call_VM. However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
@@ -3103,7 +3144,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   RegisterSaver::restore_live_registers_and_pop_frame(masm,
                                                       frame_size_in_bytes,
                                                       /*restore_ctr=*/true);
-
 
   BLOCK_COMMENT("  Jump to forward_exception_entry.");
   // Jump to forward_exception_entry, with the issuing PC in LR
@@ -3151,11 +3191,11 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   address start = __ pc();
 
-  map = RegisterSaver::push_frame_abi112_and_save_live_registers(masm,
-                                                                 &frame_size_in_bytes,
-                                                                 /*generate_oop_map*/ true,
-                                                                 /*return_pc_adjustment*/ 0,
-                                                                 RegisterSaver::return_pc_is_lr);
+  map = RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
+                                                                   &frame_size_in_bytes,
+                                                                   /*generate_oop_map*/ true,
+                                                                   /*return_pc_adjustment*/ 0,
+                                                                   RegisterSaver::return_pc_is_lr);
 
   // Use noreg as last_Java_pc, the return pc will be reconstructed
   // from the physical frame.
@@ -3189,7 +3229,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   RegisterSaver::restore_live_registers_and_pop_frame(masm, frame_size_in_bytes, /*restore_ctr*/ false);
 
-  // Get the returned methodOop.
+  // Get the returned method.
   __ get_vm_result_2(R19_method);
 
   __ bctr();
