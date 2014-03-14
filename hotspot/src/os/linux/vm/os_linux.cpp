@@ -5284,7 +5284,6 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   static bool proc_task_unchecked = true;
-  static const char *proc_stat_path = "/proc/%d/stat";
   pid_t  tid = thread->osthread()->thread_id();
   char *s;
   char stat[2048];
@@ -5297,6 +5296,8 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   long ldummy;
   FILE *fp;
 
+  snprintf(proc_name, 64, "/proc/%d/stat", tid);
+
   // The /proc/<tid>/stat aggregates per-process usage on
   // new Linux kernels 2.6+ where NPTL is supported.
   // The /proc/self/task/<tid>/stat still has the per-thread usage.
@@ -5308,12 +5309,11 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
     proc_task_unchecked = false;
     fp = fopen("/proc/self/task", "r");
     if (fp != NULL) {
-      proc_stat_path = "/proc/self/task/%d/stat";
+      snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
       fclose(fp);
     }
   }
 
-  sprintf(proc_name, proc_stat_path, tid);
   fp = fopen(proc_name, "r");
   if ( fp == NULL ) return -1;
   statlen = fread(stat, 1, 2047, fp);
