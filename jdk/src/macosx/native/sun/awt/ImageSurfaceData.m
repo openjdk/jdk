@@ -1497,7 +1497,7 @@ PRINT("ImageSD_dispose")
     }
 
     if (isdo->nsRef) {
-        CFRelease(isdo->nsRef); // GC
+        [isdo->nsRef release];
         isdo->nsRef = nil;
     }
 

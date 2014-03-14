@@ -291,17 +291,15 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_LWCToolkit_createAWTRunLoopMediato
 {
 AWT_ASSERT_APPKIT_THREAD;
 
-    AWTRunLoopObject *o = nil;
+    jlong result;
 
+JNF_COCOA_ENTER(env);
     // We double retain because this object is owned by both main thread and "other" thread
     // We release in both doAWTRunLoop and stopAWTRunLoop
-    o = [[AWTRunLoopObject alloc] init];
-    if (o) {
-        CFRetain(o); // GC
-        CFRetain(o); // GC
-        [o release];
-    }
-    return ptr_to_jlong(o);
+    result = ptr_to_jlong([[[AWTRunLoopObject alloc] init] retain]);
+JNF_COCOA_EXIT(env);
+
+    return result;
 }
 
 /*
@@ -336,10 +334,7 @@ JNF_COCOA_ENTER(env);
 
         }
     }
-
-   
-    CFRelease(mediatorObject);
-
+    [mediatorObject release];
 JNF_COCOA_EXIT(env);
 }
 
@@ -357,7 +352,7 @@ JNF_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThread:@selector(endRunLoop) on:mediatorObject withObject:nil waitUntilDone:NO];
 
-    CFRelease(mediatorObject);
+    [mediatorObject release];
 
 JNF_COCOA_EXIT(env);
 }

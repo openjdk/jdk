@@ -145,8 +145,7 @@ Java_sun_awt_CGraphicsEnvironment_registerDisplayReconfiguration
 
 JNF_COCOA_ENTER(env);
 
-    JNFWeakJObjectWrapper *wrapper = [JNFWeakJObjectWrapper wrapperWithJObject:this withEnv:env];
-    CFRetain(wrapper); // pin from ObjC-GC
+    JNFWeakJObjectWrapper *wrapper = [[JNFWeakJObjectWrapper wrapperWithJObject:this withEnv:env] retain];
 
     /* Register the callback */
     if (CGDisplayRegisterReconfigurationCallback(&displaycb_handle, wrapper) != kCGErrorSuccess) {
@@ -186,8 +185,7 @@ JNF_COCOA_ENTER(env);
     }
 
     [wrapper setJObject:NULL withEnv:env]; // more efficiant to pre-clear
-
-    CFRelease(wrapper);
+    [wrapper release];
 
 JNF_COCOA_EXIT(env);
 }

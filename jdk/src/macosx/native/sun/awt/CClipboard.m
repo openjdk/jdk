@@ -72,7 +72,6 @@ static CClipboard *sClipboard = nil;
 
     [super dealloc];
 }
-//- (void)finalize { [super finalize]; }
 
 - (NSData *)data {
     return fData;

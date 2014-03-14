@@ -112,9 +112,9 @@ AWT_ASSERT_APPKIT_THREAD;
             remoteLayer.parentLayer = parentLayer;
             remoteLayer.remoteLayer = NULL;
             remoteLayer.jrsRemoteLayer = [remoteLayer createRemoteLayerBoundTo:JRSRemotePort];
-            CFRetain(remoteLayer);  // REMIND
+            [remoteLayer retain];  // REMIND
             remoteLayer.frame = CGRectMake(0, 0, 720, 500); // REMIND
-            CFRetain(remoteLayer.jrsRemoteLayer); // REMIND
+            [remoteLayer.jrsRemoteLayer retain]; // REMIND
             int layerID = [remoteLayer.jrsRemoteLayer layerID];
             NSLog(@"layer id to send = %d", layerID);
             sendLayerID(layerID);
@@ -1275,12 +1275,9 @@ JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
 
         CALayer *windowLayer = jlong_to_ptr(windowLayerPtr);
-        AWTView *view = [[AWTView alloc] initWithRect:rect
-                                         platformView:cPlatformView
-                                         windowLayer:windowLayer];
-        CFRetain(view);
-        [view release]; // GC
-        newView = view;
+        newView = [[AWTView alloc] initWithRect:rect
+                                   platformView:cPlatformView
+                                    windowLayer:windowLayer];
     }];
 
 JNF_COCOA_EXIT(env);

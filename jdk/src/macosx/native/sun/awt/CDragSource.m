@@ -188,7 +188,7 @@ static BOOL                sNeedsEnter;
         fFormatMap = NULL;
     }
 
-    CFRelease(self); // GC
+    [self release];
 }
 
 - (void)dealloc
@@ -204,8 +204,6 @@ static BOOL                sNeedsEnter;
 
     [super dealloc];
 }
-//- (void)finalize { [super finalize]; }
-
 
 // Appropriated from Windows' awt_DataTransferer.cpp:
 //
