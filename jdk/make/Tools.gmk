@@ -23,7 +23,7 @@
 # questions.
 #
 
-# Cache all finds needed for this file. Only used on windows.
+# Cache all finds needed for this file.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/make/src/classes))
 
 # The exception handling of swing beaninfo which have the own tool directory

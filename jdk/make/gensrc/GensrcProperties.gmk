@@ -23,8 +23,10 @@
 # questions.
 #
 
-# Prepare the find cache. This is only used on windows.
-$(eval $(call FillCacheFind, $(JDK_TOPDIR)/src/share/classes $(JDK_TOPDIR)/src/windows/classes))
+# Prepare the find cache.
+$(eval $(call FillCacheFind, $(JDK_TOPDIR)/src/share/classes \
+    $(JDK_TOPDIR)/src/windows/classes \
+    $(JDK_TOPDIR)/src/macosx/classes))
 
 # All .properties files to be compiled are appended to this variable.
 ALL_COMPILED_PROPSOURCES :=
