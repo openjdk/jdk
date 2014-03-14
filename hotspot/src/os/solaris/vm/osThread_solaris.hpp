@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,20 +81,6 @@
   ucontext_t* ucontext() const { return _ucontext; }
   void set_ucontext(ucontext_t* ptr) { _ucontext = ptr; }
   static void SR_handler(Thread* thread, ucontext_t* uc);
-
- // ***************************************************************
- // java.lang.Thread.interrupt state.
- // ***************************************************************
-
- private:
-
-  JavaThreadState      _saved_interrupt_thread_state;       // the thread state before a system call -- restored afterward
-
- public:
-
-
-  JavaThreadState   saved_interrupt_thread_state()                              { return _saved_interrupt_thread_state; }
-  void              set_saved_interrupt_thread_state(JavaThreadState state)     { _saved_interrupt_thread_state = state; }
 
   static void       handle_spinlock_contention(int tries);                      // Used for thread local eden locking
 
