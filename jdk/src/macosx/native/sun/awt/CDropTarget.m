@@ -106,6 +106,7 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
         NSFilenamesPboardType,
         NSPostScriptPboardType,
         NSTIFFPboardType,
+        NSPasteboardTypePNG,
         NSRTFPboardType,
         NSTabularTextPboardType,
         NSFontPboardType,
@@ -119,6 +120,7 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
         NSVCardPboardType,
         NSFilesPromisePboardType,
         [DnDUtilities javaPboardType],
+        (NSString*)kUTTypeJPEG,
         nil];
 
     // Enable dragging events over this object:

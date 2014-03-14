@@ -54,6 +54,10 @@ NSMutableDictionary *getMappingTable() {
                               forKey:[NSNumber numberWithLong:sun_lwawt_macosx_CDataTransferer_CF_PDF]];
         [sStandardMappings setObject:NSURLPboardType
                               forKey:[NSNumber numberWithLong:sun_lwawt_macosx_CDataTransferer_CF_URL]];
+        [sStandardMappings setObject:NSPasteboardTypePNG
+                              forKey:[NSNumber numberWithLong:sun_lwawt_macosx_CDataTransferer_CF_PNG]];
+        [sStandardMappings setObject:(NSString*)kUTTypeJPEG
+                              forKey:[NSNumber numberWithLong:sun_lwawt_macosx_CDataTransferer_CF_JPEG]];
     }
     return sStandardMappings;
 }
@@ -124,106 +128,6 @@ JNF_COCOA_ENTER(env);
     returnValue = JNFNSToJavaString(env, formatForIndex(index));
 JNF_COCOA_EXIT(env);
     return returnValue;
-}
-
-/*
- * Class:     sun_lwawt_macosx_CDataTransferer
- * Method:    imageDataToPlatformImageBytes
- * Signature: ([III)[B
-     */
-JNIEXPORT jbyteArray JNICALL Java_sun_lwawt_macosx_CDataTransferer_imageDataToPlatformImageBytes
-(JNIEnv *env, jobject obj, jintArray inPixelData, jint inWidth, jint inHeight)
-{
-    jbyteArray returnValue = nil;
-JNF_COCOA_ENTER(env);
-    UInt32 *rawImageData = (UInt32 *)(*env)->GetPrimitiveArrayCritical(env, inPixelData, 0);
-
-    // The pixel data is in premultiplied ARGB format. That's exactly what
-    // we need for the bitmap image rep.
-    if (rawImageData != NULL) {
-        NSBitmapImageRep *imageRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
-                                                                             pixelsWide:inWidth
-                                                                             pixelsHigh:inHeight
-                                                                          bitsPerSample:8
-                                                                        samplesPerPixel:4
-                                                                               hasAlpha:YES
-                                                                               isPlanar:NO
-                                                                         colorSpaceName:NSCalibratedRGBColorSpace
-                                                                            bytesPerRow:(inWidth*4)
-                                                                           bitsPerPixel:32];
-
-        // Conver the ARGB data into RGBA data that the bitmap can draw.
-        unsigned char *destData = [imageRep bitmapData];
-        unsigned char *currentRowBase;
-        jint x, y;
-
-        for (y = 0; y < inHeight; y++) {
-            currentRowBase = destData + y * (inWidth * 4);
-            unsigned char *currElement = currentRowBase;
-            for (x = 0; x < inWidth; x++) {
-                UInt32 currPixel = rawImageData[y * inWidth + x];
-                *currElement++ = ((currPixel & 0xFF0000) >> 16);
-                *currElement++ = ((currPixel & 0xFF00) >> 8);
-                *currElement++ = (currPixel & 0xFF);
-                *currElement++ = ((currPixel & 0xFF000000) >> 24);
-            }
-        }
-
-        (*env)->ReleasePrimitiveArrayCritical(env, inPixelData, rawImageData, JNI_ABORT);
-        NSData *tiffImage = [imageRep TIFFRepresentation];
-        jsize tiffSize = (jsize)[tiffImage length]; // #warning 64-bit: -length returns NSUInteger, but NewByteArray takes jsize
-        returnValue = (*env)->NewByteArray(env, tiffSize);
-        CHECK_NULL_RETURN(returnValue, nil);
-        jbyte *tiffData = (jbyte *)(*env)->GetPrimitiveArrayCritical(env, returnValue, 0);
-        CHECK_NULL_RETURN(tiffData, nil);
-        [tiffImage getBytes:tiffData];
-        (*env)->ReleasePrimitiveArrayCritical(env, returnValue, tiffData, 0); // Do not use JNI_COMMIT, as that will not free the buffer copy when +ProtectJavaHeap is on.
-        [imageRep release];
-    }
-JNF_COCOA_EXIT(env);
-    return returnValue;
-
-}
-
-static jobject getImageForByteStream(JNIEnv *env, jbyteArray sourceData)
-{
-    CHECK_NULL_RETURN(sourceData, NULL);
-
-    jsize sourceSize = (*env)->GetArrayLength(env, sourceData);
-    if (sourceSize == 0) return NULL;
-
-    jbyte *sourceBytes = (*env)->GetPrimitiveArrayCritical(env, sourceData, NULL);
-    CHECK_NULL_RETURN(sourceBytes, NULL);
-    NSData *rawData = [NSData dataWithBytes:sourceBytes length:sourceSize];
-
-    NSImage *newImage = [[NSImage alloc] initWithData:rawData];
-
-    (*env)->ReleasePrimitiveArrayCritical(env, sourceData, sourceBytes, JNI_ABORT);
-    CHECK_NULL_RETURN(newImage, NULL);
-
-    // The ownership of the NSImage is passed to the new CImage jobject. No need to release it.
-    static JNF_CLASS_CACHE(jc_CImage, "sun/lwawt/macosx/CImage");
-    static JNF_STATIC_MEMBER_CACHE(jm_CImage_getCreator, jc_CImage, "getCreator", "()Lsun/lwawt/macosx/CImage$Creator;");
-    jobject creator = JNFCallStaticObjectMethod(env, jm_CImage_getCreator);
-
-    static JNF_CLASS_CACHE(jc_CImage_Generator, "sun/lwawt/macosx/CImage$Creator");
-    static JNF_MEMBER_CACHE(jm_CImage_Generator_createImageUsingNativeSize, jc_CImage_Generator, "createImageUsingNativeSize", "(J)Ljava/awt/image/BufferedImage;");
-    return JNFCallObjectMethod(env, creator, jm_CImage_Generator_createImageUsingNativeSize, ptr_to_jlong(newImage)); // AWT_THREADING Safe (known object)
-}
-
-/*
- * Class:     sun_lwawt_macosx_CDataTransferer
- * Method:    getImageForByteStream
- * Signature: ([B)Ljava/awt/Image;
- */
-JNIEXPORT jobject JNICALL Java_sun_lwawt_macosx_CDataTransferer_getImageForByteStream
-  (JNIEnv *env, jobject obj, jbyteArray sourceData)
-{
-    jobject img = NULL;
-JNF_COCOA_ENTER(env);
-    img = getImageForByteStream(env, sourceData);
-JNF_COCOA_EXIT(env);
-    return img;
 }
 
 static jobjectArray CreateJavaFilenameArray(JNIEnv *env, NSArray *filenameArray)

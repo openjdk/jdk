@@ -38,11 +38,13 @@ import sun.awt.image.SunWritableRaster;
 
 public class CImage extends CFRetainedResource {
     private static native long nativeCreateNSImageFromArray(int[] buffer, int w, int h);
+    private static native long nativeCreateNSImageFromBytes(byte[] buffer);
     private static native long nativeCreateNSImageFromArrays(int[][] buffers, int w[], int h[]);
     private static native long nativeCreateNSImageFromFileContents(String file);
     private static native long nativeCreateNSImageOfFileFromLaunchServices(String file);
     private static native long nativeCreateNSImageFromImageName(String name);
     private static native long nativeCreateNSImageFromIconSelector(int selector);
+    private static native byte[] nativeGetPlatformImageBytes(int[] buffer, int w, int h);
     private static native void nativeCopyNSImageIntoArray(long image, int[] buffer, int sw, int sh, int dw, int dh);
     private static native Dimension2D nativeGetNSImageSize(long image);
     private static native void nativeSetNSImageSize(long image, double w, double h);
@@ -145,6 +147,23 @@ public class CImage extends CFRetainedResource {
 
             return new CImage(nativeCreateNSImageFromArray(buffer, image.getWidth(null),
                                                            image.getHeight(null)));
+        }
+
+        public byte[] getPlatformImageBytes(final Image image) {
+            int[] buffer = imageToArray(image, false);
+
+            if (buffer == null) {
+                return null;
+            }
+
+            return nativeGetPlatformImageBytes(buffer, image.getWidth(null), image.getHeight(null));
+        }
+
+        /**
+         * Translates a byte array which contains platform-specific image data in the given format into an Image.
+         */
+        public Image createImageFromPlatformImageBytes(final byte[] buffer) {
+            return createImageUsingNativeSize(nativeCreateNSImageFromBytes(buffer));
         }
 
         // This is used to create a CImage from a Image
