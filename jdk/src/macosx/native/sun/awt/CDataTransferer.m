@@ -197,8 +197,6 @@ static jobject getImageForByteStream(JNIEnv *env, jbyteArray sourceData)
     NSData *rawData = [NSData dataWithBytes:sourceBytes length:sourceSize];
 
     NSImage *newImage = [[NSImage alloc] initWithData:rawData];
-    if (newImage) CFRetain(newImage); // GC
-    [newImage release];
 
     (*env)->ReleasePrimitiveArrayCritical(env, sourceData, sourceBytes, JNI_ABORT);
     CHECK_NULL_RETURN(newImage, NULL);

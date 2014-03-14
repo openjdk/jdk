@@ -169,7 +169,7 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
         fDropTargetContextPeer = NULL;
     }
 
-    CFRelease(self);
+    [self release];
 }
 
 - (void)dealloc
@@ -185,7 +185,6 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
 
     [super dealloc];
 }
-//- (void)finalize { [super finalize]; }
 
 - (NSInteger) getDraggingSequenceNumber
 {
@@ -722,10 +721,6 @@ JNF_COCOA_ENTER(env);
     dropTarget = [[CDropTarget alloc] init:jdroptarget component:jcomponent peer:jpeer control:controlObj];
 JNF_COCOA_EXIT(env);
 
-    if (dropTarget) {
-        CFRetain(dropTarget); // GC
-        [dropTarget release];
-    }
     return ptr_to_jlong(dropTarget);
 }
 

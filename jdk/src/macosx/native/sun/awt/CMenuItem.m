@@ -420,11 +420,6 @@ JNF_COCOA_ENTER(env);
 
     // setLabel will be called after creation completes.
 
-    if (aCMenuItem) {
-        CFRetain(aCMenuItem); // GC
-        [aCMenuItem release];
-    }
-
 JNF_COCOA_EXIT(env);
     return ptr_to_jlong(aCMenuItem);
 }

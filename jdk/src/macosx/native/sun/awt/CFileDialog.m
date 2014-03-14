@@ -88,7 +88,6 @@ canChooseDirectories:(BOOL)inChooseDirectories
 
     [super dealloc];
 }
-//- (void)finalize { [super finalize]; }
 
 - (void)safeSaveOrLoad {
     NSSavePanel *thePanel = nil;
@@ -168,9 +167,9 @@ canChooseDirectories:(BOOL)inChooseDirectories
     }
 
     // ask the file filter up in Java
-    CFStringRef filePath = CFURLCopyFileSystemPath((CFURLRef)url, kCFURLPOSIXPathStyle);
-    BOOL shouldEnableFile = [self askFilenameFilter:(NSString *)filePath];
-    CFRelease(filePath);
+    NSString* filePath = (NSString*)CFURLCopyFileSystemPath((CFURLRef)url, kCFURLPOSIXPathStyle);
+    BOOL shouldEnableFile = [self askFilenameFilter:filePath];
+    [filePath release];
     return shouldEnableFile;
 }
 

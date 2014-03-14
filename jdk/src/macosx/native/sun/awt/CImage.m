@@ -115,14 +115,9 @@ JNF_COCOA_ENTER(env);
 
     NSBitmapImageRep* imageRep = CImage_CreateImageRep(env, buffer, width, height);
     if (imageRep) {
-        NSImage *nsImage = [[NSImage alloc] initWithSize:NSMakeSize(width, height)];
+        NSImage *nsImage = [[[NSImage alloc] initWithSize:NSMakeSize(width, height)] retain];
         [nsImage addRepresentation:imageRep];
         [imageRep release];
-
-        if (nsImage != nil) {
-            CFRetain(nsImage); // GC
-        }
-
         result = ptr_to_jlong(nsImage);
     }
 
@@ -165,13 +160,8 @@ JNF_COCOA_ENTER(env);
         (*env)->ReleaseIntArrayElements(env, widths, ws, JNI_ABORT);
     }
     if ([reps count]) {
-        NSImage *nsImage = [[NSImage alloc] initWithSize:NSMakeSize(0, 0)];
+        NSImage *nsImage = [[[NSImage alloc] initWithSize:NSMakeSize(0, 0)] retain];
         [nsImage addRepresentations: reps];
-
-        if (nsImage != nil) {
-            CFRetain(nsImage); // GC
-        }
-
         result = ptr_to_jlong(nsImage);
     }
 
@@ -194,8 +184,7 @@ JNF_COCOA_ENTER(env);
 
     IconRef iconRef;
     if (noErr == GetIconRef(kOnSystemDisk, kSystemIconsCreator, selector, &iconRef)) {
-        image = [[NSImage alloc] initWithIconRef:iconRef];
-        if (image) CFRetain(image); // GC
+        image = [[[NSImage alloc] initWithIconRef:iconRef] retain];
         ReleaseIconRef(iconRef);
     }
 
@@ -217,8 +206,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CImage_nativeCreateNSImageFromFile
 JNF_COCOA_ENTER(env);
 
     NSString *path = JNFNormalizedNSStringForPath(env, file);
-    image = [[NSImage alloc] initByReferencingFile:path];
-    if (image) CFRetain(image); // GC
+    image = [[[NSImage alloc] initByReferencingFile:path] retain];
 
 JNF_COCOA_EXIT(env);
 
@@ -239,9 +227,8 @@ JNF_COCOA_ENTER(env);
 
     NSString *path = JNFNormalizedNSStringForPath(env, file);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        image = [[NSWorkspace sharedWorkspace] iconForFile:path];
+        image = [[[NSWorkspace sharedWorkspace] iconForFile:path] retain];
         [image setScalesWhenResized:TRUE];
-        if (image) CFRetain(image); // GC
     }];
 
 JNF_COCOA_EXIT(env);
@@ -261,8 +248,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CImage_nativeCreateNSImageFromImag
 
 JNF_COCOA_ENTER(env);
 
-    image = [NSImage imageNamed:JNFJavaToNSString(env, name)];
-    if (image) CFRetain(image); // GC
+    image = [[NSImage imageNamed:JNFJavaToNSString(env, name)] retain];
 
 JNF_COCOA_EXIT(env);
 
