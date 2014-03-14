@@ -135,5 +135,11 @@ define_pd_global(uintx, TypeProfileLevel, 111);
                                                                             \
   product(bool, UseCountLeadingZerosInstruction, false,                     \
           "Use count leading zeros instruction")                            \
+                                                                            \
+  product(bool, UseCountTrailingZerosInstruction, false,                    \
+          "Use count trailing zeros instruction")                           \
+                                                                            \
+  product(bool, UseBMI1Instructions, false,                                 \
+          "Use BMI instructions")
 
 #endif // CPU_X86_VM_GLOBALS_X86_HPP

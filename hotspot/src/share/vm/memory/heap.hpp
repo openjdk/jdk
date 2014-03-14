@@ -92,24 +92,28 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   FreeBlock*   _freelist;
   size_t       _freelist_segments;               // No. of segments in freelist
+  int          _freelist_length;
+
+  enum { free_sentinel = 0xFF };
 
   // Helper functions
   size_t   size_to_segments(size_t size) const { return (size + _segment_size - 1) >> _log2_segment_size; }
   size_t   segments_to_size(size_t number_of_segments) const { return number_of_segments << _log2_segment_size; }
 
   size_t   segment_for(void* p) const            { return ((char*)p - _memory.low()) >> _log2_segment_size; }
+  bool     is_segment_unused(int val) const      { return val == free_sentinel; }
   HeapBlock* block_at(size_t i) const            { return (HeapBlock*)(_memory.low() + (i << _log2_segment_size)); }
 
   void  mark_segmap_as_free(size_t beg, size_t end);
   void  mark_segmap_as_used(size_t beg, size_t end);
 
   // Freelist management helpers
-  FreeBlock* following_block(FreeBlock *b);
+  FreeBlock* following_block(FreeBlock* b);
   void insert_after(FreeBlock* a, FreeBlock* b);
-  void merge_right (FreeBlock* a);
+  bool merge_right (FreeBlock* a);
 
   // Toplevel freelist management
-  void add_to_freelist(HeapBlock *b);
+  void add_to_freelist(HeapBlock* b);
   FreeBlock* search_freelist(size_t length, bool is_critical);
 
   // Iteration helpers
@@ -120,20 +124,18 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   // to perform additional actions on creation of executable code
   void on_code_mapping(char* base, size_t size);
+  void clear();                                 // clears all heap contents
 
  public:
   CodeHeap();
 
   // Heap extents
   bool  reserve(size_t reserved_size, size_t committed_size, size_t segment_size);
-  void  release();                               // releases all allocated memory
   bool  expand_by(size_t size);                  // expands committed memory by size
-  void  shrink_by(size_t size);                  // shrinks committed memory by size
-  void  clear();                                 // clears all heap contents
 
   // Memory allocation
   void* allocate  (size_t size, bool is_critical);  // allocates a block of size or returns NULL
-  void  deallocate(void* p);                     // deallocates a block
+  void  deallocate(void* p);                        // deallocates a block
 
   // Attributes
   char* low_boundary() const                     { return _memory.low_boundary (); }
@@ -141,12 +143,13 @@ class CodeHeap : public CHeapObj<mtCode> {
   char* high_boundary() const                    { return _memory.high_boundary(); }
 
   bool  contains(const void* p) const            { return low_boundary() <= p && p < high(); }
-  void* find_start(void* p) const;              // returns the block containing p or NULL
-  size_t alignment_unit() const;                // alignment of any block
-  size_t alignment_offset() const;              // offset of first byte of any block, within the enclosing alignment unit
-  static size_t header_size();                  // returns the header size for each heap block
+  void* find_start(void* p)     const;           // returns the block containing p or NULL
+  size_t alignment_unit()       const;           // alignment of any block
+  size_t alignment_offset()     const;           // offset of first byte of any block, within the enclosing alignment unit
+  static size_t header_size();                   // returns the header size for each heap block
 
-  // Iteration
+  size_t allocated_in_freelist() const           { return _freelist_segments * CodeCacheSegmentSize; }
+  int    freelist_length()       const           { return _freelist_length; } // number of elements in the freelist
 
   // returns the first block or NULL
   void* first() const       { return next_free(first_block()); }
@@ -156,6 +159,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   // Statistics
   size_t capacity() const;
   size_t max_capacity() const;
+  int    allocated_segments() const;
   size_t allocated_capacity() const;
   size_t unallocated_capacity() const            { return max_capacity() - allocated_capacity(); }
 
@@ -164,7 +168,7 @@ private:
 
 public:
   // Debugging
-  void verify();
+  void verify() PRODUCT_RETURN;
   void print()  PRODUCT_RETURN;
 };
 
