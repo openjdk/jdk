@@ -112,7 +112,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CImage_nativeCreateNSImageFromArra
     jlong result = 0L;
 
 JNF_COCOA_ENTER(env);
-
+    
     NSBitmapImageRep* imageRep = CImage_CreateImageRep(env, buffer, width, height);
     if (imageRep) {
         NSImage *nsImage = [[[NSImage alloc] initWithSize:NSMakeSize(width, height)] retain];
@@ -421,4 +421,63 @@ JNF_COCOA_ENTER(env);
 JNF_COCOA_EXIT(env);
 
     return jreturnArray;
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CImage
+ * Method:    nativeGetPlatformImageBytes
+ * Signature: ([III)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_sun_lwawt_macosx_CImage_nativeGetPlatformImageBytes
+(JNIEnv *env, jclass klass, jintArray buffer, jint width, jint height)
+{
+    jbyteArray result = 0L;
+
+    JNF_COCOA_ENTER(env);
+
+    NSBitmapImageRep* imageRep = [CImage_CreateImageRep(env, buffer, width, height) autorelease];
+    if (imageRep) {
+        NSData *tiffImage = [imageRep TIFFRepresentation];
+        jsize tiffSize = (jsize)[tiffImage length];
+        result = (*env)->NewByteArray(env, tiffSize);
+        CHECK_NULL_RETURN(result, nil);
+        jbyte *tiffData = (jbyte *)(*env)->GetPrimitiveArrayCritical(env, result, 0);
+        CHECK_NULL_RETURN(tiffData, nil);
+        [tiffImage getBytes:tiffData];
+        (*env)->ReleasePrimitiveArrayCritical(env, result, tiffData, 0);
+    }
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CImage
+ * Method:    nativeCreateNSImageFromBytes
+ * Signature: ([B)J
+ */
+JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CImage_nativeCreateNSImageFromBytes
+(JNIEnv *env, jclass klass, jbyteArray sourceData)
+{
+    jlong result = 0L;
+    CHECK_NULL_RETURN(sourceData, 0L);
+
+    JNF_COCOA_ENTER(env);
+
+    jsize sourceSize = (*env)->GetArrayLength(env, sourceData);
+    if (sourceSize == 0) return 0L;
+
+    jbyte *sourceBytes = (*env)->GetPrimitiveArrayCritical(env, sourceData, NULL);
+    CHECK_NULL_RETURN(sourceBytes, 0L);
+    NSData *rawData = [NSData dataWithBytes:sourceBytes length:sourceSize];
+    NSImage *newImage = [[NSImage alloc] initWithData:rawData];
+
+    (*env)->ReleasePrimitiveArrayCritical(env, sourceData, sourceBytes, JNI_ABORT);
+    CHECK_NULL_RETURN(newImage, 0L);
+
+    result = ptr_to_jlong(newImage);
+    JNF_COCOA_EXIT(env);
+
+    return result;
 }

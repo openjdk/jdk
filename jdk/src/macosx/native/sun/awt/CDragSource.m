@@ -311,8 +311,7 @@ static BOOL                sNeedsEnter;
 
                     // This is a good approximation if not perfect. A conclusive search would
                     // have to be done matching all defined strings in AppKit's commonStrings.h.
-                    if ([type hasPrefix:@"NS"] || [type hasPrefix:@"NeXT"])
-                        hasNSTypeData = true;
+                    hasNSTypeData = [type hasPrefix:@"NS"] || [type hasPrefix:@"NeXT"] || [type hasPrefix:@"public."];
                 }
             }
         }
