@@ -38,7 +38,7 @@ JAVAC_WARNINGS := -Xlint:-unchecked,-deprecation,-overrides,auxiliaryclass,cast,
 # boot jdk to generate tools that need to be run with the boot jdk.
 # Thus we force the target bytecode to the previous JDK version.
 $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE, \
-    JVM := $(JAVA), \
+    JVM := $(JAVA_SMALL), \
     JAVAC := $(NEW_JAVAC), \
     FLAGS := $(BOOT_JDK_SOURCETARGET) -bootclasspath $(BOOT_RTJAR) $(DISABLE_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
@@ -60,7 +60,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE, \
 # I.e. the rt.jar, but since rt.jar has not yet been generated
 # (it will be in "make images") therefore we use classes instead.
 $(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE, \
-    JVM := $(JAVA), \
+    JVM := $(JAVA_SMALL), \
     JAVAC := $(NEW_JAVAC), \
     FLAGS := -bootclasspath $(JDK_OUTPUTDIR)/classes $(DISABLE_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
