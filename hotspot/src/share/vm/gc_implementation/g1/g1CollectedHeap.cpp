@@ -1298,7 +1298,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
   size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
 
-  HRSPhaseSetter x(HRSPhaseFullGC);
   verify_region_sets_optional();
 
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
@@ -1928,10 +1927,10 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _g1mm(NULL),
   _refine_cte_cl(NULL),
   _full_collection(false),
-  _free_list("Master Free List"),
-  _secondary_free_list("Secondary Free List"),
-  _old_set("Old Set"),
-  _humongous_set("Master Humongous Set"),
+  _free_list("Master Free List", new MasterFreeRegionListMtSafeChecker()),
+  _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
+  _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
+  _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
   _free_regions_coming(false),
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
@@ -2079,7 +2078,7 @@ jint G1CollectedHeap::initialize() {
   guarantee(HeapRegion::CardsPerRegion < max_cards_per_region,
             "too many cards per region");
 
-  HeapRegionSet::set_unrealistically_long_length(max_regions() + 1);
+  FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
   _bot_shared = new G1BlockOffsetSharedArray(_reserved,
                                              heap_word_size(init_byte_size));
@@ -3887,7 +3886,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   print_heap_before_gc();
   trace_heap_before_gc(_gc_tracer_stw);
 
-  HRSPhaseSetter x(HRSPhaseEvacuation);
   verify_region_sets_optional();
   verify_dirty_young_regions();
 
@@ -5937,28 +5935,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 }
 
-void G1CollectedHeap::free_region_if_empty(HeapRegion* hr,
-                                     size_t* pre_used,
-                                     FreeRegionList* free_list,
-                                     OldRegionSet* old_proxy_set,
-                                     HumongousRegionSet* humongous_proxy_set,
-                                     HRRSCleanupTask* hrrs_cleanup_task,
-                                     bool par) {
-  if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young()) {
-    if (hr->isHumongous()) {
-      assert(hr->startsHumongous(), "we should only see starts humongous");
-      free_humongous_region(hr, pre_used, free_list, humongous_proxy_set, par);
-    } else {
-      _old_set.remove_with_proxy(hr, old_proxy_set);
-      free_region(hr, pre_used, free_list, par);
-    }
-  } else {
-    hr->rem_set()->do_cleanup_work(hrrs_cleanup_task);
-  }
-}
-
 void G1CollectedHeap::free_region(HeapRegion* hr,
-                                  size_t* pre_used,
                                   FreeRegionList* free_list,
                                   bool par) {
   assert(!hr->isHumongous(), "this is only for non-humongous regions");
@@ -5971,70 +5948,56 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
   if (!hr->is_young()) {
     _cg1r->hot_card_cache()->reset_card_counts(hr);
   }
-  *pre_used += hr->used();
   hr->hr_clear(par, true /* clear_space */);
   free_list->add_as_head(hr);
 }
 
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
-                                     size_t* pre_used,
                                      FreeRegionList* free_list,
-                                     HumongousRegionSet* humongous_proxy_set,
                                      bool par) {
   assert(hr->startsHumongous(), "this is only for starts humongous regions");
   assert(free_list != NULL, "pre-condition");
-  assert(humongous_proxy_set != NULL, "pre-condition");
 
-  size_t hr_used = hr->used();
   size_t hr_capacity = hr->capacity();
-  size_t hr_pre_used = 0;
-  _humongous_set.remove_with_proxy(hr, humongous_proxy_set);
   // We need to read this before we make the region non-humongous,
   // otherwise the information will be gone.
   uint last_index = hr->last_hc_index();
   hr->set_notHumongous();
-  free_region(hr, &hr_pre_used, free_list, par);
+  free_region(hr, free_list, par);
 
   uint i = hr->hrs_index() + 1;
   while (i < last_index) {
     HeapRegion* curr_hr = region_at(i);
     assert(curr_hr->continuesHumongous(), "invariant");
     curr_hr->set_notHumongous();
-    free_region(curr_hr, &hr_pre_used, free_list, par);
+    free_region(curr_hr, free_list, par);
     i += 1;
   }
-  assert(hr_pre_used == hr_used,
-         err_msg("hr_pre_used: "SIZE_FORMAT" and hr_used: "SIZE_FORMAT" "
-                 "should be the same", hr_pre_used, hr_used));
-  *pre_used += hr_pre_used;
 }
 
-void G1CollectedHeap::update_sets_after_freeing_regions(size_t pre_used,
-                                       FreeRegionList* free_list,
-                                       OldRegionSet* old_proxy_set,
-                                       HumongousRegionSet* humongous_proxy_set,
-                                       bool par) {
-  if (pre_used > 0) {
-    Mutex* lock = (par) ? ParGCRareEvent_lock : NULL;
-    MutexLockerEx x(lock, Mutex::_no_safepoint_check_flag);
-    assert(_summary_bytes_used >= pre_used,
-           err_msg("invariant: _summary_bytes_used: "SIZE_FORMAT" "
-                   "should be >= pre_used: "SIZE_FORMAT,
-                   _summary_bytes_used, pre_used));
-    _summary_bytes_used -= pre_used;
+void G1CollectedHeap::remove_from_old_sets(const HeapRegionSetCount& old_regions_removed,
+                                       const HeapRegionSetCount& humongous_regions_removed) {
+  if (old_regions_removed.length() > 0 || humongous_regions_removed.length() > 0) {
+    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
+    _old_set.bulk_remove(old_regions_removed);
+    _humongous_set.bulk_remove(humongous_regions_removed);
   }
-  if (free_list != NULL && !free_list->is_empty()) {
+
+}
+
+void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
+  assert(list != NULL, "list can't be null");
+  if (!list->is_empty()) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    _free_list.add_as_head(free_list);
+    _free_list.add_as_head(list);
   }
-  if (old_proxy_set != NULL && !old_proxy_set->is_empty()) {
-    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
-    _old_set.update_from_proxy(old_proxy_set);
-  }
-  if (humongous_proxy_set != NULL && !humongous_proxy_set->is_empty()) {
-    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
-    _humongous_set.update_from_proxy(humongous_proxy_set);
-  }
+}
+
+void G1CollectedHeap::decrement_summary_bytes(size_t bytes) {
+  assert(_summary_bytes_used >= bytes,
+         err_msg("invariant: _summary_bytes_used: "SIZE_FORMAT" should be >= bytes: "SIZE_FORMAT,
+                  _summary_bytes_used, bytes));
+  _summary_bytes_used -= bytes;
 }
 
 class G1ParCleanupCTTask : public AbstractGangTask {
@@ -6227,7 +6190,8 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
 
       // And the region is empty.
       assert(!used_mr.is_empty(), "Should not have empty regions in a CS.");
-      free_region(cur, &pre_used, &local_free_list, false /* par */);
+      pre_used += cur->used();
+      free_region(cur, &local_free_list, false /* par */);
     } else {
       cur->uninstall_surv_rate_group();
       if (cur->is_young()) {
@@ -6255,10 +6219,8 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
     young_time_ms += elapsed_ms;
   }
 
-  update_sets_after_freeing_regions(pre_used, &local_free_list,
-                                    NULL /* old_proxy_set */,
-                                    NULL /* humongous_proxy_set */,
-                                    false /* par */);
+  prepend_to_freelist(&local_free_list);
+  decrement_summary_bytes(pre_used);
   policy->phase_times()->record_young_free_cset_time_ms(young_time_ms);
   policy->phase_times()->record_non_young_free_cset_time_ms(non_young_time_ms);
 }
@@ -6370,10 +6332,10 @@ bool G1CollectedHeap::check_young_list_empty(bool check_heap, bool check_sample)
 
 class TearDownRegionSetsClosure : public HeapRegionClosure {
 private:
-  OldRegionSet *_old_set;
+  HeapRegionSet *_old_set;
 
 public:
-  TearDownRegionSetsClosure(OldRegionSet* old_set) : _old_set(old_set) { }
+  TearDownRegionSetsClosure(HeapRegionSet* old_set) : _old_set(old_set) { }
 
   bool doHeapRegion(HeapRegion* r) {
     if (r->is_empty()) {
@@ -6412,13 +6374,13 @@ void G1CollectedHeap::tear_down_region_sets(bool free_list_only) {
 class RebuildRegionSetsClosure : public HeapRegionClosure {
 private:
   bool            _free_list_only;
-  OldRegionSet*   _old_set;
+  HeapRegionSet*   _old_set;
   FreeRegionList* _free_list;
   size_t          _total_used;
 
 public:
   RebuildRegionSetsClosure(bool free_list_only,
-                           OldRegionSet* old_set, FreeRegionList* free_list) :
+                           HeapRegionSet* old_set, FreeRegionList* free_list) :
     _free_list_only(free_list_only),
     _old_set(old_set), _free_list(free_list), _total_used(0) {
     assert(_free_list->is_empty(), "pre-condition");
@@ -6615,23 +6577,22 @@ void OldGCAllocRegion::retire_region(HeapRegion* alloc_region,
 
 class VerifyRegionListsClosure : public HeapRegionClosure {
 private:
-  FreeRegionList*     _free_list;
-  OldRegionSet*       _old_set;
-  HumongousRegionSet* _humongous_set;
-  uint                _region_count;
+  HeapRegionSet*   _old_set;
+  HeapRegionSet*   _humongous_set;
+  FreeRegionList*  _free_list;
 
 public:
-  VerifyRegionListsClosure(OldRegionSet* old_set,
-                           HumongousRegionSet* humongous_set,
-                           FreeRegionList* free_list) :
-    _old_set(old_set), _humongous_set(humongous_set),
-    _free_list(free_list), _region_count(0) { }
+  HeapRegionSetCount _old_count;
+  HeapRegionSetCount _humongous_count;
+  HeapRegionSetCount _free_count;
 
-  uint region_count() { return _region_count; }
+  VerifyRegionListsClosure(HeapRegionSet* old_set,
+                           HeapRegionSet* humongous_set,
+                           FreeRegionList* free_list) :
+    _old_set(old_set), _humongous_set(humongous_set), _free_list(free_list),
+    _old_count(), _humongous_count(), _free_count(){ }
 
   bool doHeapRegion(HeapRegion* hr) {
-    _region_count += 1;
-
     if (hr->continuesHumongous()) {
       return false;
     }
@@ -6639,13 +6600,30 @@ public:
     if (hr->is_young()) {
       // TODO
     } else if (hr->startsHumongous()) {
-      _humongous_set->verify_next_region(hr);
+      assert(hr->containing_set() == _humongous_set, err_msg("Heap region %u is starts humongous but not in humongous set.", hr->region_num()));
+      _humongous_count.increment(1u, hr->capacity());
     } else if (hr->is_empty()) {
-      _free_list->verify_next_region(hr);
+      assert(hr->containing_set() == _free_list, err_msg("Heap region %u is empty but not on the free list.", hr->region_num()));
+      _free_count.increment(1u, hr->capacity());
     } else {
-      _old_set->verify_next_region(hr);
+      assert(hr->containing_set() == _old_set, err_msg("Heap region %u is old but not in the old set.", hr->region_num()));
+      _old_count.increment(1u, hr->capacity());
     }
     return false;
+  }
+
+  void verify_counts(HeapRegionSet* old_set, HeapRegionSet* humongous_set, FreeRegionList* free_list) {
+    guarantee(old_set->length() == _old_count.length(), err_msg("Old set count mismatch. Expected %u, actual %u.", old_set->length(), _old_count.length()));
+    guarantee(old_set->total_capacity_bytes() == _old_count.capacity(), err_msg("Old set capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
+        old_set->total_capacity_bytes(), _old_count.capacity()));
+
+    guarantee(humongous_set->length() == _humongous_count.length(), err_msg("Hum set count mismatch. Expected %u, actual %u.", humongous_set->length(), _humongous_count.length()));
+    guarantee(humongous_set->total_capacity_bytes() == _humongous_count.capacity(), err_msg("Hum set capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
+        humongous_set->total_capacity_bytes(), _humongous_count.capacity()));
+
+    guarantee(free_list->length() == _free_count.length(), err_msg("Free list count mismatch. Expected %u, actual %u.", free_list->length(), _free_count.length()));
+    guarantee(free_list->total_capacity_bytes() == _free_count.capacity(), err_msg("Free list capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
+        free_list->total_capacity_bytes(), _free_count.capacity()));
   }
 };
 
@@ -6662,16 +6640,14 @@ void G1CollectedHeap::verify_region_sets() {
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
 
   // First, check the explicit lists.
-  _free_list.verify();
+  _free_list.verify_list();
   {
     // Given that a concurrent operation might be adding regions to
     // the secondary free list we have to take the lock before
     // verifying it.
     MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-    _secondary_free_list.verify();
+    _secondary_free_list.verify_list();
   }
-  _old_set.verify();
-  _humongous_set.verify();
 
   // If a concurrent region freeing operation is in progress it will
   // be difficult to correctly attributed any free regions we come
@@ -6694,16 +6670,10 @@ void G1CollectedHeap::verify_region_sets() {
 
   // Finally, make sure that the region accounting in the lists is
   // consistent with what we see in the heap.
-  _old_set.verify_start();
-  _humongous_set.verify_start();
-  _free_list.verify_start();
 
   VerifyRegionListsClosure cl(&_old_set, &_humongous_set, &_free_list);
   heap_region_iterate(&cl);
-
-  _old_set.verify_end();
-  _humongous_set.verify_end();
-  _free_list.verify_end();
+  cl.verify_counts(&_old_set, &_humongous_set, &_free_list);
 }
 
 // Optimized nmethod scanning

@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
-#include "gc_implementation/g1/heapRegionSets.hpp"
+#include "gc_implementation/g1/heapRegionSet.hpp"
 
 // Note on the check_mt_safety() methods below:
 //
@@ -37,30 +37,34 @@
 // for the "master" heap region sets / lists, the check_mt_safety()
 // method should include the VM thread / STW case.
 
-//////////////////// FreeRegionList ////////////////////
+void FreeRegionList::verify_list() {
+  HeapRegion* curr = head();
+  HeapRegion* prev1 = NULL;
+  HeapRegion* prev0 = NULL;
+  uint count = 0;
+  size_t capacity = 0;
+  while (curr != NULL) {
+    verify_region(curr);
 
-const char* FreeRegionList::verify_region_extra(HeapRegion* hr) {
-  if (hr->is_young()) {
-    return "the region should not be young";
+    count++;
+    guarantee(count < _unrealistically_long_length,
+        hrs_err_msg("[%s] the calculated length: %u seems very long, is there maybe a cycle? curr: "PTR_FORMAT" prev0: "PTR_FORMAT" " "prev1: "PTR_FORMAT" length: %u", name(), count, curr, prev0, prev1, length()));
+
+    capacity += curr->capacity();
+
+    prev1 = prev0;
+    prev0 = curr;
+    curr = curr->next();
   }
-  // The superclass will check that the region is empty and
-  // not humongous.
-  return HeapRegionLinkedList::verify_region_extra(hr);
+
+  guarantee(tail() == prev0, err_msg("Expected %s to end with %u but it ended with %u.", name(), tail()->hrs_index(), prev0->hrs_index()));
+
+  guarantee(length() == count, err_msg("%s count mismatch. Expected %u, actual %u.", name(), length(), count));
+  guarantee(total_capacity_bytes() == capacity, err_msg("%s capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
+      name(), total_capacity_bytes(), capacity));
 }
 
-//////////////////// MasterFreeRegionList ////////////////////
-
-const char* MasterFreeRegionList::verify_region_extra(HeapRegion* hr) {
-  // We should reset the RSet for parallel iteration before we add it
-  // to the master free list so that it is ready when the region is
-  // re-allocated.
-  if (!hr->rem_set()->verify_ready_for_par_iteration()) {
-    return "the region's RSet should be ready for parallel iteration";
-  }
-  return FreeRegionList::verify_region_extra(hr);
-}
-
-bool MasterFreeRegionList::check_mt_safety() {
+void MasterFreeRegionListMtSafeChecker::check() {
   // Master Free List MT safety protocol:
   // (a) If we're at a safepoint, operations on the master free list
   // should be invoked by either the VM thread (which will serialize
@@ -71,45 +75,21 @@ bool MasterFreeRegionList::check_mt_safety() {
 
   if (SafepointSynchronize::is_at_safepoint()) {
     guarantee(Thread::current()->is_VM_thread() ||
-              FreeList_lock->owned_by_self(),
-              hrs_ext_msg(this, "master free list MT safety protocol "
-                                "at a safepoint"));
+              FreeList_lock->owned_by_self(), "master free list MT safety protocol at a safepoint");
   } else {
-    guarantee(Heap_lock->owned_by_self(),
-              hrs_ext_msg(this, "master free list MT safety protocol "
-                                "outside a safepoint"));
+    guarantee(Heap_lock->owned_by_self(), "master free list MT safety protocol outside a safepoint");
   }
-
-  return FreeRegionList::check_mt_safety();
 }
 
-//////////////////// SecondaryFreeRegionList ////////////////////
-
-bool SecondaryFreeRegionList::check_mt_safety() {
+void SecondaryFreeRegionListMtSafeChecker::check() {
   // Secondary Free List MT safety protocol:
   // Operations on the secondary free list should always be invoked
   // while holding the SecondaryFreeList_lock.
 
-  guarantee(SecondaryFreeList_lock->owned_by_self(),
-            hrs_ext_msg(this, "secondary free list MT safety protocol"));
-
-  return FreeRegionList::check_mt_safety();
+  guarantee(SecondaryFreeList_lock->owned_by_self(), "secondary free list MT safety protocol");
 }
 
-//////////////////// OldRegionSet ////////////////////
-
-const char* OldRegionSet::verify_region_extra(HeapRegion* hr) {
-  if (hr->is_young()) {
-    return "the region should not be young";
-  }
-  // The superclass will check that the region is not empty and not
-  // humongous.
-  return HeapRegionSet::verify_region_extra(hr);
-}
-
-//////////////////// MasterOldRegionSet ////////////////////
-
-bool MasterOldRegionSet::check_mt_safety() {
+void OldRegionSetMtSafeChecker::check() {
   // Master Old Set MT safety protocol:
   // (a) If we're at a safepoint, operations on the master old set
   // should be invoked:
@@ -124,35 +104,16 @@ bool MasterOldRegionSet::check_mt_safety() {
   // should be invoked while holding the Heap_lock.
 
   if (SafepointSynchronize::is_at_safepoint()) {
-    guarantee(Thread::current()->is_VM_thread() ||
-              _phase == HRSPhaseEvacuation && FreeList_lock->owned_by_self() ||
-              _phase == HRSPhaseCleanup && OldSets_lock->owned_by_self(),
-              hrs_ext_msg(this, "master old set MT safety protocol "
-                                "at a safepoint"));
+    guarantee(Thread::current()->is_VM_thread()
+        || FreeList_lock->owned_by_self() || OldSets_lock->owned_by_self(),
+        "master old set MT safety protocol at a safepoint");
   } else {
-    guarantee(Heap_lock->owned_by_self(),
-              hrs_ext_msg(this, "master old set MT safety protocol "
-                                "outside a safepoint"));
+    guarantee(Heap_lock->owned_by_self(), "master old set MT safety protocol outside a safepoint");
   }
-
-  return OldRegionSet::check_mt_safety();
 }
 
-//////////////////// HumongousRegionSet ////////////////////
-
-const char* HumongousRegionSet::verify_region_extra(HeapRegion* hr) {
-  if (hr->is_young()) {
-    return "the region should not be young";
-  }
-  // The superclass will check that the region is not empty and
-  // humongous.
-  return HeapRegionSet::verify_region_extra(hr);
-}
-
-//////////////////// MasterHumongousRegionSet ////////////////////
-
-bool MasterHumongousRegionSet::check_mt_safety() {
-  // Master Humongous Set MT safety protocol:
+void HumongousRegionSetMtSafeChecker::check() {
+  // Humongous Set MT safety protocol:
   // (a) If we're at a safepoint, operations on the master humongous
   // set should be invoked by either the VM thread (which will
   // serialize them) or by the GC workers while holding the
@@ -163,13 +124,9 @@ bool MasterHumongousRegionSet::check_mt_safety() {
   if (SafepointSynchronize::is_at_safepoint()) {
     guarantee(Thread::current()->is_VM_thread() ||
               OldSets_lock->owned_by_self(),
-              hrs_ext_msg(this, "master humongous set MT safety protocol "
-                                "at a safepoint"));
+              "master humongous set MT safety protocol at a safepoint");
   } else {
     guarantee(Heap_lock->owned_by_self(),
-              hrs_ext_msg(this, "master humongous set MT safety protocol "
-                                "outside a safepoint"));
+              "master humongous set MT safety protocol outside a safepoint");
   }
-
-  return HumongousRegionSet::check_mt_safety();
 }
