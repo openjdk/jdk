@@ -350,8 +350,23 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
   AC_MSG_CHECKING([flags for boot jdk java command] )
 
+  # Disable special log output when a debug build is used as Boot JDK...
+  ADD_JVM_ARG_IF_OK([-XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput],boot_jdk_jvmargs,[$JAVA])
+
+  # Apply user provided options.
+  ADD_JVM_ARG_IF_OK([$with_boot_jdk_jvmargs],boot_jdk_jvmargs,[$JAVA])
+
+  AC_MSG_RESULT([$boot_jdk_jvmargs])
+
+  # For now, general JAVA_FLAGS are the same as the boot jdk jvmargs
+  JAVA_FLAGS=$boot_jdk_jvmargs
+  AC_SUBST(JAVA_FLAGS)
+
+
+  AC_MSG_CHECKING([flags for boot jdk java command for big workloads])
+
   # Starting amount of heap memory.
-  ADD_JVM_ARG_IF_OK([-Xms64M],boot_jdk_jvmargs,[$JAVA])
+  ADD_JVM_ARG_IF_OK([-Xms64M],boot_jdk_jvmargs_big,[$JAVA])
 
   # Maximum amount of heap memory.
   # Maximum stack size.
@@ -366,20 +381,24 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
     JVM_MAX_HEAP=1600M
     STACK_SIZE=1536
   fi
-  ADD_JVM_ARG_IF_OK([-Xmx$JVM_MAX_HEAP],boot_jdk_jvmargs,[$JAVA])
-  ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],boot_jdk_jvmargs,[$JAVA])
+  ADD_JVM_ARG_IF_OK([-Xmx$JVM_MAX_HEAP],boot_jdk_jvmargs_big,[$JAVA])
+  ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],boot_jdk_jvmargs_big,[$JAVA])
 
-  # Disable special log output when a debug build is used as Boot JDK...
-  ADD_JVM_ARG_IF_OK([-XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput],boot_jdk_jvmargs,[$JAVA])
+  AC_MSG_RESULT([$boot_jdk_jvmargs_big])
 
-  # Apply user provided options.
-  ADD_JVM_ARG_IF_OK([$with_boot_jdk_jvmargs],boot_jdk_jvmargs,[$JAVA])
+  JAVA_FLAGS_BIG=$boot_jdk_jvmargs_big
+  AC_SUBST(JAVA_FLAGS_BIG)
 
-  AC_MSG_RESULT([$boot_jdk_jvmargs])
 
-  # For now, general JAVA_FLAGS are the same as the boot jdk jvmargs
-  JAVA_FLAGS=$boot_jdk_jvmargs
+  AC_MSG_CHECKING([flags for boot jdk java command for small workloads])
 
-  AC_SUBST(BOOT_JDK_JVMARGS, $boot_jdk_jvmargs)
-  AC_SUBST(JAVA_FLAGS, $JAVA_FLAGS)
+  # Use serial gc for small short lived tools if possible
+  ADD_JVM_ARG_IF_OK([-XX:+UseSerialGC],boot_jdk_jvmargs_small,[$JAVA])
+  ADD_JVM_ARG_IF_OK([-Xms32M],boot_jdk_jvmargs_small,[$JAVA])
+  ADD_JVM_ARG_IF_OK([-Xmx512M],boot_jdk_jvmargs_small,[$JAVA])
+
+  AC_MSG_RESULT([$boot_jdk_jvmargs_small])
+
+  JAVA_FLAGS_SMALL=$boot_jdk_jvmargs_small
+  AC_SUBST(JAVA_FLAGS_SMALL)
 ])
