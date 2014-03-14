@@ -25,7 +25,7 @@
  * @test
  * @bug 8027422
  * @summary type methods shouldn't always operate on speculative part
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:TypeProfileLevel=222 -XX:+UnlockExperimentalVMOptions -XX:+UseTypeSpeculation -XX:-BackgroundCompilation TestSpeculationFailedHigherEqual
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:TypeProfileLevel=222 -XX:+UseTypeSpeculation -XX:-BackgroundCompilation TestSpeculationFailedHigherEqual
  *
  */
 

@@ -809,11 +809,10 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
   int bci = vfst.bci();
   Bytecodes::Code code = caller_method()->java_code_at(bci);
 
-#ifndef PRODUCT
   // this is used by assertions in the access_field_patching_id
   BasicType patch_field_type = T_ILLEGAL;
-#endif // PRODUCT
   bool deoptimize_for_volatile = false;
+  bool deoptimize_for_atomic = false;
   int patch_field_offset = -1;
   KlassHandle init_klass(THREAD, NULL); // klass needed by load_klass_patching code
   KlassHandle load_klass(THREAD, NULL); // klass needed by load_klass_patching code
@@ -839,11 +838,24 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
     // is the path for patching field offsets.  load_klass is only
     // used for patching references to oops which don't need special
     // handling in the volatile case.
+
     deoptimize_for_volatile = result.access_flags().is_volatile();
 
-#ifndef PRODUCT
+    // If we are patching a field which should be atomic, then
+    // the generated code is not correct either, force deoptimizing.
+    // We need to only cover T_LONG and T_DOUBLE fields, as we can
+    // break access atomicity only for them.
+
+    // Strictly speaking, the deoptimizaation on 64-bit platforms
+    // is unnecessary, and T_LONG stores on 32-bit platforms need
+    // to be handled by special patching code when AlwaysAtomicAccesses
+    // becomes product feature. At this point, we are still going
+    // for the deoptimization for consistency against volatile
+    // accesses.
+
     patch_field_type = result.field_type();
-#endif
+    deoptimize_for_atomic = (AlwaysAtomicAccesses && (patch_field_type == T_DOUBLE || patch_field_type == T_LONG));
+
   } else if (load_klass_or_mirror_patch_id) {
     Klass* k = NULL;
     switch (code) {
@@ -918,13 +930,19 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
     ShouldNotReachHere();
   }
 
-  if (deoptimize_for_volatile) {
-    // At compile time we assumed the field wasn't volatile but after
-    // loading it turns out it was volatile so we have to throw the
+  if (deoptimize_for_volatile || deoptimize_for_atomic) {
+    // At compile time we assumed the field wasn't volatile/atomic but after
+    // loading it turns out it was volatile/atomic so we have to throw the
     // compiled code out and let it be regenerated.
     if (TracePatching) {
-      tty->print_cr("Deoptimizing for patching volatile field reference");
+      if (deoptimize_for_volatile) {
+        tty->print_cr("Deoptimizing for patching volatile field reference");
+      }
+      if (deoptimize_for_atomic) {
+        tty->print_cr("Deoptimizing for patching atomic field reference");
+      }
     }
+
     // It's possible the nmethod was invalidated in the last
     // safepoint, but if it's still alive then make it not_entrant.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
