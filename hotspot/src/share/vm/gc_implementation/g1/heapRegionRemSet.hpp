@@ -45,6 +45,54 @@ class nmethod;
 class HRRSCleanupTask : public SparsePRTCleanupTask {
 };
 
+// The FromCardCache remembers the most recently processed card on the heap on
+// a per-region and per-thread basis.
+class FromCardCache : public AllStatic {
+ private:
+  // Array of card indices. Indexed by thread X and heap region to minimize
+  // thread contention.
+  static int** _cache;
+  static uint _max_regions;
+  static size_t _static_mem_size;
+
+ public:
+  enum {
+    InvalidCard = -1 // Card value of an invalid card, i.e. a card index not otherwise used.
+  };
+
+  static void clear(uint region_idx);
+
+  // Returns true if the given card is in the cache at the given location, or
+  // replaces the card at that location and returns false.
+  static bool contains_or_replace(uint worker_id, uint region_idx, int card) {
+    int card_in_cache = at(worker_id, region_idx);
+    if (card_in_cache == card) {
+      return true;
+    } else {
+      set(worker_id, region_idx, card);
+      return false;
+    }
+  }
+
+  static int at(uint worker_id, uint region_idx) {
+    return _cache[worker_id][region_idx];
+  }
+
+  static void set(uint worker_id, uint region_idx, int val) {
+    _cache[worker_id][region_idx] = val;
+  }
+
+  static void initialize(uint n_par_rs, uint max_num_regions);
+
+  static void shrink(uint new_num_regions);
+
+  static void print(outputStream* out = gclog_or_tty) PRODUCT_RETURN;
+
+  static size_t static_mem_size() {
+    return _static_mem_size;
+  }
+};
+
 // The "_coarse_map" is a bitmap with one bit for each region, where set
 // bits indicate that the corresponding region may contain some pointer
 // into the owning region.
@@ -119,11 +167,6 @@ class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
   // false.
   bool del_single_region_table(size_t ind, HeapRegion* hr);
 
-  // Indexed by thread X heap region, to minimize thread contention.
-  static int** _from_card_cache;
-  static uint _from_card_cache_max_regions;
-  static size_t _from_card_cache_mem_size;
-
   // link/add the given fine grain remembered set into the "all" list
   void link_to_all(PerRegionTable * prt);
   // unlink/remove the given fine grain remembered set into the "all" list
@@ -174,7 +217,7 @@ public:
 
   // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
   // Make sure any entries for higher regions are invalid.
-  static void shrink_from_card_cache(uint new_n_regs);
+  static void shrink_from_card_cache(uint new_num_regions);
 
   static void print_from_card_cache();
 };
