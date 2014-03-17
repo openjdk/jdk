@@ -23,7 +23,7 @@
 
 /*
  * @test TestPrintGCDetails
- * @bug 8035406
+ * @bug 8035406 8027295
  * @summary Ensure that the PrintGCDetails output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -38,13 +38,41 @@ public class TestGCLogMessages {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                               "-Xmx10M",
-                                                              "-XX:+PrintGCDetails",
                                                               GCTest.class.getName());
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-    output.shouldContain("[Code Root Purge");
+    output.shouldNotContain("[Code Root Purge");
+    output.shouldNotContain("[Young Free CSet");
+    output.shouldNotContain("[Non-Young Free CSet");
     output.shouldHaveExitValue(0);
+
+    pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                               "-Xmx10M",
+                                               "-XX:+PrintGCDetails",
+                                               GCTest.class.getName());
+
+    output = new OutputAnalyzer(pb.start());
+
+    output.shouldContain("[Code Root Purge");
+    output.shouldNotContain("[Young Free CSet");
+    output.shouldNotContain("[Non-Young Free CSet");
+    output.shouldHaveExitValue(0);
+
+    pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                               "-Xmx10M",
+                                               "-XX:+PrintGCDetails",
+                                               "-XX:+UnlockExperimentalVMOptions",
+                                               "-XX:G1LogLevel=finest",
+                                               GCTest.class.getName());
+
+    output = new OutputAnalyzer(pb.start());
+
+    output.shouldContain("[Code Root Purge");
+    output.shouldContain("[Young Free CSet");
+    output.shouldContain("[Non-Young Free CSet");
+    output.shouldHaveExitValue(0);
+
   }
 
   static class GCTest {

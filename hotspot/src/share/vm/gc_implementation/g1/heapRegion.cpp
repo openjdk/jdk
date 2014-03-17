@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ void HeapRegion::reset_after_compaction() {
   init_top_at_mark_start();
 }
 
-void HeapRegion::hr_clear(bool par, bool clear_space) {
+void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
   assert(_humongous_type == NotHumongous,
          "we should have already filtered out humongous regions");
   assert(_humongous_start_region == NULL,
@@ -223,7 +223,11 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
   if (!par) {
     // If this is parallel, this will be done later.
     HeapRegionRemSet* hrrs = rem_set();
-    hrrs->clear();
+    if (locked) {
+      hrrs->clear_locked();
+    } else {
+      hrrs->clear();
+    }
     _claimed = InitialClaimValue;
   }
   zero_marked_bytes();

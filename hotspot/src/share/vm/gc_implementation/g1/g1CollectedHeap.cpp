@@ -5939,7 +5939,8 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
 
 void G1CollectedHeap::free_region(HeapRegion* hr,
                                   FreeRegionList* free_list,
-                                  bool par) {
+                                  bool par,
+                                  bool locked) {
   assert(!hr->isHumongous(), "this is only for non-humongous regions");
   assert(!hr->is_empty(), "the region should not be empty");
   assert(free_list != NULL, "pre-condition");
@@ -5950,7 +5951,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
   if (!hr->is_young()) {
     _cg1r->hot_card_cache()->reset_card_counts(hr);
   }
-  hr->hr_clear(par, true /* clear_space */);
+  hr->hr_clear(par, true /* clear_space */, locked /* locked */);
   free_list->add_as_head(hr);
 }
 
@@ -6159,7 +6160,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
       }
     }
 
-    rs_lengths += cur->rem_set()->occupied();
+    rs_lengths += cur->rem_set()->occupied_locked();
 
     HeapRegion* next = cur->next_in_collection_set();
     assert(cur->in_collection_set(), "bad CS");
@@ -6193,7 +6194,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
       // And the region is empty.
       assert(!used_mr.is_empty(), "Should not have empty regions in a CS.");
       pre_used += cur->used();
-      free_region(cur, &local_free_list, false /* par */);
+      free_region(cur, &local_free_list, false /* par */, true /* locked */);
     } else {
       cur->uninstall_surv_rate_group();
       if (cur->is_young()) {
