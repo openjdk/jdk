@@ -32,7 +32,9 @@
 #include "memory/gcLocker.hpp"
 #include "memory/metachunk.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceGCThresholdUpdater.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceTracer.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.inline.hpp"
@@ -57,6 +59,7 @@ size_t const allocation_from_dictionary_limit = 4 * K;
 MetaWord* last_allocated = 0;
 
 size_t Metaspace::_compressed_class_space_size;
+const MetaspaceTracer* Metaspace::_tracer = NULL;
 
 // Used in declarations in SpaceManager and ChunkManager
 enum ChunkIndex {
@@ -1436,19 +1439,21 @@ void MetaspaceGC::compute_new_size() {
     expand_bytes = align_size_up(expand_bytes, Metaspace::commit_alignment());
     // Don't expand unless it's significant
     if (expand_bytes >= MinMetaspaceExpansion) {
-      MetaspaceGC::inc_capacity_until_GC(expand_bytes);
-    }
-    if (PrintGCDetails && Verbose) {
-      size_t new_capacity_until_GC = capacity_until_GC;
-      gclog_or_tty->print_cr("    expanding:"
-                    "  minimum_desired_capacity: %6.1fKB"
-                    "  expand_bytes: %6.1fKB"
-                    "  MinMetaspaceExpansion: %6.1fKB"
-                    "  new metaspace HWM:  %6.1fKB",
-                    minimum_desired_capacity / (double) K,
-                    expand_bytes / (double) K,
-                    MinMetaspaceExpansion / (double) K,
-                    new_capacity_until_GC / (double) K);
+      size_t new_capacity_until_GC = MetaspaceGC::inc_capacity_until_GC(expand_bytes);
+      Metaspace::tracer()->report_gc_threshold(capacity_until_GC,
+                                               new_capacity_until_GC,
+                                               MetaspaceGCThresholdUpdater::ComputeNewSize);
+      if (PrintGCDetails && Verbose) {
+        gclog_or_tty->print_cr("    expanding:"
+                      "  minimum_desired_capacity: %6.1fKB"
+                      "  expand_bytes: %6.1fKB"
+                      "  MinMetaspaceExpansion: %6.1fKB"
+                      "  new metaspace HWM:  %6.1fKB",
+                      minimum_desired_capacity / (double) K,
+                      expand_bytes / (double) K,
+                      MinMetaspaceExpansion / (double) K,
+                      new_capacity_until_GC / (double) K);
+      }
     }
     return;
   }
@@ -1528,7 +1533,10 @@ void MetaspaceGC::compute_new_size() {
   // Don't shrink unless it's significant
   if (shrink_bytes >= MinMetaspaceExpansion &&
       ((capacity_until_GC - shrink_bytes) >= MetaspaceSize)) {
-    MetaspaceGC::dec_capacity_until_GC(shrink_bytes);
+    size_t new_capacity_until_GC = MetaspaceGC::dec_capacity_until_GC(shrink_bytes);
+    Metaspace::tracer()->report_gc_threshold(capacity_until_GC,
+                                             new_capacity_until_GC,
+                                             MetaspaceGCThresholdUpdater::ComputeNewSize);
   }
 }
 
@@ -3132,6 +3140,7 @@ void Metaspace::global_initialize() {
   }
 
   MetaspaceGC::initialize();
+  _tracer = new MetaspaceTracer();
 }
 
 Metachunk* Metaspace::get_initialization_chunk(MetadataType mdtype,
@@ -3220,8 +3229,12 @@ MetaWord* Metaspace::expand_and_allocate(size_t word_size, MetadataType mdtype) 
   assert(delta_bytes > 0, "Must be");
 
   size_t after_inc = MetaspaceGC::inc_capacity_until_GC(delta_bytes);
+
+  // capacity_until_GC might be updated concurrently, must calculate previous value.
   size_t before_inc = after_inc - delta_bytes;
 
+  tracer()->report_gc_threshold(before_inc, after_inc,
+                                MetaspaceGCThresholdUpdater::ExpandAndAllocate);
   if (PrintGCDetails && Verbose) {
     gclog_or_tty->print_cr("Increase capacity to GC from " SIZE_FORMAT
         " to " SIZE_FORMAT, before_inc, after_inc);

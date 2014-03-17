@@ -60,6 +60,7 @@ class ChunkManager;
 class ClassLoaderData;
 class Metablock;
 class Metachunk;
+class MetaspaceTracer;
 class MetaWord;
 class Mutex;
 class outputStream;
@@ -149,6 +150,8 @@ class Metaspace : public CHeapObj<mtClass> {
   static ChunkManager* _chunk_manager_metadata;
   static ChunkManager* _chunk_manager_class;
 
+  static const MetaspaceTracer* _tracer;
+
  public:
   static VirtualSpaceList* space_list()       { return _space_list; }
   static VirtualSpaceList* class_space_list() { return _class_space_list; }
@@ -163,6 +166,8 @@ class Metaspace : public CHeapObj<mtClass> {
     assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
     return mdtype == ClassType ? chunk_manager_class() : chunk_manager_metadata();
   }
+
+  static const MetaspaceTracer* tracer() { return _tracer; }
 
  private:
   // This is used by DumpSharedSpaces only, where only _vsm is used. So we will

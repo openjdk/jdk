@@ -199,6 +199,12 @@ Declares a structure type that can be used in other events.
       <structvalue type="MetaspaceSizes" field="classSpace" label="Class"/>
     </event>
 
+    <event id="MetaspaceGCThreshold" path="vm/gc/metaspace/gc_threshold" label="Metaspace GC Threshold" is_instant="true">
+      <value type="BYTES64" field="oldValue" label="Old Value" />
+      <value type="BYTES64" field="newValue" label="New Value" />
+      <value type="GCTHRESHOLDUPDATER" field="updater" label="Updater" />
+    </event>
+
     <event id="PSHeapSummary" path="vm/gc/heap/ps_summary" label="Parallel Scavenge Heap Summary" is_instant="true">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
       <value type="GCWHEN" field="when" label="When" />
