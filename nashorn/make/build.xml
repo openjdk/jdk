@@ -125,6 +125,7 @@
       <compilerarg value="-Xlint:unchecked"/>
       <compilerarg value="-Xlint:deprecation"/>
       <compilerarg value="-XDignore.symbol.file"/>
+      <compilerarg value="-Xdiags:verbose"/>
     </javac>
     <copy todir="${build.classes.dir}/META-INF/services">
        <fileset dir="${meta.inf.dir}/services/"/>
@@ -243,6 +244,7 @@
         <compilerarg value="-J-Djava.ext.dirs="/>
         <compilerarg value="-Xlint:unchecked"/>
         <compilerarg value="-Xlint:deprecation"/>
+        <compilerarg value="-Xdiags:verbose"/>
     </javac>
 
     <copy todir="${build.test.classes.dir}/META-INF/services">

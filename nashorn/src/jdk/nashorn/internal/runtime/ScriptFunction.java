@@ -38,6 +38,7 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 
@@ -475,14 +476,14 @@ public abstract class ScriptFunction extends ScriptObject {
         if (obj instanceof ScriptObject || !ScriptFunctionData.isPrimitiveThis(obj)) {
             return obj;
         }
-        return ((GlobalObject)Context.getGlobalTrusted()).wrapAsObject(obj);
+        return Context.getGlobal().wrapAsObject(obj);
     }
 
 
     @SuppressWarnings("unused")
     private static Object globalFilter(final Object object) {
         // replace whatever we get with the current global object
-        return Context.getGlobalTrusted();
+        return Context.getGlobal();
     }
 
     /**

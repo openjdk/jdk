@@ -90,10 +90,6 @@ public final class NativeNumber extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     private NativeNumber(final double value, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         this.value = value;
@@ -102,7 +98,7 @@ public final class NativeNumber extends ScriptObject {
     }
 
     NativeNumber(final double value, final Global global) {
-        this(value, global.getNumberPrototype(), getInitialMap());
+        this(value, global.getNumberPrototype(), $nasgenmap$);
     }
 
     private NativeNumber(final double value) {

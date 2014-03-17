@@ -156,7 +156,7 @@ public final class Context {
     /** Is Context global debug mode enabled ? */
     public static final boolean DEBUG = Options.getBooleanProperty("nashorn.debug");
 
-    private static final ThreadLocal<ScriptObject> currentGlobal = new ThreadLocal<>();
+    private static final ThreadLocal<Global> currentGlobal = new ThreadLocal<>();
 
     // class cache
     private ClassCache classCache;
@@ -165,10 +165,10 @@ public final class Context {
      * Get the current global scope
      * @return the current global scope
      */
-    public static ScriptObject getGlobal() {
+    public static Global getGlobal() {
         // This class in a package.access protected package.
         // Trusted code only can call this method.
-        return getGlobalTrusted();
+        return currentGlobal.get();
     }
 
     /**
@@ -177,10 +177,19 @@ public final class Context {
      */
     public static void setGlobal(final ScriptObject global) {
         if (global != null && !(global instanceof Global)) {
-            throw new IllegalArgumentException("global is not an instance of Global!");
+            throw new IllegalArgumentException("not a global!");
         }
+        setGlobal((Global)global);
+    }
 
-        setGlobalTrusted(global);
+    /**
+     * Set the current global scope
+     * @param global the global scope
+     */
+    public static void setGlobal(final Global global) {
+        // This class in a package.access protected package.
+        // Trusted code only can call this method.
+        currentGlobal.set(global);
     }
 
     /**
@@ -201,7 +210,7 @@ public final class Context {
      * @return error writer of the current context
      */
     public static PrintWriter getCurrentErr() {
-        final ScriptObject global = getGlobalTrusted();
+        final ScriptObject global = getGlobal();
         return (global != null)? global.getContext().getErr() : new PrintWriter(System.err);
     }
 
@@ -406,7 +415,7 @@ public final class Context {
      * @return the property map of the current global scope
      */
     public static PropertyMap getGlobalMap() {
-        return Context.getGlobalTrusted().getMap();
+        return Context.getGlobal().getMap();
     }
 
     /**
@@ -436,7 +445,7 @@ public final class Context {
         final String  file       = (location == UNDEFINED || location == null) ? "<eval>" : location.toString();
         final Source  source     = new Source(file, string);
         final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
-        final ScriptObject global = Context.getGlobalTrusted();
+        final Global  global = Context.getGlobal();
 
         ScriptObject scope = initialScope;
 
@@ -468,7 +477,7 @@ public final class Context {
         // in the caller's environment. A new environment is created!
         if (strictFlag) {
             // Create a new scope object
-            final ScriptObject strictEvalScope = ((GlobalObject)global).newObject();
+            final ScriptObject strictEvalScope = global.newObject();
 
             // bless it as a "scope"
             strictEvalScope.setIsScope();
@@ -593,10 +602,10 @@ public final class Context {
      * @throws IOException if source cannot be found or loaded
      */
     public Object loadWithNewGlobal(final Object from, final Object...args) throws IOException {
-        final ScriptObject oldGlobal = getGlobalTrusted();
-        final ScriptObject newGlobal = AccessController.doPrivileged(new PrivilegedAction<ScriptObject>() {
+        final Global oldGlobal = getGlobal();
+        final Global newGlobal = AccessController.doPrivileged(new PrivilegedAction<Global>() {
            @Override
-           public ScriptObject run() {
+           public Global run() {
                try {
                    return newGlobal();
                } catch (final RuntimeException e) {
@@ -609,17 +618,17 @@ public final class Context {
         }, CREATE_GLOBAL_ACC_CTXT);
         // initialize newly created Global instance
         initGlobal(newGlobal);
-        setGlobalTrusted(newGlobal);
+        setGlobal(newGlobal);
 
         final Object[] wrapped = args == null? ScriptRuntime.EMPTY_ARRAY :  ScriptObjectMirror.wrapArray(args, oldGlobal);
-        newGlobal.put("arguments", ((GlobalObject)newGlobal).wrapAsObject(wrapped), env._strict);
+        newGlobal.put("arguments", newGlobal.wrapAsObject(wrapped), env._strict);
 
         try {
             // wrap objects from newGlobal's world as mirrors - but if result
             // is from oldGlobal's world, unwrap it!
             return ScriptObjectMirror.unwrap(ScriptObjectMirror.wrap(load(newGlobal, from), newGlobal), oldGlobal);
         } finally {
-            setGlobalTrusted(oldGlobal);
+            setGlobal(oldGlobal);
         }
     }
 
@@ -794,7 +803,7 @@ public final class Context {
      *
      * @return the initialized global scope object.
      */
-    public ScriptObject createGlobal() {
+    public Global createGlobal() {
         return initGlobal(newGlobal());
     }
 
@@ -802,7 +811,7 @@ public final class Context {
      * Create a new uninitialized global scope object
      * @return the global script object
      */
-    public ScriptObject newGlobal() {
+    public Global newGlobal() {
         return new Global(this);
     }
 
@@ -812,20 +821,16 @@ public final class Context {
      * @param global the global
      * @return the initialized global scope object.
      */
-    public ScriptObject initGlobal(final ScriptObject global) {
-        if (! (global instanceof GlobalObject)) {
-            throw new IllegalArgumentException("not a global object!");
-        }
-
+    public Global initGlobal(final Global global) {
         // Need only minimal global object, if we are just compiling.
         if (!env._compile_only) {
-            final ScriptObject oldGlobal = Context.getGlobalTrusted();
+            final Global oldGlobal = Context.getGlobal();
             try {
-                Context.setGlobalTrusted(global);
+                Context.setGlobal(global);
                 // initialize global scope with builtin global objects
-                ((GlobalObject)global).initBuiltinObjects();
+                global.initBuiltinObjects();
             } finally {
-                Context.setGlobalTrusted(oldGlobal);
+                Context.setGlobal(oldGlobal);
             }
         }
 
@@ -833,30 +838,15 @@ public final class Context {
     }
 
     /**
-     * Trusted variants - package-private
+     * Trusted variant - package-private
      */
-
-    /**
-     * Return the current global scope
-     * @return current global scope
-     */
-    static ScriptObject getGlobalTrusted() {
-        return currentGlobal.get();
-    }
-
-    /**
-     * Set the current global scope
-     */
-    static void setGlobalTrusted(ScriptObject global) {
-         currentGlobal.set(global);
-    }
 
     /**
      * Return the current global's context
      * @return current global's context
      */
     static Context getContextTrusted() {
-        return Context.getGlobalTrusted().getContext();
+        return ((ScriptObject)Context.getGlobal()).getContext();
     }
 
     /**
@@ -925,7 +915,7 @@ public final class Context {
         }
 
         // Package as a JavaScript function and pass function back to shell.
-        return ((GlobalObject)Context.getGlobalTrusted()).newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, scope, strict);
+        return Context.getGlobal().newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, scope, strict);
     }
 
     private ScriptFunction compileScript(final Source source, final ScriptObject scope, final ErrorManager errMan) {

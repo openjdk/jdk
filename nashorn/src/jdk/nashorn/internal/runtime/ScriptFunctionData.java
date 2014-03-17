@@ -32,6 +32,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 
 /**
@@ -372,11 +373,11 @@ public abstract class ScriptFunctionData {
     private Object convertThisObject(final Object thiz) {
         if (!(thiz instanceof ScriptObject) && needsWrappedThis()) {
             if (JSType.nullOrUndefined(thiz)) {
-                return Context.getGlobalTrusted();
+                return Context.getGlobal();
             }
 
             if (isPrimitiveThis(thiz)) {
-                return ((GlobalObject)Context.getGlobalTrusted()).wrapAsObject(thiz);
+                return Context.getGlobal().wrapAsObject(thiz);
             }
         }
 

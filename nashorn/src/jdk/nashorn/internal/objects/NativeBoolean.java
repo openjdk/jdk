@@ -59,17 +59,13 @@ public final class NativeBoolean extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     private NativeBoolean(final boolean value, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         this.value = value;
     }
 
     NativeBoolean(final boolean flag, final Global global) {
-        this(flag, global.getBooleanPrototype(), getInitialMap());
+        this(flag, global.getBooleanPrototype(), $nasgenmap$);
     }
 
     NativeBoolean(final boolean flag) {

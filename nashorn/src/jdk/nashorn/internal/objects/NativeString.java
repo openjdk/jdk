@@ -78,16 +78,12 @@ public final class NativeString extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     private NativeString(final CharSequence value) {
         this(value, Global.instance());
     }
 
     NativeString(final CharSequence value, final Global global) {
-        this(value, global.getStringPrototype(), getInitialMap());
+        this(value, global.getStringPrototype(), $nasgenmap$);
     }
 
     private NativeString(final CharSequence value, final ScriptObject proto, final PropertyMap map) {

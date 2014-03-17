@@ -325,18 +325,18 @@ public abstract class ScriptObject implements PropertyAccess {
       * @return property descriptor
       */
     public final PropertyDescriptor toPropertyDescriptor() {
-        final GlobalObject global = (GlobalObject) Context.getGlobalTrusted();
+        final Global global = Context.getGlobal();
 
         final PropertyDescriptor desc;
         if (isDataDescriptor()) {
             if (has(SET) || has(GET)) {
-                throw typeError((ScriptObject)global, "inconsistent.property.descriptor");
+                throw typeError(global, "inconsistent.property.descriptor");
             }
 
             desc = global.newDataDescriptor(UNDEFINED, false, false, false);
         } else if (isAccessorDescriptor()) {
             if (has(VALUE) || has(WRITABLE)) {
-                throw typeError((ScriptObject)global, "inconsistent.property.descriptor");
+                throw typeError(global, "inconsistent.property.descriptor");
             }
 
             desc = global.newAccessorDescriptor(UNDEFINED, UNDEFINED, false, false);
@@ -355,7 +355,7 @@ public abstract class ScriptObject implements PropertyAccess {
      *
      * @return property descriptor
      */
-    public static PropertyDescriptor toPropertyDescriptor(final ScriptObject global, final Object obj) {
+    public static PropertyDescriptor toPropertyDescriptor(final Global global, final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).toPropertyDescriptor();
         }
@@ -374,7 +374,7 @@ public abstract class ScriptObject implements PropertyAccess {
     public Object getOwnPropertyDescriptor(final String key) {
         final Property property = getMap().findProperty(key);
 
-        final GlobalObject global = (GlobalObject)Context.getGlobalTrusted();
+        final Global global = Context.getGlobal();
 
         if (property != null) {
             final ScriptFunction get   = property.getGetterFunction(this);
@@ -439,7 +439,7 @@ public abstract class ScriptObject implements PropertyAccess {
      * @return true if property was successfully defined
      */
     public boolean defineOwnProperty(final String key, final Object propertyDesc, final boolean reject) {
-        final ScriptObject       global  = Context.getGlobalTrusted();
+        final Global             global  = Context.getGlobal();
         final PropertyDescriptor desc    = toPropertyDescriptor(global, propertyDesc);
         final Object             current = getOwnPropertyDescriptor(key);
         final String             name    = JSType.toString(key);
@@ -637,7 +637,7 @@ public abstract class ScriptObject implements PropertyAccess {
         final int propFlags = Property.toFlags(pdesc);
 
         if (pdesc.type() == PropertyDescriptor.GENERIC) {
-            final GlobalObject global = (GlobalObject) Context.getGlobalTrusted();
+            final Global global = Context.getGlobal();
             final PropertyDescriptor dDesc = global.newDataDescriptor(UNDEFINED, false, false, false);
 
             dDesc.fillFrom((ScriptObject)pdesc);
@@ -1150,7 +1150,7 @@ public abstract class ScriptObject implements PropertyAccess {
             }
             setProto((ScriptObject)newProto);
         } else {
-            final ScriptObject global = Context.getGlobalTrusted();
+            final Global global = Context.getGlobal();
             final Object  newProtoObject = JSType.toScriptObject(global, newProto);
 
             if (newProtoObject instanceof ScriptObject) {
@@ -1240,11 +1240,11 @@ public abstract class ScriptObject implements PropertyAccess {
      * @return the default value
      */
     public Object getDefaultValue(final Class<?> typeHint) {
-        // We delegate to GlobalObject, as the implementation uses dynamic call sites to invoke object's "toString" and
+        // We delegate to Global, as the implementation uses dynamic call sites to invoke object's "toString" and
         // "valueOf" methods, and in order to avoid those call sites from becoming megamorphic when multiple contexts
         // are being executed in a long-running program, we move the code and their associated dynamic call sites
         // (Global.TO_STRING and Global.VALUE_OF) into per-context code.
-        return ((GlobalObject)Context.getGlobalTrusted()).getDefaultValue(this, typeHint);
+        return Context.getGlobal().getDefaultValue(this, typeHint);
     }
 
     /**

@@ -48,7 +48,6 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
-import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
@@ -70,7 +69,7 @@ import jdk.nashorn.internal.scripts.JO;
  * Representation of global scope.
  */
 @ScriptClass("Global")
-public final class Global extends ScriptObject implements GlobalObject, Scope {
+public final class Global extends ScriptObject implements Scope {
     private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
     private final InvokeByName VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
 
@@ -433,11 +432,9 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return the global singleton
      */
     public static Global instance() {
-        ScriptObject global = Context.getGlobal();
-        if (! (global instanceof Global)) {
-            throw new IllegalStateException("no current global instance");
-        }
-        return (Global)global;
+        Global global = Context.getGlobal();
+        global.getClass(); // null check
+        return global;
     }
 
     /**
@@ -458,19 +455,30 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         return instance().getContext();
     }
 
-    // GlobalObject interface implementation
+    // Runtime interface to Global
 
-    @Override
+    /**
+     * Is this global of the given Context?
+     * @param ctxt the context
+     * @return true if this global belongs to the given Context
+     */
     public boolean isOfContext(final Context ctxt) {
         return this.context == ctxt;
     }
 
-    @Override
+    /**
+     * Does this global belong to a strict Context?
+     * @return true if this global belongs to a strict Context
+     */
     public boolean isStrictContext() {
         return context.getEnv()._strict;
     }
 
-    @Override
+    /**
+     * Initialize standard builtin objects like "Object", "Array", "Function" etc.
+     * as well as our extension builtin objects like "Java", "JSAdapter" as properties
+     * of the global scope object.
+     */
     public void initBuiltinObjects() {
         if (this.builtinObject != null) {
             // already initialized, just return
@@ -480,12 +488,26 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         init();
     }
 
-    @Override
+    /**
+     * Create a new ScriptFunction object
+     *
+     * @param name   function name
+     * @param handle invocation handle for function
+     * @param scope  the scope
+     * @param strict are we in strict mode
+     *
+     * @return new script function
+     */
     public ScriptFunction newScriptFunction(final String name, final MethodHandle handle, final ScriptObject scope, final boolean strict) {
         return new ScriptFunctionImpl(name, handle, scope, null, strict ? ScriptFunctionData.IS_STRICT_CONSTRUCTOR : ScriptFunctionData.IS_CONSTRUCTOR);
     }
 
-    @Override
+    /**
+     * Wrap a Java object as corresponding script object
+     *
+     * @param obj object to wrap
+     * @return    wrapped object
+     */
     public Object wrapAsObject(final Object obj) {
         if (obj instanceof Boolean) {
             return new NativeBoolean((Boolean)obj, this);
@@ -507,7 +529,14 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         }
     }
 
-    @Override
+    /**
+     * Lookup helper for JS primitive types
+     *
+     * @param request the link request for the dynamic call site.
+     * @param self     self reference
+     *
+     * @return guarded invocation
+     */
     public GuardedInvocation primitiveLookup(final LinkRequest request, final Object self) {
         if (self instanceof String || self instanceof ConsString) {
             return NativeString.lookupPrimitive(request, self);
@@ -519,12 +548,23 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         throw new IllegalArgumentException("Unsupported primitive: " + self);
     }
 
-    @Override
+    /**
+     * Create a new empty script object
+     *
+     * @return the new ScriptObject
+     */
     public ScriptObject newObject() {
         return new JO(getObjectPrototype(), JO.getInitialMap());
     }
 
-    @Override
+    /**
+     * Default value of given type
+     *
+     * @param sobj     script object
+     * @param typeHint type hint
+     *
+     * @return default value
+     */
     public Object getDefaultValue(final ScriptObject sobj, final Class<?> typeHint) {
         // When the [[DefaultValue]] internal method of O is called with no hint,
         // then it behaves as if the hint were Number, unless O is a Date object
@@ -584,7 +624,12 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         return UNDEFINED;
     }
 
-    @Override
+    /**
+     * Is the given ScriptObject an ECMAScript Error object?
+     *
+     * @param sobj the object being checked
+     * @return true if sobj is an Error object
+     */
     public boolean isError(final ScriptObject sobj) {
         final ScriptObject errorProto = getErrorPrototype();
         ScriptObject proto = sobj.getProto();
@@ -597,52 +642,108 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         return false;
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript Error object.
+     *
+     * @param msg error message
+     * @return newly created Error object
+     */
     public ScriptObject newError(final String msg) {
         return new NativeError(msg, this);
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript EvalError object.
+     *
+     * @param msg error message
+     * @return newly created EvalError object
+     */
     public ScriptObject newEvalError(final String msg) {
         return new NativeEvalError(msg, this);
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript RangeError object.
+     *
+     * @param msg error message
+     * @return newly created RangeError object
+     */
     public ScriptObject newRangeError(final String msg) {
         return new NativeRangeError(msg, this);
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript ReferenceError object.
+     *
+     * @param msg error message
+     * @return newly created ReferenceError object
+     */
     public ScriptObject newReferenceError(final String msg) {
         return new NativeReferenceError(msg, this);
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript SyntaxError object.
+     *
+     * @param msg error message
+     * @return newly created SyntaxError object
+     */
     public ScriptObject newSyntaxError(final String msg) {
         return new NativeSyntaxError(msg, this);
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript TypeError object.
+     *
+     * @param msg error message
+     * @return newly created TypeError object
+     */
     public ScriptObject newTypeError(final String msg) {
         return new NativeTypeError(msg, this);
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript URIError object.
+     *
+     * @param msg error message
+     * @return newly created URIError object
+     */
     public ScriptObject newURIError(final String msg) {
         return new NativeURIError(msg, this);
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript GenericDescriptor object.
+     *
+     * @param configurable is the property configurable?
+     * @param enumerable is the property enumerable?
+     * @return newly created GenericDescriptor object
+     */
     public PropertyDescriptor newGenericDescriptor(final boolean configurable, final boolean enumerable) {
         return new GenericPropertyDescriptor(configurable, enumerable, this);
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript DatePropertyDescriptor object.
+     *
+     * @param value of the data property
+     * @param configurable is the property configurable?
+     * @param enumerable is the property enumerable?
+     * @return newly created DataPropertyDescriptor object
+     */
     public PropertyDescriptor newDataDescriptor(final Object value, final boolean configurable, final boolean enumerable, final boolean writable) {
         return new DataPropertyDescriptor(configurable, enumerable, writable, value, this);
     }
 
-    @Override
+    /**
+     * Create a new ECMAScript AccessorPropertyDescriptor object.
+     *
+     * @param get getter function of the user accessor property
+     * @param set setter function of the user accessor property
+     * @param configurable is the property configurable?
+     * @param enumerable is the property enumerable?
+     * @return newly created AccessorPropertyDescriptor object
+     */
     public PropertyDescriptor newAccessorDescriptor(final Object get, final Object set, final boolean configurable, final boolean enumerable) {
         final AccessorPropertyDescriptor desc = new AccessorPropertyDescriptor(configurable, enumerable, get == null ? UNDEFINED : get, set == null ? UNDEFINED : set, this);
 
@@ -675,14 +776,25 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     private final Map<Object, InvokeByName> namedInvokers = new ConcurrentHashMap<>();
 
-    @Override
+
+    /**
+     * Get cached InvokeByName object for the given key
+     * @param key key to be associated with InvokeByName object
+     * @param creator if InvokeByName is absent 'creator' is called to make one (lazy init)
+     * @return InvokeByName object associated with the key.
+     */
     public InvokeByName getInvokeByName(final Object key, final Callable<InvokeByName> creator) {
         return getLazilyCreatedValue(key, creator, namedInvokers);
     }
 
     private final Map<Object, MethodHandle> dynamicInvokers = new ConcurrentHashMap<>();
 
-    @Override
+    /**
+     * Get cached dynamic method handle for the given key
+     * @param key key to be associated with dynamic method handle
+     * @param creator if method handle is absent 'creator' is called to make one (lazy init)
+     * @return dynamic method handle associated with the key.
+     */
     public MethodHandle getDynamicInvoker(final Object key, final Callable<MethodHandle> creator) {
         return getLazilyCreatedValue(key, creator, dynamicInvokers);
     }
