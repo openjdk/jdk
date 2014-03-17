@@ -4723,6 +4723,12 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
   oop forward_ptr = old->forward_to_atomic(obj);
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words((HeapWord*) old, obj_ptr, word_sz);
+
+    // alloc_purpose is just a hint to allocate() above, recheck the type of region
+    // we actually allocated from and update alloc_purpose accordingly
+    HeapRegion* to_region = _g1h->heap_region_containing_raw(obj_ptr);
+    alloc_purpose = to_region->is_young() ? GCAllocForSurvived : GCAllocForTenured;
+
     if (g1p->track_object_age(alloc_purpose)) {
       // We could simply do obj->incr_age(). However, this causes a
       // performance issue. obj->incr_age() will first check whether
