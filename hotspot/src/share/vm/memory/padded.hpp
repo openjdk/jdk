@@ -101,4 +101,12 @@ class Padded2DArray {
   static T** create_unfreeable(uint rows, uint columns, size_t* allocation_size = NULL);
 };
 
+// Helper class to create an array of T objects. The array as a whole will
+// start at a multiple of alignment and its size will be aligned to alignment.
+template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+class PaddedPrimitiveArray {
+ public:
+  static T* create_unfreeable(size_t length);
+};
+
 #endif // SHARE_VM_MEMORY_PADDED_HPP
