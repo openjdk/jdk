@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,6 +250,9 @@ double G1GCPhaseTimes::accounted_time_ms() {
     // Strong code root migration time
     misc_time_ms += _cur_strong_code_root_migration_time_ms;
 
+    // Strong code root purge time
+    misc_time_ms += _cur_strong_code_root_purge_time_ms;
+
     // Subtract the time taken to clean the card table from the
     // current value of "other time"
     misc_time_ms += _cur_clear_ct_time_ms;
@@ -299,6 +302,7 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   }
   print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
   print_stats(1, "Code Root Migration", _cur_strong_code_root_migration_time_ms);
+  print_stats(1, "Code Root Purge", _cur_strong_code_root_purge_time_ms);
   print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
   double misc_time_ms = pause_time_sec * MILLIUNITS - accounted_time_ms();
   print_stats(1, "Other", misc_time_ms);

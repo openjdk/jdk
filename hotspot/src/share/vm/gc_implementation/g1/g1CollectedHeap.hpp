@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1632,6 +1632,9 @@ public:
   // of an evacuation failure, nmethods that reference objects
   // that were not successfully evacuated are not migrated.
   void migrate_strong_code_roots();
+
+  // Free up superfluous code root memory.
+  void purge_code_root_memory();
 
   // During an initial mark pause, mark all the code roots that
   // point into regions *not* in the collection set.

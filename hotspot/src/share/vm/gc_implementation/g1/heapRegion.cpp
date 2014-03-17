@@ -710,14 +710,14 @@ void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const
   }
 
   HeapRegionRemSet* hrrs = rem_set();
-  int strong_code_roots_length = hrrs->strong_code_roots_list_length();
+  size_t strong_code_roots_length = hrrs->strong_code_roots_list_length();
 
   // if this region is empty then there should be no entries
   // on its strong code root list
   if (is_empty()) {
     if (strong_code_roots_length > 0) {
       gclog_or_tty->print_cr("region ["PTR_FORMAT","PTR_FORMAT"] is empty "
-                             "but has "INT32_FORMAT" code root entries",
+                             "but has "SIZE_FORMAT" code root entries",
                              bottom(), end(), strong_code_roots_length);
       *failures = true;
     }
@@ -727,7 +727,7 @@ void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const
   if (continuesHumongous()) {
     if (strong_code_roots_length > 0) {
       gclog_or_tty->print_cr("region "HR_FORMAT" is a continuation of a humongous "
-                             "region but has "INT32_FORMAT" code root entries",
+                             "region but has "SIZE_FORMAT" code root entries",
                              HR_FORMAT_PARAMS(this), strong_code_roots_length);
       *failures = true;
     }
