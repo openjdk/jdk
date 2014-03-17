@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,9 @@ public class IndexTest {
         NetworkInterface nif;
         while (netifs.hasMoreElements()) {
             nif = netifs.nextElement();
-            // JDK-8022212, Skip (Windows) Teredo Tunneling seudo-Interface
-            if (nif.getDisplayName().contains("Teredo") && isWindows)
+            // JDK-8022212, Skip (Windows) Teredo Tunneling Pseudo-Interface
+            String dName = nif.getDisplayName();
+            if (isWindows && dName != null && dName.contains("Teredo"))
                 continue;
             int index = nif.getIndex();
             if (index >= 0) {

@@ -452,7 +452,7 @@
   product(bool, EliminateAutoBox, true,                                     \
           "Control optimizations for autobox elimination")                  \
                                                                             \
-  experimental(bool, UseImplicitStableValues, false,                        \
+  diagnostic(bool, UseImplicitStableValues, true,                           \
           "Mark well-known stable fields as such (e.g. String.value)")      \
                                                                             \
   product(intx, AutoBoxCacheMax, 128,                                       \
@@ -650,7 +650,7 @@
   experimental(bool, ReplaceInParentMaps, false,                            \
           "Propagate type improvements in callers of inlinee if possible")  \
                                                                             \
-  experimental(bool, UseTypeSpeculation, false,                             \
+  product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
                                                                             \
   diagnostic(bool, UseInlineDepthForSpeculativeTypes, true,                 \

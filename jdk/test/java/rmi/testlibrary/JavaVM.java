@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeoutException;
 
 /**
  * RMI regression test utility class that uses Runtime.exec to spawn a
@@ -123,7 +124,11 @@ public class JavaVM {
             addOptions(new String[] { option });
         }
 
-        addOptions(new String[] { getCodeCoverageOptions() });
+        addOptions(new String[] {
+            getCodeCoverageOptions(),
+            TestParams.testJavaOpts,
+            TestParams.testVmOpts
+        });
 
         StringTokenizer optionsTokenizer = new StringTokenizer(options);
         StringTokenizer argsTokenizer = new StringTokenizer(args);
@@ -170,6 +175,40 @@ public class JavaVM {
         outPipe.join();
         errPipe.join();
         return status;
+    }
+
+    /**
+     * Causes the current thread to wait the vm process to exit, if necessary,
+     * wait until the vm process has terminated, or the specified waiting time
+     * elapses. Release allocated input/output after vm process has terminated.
+     * @param timeout the maximum milliseconds to wait.
+     * @return exit value for vm process.
+     * @throws InterruptedException if the current thread is interrupted
+     *         while waiting.
+     * @throws TimeoutException if subprocess does not end after timeout
+     *         milliseconds passed
+     */
+    public int waitFor(long timeout)
+            throws InterruptedException, TimeoutException {
+        if (vm == null)
+            throw new IllegalStateException("can't wait for JavaVM that isn't running");
+        long startTime = System.currentTimeMillis();
+        long rem = timeout;
+
+        do {
+            try {
+                int status = vm.exitValue();
+                outPipe.join();
+                errPipe.join();
+                return status;
+            } catch (IllegalThreadStateException ex) {
+                if (rem > 0) {
+                    Thread.sleep(Math.min(rem, 100));
+                }
+            }
+            rem = timeout - (System.currentTimeMillis() - startTime);
+        } while (rem > 0);
+        throw new TimeoutException();
     }
 
     /**

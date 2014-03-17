@@ -46,7 +46,6 @@ public class Test {
         File testSrc = new File(System.getProperty("test.src"));
         String[] args = {
             "-Xdoclint:none",
-            "-source", "1.4", // enables certain Parser warnings
             "-bootclasspath", System.getProperty("sun.boot.class.path"),
             "-classpath", ".",
             "-package",

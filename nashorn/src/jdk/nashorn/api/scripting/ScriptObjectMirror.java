@@ -25,6 +25,7 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.nio.ByteBuffer;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Permissions;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.script.Bindings;
+import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.GlobalObject;
@@ -258,6 +260,22 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
             }
         });
     }
+
+    /**
+     * Nashorn extension: setIndexedPropertiesToExternalArrayData.
+     * set indexed properties be exposed from a given nio ByteBuffer.
+     *
+     * @param buf external buffer - should be a nio ByteBuffer
+     */
+    public void setIndexedPropertiesToExternalArrayData(final ByteBuffer buf) {
+        inGlobal(new Callable<Void>() {
+            @Override public Void call() {
+                sobj.setArray(ArrayData.allocate(buf));
+                return null;
+            }
+        });
+    }
+
 
     @Override
     public boolean isInstance(final Object obj) {

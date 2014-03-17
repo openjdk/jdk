@@ -50,8 +50,6 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.COLLECTIONS_TYPE
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.COLLECTIONS_EMPTY_LIST;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_FIELD_NAME;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_SETISSHARED;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_SETISSHARED_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_NEWMAP;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_NEWMAP_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_TYPE;
@@ -191,8 +189,6 @@ public class ClassGenerator {
         // stack: Collection
         // pmap = PropertyMap.newMap(Collection<Property>);
         mi.invokeStatic(PROPERTYMAP_TYPE, PROPERTYMAP_NEWMAP, PROPERTYMAP_NEWMAP_DESC);
-        // pmap.setIsShared();
-        mi.invokeVirtual(PROPERTYMAP_TYPE, PROPERTYMAP_SETISSHARED, PROPERTYMAP_SETISSHARED_DESC);
         // $nasgenmap$ = pmap;
         mi.putStatic(className, PROPERTYMAP_FIELD_NAME, PROPERTYMAP_DESC);
         mi.returnVoid();

@@ -193,13 +193,17 @@ public class JavacElements implements Elements {
             public void visitVarDef(JCVariableDecl tree) {
                 result = tree.mods.annotations;
             }
+            @Override
+            public void visitTypeParameter(JCTypeParameter tree) {
+                result = tree.annotations;
+            }
         }
         Vis vis = new Vis();
         tree.accept(vis);
         if (vis.result == null)
             return null;
 
-        List<Attribute.Compound> annos = sym.getRawAttributes();
+        List<Attribute.Compound> annos = sym.getAnnotationMirrors();
         return matchAnnoToTree(cast(Attribute.Compound.class, findme),
                                annos,
                                vis.result);

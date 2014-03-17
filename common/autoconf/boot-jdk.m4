@@ -341,39 +341,45 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 [
   ##############################################################################
   #
-  # Specify options for anything that is run with the Boot JDK.
+  # Specify jvm options for anything that is run with the Boot JDK.
+  # Not all JVM:s accept the same arguments on the command line.
   #
   AC_ARG_WITH(boot-jdk-jvmargs, [AS_HELP_STRING([--with-boot-jdk-jvmargs],
-  [specify JVM arguments to be passed to all invocations of the Boot JDK, overriding the default values,
+  [specify JVM arguments to be passed to all java invocations of boot JDK, overriding the default values,
   e.g --with-boot-jdk-jvmargs="-Xmx8G -enableassertions"])])
 
-  if test "x$with_boot_jdk_jvmargs" = x; then
-    # Not all JVM:s accept the same arguments on the command line.
-    # OpenJDK specific increase in thread stack for JDK build,
-    # well more specifically, when running javac.
-    if test "x$BUILD_NUM_BITS" = x32; then
-      STACK_SIZE=768
-    else
-      # Running Javac on a JVM on a 64-bit machine, the stack takes more space
-      # since 64-bit pointers are pushed on the stach. Apparently, we need
-      # to increase the stack space when javacing the JDK....
-      STACK_SIZE=1536
-    fi
+  AC_MSG_CHECKING([flags for boot jdk java command] )
 
-    # Minimum amount of heap memory.
-    ADD_JVM_ARG_IF_OK([-Xms64M],boot_jdk_jvmargs,[$JAVA])
-    if test "x$OPENJDK_TARGET_OS" = "xmacosx" || test "x$OPENJDK_TARGET_CPU" = "xppc64" ; then
-      # Why does macosx need more heap? Its the huge JDK batch.
-      ADD_JVM_ARG_IF_OK([-Xmx1600M],boot_jdk_jvmargs,[$JAVA])
-    else
-      ADD_JVM_ARG_IF_OK([-Xmx1100M],boot_jdk_jvmargs,[$JAVA])
-    fi
-    # When is adding -client something that speeds up the JVM?
-    # ADD_JVM_ARG_IF_OK([-client],boot_jdk_jvmargs,[$JAVA])
-    ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],boot_jdk_jvmargs,[$JAVA])
-    # Disable special log output when a debug build is used as Boot JDK...
-    ADD_JVM_ARG_IF_OK([-XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput],boot_jdk_jvmargs,[$JAVA])
+  # Starting amount of heap memory.
+  ADD_JVM_ARG_IF_OK([-Xms64M],boot_jdk_jvmargs,[$JAVA])
+
+  # Maximum amount of heap memory.
+  # Maximum stack size.
+  if test "x$BUILD_NUM_BITS" = x32; then
+    JVM_MAX_HEAP=1100M
+    STACK_SIZE=768
+  else
+    # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
+    # pointers are used. Apparently, we need to increase the heap and stack
+    # space for the jvm. More specifically, when running javac to build huge
+    # jdk batch
+    JVM_MAX_HEAP=1600M
+    STACK_SIZE=1536
   fi
+  ADD_JVM_ARG_IF_OK([-Xmx$JVM_MAX_HEAP],boot_jdk_jvmargs,[$JAVA])
+  ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],boot_jdk_jvmargs,[$JAVA])
+
+  # Disable special log output when a debug build is used as Boot JDK...
+  ADD_JVM_ARG_IF_OK([-XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput],boot_jdk_jvmargs,[$JAVA])
+
+  # Apply user provided options.
+  ADD_JVM_ARG_IF_OK([$with_boot_jdk_jvmargs],boot_jdk_jvmargs,[$JAVA])
+
+  AC_MSG_RESULT([$boot_jdk_jvmargs])
+
+  # For now, general JAVA_FLAGS are the same as the boot jdk jvmargs
+  JAVA_FLAGS=$boot_jdk_jvmargs
 
   AC_SUBST(BOOT_JDK_JVMARGS, $boot_jdk_jvmargs)
+  AC_SUBST(JAVA_FLAGS, $JAVA_FLAGS)
 ])

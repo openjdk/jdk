@@ -769,6 +769,7 @@ public abstract class Provider extends Properties {
         return super.replace(key, value);
     }
 
+    @SuppressWarnings("unchecked") // Function must actually operate over strings
     private void implReplaceAll(BiFunction<? super Object, ? super Object, ? extends Object> function) {
         legacyChanged = true;
         if (legacyStrings == null) {
@@ -779,7 +780,7 @@ public abstract class Provider extends Properties {
         super.replaceAll(function);
     }
 
-
+    @SuppressWarnings("unchecked") // Function must actually operate over strings
     private Object implMerge(Object key, Object value, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
         if ((key instanceof String) && (value instanceof String)) {
             if (!checkLegacy(key)) {
@@ -791,6 +792,7 @@ public abstract class Provider extends Properties {
         return super.merge(key, value, remappingFunction);
     }
 
+    @SuppressWarnings("unchecked") // Function must actually operate over strings
     private Object implCompute(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
         if (key instanceof String) {
             if (!checkLegacy(key)) {
@@ -802,6 +804,7 @@ public abstract class Provider extends Properties {
         return super.compute(key, remappingFunction);
     }
 
+    @SuppressWarnings("unchecked") // Function must actually operate over strings
     private Object implComputeIfAbsent(Object key, Function<? super Object, ? extends Object> mappingFunction) {
         if (key instanceof String) {
             if (!checkLegacy(key)) {
@@ -813,6 +816,7 @@ public abstract class Provider extends Properties {
         return super.computeIfAbsent(key, mappingFunction);
     }
 
+    @SuppressWarnings("unchecked") // Function must actually operate over strings
     private Object implComputeIfPresent(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
         if (key instanceof String) {
             if (!checkLegacy(key)) {

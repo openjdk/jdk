@@ -165,7 +165,7 @@ public class CompoundName implements Name {
 
     /**
       * Constructs a new compound name instance using the components
-      * specified in comps and syntax. This protected method is intended to be
+      * specified in comps and syntax. This protected method is intended
       * to be used by subclasses of CompoundName when they override
       * methods such as clone(), getPrefix(), getSuffix().
       *
@@ -365,7 +365,7 @@ public class CompoundName implements Name {
       * components in this compound name.
       * The result and this compound name share the same syntax.
       * Subsequent changes to
-      * this compound name does not affect the name that is returned and
+      * this compound name do not affect the name that is returned and
       * vice versa.
       *
       * @param  posn    The 0-based index of the component at which to stop.
@@ -385,7 +385,7 @@ public class CompoundName implements Name {
       * components in this compound name.
       * The result and this compound name share the same syntax.
       * Subsequent changes to
-      * this compound name does not affect the name that is returned.
+      * this compound name do not affect the name that is returned.
       *
       * @param  posn    The 0-based index of the component at which to start.
       *                 Must be in the range [0,size()].
@@ -423,7 +423,7 @@ public class CompoundName implements Name {
 
     /**
       * Determines whether a compound name is a suffix of this compound name.
-      * A compound name 'n' is a suffix if it it is equal to
+      * A compound name 'n' is a suffix if it is equal to
       * getSuffix(size()-n.size())--in other words, this
       * compound name ends with 'n'.
       * If n is null or not a compound name, false is returned.

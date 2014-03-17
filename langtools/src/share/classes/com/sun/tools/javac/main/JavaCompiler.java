@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -855,6 +855,12 @@ public class JavaCompiler {
                 processAnnotations(
                     enterTrees(stopIfError(CompileState.PARSE, parseFiles(sourceFileObjects))),
                     classnames);
+
+            // If it's safe to do so, skip attr / flow / gen for implicit classes
+            if (taskListener.isEmpty() &&
+                    implicitSourcePolicy == ImplicitSourcePolicy.NONE) {
+                delegateCompiler.todo.retainFiles(delegateCompiler.inputFiles);
+            }
 
             delegateCompiler.compile2();
             delegateCompiler.close();

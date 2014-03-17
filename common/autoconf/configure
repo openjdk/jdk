@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,26 @@
 # questions.
 #
 
-if test "x$BASH_VERSION" = x; then
-  echo This script needs bash to run.
-  echo It is recommended to use the configure script in the source tree root instead.
-  exit 1
+if test "x$1" != xCHECKME; then
+  echo "WARNING: Calling the wrapper script directly is deprecated and unsupported."
+  echo "Not all features of configure will be available."
+  echo "Use the 'configure' script in the top-level directory instead."
+  TOPDIR=$(cd $(dirname $0)/../.. > /dev/null && pwd)
+else
+  # Now the next argument is the absolute top-level directory path.
+  # The TOPDIR variable is passed on to configure.ac.
+  TOPDIR="$2"
+  # Remove these two arguments to get to the user supplied arguments
+  shift
+  shift
 fi
 
-CONFIGURE_COMMAND_LINE="$@"
-conf_script_dir=`dirname $0`
+conf_script_dir="$TOPDIR/common/autoconf"
 
 if [ "$CUSTOM_CONFIG_DIR" = "" ]; then
-  conf_custom_script_dir="$conf_script_dir/../../jdk/make/closed/autoconf"
+  conf_custom_script_dir="$TOPDIR/closed/autoconf"
 else
-  conf_custom_script_dir=$CUSTOM_CONFIG_DIR
+  conf_custom_script_dir="$CUSTOM_CONFIG_DIR"
 fi
 
 ###
@@ -110,14 +117,41 @@ fi
 if test "x$conf_debug_configure" = xtrue; then
   conf_debug_configure=recursive
 fi
+
 ###
 ### Process command-line arguments
 ###
+
+# Returns a shell-escaped version of the argument given.
+function shell_quote() {
+  if [[ -n "$1" ]]; then
+    # Uses only shell-safe characters?  No quoting needed.
+    # '=' is a zsh meta-character, but only in word-initial position.
+    if echo "$1" | grep '^[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\.:,%/+=_-]\{1,\}$' > /dev/null \
+        && ! echo "$1" | grep '^=' > /dev/null; then
+      quoted="$1"
+    else
+      if echo "$1" | grep "[\'!]" > /dev/null; then
+        # csh does history expansion within single quotes, but not
+        # when backslash-escaped!
+        local quoted_quote="'\\''" quoted_exclam="'\\!'"
+        word="${1//\'/${quoted_quote}}"
+        word="${1//\!/${quoted_exclam}}"
+      fi
+      quoted="'$1'"
+    fi
+    echo "$quoted"
+  fi
+}
+
 conf_processed_arguments=()
+conf_quoted_arguments=()
 conf_openjdk_target=
 
 for conf_option
 do
+
+  # Process (and remove) our own extensions that will not be passed to autoconf
   case $conf_option in
     --openjdk-target=*)
       conf_openjdk_target=`expr "X$conf_option" : '[^=]*=\(.*\)'`
@@ -128,18 +162,35 @@ do
         export conf_debug_configure
       fi
       ;;
-    [^-]*=*)
-      # Add name of variable to CONFIGURE_OVERRIDDEN_VARIABLES list inside !...!.
-      conf_env_var=`expr "x$conf_option" : 'x\([^=]*\)='`
-      CONFIGURE_OVERRIDDEN_VARIABLES="$CONFIGURE_OVERRIDDEN_VARIABLES!$conf_env_var!"
-      # ... and then process argument as usual
-      conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option")
-      ;;
     *)
       conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option")
       ;;
   esac
 
+  # Store all variables overridden on the command line
+  case $conf_option in
+    [^-]*=*)
+      # Add name of variable to CONFIGURE_OVERRIDDEN_VARIABLES list inside !...!.
+      conf_env_var=`expr "x$conf_option" : 'x\([^=]*\)='`
+      CONFIGURE_OVERRIDDEN_VARIABLES="$CONFIGURE_OVERRIDDEN_VARIABLES!$conf_env_var!"
+      ;;
+  esac
+
+  # Save the arguments, intelligently quoted for CONFIGURE_COMMAND_LINE.
+  case $conf_option in
+    *=*)
+      conf_option_name=`expr "x$conf_option" : 'x\([^=]*\)='`
+      conf_option_name=$(shell_quote "$conf_option_name")
+      conf_option_value=`expr "x$conf_option" : 'x[^=]*=\(.*\)'`
+      conf_option_value=$(shell_quote "$conf_option_value")
+      conf_quoted_arguments=("${conf_quoted_arguments[@]}" "$conf_option_name=$conf_option_value")
+      ;;
+    *)
+      conf_quoted_arguments=("${conf_quoted_arguments[@]}" "$(shell_quote "$conf_option")")
+      ;;
+  esac
+
+  # Check for certain autoconf options that require extra action
   case $conf_option in
     -build | --build | --buil | --bui | --bu |-build=* | --build=* | --buil=* | --bui=* | --bu=*)
       conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
@@ -151,6 +202,9 @@ do
       conf_print_help=true ;;
   esac
 done
+
+# Save the quoted command line
+CONFIGURE_COMMAND_LINE="${conf_quoted_arguments[@]}"
 
 if test "x$conf_legacy_crosscompile" != "x"; then
   if test "x$conf_openjdk_target" != "x"; then
@@ -181,10 +235,10 @@ conf_processed_arguments=("--enable-option-checking=fatal" "${conf_processed_arg
 ###
 if test -e $conf_custom_script_dir/generated-configure.sh; then
   # Custom source configure available; run that instead
-  echo Running custom generated-configure.sh
+  echo "Running custom generated-configure.sh"
   conf_script_to_run=$conf_custom_script_dir/generated-configure.sh
 else
-  echo Running generated-configure.sh
+  echo "Running generated-configure.sh"
   conf_script_to_run=$conf_script_dir/generated-configure.sh
 fi
 
@@ -217,6 +271,13 @@ Additional (non-autoconf) OpenJDK Options:
                           --build=<current platform>
   --debug-configure       Run the configure script with additional debug
                           logging enabled.
+
+EOT
+
+    # Print list of toolchains. This must be done by the autoconf script.
+    ( CONFIGURE_PRINT_TOOLCHAIN_LIST=true . $conf_script_to_run PRINTF=printf )
+
+    cat <<EOT
 
 Please be aware that, when cross-compiling, the OpenJDK configure script will
 generally use 'target' where autoconf traditionally uses 'host'.

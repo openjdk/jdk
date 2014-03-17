@@ -229,9 +229,20 @@ public abstract class ScriptFunctionData {
 
     /**
      * Allocates an object using this function's allocator.
+     *
+     * @param map the property map for the allocated object.
      * @return the object allocated using this function's allocator, or null if the function doesn't have an allocator.
      */
-    ScriptObject allocate() {
+    ScriptObject allocate(final PropertyMap map) {
+        return null;
+    }
+
+    /**
+     * Get the property map to use for objects allocated by this function.
+     *
+     * @return the property map for allocated objects.
+     */
+    PropertyMap getAllocatorMap() {
         return null;
     }
 

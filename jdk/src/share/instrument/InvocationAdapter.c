@@ -153,7 +153,6 @@ Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
         char *          options;
         jarAttribute*   attributes;
         char *          premainClass;
-        char *          agentClass;
         char *          bootClassPath;
 
         /*

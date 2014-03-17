@@ -68,9 +68,9 @@ if [ -z "${TESTJAVA}" ] ; then
    # is given on the command line, tell the user that and use a default.
    # THIS IS THE JDK BEING TESTED.
    if [ -n "$1" ] ; then
-          TESTJAVA=$1
+         TESTJAVA=$1
       else
-	  TESTJAVA=$JAVA_HOME
+         TESTJAVA=$JAVA_HOME
    fi
    TESTSRC=.
    TESTCLASSES=.

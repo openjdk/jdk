@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 import java.io.*;
 import java.rmi.*;
 import java.rmi.activation.*;
+import java.rmi.registry.*;
 
 /**
  * Utility class that creates an instance of rmid with a policy
@@ -37,6 +38,9 @@ import java.rmi.activation.*;
  * test.
  */
 public class RMID extends JavaVM {
+
+    private static final String SYSTEM_NAME = ActivationSystem.class.getName();
+        // "java.rmi.activation.ActivationSystem"
 
     public static String MANAGER_OPTION="-Djava.security.manager=";
 
@@ -111,6 +115,18 @@ public class RMID extends JavaVM {
         }
         if (!TestParams.testClasses.equals("")) {
             args += " -C-Dtest.classes=" + TestParams.testClasses;
+        }
+
+        if (!TestParams.testJavaOpts.equals("")) {
+            for (String a : TestParams.testJavaOpts.split(" +")) {
+                args += " -C" + a;
+            }
+        }
+
+        if (!TestParams.testVmOpts.equals("")) {
+            for (String a : TestParams.testVmOpts.split(" +")) {
+                args += " -C" + a;
+            }
         }
 
         args += " -C-Djava.rmi.server.useCodebaseOnly=false ";
@@ -207,6 +223,22 @@ public class RMID extends JavaVM {
         start(60000);
     }
 
+    /**
+     * Looks up the activation system in the registry on the given port,
+     * returning its stub, or null if it's not present. This method differs from
+     * ActivationGroup.getSystem() because this method looks on a specific port
+     * instead of using the java.rmi.activation.port property like
+     * ActivationGroup.getSystem() does. This method also returns null instead
+     * of throwing exceptions.
+     */
+    public static ActivationSystem lookupSystem(int port) {
+        try {
+            return (ActivationSystem)LocateRegistry.getRegistry(port).lookup(SYSTEM_NAME);
+        } catch (RemoteException | NotBoundException ex) {
+            return null;
+        }
+    }
+
     public void start(long waitTime) throws IOException {
 
         // if rmid is already running, then the test will fail with
@@ -238,8 +270,8 @@ public class RMID extends JavaVM {
             waitTime -= rmidStartSleepTime;
 
             // Checking if rmid is present
-            if (ActivationLibrary.rmidRunning(port)) {
-                /**
+            if (lookupSystem(port) != null) {
+                /*
                  * We need to set the java.rmi.activation.port value as the
                  * activation system will use the property to determine the
                  * port #.  The activation system will use this value if set.
@@ -249,11 +281,11 @@ public class RMID extends JavaVM {
                 System.setProperty("java.rmi.activation.port", Integer.toString(port));
                 mesg("finished starting rmid.");
                 return;
+            } else {
+                if (waitTime > 0) {
+                    mesg("rmid not started, will retry for " + waitTime + "ms");
+                }
             }
-            else {
-                mesg("rmid still not started");
-            }
-
         } while (waitTime > 0);
         TestLibrary.bomb("start rmid failed... giving up", null);
     }
@@ -274,24 +306,13 @@ public class RMID extends JavaVM {
     public static void shutdown(int port) {
 
         try {
-            ActivationSystem system = null;
-
-            try {
-                mesg("getting a reference to the activation system");
-                system = (ActivationSystem) Naming.lookup("//:" +
-                    port +
-                    "/java.rmi.activation.ActivationSystem");
-                mesg("obtained a reference to the activation system");
-            } catch (RemoteException re) {
-                mesg("could not contact registry while trying to shutdown activation system");
-            } catch (java.net.MalformedURLException mue) {
-            }
+            ActivationSystem system = lookupSystem(port);
 
             if (system == null) {
                 TestLibrary.bomb("reference to the activation system was null");
             }
-            system.shutdown();
 
+            system.shutdown();
         } catch (RemoteException re) {
             mesg("shutting down the activation daemon failed");
         } catch (Exception e) {

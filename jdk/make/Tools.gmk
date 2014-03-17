@@ -26,17 +26,11 @@
 # Cache all finds needed for this file. Only used on windows.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/make/src/classes))
 
-TOOLS_SRC := $(JDK_TOPDIR)/make/src/classes
-
-ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
-  TOOLS_SRC += $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator
-endif
-
 # The exception handling of swing beaninfo which have the own tool directory
 ifeq (, $(BUILD_TOOLS))
   $(eval $(call SetupJavaCompilation,BUILD_TOOLS, \
       SETUP := GENERATE_OLDBYTECODE, \
-      SRC := $(TOOLS_SRC), \
+      SRC := $(JDK_TOPDIR)/make/src/classes, \
       BIN := $(JDK_OUTPUTDIR)/btclasses))
 endif
 
@@ -111,7 +105,7 @@ TOOL_GENERATENIMBUS = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.generatenimbus.Generator
 
 TOOL_WRAPPERGENERATOR = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
-    WrapperGenerator
+    build.tools.x11wrappergen.WrapperGenerator
 
 TOOL_AWT_TOBIN = $(JAVA) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.icondata.awt.ToBin

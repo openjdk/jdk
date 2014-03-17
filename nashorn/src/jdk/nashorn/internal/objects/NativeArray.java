@@ -208,7 +208,7 @@ public final class NativeArray extends ScriptObject {
     }
 
     NativeArray(final ArrayData arrayData, final Global global) {
-        super(global.getArrayPrototype(), global.getArrayMap());
+        super(global.getArrayPrototype(), getInitialMap());
         this.setArray(arrayData);
         this.setIsArray();
     }

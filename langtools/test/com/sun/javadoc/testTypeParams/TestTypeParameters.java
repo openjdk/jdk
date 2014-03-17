@@ -42,11 +42,11 @@ public class TestTypeParameters extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS1 = new String[]{
-        "-d", BUG_ID, "-use", "-source", "1.5", "-sourcepath", SRC_DIR,
+        "-d", BUG_ID, "-use", "-sourcepath", SRC_DIR,
         "pkg"
     };
     private static final String[] ARGS2 = new String[]{
-        "-d", BUG_ID, "-linksource", "-source", "1.5", "-sourcepath", SRC_DIR,
+        "-d", BUG_ID, "-linksource", "-sourcepath", SRC_DIR,
         "pkg"
     };
 

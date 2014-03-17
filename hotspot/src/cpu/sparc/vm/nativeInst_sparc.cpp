@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
+#include "code/codeCache.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_sparc.hpp"
 #include "oops/oop.inline.hpp"

@@ -26,7 +26,12 @@
 # @bug     6528083
 # @summary Test RMI Bootstrap
 #
-# @build TestLogger RmiBootstrapTest Utils
+# @library /lib/testlibrary
+# @library /lib/testlibrary
+# @build jdk.testlibrary.Utils
+# @build TestLogger
+# @build Utils
+# @build RmiBootstrapTest
 # @run shell/timeout=300  RmiBootstrapTest.sh
 
 # Define the Java class test name

@@ -32,6 +32,12 @@
  * @run main TestLambdaFeature
  */
 
+/*
+ * NOTE : This test should be elided when version 1.7 support is removed from the JDK
+ *              or the negative part of the test showing 1.7's non-support should be
+ *              removed [ 8022738 ]
+ */
+
 public class TestLambdaFeature extends JavadocTester {
 
     //Test information.
@@ -43,7 +49,7 @@ public class TestLambdaFeature extends JavadocTester {
     };
 
     private static final String[] ARGS_1 = new String[] {
-        "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR, "-source", "1.5", "pkg1"
+        "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR, "-source", "1.7", "pkg1"
     };
 
     //Input for string search tests.

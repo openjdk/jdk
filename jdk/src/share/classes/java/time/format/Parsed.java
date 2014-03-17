@@ -289,7 +289,7 @@ final class Parsed implements TemporalAccessor {
                             changedCount++;
                             continue outer;  // have to restart to avoid concurrent modification
                         }
-                        throw new DateTimeException("Method resolveFields() can only return ChronoZonedDateTime," +
+                        throw new DateTimeException("Method resolve() can only return ChronoZonedDateTime, " +
                                 "ChronoLocalDateTime, ChronoLocalDate or LocalTime");
                     } else if (fieldValues.containsKey(targetField) == false) {
                         changedCount++;

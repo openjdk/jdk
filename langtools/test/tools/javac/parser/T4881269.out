@@ -2,8 +2,4 @@ T4881269.java:32:13: compiler.err.illegal.dot
 T4881269.java:33:27: compiler.err.illegal.dot
 T4881269.java:33:22: compiler.err.not.stmt
 T4881269.java:34:19: compiler.err.illegal.dot
-T4881269.java:34:20: compiler.err.expected: ';'
-T4881269.java:34:22: compiler.err.illegal.start.of.type
-T4881269.java:34:23: compiler.err.expected: token.identifier
-T4881269.java:34:25: compiler.err.expected: ';'
-8 errors
+4 errors

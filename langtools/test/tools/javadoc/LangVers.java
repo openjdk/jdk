@@ -42,7 +42,7 @@ public class LangVers extends Doclet {
                 "javadoc",
                 "LangVers",
                 LangVers.class.getClassLoader(),
-                new String[] {"-source", "1.5", thisFile}) != 0)
+                new String[] {thisFile}) != 0)
             throw new Error("Javadoc encountered warnings or errors.");
     }
 

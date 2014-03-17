@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,6 +462,10 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
 
         netypes = (*env)->GetArrayLength(env, jetypes);
         etypes = (jint *) (*env)->GetIntArrayElements(env, jetypes, NULL);
+
+        if (etypes == NULL) {
+            break;
+        }
 
         // check TGT validity
         if (native_debug) {
@@ -952,8 +956,7 @@ jobject BuildPrincipal(JNIEnv *env, PKERB_EXTERNAL_NAME principalName,
         if (native_debug) {
             printf("LSA: Can't allocate String array for Principal\n");
         }
-        LocalFree(realm);
-        return principal;
+        goto cleanup;
     }
 
     for (i=0; i<nameCount; i++) {
@@ -963,8 +966,17 @@ jobject BuildPrincipal(JNIEnv *env, PKERB_EXTERNAL_NAME principalName,
         // OK, got a Char array, so construct a String
         tempString = (*env)->NewString(env, (const jchar*)scanner->Buffer,
                             scanner->Length/sizeof(WCHAR));
+
+        if (tempString == NULL) {
+            goto cleanup;
+        }
+
         // Set the String into the StringArray
         (*env)->SetObjectArrayElement(env, stringArray, i, tempString);
+
+        if ((*env)->ExceptionCheck(env)) {
+            goto cleanup;
+        }
 
         // Do I have to worry about storage reclamation here?
     }
@@ -972,9 +984,14 @@ jobject BuildPrincipal(JNIEnv *env, PKERB_EXTERNAL_NAME principalName,
     realmLen = (ULONG)wcslen((PWCHAR)realm);
     realmStr = (*env)->NewString(env, (PWCHAR)realm, (USHORT)realmLen);
 
+    if (realmStr == NULL) {
+        goto cleanup;
+    }
+
     principal = (*env)->NewObject(env, principalNameClass,
                     principalNameConstructor, stringArray, realmStr);
 
+cleanup:
     // free local resources
     LocalFree(realm);
 

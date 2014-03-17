@@ -233,7 +233,7 @@ compute_cen(int fd, Byte *bp)
     jlong base_offset;
     jlong offset;
     char buffer[MINREAD];
-    p = buffer;
+    p = (Byte*) buffer;
     /*
      * Read the END Header, which is the starting point for ZIP files.
      * (Clearly designed to make writing a zip file easier than reading
@@ -276,7 +276,7 @@ compute_cen(int fd, Byte *bp)
         if (JLI_Lseek(fd, offset, SEEK_SET) < (jlong)0) {
             return (-1);
         }
-        p = buffer;
+        p = (Byte*) buffer;
         base_offset = base_offset - ZIP64_ENDSIZ(p) - ZIP64_ENDOFF(p) - ZIP64_ENDHDR;
     } else {
         base_offset = base_offset - ENDSIZ(p) - ENDOFF(p);

@@ -1436,7 +1436,7 @@ void GraphBuilder::method_return(Value x) {
 
   bool need_mem_bar = false;
   if (method()->name() == ciSymbol::object_initializer_name() &&
-      scope()->wrote_final()) {
+      (scope()->wrote_final() || (AlwaysSafeConstructors && scope()->wrote_fields()))) {
     need_mem_bar = true;
   }
 
@@ -1548,6 +1548,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
 
   if (field->is_final() && (code == Bytecodes::_putfield)) {
     scope()->set_wrote_final();
+  }
+
+  if (code == Bytecodes::_putfield) {
+    scope()->set_wrote_fields();
   }
 
   const int offset = !needs_patching ? field->offset() : -1;
@@ -3767,11 +3771,14 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   }
 
   // now perform tests that are based on flag settings
-  if (callee->force_inline()) {
-    if (inline_level() > MaxForceInlineLevel) INLINE_BAILOUT("MaxForceInlineLevel");
-    print_inlining(callee, "force inline by annotation");
-  } else if (callee->should_inline()) {
-    print_inlining(callee, "force inline by CompileOracle");
+  if (callee->force_inline() || callee->should_inline()) {
+    if (inline_level() > MaxForceInlineLevel                    ) INLINE_BAILOUT("MaxForceInlineLevel");
+    if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");
+
+    const char* msg = "";
+    if (callee->force_inline())  msg = "force inline by annotation";
+    if (callee->should_inline()) msg = "force inline by CompileOracle";
+    print_inlining(callee, msg);
   } else {
     // use heuristic controls on inlining
     if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("inlining too deep");
