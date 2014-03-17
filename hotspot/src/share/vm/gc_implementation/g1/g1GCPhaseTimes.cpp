@@ -309,6 +309,16 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   if (_cur_verify_before_time_ms > 0.0) {
     print_stats(2, "Verify Before", _cur_verify_before_time_ms);
   }
+  if (G1CollectedHeap::heap()->evacuation_failed()) {
+    double evac_fail_handling = _cur_evac_fail_recalc_used + _cur_evac_fail_remove_self_forwards +
+      _cur_evac_fail_restore_remsets;
+    print_stats(2, "Evacuation Failure", evac_fail_handling);
+    if (G1Log::finest()) {
+      print_stats(3, "Recalculate Used", _cur_evac_fail_recalc_used);
+      print_stats(3, "Remove Self Forwards", _cur_evac_fail_remove_self_forwards);
+      print_stats(3, "Restore RemSet", _cur_evac_fail_restore_remsets);
+    }
+  }
   print_stats(2, "Choose CSet",
     (_recorded_young_cset_choice_time_ms +
     _recorded_non_young_cset_choice_time_ms));
