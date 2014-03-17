@@ -246,6 +246,7 @@ void GCTracer::send_meta_space_summary_event(GCWhen::Type when, const MetaspaceS
   if (e.should_commit()) {
     e.set_gcId(_shared_gc_info.id());
     e.set_when((u1) when);
+    e.set_gcThreshold(meta_space_summary.capacity_until_GC());
     e.set_metaspace(to_trace_struct(meta_space_summary.meta_space()));
     e.set_dataSpace(to_trace_struct(meta_space_summary.data_space()));
     e.set_classSpace(to_trace_struct(meta_space_summary.class_space()));

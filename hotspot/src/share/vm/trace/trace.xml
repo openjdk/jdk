@@ -193,6 +193,7 @@ Declares a structure type that can be used in other events.
     <event id="MetaspaceSummary" path="vm/gc/heap/metaspace_summary" label="Metaspace Summary" is_instant="true">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
       <value type="GCWHEN" field="when" label="When" />
+      <value type="BYTES64" field="gcThreshold" label="GC Threshold" />
       <structvalue type="MetaspaceSizes" field="metaspace" label="Total"/>
       <structvalue type="MetaspaceSizes" field="dataSpace" label="Data"/>
       <structvalue type="MetaspaceSizes" field="classSpace" label="Class"/>
