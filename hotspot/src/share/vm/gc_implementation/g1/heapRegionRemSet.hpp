@@ -121,7 +121,7 @@ class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
 
   // Indexed by thread X heap region, to minimize thread contention.
   static int** _from_card_cache;
-  static size_t _from_card_cache_max_regions;
+  static uint _from_card_cache_max_regions;
   static size_t _from_card_cache_mem_size;
 
   // link/add the given fine grain remembered set into the "all" list
@@ -170,11 +170,11 @@ public:
 
   // Declare the heap size (in # of regions) to the OtherRegionsTable.
   // (Uses it to initialize from_card_cache).
-  static void init_from_card_cache(size_t max_regions);
+  static void init_from_card_cache(uint max_regions);
 
   // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
   // Make sure any entries for higher regions are invalid.
-  static void shrink_from_card_cache(size_t new_n_regs);
+  static void shrink_from_card_cache(uint new_n_regs);
 
   static void print_from_card_cache();
 };
@@ -222,7 +222,7 @@ private:
 public:
   HeapRegionRemSet(G1BlockOffsetSharedArray* bosa, HeapRegion* hr);
 
-  static int num_par_rem_sets();
+  static uint num_par_rem_sets();
   static void setup_remset_size();
 
   HeapRegion* hr() const {
@@ -358,12 +358,12 @@ public:
   // (Uses it to initialize from_card_cache).
   static void init_heap(uint max_regions) {
     G1CodeRootSet::initialize();
-    OtherRegionsTable::init_from_card_cache((size_t) max_regions);
+    OtherRegionsTable::init_from_card_cache(max_regions);
   }
 
   // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
   static void shrink_heap(uint new_n_regs) {
-    OtherRegionsTable::shrink_from_card_cache((size_t) new_n_regs);
+    OtherRegionsTable::shrink_from_card_cache(new_n_regs);
   }
 
 #ifndef PRODUCT

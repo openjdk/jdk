@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "memory/allocation.hpp"
+#include "memory/padded.inline.hpp"
 #include "memory/space.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -358,27 +359,29 @@ void OtherRegionsTable::unlink_from_all(PerRegionTable* prt) {
 }
 
 int**  OtherRegionsTable::_from_card_cache = NULL;
-size_t OtherRegionsTable::_from_card_cache_max_regions = 0;
+uint   OtherRegionsTable::_from_card_cache_max_regions = 0;
 size_t OtherRegionsTable::_from_card_cache_mem_size = 0;
 
-void OtherRegionsTable::init_from_card_cache(size_t max_regions) {
-  _from_card_cache_max_regions = max_regions;
+void OtherRegionsTable::init_from_card_cache(uint max_regions) {
+  guarantee(_from_card_cache == NULL, "Should not call this multiple times");
+  uint n_par_rs = HeapRegionRemSet::num_par_rem_sets();
 
-  int n_par_rs = HeapRegionRemSet::num_par_rem_sets();
-  _from_card_cache = NEW_C_HEAP_ARRAY(int*, n_par_rs, mtGC);
-  for (int i = 0; i < n_par_rs; i++) {
-    _from_card_cache[i] = NEW_C_HEAP_ARRAY(int, max_regions, mtGC);
-    for (size_t j = 0; j < max_regions; j++) {
+  _from_card_cache_max_regions = max_regions;
+  _from_card_cache = Padded2DArray<int, mtGC>::create_unfreeable(n_par_rs,
+                                                                 _from_card_cache_max_regions,
+                                                                 &_from_card_cache_mem_size);
+
+  for (uint i = 0; i < n_par_rs; i++) {
+    for (uint j = 0; j < _from_card_cache_max_regions; j++) {
       _from_card_cache[i][j] = -1;  // An invalid value.
     }
   }
-  _from_card_cache_mem_size = n_par_rs * max_regions * sizeof(int);
 }
 
-void OtherRegionsTable::shrink_from_card_cache(size_t new_n_regs) {
-  for (int i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
+void OtherRegionsTable::shrink_from_card_cache(uint new_n_regs) {
+  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
     assert(new_n_regs <= _from_card_cache_max_regions, "Must be within max.");
-    for (size_t j = new_n_regs; j < _from_card_cache_max_regions; j++) {
+    for (uint j = new_n_regs; j < _from_card_cache_max_regions; j++) {
       _from_card_cache[i][j] = -1;  // An invalid value.
     }
   }
@@ -386,8 +389,8 @@ void OtherRegionsTable::shrink_from_card_cache(size_t new_n_regs) {
 
 #ifndef PRODUCT
 void OtherRegionsTable::print_from_card_cache() {
-  for (int i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
-    for (size_t j = 0; j < _from_card_cache_max_regions; j++) {
+  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
+    for (uint j = 0; j < _from_card_cache_max_regions; j++) {
       gclog_or_tty->print_cr("_from_card_cache[%d][%d] = %d.",
                     i, j, _from_card_cache[i][j]);
     }
@@ -727,8 +730,8 @@ size_t OtherRegionsTable::fl_mem_size() {
 }
 
 void OtherRegionsTable::clear_fcc() {
-  size_t hrs_idx = hr()->hrs_index();
-  for (int i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
+  uint hrs_idx = hr()->hrs_index();
+  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
     _from_card_cache[i][hrs_idx] = -1;
   }
 }
@@ -762,8 +765,8 @@ void OtherRegionsTable::clear_incoming_entry(HeapRegion* from_hr) {
     _coarse_map.par_at_put(hrs_ind, 0);
   }
   // Check to see if any of the fcc entries come from here.
-  size_t hr_ind = (size_t) hr()->hrs_index();
-  for (int tid = 0; tid < HeapRegionRemSet::num_par_rem_sets(); tid++) {
+  uint hr_ind = hr()->hrs_index();
+  for (uint tid = 0; tid < HeapRegionRemSet::num_par_rem_sets(); tid++) {
     int fcc_ent = _from_card_cache[tid][hr_ind];
     if (fcc_ent != -1) {
       HeapWord* card_addr = (HeapWord*)
@@ -838,8 +841,8 @@ OtherRegionsTable::do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task) {
 // Determines how many threads can add records to an rset in parallel.
 // This can be done by either mutator threads together with the
 // concurrent refinement threads or GC threads.
-int HeapRegionRemSet::num_par_rem_sets() {
-  return (int)MAX2(DirtyCardQueueSet::num_par_ids() + ConcurrentG1Refine::thread_num(), ParallelGCThreads);
+uint HeapRegionRemSet::num_par_rem_sets() {
+  return (uint)MAX2(DirtyCardQueueSet::num_par_ids() + ConcurrentG1Refine::thread_num(), ParallelGCThreads);
 }
 
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
