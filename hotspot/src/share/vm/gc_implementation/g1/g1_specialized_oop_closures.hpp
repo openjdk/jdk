@@ -43,8 +43,6 @@ class G1ParCopyClosure;
 class G1ParScanClosure;
 class G1ParPushHeapRSClosure;
 
-typedef G1ParCopyClosure<G1BarrierEvac, false> G1ParScanHeapEvacClosure;
-
 class FilterIntoCSClosure;
 class FilterOutOfRegionClosure;
 class G1CMOopClosure;
@@ -61,7 +59,6 @@ class G1UpdateRSOrPushRefOopClosure;
 #endif
 
 #define FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES(f) \
-      f(G1ParScanHeapEvacClosure,_nv)                   \
       f(G1ParScanClosure,_nv)                           \
       f(G1ParPushHeapRSClosure,_nv)                     \
       f(FilterIntoCSClosure,_nv)                        \
