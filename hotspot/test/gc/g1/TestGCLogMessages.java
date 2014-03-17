@@ -23,7 +23,7 @@
 
 /*
  * @test TestPrintGCDetails
- * @bug 8035406 8027295
+ * @bug 8035406 8027295 8035398
  * @summary Ensure that the PrintGCDetails output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -42,6 +42,7 @@ public class TestGCLogMessages {
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
+    output.shouldNotContain("[Redirty Cards");
     output.shouldNotContain("[Code Root Purge");
     output.shouldNotContain("[Young Free CSet");
     output.shouldNotContain("[Non-Young Free CSet");
@@ -54,6 +55,7 @@ public class TestGCLogMessages {
 
     output = new OutputAnalyzer(pb.start());
 
+    output.shouldContain("[Redirty Cards");
     output.shouldContain("[Code Root Purge");
     output.shouldNotContain("[Young Free CSet");
     output.shouldNotContain("[Non-Young Free CSet");
@@ -68,6 +70,7 @@ public class TestGCLogMessages {
 
     output = new OutputAnalyzer(pb.start());
 
+    output.shouldContain("[Redirty Cards");
     output.shouldContain("[Code Root Purge");
     output.shouldContain("[Young Free CSet");
     output.shouldContain("[Non-Young Free CSet");

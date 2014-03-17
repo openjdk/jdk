@@ -1651,6 +1651,8 @@ public:
   // in symbol table, possibly in parallel.
   void unlink_string_and_symbol_table(BoolObjectClosure* is_alive, bool unlink_strings = true, bool unlink_symbols = true);
 
+  // Redirty logged cards in the refinement queue.
+  void redirty_logged_cards();
   // Verification
 
   // The following is just to alert the verification code

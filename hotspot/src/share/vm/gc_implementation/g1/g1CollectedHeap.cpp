@@ -169,14 +169,6 @@ public:
   int calls() { return _calls; }
 };
 
-class RedirtyLoggedCardTableEntryFastClosure : public CardTableEntryClosure {
-public:
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    *card_ptr = CardTableModRefBS::dirty_card_val();
-    return true;
-  }
-};
-
 YoungList::YoungList(G1CollectedHeap* g1h) :
     _g1h(g1h), _head(NULL), _length(0), _last_sampled_rs_lengths(0),
     _survivor_head(NULL), _survivor_tail(NULL), _survivor_length(0) {
@@ -5270,6 +5262,29 @@ void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive
   }
 }
 
+class RedirtyLoggedCardTableEntryFastClosure : public CardTableEntryClosure {
+public:
+  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
+    *card_ptr = CardTableModRefBS::dirty_card_val();
+    return true;
+  }
+};
+
+void G1CollectedHeap::redirty_logged_cards() {
+  guarantee(G1DeferredRSUpdate, "Must only be called when using deferred RS updates.");
+  double redirty_logged_cards_start = os::elapsedTime();
+
+  RedirtyLoggedCardTableEntryFastClosure redirty;
+  dirty_card_queue_set().set_closure(&redirty);
+  dirty_card_queue_set().apply_closure_to_all_completed_buffers();
+
+  DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
+  dcq.merge_bufferlists(&dirty_card_queue_set());
+  assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
+
+  g1_policy()->phase_times()->record_redirty_logged_cards_time_ms((os::elapsedTime() - redirty_logged_cards_start) * 1000.0);
+}
+
 // Weak Reference Processing support
 
 // An always "is_alive" closure that is used to preserve referents.
@@ -5926,13 +5941,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   enqueue_discovered_references(n_workers);
 
   if (G1DeferredRSUpdate) {
-    RedirtyLoggedCardTableEntryFastClosure redirty;
-    dirty_card_queue_set().set_closure(&redirty);
-    dirty_card_queue_set().apply_closure_to_all_completed_buffers();
-
-    DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
-    dcq.merge_bufferlists(&dirty_card_queue_set());
-    assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
+    redirty_logged_cards();
   }
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 }
