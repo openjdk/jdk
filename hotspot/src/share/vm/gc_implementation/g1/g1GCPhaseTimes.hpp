@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_collection_par_time_ms;
   double _cur_collection_code_root_fixup_time_ms;
   double _cur_strong_code_root_migration_time_ms;
+  double _cur_strong_code_root_purge_time_ms;
 
   double _cur_clear_ct_time_ms;
   double _cur_ref_proc_time_ms;
@@ -221,6 +222,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_strong_code_root_migration_time(double ms) {
     _cur_strong_code_root_migration_time_ms = ms;
+  }
+
+  void record_strong_code_root_purge_time(double ms) {
+    _cur_strong_code_root_purge_time_ms = ms;
   }
 
   void record_ref_proc_time(double ms) {
