@@ -731,7 +731,8 @@ size_t OtherRegionsTable::fl_mem_size() {
 
 void OtherRegionsTable::clear_fcc() {
   uint hrs_idx = hr()->hrs_index();
-  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
+  uint num_par_remsets = HeapRegionRemSet::num_par_rem_sets();
+  for (uint i = 0; i < num_par_remsets; i++) {
     _from_card_cache[i][hrs_idx] = -1;
   }
 }

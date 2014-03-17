@@ -763,9 +763,12 @@ public:
   // list later). The used bytes of freed regions are accumulated in
   // pre_used. If par is true, the region's RSet will not be freed
   // up. The assumption is that this will be done later.
+  // The locked parameter indicates if the caller has already taken
+  // care of proper synchronization. This may allow some optimizations.
   void free_region(HeapRegion* hr,
                    FreeRegionList* free_list,
-                   bool par);
+                   bool par,
+                   bool locked = false);
 
   // Frees a humongous region by collapsing it into individual regions
   // and calling free_region() for each of them. The freed regions

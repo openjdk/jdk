@@ -317,6 +317,10 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   print_stats(2, "Free CSet",
     (_recorded_young_free_cset_time_ms +
     _recorded_non_young_free_cset_time_ms));
+  if (G1Log::finest()) {
+    print_stats(3, "Young Free CSet", _recorded_young_free_cset_time_ms);
+    print_stats(3, "Non-Young Free CSet", _recorded_non_young_free_cset_time_ms);
+  }
   if (_cur_verify_after_time_ms > 0.0) {
     print_stats(2, "Verify After", _cur_verify_after_time_ms);
   }

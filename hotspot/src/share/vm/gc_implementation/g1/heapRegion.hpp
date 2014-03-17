@@ -596,7 +596,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void save_marks();
 
   // Reset HR stuff to default values.
-  void hr_clear(bool par, bool clear_space);
+  void hr_clear(bool par, bool clear_space, bool locked = false);
   void par_clear();
 
   // Get the start of the unmarked area in this region.
