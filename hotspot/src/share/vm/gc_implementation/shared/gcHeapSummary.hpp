@@ -125,15 +125,17 @@ class PSHeapSummary : public GCHeapSummary {
 };
 
 class MetaspaceSummary : public StackObj {
+  size_t _capacity_until_GC;
   MetaspaceSizes _meta_space;
   MetaspaceSizes _data_space;
   MetaspaceSizes _class_space;
 
  public:
-  MetaspaceSummary() : _meta_space(), _data_space(), _class_space() {}
-  MetaspaceSummary(const MetaspaceSizes& meta_space, const MetaspaceSizes& data_space, const MetaspaceSizes& class_space) :
-       _meta_space(meta_space), _data_space(data_space), _class_space(class_space) { }
+  MetaspaceSummary() : _capacity_until_GC(0), _meta_space(), _data_space(), _class_space() {}
+  MetaspaceSummary(size_t capacity_until_GC, const MetaspaceSizes& meta_space, const MetaspaceSizes& data_space, const MetaspaceSizes& class_space) :
+       _capacity_until_GC(capacity_until_GC), _meta_space(meta_space), _data_space(data_space), _class_space(class_space) { }
 
+  size_t capacity_until_GC() const { return _capacity_until_GC; }
   const MetaspaceSizes& meta_space() const { return _meta_space; }
   const MetaspaceSizes& data_space() const { return _data_space; }
   const MetaspaceSizes& class_space() const { return _class_space; }

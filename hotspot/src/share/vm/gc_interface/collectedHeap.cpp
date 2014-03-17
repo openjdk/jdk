@@ -97,7 +97,7 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
       MetaspaceAux::allocated_used_bytes(Metaspace::ClassType),
       MetaspaceAux::reserved_bytes(Metaspace::ClassType));
 
-  return MetaspaceSummary(meta_space, data_space, class_space);
+  return MetaspaceSummary(MetaspaceGC::capacity_until_GC(), meta_space, data_space, class_space);
 }
 
 void CollectedHeap::print_heap_before_gc() {
