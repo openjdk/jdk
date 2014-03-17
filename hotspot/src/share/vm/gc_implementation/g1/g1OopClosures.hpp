@@ -80,53 +80,6 @@ public:
   virtual void do_oop(narrowOop* p)    { do_oop_nv(p); }
 };
 
-#define G1_PARTIAL_ARRAY_MASK 0x2
-
-inline bool has_partial_array_mask(oop* ref) {
-  return ((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) == G1_PARTIAL_ARRAY_MASK;
-}
-
-// We never encode partial array oops as narrowOop*, so return false immediately.
-// This allows the compiler to create optimized code when popping references from
-// the work queue.
-inline bool has_partial_array_mask(narrowOop* ref) {
-  assert(((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) != G1_PARTIAL_ARRAY_MASK, "Partial array oop reference encoded as narrowOop*");
-  return false;
-}
-
-// Only implement set_partial_array_mask() for regular oops, not for narrowOops.
-// We always encode partial arrays as regular oop, to allow the
-// specialization for has_partial_array_mask() for narrowOops above.
-// This means that unintentional use of this method with narrowOops are caught
-// by the compiler.
-inline oop* set_partial_array_mask(oop obj) {
-  assert(((uintptr_t)(void *)obj & G1_PARTIAL_ARRAY_MASK) == 0, "Information loss!");
-  return (oop*) ((uintptr_t)(void *)obj | G1_PARTIAL_ARRAY_MASK);
-}
-
-template <class T> inline oop clear_partial_array_mask(T* ref) {
-  return cast_to_oop((intptr_t)ref & ~G1_PARTIAL_ARRAY_MASK);
-}
-
-class G1ParScanPartialArrayClosure : public G1ParClosureSuper {
-  G1ParScanClosure _scanner;
-
-public:
-  G1ParScanPartialArrayClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state, ReferenceProcessor* rp) :
-    G1ParClosureSuper(g1, par_scan_state), _scanner(g1, par_scan_state, rp)
-  {
-    assert(_ref_processor == NULL, "sanity");
-  }
-
-  G1ParScanClosure* scanner() {
-    return &_scanner;
-  }
-
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)       { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-};
-
 // Add back base class for metadata
 class G1ParCopyHelper : public G1ParClosureSuper {
 protected:
@@ -173,15 +126,8 @@ typedef G1ParCopyClosure<G1BarrierKlass, false> G1ParScanMetadataClosure;
 typedef G1ParCopyClosure<G1BarrierNone, true> G1ParScanAndMarkExtRootClosure;
 typedef G1ParCopyClosure<G1BarrierKlass, true> G1ParScanAndMarkMetadataClosure;
 
-// The following closure type is defined in g1_specialized_oop_closures.hpp:
-//
-// typedef G1ParCopyClosure<G1BarrierEvac, false> G1ParScanHeapEvacClosure;
-
 // We use a separate closure to handle references during evacuation
 // failure processing.
-// We could have used another instance of G1ParScanHeapEvacClosure
-// (since that closure no longer assumes that the references it
-// handles point into the collection set).
 
 typedef G1ParCopyClosure<G1BarrierEvac, false> G1ParScanHeapEvacFailureClosure;
 

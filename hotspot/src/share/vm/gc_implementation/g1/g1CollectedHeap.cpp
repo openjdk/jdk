@@ -4632,9 +4632,7 @@ bool G1ParScanThreadState::verify_task(StarTask ref) const {
 #endif // ASSERT
 
 void G1ParScanThreadState::trim_queue() {
-  assert(_evac_cl != NULL, "not set");
   assert(_evac_failure_cl != NULL, "not set");
-  assert(_partial_scan_cl != NULL, "not set");
 
   StarTask ref;
   do {
@@ -4830,55 +4828,6 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
 template void G1ParCopyClosure<G1BarrierEvac, false>::do_oop_work(oop* p);
 template void G1ParCopyClosure<G1BarrierEvac, false>::do_oop_work(narrowOop* p);
 
-template <class T> void G1ParScanPartialArrayClosure::do_oop_nv(T* p) {
-  assert(has_partial_array_mask(p), "invariant");
-  oop from_obj = clear_partial_array_mask(p);
-
-  assert(Universe::heap()->is_in_reserved(from_obj), "must be in heap.");
-  assert(from_obj->is_objArray(), "must be obj array");
-  objArrayOop from_obj_array = objArrayOop(from_obj);
-  // The from-space object contains the real length.
-  int length                 = from_obj_array->length();
-
-  assert(from_obj->is_forwarded(), "must be forwarded");
-  oop to_obj                 = from_obj->forwardee();
-  assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
-  objArrayOop to_obj_array   = objArrayOop(to_obj);
-  // We keep track of the next start index in the length field of the
-  // to-space object.
-  int next_index             = to_obj_array->length();
-  assert(0 <= next_index && next_index < length,
-         err_msg("invariant, next index: %d, length: %d", next_index, length));
-
-  int start                  = next_index;
-  int end                    = length;
-  int remainder              = end - start;
-  // We'll try not to push a range that's smaller than ParGCArrayScanChunk.
-  if (remainder > 2 * ParGCArrayScanChunk) {
-    end = start + ParGCArrayScanChunk;
-    to_obj_array->set_length(end);
-    // Push the remainder before we process the range in case another
-    // worker has run out of things to do and can steal it.
-    oop* from_obj_p = set_partial_array_mask(from_obj);
-    _par_scan_state->push_on_queue(from_obj_p);
-  } else {
-    assert(length == end, "sanity");
-    // We'll process the final range for this object. Restore the length
-    // so that the heap remains parsable in case of evacuation failure.
-    to_obj_array->set_length(end);
-  }
-  _scanner.set_region(_g1->heap_region_containing_raw(to_obj));
-  // Process indexes [start,end). It will also process the header
-  // along with the first chunk (i.e., the chunk with start == 0).
-  // Note that at this point the length field of to_obj_array is not
-  // correct given that we are using it to keep track of the next
-  // start index. oop_iterate_range() (thankfully!) ignores the length
-  // field and only relies on the start / end parameters.  It does
-  // however return the size of the object which will be incorrect. So
-  // we have to ignore it even if we wanted to use it.
-  to_obj_array->oop_iterate_range(&_scanner, start, end);
-}
-
 class G1ParEvacuateFollowersClosure : public VoidClosure {
 protected:
   G1CollectedHeap*              _g1h;
@@ -5020,13 +4969,9 @@ public:
       ReferenceProcessor*             rp = _g1h->ref_processor_stw();
 
       G1ParScanThreadState            pss(_g1h, worker_id, rp);
-      G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, rp);
       G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, rp);
-      G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, rp);
 
-      pss.set_evac_closure(&scan_evac_cl);
       pss.set_evac_failure_closure(&evac_failure_cl);
-      pss.set_partial_scan_closure(&partial_scan_cl);
 
       G1ParScanExtRootClosure        only_scan_root_cl(_g1h, &pss, rp);
       G1ParScanMetadataClosure       only_scan_metadata_cl(_g1h, &pss, rp);
@@ -5474,14 +5419,9 @@ public:
     G1STWIsAliveClosure is_alive(_g1h);
 
     G1ParScanThreadState            pss(_g1h, worker_id, NULL);
-
-    G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, NULL);
     G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, NULL);
-    G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, NULL);
 
-    pss.set_evac_closure(&scan_evac_cl);
     pss.set_evac_failure_closure(&evac_failure_cl);
-    pss.set_partial_scan_closure(&partial_scan_cl);
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, &pss, NULL);
     G1ParScanMetadataClosure       only_copy_metadata_cl(_g1h, &pss, NULL);
@@ -5586,13 +5526,9 @@ public:
     HandleMark   hm;
 
     G1ParScanThreadState            pss(_g1h, worker_id, NULL);
-    G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, NULL);
     G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, NULL);
-    G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, NULL);
 
-    pss.set_evac_closure(&scan_evac_cl);
     pss.set_evac_failure_closure(&evac_failure_cl);
-    pss.set_partial_scan_closure(&partial_scan_cl);
 
     assert(pss.refs()->is_empty(), "both queue and overflow should be empty");
 
@@ -5716,13 +5652,9 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   // We do not embed a reference processor in the copying/scanning
   // closures while we're actually processing the discovered
   // reference objects.
-  G1ParScanHeapEvacClosure        scan_evac_cl(this, &pss, NULL);
   G1ParScanHeapEvacFailureClosure evac_failure_cl(this, &pss, NULL);
-  G1ParScanPartialArrayClosure    partial_scan_cl(this, &pss, NULL);
 
-  pss.set_evac_closure(&scan_evac_cl);
   pss.set_evac_failure_closure(&evac_failure_cl);
-  pss.set_partial_scan_closure(&partial_scan_cl);
 
   assert(pss.refs()->is_empty(), "pre-condition");
 
