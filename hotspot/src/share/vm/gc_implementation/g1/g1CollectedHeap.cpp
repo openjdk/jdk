@@ -2360,8 +2360,12 @@ public:
 };
 
 size_t G1CollectedHeap::recalculate_used() const {
+  double recalculate_used_start = os::elapsedTime();
+
   SumUsedClosure blk;
   heap_region_iterate(&blk);
+
+  g1_policy()->phase_times()->record_evac_fail_recalc_used_time((os::elapsedTime() - recalculate_used_start) * 1000.0);
   return blk.result();
 }
 
@@ -4376,6 +4380,8 @@ void G1CollectedHeap::finalize_for_evac_failure() {
 void G1CollectedHeap::remove_self_forwarding_pointers() {
   assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
 
+  double remove_self_forwards_start = os::elapsedTime();
+
   G1ParRemoveSelfForwardPtrsTask rsfp_task(this);
 
   if (G1CollectedHeap::use_parallel_gc_threads()) {
@@ -4403,6 +4409,8 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   }
   _objs_with_preserved_marks.clear(true);
   _preserved_marks_of_objs.clear(true);
+
+  g1_policy()->phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }
 
 void G1CollectedHeap::push_on_evac_failure_scan_stack(oop obj) {

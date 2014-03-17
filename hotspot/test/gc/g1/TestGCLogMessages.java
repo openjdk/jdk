@@ -35,6 +35,11 @@ import com.oracle.java.testlibrary.OutputAnalyzer;
 
 public class TestGCLogMessages {
   public static void main(String[] args) throws Exception {
+    testNormalLogs();
+    testWithToSpaceExhaustionLogs();
+  }
+
+  private static void testNormalLogs() throws Exception {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                               "-Xmx10M",
@@ -74,8 +79,43 @@ public class TestGCLogMessages {
     output.shouldContain("[Code Root Purge");
     output.shouldContain("[Young Free CSet");
     output.shouldContain("[Non-Young Free CSet");
+
+    // also check evacuation failure messages once
+    output.shouldNotContain("[Evacuation Failure");
+    output.shouldNotContain("[Recalculate Used");
+    output.shouldNotContain("[Remove Self Forwards");
+    output.shouldNotContain("[Restore RemSet");
+    output.shouldHaveExitValue(0);
+  }
+
+  private static void testWithToSpaceExhaustionLogs() throws Exception {
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                               "-Xmx10M",
+                                               "-Xmn5M",
+                                               "-XX:+PrintGCDetails",
+                                               GCTestWithToSpaceExhaustion.class.getName());
+
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldContain("[Evacuation Failure");
+    output.shouldNotContain("[Recalculate Used");
+    output.shouldNotContain("[Remove Self Forwards");
+    output.shouldNotContain("[Restore RemSet");
     output.shouldHaveExitValue(0);
 
+    pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                               "-Xmx10M",
+                                               "-Xmn5M",
+                                               "-XX:+PrintGCDetails",
+                                               "-XX:+UnlockExperimentalVMOptions",
+                                               "-XX:G1LogLevel=finest",
+                                               GCTestWithToSpaceExhaustion.class.getName());
+
+    output = new OutputAnalyzer(pb.start());
+    output.shouldContain("[Evacuation Failure");
+    output.shouldContain("[Recalculate Used");
+    output.shouldContain("[Remove Self Forwards");
+    output.shouldContain("[Restore RemSet");
+    output.shouldHaveExitValue(0);
   }
 
   static class GCTest {
@@ -83,6 +123,21 @@ public class TestGCLogMessages {
     public static void main(String [] args) {
       System.out.println("Creating garbage");
       // create 128MB of garbage. This should result in at least one GC
+      for (int i = 0; i < 1024; i++) {
+        garbage = new byte[128 * 1024];
+      }
+      System.out.println("Done");
+    }
+  }
+
+  static class GCTestWithToSpaceExhaustion {
+    private static byte[] garbage;
+    private static byte[] largeObject;
+    public static void main(String [] args) {
+      largeObject = new byte[5*1024*1024];
+      System.out.println("Creating garbage");
+      // create 128MB of garbage. This should result in at least one GC,
+      // some of them with to-space exhaustion.
       for (int i = 0; i < 1024; i++) {
         garbage = new byte[128 * 1024];
       }
