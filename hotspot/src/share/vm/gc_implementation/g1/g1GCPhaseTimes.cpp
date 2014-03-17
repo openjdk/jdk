@@ -314,6 +314,9 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
     _recorded_non_young_cset_choice_time_ms));
   print_stats(2, "Ref Proc", _cur_ref_proc_time_ms);
   print_stats(2, "Ref Enq", _cur_ref_enq_time_ms);
+  if (G1DeferredRSUpdate) {
+    print_stats(2, "Redirty Cards", _recorded_redirty_logged_cards_time_ms);
+  }
   print_stats(2, "Free CSet",
     (_recorded_young_free_cset_time_ms +
     _recorded_non_young_free_cset_time_ms));
