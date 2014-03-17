@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/param.h>
 #include <signal.h>
 #include <pthread.h>
 #include <sys/types.h>
@@ -35,7 +36,6 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include <sys/poll.h>
 
 /*
@@ -297,9 +297,8 @@ int NET_ReadV(int s, const struct iovec * vector, int count) {
 }
 
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
-       struct sockaddr *from, int *fromlen) {
-    /* casting int *fromlen -> socklen_t* Both are ints */
-    BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, (socklen_t *)fromlen) );
+       struct sockaddr *from, socklen_t *fromlen) {
+    BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, fromlen) );
 }
 
 int NET_Send(int s, void *msg, int len, unsigned int flags) {
@@ -315,29 +314,17 @@ int NET_SendTo(int s, const void *msg, int len,  unsigned  int
     BLOCKING_IO_RETURN_INT( s, sendto(s, msg, len, flags, to, tolen) );
 }
 
-int NET_Accept(int s, struct sockaddr *addr, int *addrlen) {
-    socklen_t len = *addrlen;
-    int error = accept(s, addr, &len);
-    if (error != -1)
-        *addrlen = (int)len;
-    BLOCKING_IO_RETURN_INT( s, error );
+int NET_Accept(int s, struct sockaddr *addr, socklen_t *addrlen) {
+    BLOCKING_IO_RETURN_INT( s, accept(s, addr, addrlen) );
 }
 
 int NET_Connect(int s, struct sockaddr *addr, int addrlen) {
     BLOCKING_IO_RETURN_INT( s, connect(s, addr, addrlen) );
 }
 
-#ifndef USE_SELECT
 int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
     BLOCKING_IO_RETURN_INT( ufds[0].fd, poll(ufds, nfds, timeout) );
 }
-#else
-int NET_Select(int s, fd_set *readfds, fd_set *writefds,
-               fd_set *exceptfds, struct timeval *timeout) {
-    BLOCKING_IO_RETURN_INT( s-1,
-                            select(s, readfds, writefds, exceptfds, timeout) );
-}
-#endif
 
 /*
  * Wrapper for select(s, timeout). We are using select() on Mac OS due to Bug 7131399.
@@ -347,6 +334,10 @@ int NET_Select(int s, fd_set *readfds, fd_set *writefds,
 int NET_Timeout(int s, long timeout) {
     long prevtime = 0, newtime;
     struct timeval t, *tp = &t;
+    fd_set fds;
+    fd_set* fdsp = NULL;
+    int allocated = 0;
+    threadEntry_t self;
     fdEntry_t *fdEntry = getFdEntry(s);
 
     /*
@@ -376,20 +367,29 @@ int NET_Timeout(int s, long timeout) {
         t.tv_usec = 0;
     }
 
+    if (s < FD_SETSIZE) {
+        fdsp = &fds;
+        FD_ZERO(fdsp);
+    } else {
+        int length = (howmany(s+1, NFDBITS)) * sizeof(int);
+        fdsp = (fd_set *) calloc(1, length);
+        if (fdsp == NULL) {
+            return -1;   // errno will be set to ENOMEM
+        }
+        allocated = 1;
+    }
+    FD_SET(s, fdsp);
+
     for(;;) {
-        fd_set rfds;
         int rv;
-        threadEntry_t self;
 
         /*
          * call select on the fd. If interrupted by our wakeup signal
          * errno will be set to EBADF.
          */
-        FD_ZERO(&rfds);
-        FD_SET(s, &rfds);
 
         startOp(fdEntry, &self);
-        rv = select(s+1, &rfds, 0, 0, tp);
+        rv = select(s+1, fdsp, 0, 0, tp);
         endOp(fdEntry, &self);
 
         /*
@@ -403,6 +403,8 @@ int NET_Timeout(int s, long timeout) {
                 newtime = now.tv_sec * 1000  +  now.tv_usec / 1000;
                 timeout -= newtime - prevtime;
                 if (timeout <= 0) {
+                    if (allocated != 0)
+                        free(fdsp);
                     return 0;
                 }
                 prevtime = newtime;
@@ -410,6 +412,8 @@ int NET_Timeout(int s, long timeout) {
                 t.tv_usec = (timeout % 1000) * 1000;
             }
         } else {
+            if (allocated != 0)
+                free(fdsp);
             return rv;
         }
 

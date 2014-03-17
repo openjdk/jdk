@@ -1593,35 +1593,33 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
 
 // Try to constant-fold a stable array element.
 static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicType loadbt) {
+  assert(ary->const_oop(), "array should be constant");
   assert(ary->is_stable(), "array should be stable");
 
-  if (ary->const_oop() != NULL) {
-    // Decode the results of GraphKit::array_element_address.
-    ciArray* aobj = ary->const_oop()->as_array();
-    ciConstant con = aobj->element_value_by_offset(off);
+  // Decode the results of GraphKit::array_element_address.
+  ciArray* aobj = ary->const_oop()->as_array();
+  ciConstant con = aobj->element_value_by_offset(off);
 
-    if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
-      const Type* con_type = Type::make_from_constant(con);
-      if (con_type != NULL) {
-        if (con_type->isa_aryptr()) {
-          // Join with the array element type, in case it is also stable.
-          int dim = ary->stable_dimension();
-          con_type = con_type->is_aryptr()->cast_to_stable(true, dim-1);
-        }
-        if (loadbt == T_NARROWOOP && con_type->isa_oopptr()) {
-          con_type = con_type->make_narrowoop();
-        }
-#ifndef PRODUCT
-        if (TraceIterativeGVN) {
-          tty->print("FoldStableValues: array element [off=%d]: con_type=", off);
-          con_type->dump(); tty->cr();
-        }
-#endif //PRODUCT
-        return con_type;
+  if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
+    const Type* con_type = Type::make_from_constant(con);
+    if (con_type != NULL) {
+      if (con_type->isa_aryptr()) {
+        // Join with the array element type, in case it is also stable.
+        int dim = ary->stable_dimension();
+        con_type = con_type->is_aryptr()->cast_to_stable(true, dim-1);
       }
+      if (loadbt == T_NARROWOOP && con_type->isa_oopptr()) {
+        con_type = con_type->make_narrowoop();
+      }
+#ifndef PRODUCT
+      if (TraceIterativeGVN) {
+        tty->print("FoldStableValues: array element [off=%d]: con_type=", off);
+        con_type->dump(); tty->cr();
+      }
+#endif //PRODUCT
+      return con_type;
     }
   }
-
   return NULL;
 }
 
@@ -1641,7 +1639,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
   // Try to guess loaded type from pointer type
   if (tp->isa_aryptr()) {
     const TypeAryPtr* ary = tp->is_aryptr();
-    const Type *t = ary->elem();
+    const Type* t = ary->elem();
 
     // Determine whether the reference is beyond the header or not, by comparing
     // the offset against the offset of the start of the array's data.
@@ -1653,10 +1651,9 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
     const bool off_beyond_header = ((uint)off >= (uint)min_base_off);
 
     // Try to constant-fold a stable array element.
-    if (FoldStableValues && ary->is_stable()) {
-      // Make sure the reference is not into the header
-      if (off_beyond_header && off != Type::OffsetBot) {
-        assert(adr->is_AddP() && adr->in(AddPNode::Offset)->is_Con(), "offset is a constant");
+    if (FoldStableValues && ary->is_stable() && ary->const_oop() != NULL) {
+      // Make sure the reference is not into the header and the offset is constant
+      if (off_beyond_header && adr->is_AddP() && off != Type::OffsetBot) {
         const Type* con_type = fold_stable_ary_elem(ary, off, memory_type());
         if (con_type != NULL) {
           return con_type;

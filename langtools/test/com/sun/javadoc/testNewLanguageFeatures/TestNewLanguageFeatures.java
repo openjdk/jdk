@@ -40,7 +40,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-use", "-source", "1.5", "-sourcepath", SRC_DIR, "pkg", "pkg1", "pkg2"
+        "-Xdoclint:none", "-d", BUG_ID, "-use", "-sourcepath", SRC_DIR, "pkg", "pkg1", "pkg2"
     };
 
     //Input for string search tests.

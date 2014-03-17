@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,15 @@ public interface SerialFieldTag extends Tag, Comparable<Object> {
 
     /**
      * Return the serializable field name.
+     *
+     * @return the serializable field name.
      */
     public String fieldName();
 
     /**
      * Return the field type string.
+     *
+     * @return the field type string.
      */
     public String fieldType();
 
@@ -66,6 +70,9 @@ public interface SerialFieldTag extends Tag, Comparable<Object> {
     /**
      * Return the field comment. If there is no serialField comment, return
      * javadoc comment of corresponding FieldDoc.
+     *
+     * @return the field comment. If there is no serialField comment, return
+     *         javadoc comment of corresponding FieldDoc.
      */
     public String description();
 
@@ -76,7 +83,7 @@ public interface SerialFieldTag extends Tag, Comparable<Object> {
      * <p>
      * Included to make SerialFieldTag items java.lang.Comparable.
      *
-     * @param   obj the <code>Object</code> to be compared.
+     * @param   obj the {@code Object} to be compared.
      * @return  a negative integer, zero, or a positive integer as this Object
      *          is less than, equal to, or greater than the given Object.
      * @exception ClassCastException the specified Object's type prevents it

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class $1 {
       a4(22);                  // it passes if this line is commented out
       System.out.println("jj");
     }
-    
+
     public void a4(int pp) {
       int v4 = 90;
       System.out.println("a4: @1 breakpoint here");
@@ -84,8 +84,6 @@ dojdbCmds()
     #cmd next
     cmd step
     cmd where
-    cmd quit
-    jdbFailIfNotPresent "shtest\.main" 3
 }
 
 
@@ -108,5 +106,6 @@ mysetup()
 mysetup
 
 runit
+jdbFailIfNotPresent "shtest\.main" 3
 debuggeeFailIfPresent "Internal exception:"
 pass

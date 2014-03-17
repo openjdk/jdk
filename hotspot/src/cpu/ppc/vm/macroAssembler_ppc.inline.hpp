@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,6 +321,15 @@ inline void MacroAssembler::load_heap_oop_not_null(Register d, RegisterOrConstan
   }
 }
 
+inline void MacroAssembler::store_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1, Register tmp) {
+  if (UseCompressedOops) {
+    Register compressedOop = encode_heap_oop_not_null((tmp != noreg) ? tmp : d, d);
+    stw(compressedOop, offs, s1);
+  } else {
+    std(d, offs, s1);
+  }
+}
+
 inline void MacroAssembler::load_heap_oop(Register d, RegisterOrConstant offs, Register s1) {
   if (UseCompressedOops) {
     lwz(d, offs, s1);
@@ -330,13 +339,17 @@ inline void MacroAssembler::load_heap_oop(Register d, RegisterOrConstant offs, R
   }
 }
 
-inline void MacroAssembler::encode_heap_oop_not_null(Register d) {
+inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register src) {
+  Register current = (src!=noreg) ? src : d; // Compressed oop is in d if no src provided.
   if (Universe::narrow_oop_base() != NULL) {
-    sub(d, d, R30);
+    sub(d, current, R30);
+    current = d;
   }
   if (Universe::narrow_oop_shift() != 0) {
-    srdi(d, d, LogMinObjAlignmentInBytes);
+    srdi(d, current, LogMinObjAlignmentInBytes);
+    current = d;
   }
+  return current; // Encoded oop is in this register.
 }
 
 inline void MacroAssembler::decode_heap_oop_not_null(Register d) {
@@ -384,5 +397,11 @@ inline void MacroAssembler::trap_range_check_ge(Register a, Register b) {
 inline void MacroAssembler::trap_range_check_ge(Register a, int si16) {
   twi(traptoEqual | traptoGreaterThanUnsigned, a/*reg a*/, si16);
 }
+
+#if defined(ABI_ELFv2)
+inline address MacroAssembler::function_entry() { return pc(); }
+#else
+inline address MacroAssembler::function_entry() { return emit_fd(); }
+#endif
 
 #endif // CPU_PPC_VM_MACROASSEMBLER_PPC_INLINE_HPP

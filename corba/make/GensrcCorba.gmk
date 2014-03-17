@@ -34,13 +34,16 @@ include CommonCorba.gmk
 
 ################################################################################
 
-$(eval $(call SetupJavaCompilation,BUILD_STRIPPROP, \
+$(eval $(call SetupJavaCompilation,BUILD_TOOLS, \
     SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(CORBA_TOPDIR)/make/tools/src, \
-    BIN := $(CORBA_OUTPUTDIR)/stripprop_classes))
+    SRC := $(CORBA_TOPDIR)/make/src/classes, \
+    BIN := $(CORBA_OUTPUTDIR)/tools_classes))
 
-TOOL_STRIPPROP_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/stripprop_classes \
+TOOL_STRIPPROP_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/tools_classes \
     build.tools.stripproperties.StripPropertiesCorba
+
+TOOL_LOGUTIL_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/tools_classes \
+    build.tools.logutil.MC
 
 $(eval $(call SetupJavaCompilation,BUILD_IDLJ, \
     SETUP := GENERATE_OLDBYTECODE, \
@@ -53,21 +56,12 @@ $(eval $(call SetupJavaCompilation,BUILD_IDLJ, \
 TOOL_IDLJ_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/idlj_classes \
     com.sun.tools.corba.se.idl.toJavaPortable.Compile
 
-$(eval $(call SetupJavaCompilation,BUILD_LOGUTIL, \
-    SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(CORBA_TOPDIR)/src/share/classes, \
-    BIN := $(CORBA_OUTPUTDIR)/logutil_classes, \
-    INCLUDES := com/sun/tools/corba/se/logutil))
-
-TOOL_LOGUTIL_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/logutil_classes \
-    com.sun.tools.corba.se.logutil.MC
-
 ################################################################################
 
 # Generate LogWrapper classes
 $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/%SystemException.java: \
     $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
-    $(BUILD_LOGUTIL)
+    $(BUILD_TOOLS)
 	$(MKDIR) -p $(@D)
 	$(RM) -f $(@D)/_the_wrappers.d
 	$(ECHO) $(LOG_INFO) Generating class file from $*.mc
@@ -90,7 +84,7 @@ $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/LogStrings.properties: \
 # The resources files are generated from lisp-like .mc files.
 $(CORBA_OUTPUTDIR)/logwrappers/%SystemException.resource: \
     $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
-    $(BUILD_LOGUTIL)
+    $(BUILD_TOOLS)
 	$(MKDIR) -p $(@D)
 	$(RM) -f $(@D)/_the_wrappers.d
 	$(ECHO) $(LOG_INFO) Generating resource file from $*.mc
@@ -111,6 +105,115 @@ LOGWRAPPER_TARGETS := \
 ################################################################################
 # Build the IDLs.
 
+IDL_DELETES := \
+    org/omg/DynamicAny/*POA* \
+    org/omg/DynamicAny/*Holder* \
+    org/omg/DynamicAny/DynValueBoxHelper.java \
+    org/omg/DynamicAny/DynValueCommonHelper.java \
+    org/omg/DynamicAny/_DynValueCommonStub.java \
+    org/omg/DynamicAny/_DynValueBoxStub.java \
+    org/omg/DynamicAny/DynAnyPackage/TypeMismatchHolder.java \
+    org/omg/DynamicAny/DynAnyPackage/InvalidValueHolder.java \
+    org/omg/DynamicAny/DynAnyFactoryPackage/InconsistentTypeCodeHolder.java \
+    org/omg/IOP/BI_DIR_IIOP.java \
+    org/omg/IOP/ChainBypassCheck.java \
+    org/omg/IOP/ChainBypassInfo.java \
+    org/omg/IOP/FORWARDED_IDENTITY.java \
+    org/omg/IOP/INVOCATION_POLICIES.java \
+    org/omg/IOP/LogicalThreadId.java \
+    org/omg/IOP/SendingContextRunTime.java \
+    org/omg/IOP/UnknownExceptionInfo.java \
+    org/omg/IOP/TaggedComponentSeqHolder.java \
+    org/omg/PortableServer/CurrentPackage/NoContextHolder.java \
+    org/omg/PortableServer/ForwardRequestHolder.java \
+    org/omg/PortableServer/IdAssignmentPolicyValueHelper.java \
+    org/omg/PortableServer/IdAssignmentPolicyValueHolder.java \
+    org/omg/PortableServer/IdUniquenessPolicyValueHelper.java \
+    org/omg/PortableServer/IdUniquenessPolicyValueHolder.java \
+    org/omg/PortableServer/ImplicitActivationPolicyValueHelper.java \
+    org/omg/PortableServer/ImplicitActivationPolicyValueHolder.java \
+    org/omg/PortableServer/LifespanPolicyValueHelper.java \
+    org/omg/PortableServer/LifespanPolicyValueHolder.java \
+    org/omg/PortableServer/ServantRetentionPolicyValueHelper.java \
+    org/omg/PortableServer/ServantRetentionPolicyValueHolder.java \
+    org/omg/PortableServer/ObjectIdHelper.java \
+    org/omg/PortableServer/ObjectIdHolder.java \
+    org/omg/PortableServer/POAListHelper.java \
+    org/omg/PortableServer/POAListHolder.java \
+    org/omg/PortableServer/POAManagerPackage/AdapterInactiveHolder.java \
+    org/omg/PortableServer/POAManagerPackage/StateHelper.java \
+    org/omg/PortableServer/POAManagerPackage/StateHolder.java \
+    org/omg/PortableServer/POAPackage/AdapterAlreadyExistsHolder.java \
+    org/omg/PortableServer/POAPackage/AdapterNonExistentHolder.java \
+    org/omg/PortableServer/POAPackage/InvalidPolicyHolder.java \
+    org/omg/PortableServer/POAPackage/NoServantHolder.java \
+    org/omg/PortableServer/POAPackage/ObjectAlreadyActiveHolder.java \
+    org/omg/PortableServer/POAPackage/ObjectNotActiveHolder.java \
+    org/omg/PortableServer/POAPackage/ServantAlreadyActiveHolder.java \
+    org/omg/PortableServer/POAPackage/ServantNotActiveHolder.java \
+    org/omg/PortableServer/POAPackage/WrongAdapterHolder.java \
+    org/omg/PortableServer/POAPackage/WrongPolicyHolder.java \
+    org/omg/PortableServer/RequestProcessingPolicyValueHelper.java \
+    org/omg/PortableServer/RequestProcessingPolicyValueHolder.java \
+    org/omg/PortableServer/ServantActivatorHolder.java \
+    org/omg/PortableServer/ServantLocatorHolder.java \
+    org/omg/PortableServer/ThreadPolicyValueHelper.java \
+    org/omg/PortableServer/ThreadPolicyValueHolder.java \
+    org/omg/PortableInterceptor/ClientRequestInfoHelper.java \
+    org/omg/PortableInterceptor/ClientRequestInterceptorHelper.java \
+    org/omg/PortableInterceptor/IORInfoHelper.java \
+    org/omg/PortableInterceptor/IORInterceptorHelper.java \
+    org/omg/PortableInterceptor/InterceptorHelper.java \
+    org/omg/PortableInterceptor/ORBInitInfoHelper.java \
+    org/omg/PortableInterceptor/ORBInitializerHelper.java \
+    org/omg/PortableInterceptor/PolicyFactoryHelper.java \
+    org/omg/PortableInterceptor/ReplyStatusHelper.java \
+    org/omg/PortableInterceptor/RequestInfoHelper.java \
+    org/omg/PortableInterceptor/ServerRequestInfoHelper.java \
+    org/omg/PortableInterceptor/ServerRequestInterceptorHelper.java \
+    org/omg/PortableInterceptor/SlotIdHelper.java \
+    org/omg/PortableInterceptor/ClientRequestInfoHolder.java \
+    org/omg/PortableInterceptor/ClientRequestInterceptorHolder.java \
+    org/omg/PortableInterceptor/CurrentHolder.java \
+    org/omg/PortableInterceptor/ForwardRequestHolder.java \
+    org/omg/PortableInterceptor/IORInfoHolder.java \
+    org/omg/PortableInterceptor/IORInterceptorHolder.java \
+    org/omg/PortableInterceptor/InterceptorHolder.java \
+    org/omg/PortableInterceptor/InvalidSlotHolder.java \
+    org/omg/PortableInterceptor/ORBInitInfoHolder.java \
+    org/omg/PortableInterceptor/ORBInitializerHolder.java \
+    org/omg/PortableInterceptor/PolicyFactoryHolder.java \
+    org/omg/PortableInterceptor/RequestInfoHolder.java \
+    org/omg/PortableInterceptor/ServerRequestInfoHolder.java \
+    org/omg/PortableInterceptor/ServerRequestInterceptorHolder.java \
+    org/omg/PortableInterceptor/TaggedComponentSeqHolder.java \
+    org/omg/PortableInterceptor/ORBInitInfoPackage/DuplicateNameHolder.java \
+    org/omg/PortableInterceptor/ORBInitInfoPackage/InvalidNameHolder.java \
+    org/omg/IOP/CodecPackage/FormatMismatchHolder.java \
+    org/omg/IOP/CodecPackage/InvalidTypeForEncodingHolder.java \
+    org/omg/IOP/CodecPackage/TypeMismatchHolder.java \
+    org/omg/IOP/CodecHelper.java \
+    org/omg/IOP/EncodingFormatHelper.java \
+    org/omg/IOP/EncodingHelper.java \
+    org/omg/IOP/CodecFactoryPackage/UnknownEncodingHolder.java \
+    org/omg/IOP/CodecFactoryHolder.java \
+    org/omg/IOP/CodecHolder.java \
+    org/omg/IOP/EncodingHolder.java \
+    org/omg/IOP/TaggedComponentSeqHelper.java \
+    org/omg/Dynamic/ContextListHelper.java \
+    org/omg/Dynamic/ExceptionListHelper.java \
+    org/omg/Dynamic/ParameterHolder.java \
+    org/omg/Dynamic/ParameterListHolder.java \
+    org/omg/Dynamic/ExceptionListHolder.java \
+    org/omg/Dynamic/ParameterHelper.java \
+    org/omg/Dynamic/ParameterListHelper.java \
+    org/omg/Dynamic/RequestContextHelper.java \
+    org/omg/CORBA/OctetSeqHelper.java \
+    org/omg/CORBA/OctetSeqHolder.java \
+    org/omg/CORBA/PolicyError.java \
+    org/omg/CORBA/RepositoryIdHelper.java \
+    #
+
 $(eval $(call SetupIdlCompilation,BUILD_IDLS, \
     IDLJ := $(TOOL_IDLJ_CMD), \
     SRC := $(CORBA_TOPDIR)/src/share/classes, \
@@ -122,7 +225,7 @@ $(eval $(call SetupIdlCompilation,BUILD_IDLS, \
     INCLUDES := %, \
     OLDIMPLBASES := com/sun/corba/se/PortableActivationIDL/activation.idl \
         com/sun/corba/se/spi/activation/activation.idl, \
-    DELETES := DYNANYDELETEFILES org/omg/DynamicAny/*POA* org/omg/DynamicAny/*Holder* org/omg/DynamicAny/DynValueBoxHelper.java org/omg/DynamicAny/DynValueCommonHelper.java org/omg/DynamicAny/_DynValueCommonStub.java org/omg/DynamicAny/_DynValueBoxStub.java org/omg/DynamicAny/DynAnyPackage/TypeMismatchHolder.java org/omg/DynamicAny/DynAnyPackage/InvalidValueHolder.java org/omg/DynamicAny/DynAnyFactoryPackage/InconsistentTypeCodeHolder.java IOPDELETEFILES org/omg/IOP/BI_DIR_IIOP.java org/omg/IOP/ChainBypassCheck.java org/omg/IOP/ChainBypassInfo.java org/omg/IOP/FORWARDED_IDENTITY.java org/omg/IOP/INVOCATION_POLICIES.java org/omg/IOP/LogicalThreadId.java org/omg/IOP/SendingContextRunTime.java org/omg/IOP/UnknownExceptionInfo.java org/omg/IOP/TaggedComponentSeqHolder.java POAHELHOLFILES org/omg/PortableServer/CurrentPackage/NoContextHolder.java org/omg/PortableServer/ForwardRequestHolder.java org/omg/PortableServer/IdAssignmentPolicyValueHelper.java org/omg/PortableServer/IdAssignmentPolicyValueHolder.java org/omg/PortableServer/IdUniquenessPolicyValueHelper.java org/omg/PortableServer/IdUniquenessPolicyValueHolder.java org/omg/PortableServer/ImplicitActivationPolicyValueHelper.java org/omg/PortableServer/ImplicitActivationPolicyValueHolder.java org/omg/PortableServer/LifespanPolicyValueHelper.java org/omg/PortableServer/LifespanPolicyValueHolder.java org/omg/PortableServer/ServantRetentionPolicyValueHelper.java org/omg/PortableServer/ServantRetentionPolicyValueHolder.java org/omg/PortableServer/ObjectIdHelper.java org/omg/PortableServer/ObjectIdHolder.java org/omg/PortableServer/POAListHelper.java org/omg/PortableServer/POAListHolder.java org/omg/PortableServer/POAManagerPackage/AdapterInactiveHolder.java org/omg/PortableServer/POAManagerPackage/StateHelper.java org/omg/PortableServer/POAManagerPackage/StateHolder.java org/omg/PortableServer/POAPackage/AdapterAlreadyExistsHolder.java org/omg/PortableServer/POAPackage/AdapterNonExistentHolder.java org/omg/PortableServer/POAPackage/InvalidPolicyHolder.java org/omg/PortableServer/POAPackage/NoServantHolder.java org/omg/PortableServer/POAPackage/ObjectAlreadyActiveHolder.java org/omg/PortableServer/POAPackage/ObjectNotActiveHolder.java org/omg/PortableServer/POAPackage/ServantAlreadyActiveHolder.java org/omg/PortableServer/POAPackage/ServantNotActiveHolder.java org/omg/PortableServer/POAPackage/WrongAdapterHolder.java org/omg/PortableServer/POAPackage/WrongPolicyHolder.java org/omg/PortableServer/RequestProcessingPolicyValueHelper.java org/omg/PortableServer/RequestProcessingPolicyValueHolder.java org/omg/PortableServer/ServantActivatorHolder.java org/omg/PortableServer/ServantLocatorHolder.java org/omg/PortableServer/ThreadPolicyValueHelper.java org/omg/PortableServer/ThreadPolicyValueHolder.java PIHELHOLFILES org/omg/PortableInterceptor/ClientRequestInfoHelper.java org/omg/PortableInterceptor/ClientRequestInterceptorHelper.java org/omg/PortableInterceptor/IORInfoHelper.java org/omg/PortableInterceptor/IORInterceptorHelper.java org/omg/PortableInterceptor/InterceptorHelper.java org/omg/PortableInterceptor/ORBInitInfoHelper.java org/omg/PortableInterceptor/ORBInitializerHelper.java org/omg/PortableInterceptor/PolicyFactoryHelper.java org/omg/PortableInterceptor/ReplyStatusHelper.java org/omg/PortableInterceptor/RequestInfoHelper.java org/omg/PortableInterceptor/ServerRequestInfoHelper.java org/omg/PortableInterceptor/ServerRequestInterceptorHelper.java org/omg/PortableInterceptor/SlotIdHelper.java org/omg/PortableInterceptor/ClientRequestInfoHolder.java org/omg/PortableInterceptor/ClientRequestInterceptorHolder.java org/omg/PortableInterceptor/CurrentHolder.java org/omg/PortableInterceptor/ForwardRequestHolder.java org/omg/PortableInterceptor/IORInfoHolder.java org/omg/PortableInterceptor/IORInterceptorHolder.java org/omg/PortableInterceptor/InterceptorHolder.java org/omg/PortableInterceptor/InvalidSlotHolder.java org/omg/PortableInterceptor/ORBInitInfoHolder.java org/omg/PortableInterceptor/ORBInitializerHolder.java org/omg/PortableInterceptor/PolicyFactoryHolder.java org/omg/PortableInterceptor/RequestInfoHolder.java org/omg/PortableInterceptor/ServerRequestInfoHolder.java org/omg/PortableInterceptor/ServerRequestInterceptorHolder.java org/omg/PortableInterceptor/TaggedComponentSeqHolder.java org/omg/PortableInterceptor/ORBInitInfoPackage/DuplicateNameHolder.java org/omg/PortableInterceptor/ORBInitInfoPackage/InvalidNameHolder.java org/omg/IOP/CodecPackage/FormatMismatchHolder.java org/omg/IOP/CodecPackage/InvalidTypeForEncodingHolder.java org/omg/IOP/CodecPackage/TypeMismatchHolder.java org/omg/IOP/CodecHelper.java org/omg/IOP/EncodingFormatHelper.java org/omg/IOP/EncodingHelper.java org/omg/IOP/CodecFactoryPackage/UnknownEncodingHolder.java org/omg/IOP/CodecFactoryHolder.java org/omg/IOP/CodecHolder.java org/omg/IOP/EncodingHolder.java org/omg/IOP/TaggedComponentSeqHelper.java org/omg/Dynamic/ContextListHelper.java org/omg/Dynamic/ExceptionListHelper.java org/omg/Dynamic/ParameterHolder.java org/omg/Dynamic/ParameterListHolder.java org/omg/Dynamic/ExceptionListHolder.java org/omg/Dynamic/ParameterHelper.java org/omg/Dynamic/ParameterListHelper.java org/omg/Dynamic/RequestContextHelper.java CORBAX org/omg/CORBA/OctetSeqHelper.java org/omg/CORBA/OctetSeqHolder.java org/omg/CORBA/PolicyError.java org/omg/CORBA/RepositoryIdHelper.java))
+    DELETES := $(IDL_DELETES)))
 
 $(BUILD_IDLS): $(BUILD_IDLJ)
 
@@ -142,7 +245,7 @@ STRIP_PROP_CMDLINE := $(subst _SPACE_, $(SPACE), \
     $(addprefix _SPACE_, $(STRIP_PROP_FILES))))
 
 $(CORBA_OUTPUTDIR)/_the.stripped_properties: $(STRIP_PROP_SRC_FILES) \
-    $(BUILD_STRIPPROP)
+    $(BUILD_TOOLS)
 	$(MKDIR) -p $(sort $(dir $(STRIP_PROP_FILES)))
 	$(call ListPathsSafely,STRIP_PROP_CMDLINE,\n, >> $(CORBA_OUTPUTDIR)/_the.strip_prop.cmdline)
 	$(TOOL_STRIPPROP_CMD) @$(CORBA_OUTPUTDIR)/_the.strip_prop.cmdline

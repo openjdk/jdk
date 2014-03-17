@@ -71,6 +71,8 @@ class RegularFileObject extends BaseFileObject {
         }
         this.name = name;
         this.file = f;
+        if (f.lastModified() > System.currentTimeMillis())
+            fileManager.log.warning("file.from.future", f);
     }
 
     @Override

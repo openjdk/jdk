@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,57 +25,28 @@
  * @bug 4531526
  * @summary Test that more than one debuggee cannot bind to same port
  *          at the same time.
+ * @library /lib/testlibrary
  *
+ * @build jdk.testlibrary.ProcessTools jdk.testlibrary.JDKToolLauncher jdk.testlibrary.Utils
  * @build VMConnection ExclusiveBind HelloWorld
  * @run main ExclusiveBind
  */
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.File;
 import java.net.ServerSocket;
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.AttachingConnector;
+
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
+
+import jdk.testlibrary.ProcessTools;
+import jdk.testlibrary.Utils;
 
 public class ExclusiveBind {
-
-    /*
-     * Helper class to direct process output to the parent
-     * System.out
-     */
-    static class IOHandler implements Runnable {
-        InputStream in;
-
-        IOHandler(InputStream in) {
-            this.in = in;
-        }
-
-        static void handle(InputStream in) {
-            IOHandler handler = new IOHandler(in);
-            Thread thr = new Thread(handler);
-            thr.setDaemon(true);
-            thr.start();
-        }
-
-        public void run() {
-            try {
-                byte b[] = new byte[100];
-                for (;;) {
-                    int n = in.read(b);
-                    if (n < 0) return;
-                    for (int i=0; i<n; i++) {
-                        System.out.print((char)b[i]);
-                    }
-                }
-            } catch (IOException ioe) { }
-        }
-
-    }
-
     /*
      * Find a connector by name
      */
@@ -95,25 +66,23 @@ public class ExclusiveBind {
      * Launch (in server mode) a debuggee with the given address and
      * suspend mode.
      */
-    private static Process launch(String address, boolean suspend, String class_name) throws IOException {
-        String exe = System.getProperty("java.home") + File.separator + "bin" +
-            File.separator + "java";
-        String cmd = exe + " " + VMConnection.getDebuggeeVMOptions() +
-            " -agentlib:jdwp=transport=dt_socket,server=y,suspend=";
-        if (suspend) {
-            cmd += "y";
-        } else {
-            cmd += "n";
+    private static ProcessBuilder prepareLauncher(String address, boolean suspend, String class_name) throws Exception {
+        List<String> args = new ArrayList<>();
+        for(String dbgOption : VMConnection.getDebuggeeVMOptions().split(" ")) {
+            args.add(dbgOption);
         }
-        cmd += ",address=" + address + " " + class_name;
+        String lib = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=";
+        if (suspend) {
+            lib += "y";
+        } else {
+            lib += "n";
+        }
+        lib += ",address=" + address;
 
-        System.out.println("Starting: " + cmd);
+        args.add(lib);
+        args.add(class_name);
 
-        Process p = Runtime.getRuntime().exec(cmd);
-        IOHandler.handle(p.getInputStream());
-        IOHandler.handle(p.getErrorStream());
-
-        return p;
+        return ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
     }
 
     /*
@@ -132,16 +101,21 @@ public class ExclusiveBind {
         String address = String.valueOf(port);
 
         // launch the first debuggee
-        Process process1 = launch(address, true, "HelloWorld");
-
-        // give first debuggee time to suspend
-        Thread.currentThread().sleep(5000);
+        ProcessBuilder process1 = prepareLauncher(address, true, "HelloWorld");
+        // start the debuggee and wait for the "ready" message
+        Process p = ProcessTools.startProcess(
+                "process1",
+                process1,
+                line -> line.equals("Listening for transport dt_socket at address: " + address),
+                Math.round(5000 * Utils.TIMEOUT_FACTOR),
+                TimeUnit.MILLISECONDS
+        );
 
         // launch a second debuggee with the same address
-        Process process2 = launch(address, false, "HelloWorld");
+        ProcessBuilder process2 = prepareLauncher(address, false, "HelloWorld");
 
         // get exit status from second debuggee
-        int exitCode = process2.waitFor();
+        int exitCode = ProcessTools.startProcess("process2", process2).waitFor();
 
         // clean-up - attach to first debuggee and resume it
         AttachingConnector conn = (AttachingConnector)findConnector("com.sun.jdi.SocketAttach");

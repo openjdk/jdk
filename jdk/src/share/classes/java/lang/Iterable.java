@@ -82,7 +82,7 @@ public interface Iterable<T> {
      *
      * @implSpec
      * The default implementation creates an
-     * <em><a href="Spliterator.html#binding">early-binding</a></em>
+     * <em><a href="../util/Spliterator.html#binding">early-binding</a></em>
      * spliterator from the iterable's {@code Iterator}.  The spliterator
      * inherits the <em>fail-fast</em> properties of the iterable's iterator.
      *

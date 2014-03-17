@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class HeapBinaryFormatTest {
         DemoRun hprof;
 
         /* Run JVMTI hprof agent to get binary format dump */
-        hprof = new DemoRun("hprof", "heap=dump,format=b,logflags=4");
+        hprof = new DemoRun("hprof", "heap=dump,format=b,logflags=4,file=heapbinaryformat.txt");
         hprof.runit(args[0]);
 
         /* Make sure patterns in output look ok */

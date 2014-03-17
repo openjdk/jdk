@@ -91,10 +91,9 @@ public class Resolve {
     TreeInfo treeinfo;
     Types types;
     JCDiagnostic.Factory diags;
-    public final boolean boxingEnabled; // = source.allowBoxing();
-    public final boolean varargsEnabled; // = source.allowVarargs();
+    public final boolean boxingEnabled;
+    public final boolean varargsEnabled;
     public final boolean allowMethodHandles;
-    public final boolean allowDefaultMethodsResolution;
     public final boolean allowStructuralMostSpecific;
     private final boolean debugResolve;
     private final boolean compactMethodDiags;
@@ -136,7 +135,6 @@ public class Resolve {
         verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
         allowMethodHandles = target.hasMethodHandles();
-        allowDefaultMethodsResolution = source.allowDefaultMethodsResolution();
         allowStructuralMostSpecific = source.allowStructuralMostSpecific();
         polymorphicSignatureScope = new Scope(syms.noSymbol);
 
@@ -900,7 +898,7 @@ public class Resolve {
 
                 @Override
                 public boolean compatible(Type found, Type req, Warner warn) {
-                    found = pendingInferenceContext.asFree(found);
+                    found = pendingInferenceContext.asUndetVar(found);
                     req = infer.returnConstraintTarget(found, req);
                     return super.compatible(found, req, warn);
                 }
@@ -937,8 +935,8 @@ public class Resolve {
 
         public boolean compatible(Type found, Type req, Warner warn) {
             return strict ?
-                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asFree(req), warn) :
-                    types.isConvertible(found, deferredAttrContext.inferenceContext.asFree(req), warn);
+                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asUndetVar(req), warn) :
+                    types.isConvertible(found, deferredAttrContext.inferenceContext.asUndetVar(req), warn);
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
@@ -1143,7 +1141,7 @@ public class Resolve {
                         Type desc_t = types.findDescriptorType(t);
                         Type desc_s = types.findDescriptorType(s);
                         if (types.isSameTypes(desc_t.getParameterTypes(),
-                                inferenceContext().asFree(desc_s.getParameterTypes()))) {
+                                inferenceContext().asUndetVars(desc_s.getParameterTypes()))) {
                             if (types.asSuper(t, s.tsym) != null ||
                                 types.asSuper(s, t.tsym) != null) {
                                 result &= MostSpecificCheckContext.super.compatible(t, s, warn);
@@ -1170,7 +1168,7 @@ public class Resolve {
                         Type desc_t = types.findDescriptorType(t);
                         Type desc_s = types.findDescriptorType(s);
                         if (types.isSameTypes(desc_t.getParameterTypes(),
-                                inferenceContext().asFree(desc_s.getParameterTypes()))) {
+                                inferenceContext().asUndetVars(desc_s.getParameterTypes()))) {
                             if (types.asSuper(t, s.tsym) != null ||
                                 types.asSuper(s, t.tsym) != null) {
                                 result &= MostSpecificCheckContext.super.compatible(t, s, warn);
@@ -1680,7 +1678,6 @@ public class Resolve {
                 bestSoFar : methodNotFound;
 
         for (InterfaceLookupPhase iphase2 : InterfaceLookupPhase.values()) {
-            if (iphase2 == InterfaceLookupPhase.DEFAULT_OK && !allowDefaultMethodsResolution) break;
             //keep searching for abstract methods
             for (Type itype : itypes[iphase2.ordinal()]) {
                 if (!itype.isInterface()) continue; //skip j.l.Object (included by Types.closure())
@@ -1713,10 +1710,8 @@ public class Resolve {
                 //from superinterfaces)
                 if ((s.flags() & (ABSTRACT | INTERFACE | ENUM)) != 0) {
                     return this;
-                } else if (rs.allowDefaultMethodsResolution) {
-                    return DEFAULT_OK;
                 } else {
-                    return null;
+                    return DEFAULT_OK;
                 }
             }
         },
@@ -3156,7 +3151,7 @@ public class Resolve {
             if (TreeInfo.isStaticSelector(referenceTree.expr, names) &&
                     argtypes.nonEmpty() &&
                     (argtypes.head.hasTag(NONE) ||
-                    types.isSubtypeUnchecked(inferenceContext.asFree(argtypes.head), site))) {
+                    types.isSubtypeUnchecked(inferenceContext.asUndetVar(argtypes.head), site))) {
                 return new UnboundMethodReferenceLookupHelper(referenceTree, name,
                         site, argtypes, typeargtypes, maxPhase);
             } else {
@@ -3340,9 +3335,9 @@ public class Resolve {
             if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
             env1 = env1.outer;
         }
-        if (allowDefaultMethodsResolution && c.isInterface() &&
-                name == names._super && !isStatic(env) &&
-                types.isDirectSuperInterface(c, env.enclClass.sym)) {
+        if (c.isInterface() &&
+            name == names._super && !isStatic(env) &&
+            types.isDirectSuperInterface(c, env.enclClass.sym)) {
             //this might be a default super call if one of the superinterfaces is 'c'
             for (Type t : pruneInterfaces(env.enclClass.type)) {
                 if (t.tsym == c) {
@@ -4268,7 +4263,11 @@ public class Resolve {
         }
 
         DeferredAttrContext deferredAttrContext(Symbol sym, InferenceContext inferenceContext, ResultInfo pendingResult, Warner warn) {
-            return deferredAttr.new DeferredAttrContext(attrMode, sym, step, inferenceContext, pendingResult != null ? pendingResult.checkContext.deferredAttrContext() : deferredAttr.emptyDeferredAttrContext, warn);
+            DeferredAttrContext parent = (pendingResult == null)
+                ? deferredAttr.emptyDeferredAttrContext
+                : pendingResult.checkContext.deferredAttrContext();
+            return deferredAttr.new DeferredAttrContext(attrMode, sym, step,
+                    inferenceContext, parent, warn);
         }
 
         /**

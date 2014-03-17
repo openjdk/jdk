@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class ConstantWriter extends BasicWriter {
             public Integer visitClass(CONSTANT_Class_info info, Void p) {
                 print("#" + info.name_index);
                 tab();
-                println("//  " + stringValue(info));
+                println("// " + stringValue(info));
                 return 1;
             }
 
@@ -76,7 +76,7 @@ public class ConstantWriter extends BasicWriter {
             public Integer visitFieldref(CONSTANT_Fieldref_info info, Void p) {
                 print("#" + info.class_index + ".#" + info.name_and_type_index);
                 tab();
-                println("//  " + stringValue(info));
+                println("// " + stringValue(info));
                 return 1;
             }
 
@@ -93,14 +93,14 @@ public class ConstantWriter extends BasicWriter {
             public Integer visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, Void p) {
                 print("#" + info.class_index + ".#" + info.name_and_type_index);
                 tab();
-                println("//  " + stringValue(info));
+                println("// " + stringValue(info));
                 return 1;
             }
 
             public Integer visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, Void p) {
                 print("#" + info.bootstrap_method_attr_index + ":#" + info.name_and_type_index);
                 tab();
-                println("//  " + stringValue(info));
+                println("// " + stringValue(info));
                 return 1;
             }
 
@@ -112,21 +112,21 @@ public class ConstantWriter extends BasicWriter {
             public Integer visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
                 print("#" + info.name_index + ":#" + info.type_index);
                 tab();
-                println("//  " + stringValue(info));
+                println("// " + stringValue(info));
                 return 1;
             }
 
             public Integer visitMethodref(CONSTANT_Methodref_info info, Void p) {
                 print("#" + info.class_index + ".#" + info.name_and_type_index);
                 tab();
-                println("//  " + stringValue(info));
+                println("// " + stringValue(info));
                 return 1;
             }
 
             public Integer visitMethodHandle(CONSTANT_MethodHandle_info info, Void p) {
                 print("#" + info.reference_kind.tag + ":#" + info.reference_index);
                 tab();
-                println("//  " + stringValue(info));
+                println("// " + stringValue(info));
                 return 1;
             }
 
@@ -140,7 +140,7 @@ public class ConstantWriter extends BasicWriter {
             public Integer visitString(CONSTANT_String_info info, Void p) {
                 print("#" + info.string_index);
                 tab();
-                println("//  " + stringValue(info));
+                println("// " + stringValue(info));
                 return 1;
             }
 

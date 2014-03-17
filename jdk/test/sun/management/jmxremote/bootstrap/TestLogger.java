@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package util;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;

@@ -59,28 +59,12 @@ void SharkMemoryManager::endFunctionBody(const Function* F,
     entry->set_code_limit(FunctionEnd);
 }
 
-unsigned char* SharkMemoryManager::startExceptionTable(const Function* F,
-                                                       uintptr_t& ActualSize) {
-  return mm()->startExceptionTable(F, ActualSize);
-}
-
-void SharkMemoryManager::endExceptionTable(const Function* F,
-                                           unsigned char* TableStart,
-                                           unsigned char* TableEnd,
-                                           unsigned char* FrameRegister) {
-  mm()->endExceptionTable(F, TableStart, TableEnd, FrameRegister);
-}
-
 void SharkMemoryManager::setMemoryWritable() {
   mm()->setMemoryWritable();
 }
 
 void SharkMemoryManager::setMemoryExecutable() {
   mm()->setMemoryExecutable();
-}
-
-void SharkMemoryManager::deallocateExceptionTable(void *ptr) {
-  mm()->deallocateExceptionTable(ptr);
 }
 
 void SharkMemoryManager::deallocateFunctionBody(void *ptr) {
@@ -96,14 +80,6 @@ void* SharkMemoryManager::getPointerToNamedFunction(const std::string &Name, boo
   return mm()->getPointerToNamedFunction(Name, AbortOnFailure);
 }
 
-uint8_t* SharkMemoryManager::allocateCodeSection(uintptr_t Size, unsigned Alignment, unsigned SectionID) {
-  return mm()->allocateCodeSection(Size, Alignment, SectionID);
-}
-
-uint8_t* SharkMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment, unsigned SectionID) {
-  return mm()->allocateDataSection(Size, Alignment, SectionID);
-}
-
 void SharkMemoryManager::setPoisonMemory(bool poison) {
   mm()->setPoisonMemory(poison);
 }
@@ -112,3 +88,45 @@ unsigned char *SharkMemoryManager::allocateSpace(intptr_t Size,
                                                  unsigned int Alignment) {
   return mm()->allocateSpace(Size, Alignment);
 }
+
+#if SHARK_LLVM_VERSION <= 32
+
+uint8_t* SharkMemoryManager::allocateCodeSection(uintptr_t Size, unsigned Alignment, unsigned SectionID) {
+  return mm()->allocateCodeSection(Size, Alignment, SectionID);
+}
+
+uint8_t* SharkMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment, unsigned SectionID) {
+  return mm()->allocateDataSection(Size, Alignment, SectionID);
+}
+
+void SharkMemoryManager::deallocateExceptionTable(void *ptr) {
+  mm()->deallocateExceptionTable(ptr);
+}
+
+unsigned char* SharkMemoryManager::startExceptionTable(const Function* F,
+                                                       uintptr_t& ActualSize) {
+  return mm()->startExceptionTable(F, ActualSize);
+}
+
+void SharkMemoryManager::endExceptionTable(const Function* F,
+                                           unsigned char* TableStart,
+                                           unsigned char* TableEnd,
+                                           unsigned char* FrameRegister) {
+  mm()->endExceptionTable(F, TableStart, TableEnd, FrameRegister);
+}
+
+#else
+
+uint8_t *SharkMemoryManager::allocateCodeSection(uintptr_t Size, unsigned Alignment, unsigned SectionID, StringRef SectionName) {
+    return mm()->allocateCodeSection(Size, Alignment, SectionID, SectionName);
+}
+
+uint8_t* SharkMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment, unsigned SectionID, StringRef SectionName, bool IsReadOnly) {
+  return mm()->allocateDataSection(Size, Alignment, SectionID, SectionName, IsReadOnly);
+}
+
+bool SharkMemoryManager::finalizeMemory(std::string *ErrMsg) {
+    return mm()->finalizeMemory(ErrMsg);
+}
+
+#endif

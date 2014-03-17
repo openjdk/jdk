@@ -25,9 +25,9 @@
 # No need to compile (now done by JTReg tags in calling file)
 #
 echo ${TESTJAVA}/bin/java ${TESTVMOPTS} -Dtest.src=${TESTCLASSES} \
-     -classpath ${TESTCLASSES} $* || exit 20 
+     -classpath ${TESTCLASSPATH} $* || exit 20
 
 ${TESTJAVA}/bin/java ${TESTVMOPTS} -Dtest.src=${TESTCLASSES} \
-     -classpath ${TESTCLASSES} $* || exit 20 
+     -classpath ${TESTCLASSPATH} $* || exit 20
 
 exit 0

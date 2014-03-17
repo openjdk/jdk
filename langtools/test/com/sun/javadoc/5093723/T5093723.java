@@ -36,7 +36,7 @@ public class T5093723 extends JavadocTester {
     private static final String BUG_ID = "5093723";
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID + ".out", "-source", "5", "-Xdoclint:none",
+        "-d", BUG_ID + ".out", "-Xdoclint:none",
         SRC_DIR + "/DocumentedClass.java",
         SRC_DIR + "/UndocumentedClass.java"
     };

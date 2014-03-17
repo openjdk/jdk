@@ -207,9 +207,6 @@ public enum Source {
     public boolean allowDefaultMethods() {
         return compareTo(JDK1_8) >= 0;
     }
-    public boolean allowDefaultMethodsResolution() {
-        return compareTo(JDK1_7) >= 0;
-    }
     public boolean allowStaticInterfaceMethods() {
         return compareTo(JDK1_8) >= 0;
     }

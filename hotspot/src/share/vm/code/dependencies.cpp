@@ -725,13 +725,13 @@ Klass* Dependencies::DepStream::context_type() {
 }
 
 // ----------------- DependencySignature --------------------------------------
-bool DependencySignature::equals(DependencySignature* sig) const {
-  if ((type() != sig->type()) || (args_count() != sig->args_count())) {
+bool DependencySignature::equals(DependencySignature const& s1, DependencySignature const& s2) {
+  if ((s1.type() != s2.type()) || (s1.args_count() != s2.args_count())) {
     return false;
   }
 
-  for (int i = 0; i < sig->args_count(); i++) {
-    if (arg(i) != sig->arg(i)) {
+  for (int i = 0; i < s1.args_count(); i++) {
+    if (s1.arg(i) != s2.arg(i)) {
       return false;
     }
   }

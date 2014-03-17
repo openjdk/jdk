@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -332,6 +332,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
   fi
 
   AC_SUBST(SET_OPENJDK)
+
+  # custom-make-dir is deprecated. Please use your custom-hook.m4 to override
+  # the IncludeCustomExtension macro.
+  BASIC_DEPRECATED_ARG_WITH(custom-make-dir)
 ])
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
@@ -426,6 +430,19 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   ###############################################################################
   #
+  # --enable-rmiconnector-iiop
+  #
+  AC_ARG_ENABLE(rmiconnector-iiop, [AS_HELP_STRING([--enable-rmiconnector-iiop],
+      [enable the JMX RMIConnector iiop transport  @<:@disabled@:>@])])
+  if test "x$enable_rmiconnector_iiop" = "xyes"; then
+    RMICONNECTOR_IIOP=true
+  else
+    RMICONNECTOR_IIOP=false
+  fi
+  AC_SUBST(RMICONNECTOR_IIOP)
+
+  ###############################################################################
+  #
   # Compress jars
   #
   COMPRESS_JARS=false
@@ -469,7 +486,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
   fi
 
   AC_ARG_WITH(user-release-suffix, [AS_HELP_STRING([--with-user-release-suffix],
-      [Add a custom string to the version string if build number isn't set.@<:@username_builddateb00@:>@])])
+      [Add a custom string to the version string if build number is not set.@<:@username_builddateb00@:>@])])
   if test "x$with_user_release_suffix" = xyes; then
     AC_MSG_ERROR([Release suffix must have a value])
   elif test "x$with_user_release_suffix" != x; then
@@ -589,14 +606,4 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 
   AC_SUBST(ENABLE_DEBUG_SYMBOLS)
   AC_SUBST(ZIP_DEBUGINFO_FILES)
-  AC_SUBST(CFLAGS_DEBUG_SYMBOLS)
-  AC_SUBST(CXXFLAGS_DEBUG_SYMBOLS)
 ])
-
-# Support for customization of the build process. Some build files
-# will include counterparts from this location, if they exist. This allows
-# for a degree of customization of the build targets and the rules/recipes
-# to create them
-AC_ARG_WITH([custom-make-dir], [AS_HELP_STRING([--with-custom-make-dir],
-[use this directory for custom build/make files])], [CUSTOM_MAKE_DIR=$with_custom_make_dir])
-AC_SUBST(CUSTOM_MAKE_DIR)

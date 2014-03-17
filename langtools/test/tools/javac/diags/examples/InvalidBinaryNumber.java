@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.invalid.binary.number
-// key: compiler.err.illegal.start.of.type
-// key: compiler.err.expected
-// key: compiler.err.premature.eof
 
 class InvalidBinaryNumber {
     int i = 0b201000010;

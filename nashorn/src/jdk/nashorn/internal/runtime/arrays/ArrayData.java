@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import java.lang.invoke.MethodHandle;
+import java.nio.ByteBuffer;
 import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
@@ -141,6 +142,16 @@ public abstract class ArrayData {
      */
     public static ArrayData allocate(final Object[] array) {
         return new ObjectArrayData(array, array.length);
+    }
+
+    /**
+     * Allocate an ArrayData wrapping a given nio ByteBuffer
+     *
+     * @param buf the nio ByteBuffer to wrap
+     * @return the ArrayData
+     */
+    public static ArrayData allocate(final ByteBuffer buf) {
+        return new ByteBufferArrayData((ByteBuffer)buf);
     }
 
     /**

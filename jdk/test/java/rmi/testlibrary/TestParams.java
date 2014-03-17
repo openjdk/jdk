@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,55 +32,49 @@ import java.io.File;
 public class TestParams {
 
     /** variables that hold value property values */
-    public static String testSrc = null;
-    public static String testClasses = null;
+    public static final String testSrc;
+    public static final String testClasses;
 
-    /** name of default security policy */
-    public static String defaultPolicy = null;
+    /** name of default security policy for test JVM */
+    public static final String defaultPolicy;
 
     /** name of default security policy for RMID */
-    public static String defaultRmidPolicy = null;
+    public static final String defaultRmidPolicy;
 
     /** name of default security policy for activation groups */
-    public static String defaultGroupPolicy = null;
+    public static final String defaultGroupPolicy;
 
     /** name of default security manager */
-    public static String defaultSecurityManager =
-        "java.rmi.RMISecurityManager";
+    public static final String defaultSecurityManager;
 
+    /** VM options string */
+    public static final String testVmOpts;
+
+    /** Java options string */
+    public static final String testJavaOpts;
 
     /* Initalize commonly used strings */
     static {
-        try {
-            testSrc = TestLibrary.
-                getProperty("test.src", ".");
-            testClasses = TestLibrary.
-                getProperty("test.classes", ".");
+        testSrc = TestLibrary.getProperty("test.src", ".");
+        testClasses = TestLibrary.getProperty("test.classes", ".");
 
-            // if policy file already set use it
-            defaultPolicy = TestLibrary.
-                getProperty("java.security.policy",
-                            defaultPolicy);
-            if (defaultPolicy == null) {
-                defaultPolicy = testSrc + File.separatorChar +
-                    "security.policy";
-            }
-
-            // if manager prop set use it
-            defaultSecurityManager = TestLibrary.
-                getProperty("java.security.manager",
-                            defaultSecurityManager);
-
-            defaultRmidPolicy =
-                testSrc + File.separatorChar + "rmid.security.policy";
-
-            defaultGroupPolicy = testSrc +
-                File.separatorChar + "group.security.policy";
-
-        } catch (SecurityException se) {
-            TestLibrary.bomb("Security exception received" +
-                             " during test initialization:",
-                             se);
+        String dp = TestLibrary.getProperty("java.security.policy", null);
+        if (dp == null) {
+            dp = testSrc + File.separatorChar + "security.policy";
         }
+        defaultPolicy = dp;
+
+        defaultRmidPolicy =
+            testSrc + File.separatorChar + "rmid.security.policy";
+
+        defaultGroupPolicy =
+            testSrc + File.separatorChar + "group.security.policy";
+
+        defaultSecurityManager = TestLibrary.getProperty(
+            "java.security.manager", "java.lang.SecurityManager");
+
+        testVmOpts = TestLibrary.getProperty("test.vm.opts", "");
+
+        testJavaOpts = TestLibrary.getProperty("test.java.opts", "");
     }
 }

@@ -527,7 +527,7 @@ class Dependencies: public ResourceObj {
 };
 
 
-class DependencySignature : public GenericHashtableEntry<DependencySignature, ResourceObj> {
+class DependencySignature : public ResourceObj {
  private:
   int                   _args_count;
   uintptr_t             _argument_hash[Dependencies::max_arg_count];
@@ -542,12 +542,13 @@ class DependencySignature : public GenericHashtableEntry<DependencySignature, Re
     }
   }
 
-  bool equals(DependencySignature* sig) const;
-  uintptr_t key() const { return _argument_hash[0] >> 2; }
+  static bool     equals(DependencySignature const& s1, DependencySignature const& s2);
+  static unsigned hash  (DependencySignature const& s1) { return s1.arg(0) >> 2; }
 
   int args_count()             const { return _args_count; }
   uintptr_t arg(int idx)       const { return _argument_hash[idx]; }
   Dependencies::DepType type() const { return _type; }
+
 };
 
 

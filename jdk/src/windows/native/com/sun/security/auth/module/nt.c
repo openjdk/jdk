@@ -43,6 +43,12 @@ BOOL getImpersonationToken(PHANDLE impersonationToken);
 BOOL getTextualSid(PSID pSid, LPTSTR TextualSid, LPDWORD lpdwBufferLen);
 void DisplayErrorText(DWORD dwLastError);
 
+static void throwIllegalArgumentException(JNIEnv *env, const char *msg) {
+    jclass clazz = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
+    if (clazz != NULL)
+        (*env)->ThrowNew(env, clazz, msg);
+}
+
 JNIEXPORT jlong JNICALL
 Java_com_sun_security_auth_module_NTSystem_getImpersonationToken0
         (JNIEnv *env, jobject obj) {
@@ -62,7 +68,6 @@ Java_com_sun_security_auth_module_NTSystem_getCurrent
 
     long i, j = 0;
     HANDLE tokenHandle = INVALID_HANDLE_VALUE;
-    BOOL systemError = FALSE;
 
     LPTSTR userName = NULL;             // user name
     LPTSTR userSid = NULL;              // user sid
@@ -116,70 +121,59 @@ Java_com_sun_security_auth_module_NTSystem_getCurrent
 
     fid = (*env)->GetFieldID(env, cls, "userName", "Ljava/lang/String;");
     if (fid == 0) {
-        jclass newExcCls =
-            (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-        if (newExcCls == 0) {
-            // Unable to find exception class
-            systemError = TRUE;
-            goto out;
-        }
-        (*env)->ThrowNew(env, newExcCls, "invalid field: userName");
+        (*env)->ExceptionClear(env);
+        throwIllegalArgumentException(env, "invalid field: userName");
+        goto cleanup;
     }
     jstr = (*env)->NewStringUTF(env, userName);
+    if (jstr == NULL)
+        goto cleanup;
     (*env)->SetObjectField(env, obj, fid, jstr);
 
     fid = (*env)->GetFieldID(env, cls, "userSID", "Ljava/lang/String;");
     if (fid == 0) {
-        jclass newExcCls =
-            (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-        if (newExcCls == 0) {
-            systemError = TRUE;
-            goto out;
-        }
-        (*env)->ThrowNew(env, newExcCls, "invalid field: userSID");
+        (*env)->ExceptionClear(env);
+        throwIllegalArgumentException(env, "invalid field: userSID");
+        goto cleanup;
     }
     jstr = (*env)->NewStringUTF(env, userSid);
+    if (jstr == NULL)
+        goto cleanup;
     (*env)->SetObjectField(env, obj, fid, jstr);
 
     fid = (*env)->GetFieldID(env, cls, "domain", "Ljava/lang/String;");
     if (fid == 0) {
-        jclass newExcCls =
-            (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-        if (newExcCls == 0) {
-            systemError = TRUE;
-            goto out;
-        }
-        (*env)->ThrowNew(env, newExcCls, "invalid field: domain");
+        (*env)->ExceptionClear(env);
+        throwIllegalArgumentException(env, "invalid field: domain");
+        goto cleanup;
     }
     jstr = (*env)->NewStringUTF(env, domainName);
+    if (jstr == NULL)
+        goto cleanup;
     (*env)->SetObjectField(env, obj, fid, jstr);
 
     if (domainSid != NULL) {
         fid = (*env)->GetFieldID(env, cls, "domainSID", "Ljava/lang/String;");
         if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                systemError = TRUE;
-                goto out;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: domainSID");
+            (*env)->ExceptionClear(env);
+            throwIllegalArgumentException(env, "invalid field: domainSID");
+            goto cleanup;
         }
         jstr = (*env)->NewStringUTF(env, domainSid);
+        if (jstr == NULL)
+            goto cleanup;
         (*env)->SetObjectField(env, obj, fid, jstr);
     }
 
     fid = (*env)->GetFieldID(env, cls, "primaryGroupID", "Ljava/lang/String;");
     if (fid == 0) {
-        jclass newExcCls =
-            (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-        if (newExcCls == 0) {
-            systemError = TRUE;
-            goto out;
-        }
-        (*env)->ThrowNew(env, newExcCls, "invalid field: PrimaryGroupID");
+        (*env)->ExceptionClear(env);
+        throwIllegalArgumentException(env, "invalid field: PrimaryGroupID");
+        goto cleanup;
     }
     jstr = (*env)->NewStringUTF(env, primaryGroup);
+    if (jstr == NULL)
+        goto cleanup;
     (*env)->SetObjectField(env, obj, fid, jstr);
 
     // primary group may or may not be part of supplementary groups
@@ -204,19 +198,14 @@ Java_com_sun_security_auth_module_NTSystem_getCurrent
 
         fid = (*env)->GetFieldID(env, cls, "groupIDs", "[Ljava/lang/String;");
         if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                systemError = TRUE;
-                goto out;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: groupIDs");
+            (*env)->ExceptionClear(env);
+            throwIllegalArgumentException(env, "groupIDs");
+            goto cleanup;
         }
 
         stringClass = (*env)->FindClass(env, "java/lang/String");
-        if (stringClass == 0) {
-            goto out;
-        }
+        if (stringClass == NULL)
+            goto cleanup;
 
         if (pIndex == -1) {
             // primary group not in groups array
@@ -226,6 +215,8 @@ Java_com_sun_security_auth_module_NTSystem_getCurrent
             // allocate one less array entry and do not add into new array
             jgroups = (*env)->NewObjectArray(env, numGroups-1, stringClass, 0);
         }
+        if (jgroups == NULL)
+            goto cleanup;
 
         for (i = 0, j = 0; i < (long)numGroups; i++) {
             if (pIndex == i) {
@@ -233,12 +224,14 @@ Java_com_sun_security_auth_module_NTSystem_getCurrent
                 continue;
             }
             jstr = (*env)->NewStringUTF(env, groups[i]);
+            if (jstr == NULL)
+                goto cleanup;
             (*env)->SetObjectArrayElement(env, jgroups, j++, jstr);
         }
         (*env)->SetObjectField(env, obj, fid, jgroups);
     }
 
-out:
+cleanup:
     if (userName != NULL) {
         HeapFree(GetProcessHeap(), 0, userName);
     }
@@ -263,11 +256,6 @@ out:
         HeapFree(GetProcessHeap(), 0, groups);
     }
     CloseHandle(tokenHandle);
-
-    if (systemError && debug) {
-        printf("  [getCurrent] System Error: ");
-        printf("unable to find IllegalArgumentException class\n");
-    }
 
     return;
 }
@@ -336,7 +324,7 @@ BOOL getUser(HANDLE tokenHandle, LPTSTR *userName,
             DisplayErrorText(GetLastError());
         }
         error = TRUE;
-        goto out;
+        goto cleanup;
     }
 
     if (debug) {
@@ -369,7 +357,7 @@ BOOL getUser(HANDLE tokenHandle, LPTSTR *userName,
             DisplayErrorText(GetLastError());
         }
         error = TRUE;
-        goto out;
+        goto cleanup;
     }
 
     if (debug) {
@@ -411,7 +399,7 @@ BOOL getUser(HANDLE tokenHandle, LPTSTR *userName,
             DisplayErrorText(GetLastError());
         }
         // ok not to have a domain SID (no error)
-        goto out;
+        goto cleanup;
     }
 
     bufSize = 0;
@@ -422,7 +410,7 @@ BOOL getUser(HANDLE tokenHandle, LPTSTR *userName,
         printf("  [getUser] domainSid: %s\n", *domainSid);
     }
 
-out:
+cleanup:
     if (tokenUserInfo != NULL) {
         HeapFree(GetProcessHeap(), 0, tokenUserInfo);
     }
@@ -466,7 +454,7 @@ BOOL getPrimaryGroup(HANDLE tokenHandle, LPTSTR *primaryGroup) {
             DisplayErrorText(GetLastError());
         }
         error = TRUE;
-        goto out;
+        goto cleanup;
     }
 
     if (debug) {
@@ -481,7 +469,7 @@ BOOL getPrimaryGroup(HANDLE tokenHandle, LPTSTR *primaryGroup) {
         printf("  [getPrimaryGroup] primaryGroup: %s\n", *primaryGroup);
     }
 
-out:
+cleanup:
     if (tokenGroupInfo != NULL) {
         HeapFree(GetProcessHeap(), 0, tokenGroupInfo);
     }
@@ -519,7 +507,7 @@ BOOL getGroups(HANDLE tokenHandle, PDWORD numGroups, LPTSTR **groups) {
             DisplayErrorText(GetLastError());
         }
         error = TRUE;
-        goto out;
+        goto cleanup;
     }
 
     if (debug) {
@@ -528,7 +516,7 @@ BOOL getGroups(HANDLE tokenHandle, PDWORD numGroups, LPTSTR **groups) {
 
     if (tokenGroupInfo->GroupCount == 0) {
         // no groups
-        goto out;
+        goto cleanup;
     }
 
     // return group info
@@ -545,7 +533,7 @@ BOOL getGroups(HANDLE tokenHandle, PDWORD numGroups, LPTSTR **groups) {
         }
     }
 
-out:
+cleanup:
     if (tokenGroupInfo != NULL) {
         HeapFree(GetProcessHeap(), 0, tokenGroupInfo);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include <sys/poll.h>
 
 /*
@@ -279,10 +278,8 @@ int NET_ReadV(int s, const struct iovec * vector, int count) {
 }
 
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
-       struct sockaddr *from, int *fromlen) {
-    socklen_t socklen = *fromlen;
-    BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, &socklen) );
-    *fromlen = socklen;
+       struct sockaddr *from, socklen_t *fromlen) {
+    BLOCKING_IO_RETURN_INT( s, recvfrom(s, buf, len, flags, from, fromlen) );
 }
 
 int NET_Send(int s, void *msg, int len, unsigned int flags) {
@@ -298,27 +295,17 @@ int NET_SendTo(int s, const void *msg, int len,  unsigned  int
     BLOCKING_IO_RETURN_INT( s, sendto(s, msg, len, flags, to, tolen) );
 }
 
-int NET_Accept(int s, struct sockaddr *addr, int *addrlen) {
-    socklen_t socklen = *addrlen;
-    BLOCKING_IO_RETURN_INT( s, accept(s, addr, &socklen) );
-    *addrlen = socklen;
+int NET_Accept(int s, struct sockaddr *addr, socklen_t *addrlen) {
+    BLOCKING_IO_RETURN_INT( s, accept(s, addr, addrlen) );
 }
 
 int NET_Connect(int s, struct sockaddr *addr, int addrlen) {
     BLOCKING_IO_RETURN_INT( s, connect(s, addr, addrlen) );
 }
 
-#ifndef USE_SELECT
 int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
     BLOCKING_IO_RETURN_INT( ufds[0].fd, poll(ufds, nfds, timeout) );
 }
-#else
-int NET_Select(int s, fd_set *readfds, fd_set *writefds,
-               fd_set *exceptfds, struct timeval *timeout) {
-    BLOCKING_IO_RETURN_INT( s-1,
-                            select(s, readfds, writefds, exceptfds, timeout) );
-}
-#endif
 
 /*
  * Wrapper for poll(s, timeout).

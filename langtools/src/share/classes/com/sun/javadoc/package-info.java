@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ information can be extracted.
 When calling javadoc, you pass in package names and source file names --
 these are called the <em>specified</em> packages and classes.
 You also pass in Javadoc options; the <em>access control</em> Javadoc options
-(<code>-public</code>, <code>-protected</code>, <code>-package</code>,
-and <code>-private</code>) filter program elements, producing a
+({@code -public}, {@code -protected}, {@code -package},
+and {@code -private}) filter program elements, producing a
 result set, called the <em>included</em> set, or "documented" set.
 (The unfiltered set is also available through
 {@link com.sun.javadoc.PackageDoc#allClasses(boolean) allClasses(false)}.)
@@ -78,45 +78,45 @@ describes explicitly which meaning is being used.
 
 <a name="qualified"></a>
 A <em>qualified</em> class or interface name is one that has its package
-name prepended to it, such as <code>java.lang.String</code>.  A non-qualified
-name has no package name, such as <code>String</code>.
+name prepended to it, such as {@code java.lang.String}.  A non-qualified
+name has no package name, such as {@code String}.
 <p>
 
 <a name="example"></a>
 <h3>Example</h3>
 
 The following is an example doclet that
-displays information in the <code>@param</code> tags of the processed
+displays information in the {@code @param} tags of the processed
 classes:
 <pre>
 import com.sun.javadoc.*;
 
-public class ListParams extends <font color=red title="Doclet API">Doclet</font> {
+public class ListParams extends <span style="color:red" >Doclet</span> {
 
-    public static boolean start(<font color=red title="Doclet API">RootDoc</font> root) {
-        <font color=red title="Doclet API">ClassDoc</font>[] classes = root.<font color=red title="Doclet API">classes</font>();
-        for (int i = 0; i < classes.length; ++i) {
-            <font color=red title="Doclet API">ClassDoc</font> cd = classes[i];
-            printMembers(cd.<font color=red title="Doclet API">constructors</font>());
-            printMembers(cd.<font color=red title="Doclet API">methods</font>());
+    public static boolean start(<span style="color:red" >RootDoc</span> root) {
+        <span style="color:red" >ClassDoc</span>[] classes = root.<span style="color:red" >classes</span>();
+        for (int i = 0; i &lt; classes.length; ++i) {
+            <span style="color:red" >ClassDoc</span> cd = classes[i];
+            printMembers(cd.<span style="color:red" >constructors</span>());
+            printMembers(cd.<span style="color:red" >methods</span>());
         }
         return true;
     }
 
-    static void printMembers(<font color=red title="Doclet API">ExecutableMemberDoc</font>[] mems) {
-        for (int i = 0; i < mems.length; ++i) {
-            <font color=red title="Doclet API">ParamTag</font>[] params = mems[i].<font color=red title="Doclet API">paramTags</font>();
-            System.out.println(mems[i].<font color=red title="Doclet API">qualifiedName</font>());
-            for (int j = 0; j < params.length; ++j) {
-                System.out.println("   " + params[j].<font color=red title="Doclet API">parameterName</font>()
-                    + " - " + params[j].<font color=red title="Doclet API">parameterComment</font>());
+    static void printMembers(<span style="color:red" >ExecutableMemberDoc</span>[] mems) {
+        for (int i = 0; i &lt; mems.length; ++i) {
+            <span style="color:red" >ParamTag</span>[] params = mems[i].<span style="color:red" >paramTags</span>();
+            System.out.println(mems[i].<span style="color:red" >qualifiedName</span>());
+            for (int j = 0; j &lt; params.length; ++j) {
+                System.out.println("   " + params[j].<span style="color:red" >parameterName</span>()
+                    + " - " + params[j].<span style="color:red" >parameterComment</span>());
             }
         }
     }
 }
 </pre>
 Interfaces and methods from the Javadoc API are marked in
-<font color=red title="Doclet API">red</font>.
+<span style="color:red" >red</span>.
 {@link com.sun.javadoc.Doclet Doclet} is an abstract class that specifies
 the invocation interface for doclets,
 {@link com.sun.javadoc.Doclet Doclet} holds class or interface information,
@@ -124,7 +124,7 @@ the invocation interface for doclets,
 superinterface of {@link com.sun.javadoc.MethodDoc} and
 {@link com.sun.javadoc.ConstructorDoc},
 and {@link com.sun.javadoc.ParamTag} holds information
-from "<code>@param</code>" tags.
+from "{@code @param}" tags.
 <p>
 This doclet when invoked with a command line like:
 <pre>

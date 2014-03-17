@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,24 +44,24 @@ public class MethodParameters {
     static final String Init0_expected =
         ("  Foo();\n" +
          "    descriptor: ()V\n" +
-         "    flags: \n" +
+         "    flags:\n" +
          "    Code:\n" +
          "      stack=1, locals=1, args_size=1\n" +
-         "         0: aload_0       \n" +
+         "         0: aload_0\n" +
          "         1: invokespecial #1                  // Method java/lang/Object.\"<init>\":()V\n" +
-         "         4: return        \n" +
+         "         4: return\n" +
          "      LineNumberTable:\n" +
          "        line 2: 0").replaceAll(" +", " ");
 
     static final String Init1_expected =
         ("  Foo(int);\n" +
          "    descriptor: (I)V\n" +
-         "    flags: \n" +
+         "    flags:\n" +
          "    Code:\n" +
          "      stack=1, locals=2, args_size=2\n" +
-         "         0: aload_0       \n" +
+         "         0: aload_0\n" +
          "         1: invokespecial #1                  // Method java/lang/Object.\"<init>\":()V\n" +
-         "         4: return        \n" +
+         "         4: return\n" +
          "      LineNumberTable:\n" +
          "        line 3: 0\n" +
          "    MethodParameters:\n" +
@@ -71,25 +71,25 @@ public class MethodParameters {
     static final String foo0_expected =
         ("  void foo0();\n" +
          "    descriptor: ()V\n" +
-         "    flags: \n" +
+         "    flags:\n" +
          "    Code:\n" +
          "      stack=0, locals=1, args_size=1\n" +
-         "         0: return        \n" +
+         "         0: return\n" +
          "      LineNumberTable:\n" +
          "        line 4: 0").replaceAll(" +", " ");
 
     static final String foo2_expected =
         ("  void foo2(int, int);\n" +
          "    descriptor: (II)V\n" +
-         "    flags: \n" +
+         "    flags:\n" +
          "    Code:\n" +
          "      stack=0, locals=3, args_size=3\n" +
-         "         0: return        \n" +
+         "         0: return\n" +
          "      LineNumberTable:\n" +
          "        line 5: 0\n" +
          "    MethodParameters:\n" +
          "      Name                                Flags\n" +
-         "      j                              \n" +
+         "      j\n" +
          "      k").replaceAll(" +", " ");
 
     static final File classesdir = new File("methodparameters");

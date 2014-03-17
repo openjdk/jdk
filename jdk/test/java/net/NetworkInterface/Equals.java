@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,9 @@ public class Equals {
         while (nifs2.hasMoreElements()) {
             NetworkInterface ni = nifs2.nextElement();
 
-            // JDK-8022963, Skip (Windows)Teredo Tunneling seudo-Interface
-            if (isWindows && ni.getDisplayName().contains("Teredo"))
+            // JDK-8022963, Skip (Windows)Teredo Tunneling Pseudo-Interface
+            String dName = ni.getDisplayName();
+            if (isWindows && dName != null && dName.contains("Teredo"))
                 continue;
 
             NetworkInterface niOrig = nicMap.get(ni.getName());

@@ -38,7 +38,7 @@ public class TestHref extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-source", "1.5", "-sourcepath", SRC_DIR, "-linkoffline",
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-linkoffline",
         "http://java.sun.com/j2se/1.4/docs/api/", SRC_DIR, "pkg"
     };
 

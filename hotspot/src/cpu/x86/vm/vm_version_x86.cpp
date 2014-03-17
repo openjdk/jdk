@@ -429,7 +429,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -455,7 +455,9 @@ void VM_Version::get_processor_features() {
                (supports_ht() ? ", ht": ""),
                (supports_tsc() ? ", tsc": ""),
                (supports_tscinv_bit() ? ", tscinvbit": ""),
-               (supports_tscinv() ? ", tscinv": ""));
+               (supports_tscinv() ? ", tscinv": ""),
+               (supports_bmi1() ? ", bmi1" : ""),
+               (supports_bmi2() ? ", bmi2" : ""));
   _features_str = strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
@@ -600,13 +602,6 @@ void VM_Version::get_processor_features() {
       }
     }
 
-    // Use count leading zeros count instruction if available.
-    if (supports_lzcnt()) {
-      if (FLAG_IS_DEFAULT(UseCountLeadingZerosInstruction)) {
-        UseCountLeadingZerosInstruction = true;
-      }
-    }
-
     // some defaults for AMD family 15h
     if ( cpu_family() == 0x15 ) {
       // On family 15h processors default is no sw prefetch
@@ -691,6 +686,35 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(MaxVectorSize, 16);
     }
 #endif // COMPILER2
+
+  // Use count leading zeros count instruction if available.
+  if (supports_lzcnt()) {
+    if (FLAG_IS_DEFAULT(UseCountLeadingZerosInstruction)) {
+      UseCountLeadingZerosInstruction = true;
+    }
+   } else if (UseCountLeadingZerosInstruction) {
+    warning("lzcnt instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UseCountLeadingZerosInstruction, false);
+  }
+
+  if (supports_bmi1()) {
+    if (FLAG_IS_DEFAULT(UseBMI1Instructions)) {
+      UseBMI1Instructions = true;
+    }
+  } else if (UseBMI1Instructions) {
+    warning("BMI1 instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseBMI1Instructions, false);
+  }
+
+  // Use count trailing zeros instruction if available
+  if (supports_bmi1()) {
+    if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
+      UseCountTrailingZerosInstruction = UseBMI1Instructions;
+    }
+  } else if (UseCountTrailingZerosInstruction) {
+    warning("tzcnt instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UseCountTrailingZerosInstruction, false);
+  }
 
   // Use population count instruction if available.
   if (supports_popcnt()) {

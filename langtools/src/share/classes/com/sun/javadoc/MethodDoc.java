@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,15 @@ public interface MethodDoc extends ExecutableMemberDoc {
 
     /**
      * Return true if this method is abstract
+     *
+     * @return true if this method is abstract
      */
     boolean isAbstract();
 
     /**
      * Return true if this method is default
+     *
+     * @return true if this method is default
      */
     boolean isDefault();
 
@@ -54,9 +58,9 @@ public interface MethodDoc extends ExecutableMemberDoc {
     /**
      * Return the class containing the method that this method overrides.
      *
-     * <p> <i>The <code>overriddenClass</code> method cannot
+     * <p> <i>The {@code overriddenClass} method cannot
      * accommodate certain generic type constructs.  The
-     * <code>overriddenType</code> method should be used instead.</i>
+     * {@code overriddenType} method should be used instead.</i>
      *
      * @return a ClassDoc representing the superclass
      *         defining a method that this method overrides, or null if
@@ -66,7 +70,7 @@ public interface MethodDoc extends ExecutableMemberDoc {
 
     /**
      * Return the type containing the method that this method overrides.
-     * It may be a <code>ClassDoc</code> or a <code>ParameterizedType</code>.
+     * It may be a {@code ClassDoc} or a {@code ParameterizedType}.
      *
      * @return the supertype whose method is overridden, or null if this
      *         method does not override another in a superclass

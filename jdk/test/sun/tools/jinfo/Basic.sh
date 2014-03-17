@@ -61,19 +61,39 @@ fi
 
 if [ $runSA = true ]; then
     # -sysprops option
-    ${JINFO} -J-XX:+UsePerfData -sysprops $appJavaPid
+    ${JINFO} -J-XX:+UsePerfData -F -sysprops $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 
     # -flags option
-    ${JINFO} -J-XX:+UsePerfData -flags $appJavaPid
+    ${JINFO} -J-XX:+UsePerfData -F -flags $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 
     # no option
-    ${JINFO} -J-XX:+UsePerfData $appJavaPid
+    ${JINFO} -J-XX:+UsePerfData -F $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 
+    # -flag option
+    ${JINFO} -J-XX:+UsePerfData -F -flag +PrintGC $appJavaPid
+    if [ $? != 0 ]; then failed=1; fi 
+
+    ${JINFO} -J-XX:+UsePerfData -F -flag -PrintGC $appJavaPid
+    if [ $? != 0 ]; then failed=1; fi
+
+    ${JINFO} -J-XX:+UsePerfData -F -flag PrintGC $appJavaPid
+    if [ $? != 0 ]; then failed=1; fi
 fi
 
+# -sysprops option
+${JINFO} -J-XX:+UsePerfData -sysprops $appJavaPid
+if [ $? != 0 ]; then failed=1; fi
+
+# -flags option
+${JINFO} -J-XX:+UsePerfData -flags $appJavaPid
+if [ $? != 0 ]; then failed=1; fi
+
+# no option
+${JINFO} -J-XX:+UsePerfData $appJavaPid
+if [ $? != 0 ]; then failed=1; fi
 
 # -flag option
 ${JINFO} -J-XX:+UsePerfData -flag +PrintGC $appJavaPid

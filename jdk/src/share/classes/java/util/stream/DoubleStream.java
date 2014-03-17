@@ -330,7 +330,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * <pre>{@code
      *     double result = identity;
      *     for (double element : this stream)
-     *         result = accumulator.apply(result, element)
+     *         result = accumulator.applyAsDouble(result, element)
      *     return result;
      * }</pre>
      *
@@ -391,7 +391,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      *             result = element;
      *         }
      *         else
-     *             result = accumulator.apply(result, element);
+     *             result = accumulator.applyAsDouble(result, element);
      *     }
      *     return foundAny ? OptionalDouble.of(result) : OptionalDouble.empty();
      * }</pre>

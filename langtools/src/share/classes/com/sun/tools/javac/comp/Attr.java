@@ -248,7 +248,7 @@ public class Attr extends JCTree.Visitor {
         if (!owntype.hasTag(ERROR) && !resultInfo.pt.hasTag(METHOD) && !resultInfo.pt.hasTag(FORALL)) {
             if (allowPoly && inferenceContext.free(found)) {
                 if ((ownkind & ~resultInfo.pkind) == 0) {
-                    owntype = resultInfo.check(tree, inferenceContext.asFree(owntype));
+                    owntype = resultInfo.check(tree, inferenceContext.asUndetVar(owntype));
                 } else {
                     log.error(tree.pos(), "unexpected.type",
                             kindNames(resultInfo.pkind),
@@ -769,13 +769,6 @@ public class Attr extends JCTree.Visitor {
                 = deferredLintHandler.setPos(variable.pos());
 
         try {
-            // Use null as symbol to not attach the type annotation to any symbol.
-            // The initializer will later also be visited and then we'll attach
-            // to the symbol.
-            // This prevents having multiple type annotations, just because of
-            // lazy constant value evaluation.
-            memberEnter.typeAnnotate(variable.init, env, null, variable.pos());
-            annotate.flush();
             Type itype = attribExpr(variable.init, env, type);
             if (itype.constValue() != null) {
                 return coerce(itype, type).constValue();
@@ -1021,7 +1014,7 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 // Attribute all type annotations in the body
-                memberEnter.typeAnnotate(tree.body, localEnv, m, null);
+                annotate.annotateTypeLater(tree.body, localEnv, m, null);
                 annotate.flush();
 
                 // Attribute method body.
@@ -1050,7 +1043,7 @@ public class Attr extends JCTree.Visitor {
         } else {
             if (tree.init != null) {
                 // Field initializer expression need to be entered.
-                memberEnter.typeAnnotate(tree.init, env, tree.sym, tree.pos());
+                annotate.annotateTypeLater(tree.init, env, tree.sym, tree.pos());
                 annotate.flush();
             }
         }
@@ -1111,7 +1104,7 @@ public class Attr extends JCTree.Visitor {
             if ((tree.flags & STATIC) != 0) localEnv.info.staticLevel++;
 
             // Attribute all type annotations in the block
-            memberEnter.typeAnnotate(tree, localEnv, localEnv.info.scope.owner, null);
+            annotate.annotateTypeLater(tree, localEnv, localEnv.info.scope.owner, null);
             annotate.flush();
 
             {
@@ -2406,7 +2399,7 @@ public class Attr extends JCTree.Visitor {
                 //add thrown types as bounds to the thrown types free variables if needed:
                 if (resultInfo.checkContext.inferenceContext().free(lambdaType.getThrownTypes())) {
                     List<Type> inferredThrownTypes = flow.analyzeLambdaThrownTypes(env, that, make);
-                    List<Type> thrownTypes = resultInfo.checkContext.inferenceContext().asFree(lambdaType.getThrownTypes());
+                    List<Type> thrownTypes = resultInfo.checkContext.inferenceContext().asUndetVars(lambdaType.getThrownTypes());
 
                     chk.unhandled(inferredThrownTypes, thrownTypes);
                 }
@@ -2547,7 +2540,7 @@ public class Attr extends JCTree.Visitor {
             @Override
             public boolean compatible(Type found, Type req, Warner warn) {
                 //return type must be compatible in both current context and assignment context
-                return chk.basicHandler.compatible(found, inferenceContext().asFree(req), warn);
+                return chk.basicHandler.compatible(found, inferenceContext().asUndetVar(req), warn);
             }
 
             @Override
@@ -2580,7 +2573,7 @@ public class Attr extends JCTree.Visitor {
         * types must be compatible with the return type of the expected descriptor.
         */
         private void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext) {
-            Type returnType = checkContext.inferenceContext().asFree(descriptor.getReturnType());
+            Type returnType = checkContext.inferenceContext().asUndetVar(descriptor.getReturnType());
 
             //return values have already been checked - but if lambda has no return
             //values, we must ensure that void/value compatibility is correct;
@@ -2592,7 +2585,7 @@ public class Attr extends JCTree.Visitor {
                         diags.fragment("missing.ret.val", returnType)));
             }
 
-            List<Type> argTypes = checkContext.inferenceContext().asFree(descriptor.getParameterTypes());
+            List<Type> argTypes = checkContext.inferenceContext().asUndetVars(descriptor.getParameterTypes());
             if (!types.isSameTypes(argTypes, TreeInfo.types(tree.params))) {
                 checkContext.report(tree, diags.fragment("incompatible.arg.types.in.lambda"));
             }
@@ -2836,7 +2829,7 @@ public class Attr extends JCTree.Visitor {
             if (that.kind.isUnbound() &&
                     resultInfo.checkContext.inferenceContext().free(argtypes.head)) {
                 //re-generate inference constraints for unbound receiver
-                if (!types.isSubtype(resultInfo.checkContext.inferenceContext().asFree(argtypes.head), exprType)) {
+                if (!types.isSubtype(resultInfo.checkContext.inferenceContext().asUndetVar(argtypes.head), exprType)) {
                     //cannot happen as this has already been checked - we just need
                     //to regenerate the inference constraints, as that has been lost
                     //as a result of the call to inferenceContext.save()
@@ -2874,7 +2867,7 @@ public class Attr extends JCTree.Visitor {
 
     @SuppressWarnings("fallthrough")
     void checkReferenceCompatible(JCMemberReference tree, Type descriptor, Type refType, CheckContext checkContext, boolean speculativeAttr) {
-        Type returnType = checkContext.inferenceContext().asFree(descriptor.getReturnType());
+        Type returnType = checkContext.inferenceContext().asUndetVar(descriptor.getReturnType());
 
         Type resType;
         switch (tree.getMode()) {
@@ -2906,7 +2899,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         if (!speculativeAttr) {
-            List<Type> thrownTypes = checkContext.inferenceContext().asFree(descriptor.getThrownTypes());
+            List<Type> thrownTypes = checkContext.inferenceContext().asUndetVars(descriptor.getThrownTypes());
             if (chk.unhandled(refType.getThrownTypes(), thrownTypes).nonEmpty()) {
                 log.error(tree, "incompatible.thrown.types.in.mref", refType.getThrownTypes());
             }

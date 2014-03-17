@@ -28,10 +28,10 @@ export DISPLAY
 OS=`uname -s`
 case "$OS" in
   SunOS )
-    ${TESTJAVA}/bin/java BadDisplayTest
+    ${TESTJAVA}/bin/java ${TESTVMOPTS} BadDisplayTest
     ;;
   Linux )
-    ${TESTJAVA}/bin/java BadDisplayTest
+    ${TESTJAVA}/bin/java ${TESTVMOPTS} BadDisplayTest
      ;;
   * )
     echo "Unsupported System: ${OS}"
