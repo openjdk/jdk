@@ -146,10 +146,6 @@ public final class NativeJSAdapter extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     NativeJSAdapter(final Object overrides, final ScriptObject adaptee, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         this.adaptee = wrapAdaptee(adaptee);
@@ -577,7 +573,7 @@ public final class NativeJSAdapter extends ScriptObject {
             proto = global.getJSAdapterPrototype();
         }
 
-        return new NativeJSAdapter(overrides, (ScriptObject)adaptee, (ScriptObject)proto, getInitialMap());
+        return new NativeJSAdapter(overrides, (ScriptObject)adaptee, (ScriptObject)proto, $nasgenmap$);
     }
 
     @Override
