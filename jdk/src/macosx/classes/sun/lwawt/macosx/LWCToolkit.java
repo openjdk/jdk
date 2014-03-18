@@ -476,9 +476,11 @@ public final class LWCToolkit extends LWToolkit {
         return true;
     }
 
+    private static final String APPKIT_THREAD_NAME = "AppKit Thread";
+
     // Intended to be called from the LWCToolkit.m only.
     private static void installToolkitThreadNameInJava() {
-        Thread.currentThread().setName(CThreading.APPKIT_THREAD_NAME);
+        Thread.currentThread().setName(APPKIT_THREAD_NAME);
     }
 
     @Override

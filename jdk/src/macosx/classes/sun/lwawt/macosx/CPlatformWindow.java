@@ -468,7 +468,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     @Override // PlatformWindow
     public void setBounds(int x, int y, int w, int h) {
-//        assert CThreading.assertEventQueue();
         nativeSetNSWindowBounds(getNSWindowPtr(), x, y, w, h);
     }
 
@@ -1062,8 +1061,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     // ----------------------------------------------------------------------
 
     private void windowDidBecomeMain() {
-        assert CThreading.assertAppKit();
-
         if (checkBlockingAndOrder()) return;
         // If it's not blocked, make sure it's above its siblings
         orderAboveSiblings();
