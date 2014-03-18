@@ -2496,7 +2496,8 @@ void CMSCollector::save_heap_summary() {
 }
 
 void CMSCollector::report_heap_summary(GCWhen::Type when) {
-  _gc_tracer_cm->report_gc_heap_summary(when, _last_heap_summary, _last_metaspace_summary);
+  _gc_tracer_cm->report_gc_heap_summary(when, _last_heap_summary);
+  _gc_tracer_cm->report_metaspace_summary(when, _last_metaspace_summary);
 }
 
 void CMSCollector::collect_in_foreground(bool clear_all_soft_refs, GCCause::Cause cause) {

@@ -185,6 +185,48 @@ class ChunkManager : public CHeapObj<mtInternal> {
   // Remove from a list by size.  Selects list based on size of chunk.
   Metachunk* free_chunks_get(size_t chunk_word_size);
 
+#define index_bounds_check(index)                                         \
+  assert(index == SpecializedIndex ||                                     \
+         index == SmallIndex ||                                           \
+         index == MediumIndex ||                                          \
+         index == HumongousIndex, err_msg("Bad index: %d", (int) index))
+
+  size_t num_free_chunks(ChunkIndex index) const {
+    index_bounds_check(index);
+
+    if (index == HumongousIndex) {
+      return _humongous_dictionary.total_free_blocks();
+    }
+
+    ssize_t count = _free_chunks[index].count();
+    return count == -1 ? 0 : (size_t) count;
+  }
+
+  size_t size_free_chunks_in_bytes(ChunkIndex index) const {
+    index_bounds_check(index);
+
+    size_t word_size = 0;
+    if (index == HumongousIndex) {
+      word_size = _humongous_dictionary.total_size();
+    } else {
+      const size_t size_per_chunk_in_words = _free_chunks[index].size();
+      word_size = size_per_chunk_in_words * num_free_chunks(index);
+    }
+
+    return word_size * BytesPerWord;
+  }
+
+  MetaspaceChunkFreeListSummary chunk_free_list_summary() const {
+    return MetaspaceChunkFreeListSummary(num_free_chunks(SpecializedIndex),
+                                         num_free_chunks(SmallIndex),
+                                         num_free_chunks(MediumIndex),
+                                         num_free_chunks(HumongousIndex),
+                                         size_free_chunks_in_bytes(SpecializedIndex),
+                                         size_free_chunks_in_bytes(SmallIndex),
+                                         size_free_chunks_in_bytes(MediumIndex),
+                                         size_free_chunks_in_bytes(HumongousIndex));
+  }
+
   // Debug support
   void verify();
   void slow_verify() {
@@ -2635,6 +2677,19 @@ size_t MetaspaceAux::free_chunks_total_words() {
 
 size_t MetaspaceAux::free_chunks_total_bytes() {
   return free_chunks_total_words() * BytesPerWord;
+}
+
+bool MetaspaceAux::has_chunk_free_list(Metaspace::MetadataType mdtype) {
+  return Metaspace::get_chunk_manager(mdtype) != NULL;
+}
+
+MetaspaceChunkFreeListSummary MetaspaceAux::chunk_free_list_summary(Metaspace::MetadataType mdtype) {
+  if (!has_chunk_free_list(mdtype)) {
+    return MetaspaceChunkFreeListSummary();
+  }
+
+  const ChunkManager* cm = Metaspace::get_chunk_manager(mdtype);
+  return cm->chunk_free_list_summary();
 }
 
 void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {

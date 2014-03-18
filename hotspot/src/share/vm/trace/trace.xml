@@ -221,6 +221,20 @@ Declares a structure type that can be used in other events.
       <value type="METASPACEOBJTYPE" field="metaspaceObjectType" label="Metaspace Object Type" />
     </event>
 
+    <event id="MetaspaceChunkFreeListSummary" path="vm/gc/metaspace/chunk_free_list_summary" label="Metaspace Chunk Free List Summary" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="GCWHEN" field="when" label="When" />
+      <value type="METADATATYPE" field="metadataType" label="Metadata Type" />
+      <value type="ULONG" field="specializedChunks" label="Specialized Chunks" />
+      <value type="BYTES64" field="specializedChunksTotalSize" label="Specialized Chunks Total Size" />
+      <value type="ULONG" field="smallChunks" label="Small Chunks" />
+      <value type="BYTES64" field="smallChunksTotalSize" label="Small Chunks Total Size" />
+      <value type="ULONG" field="mediumChunks" label="Medium Chunks" />
+      <value type="BYTES64" field="mediumChunksTotalSize" label="Medium Chunks Total Size" />
+      <value type="ULONG" field="humongousChunks" label="Humongous Chunks" />
+      <value type="BYTES64" field="humongousChunksTotalSize" label="Humongous Chunks Total Size" />
+    </event>
+
     <event id="PSHeapSummary" path="vm/gc/heap/ps_summary" label="Parallel Scavenge Heap Summary" is_instant="true">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
       <value type="GCWHEN" field="when" label="When" />

@@ -26,6 +26,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/metaspaceChunkFreeListSummary.hpp"
 #include "runtime/virtualspace.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -354,6 +355,9 @@ class MetaspaceAux : AllStatic {
   static size_t min_chunk_size_bytes() {
     return min_chunk_size_words() * BytesPerWord;
   }
+
+  static bool has_chunk_free_list(Metaspace::MetadataType mdtype);
+  static MetaspaceChunkFreeListSummary chunk_free_list_summary(Metaspace::MetadataType mdtype);
 
   // Print change in used metadata.
   static void print_metaspace_change(size_t prev_metadata_used);
