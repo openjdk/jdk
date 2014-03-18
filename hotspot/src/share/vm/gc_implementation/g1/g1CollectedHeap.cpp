@@ -39,6 +39,7 @@
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/g1/g1YCTypes.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
@@ -2172,6 +2173,8 @@ jint G1CollectedHeap::initialize() {
   // values in the heap have been properly initialized.
   _g1mm = new G1MonitoringSupport(this);
 
+  G1StringDedup::initialize();
+
   return JNI_OK;
 }
 
@@ -3456,6 +3459,11 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
     if (!silent) gclog_or_tty->print("RemSet ");
     rem_set()->verify();
 
+    if (G1StringDedup::is_enabled()) {
+      if (!silent) gclog_or_tty->print("StrDedup ");
+      G1StringDedup::verify();
+    }
+
     if (failures) {
       gclog_or_tty->print_cr("Heap:");
       // It helps to have the per-region information in the output to
@@ -3473,8 +3481,13 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
     }
     guarantee(!failures, "there should not have been any failures");
   } else {
-    if (!silent)
-      gclog_or_tty->print("(SKIPPING roots, heapRegionSets, heapRegions, remset) ");
+    if (!silent) {
+      gclog_or_tty->print("(SKIPPING Roots, HeapRegionSets, HeapRegions, RemSet");
+      if (G1StringDedup::is_enabled()) {
+        gclog_or_tty->print(", StrDedup");
+      }
+      gclog_or_tty->print(") ");
+    }
   }
 }
 
@@ -3567,6 +3580,9 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   st->cr();
   _cm->print_worker_threads_on(st);
   _cg1r->print_worker_threads_on(st);
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::print_worker_threads_on(st);
+  }
 }
 
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
@@ -3575,6 +3591,9 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   }
   tc->do_thread(_cmThread);
   _cg1r->threads_do(tc);
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::threads_do(tc);
+  }
 }
 
 void G1CollectedHeap::print_tracing_info() const {
@@ -4755,6 +4774,13 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
       obj->set_mark(m);
     }
 
+    if (G1StringDedup::is_enabled()) {
+      G1StringDedup::enqueue_from_evacuation(from_region->is_young(),
+                                             to_region->is_young(),
+                                             queue_num(),
+                                             obj);
+    }
+
     size_t* surv_young_words = surviving_young_words();
     surv_young_words[young_index] += word_sz;
 
@@ -5217,6 +5243,10 @@ void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive
                            "symbols: "SIZE_FORMAT" processed, "SIZE_FORMAT" removed",
                            g1_unlink_task.strings_processed(), g1_unlink_task.strings_removed(),
                            g1_unlink_task.symbols_processed(), g1_unlink_task.symbols_removed());
+  }
+
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::unlink(is_alive);
   }
 }
 
@@ -5841,6 +5871,9 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
     G1STWIsAliveClosure is_alive(this);
     G1KeepAliveClosure keep_alive(this);
     JNIHandles::weak_oops_do(&is_alive, &keep_alive);
+    if (G1StringDedup::is_enabled()) {
+      G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive);
+    }
   }
 
   release_gc_alloc_regions(n_workers, evacuation_info);
@@ -6321,9 +6354,10 @@ void G1CollectedHeap::tear_down_region_sets(bool free_list_only) {
     TearDownRegionSetsClosure cl(&_old_set);
     heap_region_iterate(&cl);
 
-    // Need to do this after the heap iteration to be able to
-    // recognize the young regions and ignore them during the iteration.
-    _young_list->empty_list();
+    // Note that emptying the _young_list is postponed and instead done as
+    // the first step when rebuilding the regions sets again. The reason for
+    // this is that during a full GC string deduplication needs to know if
+    // a collected region was young or old when the full GC was initiated.
   }
   _free_list.remove_all();
 }
@@ -6376,6 +6410,10 @@ public:
 
 void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
   assert_at_safepoint(true /* should_be_vm_thread */);
+
+  if (!free_list_only) {
+    _young_list->empty_list();
+  }
 
   RebuildRegionSetsClosure cl(free_list_only, &_old_set, &_free_list);
   heap_region_iterate(&cl);
