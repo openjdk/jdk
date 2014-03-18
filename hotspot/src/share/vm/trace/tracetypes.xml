@@ -140,6 +140,16 @@ Now we can use the content + data type in declaring event fields.
       <value type="UTF8" field="type" label="type" />
     </content_type>
 
+    <content_type id="MetadataType" hr_name="Metadata Type"
+                  type="U1" jvm_type="METADATATYPE">
+      <value type="UTF8" field="type" label="type" />
+    </content_type>
+
+    <content_type id="MetaspaceObjectType" hr_name="Metaspace Object Type"
+                  type="U1" jvm_type="METASPACEOBJTYPE">
+      <value type="UTF8" field="type" label="type" />
+    </content_type>
+
     <content_type id="NARROW_OOP_MODE" hr_name="Narrow Oop Mode"
                   type="U1" jvm_type="NARROWOOPMODE">
       <value type="UTF8" field="mode" label="mode" />
@@ -336,6 +346,14 @@ Now we can use the content + data type in declaring event fields.
     <!-- REFERENCETYPE -->
     <primary_type symbol="REFERENCETYPE" datatype="U1"
                   contenttype="REFERENCETYPE" type="u1" sizeop="sizeof(u1)" />
+
+    <!-- METADATATYPE -->
+    <primary_type symbol="METADATATYPE" datatype="U1"
+                  contenttype="METADATATYPE" type="u1" sizeop="sizeof(u1)" />
+
+    <!-- METADATAOBJTYPE -->
+    <primary_type symbol="METASPACEOBJTYPE" datatype="U1"
+                  contenttype="METASPACEOBJTYPE" type="u1" sizeop="sizeof(u1)" />
 
     <!-- NARROWOOPMODE -->
     <primary_type symbol="NARROWOOPMODE" datatype="U1"

@@ -3358,6 +3358,8 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
   if (result == NULL) {
+    tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
+
     // Allocation failed.
     if (is_init_completed()) {
       // Only start a GC if the bootstrapping has completed.
@@ -3423,6 +3425,16 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     THROW_OOP(Universe::out_of_memory_error_class_metaspace());
   } else {
     THROW_OOP(Universe::out_of_memory_error_metaspace());
+  }
+}
+
+const char* Metaspace::metadata_type_name(Metaspace::MetadataType mdtype) {
+  switch (mdtype) {
+    case Metaspace::ClassType: return "Class";
+    case Metaspace::NonClassType: return "Metadata";
+    default:
+      assert(false, err_msg("Got bad mdtype: %d", (int) mdtype));
+      return NULL;
   }
 }
 
