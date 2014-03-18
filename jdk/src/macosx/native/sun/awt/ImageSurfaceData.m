@@ -849,7 +849,7 @@ PRINT("    copyARGB_PRE_bitToIndexed_8bit")
                     indexOfBest = 0;
                     distanceOfBest = DBL_MAX;
 
-                    for (i=0; i<lutDataSize; i++)
+                    for (i=0; (unsigned)i<lutDataSize; i++)
                     {
                         p2 = lutdata[i];
 
@@ -899,7 +899,7 @@ static void releaseDataFromProvider(void *info, const void *data, size_t size)
 {
     if (data != NULL)
     {
-        free(data);
+        free((void*)data);
     }
 }
 
@@ -1577,7 +1577,9 @@ JNIEXPORT jobject JNICALL Java_sun_awt_image_BufImgSurfaceData_getSurfaceData
     {
         static char *bimgName = "java/awt/image/BufferedImage";
         jclass bimg = (*env)->FindClass(env, bimgName);
+        CHECK_NULL_RETURN(bimg, NULL);
         sDataID = (*env)->GetFieldID(env, bimg, "sData", "Lsun/java2d/SurfaceData;");
+        CHECK_NULL_RETURN(sDataID, NULL);
     }
 
     return (*env)->GetObjectField(env, bufImg, sDataID);
@@ -1591,7 +1593,9 @@ JNIEXPORT void JNICALL Java_sun_awt_image_BufImgSurfaceData_setSurfaceData
     {
         static char *bimgName = "java/awt/image/BufferedImage";
         jclass bimg = (*env)->FindClass(env, bimgName);
+        CHECK_NULL(bimg);
         sDataID = (*env)->GetFieldID(env, bimg, "sData", "Lsun/java2d/SurfaceData;");
+        CHECK_NULL(sDataID);
     }
 
     (*env)->SetObjectField(env, bufImg, sDataID, sData);
@@ -1610,18 +1614,11 @@ JNIEXPORT void JNICALL Java_sun_java2d_OSXOffScreenSurfaceData_initIDs(JNIEnv *e
         return;
         }
 
-        icm = (*env)->FindClass(env, icmName);
-        if (icm == NULL) {
-            return;
-        }
-
-        rgbID = (*env)->GetFieldID(env, icm, "rgb", "[I");
-        allGrayID = (*env)->GetFieldID(env, icm, "allgrayopaque", "Z");
-        mapSizeID = (*env)->GetFieldID(env, icm, "map_size", "I");
-        CMpDataID = (*env)->GetFieldID(env, icm, "pData", "J");
-        if (allGrayID == 0 || rgbID == 0 || mapSizeID == 0 || CMpDataID == 0) {
-        JNU_ThrowInternalError(env, "Could not get field IDs");
-        }
+        CHECK_NULL(icm = (*env)->FindClass(env, icmName));
+        CHECK_NULL(rgbID = (*env)->GetFieldID(env, icm, "rgb", "[I"));
+        CHECK_NULL(allGrayID = (*env)->GetFieldID(env, icm, "allgrayopaque", "Z"));
+        CHECK_NULL(mapSizeID = (*env)->GetFieldID(env, icm, "map_size", "I"));
+        CHECK_NULL(CMpDataID = (*env)->GetFieldID(env, icm, "pData", "J"));
     }
 
     gColorspaceRGB = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
@@ -1795,20 +1792,23 @@ PRINT("Java_sun_java2d_OSXOffScreenSurfaceData_initRaster")
         //bisdo->sdOps.Dispose = BufImg_Dispose;
 
         bisdo->array = (*env)->NewWeakGlobalRef(env, array);
+        if (array != NULL) CHECK_NULL(bisdo->array);
         bisdo->offset = offset;
         //bisdo->scanStr = scanStr;
         bisdo->scanStr = scanStride;
         //bisdo->pixStr = pixStr;
         bisdo->pixStr = pixelStride;
         if (!icm) {
-        bisdo->lutarray = NULL;
-        bisdo->lutsize = 0;
-        bisdo->icm = NULL;
+            bisdo->lutarray = NULL;
+            bisdo->lutsize = 0;
+            bisdo->icm = NULL;
         } else {
-        jobject lutarray = (*env)->GetObjectField(env, icm, rgbID);
-        bisdo->lutarray = (*env)->NewWeakGlobalRef(env, lutarray);
-        bisdo->lutsize = (*env)->GetIntField(env, icm, mapSizeID);
-        bisdo->icm = (*env)->NewWeakGlobalRef(env, icm);
+            jobject lutarray = (*env)->GetObjectField(env, icm, rgbID);
+            bisdo->lutarray = (*env)->NewWeakGlobalRef(env, lutarray);
+            if (lutarray != NULL) CHECK_NULL(bisdo->lutarray);
+            bisdo->lutsize = (*env)->GetIntField(env, icm, mapSizeID);
+            bisdo->icm = (*env)->NewWeakGlobalRef(env, icm);
+            if (icm != NULL) CHECK_NULL(bisdo->icm);
         }
         bisdo->rasbounds.x1 = 0;
         bisdo->rasbounds.y1 = 0;
@@ -1887,7 +1887,7 @@ PRINT("Java_sun_java2d_OSXOffScreenSurfaceData_initRaster")
                         Pixel32bit* src = lutdata;
                         Pixel32bit* dst = isdo->lutData;
                         jint i;
-                        for (i=0; i<isdo->lutDataSize; i++)
+                        for (i=0; (unsigned)i<isdo->lutDataSize; i++)
                         {
                             if (i != transparent_index)
                             {
@@ -1919,7 +1919,7 @@ PRINT("Java_sun_java2d_OSXOffScreenSurfaceData_initRaster")
                         Pixel32bit* src = lutdata;
                         Pixel32bit* dst = isdo->lutData;
                         jint i;
-                        for (i=0; i<isdo->lutDataSize; i++)
+                        for (i=0; (unsigned)i<isdo->lutDataSize; i++)
                         {
                             *dst = *src | mask;
                             dst++; src++;
