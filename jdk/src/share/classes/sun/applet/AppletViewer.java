@@ -33,21 +33,17 @@ import java.awt.print.*;
 import javax.print.attribute.*;
 import java.applet.*;
 import java.net.URL;
-import java.net.MalformedURLException;
 import java.net.SocketPermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import sun.awt.SunToolkit;
 import sun.awt.AppContext;
-import java.lang.ref.WeakReference;
 
 /**
  * A frame to show the applet tag in.
  */
 @SuppressWarnings("serial") // JDK-implementation class
-class TextFrame extends Frame {
+final class TextFrame extends Frame {
 
     /**
      * Create the tag frame.
@@ -66,6 +62,7 @@ class TextFrame extends Frame {
         p.add(b);
 
         class ActionEventListener implements ActionListener {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 dispose();
             }
@@ -78,6 +75,7 @@ class TextFrame extends Frame {
 
         WindowListener windowEventListener = new WindowAdapter() {
 
+            @Override
             public void windowClosing(WindowEvent evt) {
                 dispose();
             }
@@ -90,20 +88,22 @@ class TextFrame extends Frame {
 }
 
 /**
- * Lets us construct one using unix-style one shot behaviors
+ * Lets us construct one using unix-style one shot behaviors.
  */
+final class StdAppletViewerFactory implements AppletViewerFactory {
 
-class StdAppletViewerFactory implements AppletViewerFactory
-{
+    @Override
     public AppletViewer createAppletViewer(int x, int y,
                                            URL doc, Hashtable atts) {
         return new AppletViewer(x, y, doc, atts, System.out, this);
     }
 
+    @Override
     public MenuBar getBaseMenuBar() {
         return new MenuBar();
     }
 
+    @Override
     public boolean isStandalone() {
         return true;
     }
@@ -117,8 +117,7 @@ class StdAppletViewerFactory implements AppletViewerFactory
  *  once the JDK docs have been installed.)
  */
 @SuppressWarnings("serial") // JDK implementation class
-public class AppletViewer extends Frame implements AppletContext,
-                                                   Printable {
+public class AppletViewer extends Frame implements AppletContext, Printable {
 
     /**
      * Some constants...
@@ -148,13 +147,14 @@ public class AppletViewer extends Frame implements AppletContext,
 
 
     private final class UserActionListener implements ActionListener {
+        @Override
         public void actionPerformed(ActionEvent evt) {
             processUserAction(evt);
         }
     }
 
     /**
-     * Create the applet viewer
+     * Create the applet viewer.
      */
     public AppletViewer(int x, int y, URL doc, Hashtable atts,
                         PrintStream statusMsgStream, AppletViewerFactory factory) {
@@ -202,14 +202,17 @@ public class AppletViewer extends Frame implements AppletContext,
 
         WindowListener windowEventListener = new WindowAdapter() {
 
+            @Override
             public void windowClosing(WindowEvent evt) {
                 appletClose();
             }
 
+            @Override
             public void windowIconified(WindowEvent evt) {
                 appletStop();
             }
 
+            @Override
             public void windowDeiconified(WindowEvent evt) {
                 appletStart();
             }
@@ -224,6 +227,7 @@ public class AppletViewer extends Frame implements AppletContext,
                 this.frame = frame;
             }
 
+            @Override
             public void appletStateChanged(AppletEvent evt)
             {
                 AppletPanel src = (AppletPanel)evt.getSource();
@@ -371,6 +375,7 @@ public class AppletViewer extends Frame implements AppletContext,
     /**
      * Get an audio clip.
      */
+    @Override
     public AudioClip getAudioClip(URL url) {
         checkConnect(url);
         synchronized (audioClips) {
@@ -387,6 +392,7 @@ public class AppletViewer extends Frame implements AppletContext,
     /**
      * Get an image.
      */
+    @Override
     public Image getImage(URL url) {
         return getCachedImage(url);
     }
@@ -418,6 +424,7 @@ public class AppletViewer extends Frame implements AppletContext,
     /**
      * Get an applet by name.
      */
+    @Override
     public Applet getApplet(String name) {
         AppletSecurity security = (AppletSecurity)System.getSecurityManager();
         name = name.toLowerCase();
@@ -447,6 +454,7 @@ public class AppletViewer extends Frame implements AppletContext,
      * Return an enumeration of all the accessible
      * applets on this page.
      */
+    @Override
     public Enumeration getApplets() {
         AppletSecurity security = (AppletSecurity)System.getSecurityManager();
         Vector v = new Vector();
@@ -470,31 +478,37 @@ public class AppletViewer extends Frame implements AppletContext,
     /**
      * Ignore.
      */
+    @Override
     public void showDocument(URL url) {
     }
 
     /**
      * Ignore.
      */
+    @Override
     public void showDocument(URL url, String target) {
     }
 
     /**
      * Show status.
      */
+    @Override
     public void showStatus(String status) {
         label.setText(status);
     }
 
+    @Override
     public void setStream(String key, InputStream stream)throws IOException{
         // We do nothing.
     }
 
+    @Override
     public InputStream getStream(String key){
         // We do nothing.
         return null;
     }
 
+    @Override
     public Iterator getStreamKeys(){
         // We do nothing.
         return null;
@@ -608,7 +622,7 @@ public class AppletViewer extends Frame implements AppletContext,
         panel.sendEvent(AppletPanel.APPLET_DISPOSE);
 
         /**
-         * Fixed #4501142: Classlaoder sharing policy doesn't
+         * Fixed #4501142: Classloader sharing policy doesn't
          * take "archive" into account. This will be overridden
          * by Java Plug-in.                     [stanleyh]
          */
@@ -637,6 +651,7 @@ public class AppletViewer extends Frame implements AppletContext,
     void appletSave() {
         AccessController.doPrivileged(new PrivilegedAction() {
 
+            @Override
             public Object run() {
                 // XXX: this privileged block should be made smaller
                 // by initializing a private static variable with "user.dir"
@@ -765,6 +780,7 @@ public class AppletViewer extends Frame implements AppletContext,
         }
     }
 
+    @Override
     public int print(Graphics graphics, PageFormat pf, int pageIndex) {
         if (pageIndex > 0) {
             return Printable.NO_SUCH_PAGE;
@@ -829,6 +845,7 @@ public class AppletViewer extends Frame implements AppletContext,
 
         new Thread(new Runnable()
         {
+            @Override
             public void run()
             {
                 appletShutdown(p);
@@ -864,6 +881,7 @@ public class AppletViewer extends Frame implements AppletContext,
         //
         new Thread(new Runnable()
         {
+            @Override
             public void run()
             {
                 for (Enumeration e = appletPanels.elements() ; e.hasMoreElements() ;) {
