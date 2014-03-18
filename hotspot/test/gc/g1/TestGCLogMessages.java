@@ -49,11 +49,13 @@ public class TestGCLogMessages {
 
     output.shouldNotContain("[Redirty Cards");
     output.shouldNotContain("[Code Root Purge");
+    output.shouldNotContain("[String Dedup Fixup");
     output.shouldNotContain("[Young Free CSet");
     output.shouldNotContain("[Non-Young Free CSet");
     output.shouldHaveExitValue(0);
 
     pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                               "-XX:+UseStringDeduplication",
                                                "-Xmx10M",
                                                "-XX:+PrintGCDetails",
                                                GCTest.class.getName());
@@ -62,11 +64,13 @@ public class TestGCLogMessages {
 
     output.shouldContain("[Redirty Cards");
     output.shouldContain("[Code Root Purge");
+    output.shouldContain("[String Dedup Fixup");
     output.shouldNotContain("[Young Free CSet");
     output.shouldNotContain("[Non-Young Free CSet");
     output.shouldHaveExitValue(0);
 
     pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                               "-XX:+UseStringDeduplication",
                                                "-Xmx10M",
                                                "-XX:+PrintGCDetails",
                                                "-XX:+UnlockExperimentalVMOptions",
@@ -77,6 +81,7 @@ public class TestGCLogMessages {
 
     output.shouldContain("[Redirty Cards");
     output.shouldContain("[Code Root Purge");
+    output.shouldContain("[String Dedup Fixup");
     output.shouldContain("[Young Free CSet");
     output.shouldContain("[Non-Young Free CSet");
 

@@ -137,6 +137,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_evac_fail_restore_remsets;
   double _cur_evac_fail_remove_self_forwards;
 
+  double                  _cur_string_dedup_fixup_time_ms;
+  WorkerDataArray<double> _cur_string_dedup_queue_fixup_worker_times_ms;
+  WorkerDataArray<double> _cur_string_dedup_table_fixup_worker_times_ms;
+
   double _cur_clear_ct_time_ms;
   double _cur_ref_proc_time_ms;
   double _cur_ref_enq_time_ms;
@@ -244,6 +248,21 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_evac_fail_remove_self_forwards(double ms) {
     _cur_evac_fail_remove_self_forwards = ms;
+  }
+
+  void note_string_dedup_fixup_start();
+  void note_string_dedup_fixup_end();
+
+  void record_string_dedup_fixup_time(double ms) {
+    _cur_string_dedup_fixup_time_ms = ms;
+  }
+
+  void record_string_dedup_queue_fixup_worker_time(uint worker_id, double ms) {
+    _cur_string_dedup_queue_fixup_worker_times_ms.set(worker_id, ms);
+  }
+
+  void record_string_dedup_table_fixup_worker_time(uint worker_id, double ms) {
+    _cur_string_dedup_table_fixup_worker_times_ms.set(worker_id, ms);
   }
 
   void record_ref_proc_time(double ms) {

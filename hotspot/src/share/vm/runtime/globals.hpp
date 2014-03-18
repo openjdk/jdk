@@ -3840,6 +3840,22 @@ class CommandLineFlags {
   experimental(uintx, SymbolTableSize, defaultSymbolTableSize,              \
           "Number of buckets in the JVM internal Symbol table")             \
                                                                             \
+  product(bool, UseStringDeduplication, false,                              \
+          "Use string deduplication")                                       \
+                                                                            \
+  product(bool, PrintStringDeduplicationStatistics, false,                  \
+          "Print string deduplication statistics")                          \
+                                                                            \
+  product(uintx, StringDeduplicationAgeThreshold, 3,                        \
+          "A string must reach this age (or be promoted to an old region) " \
+          "to be considered for deduplication")                             \
+                                                                            \
+  diagnostic(bool, StringDeduplicationResizeALot, false,                    \
+          "Force table resize every time the table is scanned")             \
+                                                                            \
+  diagnostic(bool, StringDeduplicationRehashALot, false,                    \
+          "Force table rehash every time the table is scanned")             \
+                                                                            \
   develop(bool, TraceDefaultMethods, false,                                 \
           "Trace the default method processing steps")                      \
                                                                             \

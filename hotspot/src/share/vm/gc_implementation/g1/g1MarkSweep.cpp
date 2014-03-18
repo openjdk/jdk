@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "code/icBuffer.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/shared/gcHeapSummary.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
@@ -315,6 +316,10 @@ void G1MarkSweep::mark_sweep_phase3() {
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   sh->process_weak_roots(&GenMarkSweep::adjust_pointer_closure);
+
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::oops_do(&GenMarkSweep::adjust_pointer_closure);
+  }
 
   GenMarkSweep::adjust_marks();
 
