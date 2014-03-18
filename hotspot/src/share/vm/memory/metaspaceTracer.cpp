@@ -44,7 +44,22 @@ void MetaspaceTracer::report_metaspace_allocation_failure(ClassLoaderData *cld,
                                                           size_t word_size,
                                                           MetaspaceObj::Type objtype,
                                                           Metaspace::MetadataType mdtype) const {
-  EventMetaspaceAllocationFailure event;
+  send_allocation_failure_event<EventMetaspaceAllocationFailure>(cld, word_size, objtype, mdtype);
+}
+
+void MetaspaceTracer::report_metadata_oom(ClassLoaderData *cld,
+                                         size_t word_size,
+                                         MetaspaceObj::Type objtype,
+                                         Metaspace::MetadataType mdtype) const {
+  send_allocation_failure_event<EventMetaspaceOOM>(cld, word_size, objtype, mdtype);
+}
+
+template <typename E>
+void MetaspaceTracer::send_allocation_failure_event(ClassLoaderData *cld,
+                                                    size_t word_size,
+                                                    MetaspaceObj::Type objtype,
+                                                    Metaspace::MetadataType mdtype) const {
+  E event;
   if (event.should_commit()) {
     if (cld->is_anonymous()) {
       event.set_classLoader(NULL);
