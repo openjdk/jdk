@@ -152,6 +152,10 @@ static int CALLBACK EnumFontFacesInFamilyProcA(
     /* printf("FULL=%s\n",lpelfe->elfFullName);fflush(stdout);  */
 
     fullname = JNU_NewStringPlatform(env, lpelfe->elfFullName);
+    if (fullname == NULL) {
+        (*env)->ExceptionClear(env);
+        return 1;
+
     fullnameLC = (*env)->CallObjectMethod(env, fullname,
                                           fmi->toLowerCaseMID, fmi->locale);
     (*env)->CallBooleanMethod(env, fmi->list, fmi->addMID, fullname);
@@ -242,6 +246,10 @@ static int CALLBACK EnumFontFacesInFamilyProcW(
 
     fullname = (*env)->NewString(env, lpelfe->elfFullName,
                                  (jsize)wcslen((LPWSTR)lpelfe->elfFullName));
+    if (fullname == NULL) {
+        (*env)->ExceptionClear(env);
+        return 1;
+    }
     fullnameLC = (*env)->CallObjectMethod(env, fullname,
                                           fmi->toLowerCaseMID, fmi->locale);
     (*env)->CallBooleanMethod(env, fmi->list, fmi->addMID, fullname);
@@ -287,6 +295,10 @@ static int CALLBACK EnumFamilyNamesA(
         return 1;
     }
     fmi->family = JNU_NewStringPlatform(env,lpelfe->elfLogFont.lfFaceName);
+    if (fmi->family == NULL) {
+        (*env)->ExceptionClear(env);
+        return 1;
+    }
     familyLC = (*env)->CallObjectMethod(env, fmi->family,
                                         fmi->toLowerCaseMID, fmi->locale);
     /* check if already seen this family with a different charset */
@@ -296,7 +308,10 @@ static int CALLBACK EnumFamilyNamesA(
     }
     fmi->list = (*env)->NewObject(env,
                                   fmi->arrayListClass, fmi->arrayListCtr, 4);
-
+    if (fmi->list == NULL) {
+        (*env)->ExceptionClear(env);
+        return 1;
+    }
     (*env)->CallObjectMethod(env, fmi->familyToFontListMap,
                              fmi->putMID, familyLC, fmi->list);
 
@@ -343,6 +358,10 @@ static int CALLBACK EnumFamilyNamesW(
     }
     slen = wcslen(lpelfe->elfLogFont.lfFaceName);
     fmi->family = (*env)->NewString(env,lpelfe->elfLogFont.lfFaceName, (jsize)slen);
+    if (fmi->family == NULL) {
+        (*env)->ExceptionClear(env);
+        return 1;
+    }
     familyLC = (*env)->CallObjectMethod(env, fmi->family,
                                         fmi->toLowerCaseMID, fmi->locale);
     /* check if already seen this family with a different charset */
@@ -352,7 +371,10 @@ static int CALLBACK EnumFamilyNamesW(
     }
     fmi->list = (*env)->NewObject(env,
                                   fmi->arrayListClass, fmi->arrayListCtr, 4);
-
+    if (fmi->list == NULL) {
+        (*env)->ExceptionClear(env);
+        return 1;
+    }
     (*env)->CallObjectMethod(env, fmi->familyToFontListMap,
                              fmi->putMID, familyLC, fmi->list);
 
@@ -447,6 +469,10 @@ static void registerFontA(GdiFontMapInfo *fmi, jobject fontToFileMap,
     JNIEnv *env = fmi->env;
     size_t dslen = strlen(data);
     jstring fileStr = JNU_NewStringPlatform(env, data);
+    if (fileStr == NULL) {
+        (*env)->ExceptionClear(env);
+        return;
+    }
 
     /* TTC or ttc means it may be a collection. Need to parse out
      * multiple font face names separated by " & "
@@ -467,6 +493,10 @@ static void registerFontA(GdiFontMapInfo *fmi, jobject fontToFileMap,
                     ptr1 = ptr2+3;
             }
             fontStr = JNU_NewStringPlatform(env, ptr1);
+            if (fontStr == NULL) {
+                (*env)->ExceptionClear(env);
+                return;
+            }
             fontStr = (*env)->CallObjectMethod(env, fontStr,
                                                fmi->toLowerCaseMID,
                                                fmi->locale);
@@ -481,6 +511,10 @@ static void registerFontA(GdiFontMapInfo *fmi, jobject fontToFileMap,
         }
     } else {
         fontStr = JNU_NewStringPlatform(env, name);
+        if (fontStr == NULL) {
+            (*env)->ExceptionClear(env);
+            return;
+        }
         fontStr = (*env)->CallObjectMethod(env, fontStr,
                                            fmi->toLowerCaseMID, fmi->locale);
         (*env)->CallObjectMethod(env, fontToFileMap, fmi->putMID,
@@ -496,6 +530,10 @@ static void registerFontW(GdiFontMapInfo *fmi, jobject fontToFileMap,
     JNIEnv *env = fmi->env;
     size_t dslen = wcslen(data);
     jstring fileStr = (*env)->NewString(env, data, (jsize)dslen);
+    if (fileStr == NULL) {
+        (*env)->ExceptionClear(env);
+        return;
+    }
 
     /* TTC or ttc means it may be a collection. Need to parse out
      * multiple font face names separated by " & "
@@ -517,6 +555,10 @@ static void registerFontW(GdiFontMapInfo *fmi, jobject fontToFileMap,
                 ptr1 = ptr2+3;
             }
             fontStr = (*env)->NewString(env, ptr1, (jsize)wcslen(ptr1));
+            if (fontStr == NULL) {
+                (*env)->ExceptionClear(env);
+                return;
+            }
             fontStr = (*env)->CallObjectMethod(env, fontStr,
                                                fmi->toLowerCaseMID,
                                                fmi->locale);
@@ -531,6 +573,10 @@ static void registerFontW(GdiFontMapInfo *fmi, jobject fontToFileMap,
         }
     } else {
         fontStr = (*env)->NewString(env, name, (jsize)wcslen(name));
+        if (fontStr == NULL) {
+            (*env)->ExceptionClear(env);
+            return;
+        }
         fontStr = (*env)->CallObjectMethod(env, fontStr,
                                            fmi->toLowerCaseMID, fmi->locale);
         (*env)->CallObjectMethod(env, fontToFileMap, fmi->putMID,
