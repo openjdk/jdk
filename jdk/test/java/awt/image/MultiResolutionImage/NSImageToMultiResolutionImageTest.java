@@ -27,7 +27,7 @@ import sun.awt.OSInfo;
 import sun.awt.image.MultiResolutionImage;
 /*
  * @test
- * @bug 8033534
+ * @bug 8033534 8035069
  * @summary [macosx] Get MultiResolution image from native system
  * @author Alexander Scherbatiy
  * @run main NSImageToMultiResolutionImageTest

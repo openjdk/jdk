@@ -243,24 +243,11 @@ public class CImage extends CFRetainedResource {
                 = nativeGetNSImageRepresentationSizes(ptr,
                         size.getWidth(), size.getHeight());
 
-        if (sizes == null || sizes.length < 2) {
-            return toImage(w, h, w, h);
-        }
+        BufferedImage baseImage = toImage(w, h, w, h);
 
-        BufferedImage[] images = new BufferedImage[sizes.length];
-        int currentImageIndex = 0;
-
-        for (int i = 0; i < sizes.length; i++) {
-            int imageRepWidth = (int) sizes[i].getWidth();
-            int imageRepHeight = (int) sizes[i].getHeight();
-
-            if(imageRepHeight <= w && imageRepHeight <= h){
-                currentImageIndex = i;
-            }
-            images[i] = toImage(w, h, imageRepWidth, imageRepHeight);
-        }
-        return new MultiResolutionBufferedImage(BufferedImage.TYPE_INT_ARGB_PRE,
-                currentImageIndex, images);
+        return sizes == null || sizes.length < 2 ? baseImage
+                : new MultiResolutionBufferedImage(baseImage, sizes,
+                        (width, height) -> toImage(w, h, width, height));
     }
 
     private BufferedImage toImage(int srcWidth, int srcHeight, int dstWidth, int dstHeight) {
