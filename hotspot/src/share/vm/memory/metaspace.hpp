@@ -241,6 +241,8 @@ class Metaspace : public CHeapObj<mtClass> {
   static void report_metadata_oome(ClassLoaderData* loader_data, size_t word_size,
                                    MetadataType mdtype, TRAPS);
 
+  static const char* metadata_type_name(Metaspace::MetadataType mdtype);
+
   void print_on(outputStream* st) const;
   // Debugging support
   void verify();

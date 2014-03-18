@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "memory/metaspaceTracer.hpp"
 #include "trace/tracing.hpp"
 #include "trace/traceBackend.hpp"
@@ -35,6 +36,31 @@ void MetaspaceTracer::report_gc_threshold(size_t old_val,
     event.set_oldValue(old_val);
     event.set_newValue(new_val);
     event.set_updater((u1)updater);
+    event.commit();
+  }
+}
+
+void MetaspaceTracer::report_metaspace_allocation_failure(ClassLoaderData *cld,
+                                                          size_t word_size,
+                                                          MetaspaceObj::Type objtype,
+                                                          Metaspace::MetadataType mdtype) const {
+  EventMetaspaceAllocationFailure event;
+  if (event.should_commit()) {
+    if (cld->is_anonymous()) {
+      event.set_classLoader(NULL);
+      event.set_anonymousClassLoader(true);
+    } else {
+      if (cld->is_the_null_class_loader_data()) {
+        event.set_classLoader((Klass*) NULL);
+      } else {
+        event.set_classLoader(cld->class_loader()->klass());
+      }
+      event.set_anonymousClassLoader(false);
+    }
+
+    event.set_size(word_size * BytesPerWord);
+    event.set_metadataType((u1) mdtype);
+    event.set_metaspaceObjectType((u1) objtype);
     event.commit();
   }
 }

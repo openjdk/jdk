@@ -205,6 +205,14 @@ Declares a structure type that can be used in other events.
       <value type="GCTHRESHOLDUPDATER" field="updater" label="Updater" />
     </event>
 
+    <event id="MetaspaceAllocationFailure" path="vm/gc/metaspace/allocation_failure" label="Metaspace Allocation Failure" is_instant="true" has_stacktrace="true">
+      <value type="CLASS" field="classLoader" label="Class Loader" />
+      <value type="BOOLEAN" field="anonymousClassLoader" label="Anonymous Class Loader" />
+      <value type="BYTES64" field="size" label="Size" />
+      <value type="METADATATYPE" field="metadataType" label="Metadata Type" />
+      <value type="METASPACEOBJTYPE" field="metaspaceObjectType" label="Metaspace Object Type" />
+    </event>
+
     <event id="PSHeapSummary" path="vm/gc/heap/ps_summary" label="Parallel Scavenge Heap Summary" is_instant="true">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
       <value type="GCWHEN" field="when" label="When" />
