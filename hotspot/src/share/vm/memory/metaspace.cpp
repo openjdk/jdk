@@ -3371,7 +3371,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   }
 
   if (result == NULL) {
-    report_metadata_oome(loader_data, word_size, mdtype, CHECK_NULL);
+    report_metadata_oome(loader_data, word_size, type, mdtype, CHECK_NULL);
   }
 
   // Zero initialize.
@@ -3385,7 +3385,9 @@ size_t Metaspace::class_chunk_size(size_t word_size) {
   return class_vsm()->calc_chunk_size(word_size);
 }
 
-void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_size, MetadataType mdtype, TRAPS) {
+void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_size, MetaspaceObj::Type type, MetadataType mdtype, TRAPS) {
+  tracer()->report_metadata_oom(loader_data, word_size, type, mdtype);
+
   // If result is still null, we are out of memory.
   if (Verbose && TraceMetadataChunkAllocation) {
     gclog_or_tty->print_cr("Metaspace allocation failed for size "
