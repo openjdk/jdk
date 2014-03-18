@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
  * @test
  * @bug 4634892
  * @summary Ensure authentication via GSS-API/Kerberos v5 works.
- * @ignore see runwjaas.csh for instructions for how to run this test
+ * @run main/manual AuthOnly
  */
+
 /*
- * Can set logging to FINEST to view exchange.
+ * Set logging to FINEST to view exchange.
+ * See runwjaas.csh for instructions for how to run this test.
  */
+
 import javax.security.sasl.*;
 import javax.security.auth.callback.*;
 import java.security.*;
