@@ -2501,6 +2501,8 @@ public class ClassReader {
                 return;
             } catch (IOException ex) {
                 throw badClassFile("unable.to.access.file", ex.getMessage());
+            } catch (ArrayIndexOutOfBoundsException ex) {
+                throw badClassFile("bad.class.file", c.flatname);
             } finally {
                 currentClassFile = previousClassFile;
             }
