@@ -2919,15 +2919,65 @@ public class Lower extends TreeTranslator {
     // constant propagation would require that we take care to
     // preserve possible side-effects in the condition expression.
 
+    // One common case is equality expressions involving a constant and null.
+    // Since null is not a constant expression (because null cannot be
+    // represented in the constant pool), equality checks involving null are
+    // not captured by Flow.isTrue/isFalse.
+    // Equality checks involving a constant and null, e.g.
+    //     "" == null
+    // are safe to simplify as no side-effects can occur.
+
+    private boolean isTrue(JCTree exp) {
+        if (exp.type.isTrue())
+            return true;
+        Boolean b = expValue(exp);
+        return b == null ? false : b;
+    }
+    private boolean isFalse(JCTree exp) {
+        if (exp.type.isFalse())
+            return true;
+        Boolean b = expValue(exp);
+        return b == null ? false : !b;
+    }
+    /* look for (in)equality relations involving null.
+     * return true - if expression is always true
+     *       false - if expression is always false
+     *        null - if expression cannot be eliminated
+     */
+    private Boolean expValue(JCTree exp) {
+        while (exp.hasTag(PARENS))
+            exp = ((JCParens)exp).expr;
+
+        boolean eq;
+        switch (exp.getTag()) {
+        case EQ: eq = true;  break;
+        case NE: eq = false; break;
+        default:
+            return null;
+        }
+
+        // we have a JCBinary(EQ|NE)
+        // check if we have two literals (constants or null)
+        JCBinary b = (JCBinary)exp;
+        if (b.lhs.type.hasTag(BOT)) return expValueIsNull(eq, b.rhs);
+        if (b.rhs.type.hasTag(BOT)) return expValueIsNull(eq, b.lhs);
+        return null;
+    }
+    private Boolean expValueIsNull(boolean eq, JCTree t) {
+        if (t.type.hasTag(BOT)) return Boolean.valueOf(eq);
+        if (t.hasTag(LITERAL))  return Boolean.valueOf(!eq);
+        return null;
+    }
+
     /** Visitor method for conditional expressions.
      */
     @Override
     public void visitConditional(JCConditional tree) {
         JCTree cond = tree.cond = translate(tree.cond, syms.booleanType);
-        if (cond.type.isTrue()) {
+        if (isTrue(cond)) {
             result = convert(translate(tree.truepart, tree.type), tree.type);
             addPrunedInfo(cond);
-        } else if (cond.type.isFalse()) {
+        } else if (isFalse(cond)) {
             result = convert(translate(tree.falsepart, tree.type), tree.type);
             addPrunedInfo(cond);
         } else {
@@ -2951,10 +3001,10 @@ public class Lower extends TreeTranslator {
      */
     public void visitIf(JCIf tree) {
         JCTree cond = tree.cond = translate(tree.cond, syms.booleanType);
-        if (cond.type.isTrue()) {
+        if (isTrue(cond)) {
             result = translate(tree.thenpart);
             addPrunedInfo(cond);
-        } else if (cond.type.isFalse()) {
+        } else if (isFalse(cond)) {
             if (tree.elsepart != null) {
                 result = translate(tree.elsepart);
             } else {
@@ -3333,21 +3383,21 @@ public class Lower extends TreeTranslator {
         JCTree lhs = tree.lhs = translate(tree.lhs, formals.head);
         switch (tree.getTag()) {
         case OR:
-            if (lhs.type.isTrue()) {
+            if (isTrue(lhs)) {
                 result = lhs;
                 return;
             }
-            if (lhs.type.isFalse()) {
+            if (isFalse(lhs)) {
                 result = translate(tree.rhs, formals.tail.head);
                 return;
             }
             break;
         case AND:
-            if (lhs.type.isFalse()) {
+            if (isFalse(lhs)) {
                 result = lhs;
                 return;
             }
-            if (lhs.type.isTrue()) {
+            if (isTrue(lhs)) {
                 result = translate(tree.rhs, formals.tail.head);
                 return;
             }
