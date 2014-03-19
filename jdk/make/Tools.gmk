@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 # questions.
 #
 
-# Cache all finds needed for this file. Only used on windows.
+# Cache all finds needed for this file.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/make/src/classes))
 
 # The exception handling of swing beaninfo which have the own tool directory
@@ -48,76 +48,76 @@ $(JDK_OUTPUTDIR)/btclasses/build/tools/deps/refs.allowed: \
 BUILD_TOOLS += $(JDK_OUTPUTDIR)/btclasses/build/tools/deps/refs.allowed
 
 # Add a checksum ("jsum") to the end of a text file. Prevents trivial tampering with class lists.
-TOOL_ADDJSUM = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_ADDJSUM = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.addjsum.AddJsum
 
 # The buildmetaindex tool creates a meta-index to make core class loaders lazier.
-TOOL_BUILDMETAINDEX = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_BUILDMETAINDEX = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.buildmetaindex.BuildMetaIndex
 
-TOOL_COMPILEFONTCONFIG = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.compilefontconfig.CompileFontConfig
 
-TOOL_COMPILEPROPERTIES = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_COMPILEPROPERTIES = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.compileproperties.CompileProperties
 
-TOOL_JARREORDER = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_JARREORDER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.jarreorder.JarReorder
 
-TOOL_GENERATECHARACTER = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_GENERATECHARACTER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.generatecharacter.GenerateCharacter
 
-TOOL_CHARACTERNAME = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_CHARACTERNAME = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.generatecharacter.CharacterName
 
-TOOL_DTDBUILDER = $(JAVA) -Ddtd_home=$(JDK_TOPDIR)/make/data/dtdbuilder \
+TOOL_DTDBUILDER = $(JAVA_SMALL) -Ddtd_home=$(JDK_TOPDIR)/make/data/dtdbuilder \
     -cp $(JDK_OUTPUTDIR)/btclasses build.tools.dtdbuilder.DTDBuilder
 
-TOOL_GENERATEBREAKITERATORDATA = $(JAVA) \
+TOOL_GENERATEBREAKITERATORDATA = $(JAVA_SMALL) \
     -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.generatebreakiteratordata.GenerateBreakIteratorData
 
-TOOL_GENERATECURRENCYDATA = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_GENERATECURRENCYDATA = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.generatecurrencydata.GenerateCurrencyData
 
-TOOL_HASHER = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_HASHER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.hasher.Hasher
 
-TOOL_TZDB = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_TZDB = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.tzdb.TzdbZoneRulesCompiler
 
 
 # TODO: There are references to the jdwpgen.jar in jdk/make/netbeans/jdwpgen/build.xml
 # and nbproject/project.properties in the same dir. Needs to be looked at.
-TOOL_JDWPGEN = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.jdwpgen.Main
+TOOL_JDWPGEN = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.jdwpgen.Main
 
 # TODO: Lots of files in jdk/make/tools/CharsetMapping dir
-TOOL_CHARSETMAPPING = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_CHARSETMAPPING = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.charsetmapping.Main $(LOG_INFO)
 
-TOOL_SPP = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.spp.Spp
+TOOL_SPP = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.spp.Spp
 
 # Nimbus is used somewhere in the swing build.
-TOOL_GENERATENIMBUS = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_GENERATENIMBUS = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.generatenimbus.Generator
 
-TOOL_WRAPPERGENERATOR = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_WRAPPERGENERATOR = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.x11wrappergen.WrapperGenerator
 
-TOOL_AWT_TOBIN = $(JAVA) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_AWT_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.icondata.awt.ToBin
 
-TOOL_OSX_TOBIN = $(JAVA) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_OSX_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.icondata.osxapp.ToBin
 
-TOOL_CLDRCONVERTER = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_CLDRCONVERTER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.cldrconverter.CLDRConverter
 
-TOOL_CHECKDEPS = $(JAVA) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
+TOOL_CHECKDEPS = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
     -cp $(JDK_OUTPUTDIR)/btclasses:$(JDK_OUTPUTDIR) \
     build.tools.deps.CheckDeps
 
-TOOL_ADDTORESTRICTEDPKGS=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+TOOL_ADDTORESTRICTEDPKGS = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.addtorestrictedpkgs.AddToRestrictedPkgs
 
 ##########################################################################################

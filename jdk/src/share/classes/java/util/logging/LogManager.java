@@ -570,7 +570,7 @@ public class LogManager {
         // the context requires default loggers, will be added to the context
         // logger's tree.
         final Logger getGlobalLogger() {
-            @SuppressWarnings("deprecated") // avoids initialization cycles.
+            @SuppressWarnings("deprecation") // avoids initialization cycles.
             final Logger global = Logger.global;
             return global;
         }
@@ -642,7 +642,7 @@ public class LogManager {
             // method be called for anything else than Logger.global
             // or owner.rootLogger.
             if (!requiresDefaultLoggers() || logger == null
-                    || logger != Logger.global && logger != LogManager.this.rootLogger) {
+                    || logger != getGlobalLogger() && logger != LogManager.this.rootLogger ) {
 
                 // the case where we have a non null logger which is neither
                 // Logger.global nor manager.rootLogger indicates a serious

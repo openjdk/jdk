@@ -30,7 +30,7 @@ include Setup.gmk
 
 default: images
 
-# Prepare the find cache. Only used if running on windows.
+# Prepare the find cache.
 $(eval $(call FillCacheFind, \
     $(wildcard $(JDK_OUTPUTDIR)/bin \
         $(JDK_OUTPUTDIR)/lib \
