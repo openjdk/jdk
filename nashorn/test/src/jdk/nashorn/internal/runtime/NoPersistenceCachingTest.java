@@ -37,6 +37,8 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.SimpleScriptContext;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
 
 /**
  * @test
@@ -50,8 +52,8 @@ public class NoPersistenceCachingTest {
    private ScriptContext context1, context2, context3;
    private ByteArrayOutputStream stderr;
    private PrintStream prevStderr;
-   private final String script = "print('Hello')";
 
+   @BeforeTest
    public void setupTest() {
       stderr = new ByteArrayOutputStream();
       prevStderr = System.err;
@@ -69,33 +71,33 @@ public class NoPersistenceCachingTest {
       }
       String[] options = new String[]{"--log=compiler:finest"};
       engine = nashornFactory.getScriptEngine(options);
+      context1 = engine.getContext();
+      context2 = new SimpleScriptContext();
+      context2.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
+      context3 = new SimpleScriptContext();
+      context3.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
    }
 
+   @AfterTest
    public void setErrTest() {
       System.setErr(prevStderr);
    }
 
    public void runTest(int numberOfContext, String expectedOutputPattern,
                        int expectedPatternOccurrence) {
-      setupTest();
+
       try {
          switch (numberOfContext) {
          case 2:
-            context1 = engine.getContext();
-            context2 = new SimpleScriptContext();
-            context2.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
-            engine.eval(script, context1);
-            engine.eval(script, context2);
+            String scriptTwoContexts = "print('HelloTwoContexts')";
+            engine.eval(scriptTwoContexts, context1);
+            engine.eval(scriptTwoContexts, context2);
             break;
          case 3:
-            context1 = engine.getContext();
-            context2 = new SimpleScriptContext();
-            context2.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
-            context3 = new SimpleScriptContext();
-            context3.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
-            engine.eval(script, context1);
-            engine.eval(script, context2);
-            engine.eval(script, context3);
+            String scriptThreeContexts = "print('HelloThreeContexts')";
+            engine.eval(scriptThreeContexts, context1);
+            engine.eval(scriptThreeContexts, context2);
+            engine.eval(scriptThreeContexts, context3);
             break;
          }
       } catch (final Exception se) {
@@ -113,7 +115,7 @@ public class NoPersistenceCachingTest {
                     + expectedPatternOccurrence + " and found: " + matches + "\n"
               + stderr);
       }
-      setErrTest();
+      stderr.reset();
    }
 
    private static String getCodeCachePattern() {
