@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.lang.ref.WeakReference;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -319,6 +321,15 @@ public final class CWarningWindow extends CPlatformWindow
                 };
             }
         };
+    }
+
+    @Override
+    public void dispose() {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            scheduler.shutdown();
+            return null;
+        });
+        super.dispose();
     }
 
     private void updateIconSize() {
