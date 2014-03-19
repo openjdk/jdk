@@ -155,7 +155,7 @@ static int CALLBACK EnumFontFacesInFamilyProcA(
     if (fullname == NULL) {
         (*env)->ExceptionClear(env);
         return 1;
-
+    }
     fullnameLC = (*env)->CallObjectMethod(env, fullname,
                                           fmi->toLowerCaseMID, fmi->locale);
     (*env)->CallBooleanMethod(env, fmi->list, fmi->addMID, fullname);
