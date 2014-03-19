@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @bug 4231980
- * @bug 4233913
+ * @bug 4231980 4233913
  * @summary Make sure that when no system policy and user policy files exist,
  * the built-in default policy will be used, which - amongst other things -
  * grants standard extensions the AllPermission. This regression is for 2
@@ -34,7 +33,7 @@
  *
  * @build SomeExtensionClass
  * @build GrantAllPermToExtWhenNoPolicy
- * @ignore shell GrantAllPermToExtWhenNoPolicy.sh
+ * @run shell/manual GrantAllPermToExtWhenNoPolicy.sh
  */
 
 import java.security.*;

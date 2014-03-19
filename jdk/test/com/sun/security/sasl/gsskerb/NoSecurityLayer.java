@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,16 @@
 /*
  * @test
  * @bug 4873552
- * @summary GSS-API/krb5 SASL mechanism should throw IllegalStateException for auth-only
+ * @summary GSS-API/krb5 SASL mechanism should throw IllegalStateException
+ *     for auth-only
+ * @run main/manual NoSecurityLayer
+ */
 
- * @ignore see run-nosec-wjaas.csh for instructions for how to run this test
- */
 /*
- * Can set logging to FINEST to view exchange.
+ * Set logging to FINEST to view exchange.
+ * See run-nosec-wjaas.csh for instructions for how to run this test.
  */
+
 import javax.security.sasl.*;
 import javax.security.auth.callback.*;
 import java.security.*;

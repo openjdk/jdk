@@ -35,7 +35,12 @@ public class BadKdc2 {
 
     public static void main(String[] args)
             throws Exception {
-        Security.setProperty("krb5.kdc.bad.policy", "tryLess:2,1000");
+
+        // 1 sec is too short.
+        BadKdc.setRatio(3.0f);
+
+        Security.setProperty(
+                "krb5.kdc.bad.policy", "tryLess:2," + BadKdc.toReal(1000));
         BadKdc.go(
                 "121212222222(32){1,2}11112121(32){1,2}", // 1 2
                 "11112121(32){1,2}11112121(32){1,2}", // 1 2

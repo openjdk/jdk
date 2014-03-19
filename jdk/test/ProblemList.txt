@@ -221,15 +221,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
 
-# 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
-sun/security/krb5/auto/MaxRetries.java                          solaris-sparcv9
-
-# 8006690: sun/security/krb5/auto/BadKdc1.java fails intermittently
-sun/security/krb5/auto/BadKdc1.java                             solaris-sparcv9
-sun/security/krb5/auto/BadKdc2.java                             solaris-sparcv9
-sun/security/krb5/auto/BadKdc3.java                             solaris-sparcv9
-sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
-
 ############################################################################
 
 # jdk_sound
@@ -267,6 +258,13 @@ tools/launcher/FXLauncherTest.java                              linux-all
 ############################################################################
 
 # jdk_util
+
+############################################################################
+
+# jdk_instrument
+
+# 8037082
+java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
 
 ############################################################################
 

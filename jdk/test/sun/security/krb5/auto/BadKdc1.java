@@ -28,14 +28,21 @@
  * @summary krb5 should not try to access unavailable kdc too often
  */
 
-import java.io.*;
 import java.security.Security;
 
 public class BadKdc1 {
 
    public static void main(String[] args)
            throws Exception {
-       Security.setProperty("krb5.kdc.bad.policy", "tryLess");
+
+       // 5 sec is default timeout for tryLess
+       if (BadKdc.getRatio() > 2.5) {
+           Security.setProperty("krb5.kdc.bad.policy",
+                   "tryLess:1," + BadKdc.toReal(2000));
+       } else {
+           Security.setProperty("krb5.kdc.bad.policy", "tryLess");
+       }
+
        BadKdc.go(
                "121212222222(32){1,2}1222(32){1,2}", // 1 2
                // The above line means try kdc1 for 2 seconds then kdc1
