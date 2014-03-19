@@ -604,8 +604,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
   // Note: we do not need to round double result; float result has the right precision
   // the poll sets the condition code, but no data registers
-  AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
-                              relocInfo::poll_return_type);
+  AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_return_type);
 
   if (Assembler::is_polling_page_far()) {
     __ lea(rscratch1, polling_page);
@@ -619,8 +618,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
-  AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
-                              relocInfo::poll_type);
+  AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_type);
   guarantee(info != NULL, "Shouldn't be NULL");
   int offset = __ offset();
   if (Assembler::is_polling_page_far()) {
