@@ -27,7 +27,6 @@ package sun.lwawt.macosx;
 
 import sun.awt.AWTAccessor;
 import sun.awt.IconInfo;
-import sun.awt.SunToolkit;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLLayer;
@@ -39,17 +38,11 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public final class CWarningWindow extends CPlatformWindow
         implements SecurityWarningWindow, PlatformEventNotifier {
 
-    private static class Lock {};
+    private static class Lock {}
     private final Lock lock = new Lock();
 
     private final static int SHOWING_DELAY = 300;
@@ -97,7 +90,7 @@ public final class CWarningWindow extends CPlatformWindow
     public CWarningWindow(final Window _ownerWindow, final LWWindowPeer _ownerPeer) {
         super();
 
-        this.ownerPeer = new WeakReference<LWWindowPeer>(_ownerPeer);
+        this.ownerPeer = new WeakReference<>(_ownerPeer);
         this.ownerWindow = _ownerWindow;
 
         initialize(null, null, _ownerPeer.getPlatformWindow());
@@ -122,16 +115,8 @@ public final class CWarningWindow extends CPlatformWindow
     }
 
     public void setVisible(boolean visible, boolean doSchedule) {
-        synchronized (scheduler) {
-            if (showingTaskHandle != null) {
-                showingTaskHandle.cancel(false);
-                showingTaskHandle = null;
-            }
-
-            if (hidingTaskHandle != null) {
-                hidingTaskHandle.cancel(false);
-                hidingTaskHandle = null;
-            }
+        synchronized (taskLock) {
+            cancelTasks();
 
             if (visible) {
                 if (isVisible()) {
@@ -140,20 +125,18 @@ public final class CWarningWindow extends CPlatformWindow
                     currentIcon = 2;
                 }
 
-                showingTaskHandle = scheduler.schedule(showingTask, 50,
-                        TimeUnit.MILLISECONDS);
-
+                showHideTask = new ShowingTask();
+                LWCToolkit.performOnMainThreadAfterDelay(showHideTask, 50);
             } else {
                 if (!isVisible()) {
                     return;
                 }
 
+                showHideTask = new HidingTask();
                 if (doSchedule) {
-                    hidingTaskHandle = scheduler.schedule(hidingTask, HIDING_DELAY,
-                            TimeUnit.MILLISECONDS);
+                    LWCToolkit.performOnMainThreadAfterDelay(showHideTask, HIDING_DELAY);
                 } else {
-                    hidingTaskHandle = scheduler.schedule(hidingTask, 50,
-                            TimeUnit.MILLISECONDS);
+                    LWCToolkit.performOnMainThreadAfterDelay(showHideTask, 50);
                 }
             }
         }
@@ -325,11 +308,17 @@ public final class CWarningWindow extends CPlatformWindow
 
     @Override
     public void dispose() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            scheduler.shutdown();
-            return null;
-        });
+        cancelTasks();
         super.dispose();
+    }
+
+    private void cancelTasks() {
+        synchronized (taskLock) {
+            if (showHideTask != null) {
+                showHideTask.cancel();
+                showHideTask = null;
+            }
+        }
     }
 
     private void updateIconSize() {
@@ -364,7 +353,7 @@ public final class CWarningWindow extends CPlatformWindow
         }
     }
 
-    private final Graphics getGraphics() {
+    private Graphics getGraphics() {
         SurfaceData sd = contentView.getSurfaceData();
         if (ownerWindow == null || sd == null) {
             return null;
@@ -409,44 +398,59 @@ public final class CWarningWindow extends CPlatformWindow
         return getSecurityIconInfo(currentSize, currentIcon);
     }
 
-    private final Runnable hidingTask = new Runnable() {
-        public void run() {
+    private final Lock taskLock = new Lock();
+    private CancelableRunnable showHideTask;
+
+    private static abstract class CancelableRunnable implements Runnable {
+        private volatile boolean perform = true;
+
+        public final void cancel() {
+            perform = false;
+        }
+
+        @Override
+        public final void run() {
+            if (perform) {
+                perform();
+            }
+        }
+
+        public abstract void perform();
+    }
+
+    private class HidingTask extends CancelableRunnable {
+        @Override
+        public void perform() {
             synchronized (lock) {
                 setVisible(false);
             }
 
-            synchronized (scheduler) {
-                hidingTaskHandle = null;
+            synchronized (taskLock) {
+                showHideTask = null;
             }
         }
-    };
+    }
 
-    private final Runnable showingTask = new Runnable() {
-        public void run() {
+    private class ShowingTask extends CancelableRunnable {
+        @Override
+        public void perform() {
             synchronized (lock) {
                 if (!isVisible()) {
                     setVisible(true);
                 }
-
                 repaint();
             }
 
-            synchronized (scheduler) {
+            synchronized (taskLock) {
                 if (currentIcon > 0) {
                     currentIcon--;
-                    showingTaskHandle = scheduler.schedule(showingTask, SHOWING_DELAY,
-                            TimeUnit.MILLISECONDS);
+                    showHideTask = new ShowingTask();
+                    LWCToolkit.performOnMainThreadAfterDelay(showHideTask, SHOWING_DELAY);
                 } else {
-                    showingTaskHandle = null;
+                    showHideTask = null;
                 }
             }
         }
-    };
-
-    private final ScheduledExecutorService scheduler =
-            Executors.newSingleThreadScheduledExecutor();
-
-    private ScheduledFuture hidingTaskHandle;
-    private ScheduledFuture showingTaskHandle;
+    }
 }
 
