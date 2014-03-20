@@ -161,10 +161,17 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
             {
                  if (pathlen > max_path - 1) {
                      pathbuf = prefixAbpath(ps, pathlen, pathlen);
+                     if (pathbuf == NULL) {
+                         JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
+                         return NULL;
+                     }
                  } else {
                      pathbuf = (WCHAR*)malloc((pathlen + 6) * sizeof(WCHAR));
                      if (pathbuf != 0) {
                          wcscpy(pathbuf, ps);
+                     } else {
+                         JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
+                         return NULL;
                      }
                  }
             } else {
@@ -184,10 +191,17 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
                 int dirlen = currentDirLength(ps, pathlen);
                 if (dirlen + pathlen + 1 > max_path - 1) {
                     pathbuf = prefixAbpath(ps, pathlen, dirlen + pathlen);
+                    if( pathbuf == NULL) {
+                        JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
+                        return NULL;
+                    }
                 } else {
                     pathbuf = (WCHAR*)malloc((pathlen + 6) * sizeof(WCHAR));
                     if (pathbuf != 0) {
                         wcscpy(pathbuf, ps);
+                    } else {
+                        JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
+                        return NULL;
                     }
                 }
             }
@@ -196,7 +210,9 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
 
     if (pathlen == 0) {
         if (throwFNFE == JNI_TRUE) {
-            throwFileNotFoundException(env, path);
+            if (!(*env)->ExceptionCheck(env)) {
+                throwFileNotFoundException(env, path);
+            }
             return NULL;
         } else {
             pathbuf = (WCHAR*)malloc(sizeof(WCHAR));
@@ -204,7 +220,9 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
         }
     }
     if (pathbuf == 0) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        if (!(*env)->ExceptionCheck(env)) {
+            JNU_ThrowOutOfMemoryError(env,  "native memory allocation failed");
+        }
         return NULL;
     }
     return pathbuf;
