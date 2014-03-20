@@ -47,7 +47,6 @@ import sun.awt.datatransfer.DataTransferer;
 import sun.lwawt.*;
 import sun.lwawt.LWWindowPeer.PeerType;
 import sun.security.action.GetBooleanAction;
-import sun.awt.image.MultiResolutionImage;
 
 import sun.util.CoreResourceBundleControl;
 
@@ -670,6 +669,13 @@ public final class LWCToolkit extends LWToolkit {
         }
         throw new InvocationTargetException(eventException);
     }
+
+    /**
+     * Schedules a {@code Runnable} execution on the Appkit thread after a delay
+     * @param r a {@code Runnable} to execute
+     * @param delay a delay in milliseconds
+     */
+    native static void performOnMainThreadAfterDelay(Runnable r, long delay);
 
     // This exists purely to get around permissions issues with getSystemEventQueueImpl
     EventQueue getSystemEventQueueForInvokeAndWait() {
