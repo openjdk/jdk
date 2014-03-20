@@ -8755,6 +8755,7 @@ instruct sqrtD_reg(regD dst, regD src) %{
 // Single-precision sqrt.
 instruct sqrtF_reg(regF dst, regF src) %{
   match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  predicate(VM_Version::has_fsqrts());
   ins_cost(DEFAULT_COST);
 
   format %{ "FSQRTS  $dst, $src" %}
@@ -11550,8 +11551,7 @@ instruct safePoint_poll_conPollAddr(rscratch2RegP poll) %{
   // effect no longer needs to be mentioned, since r0 is not contained
   // in a reg_class.
 
-  format %{ "LD      R12, addr of polling page\n\t"
-            "LD      R0, #0, R12 \t// Safepoint poll for GC" %}
+  format %{ "LD      R0, #0, R12 \t// Safepoint poll for GC" %}
   ins_encode( enc_poll(0x0, poll) );
   ins_pipe(pipe_class_default);
 %}
