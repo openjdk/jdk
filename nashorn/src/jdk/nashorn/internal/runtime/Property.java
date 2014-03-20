@@ -563,24 +563,33 @@ public abstract class Property {
         return sb.toString();
     }
 
+    private static String indent(final String str, final int indent) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(str);
+        for (int i = 0; i < indent - str.length(); i++) {
+            sb.append(' ');
+        }
+        return sb.toString();
+     }
+
     @Override
     public String toString() {
         final StringBuilder sb   = new StringBuilder();
         final Class<?>      type = getCurrentType();
 
-        sb.append(getKey()).
+        sb.append(indent(getKey(), 20)).
             append(" id=").
             append(Debug.id(this)).
             append(" (0x").
-            append(Integer.toHexString(flags)).
+            append(indent(Integer.toHexString(flags), 4)).
             append(") ").
             append(getClass().getSimpleName()).
             append(" {").
-            append(type(type)).
+            append(indent(type(type), 5)).
             append('}');
 
         if (slot != -1) {
-            sb.append('[').
+            sb.append(" [").
                append("slot=").
                append(slot).
                append(']');

@@ -44,6 +44,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ACMPNE;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPEQ;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPNE;
+import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPGE;
+import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPGT;
+import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPLE;
+import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPLT;
 import static jdk.internal.org.objectweb.asm.Opcodes.INSTANCEOF;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
@@ -1571,6 +1575,16 @@ public class MethodEmitter implements Emitter {
     }
 
     /**
+     * Generate an if_icmplt
+     *
+     * @param label label to true case
+     */
+    void if_icmplt(final Label label) {
+        debug("if_icmplt", label);
+        jump(IF_ICMPLT, label, 2);
+    }
+
+    /**
      * Generate an ifle
      *
      * @param label label to true case
@@ -1578,6 +1592,16 @@ public class MethodEmitter implements Emitter {
     void ifle(final Label label) {
         debug("ifle", label);
         jump(IFLE, label, 1);
+    }
+
+    /**
+     * Generate an if_icmple
+     *
+     * @param label label to true case
+     */
+    void if_icmple(final Label label) {
+        debug("if_icmple", label);
+        jump(IF_ICMPLE, label, 2);
     }
 
     /**
@@ -1591,6 +1615,16 @@ public class MethodEmitter implements Emitter {
     }
 
     /**
+     * Generate an if_icmpgt
+     *
+     * @param label label to true case
+     */
+    void if_icmpgt(final Label label) {
+        debug("if_icmpgt", label);
+        jump(IF_ICMPGT, label, 2);
+    }
+
+    /**
      * Generate an ifge
      *
      * @param label label to true case
@@ -1598,6 +1632,16 @@ public class MethodEmitter implements Emitter {
     void ifge(final Label label) {
         debug("ifge", label);
         jump(IFGE, label, 1);
+    }
+
+    /**
+     * Generate an if_icmpge
+     *
+     * @param label label to true case
+     */
+    void if_icmpge(final Label label) {
+        debug("if_icmpge", label);
+        jump(IF_ICMPGE, label, 2);
     }
 
     /**
@@ -1995,7 +2039,7 @@ public class MethodEmitter implements Emitter {
     }
 
 
-    private static String getProgramPoint(int flags) {
+    private static String getProgramPoint(final int flags) {
         if((flags & CALLSITE_OPTIMISTIC) == 0) {
             return "";
         }

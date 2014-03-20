@@ -58,6 +58,7 @@ import java.util.concurrent.ConcurrentMap;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
+import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Undefined;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
@@ -224,7 +225,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
         case jdk.internal.org.objectweb.asm.Type.OBJECT:
             try {
                 return Type.typeFor(Class.forName(itype.getClassName()));
-            } catch(ClassNotFoundException e) {
+            } catch(final ClassNotFoundException e) {
                 throw new AssertionError(e);
             }
         case jdk.internal.org.objectweb.asm.Type.VOID:
@@ -424,7 +425,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * @return true if types are equivalent, false otherwise
      */
     public boolean isEquivalentTo(final Type type) {
-        return this.weight() == type.weight() || (isObject() && type.isObject());
+        return this.weight() == type.weight() || isObject() && type.isObject();
     }
 
     /**
@@ -777,6 +778,11 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * A undefined singleton
      */
     public static final Type UNDEFINED = putInCache(new ObjectType(Undefined.class));
+
+    /**
+     * This is the singleton for ScriptObjects
+     */
+    public static final Type SCRIPT_OBJECT = putInCache(new ObjectType(ScriptObject.class));
 
     /**
      * This is the singleton for integer arrays

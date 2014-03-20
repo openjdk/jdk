@@ -163,6 +163,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /** Method handle for getting the array data */
     public static final Call GET_ARRAY          = virtualCall(MethodHandles.lookup(), ScriptObject.class, "getArray", ArrayData.class);
 
+    /** Method handle for getting the property map - debugging purposes */
+    public static final Call GET_MAP            = virtualCall(MethodHandles.lookup(), ScriptObject.class, "getMap", PropertyMap.class);
+
     /** Method handle for setting the array data */
     public static final Call SET_ARRAY          = virtualCall(MethodHandles.lookup(), ScriptObject.class, "setArray", void.class, ArrayData.class);
 
@@ -174,6 +177,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     /** Method handle for getting the proto of a ScriptObject */
     public static final Call GET_PROTO          = virtualCallNoLookup(ScriptObject.class, "getProto", ScriptObject.class);
+
+    /** Method handle for getting the proto of a ScriptObject */
+    public static final Call GET_PROTO_DEPTH    = virtualCallNoLookup(ScriptObject.class, "getProto", ScriptObject.class, int.class);
 
     /** Method handle for setting the proto of a ScriptObject */
     public static final Call SET_PROTO          = virtualCallNoLookup(ScriptObject.class, "setProto", void.class, ScriptObject.class);
@@ -1213,6 +1219,20 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
+     * Get the proto of a specific depth
+     * @param n depth
+     * @return proto at given depth
+     */
+    public final ScriptObject getProto(final int n) {
+        assert n > 0;
+        ScriptObject p = getProto();
+        for (int i = n; i-- > 0;) {
+            p = p.getProto();
+        }
+        return p;
+    }
+
+    /**
      * Set the __proto__ of an object.
      * @param newProto new __proto__ to set.
      */
@@ -1901,9 +1921,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
         mh = find.getGetter(returnType, programPoint);
+
         //we never need a guard if noGuard is set
-        final boolean noGuard =/* OBJECT_FIELDS_ONLY &&*/ NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType();
-        // getMap() is fine as we have the prototype switchpoint depending on where the property was found
+        final boolean noGuard = OBJECT_FIELDS_ONLY && NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType();
         MethodHandle guard;
         final Class<? extends Throwable> exception;
         if (noGuard) {
@@ -1919,7 +1939,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         if (mh == null) {
             mh = Lookup.emptyGetter(returnType);
         } else {
-            assert mh.type().returnType().equals(returnType) : "returntype mismatch for getter " + mh.type().returnType() + " != " + returnType;
+             assert mh.type().returnType().equals(returnType) : "returntype mismatch for getter " + mh.type().returnType() + " != " + returnType;
+
              if (find.isSelf()) {
                 return new GuardedInvocation(mh, guard, null, exception);
              }

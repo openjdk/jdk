@@ -6,6 +6,7 @@ import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.FINALIZED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.INITIALIZED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.LOWERED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.PARSED;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SCOPE_DEPTHS_COMPUTED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SPLIT;
 
 import java.util.ArrayDeque;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Expression;
@@ -120,10 +122,14 @@ enum CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             final TemporarySymbols ts = compiler.getTemporarySymbols();
-            final FunctionNode newFunctionNode = (FunctionNode)enterAttr(fn, ts).accept(new Attr(compiler.getCompilationEnvironment(), ts));
+            final FunctionNode     newFunctionNode =
+                    (FunctionNode)enterAttr(fn, ts).
+                        accept(new Attr(compiler.getCompilationEnvironment(), ts));
+
             if (compiler.getEnv()._print_mem_usage) {
                 Compiler.LOG.info("Attr temporary symbol count: " + ts.getTotalSymbolCount());
             }
+
             return newFunctionNode;
         }
 
@@ -271,12 +277,24 @@ enum CompilationPhase {
         }
     },
 
+    SCOPE_DEPTH_COMPUTATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
+            return (FunctionNode)fn.accept(new FindScopeDepths(compiler));
+        }
+
+        @Override
+        public String toString() {
+            return "[Scope Depth Computation]";
+        }
+    },
+
     /**
      * Bytecode generation:
      *
      * Generate the byte code class(es) resulting from the compiled FunctionNode
      */
-    BYTECODE_GENERATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED)) {
+    BYTECODE_GENERATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED, SCOPE_DEPTHS_COMPUTED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             final ScriptEnvironment env = compiler.getEnv();

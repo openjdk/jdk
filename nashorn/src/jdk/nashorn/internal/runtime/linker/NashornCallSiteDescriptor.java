@@ -86,7 +86,7 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
     /**
      * Maximum program point value. 22 bits should be enough for anyone
      */
-    public static final int MAX_PROGRAM_POINT_VALUE = (1 << (32 - CALLSITE_PROGRAM_POINT_SHIFT)) - 1;
+    public static final int MAX_PROGRAM_POINT_VALUE = (1 << 32 - CALLSITE_PROGRAM_POINT_SHIFT) - 1;
 
     /**
      * Flag mask to get the program point flags
@@ -106,6 +106,22 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
     private final String operand;
     private final MethodType methodType;
     private final int flags;
+
+    public static String toString(final int flags) {
+        final StringBuilder sb = new StringBuilder();
+        if ((flags & CALLSITE_SCOPE) != 0) {
+            if ((flags & CALLSITE_FAST_SCOPE) != 0) {
+                sb.append("fastscope ");
+            } else {
+                assert (flags & CALLSITE_FAST_SCOPE) == 0 : "can't be fastscope without scope";
+                sb.append("scope ");
+            }
+        }
+        if ((flags & CALLSITE_STRICT) != 0) {
+            sb.append("strict ");
+        }
+        return sb.length() == 0 ? "" : " " + sb.toString().trim();
+    }
 
     /**
      * Retrieves a Nashorn call site descriptor with the specified values. Since call site descriptors are immutable

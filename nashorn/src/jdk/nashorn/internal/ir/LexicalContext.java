@@ -235,7 +235,7 @@ public class LexicalContext {
     public LexicalContextNode replace(final LexicalContextNode oldNode, final LexicalContextNode newNode) {
         for (int i = sp - 1; i >= 0; i--) {
             if (stack[i] == oldNode) {
-                assert i == (sp - 1) : "violation of contract - we always expect to find the replacement node on top of the lexical context stack: " + newNode + " has " + stack[i + 1].getClass() + " above it";
+                assert i == sp - 1 : "violation of contract - we always expect to find the replacement node on top of the lexical context stack: " + newNode + " has " + stack[i + 1].getClass() + " above it";
                 stack[i] = newNode;
                 break;
             }
@@ -268,6 +268,17 @@ public class LexicalContext {
         iter.next();
         return iter.hasNext() ? iter.next() : null;
     }
+
+    /*
+    public FunctionNode getProgram() {
+        final Iterator<FunctionNode> iter = getFunctions();
+        FunctionNode last = null;
+        while (iter.hasNext()) {
+            last = iter.next();
+        }
+        assert last != null;
+        return last;
+    }*/
 
     /**
      * Returns an iterator over all ancestors block of the given block, with its parent block first.
@@ -381,7 +392,7 @@ public class LexicalContext {
      * @param symbol symbol
      * @return function node in which this symbol is defined, assert if no such symbol exists in context
      */
-    public FunctionNode getDefiningFunction(Symbol symbol) {
+    public FunctionNode getDefiningFunction(final Symbol symbol) {
         if (symbol.isTemp()) {
             return null;
         }
@@ -392,7 +403,7 @@ public class LexicalContext {
                 while (iter.hasNext()) {
                     final LexicalContextNode next2 = iter.next();
                     if (next2 instanceof FunctionNode) {
-                        return ((FunctionNode)next2);
+                        return (FunctionNode)next2;
                     }
                 }
                 throw new AssertionError("Defining block for symbol " + name + " has no function in the context");
@@ -437,11 +448,11 @@ public class LexicalContext {
         int n = 0;
         for (final Iterator<LexicalContextNode> iter = getAllNodes(); iter.hasNext();) {
             final LexicalContextNode node = iter.next();
-            if(node == until) {
+            if (node == until) {
                 break;
             }
             assert !(node instanceof FunctionNode); // Can't go outside current function
-            if(node instanceof WithNode || (node instanceof Block && ((Block)node).needsScope())) {
+            if (node instanceof WithNode || node instanceof Block && ((Block)node).needsScope()) {
                 n++;
             }
         }
@@ -618,7 +629,7 @@ public class LexicalContext {
             if (next == null) {
                 throw new NoSuchElementException();
             }
-            T lnext = next;
+            final T lnext = next;
             next = findNext();
             return lnext;
         }

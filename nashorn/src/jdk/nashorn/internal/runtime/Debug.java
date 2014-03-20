@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.parser.TokenType.EOF;
-
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenStream;
@@ -71,7 +70,7 @@ public final class Debug {
      * @return system identity hashcode as string
      */
     public static String id(final Object x) {
-        return "0x" + Integer.toHexString(System.identityHashCode(x));
+        return String.format("0x%08x", System.identityHashCode(x));
     }
 
     /**

@@ -31,11 +31,15 @@ import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 
 import java.lang.invoke.SwitchPoint;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.WeakHashMap;
@@ -698,19 +702,16 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
 
-        sb.append(" [");
-        boolean isFirst = true;
+        sb.append(Debug.id(this));
+        sb.append(" = {\n");
 
-        for (final Property property : properties.values()) {
-            if (!isFirst) {
-                sb.append(", ");
-            }
-
-            isFirst = false;
+        for (final Property property : plist) {
+            sb.append('\t');
             sb.append(property);
+            sb.append('\n');
         }
 
-        sb.append(']');
+        sb.append('}');
 
         return sb.toString();
     }

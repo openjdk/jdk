@@ -264,7 +264,7 @@ final class CompiledFunction {
         return betterThanFinal(type(), other.type(), callSiteMethodType);
     }
 
-    static boolean betterThanFinal(final MethodType thisMethodType, MethodType otherMethodType, final MethodType callSiteMethodType) {
+    static boolean betterThanFinal(final MethodType thisMethodType, final MethodType otherMethodType, final MethodType callSiteMethodType) {
         final int thisParamCount = getParamCount(thisMethodType);
         final int otherParamCount = getParamCount(otherMethodType);
         final int callSiteRawParamCount = getParamCount(callSiteMethodType);
@@ -389,7 +389,7 @@ final class CompiledFunction {
         throw new AssertionError(thisMethodType + " identically applicable to " + otherMethodType + " for " + callSiteMethodType); // Signatures are identical
     }
 
-    private static Type[] toTypeWithoutCallee(final MethodType type, int thisIndex) {
+    private static Type[] toTypeWithoutCallee(final MethodType type, final int thisIndex) {
         final int paramCount = type.parameterCount();
         final Type[] t = new Type[paramCount - thisIndex];
         for(int i = thisIndex; i < paramCount; ++i) {
@@ -398,7 +398,7 @@ final class CompiledFunction {
         return t;
     }
 
-    private static Type getParamType(int i, Type[] paramTypes, boolean isVarArg) {
+    private static Type getParamType(final int i, final Type[] paramTypes, final boolean isVarArg) {
         final int fixParamCount = paramTypes.length - (isVarArg ? 1 : 0);
         if(i < fixParamCount) {
             return paramTypes[i];
@@ -424,8 +424,8 @@ final class CompiledFunction {
         final boolean csIsVarArg = csParamCount == Integer.MAX_VALUE;
         final int thisThisIndex = needsCallee() ? 1 : 0; // Index of "this" parameter in this function's type
 
-        int fnParamCountNoCallee = fnParamCount - thisThisIndex;
-        int minParams = Math.min(csParamCount - 1, fnParamCountNoCallee); // callSiteType always has callee, so subtract 1
+        final int fnParamCountNoCallee = fnParamCount - thisThisIndex;
+        final int minParams = Math.min(csParamCount - 1, fnParamCountNoCallee); // callSiteType always has callee, so subtract 1
         // We must match all incoming parameters, except "this". Starting from 1 to skip "this".
         for(int i = 1; i < minParams; ++i) {
             final Type fnType = Type.typeFor(type.parameterType(i + thisThisIndex));
@@ -464,7 +464,7 @@ final class CompiledFunction {
         return optimismInfo != null;
     }
 
-    private MethodHandle createComposableInvoker(boolean isConstructor) {
+    private MethodHandle createComposableInvoker(final boolean isConstructor) {
         final MethodHandle handle = getInvokerOrConstructor(isConstructor);
 
         // If compiled function is not optimistic, it can't ever change its invoker/constructor, so just return them
@@ -498,7 +498,7 @@ final class CompiledFunction {
         cs.setTarget(target);
     }
 
-    private MethodHandle getInvokerOrConstructor(boolean selectCtor) {
+    private MethodHandle getInvokerOrConstructor(final boolean selectCtor) {
         return selectCtor ? getConstructor() : createInvokerForPessimisticCaller();
     }
 
@@ -535,7 +535,7 @@ final class CompiledFunction {
         return MH.foldArguments(RESTOF_INVOKER, MH.insertArguments(HANDLE_REWRITE_EXCEPTION, 0, this, optimismInfo));
     }
 
-    private static MethodHandle changeReturnType(MethodHandle mh, Class<?> newReturnType) {
+    private static MethodHandle changeReturnType(final MethodHandle mh, final Class<?> newReturnType) {
         return Bootstrap.getLinkerServices().asType(mh, mh.type().changeReturnType(newReturnType));
     }
 
@@ -571,7 +571,9 @@ final class CompiledFunction {
             //is recompiled
             assert optimismInfo == oldOptimismInfo;
             isOptimistic = fn.isOptimistic();
-            LOG.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ")", isOptimistic ? " remains optimistic." : " is no longer optimistic.");
+            if (LOG.isEnabled()) {
+                LOG.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ")", isOptimistic ? " remains optimistic." : " is no longer optimistic.");
+            }
             final MethodHandle newInvoker = oldOptimismInfo.data.lookup(fn);
             invoker = newInvoker.asType(type.changeReturnType(newInvoker.type().returnType()));
             constructor = null; // Will be regenerated when needed

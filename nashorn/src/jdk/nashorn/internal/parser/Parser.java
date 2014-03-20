@@ -61,6 +61,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.Namespace;
@@ -270,7 +271,7 @@ public class Parser extends AbstractParser {
             final String end = this + " end '" + scriptName + "'";
             if (Timing.isEnabled()) {
                 Timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
-                LOG.info(end, "' in ", (System.currentTimeMillis() - t0), " ms");
+                LOG.info(end, "' in ", System.currentTimeMillis() - t0, " ms");
             } else {
                 LOG.info(end);
             }
@@ -314,7 +315,7 @@ public class Parser extends AbstractParser {
         try {
             stream = new TokenStream();
             lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
-            int functionLine = line;
+            final int functionLine = line;
 
             // Set up first token (skips opening EOL.)
             k = -1;
@@ -1076,7 +1077,7 @@ loop:
 
         // If is a statement then handle end of line.
         if (isStatement) {
-            boolean semicolon = type == SEMICOLON;
+            final boolean semicolon = type == SEMICOLON;
             endOfLine();
             if (semicolon) {
                 lc.getCurrentBlock().setFinish(finish);
@@ -2663,7 +2664,7 @@ loop:
 
     private String getDefaultValidFunctionName(final int functionLine) {
         final String defaultFunctionName = getDefaultFunctionName();
-        return isValidIdentifier(defaultFunctionName) ? defaultFunctionName : (ANON_FUNCTION_PREFIX.symbolName() + functionLine);
+        return isValidIdentifier(defaultFunctionName) ? defaultFunctionName : ANON_FUNCTION_PREFIX.symbolName() + functionLine;
     }
 
     private static boolean isValidIdentifier(String name) {

@@ -52,10 +52,13 @@ import static jdk.nashorn.internal.ir.Symbol.KINDMASK;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -139,6 +142,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
 
     private final Set<Long> optimistic = new HashSet<>();
     private final Set<Long> neverOptimistic = new HashSet<>();
+    private final Map<String, Symbol> globalSymbols = new HashMap<>(); //reuse the same global symbol
 
     private int catchNestingLevel;
 
@@ -454,7 +458,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             }
 
             // Create and add to appropriate block.
-            symbol = new Symbol(name, flags);
+            symbol = createSymbol(name, flags);
             symbolBlock.putSymbol(lc, symbol);
 
             if ((flags & Symbol.KINDMASK) != IS_GLOBAL) {
@@ -465,6 +469,19 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         }
 
         return symbol;
+    }
+
+    private Symbol createSymbol(final String name, final int flags) {
+        if ((flags & Symbol.KINDMASK) == IS_GLOBAL) {
+            //reuse global symbols so they can be hashed
+            Symbol global = globalSymbols.get(name);
+            if (global == null) {
+                global = new Symbol(name, flags);
+                globalSymbols.put(name, global);
+            }
+            return global;
+        }
+        return new Symbol(name, flags);
     }
 
     @Override
@@ -555,9 +572,15 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         }
 
         final int optimisticFlag = lc.hasOptimisticAssumptions() ? FunctionNode.IS_OPTIMISTIC : 0;
+
         newFunctionNode = newFunctionNode.setState(lc, CompilationState.ATTR).setFlag(lc, optimisticFlag);
 
         popLocals();
+
+        if (!env.isOnDemandCompilation() && newFunctionNode.isProgram()) {
+            newFunctionNode = newFunctionNode.setBody(lc, newFunctionNode.getBody().setFlag(lc, Block.IS_GLOBAL_SCOPE));
+            assert newFunctionNode.getId() == 1;
+        }
 
         return end(newFunctionNode, false);
     }
@@ -576,7 +599,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         final IdentNode init = compilerConstant(initConstant);
         assert init.getSymbol() != null && init.getSymbol().hasSlot();
 
-        VarNode synthVar = new VarNode(fn.getLineNumber(), fn.getToken(), fn.getFinish(), name, init);
+        final VarNode synthVar = new VarNode(fn.getLineNumber(), fn.getToken(), fn.getFinish(), name, init);
 
         final Symbol nameSymbol = fn.getBody().getExistingSymbol(name.getName());
         assert nameSymbol != null;
@@ -631,7 +654,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             maybeForceScope(symbol);
         } else {
             LOG.info("No symbol exists. Declare undefined: ", symbol);
-            symbol = defineSymbol(block, name, IS_GLOBAL);
+            symbol = defineGlobalSymbol(block, name);
             // we have never seen this before, it can be undefined
             newType(symbol, Type.OBJECT); // TODO unknown -we have explicit casts anyway?
             symbol.setCanBeUndefined();
@@ -650,6 +673,10 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         }
 
         return end(node);
+    }
+
+    private Symbol defineGlobalSymbol(final Block block, final String name) {
+        return defineSymbol(block, name, IS_GLOBAL);
     }
 
     private boolean inCatch() {
@@ -908,7 +935,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     @Override
-    public boolean enterNOT(UnaryNode unaryNode) {
+    public boolean enterNOT(final UnaryNode unaryNode) {
         tagNeverOptimistic(unaryNode.getExpression());
         return true;
     }
@@ -1021,7 +1048,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         return end(coerce(unaryNode, Type.BOOLEAN));
     }
 
-    private IdentNode compilerConstant(CompilerConstants cc) {
+    private IdentNode compilerConstant(final CompilerConstants cc) {
         return (IdentNode)createImplicitIdentifier(cc.symbolName()).setSymbol(lc, lc.getCurrentFunction().compilerConstant(cc));
     }
 
@@ -1040,7 +1067,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     public Node leaveTYPEOF(final UnaryNode unaryNode) {
         final Expression rhs = unaryNode.getExpression();
 
-        List<Expression> args = new ArrayList<>();
+        final List<Expression> args = new ArrayList<>();
         if (rhs instanceof IdentNode && !rhs.getSymbol().isParam() && !rhs.getSymbol().isVar()) {
             args.add(compilerConstant(SCOPE));
             args.add((Expression)LiteralNode.newInstance(rhs, ((IdentNode)rhs).getName()).accept(this)); //null
@@ -1099,7 +1126,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         //which will be corrected in the post pass if unknown at this stage
 
         Type argumentsType = Type.widest(lhs.getType(), rhs.getType());
-        if(argumentsType.getTypeClass() == String.class) {
+        if (argumentsType.getTypeClass() == String.class) {
             assert binaryNode.isTokenType(TokenType.ADD);
             argumentsType = Type.OBJECT;
         }
@@ -1151,7 +1178,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             final Symbol symbol = findSymbol(block, name);
 
             if (symbol == null) {
-                defineSymbol(block, name, IS_GLOBAL);
+                defineGlobalSymbol(block, name);
             } else {
                 maybeForceScope(symbol);
             }
@@ -1169,7 +1196,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         return end(ensureSymbol(binaryNode, type));
     }
 
-    private boolean isLocal(FunctionNode function, Symbol symbol) {
+    private boolean isLocal(final FunctionNode function, final Symbol symbol) {
         final FunctionNode definingFn = lc.getDefiningFunction(symbol);
         // Temp symbols are not assigned to a block, so their defining fn is null; those can be assumed local
         return definingFn == null || definingFn == function;
@@ -1372,7 +1399,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         final Type type = Type.narrowest(lhs.getType(), rhs.getType(), Type.INT);
         inferParameter(lhs, type);
         inferParameter(rhs, type);
-        Type widest = Type.widest(lhs.getType(), rhs.getType());
+        final Type widest = Type.widest(lhs.getType(), rhs.getType());
         ensureSymbol(lhs, widest);
         ensureSymbol(rhs, widest);
         return end(ensureSymbol(binaryNode, Type.BOOLEAN));
@@ -1390,7 +1417,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     @Override
-    public boolean enterEQ(BinaryNode binaryNode) {
+    public boolean enterEQ(final BinaryNode binaryNode) {
         return enterBinaryArithmetic(binaryNode);
     }
 
@@ -1549,7 +1576,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     @Override
-    public boolean enterForNode(ForNode forNode) {
+    public boolean enterForNode(final ForNode forNode) {
         tagNeverOptimistic(forNode.getTest());
         return true;
     }
@@ -1570,7 +1597,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     @Override
-    public boolean enterTernaryNode(TernaryNode ternaryNode) {
+    public boolean enterTernaryNode(final TernaryNode ternaryNode) {
         tagNeverOptimistic(ternaryNode.getTest());
         return true;
     }
@@ -1675,7 +1702,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             newParams.add((IdentNode)param.setSymbol(lc, paramSymbol));
 
             assert paramSymbol != null;
-            Type type = paramSymbol.getSymbolType();
+            final Type type = paramSymbol.getSymbolType();
 
             // all param types are initialized to unknown
             // first we check if we do have a type (inferred during generation)
@@ -1705,7 +1732,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             }
         }
 
-        FunctionNode newFunctionNode = functionNode;
+        final FunctionNode newFunctionNode = functionNode;
 
         return newFunctionNode.setParameters(lc, newParams);
     }
@@ -1721,7 +1748,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
 
         for (final Property property : map.getProperties()) {
             final String key    = property.getKey();
-            final Symbol symbol = defineSymbol(block, key, IS_GLOBAL);
+            final Symbol symbol = defineGlobalSymbol(block, key);
             newType(symbol, Type.OBJECT);
             LOG.info("Added global symbol from property map ", symbol);
         }
@@ -1761,9 +1788,11 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
                     if (node instanceof LiteralNode) {
                         return node;
                     }
-                    Type from = node.getType();
+                    final Type from = node.getType();
                     if (!Type.areEquivalent(from, to) && Type.widest(from, to) == to) {
-                        LOG.fine("Had to post pass widen '", node, "' ", Debug.id(node), " from ", node.getType(), " to ", to);
+                        if (LOG.isEnabled()) {
+                            LOG.fine("Had to post pass widen '", node, "' ", Debug.id(node), " from ", node.getType(), " to ", to);
+                        }
                         Symbol symbol = node.getSymbol();
                         if (symbol.isShared() && symbol.wouldChangeType(to)) {
                             symbol = temporarySymbols.getTypedTemporarySymbol(to);
@@ -1875,7 +1904,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
                 }
 
                 @Override
-                public Node leaveTernaryNode(TernaryNode ternaryNode) {
+                public Node leaveTernaryNode(final TernaryNode ternaryNode) {
                     return widen(ternaryNode, Type.widest(ternaryNode.getTrueExpression().getType(), ternaryNode.getFalseExpression().getType()));
                 }
 
@@ -1938,19 +1967,19 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     @Override
-    public boolean enterReturnNode(ReturnNode returnNode) {
+    public boolean enterReturnNode(final ReturnNode returnNode) {
         tagOptimistic(returnNode.getExpression());
         return true;
     }
 
     @Override
-    public boolean enterIfNode(IfNode ifNode) {
+    public boolean enterIfNode(final IfNode ifNode) {
         tagNeverOptimistic(ifNode.getTest());
         return true;
     }
 
     @Override
-    public boolean enterWhileNode(WhileNode whileNode) {
+    public boolean enterWhileNode(final WhileNode whileNode) {
         tagNeverOptimistic(whileNode.getTest());
         return true;
     }
@@ -1966,7 +1995,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
      * @param expr an expression that is to be tagged as optimistic.
      */
     private long tag(final Optimistic expr) {
-        return ((long)lc.getCurrentFunction().getId() << 32) | expr.getProgramPoint();
+        return (long)lc.getCurrentFunction().getId() << 32 | expr.getProgramPoint();
     }
 
     /**
@@ -2000,7 +2029,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         return optimistic.contains(tag(expr));
     }
 
-    private Type getOptimisticType(Optimistic expr) {
+    private Type getOptimisticType(final Optimistic expr) {
         return useOptimisticTypes() ? env.getOptimisticType(expr) : expr.getMostPessimisticType();
     }
 
@@ -2138,7 +2167,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     private BinaryNode coerce(final BinaryNode binaryNode, final Type pessimisticType, final Type argumentsType) {
-        BinaryNode newNode = ensureSymbolTypeOverride(binaryNode, pessimisticType, argumentsType);
+        final BinaryNode newNode = ensureSymbolTypeOverride(binaryNode, pessimisticType, argumentsType);
         inferParameter(binaryNode.lhs(), newNode.getType());
         inferParameter(binaryNode.rhs(), newNode.getType());
         return newNode;
@@ -2161,7 +2190,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
 
     private static String name(final Node node) {
         final String cn = node.getClass().getName();
-        int lastDot = cn.lastIndexOf('.');
+        final int lastDot = cn.lastIndexOf('.');
         if (lastDot == -1) {
             return cn;
         }

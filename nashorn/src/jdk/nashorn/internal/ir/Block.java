@@ -77,6 +77,12 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     public static final int IS_TERMINAL = 1 << 2;
 
     /**
+     * Is this block the eager global scope - i.e. the original program. This isn't true for the
+     * outermost level of recompiles
+     */
+    public static final int IS_GLOBAL_SCOPE = 1 << 3;
+
+    /**
      * Constructor
      *
      * @param token      token
@@ -91,7 +97,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         this.entryLabel = new Label("block_entry");
         this.breakLabel = new Label("block_break");
         final int len = statements.length;
-        this.flags = (len > 0 && statements[len - 1].hasTerminalFlags()) ? IS_TERMINAL : 0;
+        this.flags = len > 0 && statements[len - 1].hasTerminalFlags() ? IS_TERMINAL : 0;
     }
 
     /**
@@ -113,6 +119,15 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         this.entryLabel = new Label(block.entryLabel);
         this.breakLabel = new Label(block.breakLabel);
         this.finish     = finish;
+    }
+
+    /**
+     * Is this block the outermost eager global scope - i.e. the primordial program?
+     * Used for global anchor point for scope depth computation for recompilation code
+     * @return true if outermost eager global scope
+     */
+    public boolean isGlobalScope() {
+        return getFlag(IS_GLOBAL_SCOPE);
     }
 
     /**
@@ -292,7 +307,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     }
 
     @Override
-    public Block setFlags(final LexicalContext lc, int flags) {
+    public Block setFlags(final LexicalContext lc, final int flags) {
         if (this.flags == flags) {
             return this;
         }
@@ -300,12 +315,12 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     }
 
     @Override
-    public Block clearFlag(final LexicalContext lc, int flag) {
+    public Block clearFlag(final LexicalContext lc, final int flag) {
         return setFlags(lc, flags & ~flag);
     }
 
     @Override
-    public Block setFlag(final LexicalContext lc, int flag) {
+    public Block setFlag(final LexicalContext lc, final int flag) {
         return setFlags(lc, flags | flag);
     }
 
@@ -354,7 +369,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     }
 
     @Override
-    public Node accept(NodeVisitor<? extends LexicalContext> visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         return Acceptor.accept(this, visitor);
     }
 }

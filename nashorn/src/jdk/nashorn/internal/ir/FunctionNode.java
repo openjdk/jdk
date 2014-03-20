@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -84,6 +85,8 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         SPLIT,
         /** method has had its types finalized */
         FINALIZED,
+        /** computed scope depths for symbols */
+        SCOPE_DEPTHS_COMPUTED,
         /** method has been emitted to bytecode */
         EMITTED
     }
@@ -139,6 +142,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /** //@ sourceURL or //# sourceURL for program function nodes */
     private final String sourceURL;
 
+    /** Line number of function start */
     private final int lineNumber;
 
     /** Is anonymous function flag. */
@@ -214,8 +218,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      *  We also pessimistically need a parent scope if we have lazy children that have not yet been compiled */
     private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_EVAL;
 
+    /** Used to signify "null", e.g. if someone asks for the parent of the program node */
+    public static final int NO_FUNCTION_ID = 0;
+
     /** Where to start assigning global and unique function node ids */
-    public static final int FIRST_FUNCTION_ID = 1;
+    public static final int FIRST_FUNCTION_ID = NO_FUNCTION_ID + 1;
 
     /** What is the return type of this function? */
     private Type returnType = Type.UNKNOWN;
@@ -275,7 +282,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         final FunctionNode functionNode,
         final long lastToken,
         final int flags,
-        String sourceURL,
+        final String sourceURL,
         final String name,
         final Type returnType,
         final CompileUnit compileUnit,
@@ -335,7 +342,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @return name for the script source
      */
     public String getSourceName() {
-        return (sourceURL != null)? sourceURL : source.getName();
+        return sourceURL != null? sourceURL : source.getName();
     }
 
     /**
@@ -472,7 +479,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     @Override
-    public FunctionNode setFlags(final LexicalContext lc, int flags) {
+    public FunctionNode setFlags(final LexicalContext lc, final int flags) {
         if (this.flags == flags) {
             return this;
         }
@@ -700,7 +707,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         return name;
     }
 
-
     /**
      * Set the internal name for this function
      * @param lc    lexical context
@@ -823,7 +829,9 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                 type,
                 compileUnit,
                 compilationState,
-                body.setReturnType(type), parameters));
+                body.setReturnType(type),
+                parameters
+                ));
    }
 
     /**
