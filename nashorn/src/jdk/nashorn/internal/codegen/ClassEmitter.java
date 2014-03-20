@@ -277,51 +277,52 @@ public class ClassEmitter implements Emitter {
         }
 
         // $getXXXX$array - get the ith entry from the constants table and cast to XXXX[].
-        for (final Class<?> cls : constantMethodNeeded) {
-            if (cls.isArray()) {
-                defineGetArrayMethod(cls);
+        for (final Class<?> clazz : constantMethodNeeded) {
+            if (clazz.isArray()) {
+                defineGetArrayMethod(clazz);
             }
         }
     }
 
     /**
      * Constructs a primitive specific method for getting the ith entry from the constants table and cast.
-     * @param cls Array class.
+     * @param clazz Array class.
      */
-    private void defineGetArrayMethod(final Class<?> cls) {
+    private void defineGetArrayMethod(final Class<?> clazz) {
         assert unitClassName != null;
 
-        final String        methodName     = getArrayMethodName(cls);
-        final MethodEmitter getArrayMethod = method(EnumSet.of(Flag.PRIVATE, Flag.STATIC), methodName, cls, int.class);
+        final String        methodName     = getArrayMethodName(clazz);
+        final MethodEmitter getArrayMethod = method(EnumSet.of(Flag.PRIVATE, Flag.STATIC), methodName, clazz, int.class);
 
         getArrayMethod.begin();
         getArrayMethod.getStatic(unitClassName, CONSTANTS.symbolName(), CONSTANTS.descriptor())
                       .load(Type.INT, 0)
                       .arrayload()
-                      .checkcast(cls)
+                      .checkcast(clazz)
                       .dup()
                       .arraylength()
-                      .invoke(staticCallNoLookup(Arrays.class, "copyOf", cls, cls, int.class))
+                      .invoke(staticCallNoLookup(Arrays.class, "copyOf", clazz, clazz, int.class))
                       ._return();
         getArrayMethod.end();
     }
 
+
     /**
      * Generate the name of a get array from constant pool method.
-     * @param cls Name of array class.
+     * @param clazz Name of array class.
      * @return Method name.
      */
-    static String getArrayMethodName(final Class<?> cls) {
-        assert cls.isArray();
-        return GET_ARRAY_PREFIX.symbolName() + cls.getComponentType().getSimpleName() + GET_ARRAY_SUFFIX.symbolName();
+    static String getArrayMethodName(final Class<?> clazz) {
+        assert clazz.isArray();
+        return GET_ARRAY_PREFIX.symbolName() + clazz.getComponentType().getSimpleName() + GET_ARRAY_SUFFIX.symbolName();
     }
 
     /**
      * Ensure a get constant method is issued for the class.
-     * @param cls Class of constant.
+     * @param clazz Class of constant.
      */
-    void needGetConstantMethod(final Class<?> cls) {
-        constantMethodNeeded.add(cls);
+    void needGetConstantMethod(final Class<?> clazz) {
+        constantMethodNeeded.add(clazz);
     }
 
     /**
@@ -672,7 +673,7 @@ public class ClassEmitter implements Emitter {
         }
     }
 
-    private MethodVisitor methodVisitor(EnumSet<Flag> flags, final String methodName, final Class<?> rtype, final Class<?>... ptypes) {
+    private MethodVisitor methodVisitor(final EnumSet<Flag> flags, final String methodName, final Class<?> rtype, final Class<?>... ptypes) {
         return cw.visitMethod(Flag.getValue(flags), methodName, methodDescriptor(rtype, ptypes), null, null);
     }
 

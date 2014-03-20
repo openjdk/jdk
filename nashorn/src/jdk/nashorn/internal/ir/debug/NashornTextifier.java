@@ -39,6 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
@@ -48,6 +49,7 @@ import jdk.internal.org.objectweb.asm.signature.SignatureReader;
 import jdk.internal.org.objectweb.asm.util.Printer;
 import jdk.internal.org.objectweb.asm.util.TraceSignatureVisitor;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * Pretty printer for --print-code.
@@ -160,8 +162,8 @@ public final class NashornTextifier extends Printer {
         }
         if (interfaces != null && interfaces.length > 0) {
             sb.append(" implements ");
-            for (int i = 0; i < interfaces.length; ++i) {
-                appendDescriptor(sb, INTERNAL_NAME, interfaces[i]);
+            for (final String interface1 : interfaces) {
+                appendDescriptor(sb, INTERNAL_NAME, interface1);
                 sb.append(' ');
             }
         }
@@ -222,8 +224,8 @@ public final class NashornTextifier extends Printer {
             sb.append(tab);
             appendDescriptor(sb, FIELD_SIGNATURE, signature);
 
-            TraceSignatureVisitor sv = new TraceSignatureVisitor(0);
-            SignatureReader r = new SignatureReader(signature);
+            final TraceSignatureVisitor sv = new TraceSignatureVisitor(0);
+            final SignatureReader r = new SignatureReader(signature);
             r.acceptType(sv);
             sb.append(tab).
                 append("// declaration: ").
@@ -249,7 +251,7 @@ public final class NashornTextifier extends Printer {
         sb.append(";\n");
         addText(sb);
 
-        NashornTextifier t = createNashornTextifier();
+        final NashornTextifier t = createNashornTextifier();
         addText(t.getText());
 
         return t;
@@ -280,12 +282,12 @@ public final class NashornTextifier extends Printer {
             sb.append(tab);
             appendDescriptor(sb, METHOD_SIGNATURE, signature);
 
-            TraceSignatureVisitor v = new TraceSignatureVisitor(0);
-            SignatureReader r = new SignatureReader(signature);
+            final TraceSignatureVisitor v = new TraceSignatureVisitor(0);
+            final SignatureReader r = new SignatureReader(signature);
             r.accept(v);
-            String genericDecl = v.getDeclaration();
-            String genericReturn = v.getReturnType();
-            String genericExceptions = v.getExceptions();
+            final String genericDecl = v.getDeclaration();
+            final String genericReturn = v.getReturnType();
+            final String genericExceptions = v.getExceptions();
 
             sb.append(tab).
                 append("// declaration: ").
@@ -316,8 +318,8 @@ public final class NashornTextifier extends Printer {
         appendDescriptor(sb, METHOD_DESCRIPTOR, desc);
         if (exceptions != null && exceptions.length > 0) {
             sb.append(" throws ");
-            for (int i = 0; i < exceptions.length; ++i) {
-                appendDescriptor(sb, INTERNAL_NAME, exceptions[i]);
+            for (final String exception : exceptions) {
+                appendDescriptor(sb, INTERNAL_NAME, exception);
                 sb.append(' ');
             }
         }
@@ -325,7 +327,7 @@ public final class NashornTextifier extends Printer {
         sb.append('\n');
         addText(sb);
 
-        NashornTextifier t = createNashornTextifier();
+        final NashornTextifier t = createNashornTextifier();
         addText(t.getText());
         return t;
     }
@@ -345,7 +347,7 @@ public final class NashornTextifier extends Printer {
         final StringBuilder sb = new StringBuilder();
         sb.append(tab2).append("// parameter ");
         appendAccess(sb, access);
-        sb.append(' ').append((name == null) ? "<no name>" : name)
+        sb.append(' ').append(name == null ? "<no name>" : name)
                 .append('\n');
         addText(sb);
     }
@@ -393,11 +395,11 @@ public final class NashornTextifier extends Printer {
     }
 
     private StringBuilder appendOpcode(final StringBuilder sb, final int opcode) {
-        Label next = labelIter == null ? null : labelIter.next();
+        final Label next = labelIter == null ? null : labelIter.next();
         if (next instanceof NashornLabel) {
             final int bci = next.getOffset();
             if (bci != -1) {
-                String bcis = "" + bci;
+                final String bcis = "" + bci;
                 for (int i = 0; i < 5 - bcis.length(); i++) {
                     sb.append(' ');
                 }
@@ -480,7 +482,6 @@ public final class NashornTextifier extends Printer {
         }
         sb.append(" [");
         appendHandle(sb, bsm);
-        sb.append(" args=");
         if (bsmArgs.length == 0) {
             sb.append("none");
         } else {
@@ -492,12 +493,12 @@ public final class NashornTextifier extends Printer {
                 } else if (cst instanceof Handle) {
                     appendHandle(sb, (Handle)cst);
                 } else if (cst instanceof Integer) {
-                    int c = (Integer)cst;
-                    int pp = c >> CALLSITE_PROGRAM_POINT_SHIFT;
+                    final int c = (Integer)cst;
+                    final int pp = c >> CALLSITE_PROGRAM_POINT_SHIFT;
                     if (pp != 0) {
-                        sb.append("pp=").append(pp).append(' ');
+                        sb.append(" pp=").append(pp);
                     }
-                    sb.append("0x").append(Integer.toHexString(c & FLAGS_MASK));
+                    sb.append(NashornCallSiteDescriptor.toString(c & FLAGS_MASK));
                 } else {
                     sb.append(cst);
                 }
@@ -539,7 +540,7 @@ public final class NashornTextifier extends Printer {
     public void visitJumpInsn(final int opcode, final Label label) {
         final StringBuilder sb = new StringBuilder();
         appendOpcode(sb, opcode).append(' ');
-        String to = appendLabel(sb, label);
+        final String to = appendLabel(sb, label);
         sb.append('\n');
         addText(sb);
         checkNoFallThru(opcode, to);
@@ -556,7 +557,7 @@ public final class NashornTextifier extends Printer {
     public void visitLabel(final Label label) {
         final StringBuilder sb = new StringBuilder();
         sb.append("\n");
-        String name = appendLabel(sb, label);
+        final String name = appendLabel(sb, label);
         sb.append(" [bci=");
         sb.append(label.info);
         sb.append("]");
@@ -689,8 +690,8 @@ public final class NashornTextifier extends Printer {
             sb.append(tab2);
             appendDescriptor(sb, FIELD_SIGNATURE, signature);
 
-            TraceSignatureVisitor sv = new TraceSignatureVisitor(0);
-            SignatureReader r = new SignatureReader(signature);
+            final TraceSignatureVisitor sv = new TraceSignatureVisitor(0);
+            final SignatureReader r = new SignatureReader(signature);
             r.acceptType(sv);
             sb.append(tab2).append("// declaration: ")
                     .append(sv.getDeclaration()).append('\n');
@@ -718,7 +719,7 @@ public final class NashornTextifier extends Printer {
 
     private void printToDir(final Graph g) {
         if (env._print_code_dir != null) {
-            File dir = new File(env._print_code_dir);
+            final File dir = new File(env._print_code_dir);
             if (!dir.exists() && !dir.mkdirs()) {
                 throw new RuntimeException(dir.toString());
             }
@@ -726,14 +727,14 @@ public final class NashornTextifier extends Printer {
             File file;
             int uniqueId = 0;
             do {
-                String fileName = g.getName() + (uniqueId == 0 ? "" : "_" + uniqueId) +  ".dot";
+                final String fileName = g.getName() + (uniqueId == 0 ? "" : "_" + uniqueId) +  ".dot";
                 file = new File(dir, fileName);
                 uniqueId++;
             } while (file.exists());
 
             try (PrintWriter pw = new PrintWriter(new FileOutputStream(file))) {
                 pw.println(g);
-            } catch (FileNotFoundException e) {
+            } catch (final FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -869,7 +870,7 @@ public final class NashornTextifier extends Printer {
                 sb.append(' ');
             }
             if (o[i] instanceof String) {
-                String desc = (String) o[i];
+                final String desc = (String) o[i];
                 if (desc.startsWith("[")) {
                     appendDescriptor(sb, FIELD_DESCRIPTOR, desc);
                 } else {
@@ -926,7 +927,7 @@ public final class NashornTextifier extends Printer {
                 }
             }
         } else {
-            int lastSlash = desc.lastIndexOf('/');
+            final int lastSlash = desc.lastIndexOf('/');
             sb.append(lastSlash == -1 ? desc : desc.substring(lastSlash + 1));
         }
     }
@@ -934,7 +935,7 @@ public final class NashornTextifier extends Printer {
     private static void appendStr(final StringBuilder sb, final String s) {
         sb.append('\"');
         for (int i = 0; i < s.length(); ++i) {
-            char c = s.charAt(i);
+            final char c = s.charAt(i);
             if (c == '\n') {
                 sb.append("\\n");
             } else if (c == '\r') {
@@ -1056,7 +1057,7 @@ public final class NashornTextifier extends Printer {
         @Override
         public String toString() {
 
-            StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder();
             sb.append("digraph " + name + " {");
             sb.append("\n");
             sb.append("\tgraph [fontname=courier]\n");
@@ -1083,7 +1084,7 @@ public final class NashornTextifier extends Printer {
             }
 
             for (final String from : edges.keySet()) {
-                for (String to : edges.get(from)) {
+                for (final String to : edges.get(from)) {
                     sb.append("\t");
                     sb.append(from);
                     sb.append(" -> ");

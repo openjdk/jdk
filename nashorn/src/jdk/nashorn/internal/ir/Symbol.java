@@ -31,6 +31,7 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
+
 import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
@@ -109,7 +110,7 @@ public final class Symbol implements Comparable<Symbol> {
         if (stacktrace != null) {
             trace = stacktrace; //stacktrace always implies trace as well
             TRACE_SYMBOLS_STACKTRACE = new HashSet<>();
-            for (StringTokenizer st = new StringTokenizer(stacktrace, ","); st.hasMoreTokens(); ) {
+            for (final StringTokenizer st = new StringTokenizer(stacktrace, ","); st.hasMoreTokens(); ) {
                 TRACE_SYMBOLS_STACKTRACE.add(st.nextToken());
             }
         } else {
@@ -119,7 +120,7 @@ public final class Symbol implements Comparable<Symbol> {
 
         if (trace != null) {
             TRACE_SYMBOLS = new HashSet<>();
-            for (StringTokenizer st = new StringTokenizer(trace, ","); st.hasMoreTokens(); ) {
+            for (final StringTokenizer st = new StringTokenizer(trace, ","); st.hasMoreTokens(); ) {
                 TRACE_SYMBOLS.add(st.nextToken());
             }
         } else {
@@ -351,7 +352,7 @@ public final class Symbol implements Comparable<Symbol> {
      * @return true if this is scoped
      */
     public boolean isScope() {
-        assert ((flags & KINDMASK) != IS_GLOBAL) || ((flags & IS_SCOPE) == IS_SCOPE) : "global without scope flag";
+        assert (flags & KINDMASK) != IS_GLOBAL || (flags & IS_SCOPE) == IS_SCOPE : "global without scope flag";
         return (flags & IS_SCOPE) == IS_SCOPE;
     }
 

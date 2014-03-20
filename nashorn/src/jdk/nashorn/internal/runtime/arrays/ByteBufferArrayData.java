@@ -60,6 +60,7 @@ final class ByteBufferArrayData extends ArrayData {
      *
      * @return property descriptor for element
      */
+    @Override
     public PropertyDescriptor getDescriptor(final GlobalObject global, final int index) {
         // make the index properties not configurable
         return global.newDataDescriptor(getObject(index), false, true, true);
@@ -197,7 +198,7 @@ final class ByteBufferArrayData extends ArrayData {
         throw unsupported("convert");
     }
 
-    private UnsupportedOperationException unsupported(final String method) {
+    private static UnsupportedOperationException unsupported(final String method) {
         return new UnsupportedOperationException(method);
     }
 }

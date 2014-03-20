@@ -50,9 +50,11 @@ public final class CompilationEnvironment {
 
     private final ParamTypeMap paramTypes;
 
-    private final RecompilableScriptFunctionData compiledFunction;
+    private RecompilableScriptFunctionData compiledFunction;
 
     private boolean strict;
+
+    private final boolean onDemand;
 
     /**
      * If this is a recompilation, this is how we pass in the invalidations, e.g. programPoint=17, Type == int means
@@ -88,12 +90,13 @@ public final class CompilationEnvironment {
             CompilationPhase.ATTRIBUTION_PHASE,
             CompilationPhase.RANGE_ANALYSIS_PHASE,
             CompilationPhase.TYPE_FINALIZATION_PHASE,
+            CompilationPhase.SCOPE_DEPTH_COMPUTATION_PHASE,
             CompilationPhase.BYTECODE_GENERATION_PHASE
         };
 
         private final static List<CompilationPhase> SEQUENCE_EAGER;
         static {
-            LinkedList<CompilationPhase> eager = new LinkedList<>();
+            final LinkedList<CompilationPhase> eager = new LinkedList<>();
             for (final CompilationPhase phase : SEQUENCE_EAGER_ARRAY) {
                 eager.add(phase);
             }
@@ -121,7 +124,7 @@ public final class CompilationEnvironment {
 
         private CompilationPhases addAfter(final CompilationPhase phase, final CompilationPhase newPhase) {
             final LinkedList<CompilationPhase> list = new LinkedList<>();
-            for (CompilationPhase p : phases) {
+            for (final CompilationPhase p : phases) {
                 list.add(p);
                 if (p == phase) {
                     list.add(newPhase);
@@ -166,78 +169,88 @@ public final class CompilationEnvironment {
     public CompilationEnvironment(
         final CompilationPhases phases,
         final boolean strict) {
-        this(phases, null, null, null, null, strict);
+        this(phases, null, null, null, null, strict, false);
     }
 
     /**
      * Constructor for compilation environment of the rest-of method
      * @param phases compilation phases
      * @param strict strict mode
-     * @param recompiledFunction recompiled function
-     * @param continuationEntryPoint program points used as the continuation entry points in the current rest-of sequence
-     * @param invalidatedProgramPoints map of invalidated program points to their type
+     * @param compiledFunction recompiled function
      * @param paramTypeMap known parameter types if any exist
+     * @param invalidatedProgramPoints map of invalidated program points to their type
+     * @param continuationEntryPoint program points used as the continuation entry points in the current rest-of sequence
+     * @param onDemand is this an on demand compilation
      */
     public CompilationEnvironment(
         final CompilationPhases phases,
         final boolean strict,
-        final RecompilableScriptFunctionData recompiledFunction,
+        final RecompilableScriptFunctionData compiledFunction,
         final ParamTypeMap paramTypeMap,
         final Map<Integer, Type> invalidatedProgramPoints,
-        final int[] continuationEntryPoint) {
-            this(phases, paramTypeMap, invalidatedProgramPoints, recompiledFunction, continuationEntryPoint, strict);
+        final int[] continuationEntryPoint,
+        final boolean onDemand) {
+            this(phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, continuationEntryPoint, strict, onDemand);
     }
 
     /**
      * Constructor
      * @param phases compilation phases
      * @param strict strict mode
-     * @param recompiledFunction recompiled function
+     * @param compiledFunction recompiled function
      * @param paramTypeMap known parameter types
      * @param invalidatedProgramPoints map of invalidated program points to their type
+     * @param onDemand is this an on demand compilation
      */
     public CompilationEnvironment(
         final CompilationPhases phases,
         final boolean strict,
-        final RecompilableScriptFunctionData recompiledFunction,
+        final RecompilableScriptFunctionData compiledFunction,
         final ParamTypeMap paramTypeMap,
-        final Map<Integer, Type> invalidatedProgramPoints) {
-        this(phases, paramTypeMap, invalidatedProgramPoints, recompiledFunction, null, strict);
+        final Map<Integer, Type> invalidatedProgramPoints,
+        final boolean onDemand) {
+        this(phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, null, strict, onDemand);
     }
 
-    @SuppressWarnings("null")
     private CompilationEnvironment(
             final CompilationPhases phases,
             final ParamTypeMap paramTypes,
             final Map<Integer, Type> invalidatedProgramPoints,
             final RecompilableScriptFunctionData compiledFunction,
             final int[] continuationEntryPoints,
-            final boolean strict) {
+            final boolean strict,
+            final boolean onDemand) {
         this.phases                   = phases;
         this.paramTypes               = paramTypes;
-        this.continuationEntryPoints = continuationEntryPoints;
+        this.continuationEntryPoints  = continuationEntryPoints;
         this.invalidatedProgramPoints =
             invalidatedProgramPoints == null ?
                 Collections.unmodifiableMap(new HashMap<Integer, Type>()) :
                 invalidatedProgramPoints;
-        this.compiledFunction       = compiledFunction;
+        this.compiledFunction         = compiledFunction;
         this.strict                   = strict;
         this.optimistic               = phases.contains(CompilationPhase.PROGRAM_POINT_PHASE);
+        this.onDemand                 = onDemand;
 
         // If entry point array is passed, it must have at least one element
         assert continuationEntryPoints == null || continuationEntryPoints.length > 0;
         assert !isCompileRestOf() || isOnDemandCompilation(); // isCompileRestOf => isRecompilation
         // continuation entry points must be among the invalidated program points
-        assert !isCompileRestOf() || (invalidatedProgramPoints != null && containsAll(invalidatedProgramPoints.keySet(), continuationEntryPoints));
+        assert !isCompileRestOf() || invalidatedProgramPoints != null && containsAll(invalidatedProgramPoints.keySet(), continuationEntryPoints);
     }
 
-    private static boolean containsAll(Set<Integer> set, final int[] array) {
-        for(int i = 0; i < array.length; ++i) {
-            if(!set.contains(array[i])) {
+    private static boolean containsAll(final Set<Integer> set, final int[] array) {
+        for (int i = 0; i < array.length; ++i) {
+            if (!set.contains(array[i])) {
                 return false;
             }
         }
         return true;
+    }
+
+    void setData(final RecompilableScriptFunctionData data) {
+        assert this.compiledFunction == null : data;
+        this.compiledFunction = data;
     }
 
     boolean isStrict() {
@@ -291,7 +304,7 @@ public final class CompilationEnvironment {
      * @return true if this is an on-demand compilation, false if this is an eager compilation.
      */
     boolean isOnDemandCompilation() {
-        return compiledFunction != null;
+        return onDemand; //data != null;
     }
 
     /**
@@ -300,9 +313,9 @@ public final class CompilationEnvironment {
      * @return true if it is a continuation entry point
      */
     boolean isContinuationEntryPoint(final int programPoint) {
-        if(continuationEntryPoints != null) {
-            for(int i = 0; i < continuationEntryPoints.length; ++i) {
-                if(continuationEntryPoints[i] == programPoint) {
+        if (continuationEntryPoints != null) {
+            for (final int continuationEntryPoint : continuationEntryPoints) {
+                if (continuationEntryPoint == programPoint) {
                     return true;
                 }
             }
@@ -338,7 +351,6 @@ public final class CompilationEnvironment {
      * @return most optimistic type in current environment
      */
     Type getOptimisticType(final Optimistic node) {
-
         assert useOptimisticTypes();
         final Type invalidType = invalidatedProgramPoints.get(node.getProgramPoint());
         if (invalidType != null) {

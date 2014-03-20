@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompilationEnvironment;
 import jdk.nashorn.internal.codegen.CompilationEnvironment.CompilationPhases;
@@ -96,7 +97,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     /** lazily generated allocator */
     private MethodHandle allocator;
 
-    private Map<Integer, RecompilableScriptFunctionData> nestedFunctions;
+    private final Map<Integer, RecompilableScriptFunctionData> nestedFunctions;
+
+    /** Id to parent function if one exists */
+    private RecompilableScriptFunctionData parent;
 
     private final boolean isDeclared;
     private final boolean isAnonymous;
@@ -109,16 +113,20 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     private static final DebugLogger LOG = new DebugLogger("recompile");
 
+    private final Map<String, Integer> externalScopeDepths;
+
+    private static final int GET_SET_PREFIX_LENGTH = "*et ".length();
 
     /**
      * Constructor - public as scripts use it
      *
-     * @param functionNode       functionNode that represents this function code
-     * @param installer          installer for code regeneration versions of this function
-     * @param allocatorClassName name of our allocator class, will be looked up dynamically if used as a constructor
-     * @param allocatorMap       allocator map to seed instances with, when constructing
-     * @param nestedFunctions    nested function map
-     * @param sourceURL          source URL
+     * @param functionNode        functionNode that represents this function code
+     * @param installer           installer for code regeneration versions of this function
+     * @param allocatorClassName  name of our allocator class, will be looked up dynamically if used as a constructor
+     * @param allocatorMap        allocator map to seed instances with, when constructing
+     * @param nestedFunctions     nested function map
+     * @param sourceURL           source URL
+     * @param externalScopeDepths external scope depths
      */
     public RecompilableScriptFunctionData(
         final FunctionNode functionNode,
@@ -126,7 +134,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         final String allocatorClassName,
         final PropertyMap allocatorMap,
         final Map<Integer, RecompilableScriptFunctionData> nestedFunctions,
-        final String sourceURL) {
+        final String sourceURL,
+        final Map<String, Integer> externalScopeDepths) {
+
         super(functionName(functionNode),
               Math.min(functionNode.getParameters().size(), MAX_ARITY),
               functionNode.isStrict(),
@@ -134,19 +144,57 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
               true,
               functionNode.isVarArg());
 
-        this.functionName       = functionNode.getName();
-        this.lineNumber         = functionNode.getLineNumber();
-        this.isDeclared         = functionNode.isDeclared();
-        this.needsCallee        = functionNode.needsCallee();
-        this.isAnonymous        = functionNode.isAnonymous();
-        this.functionNodeId     = functionNode.getId();
-        this.source             = functionNode.getSource();
-        this.token              = tokenFor(functionNode);
-        this.installer          = installer;
-        this.sourceURL          = sourceURL;
-        this.allocatorClassName = allocatorClassName;
-        this.allocatorMap       = allocatorMap;
-        this.nestedFunctions    = nestedFunctions;
+        this.functionName        = functionNode.getName();
+        this.lineNumber          = functionNode.getLineNumber();
+        this.isDeclared          = functionNode.isDeclared();
+        this.needsCallee         = functionNode.needsCallee();
+        this.isAnonymous         = functionNode.isAnonymous();
+        this.functionNodeId      = functionNode.getId();
+        this.source              = functionNode.getSource();
+        this.token               = tokenFor(functionNode);
+        this.installer           = installer;
+        this.sourceURL           = sourceURL;
+        this.allocatorClassName  = allocatorClassName;
+        this.allocatorMap        = allocatorMap;
+        this.nestedFunctions     = nestedFunctions;//deepTraverse(nestedFunctions);
+        this.externalScopeDepths = externalScopeDepths;
+
+        for (final RecompilableScriptFunctionData nfn : nestedFunctions.values()) {
+            assert nfn.getParent() == null;
+            nfn.setParent(this);
+        }
+    }
+
+    /**
+     * Return the external symbol table
+     * @param symbolName symbol name
+     * @return the external symbol table with proto depths
+     */
+    public int getExternalSymbolDepth(final String symbolName) {
+        final Map<String, Integer> map = externalScopeDepths;
+        if (map == null) {
+            return -1;
+        }
+        final Integer depth = map.get(symbolName);
+        if (depth == null) {
+            return -1;
+        }
+        return depth;
+    }
+
+    /**
+     * Get the parent of this RecompilableScriptFunctionData. If we are
+     * a nested function, we have a parent. Note that "null" return value
+     * can also mean that we have a parent but it is unknown, so this can
+     * only be used for conservative assumptions.
+     * @return parent data, or null if non exists and also null IF UNKNOWN.
+     */
+    public RecompilableScriptFunctionData getParent() {
+       return parent;
+    }
+
+    void setParent(final RecompilableScriptFunctionData parent) {
+        this.parent = parent;
     }
 
     @Override
@@ -161,6 +209,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
+
+        sb.append("fid=").append(functionNodeId).append(' ');
 
         if (source != null) {
             sb.append(source.getName())
@@ -179,7 +229,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         final FunctionNode.Kind kind = fn.getKind();
         if (kind == FunctionNode.Kind.GETTER || kind == FunctionNode.Kind.SETTER) {
             final String name = NameCodec.decode(fn.getIdent().getName());
-            return name.substring(4); // 4 is "get " or "set "
+            return name.substring(GET_SET_PREFIX_LENGTH);
         }
         return fn.getIdent().getName();
     }
@@ -265,7 +315,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
                     this,
                     isVariableArity() ? null : new ParamTypeMap(functionNodeId, explicitParams(fnCallSiteType)),
                     invalidatedProgramPoints,
-                    continuationEntryPoints
+                    continuationEntryPoints,
+                    true
                     ),
                 installer);
 
@@ -276,7 +327,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return lookupWithExplicitType(fn, MethodType.methodType(fn.getReturnType().getTypeClass(), RewriteException.class));
     }
 
-    private FunctionNode compileTypeSpecialization(MethodType actualCallSiteType) {
+    private FunctionNode compileTypeSpecialization(final MethodType actualCallSiteType) {
         return compile(actualCallSiteType, null, "Type specialized compilation");
     }
 
@@ -297,7 +348,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
                     new ParamTypeMap(
                         functionNodeId,
                         explicitParams(fnCallSiteType)),
-                invalidatedProgramPoints),
+                invalidatedProgramPoints,
+                true),
             installer);
 
         fn = compiler.compile(scriptName, fn);
@@ -377,7 +429,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     public void initializeCode(final FunctionNode functionNode) {
         // Since the method is public, we double-check that we aren't invoked with an inappropriate compile unit.
         if(!(code.isEmpty() && functionNode.getCompileUnit().isInitializing(this, functionNode))) {
-            throw new IllegalStateException();
+            throw new IllegalStateException(functionNode.getName() + " id=" + functionNode.getId());
         }
         addCode(functionNode);
     }
@@ -409,7 +461,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
         final MethodHandle handle = lookup(fn);
         final MethodType fromType = handle.type();
-        MethodType toType = (needsCallee(fromType) ? callSiteType.changeParameterType(0, ScriptFunction.class) : callSiteType.dropParameterTypes(0, 1));
+        MethodType toType = needsCallee(fromType) ? callSiteType.changeParameterType(0, ScriptFunction.class) : callSiteType.dropParameterTypes(0, 1);
         toType = toType.changeReturnType(fromType.returnType());
 
         final int toCount = toType.parameterCount();
@@ -436,7 +488,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    CompiledFunction getBest(MethodType callSiteType) {
+    CompiledFunction getBest(final MethodType callSiteType) {
         synchronized(code) {
             final CompiledFunction existingBest = super.getBest(callSiteType);
             // TODO: what if callSiteType is vararg?
@@ -465,17 +517,28 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     /**
      * Return a script function data based on a function id, either this function if
-     * the id matches or a nested function based on functionId.
+     * the id matches or a nested function based on functionId. This goes down into
+     * nested functions until all leaves are exhausted.
+     *
      * @param functionId function id
      * @return script function data or null if invalid id
      */
     public RecompilableScriptFunctionData getScriptFunctionData(final int functionId) {
-        if(functionId == functionNodeId) {
+        if (functionId == functionNodeId) {
             return this;
         }
-        if(nestedFunctions == null) {
-            return null;
+        RecompilableScriptFunctionData data;
+
+        data = nestedFunctions == null ? null : nestedFunctions.get(functionId);
+        if (data != null) {
+            return data;
         }
-        return nestedFunctions.get(functionId);
+        for (final RecompilableScriptFunctionData ndata : nestedFunctions.values()) {
+            data = ndata.getScriptFunctionData(functionId);
+            if (data != null) {
+                return data;
+            }
+        }
+        return null;
     }
 }

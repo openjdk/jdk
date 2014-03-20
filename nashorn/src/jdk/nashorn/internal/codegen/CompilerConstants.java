@@ -170,6 +170,16 @@ public enum CompilerConstants {
     /** get array suffix */
     GET_ARRAY_SUFFIX("$array");
 
+    /** To save memory - intern the compiler constant symbol names, as they are frequently reused */
+    static {
+        for (final CompilerConstants c : values()) {
+            final String symbolName = c.symbolName();
+            if (symbolName != null) {
+                symbolName.intern();
+            }
+        }
+    }
+
     /**
      * Prefix used for internal methods generated in script clases.
      */

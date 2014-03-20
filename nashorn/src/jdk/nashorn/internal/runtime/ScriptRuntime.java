@@ -269,7 +269,7 @@ public final class ScriptRuntime {
         private final int length;
         private int index;
 
-        RangeIterator(int length) {
+        RangeIterator(final int length) {
             this.length = length;
         }
 
@@ -427,7 +427,7 @@ public final class ScriptRuntime {
             }
 
             // checking for xVal == -0.0 and yVal == +0.0 or vice versa
-            if (xVal == 0.0 && (Double.doubleToLongBits(xVal) != Double.doubleToLongBits(yVal))) {
+            if (xVal == 0.0 && Double.doubleToLongBits(xVal) != Double.doubleToLongBits(yVal)) {
                 return false;
             }
 
@@ -438,7 +438,7 @@ public final class ScriptRuntime {
             return x.equals(y);
         }
 
-        return (x == y);
+        return x == y;
     }
 
     /**
@@ -510,7 +510,7 @@ public final class ScriptRuntime {
         final boolean xIsUndefined = x == UNDEFINED;
         final boolean yIsUndefined = y == UNDEFINED;
 
-        if ((xIsNumber && yIsUndefined) || (xIsUndefined && yIsNumber) || (xIsUndefined && yIsUndefined)) {
+        if (xIsNumber && yIsUndefined || xIsUndefined && yIsNumber || xIsUndefined && yIsUndefined) {
             return Double.NaN;
         }
 
@@ -713,8 +713,8 @@ public final class ScriptRuntime {
             return x == y;
         }
 
-        if ((xType == JSType.UNDEFINED && yType == JSType.NULL) ||
-            (xType == JSType.NULL && yType == JSType.UNDEFINED)) {
+        if (xType == JSType.UNDEFINED && yType == JSType.NULL ||
+            xType == JSType.NULL && yType == JSType.UNDEFINED) {
             return true;
         }
 
@@ -735,11 +735,11 @@ public final class ScriptRuntime {
         }
 
         if ((xType == JSType.STRING || xType == JSType.NUMBER) &&
-             (y instanceof ScriptObject))  {
+             y instanceof ScriptObject)  {
             return EQ(x, JSType.toPrimitive(y));
         }
 
-        if ((x instanceof ScriptObject) &&
+        if (x instanceof ScriptObject &&
             (yType == JSType.STRING || yType == JSType.NUMBER)) {
             return EQ(JSType.toPrimitive(x), y);
         }
@@ -876,7 +876,7 @@ public final class ScriptRuntime {
      */
     public static boolean LT(final Object x, final Object y) {
         final Object value = lessThan(x, y, true);
-        return (value == UNDEFINED) ? false : (Boolean)value;
+        return value == UNDEFINED ? false : (Boolean)value;
     }
 
     /**
@@ -889,7 +889,7 @@ public final class ScriptRuntime {
      */
     public static boolean GT(final Object x, final Object y) {
         final Object value = lessThan(y, x, false);
-        return (value == UNDEFINED) ? false : (Boolean)value;
+        return value == UNDEFINED ? false : (Boolean)value;
     }
 
     /**
@@ -902,7 +902,7 @@ public final class ScriptRuntime {
      */
     public static boolean LE(final Object x, final Object y) {
         final Object value = lessThan(y, x, false);
-        return (!(Boolean.TRUE.equals(value) || value == UNDEFINED));
+        return !(Boolean.TRUE.equals(value) || value == UNDEFINED);
     }
 
     /**
@@ -915,7 +915,7 @@ public final class ScriptRuntime {
      */
     public static boolean GE(final Object x, final Object y) {
         final Object value = lessThan(x, y, true);
-        return (!(Boolean.TRUE.equals(value) || value == UNDEFINED));
+        return !(Boolean.TRUE.equals(value) || value == UNDEFINED);
     }
 
     /** ECMA 11.8.5 The Abstract Relational Comparison Algorithm */
@@ -933,7 +933,7 @@ public final class ScriptRuntime {
 
         if (JSType.of(px) == JSType.STRING && JSType.of(py) == JSType.STRING) {
             // May be String or ConsString
-            return (px.toString()).compareTo(py.toString()) < 0;
+            return px.toString().compareTo(py.toString()) < 0;
         }
 
         final double nx = JSType.toNumber(px);

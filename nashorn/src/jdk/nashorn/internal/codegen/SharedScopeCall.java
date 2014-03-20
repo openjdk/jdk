@@ -165,12 +165,10 @@ class SharedScopeCall {
             method.loadNull();
             int slot = 2;
             for (final Type type : paramTypes) {
-                method.load(type, slot++);
-                if (type == Type.NUMBER || type == Type.LONG) {
-                    slot++;
-                }
+                method.load(type, slot);
+                slot += type.getSlots();
             }
-            // Shared scope calls disabled in optimistic world.
+            // Shared scope calls disabled in optimistic world. TODO is this right?
             method.dynamicCall(returnType, 2 + paramTypes.length, flags);
         }
 

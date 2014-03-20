@@ -197,7 +197,7 @@ public final class Context {
      */
     public static PrintWriter getCurrentErr() {
         final ScriptObject global = getGlobalTrusted();
-        return (global != null)? global.getContext().getErr() : new PrintWriter(System.err);
+        return global != null ? global.getContext().getErr() : new PrintWriter(System.err);
     }
 
     /**
@@ -423,7 +423,7 @@ public final class Context {
      * @return the return value of the {@code eval}
      */
     public Object eval(final ScriptObject initialScope, final String string, final Object callThis, final Object location, final boolean strict) {
-        final String  file       = (location == UNDEFINED || location == null) ? "<eval>" : location.toString();
+        final String  file       = location == UNDEFINED || location == null ? "<eval>" : location.toString();
         final Source  source     = new Source(file, string);
         final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
         final ScriptObject global = Context.getGlobalTrusted();
@@ -468,10 +468,10 @@ public final class Context {
             scope = strictEvalScope;
         }
 
-        ScriptFunction func = getProgramFunction(clazz, scope);
+        final ScriptFunction func = getProgramFunction(clazz, scope);
         Object evalThis;
         if (directEval) {
-            evalThis = (callThis instanceof ScriptObject || strictFlag) ? callThis : global;
+            evalThis = callThis instanceof ScriptObject || strictFlag ? callThis : global;
         } else {
             evalThis = global;
         }
@@ -490,7 +490,7 @@ public final class Context {
                         public Source run() {
                             try {
                                 final URL resURL = Context.class.getResource(resource);
-                                return (resURL != null)? new Source(srcStr, resURL) : null;
+                                return resURL != null ? new Source(srcStr, resURL) : null;
                             } catch (final IOException exp) {
                                 return null;
                             }
@@ -513,7 +513,7 @@ public final class Context {
      * @throws IOException if source cannot be found or loaded
      */
     public Object load(final ScriptObject scope, final Object from) throws IOException {
-        final Object src = (from instanceof ConsString)?  from.toString() : from;
+        final Object src = from instanceof ConsString ? from.toString() : from;
         Source source = null;
 
         // load accepts a String (which could be a URL or a file name), a File, a URL
@@ -521,8 +521,8 @@ public final class Context {
         if (src instanceof String) {
             final String srcStr = (String)src;
             if (srcStr.startsWith(LOAD_CLASSPATH)) {
-                URL url = getResourceURL(srcStr.substring(LOAD_CLASSPATH.length()));
-                source = (url != null)? new Source(url.toString(), url) : null;
+                final URL url = getResourceURL(srcStr.substring(LOAD_CLASSPATH.length()));
+                source = url != null ? new Source(url.toString(), url) : null;
             } else {
                 final File file = new File(srcStr);
                 if (srcStr.indexOf(':') != -1) {
@@ -837,7 +837,7 @@ public final class Context {
     /**
      * Set the current global scope
      */
-    static void setGlobalTrusted(ScriptObject global) {
+    static void setGlobalTrusted(final ScriptObject global) {
          currentGlobal.set(global);
     }
 
