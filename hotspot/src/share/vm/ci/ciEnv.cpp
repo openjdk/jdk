@@ -961,7 +961,8 @@ void ciEnv::register_method(ciMethod* target,
                             AbstractCompiler* compiler,
                             int comp_level,
                             bool has_unsafe_access,
-                            bool has_wide_vectors) {
+                            bool has_wide_vectors,
+                            RTMState  rtm_state) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
@@ -1002,6 +1003,15 @@ void ciEnv::register_method(ciMethod* target,
 
     methodHandle method(THREAD, target->get_Method());
 
+#if INCLUDE_RTM_OPT
+    if (!failing() && (rtm_state != NoRTM) &&
+        (method()->method_data() != NULL) &&
+        (method()->method_data()->rtm_state() != rtm_state)) {
+      // Preemptive decompile if rtm state was changed.
+      record_failure("RTM state change invalidated rtm code");
+    }
+#endif
+
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.
       MethodData* mdo = method()->method_data();
@@ -1028,7 +1038,9 @@ void ciEnv::register_method(ciMethod* target,
                                frame_words, oop_map_set,
                                handler_table, inc_table,
                                compiler, comp_level);
-
+#if INCLUDE_RTM_OPT
+    nm->set_rtm_state(rtm_state);
+#endif
     // Free codeBlobs
     code_buffer->free_blob();
 

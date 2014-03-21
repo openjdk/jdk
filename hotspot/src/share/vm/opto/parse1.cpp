@@ -567,6 +567,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Pars
     set_map(entry_map);
     do_method_entry();
   }
+  if (depth() == 1) {
+    // Add check to deoptimize the nmethod if RTM state was changed
+    rtm_deopt();
+  }
 
   // Check for bailouts during method entry.
   if (failing()) {
@@ -2004,6 +2008,42 @@ void Parse::call_register_finalizer() {
   }
 
   set_control( _gvn.transform(result_rgn) );
+}
+
+// Add check to deoptimize if RTM state is not ProfileRTM
+void Parse::rtm_deopt() {
+#if INCLUDE_RTM_OPT
+  if (C->profile_rtm()) {
+    assert(C->method() != NULL, "only for normal compilations");
+    assert(!C->method()->method_data()->is_empty(), "MDO is needed to record RTM state");
+    assert(depth() == 1, "generate check only for main compiled method");
+
+    // Set starting bci for uncommon trap.
+    set_parse_bci(is_osr_parse() ? osr_bci() : 0);
+
+    // Load the rtm_state from the MethodData.
+    const TypePtr* adr_type = TypeMetadataPtr::make(C->method()->method_data());
+    Node* mdo = makecon(adr_type);
+    int offset = MethodData::rtm_state_offset_in_bytes();
+    Node* adr_node = basic_plus_adr(mdo, mdo, offset);
+    Node* rtm_state = make_load(control(), adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
+
+    // Separate Load from Cmp by Opaque.
+    // In expand_macro_nodes() it will be replaced either
+    // with this load when there are locks in the code
+    // or with ProfileRTM (cmp->in(2)) otherwise so that
+    // the check will fold.
+    Node* profile_state = makecon(TypeInt::make(ProfileRTM));
+    Node* opq   = _gvn.transform( new (C) Opaque3Node(C, rtm_state, Opaque3Node::RTM_OPT) );
+    Node* chk   = _gvn.transform( new (C) CmpINode(opq, profile_state) );
+    Node* tst   = _gvn.transform( new (C) BoolNode(chk, BoolTest::eq) );
+    // Branch to failure if state was changed
+    { BuildCutout unless(this, tst, PROB_ALWAYS);
+      uncommon_trap(Deoptimization::Reason_rtm_state_change,
+                    Deoptimization::Action_make_not_entrant);
+    }
+  }
+#endif
 }
 
 //------------------------------return_current---------------------------------

@@ -3782,9 +3782,6 @@ jint Arguments::apply_ergo() {
 #endif // CC_INTERP
 
 #ifdef COMPILER2
-  if (!UseBiasedLocking || EmitSync != 0) {
-    UseOptoBiasInlining = false;
-  }
   if (!EliminateLocks) {
     EliminateNestedLocks = false;
   }
@@ -3845,6 +3842,11 @@ jint Arguments::apply_ergo() {
       UseBiasedLocking = false;
     }
   }
+#ifdef COMPILER2
+  if (!UseBiasedLocking || EmitSync != 0) {
+    UseOptoBiasInlining = false;
+  }
+#endif
 
   return JNI_OK;
 }

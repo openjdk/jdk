@@ -12925,13 +12925,31 @@ instruct RethrowException()
 
 // inlined locking and unlocking
 
+instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eDXRegI scr, rRegI cx1, rRegI cx2) %{
+  predicate(Compile::current()->use_rtm());
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, USE_KILL box);
+  ins_cost(300);
+  format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
+                 $scr$$Register, $cx1$$Register, $cx2$$Register,
+                 _counters, _rtm_counters, _stack_rtm_counters,
+                 ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
+                 true, ra_->C->profile_rtm());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr) %{
+  predicate(!Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $scr$$Register, _counters);
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
+                 $scr$$Register, noreg, noreg, _counters, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -12942,7 +12960,7 @@ instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
   ins_cost(300);
   format %{ "FASTUNLOCK $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register);
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
   %}
   ins_pipe(pipe_slow);
 %}

@@ -475,7 +475,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -492,8 +492,9 @@ void VM_Version::get_processor_features() {
                (supports_avx()    ? ", avx" : ""),
                (supports_avx2()   ? ", avx2" : ""),
                (supports_aes()    ? ", aes" : ""),
-               (supports_clmul()    ? ", clmul" : ""),
+               (supports_clmul()  ? ", clmul" : ""),
                (supports_erms()   ? ", erms" : ""),
+               (supports_rtm()    ? ", rtm" : ""),
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
                (supports_lzcnt()   ? ", lzcnt": ""),
@@ -534,7 +535,7 @@ void VM_Version::get_processor_features() {
     }
   } else if (UseAES) {
     if (!FLAG_IS_DEFAULT(UseAES))
-      warning("AES instructions not available on this CPU");
+      warning("AES instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseAES, false);
   }
 
@@ -567,9 +568,56 @@ void VM_Version::get_processor_features() {
     }
   } else if (UseAESIntrinsics) {
     if (!FLAG_IS_DEFAULT(UseAESIntrinsics))
-      warning("AES intrinsics not available on this CPU");
+      warning("AES intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
+
+  // Adjust RTM (Restricted Transactional Memory) flags
+  if (!supports_rtm() && UseRTMLocking) {
+    // Can't continue because UseRTMLocking affects UseBiasedLocking flag
+    // setting during arguments processing. See use_biased_locking().
+    // VM_Version_init() is executed after UseBiasedLocking is used
+    // in Thread::allocate().
+    vm_exit_during_initialization("RTM instructions are not available on this CPU");
+  }
+
+#if INCLUDE_RTM_OPT
+  if (UseRTMLocking) {
+    if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
+      // RTM locking should be used only for applications with
+      // high lock contention. For now we do not use it by default.
+      vm_exit_during_initialization("UseRTMLocking flag should be only set on command line");
+    }
+    if (!is_power_of_2(RTMTotalCountIncrRate)) {
+      warning("RTMTotalCountIncrRate must be a power of 2, resetting it to 64");
+      FLAG_SET_DEFAULT(RTMTotalCountIncrRate, 64);
+    }
+    if (RTMAbortRatio < 0 || RTMAbortRatio > 100) {
+      warning("RTMAbortRatio must be in the range 0 to 100, resetting it to 50");
+      FLAG_SET_DEFAULT(RTMAbortRatio, 50);
+    }
+  } else { // !UseRTMLocking
+    if (UseRTMForStackLocks) {
+      if (!FLAG_IS_DEFAULT(UseRTMForStackLocks)) {
+        warning("UseRTMForStackLocks flag should be off when UseRTMLocking flag is off");
+      }
+      FLAG_SET_DEFAULT(UseRTMForStackLocks, false);
+    }
+    if (UseRTMDeopt) {
+      FLAG_SET_DEFAULT(UseRTMDeopt, false);
+    }
+    if (PrintPreciseRTMLockingStatistics) {
+      FLAG_SET_DEFAULT(PrintPreciseRTMLockingStatistics, false);
+    }
+  }
+#else
+  if (UseRTMLocking) {
+    // Only C2 does RTM locking optimization.
+    // Can't continue because UseRTMLocking affects UseBiasedLocking flag
+    // setting during arguments processing. See use_biased_locking().
+    vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
+  }
+#endif
 
 #ifdef COMPILER2
   if (UseFPUForSpilling) {
@@ -911,6 +959,27 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // !PRODUCT
+}
+
+bool VM_Version::use_biased_locking() {
+#if INCLUDE_RTM_OPT
+  // RTM locking is most useful when there is high lock contention and
+  // low data contention.  With high lock contention the lock is usually
+  // inflated and biased locking is not suitable for that case.
+  // RTM locking code requires that biased locking is off.
+  // Note: we can't switch off UseBiasedLocking in get_processor_features()
+  // because it is used by Thread::allocate() which is called before
+  // VM_Version::initialize().
+  if (UseRTMLocking && UseBiasedLocking) {
+    if (FLAG_IS_DEFAULT(UseBiasedLocking)) {
+      FLAG_SET_DEFAULT(UseBiasedLocking, false);
+    } else {
+      warning("Biased locking is not supported with RTM locking; ignoring UseBiasedLocking flag." );
+      UseBiasedLocking = false;
+    }
+  }
+#endif
+  return UseBiasedLocking;
 }
 
 void VM_Version::initialize() {
