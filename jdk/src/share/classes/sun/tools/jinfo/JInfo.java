@@ -78,8 +78,16 @@ public class JInfo {
         }
 
         if (useSA) {
+            // SA only supports -flags or -sysprops
+            if (args[0].startsWith("-")) {
+                if (!(args[0].equals("-flags") || args[0].equals("-sysprops"))) {
+                    usage(1);
+                }
+            }
+
             // invoke SA which does it's own argument parsing
             runTool(args);
+
         } else {
             // Now we can parse arguments for the non-SA case
             String pid = null;
