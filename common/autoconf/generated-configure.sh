@@ -673,6 +673,7 @@ XMKMF
 FIXPATH
 ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
+CFLAGS_WARNINGS_ARE_ERRORS
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
 LDFLAGS_CXX_JDK
@@ -4232,7 +4233,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1394794899
+DATE_WHEN_GENERATED=1395236071
 
 ###############################################################################
 #
@@ -41988,6 +41989,24 @@ $as_echo "$supports" >&6; }
   fi
 
 
+
+  case "${TOOLCHAIN_TYPE}" in
+    microsoft)
+      CFLAGS_WARNINGS_ARE_ERRORS="/WX"
+      ;;
+    solstudio)
+      CFLAGS_WARNINGS_ARE_ERRORS="-errtags -errwarn=%all"
+      ;;
+    gcc)
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      ;;
+    clang)
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      ;;
+  esac
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: warnings are errors: $CFLAGS_WARNINGS_ARE_ERRORS" >&5
+$as_echo "warnings are errors: $CFLAGS_WARNINGS_ARE_ERRORS" >&6; }
 
 
 # Setup debug symbols (need objcopy from the toolchain for that)
