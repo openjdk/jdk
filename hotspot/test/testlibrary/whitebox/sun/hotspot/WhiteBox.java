@@ -150,4 +150,7 @@ public class WhiteBox {
   public native void runMemoryUnitTests();
   public native void readFromNoaccessArea();
 
+  // CPU features
+  public native String getCPUFeatures();
+
 }

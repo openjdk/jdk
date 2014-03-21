@@ -500,6 +500,16 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   c = *p;
 WB_END
 
+WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
+  const char* cpu_features = VM_Version::cpu_features();
+  ThreadToNativeFromVM ttn(thread);
+  jstring features_string = env->NewStringUTF(cpu_features);
+
+  CHECK_JNI_EXCEPTION_(env, NULL);
+
+  return features_string;
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -611,6 +621,7 @@ static JNINativeMethod methods[] = {
   {CC"isInStringTable",   CC"(Ljava/lang/String;)Z",  (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
+  {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
 };
 
 #undef CC
