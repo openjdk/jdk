@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,9 @@ public interface TypeVariable extends Type {
     /**
      * Get the annotations of this program element.
      * Return an empty array if there are none.
+     *
+     * @return the annotations of this program element or
+     *         an empty array if there are none.
      */
     public AnnotationDesc[] annotations();
 

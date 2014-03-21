@@ -53,12 +53,8 @@ public final class NativeRegExpExecResult extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     NativeRegExpExecResult(final RegExpResult result, final Global global) {
-        super(global.getArrayPrototype(), global.getRegExpExecResultMap());
+        super(global.getArrayPrototype(), $nasgenmap$);
         setIsArray();
         this.setArray(ArrayData.allocate(result.getGroups().clone()));
         this.index = result.getIndex();

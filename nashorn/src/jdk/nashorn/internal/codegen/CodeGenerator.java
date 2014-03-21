@@ -74,7 +74,6 @@ import java.util.Map;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.TreeMap;
-
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.RuntimeCallSite.SpecializedRuntimeNode;
@@ -891,7 +890,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     void loadStack() {
                         load(node, Type.OBJECT); // foo() makes no sense if foo == 3
                         // ScriptFunction will see CALLSITE_SCOPE and will bind scope accordingly.
-                        method.loadNull(); //the 'this'
+                        method.loadUndefined(Type.OBJECT); //the 'this'
                         argsCount = loadArgs(args);
                     }
                     @Override
@@ -1079,7 +1078,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     void loadStack() {
                         // Load up function.
                         load(function, Type.OBJECT); //TODO, e.g. booleans can be used as functions
-                        method.loadNull(); // ScriptFunction will figure out the correct this when it sees CALLSITE_SCOPE
+                        method.loadUndefined(Type.OBJECT); // ScriptFunction will figure out the correct this when it sees CALLSITE_SCOPE
                         argsCount = loadArgs(args);
                         }
                         @Override
@@ -1088,7 +1087,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                             dynamicCall(method, callNode, callNodeType, 2 + argsCount, flags);
                         }
                 }.emit(callNode);
-
                 return false;
             }
         });

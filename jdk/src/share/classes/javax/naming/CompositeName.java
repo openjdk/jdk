@@ -205,7 +205,7 @@ public class CompositeName implements Name {
     private transient NameImpl impl;
     /**
       * Constructs a new composite name instance using the components
-      * specified by 'comps'. This protected method is intended to be
+      * specified by 'comps'. This protected method is intended
       * to be used by subclasses of CompositeName when they override
       * methods such as clone(), getPrefix(), getSuffix().
       *
@@ -436,7 +436,7 @@ public class CompositeName implements Name {
 
     /**
       * Determines whether a composite name is a suffix of this composite name.
-      * A composite name 'n' is a suffix if it it is equal to
+      * A composite name 'n' is a suffix if it is equal to
       * getSuffix(size()-n.size())--in other words, this
       * composite name ends with 'n'.
       * If n is null or not a composite name, false is returned.

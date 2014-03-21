@@ -37,32 +37,28 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
     /**
      * Constructor - used for bind
      *
-     * @param name          name
-     * @param arity         arity
-     * @param functions     precompiled code
-     * @param isStrict      strict
-     * @param isBuiltin     builtin
-     * @param isConstructor constructor
+     * @param name      name
+     * @param arity     arity
+     * @param functions precompiled code
+     * @param flags     {@link ScriptFunctionData} flags
      */
-    FinalScriptFunctionData(final String name, int arity, CompiledFunctions functions, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor, final boolean isVariableArity) {
-        super(name, arity, isStrict, isBuiltin, isConstructor, isVariableArity);
+    FinalScriptFunctionData(final String name, final int arity, final CompiledFunctions functions, final int flags) {
+        super(name, arity, flags);
         assert !functions.needsCallee();
         code.addAll(functions);
     }
 
     /**
-     * Constructor - used from ScriptFunction. This assumes that we have code alraedy for the
+     * Constructor - used from ScriptFunction. This assumes that we have code already for the
      * method (typically a native method) and possibly specializations.
      *
-     * @param name           name
-     * @param mh             method handle for generic version of method
-     * @param specs          specializations
-     * @param isStrict       strict
-     * @param isBuiltin      builtin
-     * @param isConstructor  constructor
+     * @param name  name
+     * @param mh    method handle for generic version of method
+     * @param specs specializations
+     * @param flags {@link ScriptFunctionData} flags
      */
-    FinalScriptFunctionData(final String name, final MethodHandle mh, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
-        super(name, methodHandleArity(mh), isStrict, isBuiltin, isConstructor, isVarArg(mh));
+    FinalScriptFunctionData(final String name, final MethodHandle mh, final MethodHandle[] specs, final int flags) {
+        super(name, methodHandleArity(mh), flags);
 
         addInvoker(mh);
         if (specs != null) {

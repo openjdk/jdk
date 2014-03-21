@@ -26,11 +26,11 @@
  * @library /testlibrary /testlibrary/whitebox /compiler/whitebox
  * @build NegateExactLongTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,MathIntrinsic*::execMathMethod
  *                   -XX:LogFile=hs_neg.log -XX:-UseMathExactIntrinsics NegateExactLongTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,MathIntrinsic*::execMathMethod
  *                   -XX:LogFile=hs.log -XX:+UseMathExactIntrinsics NegateExactLongTest

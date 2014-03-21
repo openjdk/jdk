@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
 
 // CopyrightVersion 1.2
 
@@ -206,7 +207,7 @@ SurrogateLockerThread* SurrogateLockerThread::make(TRAPS) {
     // exceptions anyway, check and abort if this fails.
     if (res == NULL || res->osthread() == NULL) {
       vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    "unable to create new native thread");
+                                    os::native_thread_creation_failed_msg());
     }
     java_lang_Thread::set_thread(thread_oop(), res);
     java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);

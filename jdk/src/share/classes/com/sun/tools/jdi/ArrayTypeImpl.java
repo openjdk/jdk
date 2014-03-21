@@ -200,4 +200,9 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
      * Defined always to be true for arrays
      */
     public boolean isFinal() { return true; }
+
+    /*
+     * Defined always to be false for arrays
+     */
+    public boolean isStatic() { return false; }
 }

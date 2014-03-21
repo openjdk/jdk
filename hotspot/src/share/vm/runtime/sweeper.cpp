@@ -309,7 +309,8 @@ void NMethodSweeper::possibly_sweep() {
         _bytes_changed = 0;
       }
     }
-    _sweep_started = 0;
+    // Release work, because another compiler thread could continue.
+    OrderAccess::release_store((int*)&_sweep_started, 0);
   }
 }
 

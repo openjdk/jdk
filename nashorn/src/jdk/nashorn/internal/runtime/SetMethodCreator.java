@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
@@ -84,7 +83,7 @@ final class SetMethodCreator {
     }
 
     /**
-     * This class encapsulates the results of looking up a setter method; it's basically a triple of a method hanle,
+     * This class encapsulates the results of looking up a setter method; it's basically a triple of a method handle,
      * a Property object, and flags for invocation.
      *
      */
@@ -111,23 +110,8 @@ final class SetMethodCreator {
             // getGuard() and getException() either both return null, or neither does. The reason for that is that now
             // getGuard returns a map guard that casts its argument to ScriptObject, and if that fails, we need to
             // relink on ClassCastException.
-            return new GuardedInvocation(methodHandle, getGuard(), null, getException());
-        }
-
-        private Class<ClassCastException> getException() {
-            return needsNoGuard() ? null : ClassCastException.class;
-        }
-
-        private MethodHandle getGuard() {
-            return needsNoGuard() ? null : NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck);
-        }
-
-        private boolean needsNoGuard() {
-            return NashornCallSiteDescriptor.isFastScope(desc) && isPropertyTypeStable();
-        }
-
-        private boolean isPropertyTypeStable() {
-            return OBJECT_FIELDS_ONLY;
+            return new GuardedInvocation(methodHandle, NashornGuards.getGuard(sobj, property, desc, explicitInstanceOfCheck),
+                    null, explicitInstanceOfCheck ? null : ClassCastException.class);
         }
     }
 
@@ -162,10 +146,7 @@ final class SetMethodCreator {
 
         final MethodHandle boundHandle;
         if (!property.hasSetterFunction(find.getOwner()) && find.isInherited()) {
-            // Bind or add prototype filter depending on whether this is a scope object.
-            boundHandle = sobj.isScope() ?
-                    ScriptObject.addProtoFilter(methodHandle, find.getProtoChainLength()):
-                    ScriptObject.bindTo(methodHandle, find.getOwner());
+            boundHandle = ScriptObject.addProtoFilter(methodHandle, find.getProtoChainLength());
         } else {
             boundHandle = methodHandle;
         }
@@ -173,13 +154,16 @@ final class SetMethodCreator {
     }
 
     private SetMethod createGlobalPropertySetter() {
-        final ScriptObject global = Context.getGlobalTrusted();
-        return new SetMethod(ScriptObject.bindTo(global.addSpill(type, getName()), global), null);
+        final ScriptObject global = Context.getGlobal();
+        return new SetMethod(MH.filterArguments(global.addSpill(type, getName()), 0, ScriptObject.GLOBALFILTER), null);
     }
 
     private SetMethod createNewPropertySetter() {
         final SetMethod sm = map.getFieldCount() < map.getFieldMaximum() ? createNewFieldSetter() : createNewSpillPropertySetter();
-        sobj.notifyPropertyAdded(sobj, sm.property);
+        final PropertyListeners listeners = map.getListeners();
+        if (listeners != null) {
+            listeners.propertyAdded(sm.property);
+        }
         return sm;
     }
 

@@ -55,6 +55,9 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
   const int chunk_factor = 32;
   if (_chunk == NULL || _chunk + real_size > _chunk_end) {
     const int bytes = chunk_factor * real_size + pd_code_alignment();
+
+   // There is a dependency on the name of the blob in src/share/vm/prims/jvmtiCodeBlobEvents.cpp
+   // If changing the name, update the other file accordingly.
     BufferBlob* blob = BufferBlob::create("vtable chunks", bytes);
     if (blob == NULL) {
       return NULL;
@@ -62,12 +65,6 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
     _chunk = blob->content_begin();
     _chunk_end = _chunk + bytes;
     Forte::register_stub("vtable stub", _chunk, _chunk_end);
-    // Notify JVMTI about this stub. The event will be recorded by the enclosing
-    // JvmtiDynamicCodeEventCollector and posted when this thread has released
-    // all locks.
-    if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated_while_holding_locks("vtable stub", _chunk, _chunk_end);
-    }
     align_chunk();
   }
   assert(_chunk + real_size <= _chunk_end, "bad allocation");
@@ -129,6 +126,13 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
       tty->print_cr("Decoding VtableStub %s[%d]@%d",
                     is_vtable_stub? "vtbl": "itbl", vtable_index, VtableStub::receiver_location());
       Disassembler::decode(s->code_begin(), s->code_end());
+    }
+    // Notify JVMTI about this stub. The event will be recorded by the enclosing
+    // JvmtiDynamicCodeEventCollector and posted when this thread has released
+    // all locks.
+    if (JvmtiExport::should_post_dynamic_code_generated()) {
+      JvmtiExport::post_dynamic_code_generated_while_holding_locks(is_vtable_stub? "vtable stub": "itable stub",
+                                                                   s->code_begin(), s->code_end());
     }
   }
   return s->entry_point();
@@ -193,6 +197,14 @@ VtableStub* VtableStubs::stub_containing(address pc) {
 
 void vtableStubs_init() {
   VtableStubs::initialize();
+}
+
+void VtableStubs::vtable_stub_do(void f(VtableStub*)) {
+    for (int i = 0; i < N; i++) {
+        for (VtableStub* s = _table[i]; s != NULL; s = s->next()) {
+            f(s);
+        }
+    }
 }
 
 

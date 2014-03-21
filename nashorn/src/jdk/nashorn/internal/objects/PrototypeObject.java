@@ -54,16 +54,11 @@ public class PrototypeObject extends ScriptObject {
     static {
         final ArrayList<Property> properties = new ArrayList<>(1);
         properties.add(AccessorProperty.create("constructor", Property.NOT_ENUMERABLE, GET_CONSTRUCTOR, SET_CONSTRUCTOR));
-        map$ = PropertyMap.newMap(properties).setIsShared();
-    }
-
-    static PropertyMap getInitialMap() {
-        return map$;
+        map$ = PropertyMap.newMap(properties);
     }
 
     private PrototypeObject(final Global global, final PropertyMap map) {
-        super(map != map$? map.addAll(global.getPrototypeObjectMap()) : global.getPrototypeObjectMap());
-        setProto(global.getObjectPrototype());
+        super(global.getObjectPrototype(), map != map$? map.addAll(map$) : map$);
     }
 
     PrototypeObject() {

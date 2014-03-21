@@ -105,16 +105,15 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
             if (nread == 0) {
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
                             "Read timed out");
-            } else if (nread == JVM_IO_ERR) {
+            } else if (nread == -1) {
                 if (errno == EBADF) {
                      JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
-                 } else {
-                     NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                } else if (errno == ENOMEM) {
+                    JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
+                } else {
+                    NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                                                   "select/poll failed");
-                 }
-            } else if (nread == JVM_IO_INTR) {
-                JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                            "Operation interrupted");
+                }
             }
             if (bufP != BUF) {
                 free(bufP);

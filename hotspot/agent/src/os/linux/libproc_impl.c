@@ -29,54 +29,51 @@
 #include <thread_db.h>
 #include "libproc_impl.h"
 
-static const char* alt_root = NULL;
-static int alt_root_len = -1;
-
 #define SA_ALTROOT "SA_ALTROOT"
 
-static void init_alt_root() {
-   if (alt_root_len == -1) {
-      alt_root = getenv(SA_ALTROOT);
-      if (alt_root) {
-         alt_root_len = strlen(alt_root);
-      } else {
-         alt_root_len = 0;
-      }
-   }
-}
-
 int pathmap_open(const char* name) {
-   int fd;
-   char alt_path[PATH_MAX + 1];
+  static const char *alt_root = NULL;
+  static int alt_root_initialized = 0;
 
-   init_alt_root();
+  int fd;
+  char alt_path[PATH_MAX + 1], *alt_path_end;
+  const char *s;
 
-   if (alt_root_len > 0) {
-      strcpy(alt_path, alt_root);
-      strcat(alt_path, name);
-      fd = open(alt_path, O_RDONLY);
-      if (fd >= 0) {
-         print_debug("path %s substituted for %s\n", alt_path, name);
-         return fd;
-      }
+  if (!alt_root_initialized) {
+    alt_root_initialized = -1;
+    alt_root = getenv(SA_ALTROOT);
+  }
 
-      if (strrchr(name, '/')) {
-         strcpy(alt_path, alt_root);
-         strcat(alt_path, strrchr(name, '/'));
-         fd = open(alt_path, O_RDONLY);
-         if (fd >= 0) {
-            print_debug("path %s substituted for %s\n", alt_path, name);
-            return fd;
-         }
-      }
-   } else {
-      fd = open(name, O_RDONLY);
-      if (fd >= 0) {
-         return fd;
-      }
-   }
+  if (alt_root == NULL) {
+    return open(name, O_RDONLY);
+  }
 
-   return -1;
+  strcpy(alt_path, alt_root);
+  alt_path_end = alt_path + strlen(alt_path);
+
+  // Strip path items one by one and try to open file with alt_root prepended
+  s = name;
+  while (1) {
+    strcat(alt_path, s);
+    s += 1;
+
+    fd = open(alt_path, O_RDONLY);
+    if (fd >= 0) {
+      print_debug("path %s substituted for %s\n", alt_path, name);
+      return fd;
+    }
+
+    // Linker always put full path to solib to process, so we can rely
+    // on presence of /. If slash is not present, it means, that SOlib doesn't
+    // physically exist (e.g. linux-gate.so) and we fail opening it anyway
+    if ((s = strchr(s, '/')) == NULL) {
+      break;
+    }
+
+    *alt_path_end = 0;
+  }
+
+  return -1;
 }
 
 static bool _libsaproc_debug;

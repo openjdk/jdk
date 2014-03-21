@@ -594,20 +594,12 @@ gen_process_strong_roots(int level,
                          bool activate_scope,
                          SharedHeap::ScanningOption so,
                          OopsInGenClosure* not_older_gens,
-                         bool do_code_roots,
                          OopsInGenClosure* older_gens,
                          KlassClosure* klass_closure) {
   // General strong roots.
 
-  if (!do_code_roots) {
-    SharedHeap::process_strong_roots(activate_scope, so,
-                                     not_older_gens, NULL, klass_closure);
-  } else {
-    bool do_code_marking = (activate_scope || nmethod::oops_do_marking_is_active());
-    CodeBlobToOopClosure code_roots(not_older_gens, /*do_marking=*/ do_code_marking);
-    SharedHeap::process_strong_roots(activate_scope, so,
-                                     not_older_gens, &code_roots, klass_closure);
-  }
+  SharedHeap::process_strong_roots(activate_scope, so,
+                                   not_older_gens, klass_closure);
 
   if (younger_gens_as_roots) {
     if (!_gen_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
@@ -629,9 +621,8 @@ gen_process_strong_roots(int level,
   _gen_process_strong_tasks->all_tasks_completed();
 }
 
-void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure,
-                                              CodeBlobClosure* code_roots) {
-  SharedHeap::process_weak_roots(root_closure, code_roots);
+void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
+  SharedHeap::process_weak_roots(root_closure);
   // "Local" "weak" refs
   for (int i = 0; i < _n_gens; i++) {
     _gens[i]->ref_processor()->weak_oops_do(root_closure);

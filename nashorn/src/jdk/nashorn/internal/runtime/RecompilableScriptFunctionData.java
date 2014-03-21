@@ -36,7 +36,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompilationEnvironment;
 import jdk.nashorn.internal.codegen.CompilationEnvironment.CompilationPhases;
@@ -139,10 +138,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
         super(functionName(functionNode),
               Math.min(functionNode.getParameters().size(), MAX_ARITY),
-              functionNode.isStrict(),
-              false,
-              true,
-              functionNode.isVarArg());
+              getFlags(functionNode));
 
         this.functionName        = functionNode.getName();
         this.lineNumber          = functionNode.getLineNumber();
@@ -243,11 +239,33 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return Token.toDesc(TokenType.FUNCTION, position, length);
     }
 
+    private static int getFlags(final FunctionNode functionNode) {
+        int flags = IS_CONSTRUCTOR;
+        if (functionNode.isStrict()) {
+            flags |= IS_STRICT;
+        }
+        if (functionNode.needsCallee()) {
+            flags |= NEEDS_CALLEE;
+        }
+        if (functionNode.usesThis() || functionNode.hasEval()) {
+            flags |= USES_THIS;
+        }
+        if (functionNode.isVarArg()) {
+            flags |= IS_VARIABLE_ARITY;
+        }
+        return flags;
+    }
+
     @Override
-    ScriptObject allocate() {
+    PropertyMap getAllocatorMap() {
+        return allocatorMap;
+    }
+
+    @Override
+    ScriptObject allocate(final PropertyMap map) {
         try {
             ensureHasAllocator(); //if allocatorClass name is set to null (e.g. for bound functions) we don't even try
-            return allocator == null ? null : (ScriptObject)allocator.invokeExact(allocatorMap);
+            return allocator == null ? null : (ScriptObject)allocator.invokeExact(map);
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {

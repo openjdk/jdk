@@ -1285,18 +1285,17 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
     /**
      * Returns the index within this string of the first occurrence of the
-     * specified substring. The integer returned is the smallest value
-     * <i>k</i> such that:
-     * <pre>{@code
-     * this.toString().startsWith(str, <i>k</i>)
-     * }</pre>
-     * is {@code true}.
+     * specified substring.
      *
-     * @param   str   any string.
-     * @return  if the string argument occurs as a substring within this
-     *          object, then the index of the first character of the first
-     *          such substring is returned; if it does not occur as a
-     *          substring, {@code -1} is returned.
+     * <p>The returned index is the smallest value {@code k} for which:
+     * <pre>{@code
+     * this.toString().startsWith(str, k)
+     * }</pre>
+     * If no such value of {@code k} exists, then {@code -1} is returned.
+     *
+     * @param   str   the substring to search for.
+     * @return  the index of the first occurrence of the specified substring,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str) {
         return indexOf(str, 0);
@@ -1304,38 +1303,39 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
     /**
      * Returns the index within this string of the first occurrence of the
-     * specified substring, starting at the specified index.  The integer
-     * returned is the smallest value {@code k} for which:
+     * specified substring, starting at the specified index.
+     *
+     * <p>The returned index is the smallest value {@code k} for which:
      * <pre>{@code
      *     k >= Math.min(fromIndex, this.length()) &&
      *                   this.toString().startsWith(str, k)
      * }</pre>
-     * If no such value of <i>k</i> exists, then -1 is returned.
+     * If no such value of {@code k} exists, then {@code -1} is returned.
      *
-     * @param   str         the substring for which to search.
+     * @param   str         the substring to search for.
      * @param   fromIndex   the index from which to start the search.
-     * @return  the index within this string of the first occurrence of the
-     *          specified substring, starting at the specified index.
+     * @return  the index of the first occurrence of the specified substring,
+     *          starting at the specified index,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str, int fromIndex) {
         return String.indexOf(value, 0, count, str, fromIndex);
     }
 
     /**
-     * Returns the index within this string of the rightmost occurrence
-     * of the specified substring.  The rightmost empty string "" is
+     * Returns the index within this string of the last occurrence of the
+     * specified substring.  The last occurrence of the empty string "" is
      * considered to occur at the index value {@code this.length()}.
-     * The returned index is the largest value <i>k</i> such that
+     *
+     * <p>The returned index is the largest value {@code k} for which:
      * <pre>{@code
      * this.toString().startsWith(str, k)
      * }</pre>
-     * is true.
+     * If no such value of {@code k} exists, then {@code -1} is returned.
      *
      * @param   str   the substring to search for.
-     * @return  if the string argument occurs one or more times as a substring
-     *          within this object, then the index of the first character of
-     *          the last such substring is returned. If it does not occur as
-     *          a substring, {@code -1} is returned.
+     * @return  the index of the last occurrence of the specified substring,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int lastIndexOf(String str) {
         return lastIndexOf(str, count);
@@ -1343,18 +1343,20 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
     /**
      * Returns the index within this string of the last occurrence of the
-     * specified substring. The integer returned is the largest value <i>k</i>
-     * such that:
+     * specified substring, searching backward starting at the specified index.
+     *
+     * <p>The returned index is the largest value {@code k} for which:
      * <pre>{@code
      *     k <= Math.min(fromIndex, this.length()) &&
      *                   this.toString().startsWith(str, k)
      * }</pre>
-     * If no such value of <i>k</i> exists, then -1 is returned.
+     * If no such value of {@code k} exists, then {@code -1} is returned.
      *
      * @param   str         the substring to search for.
      * @param   fromIndex   the index to start the search from.
-     * @return  the index within this sequence of the last occurrence of the
-     *          specified substring.
+     * @return  the index of the last occurrence of the specified substring,
+     *          searching backward from the specified index,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int lastIndexOf(String str, int fromIndex) {
         return String.lastIndexOf(value, 0, count, str, fromIndex);

@@ -177,6 +177,7 @@ const char* Abstract_VM_Version::jre_release_version() {
 #define OS       LINUX_ONLY("linux")             \
                  WINDOWS_ONLY("windows")         \
                  SOLARIS_ONLY("solaris")         \
+                 AIX_ONLY("aix")                 \
                  BSD_ONLY("bsd")
 
 #ifdef ZERO
@@ -186,7 +187,8 @@ const char* Abstract_VM_Version::jre_release_version() {
                  IA64_ONLY("ia64")               \
                  AMD64_ONLY("amd64")             \
                  ARM_ONLY("arm")                 \
-                 PPC_ONLY("ppc")                 \
+                 PPC32_ONLY("ppc")               \
+                 PPC64_ONLY("ppc64")             \
                  SPARC_ONLY("sparc")
 #endif // ZERO
 
@@ -238,6 +240,9 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
       #endif
     #elif defined(__GNUC__)
         #define HOTSPOT_BUILD_COMPILER "gcc " __VERSION__
+    #elif defined(__IBMCPP__)
+        #define HOTSPOT_BUILD_COMPILER "xlC " XSTR(__IBMCPP__)
+
     #else
       #define HOTSPOT_BUILD_COMPILER "unknown compiler"
     #endif
@@ -250,7 +255,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
       #define FLOAT_ARCH_STR "-e500v2"
     #elif defined(ARM)
       #define FLOAT_ARCH_STR "-vfp"
-    #elif defined(PPC)
+    #elif defined(PPC32)
       #define FLOAT_ARCH_STR "-hflt"
     #else
       #define FLOAT_ARCH_STR ""

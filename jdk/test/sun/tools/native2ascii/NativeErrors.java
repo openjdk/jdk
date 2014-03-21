@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 1999, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,17 @@
 /*
  * @test
  * @bug 4136352
+ * @library /lib/testlibrary
  * @summary Test Native2ASCII error messages
  *
  */
 
-import java.io.*;
-import sun.tools.native2ascii.*;
-import java.util.*;
+import java.io.File;
+import java.util.ResourceBundle;
+import java.util.MissingResourceException;
+import jdk.testlibrary.OutputAnalyzer;
+import jdk.testlibrary.JDKToolLauncher;
+import jdk.testlibrary.ProcessTools;
 
 public class NativeErrors {
 
@@ -45,30 +49,18 @@ public class NativeErrors {
         }
     }
 
-    public static void main(String args[]) throws Exception {
-        String[] command;
-        Process p = null;
-        BufferedReader in = null;
+    public static void main(String args[]) throws Throwable {
+        // Execute command in another vm. Verify stdout for expected err msg.
 
-        // Construct a command that runs the test in other vm
-        // Exec another vm to run test in
-        // Read the result to determine if test failed
-
-        command = getComString("-encoding");
-        p = Runtime.getRuntime().exec(command);
-        in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        checkResult(in, "err.bad.arg");
+        // Test with no input file given.
+        checkResult(executeCmd("-encoding"), "err.bad.arg");
 
         File f0 = new File(System.getProperty("test.src", "."), "test123");
         String path0 = f0.getPath();
         if ( f0.exists() ) {
             throw new Error("Input file should not exist: " + path0);
         }
-
-        command = getComString(path0);
-        p = Runtime.getRuntime().exec(command);
-        in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        checkResult(in, "err.cannot.read");
+        checkResult(executeCmd(path0), "err.cannot.read");
 
         File f1 = new File(System.getProperty("test.src", "."), "test1");
         File f2 = File.createTempFile("test2", ".tmp");
@@ -81,71 +73,38 @@ public class NativeErrors {
             throw new Error("Output file cannot be made read only: " + path2);
         }
         f2.deleteOnExit();
-
-        command = getComString(path1, path2);
-        p = Runtime.getRuntime().exec(command);
-        in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        checkResult(in, "err.cannot.write");
+        checkResult(executeCmd(path1, path2), "err.cannot.write");
     }
 
-
-    private static void checkResult(BufferedReader in, String errorExpected)
-                                                           throws Exception {
-        String errorReceived;
-        errorReceived = in.readLine();
-        assert errorReceived != null : "First readline cannot be null";
-        errorExpected = rsrc.getString(errorExpected);
-        assert errorExpected != null : "Expected message cannot be null";
-        StringBuffer error = new StringBuffer(errorExpected);
-        int start = errorExpected.indexOf("{0}");
-        if (start >= 0) {
-            error.delete(start, start+3);
-            errorExpected = error.toString();
+    private static String executeCmd(String... toolArgs) throws Throwable {
+        JDKToolLauncher cmd = JDKToolLauncher.createUsingTestJDK("native2ascii");
+        for (String s : toolArgs) {
+            cmd.addToolArg(s);
         }
-        //System.out.println("received: " + errorReceived);
-        //System.out.println("expected: " + errorExpected);
-        if (!errorReceived.endsWith(errorExpected))
+        OutputAnalyzer output = ProcessTools.executeProcess(cmd.getCommand());
+        if (output == null || output.getStdout() == null) {
+            throw new Exception("Output was null. Process did not finish correctly.");
+        }
+        if (output.getExitValue() == 0) {
+            throw new Exception("Process exit code was 0, but error was expected.");
+        }
+        return output.getStdout();
+    }
+
+    private static void checkResult(
+            String errorReceived, String errorKey) throws Exception {
+        String errorExpected = rsrc.getString(errorKey);
+        if (errorExpected == null) {
+            throw new Exception("No error message for key: " + errorKey);
+        }
+        // Remove template tag from error message.
+        errorExpected = errorExpected.replaceAll("\\{0\\}", "");
+
+        System.out.println("received: " + errorReceived);
+        System.out.println("expected: " + errorExpected);
+        if (errorReceived.indexOf(errorExpected) < 0) {
             throw new RuntimeException("Native2ascii bad arg error broken.");
-    }
-
-    private static String[] getComString(String arg2) {
-        String[] coms = new String[2];
-        coms[0] = getPathString();
-        coms[1] = arg2;
-        return coms;
-    }
-
-    private static String[] getComString(String arg2, String arg3) {
-        String[] coms = new String[3];
-        coms[0] = getPathString();
-        coms[1] = arg2;
-        coms[2] = arg3;
-        return coms;
-    }
-
-    /*
-     * Search for path to native2ascii
-     */
-    private static String getPathString() {
-        String path = System.getProperty("java.home") + File.separator +
-            "bin" + File.separator + "native2ascii";
-        if (File.separatorChar == '\\') {
-            path = path + ".exe";
         }
-        File f = new File(path);
-        if (!f.exists()) {
-            System.out.println("Cannot find native2ascii at "+path);
-            path = System.getProperty("java.home") + File.separator + ".." +
-                   File.separator + "bin" + File.separator + "native2ascii";
-            if (File.separatorChar == '\\') {
-                path = path + ".exe";
-            }
-            f = new File(path);
-            if (!f.exists())
-                throw new RuntimeException("Cannot find native2ascii at "+path);
-            System.out.println("Using native2ascii at "+path);
-        }
-        return path;
     }
 
 }

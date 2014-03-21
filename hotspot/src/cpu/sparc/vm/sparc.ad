@@ -1040,6 +1040,11 @@ int Compile::ConstantTable::calculate_table_base_offset() const {
   }
 }
 
+bool MachConstantBaseNode::requires_postalloc_expand() const { return false; }
+void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
+  ShouldNotReachHere();
+}
+
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   Compile* C = ra_->C;
   Compile::ConstantTable& constant_table = C->constant_table();
@@ -1891,6 +1896,9 @@ const int Matcher::float_cmove_cost() {
   return (VM_Version::is_T4() || VM_Version::is_sparc64()) ? ConditionalMoveLimit : 0;
 }
 
+// Does the CPU require late expand (see block.cpp for description of late expand)?
+const bool Matcher::require_postalloc_expand = false;
+
 // Should the Matcher clone shifts on addressing modes, expecting them to
 // be subsumed into complex addressing expressions or compute them into
 // registers?  True for Intel but false for most RISCs
@@ -2028,19 +2036,6 @@ RegMask Matcher::modL_proj_mask() {
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return L7_REGP_mask();
 }
-
-const RegMask Matcher::mathExactI_result_proj_mask() {
-  return G1_REGI_mask();
-}
-
-const RegMask Matcher::mathExactL_result_proj_mask() {
-  return G1_REGL_mask();
-}
-
-const RegMask Matcher::mathExactI_flags_proj_mask() {
-  return INT_FLAGS_mask();
-}
-
 
 %}
 
@@ -3248,7 +3243,7 @@ frame %{
   // C.
   c_calling_convention %{
     // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, length);
+    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
   %}
 
   // Location of native (C/C++) and interpreter return values.  This is specified to
@@ -6659,6 +6654,7 @@ instruct decodeKlass_not_null(iRegP dst, iRegN src) %{
 
 instruct membar_acquire() %{
   match(MemBarAcquire);
+  match(LoadFence);
   ins_cost(4*MEMORY_REF_COST);
 
   size(0);
@@ -6679,6 +6675,7 @@ instruct membar_acquire_lock() %{
 
 instruct membar_release() %{
   match(MemBarRelease);
+  match(StoreFence);
   ins_cost(4*MEMORY_REF_COST);
 
   size(0);
@@ -9180,7 +9177,7 @@ instruct branch_short(label labl) %{
   size(4);
   ins_cost(BRANCH_COST);
   format %{ "BA     $labl\t! short branch" %}
-  ins_encode %{ 
+  ins_encode %{
     Label* L = $labl$$label;
     assert(__ use_cbcond(*L), "back to back cbcond");
     __ ba_short(*L);

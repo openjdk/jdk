@@ -72,12 +72,8 @@ public final class NativeRegExp extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     private NativeRegExp(final Global global) {
-        super(global.getRegExpPrototype(), global.getRegExpMap());
+        super(global.getRegExpPrototype(), $nasgenmap$);
         this.globalObject = global;
     }
 

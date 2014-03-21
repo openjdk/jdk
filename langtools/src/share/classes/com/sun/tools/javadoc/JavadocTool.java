@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.tools.JavaFileManager.Location;
@@ -238,10 +239,13 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             files = lb.toList();
         }
 
+        Set<JavaFileObject> ufiles = new HashSet<>();
         for (JavaFileObject fo : files) {
-            // messager.notice("main.Loading_source_file", fn);
-            trees.append(parse(fo));
-            hasFiles = true;
+            if (ufiles.add(fo)) { // ignore duplicates
+                // messager.notice("main.Loading_source_file", fn);
+                trees.append(parse(fo));
+                hasFiles = true;
+            }
         }
 
         if (!hasFiles) {

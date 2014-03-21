@@ -147,10 +147,6 @@ public final class NativeJSAdapter extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     NativeJSAdapter(final Object overrides, final ScriptObject adaptee, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         this.adaptee = wrapAdaptee(adaptee);
@@ -164,7 +160,7 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     private static ScriptObject wrapAdaptee(final ScriptObject adaptee) {
-        return new JO(adaptee, Global.instance().getObjectMap());
+        return new JO(adaptee, JO.getInitialMap());
     }
 
     @Override
@@ -578,7 +574,7 @@ public final class NativeJSAdapter extends ScriptObject {
             proto = global.getJSAdapterPrototype();
         }
 
-        return new NativeJSAdapter(overrides, (ScriptObject)adaptee, (ScriptObject)proto, global.getJSAdapterMap());
+        return new NativeJSAdapter(overrides, (ScriptObject)adaptee, (ScriptObject)proto, $nasgenmap$);
     }
 
     @Override
@@ -623,7 +619,7 @@ public final class NativeJSAdapter extends ScriptObject {
         case "getMethod":
             final FindProperty find = adaptee.findProperty(__call__, true);
             if (find != null) {
-                final Object value = getObjectValue(find);
+                final Object value = find.getObjectValue();
                 if (value instanceof ScriptFunction) {
                     final ScriptFunctionImpl func = (ScriptFunctionImpl)value;
                     // TODO: It's a shame we need to produce a function bound to this and name, when we'd only need it bound
@@ -631,7 +627,7 @@ public final class NativeJSAdapter extends ScriptObject {
                     return new GuardedInvocation(MH.dropArguments(MH.constant(Object.class,
                             func.makeBoundFunction(this, new Object[] { name })), 0, Object.class),
                             testJSAdaptor(adaptee, null, null, null),
-                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), __call__));
+                            adaptee.getProtoSwitchPoint(__call__, find.getOwner()));
                 }
             }
             throw typeError("no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));
@@ -692,7 +688,7 @@ public final class NativeJSAdapter extends ScriptObject {
         final MethodType type = desc.getMethodType();
         if (findData != null) {
             final String name = desc.getNameTokenCount() > 2 ? desc.getNameToken(2) : null;
-            final Object value = getObjectValue(findData);
+            final Object value = findData.getObjectValue();
             if (value instanceof ScriptFunction) {
                 final ScriptFunction func = (ScriptFunction)value;
 
@@ -702,7 +698,7 @@ public final class NativeJSAdapter extends ScriptObject {
                     return new GuardedInvocation(
                             methodHandle,
                             testJSAdaptor(adaptee, findData.getGetter(Object.class, UnwarrantedOptimismException.INVALID_PROGRAM_POINT), findData.getOwner(), func),
-                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), hook));
+                            adaptee.getProtoSwitchPoint(hook, findData.getOwner()));
                 }
              }
         }
@@ -714,7 +710,7 @@ public final class NativeJSAdapter extends ScriptObject {
             final MethodHandle methodHandle = hook.equals(__put__) ?
             MH.asType(Lookup.EMPTY_SETTER, type) :
             Lookup.emptyGetter(type.returnType());
-            return new GuardedInvocation(methodHandle, testJSAdaptor(adaptee, null, null, null), adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), hook));
+            return new GuardedInvocation(methodHandle, testJSAdaptor(adaptee, null, null, null), adaptee.getProtoSwitchPoint(hook, null));
         }
     }
 

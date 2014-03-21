@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,13 @@ define CaptureLocale
   $1_LOCALES := $$(subst _,-,$$(filter-out $1, $$(subst $1_,,$$(filter $1_%, $(LOCALE_RESOURCES)))))
   $1_EN_LOCALES := $$(filter $(EN_LOCALES), $$($1_LOCALES))
   $1_NON_EN_LOCALES := $$(filter-out $(EN_LOCALES), $$($1_LOCALES))
+
+  # Special handling for Chinese locales to include implicit scripts
+  $1_NON_EN_LOCALES := $$(subst zh-CN,zh-CN$$(SPACE)zh-Hans-CN, $$($1_NON_EN_LOCALES))
+  $1_NON_EN_LOCALES := $$(subst zh-SG,zh-SG$$(SPACE)zh-Hans-SG, $$($1_NON_EN_LOCALES))
+  $1_NON_EN_LOCALES := $$(subst zh-HK,zh-HK$$(SPACE)zh-Hant-HK, $$($1_NON_EN_LOCALES))
+  $1_NON_EN_LOCALES := $$(subst zh-MO,zh-MO$$(SPACE)zh-Hant-MO, $$($1_NON_EN_LOCALES))
+  $1_NON_EN_LOCALES := $$(subst zh-TW,zh-TW$$(SPACE)zh-Hant-TW, $$($1_NON_EN_LOCALES))
 
   ALL_EN_LOCALES += $$($1_EN_LOCALES)
   ALL_NON_EN_LOCALES += $$($1_NON_EN_LOCALES)

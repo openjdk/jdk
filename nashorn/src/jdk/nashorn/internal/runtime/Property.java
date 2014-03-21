@@ -85,6 +85,10 @@ public abstract class Property {
      */
     public static final int IS_NASGEN_PRIMITIVE = 1 << 7;
 
+    /** Is this property bound to a receiver? This means get/set operations will be delegated to
+     *  a statically defined object instead of the object passed as callsite parameter. */
+    public static final int IS_BOUND = 1 << 8;
+
     /** Property key. */
     private final String key;
 
@@ -113,10 +117,10 @@ public abstract class Property {
      *
      * @param property source property
      */
-    Property(final Property property) {
+    Property(final Property property, final int flags) {
         this.key   = property.key;
-        this.flags = property.flags;
         this.slot  = property.slot;
+        this.flags = flags;
     }
 
     /**
@@ -255,6 +259,16 @@ public abstract class Property {
      */
     public boolean isSpill() {
         return false;
+    }
+
+    /**
+     * Is this property bound to a receiver? If this method returns {@code true} get and set operations
+     * will be delegated to a statically bound object instead of the object passed as parameter.
+     *
+     * @return true if this is a bound property
+     */
+    public boolean isBound() {
+        return (flags & IS_BOUND) == IS_BOUND;
     }
 
     /**

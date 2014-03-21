@@ -37,7 +37,6 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
-
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
@@ -65,46 +64,56 @@ public abstract class ScriptFunctionData {
     // TODO: integrate it into ScriptFunctionData; there's not much reason for this to be in its own class.
     protected final CompiledFunctions code;
 
+    /** Function flags */
+    protected int flags;
+
     // Parameter arity of the function, corresponding to "f.length". E.g. "function f(a, b, c) { ... }" arity is 3, and
     // some built-in ECMAScript functions have their arity declared by the specification. Note that regardless of this
     // value, the function might still be capable of receiving variable number of arguments, see isVariableArity.
-    private byte arity;
-
-    private final boolean isStrict;
-    private final boolean isBuiltin;
-    private final boolean isConstructor;
-    private final boolean isVariableArity;
+    private int arity;
 
     private static final MethodHandle BIND_VAR_ARGS = findOwnMH("bindVarArgs", Object[].class, Object[].class, Object[].class);
+
+    /** Is this a strict mode function? */
+    public static final int IS_STRICT      = 1 << 0;
+    /** Is this a built-in function? */
+    public static final int IS_BUILTIN     = 1 << 1;
+    /** Is this a constructor function? */
+    public static final int IS_CONSTRUCTOR = 1 << 2;
+    /** Does this function expect a callee argument? */
+    public static final int NEEDS_CALLEE   = 1 << 3;
+    /** Does this function make use of the this-object argument? */
+    public static final int USES_THIS      = 1 << 4;
+    /** Is this a variable arity function? */
+    public static final int IS_VARIABLE_ARITY = 1 << 5;
+
+    /** Flag for strict or built-in functions */
+    public static final int IS_STRICT_OR_BUILTIN = IS_STRICT | IS_BUILTIN;
+    /** Flag for built-in constructors */
+    public static final int IS_BUILTIN_CONSTRUCTOR = IS_BUILTIN | IS_CONSTRUCTOR;
+    /** Flag for strict constructors */
+    public static final int IS_STRICT_CONSTRUCTOR = IS_STRICT | IS_CONSTRUCTOR;
 
     /**
      * Constructor
      *
-     * @param name          script function name
-     * @param arity         arity
-     * @param isStrict      is the function strict
-     * @param isBuiltin     is the function built in
-     * @param isConstructor is the function a constructor
+     * @param name  script function name
+     * @param arity arity
+     * @param flags the function flags
      */
-    ScriptFunctionData(final String name, final int arity, final boolean isStrict, final boolean isBuiltin,
-            final boolean isConstructor, final boolean isVariableArity) {
-        this.name            = name;
-        this.code            = new CompiledFunctions(name);
-        this.isStrict        = isStrict;
-        this.isBuiltin       = isBuiltin;
-        this.isConstructor   = isConstructor;
-        this.isVariableArity = isVariableArity;
-
+    ScriptFunctionData(final String name, final int arity, final int flags) {
+        this.name  = name;
+        this.code  = new CompiledFunctions(name);
+        this.flags = flags;
         setArity(arity);
     }
 
     final int getArity() {
-        // arity byte should be interpreted as u8.
-        return arity & 0xFF;
+        return arity;
     }
 
     final boolean isVariableArity() {
-        return isVariableArity;
+        return (flags & IS_VARIABLE_ARITY) != 0;
     }
 
     /**
@@ -115,7 +124,7 @@ public abstract class ScriptFunctionData {
         if(arity < 0 || arity > MAX_ARITY) {
             throw new IllegalArgumentException(String.valueOf(arity));
         }
-        this.arity = (byte)arity;
+        this.arity = arity;
     }
 
     CompiledFunction bind(final CompiledFunction originalInv, final ScriptFunction fn, final Object self, final Object[] args) {
@@ -133,15 +142,15 @@ public abstract class ScriptFunctionData {
      * @return true if strict, false otherwise
      */
     public boolean isStrict() {
-        return isStrict;
+        return (flags & IS_STRICT) != 0;
     }
 
     boolean isBuiltin() {
-        return isBuiltin;
+        return (flags & IS_BUILTIN) != 0;
     }
 
     boolean isConstructor() {
-        return isConstructor;
+        return (flags & IS_CONSTRUCTOR) != 0;
     }
 
     abstract boolean needsCallee();
@@ -152,7 +161,7 @@ public abstract class ScriptFunctionData {
      * @return true if this argument must be an object
      */
     boolean needsWrappedThis() {
-        return !isStrict && !isBuiltin;
+        return (flags & USES_THIS) != 0 && (flags & IS_STRICT_OR_BUILTIN) == 0;
     }
 
     String toSource() {
@@ -207,6 +216,15 @@ public abstract class ScriptFunctionData {
         // Constructor call sites don't have a "this", but getBest is meant to operate on "callee, this, ..." style
         final CompiledFunction cf = getBest(callSiteType.insertParameterTypes(1, Object.class));
         return new GuardedInvocation(cf.getConstructor(), cf.getOptimisticAssumptionsSwitchPoint());
+    }
+
+    /**
+     * If we can have lazy code generation, this is a hook to ensure that the code has been compiled.
+     * This does not guarantee the code been installed in this {@code ScriptFunctionData} instance;
+     * use {@link #ensureCodeGenerated()} to install the actual method handles.
+     */
+    protected void ensureCompiled() {
+        //empty
     }
 
     /**
@@ -276,9 +294,20 @@ public abstract class ScriptFunctionData {
 
     /**
      * Allocates an object using this function's allocator.
+     *
+     * @param map the property map for the allocated object.
      * @return the object allocated using this function's allocator, or null if the function doesn't have an allocator.
      */
-    ScriptObject allocate() {
+    ScriptObject allocate(final PropertyMap map) {
+        return null;
+    }
+
+    /**
+     * Get the property map to use for objects allocated by this function.
+     *
+     * @return the property map for allocated objects.
+     */
+    PropertyMap getAllocatorMap() {
         return null;
     }
 
@@ -293,13 +322,14 @@ public abstract class ScriptFunctionData {
     ScriptFunctionData makeBoundFunctionData(final ScriptFunction fn, final Object self, final Object[] args) {
         final Object[] allArgs = args == null ? ScriptRuntime.EMPTY_ARRAY : args;
         final int length = args == null ? 0 : args.length;
+        // Clear the callee and this flags
+        final int boundFlags = flags & ~NEEDS_CALLEE & ~USES_THIS;
 
         final CompiledFunctions boundList = new CompiledFunctions(fn.getName());
         final CompiledFunction bindTarget = new CompiledFunction(getGenericInvoker(), getGenericConstructor());
         boundList.add(bind(bindTarget, fn, self, allArgs));
 
-        final ScriptFunctionData boundData = new FinalScriptFunctionData(name, Math.max(0, getArity() - length), boundList, isStrict(), isBuiltin(), isConstructor(), isVariableArity());
-        return boundData;
+        return new FinalScriptFunctionData(name, Math.max(0, getArity() - length), boundList, boundFlags);
     }
 
     /**
@@ -316,11 +346,11 @@ public abstract class ScriptFunctionData {
     static Object wrapThis(final Object thiz) {
         if (!(thiz instanceof ScriptObject)) {
             if (JSType.nullOrUndefined(thiz)) {
-                return Context.getGlobalTrusted();
+                return Context.getGlobal();
             }
 
             if (isPrimitiveThis(thiz)) {
-                return ((GlobalObject)Context.getGlobalTrusted()).wrapAsObject(thiz);
+                return Context.getGlobal().wrapAsObject(thiz);
             }
         }
 

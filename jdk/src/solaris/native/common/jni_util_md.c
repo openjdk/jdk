@@ -29,14 +29,6 @@
 #include "jni_util.h"
 #include "dlfcn.h"
 
-jstring nativeNewStringPlatform(JNIEnv *env, const char *str) {
-    return NULL;
-}
-
-char* nativeGetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy) {
-    return NULL;
-}
-
 void* getProcessHandle() {
     static void *procHandle = NULL;
     if (procHandle != NULL) {
