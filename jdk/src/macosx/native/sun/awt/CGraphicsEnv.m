@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
+#import "jni_util.h"
 #import "LWCToolkit.h"
 #import "AWT_debug.h"
 
@@ -64,7 +65,7 @@ JNF_COCOA_ENTER(env);
 
     /* Get the count */
     CGDisplayCount displayCount;
-    if (CGGetActiveDisplayList(MAX_DISPLAYS, NULL, &displayCount) != kCGErrorSuccess) {
+    if (CGGetOnlineDisplayList(MAX_DISPLAYS, NULL, &displayCount) != kCGErrorSuccess) {
         [JNFException raise:env
                          as:kInternalError
                      reason:"CGGetOnlineDisplayList() failed to get display count"];
@@ -73,23 +74,36 @@ JNF_COCOA_ENTER(env);
 
     /* Allocate an array and get the size list of display Ids */
     CGDirectDisplayID displays[MAX_DISPLAYS];
-    if (CGGetActiveDisplayList(displayCount, displays, &displayCount) != kCGErrorSuccess) {
+    if (CGGetOnlineDisplayList(displayCount, displays, &displayCount) != kCGErrorSuccess) {
         [JNFException raise:env
                          as:kInternalError
                      reason:"CGGetOnlineDisplayList() failed to get display list"];
         return NULL;
     }
 
+    CGDisplayCount i;
+    CGDisplayCount displayActiveCount = 0; //Active and sleeping.
+    for (i = 0; i < displayCount; ++i) {
+        if (CGDisplayMirrorsDisplay(displays[i]) == kCGNullDirectDisplay) {
+            ++displayActiveCount;
+        } else {
+            displays[i] = kCGNullDirectDisplay;
+        }
+    }
+
     /* Allocate a java array for display identifiers */
-    ret = JNFNewIntArray(env, displayCount);
+    ret = JNFNewIntArray(env, displayActiveCount);
 
     /* Initialize and return the backing int array */
     assert(sizeof(jint) >= sizeof(CGDirectDisplayID));
     jint *elems = (*env)->GetIntArrayElements(env, ret, 0);
+    CHECK_NULL_RETURN(elems, NULL);
 
-    CGDisplayCount i;
-    for (i = 0; i < displayCount; i++) {
-        elems[i] = displays[i];
+    /* Filter out the mirrored displays */
+    for (i = 0; i < displayCount; ++i) {
+        if (displays[i] != kCGNullDirectDisplay) {
+            elems[--displayActiveCount] = displays[i];
+        }
     }
 
     (*env)->ReleaseIntArrayElements(env, ret, elems, 0);
