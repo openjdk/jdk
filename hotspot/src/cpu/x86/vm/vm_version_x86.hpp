@@ -207,7 +207,9 @@ public:
                         : 2,
                    bmi2 : 1,
                    erms : 1,
-                        : 22;
+                        : 1,
+                   rtm  : 1,
+                        : 20;
     } bits;
   };
 
@@ -257,7 +259,8 @@ protected:
     CPU_ERMS   = (1 << 20), // enhanced 'rep movsb/stosb' instructions
     CPU_CLMUL  = (1 << 21), // carryless multiply for CRC
     CPU_BMI1   = (1 << 22),
-    CPU_BMI2   = (1 << 23)
+    CPU_BMI2   = (1 << 23),
+    CPU_RTM    = (1 << 24)  // Restricted Transactional Memory instructions
   } cpuFeatureFlags;
 
   enum {
@@ -444,6 +447,8 @@ protected:
       result |= CPU_ERMS;
     if (_cpuid_info.std_cpuid1_ecx.bits.clmul != 0)
       result |= CPU_CLMUL;
+    if (_cpuid_info.sef_cpuid7_ebx.bits.rtm != 0)
+      result |= CPU_RTM;
 
     // AMD features.
     if (is_amd()) {
@@ -513,6 +518,9 @@ public:
 
   // Initialization
   static void initialize();
+
+  // Override Abstract_VM_Version implementation
+  static bool use_biased_locking();
 
   // Asserts
   static void assert_is_initialized() {
@@ -606,6 +614,7 @@ public:
   static bool supports_aes()      { return (_cpuFeatures & CPU_AES) != 0; }
   static bool supports_erms()     { return (_cpuFeatures & CPU_ERMS) != 0; }
   static bool supports_clmul()    { return (_cpuFeatures & CPU_CLMUL) != 0; }
+  static bool supports_rtm()      { return (_cpuFeatures & CPU_RTM) != 0; }
   static bool supports_bmi1()     { return (_cpuFeatures & CPU_BMI1) != 0; }
   static bool supports_bmi2()     { return (_cpuFeatures & CPU_BMI2) != 0; }
   // Intel features
