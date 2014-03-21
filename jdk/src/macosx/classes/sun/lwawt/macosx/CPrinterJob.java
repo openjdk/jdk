@@ -41,7 +41,7 @@ import javax.print.attribute.standard.PageRanges;
 import sun.java2d.*;
 import sun.print.*;
 
-final class CPrinterJob extends RasterPrinterJob {
+public final class CPrinterJob extends RasterPrinterJob {
     // NOTE: This uses RasterPrinterJob as a base, but it doesn't use
     // all of the RasterPrinterJob functions. RasterPrinterJob will
     // break down printing to pieces that aren't necessary under MacOSX
