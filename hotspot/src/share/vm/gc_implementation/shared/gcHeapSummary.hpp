@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCHEAPSUMMARY_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/metaspaceChunkFreeListSummary.hpp"
 
 class VirtualSpaceSummary : public StackObj {
   HeapWord* _start;
@@ -125,18 +126,49 @@ class PSHeapSummary : public GCHeapSummary {
 };
 
 class MetaspaceSummary : public StackObj {
+  size_t _capacity_until_GC;
   MetaspaceSizes _meta_space;
   MetaspaceSizes _data_space;
   MetaspaceSizes _class_space;
+  MetaspaceChunkFreeListSummary _metaspace_chunk_free_list_summary;
+  MetaspaceChunkFreeListSummary _class_chunk_free_list_summary;
 
  public:
-  MetaspaceSummary() : _meta_space(), _data_space(), _class_space() {}
-  MetaspaceSummary(const MetaspaceSizes& meta_space, const MetaspaceSizes& data_space, const MetaspaceSizes& class_space) :
-       _meta_space(meta_space), _data_space(data_space), _class_space(class_space) { }
+  MetaspaceSummary() :
+    _capacity_until_GC(0),
+    _meta_space(),
+    _data_space(),
+    _class_space(),
+    _metaspace_chunk_free_list_summary(),
+    _class_chunk_free_list_summary()
+  {}
+  MetaspaceSummary(size_t capacity_until_GC,
+                   const MetaspaceSizes& meta_space,
+                   const MetaspaceSizes& data_space,
+                   const MetaspaceSizes& class_space,
+                   const MetaspaceChunkFreeListSummary& metaspace_chunk_free_list_summary,
+                   const MetaspaceChunkFreeListSummary& class_chunk_free_list_summary) :
+    _capacity_until_GC(capacity_until_GC),
+    _meta_space(meta_space),
+    _data_space(data_space),
+    _class_space(class_space),
+    _metaspace_chunk_free_list_summary(metaspace_chunk_free_list_summary),
+    _class_chunk_free_list_summary(class_chunk_free_list_summary)
+  {}
 
+  size_t capacity_until_GC() const { return _capacity_until_GC; }
   const MetaspaceSizes& meta_space() const { return _meta_space; }
   const MetaspaceSizes& data_space() const { return _data_space; }
   const MetaspaceSizes& class_space() const { return _class_space; }
+
+  const MetaspaceChunkFreeListSummary& metaspace_chunk_free_list_summary() const {
+    return _metaspace_chunk_free_list_summary;
+  }
+
+  const MetaspaceChunkFreeListSummary& class_chunk_free_list_summary() const {
+    return _class_chunk_free_list_summary;
+  }
+
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GCHEAPSUMMARY_HPP
