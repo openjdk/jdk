@@ -65,12 +65,8 @@ public final class DataPropertyDescriptor extends ScriptObject implements Proper
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     DataPropertyDescriptor(final boolean configurable, final boolean enumerable, final boolean writable, final Object value, final Global global) {
-        super(global.getObjectPrototype(), global.getDataPropertyDescriptorMap());
+        super(global.getObjectPrototype(), $nasgenmap$);
         this.configurable = configurable;
         this.enumerable   = enumerable;
         this.writable     = writable;

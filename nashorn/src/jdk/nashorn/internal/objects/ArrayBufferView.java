@@ -31,7 +31,6 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -53,12 +52,8 @@ abstract class ArrayBufferView extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     private ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength, final Global global) {
-        super(global.getArrayBufferViewMap());
+        super($nasgenmap$);
 
         final int bytesPerElement = bytesPerElement();
 

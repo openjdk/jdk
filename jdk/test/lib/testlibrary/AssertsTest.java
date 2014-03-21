@@ -25,7 +25,6 @@ import static jdk.testlibrary.Asserts.*;
 
 /* @test
  * @summary Tests the different assertions in the Assert class
- * @library /testlibrary
  */
 public class AssertsTest {
     private static class Foo implements Comparable<Foo> {
@@ -36,6 +35,9 @@ public class AssertsTest {
 
         public int compareTo(Foo f) {
             return new Integer(id).compareTo(new Integer(f.id));
+        }
+        public String toString() {
+            return "Foo(" + Integer.toString(id) + ")";
         }
     }
 
@@ -50,6 +52,7 @@ public class AssertsTest {
         testNotNull();
         testTrue();
         testFalse();
+        testFail();
     }
 
     private static void testLessThan() throws Exception {
@@ -72,7 +75,7 @@ public class AssertsTest {
 
     private static void testEquals() throws Exception {
         expectPass(Assertion.EQ, 1, 1);
-        expectPass(Assertion.EQ, null, null);
+        expectPass(Assertion.EQ, (Comparable)null, (Comparable)null);
 
         Foo f1 = new Foo(1);
         expectPass(Assertion.EQ, f1, f1);
@@ -109,13 +112,13 @@ public class AssertsTest {
         Foo f2 = new Foo(1);
         expectPass(Assertion.NE, f1, f2);
 
-        expectFail(Assertion.NE, null, null);
+        expectFail(Assertion.NE, (Comparable)null, (Comparable)null);
         expectFail(Assertion.NE, f1, f1);
         expectFail(Assertion.NE, 1, 1);
     }
 
     private static void testNull() throws Exception {
-        expectPass(Assertion.NULL, null);
+        expectPass(Assertion.NULL, (Comparable)null);
 
         expectFail(Assertion.NULL, 1);
     }
@@ -123,7 +126,7 @@ public class AssertsTest {
     private static void testNotNull() throws Exception {
         expectPass(Assertion.NOTNULL, 1);
 
-        expectFail(Assertion.NOTNULL, null);
+        expectFail(Assertion.NOTNULL, (Comparable)null);
     }
 
     private static void testTrue() throws Exception {
@@ -137,6 +140,36 @@ public class AssertsTest {
 
         expectFail(Assertion.FALSE, true);
     }
+
+    private static void testFail() throws Exception {
+        try {
+            fail();
+        } catch (RuntimeException re) {
+            assertEquals("fail", re.getMessage());
+        }
+
+        try {
+            fail("Failure");
+        } catch (RuntimeException re) {
+            assertEquals("Failure", re.getMessage());
+        }
+
+        Exception e = new Exception("the cause");
+        try {
+            fail("Fail w/ cause", e);
+        } catch (RuntimeException re) {
+            assertEquals("Fail w/ cause", re.getMessage());
+            assertEquals(e, re.getCause(), "Cause mismatch");
+        }
+
+        try {
+            fail(1, 2, "Different", "vs");
+        } catch (RuntimeException re) {
+            assertEquals("Different <1> vs <2>", re.getMessage());
+        }
+    }
+
+
 
     private static <T extends Comparable<T>> void expectPass(Assertion assertion, T ... args)
         throws Exception {

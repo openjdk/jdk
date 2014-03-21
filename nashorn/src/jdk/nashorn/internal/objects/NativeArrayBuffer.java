@@ -28,7 +28,6 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.nio.ByteBuffer;
-
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -51,17 +50,6 @@ public final class NativeArrayBuffer extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
-    /**
-     * Constructor
-     * @param newObj is this a new call
-     * @param self   self
-     * @param args   arguments
-     * @return new native array buffer
-     */
     @Constructor(arity = 1)
     public static Object constructor(final boolean newObj, final Object self, final Object... args) {
         if (!newObj) {
@@ -81,7 +69,7 @@ public final class NativeArrayBuffer extends ScriptObject {
      * @param global global instance
      */
     protected NativeArrayBuffer(final ByteBuffer nb, final Global global) {
-        super(global.getArrayBufferPrototype(), global.getArrayBufferMap());
+        super(global.getArrayBufferPrototype(), $nasgenmap$);
         this.nb = nb;
     }
 
@@ -210,5 +198,19 @@ public final class NativeArrayBuffer extends ScriptObject {
 
     int getByteLength() {
         return nb.limit();
+    }
+
+    ByteBuffer getBuffer() {
+       return nb;
+    }
+
+    ByteBuffer getBuffer(final int offset) {
+        return (ByteBuffer)nb.duplicate().position(offset);
+//        return ByteBuffer.wrap(buffer, offset, buffer.length - offset);
+    }
+
+    ByteBuffer getBuffer(final int offset, final int length) {
+        return (ByteBuffer)getBuffer(offset).limit(length);
+        //return ByteBuffer.wrap(buffer, offset, length);
     }
 }

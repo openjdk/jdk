@@ -260,7 +260,7 @@ ifeq ($(USE_CLANG), true)
   WARNINGS_ARE_ERRORS += -Wno-empty-body
 endif
 
-WARNING_FLAGS = -Wpointer-arith -Wsign-compare -Wundef -Wunused-function -Wunused-value
+WARNING_FLAGS = -Wpointer-arith -Wsign-compare -Wundef -Wunused-function -Wformat=2 -Wno-error=format-nonliteral
 
 ifeq ($(USE_CLANG),)
   # Since GCC 4.3, -Wconversion has changed its meanings to warn these implicit
@@ -289,7 +289,7 @@ CFLAGS += -fno-strict-aliasing
 # The flags to use for an Optimized g++ build
 ifeq ($(OS_VENDOR), Darwin)
   # use -Os by default, unless -O3 can be proved to be worth the cost, as per policy
-  # <http://wikis.sun.com/display/OpenJDK/Mac+OS+X+Port+Compilers>
+  # <https://wiki.openjdk.java.net/display/MacOSXPort/Compiler+Errata>
   OPT_CFLAGS_DEFAULT ?= SIZE
 else
   OPT_CFLAGS_DEFAULT ?= SPEED
@@ -363,6 +363,11 @@ ASFLAGS += -x assembler-with-cpp
 
 # statically link libstdc++.so, work with gcc but ignored by g++
 STATIC_STDCXX = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
+
+# Ensure use libstdc++ on clang, not libc++
+ifeq ($(USE_CLANG), true)
+  LFLAGS += -stdlib=libstdc++
+endif
 
 ifeq ($(USE_CLANG),)
   # statically link libgcc and/or libgcc_s, libgcc does not exist before gcc-3.x.

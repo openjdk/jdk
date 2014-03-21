@@ -26,17 +26,16 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-
+import java.nio.ByteBuffer;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-
-import java.nio.ByteBuffer;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.runtime.GlobalObject;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
@@ -510,7 +509,7 @@ public abstract class ArrayData {
      *
      * @return property descriptor for element
      */
-    public PropertyDescriptor getDescriptor(final GlobalObject global, final int index) {
+    public PropertyDescriptor getDescriptor(final Global global, final int index) {
         return global.newDataDescriptor(getObject(index), true, true, true);
     }
 

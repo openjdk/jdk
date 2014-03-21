@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import jdk.nashorn.api.scripting.NashornException;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Token;
 
 /**
@@ -110,7 +111,7 @@ public final class ParserException extends NashornException {
      * Throw this {@code ParserException} as one of the 7 native JavaScript errors
      * @param global global scope object
      */
-    public void throwAsEcmaException(final ScriptObject global) {
+    public void throwAsEcmaException(final Global global) {
         throw ECMAErrors.asEcmaException(global, this);
     }
 }

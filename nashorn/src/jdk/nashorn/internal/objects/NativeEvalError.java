@@ -62,10 +62,6 @@ public final class NativeEvalError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     @SuppressWarnings("LeakingThisInConstructor")
     private NativeEvalError(final Object msg, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
@@ -78,7 +74,7 @@ public final class NativeEvalError extends ScriptObject {
     }
 
     NativeEvalError(final Object msg, final Global global) {
-        this(msg, global.getEvalErrorPrototype(), global.getEvalErrorMap());
+        this(msg, global.getEvalErrorPrototype(), $nasgenmap$);
     }
 
     private NativeEvalError(final Object msg) {

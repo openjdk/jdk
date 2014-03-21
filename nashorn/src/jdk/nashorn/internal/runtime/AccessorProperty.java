@@ -43,7 +43,6 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.logging.Level;
-
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -150,24 +149,25 @@ public class AccessorProperty extends Property {
     private Class<?> currentType;
 
     /**
-     * DELEGATE CONSTRUCTOR
+     * Delegate constructor for bound properties. This is used for properties created by
+     * {@link ScriptRuntime#mergeScope} and the Nashorn {@code Object.bindProperties} method.
+     * The former is used to add a script's defined globals to the current global scope while
+     * still storing them in a JO-prefixed ScriptObject class.
      *
-     * Delegate constructor. This is used when adding properties to the Global scope, which
-     * is necessary for outermost levels in a script (the ScriptObject is represented by
-     * a JO-prefixed ScriptObject class, but the properties need to be in the Global scope
-     * and are thus rebound with that as receiver
+     * <p>All properties created by this constructor have the {@link #IS_BOUND} flag set.</p>
      *
      * @param property  accessor property to rebind
      * @param delegate  delegate object to rebind receiver to
      */
     AccessorProperty(final AccessorProperty property, final Object delegate) {
-        super(property);
+        super(property, property.getFlags() | IS_BOUND);
 
         this.primitiveGetter = bindTo(property.primitiveGetter, delegate);
         this.primitiveSetter = bindTo(property.primitiveSetter, delegate);
         this.objectGetter    = bindTo(property.objectGetter, delegate);
         this.objectSetter    = bindTo(property.objectSetter, delegate);
 
+        // Properties created this way are bound to a delegate
         setCurrentType(property.getCurrentType());
     }
 
@@ -322,7 +322,7 @@ public class AccessorProperty extends Property {
      * @param newType  new type
      */
     protected AccessorProperty(final AccessorProperty property, final Class<?> newType) {
-        super(property);
+        super(property, property.getFlags());
 
         this.GETTER_CACHE    = newType != property.getCurrentType() ? new MethodHandle[NOOF_TYPES] : property.GETTER_CACHE;
         this.primitiveGetter = property.primitiveGetter;

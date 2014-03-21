@@ -100,9 +100,9 @@ protected:
 public:
 
   // ...then the post-write version.
-  inline void write_ref_field(void* field, oop new_val);
+  inline void write_ref_field(void* field, oop new_val, bool release = false);
 protected:
-  virtual void write_ref_field_work(void* field, oop new_val) = 0;
+  virtual void write_ref_field_work(void* field, oop new_val, bool release = false) = 0;
 public:
 
   // Invoke the barrier, if any, necessary when writing the "bytes"-byte

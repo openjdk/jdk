@@ -91,7 +91,7 @@ void ObjPtrQueue::filter() {
       assert(new_index > 0, "we should not have already filled up the buffer");
       new_index -= oopSize;
       assert(new_index >= i,
-             "new_index should never be below i, as we alwaysr compact 'up'");
+             "new_index should never be below i, as we always compact 'up'");
       oop* new_p = (oop*) &buf[byte_index_to_index((int) new_index)];
       assert(new_p >= p, "the destination location should never be below "
              "the source as we always compact 'up'");

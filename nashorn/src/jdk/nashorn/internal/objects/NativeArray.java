@@ -40,7 +40,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
-
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -134,7 +133,7 @@ public final class NativeArray extends ScriptObject {
     }
 
     NativeArray(final ArrayData arrayData, final Global global) {
-        super(global.getArrayPrototype(), global.getArrayMap());
+        super(global.getArrayPrototype(), $nasgenmap$);
         this.setArray(arrayData);
         this.setIsArray();
     }
@@ -242,10 +241,6 @@ public final class NativeArray extends ScriptObject {
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
-
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
 
     @Override
     public String getClassName() {

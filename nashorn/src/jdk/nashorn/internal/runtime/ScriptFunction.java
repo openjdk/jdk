@@ -68,6 +68,8 @@ public abstract class ScriptFunction extends ScriptObject {
 
     private static final MethodHandle WRAPFILTER = findOwnMH_S("wrapFilter", Object.class, Object.class);
 
+    private static final MethodHandle GLOBALFILTER = findOwnMH_S("globalFilter", Object.class, Object.class);
+
     /** method handle to scope getter for this ScriptFunction */
     public static final Call GET_SCOPE = virtualCallNoLookup(ScriptFunction.class, "getScope", ScriptObject.class);
 
@@ -86,6 +88,9 @@ public abstract class ScriptFunction extends ScriptObject {
 
     private final ScriptFunctionData data;
 
+    /** The property map used for newly allocated object when function is used as constructor. */
+    protected PropertyMap allocatorMap;
+
     /**
      * Constructor
      *
@@ -94,9 +99,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param map           property map
      * @param scope         scope
      * @param specs         specialized version of this function - other method handles
-     * @param strict        is this a strict mode function?
-     * @param builtin       is this a built in function?
-     * @param isConstructor is this a constructor?
+     * @param flags         {@link ScriptFunctionData} flags
      */
     protected ScriptFunction(
             final String name,
@@ -104,11 +107,9 @@ public abstract class ScriptFunction extends ScriptObject {
             final PropertyMap map,
             final ScriptObject scope,
             final MethodHandle[] specs,
-            final boolean strict,
-            final boolean builtin,
-            final boolean isConstructor) {
+            final int flags) {
 
-        this(new FinalScriptFunctionData(name, methodHandle, specs, strict, builtin, isConstructor), map, scope);
+        this(new FinalScriptFunctionData(name, methodHandle, specs, flags), map, scope);
     }
 
     /**
@@ -131,6 +132,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
         this.data  = data;
         this.scope = scope;
+        this.allocatorMap = data.getAllocatorMap();
     }
 
     @Override
@@ -240,16 +242,16 @@ public abstract class ScriptFunction extends ScriptObject {
 
         assert !isBoundFunction(); // allocate never invoked on bound functions
 
-        final ScriptObject object = data.allocate();
+        final ScriptObject object = data.allocate(allocatorMap);
 
         if (object != null) {
             final Object prototype = getPrototype();
             if (prototype instanceof ScriptObject) {
-                object.setProto((ScriptObject)prototype);
+                object.setInitialProto((ScriptObject)prototype);
             }
 
             if (object.getProto() == null) {
-                object.setProto(getObjectPrototype());
+                object.setInitialProto(getObjectPrototype());
             }
         }
 
@@ -479,7 +481,14 @@ public abstract class ScriptFunction extends ScriptObject {
         if (obj instanceof ScriptObject || !ScriptFunctionData.isPrimitiveThis(obj)) {
             return obj;
         }
-        return ((GlobalObject)Context.getGlobalTrusted()).wrapAsObject(obj);
+        return Context.getGlobal().wrapAsObject(obj);
+    }
+
+
+    @SuppressWarnings("unused")
+    private static Object globalFilter(final Object object) {
+        // replace whatever we get with the current global object
+        return Context.getGlobal();
     }
 
     /**
@@ -541,11 +550,11 @@ public abstract class ScriptFunction extends ScriptObject {
         final int programPoint = NashornCallSiteDescriptor.isOptimistic(desc) ? NashornCallSiteDescriptor.getProgramPoint(desc) : INVALID_PROGRAM_POINT;
         final GuardedInvocation bestInvoker = getBestInvoker(type, programPoint);
         final MethodHandle callHandle = bestInvoker.getInvocation();
+
         if (data.needsCallee()) {
-            if (scopeCall) {
-                // Make a handle that drops the passed "this" argument and binds either Global or Undefined instead
-                // Signature remains (callee, this, args...)
-                boundHandle = MH.dropArguments(bindImplicitThis(callHandle), 1, type.parameterType(1));
+            if (scopeCall && needsWrappedThis()) {
+                // (callee, this, args...) => (callee, [this], args...)
+                boundHandle = MH.filterArguments(callHandle, 1, GLOBALFILTER);
             } else {
                 // It's already (callee, this, args...), just what we need
                 boundHandle = callHandle;
@@ -554,11 +563,12 @@ public abstract class ScriptFunction extends ScriptObject {
             // NOTE: the only built-in named "extend" is NativeJava.extend. As a special-case we're binding the
             // current lookup as its "this" so it can do security-sensitive creation of adapter classes.
             boundHandle = MH.dropArguments(MH.bindTo(callHandle, desc.getLookup()), 0, type.parameterType(0), type.parameterType(1));
-        } else if (scopeCall) {
+        } else if (scopeCall && needsWrappedThis()) {
             // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
-            // (this, args...) => (args...)
-            // (args...) => ([callee], [this], args...)
-            boundHandle = MH.dropArguments(MH.bindTo(callHandle, getImplicitThis()), 0, type.parameterType(0), type.parameterType(1));
+            // (this, args...) => ([this], args...)
+            boundHandle = MH.filterArguments(callHandle, 0, GLOBALFILTER);
+            // ([this], args...) => ([callee], [this], args...)
+            boundHandle = MH.dropArguments(boundHandle, 0, type.parameterType(0));
         } else {
             // (this, args...) => ([callee], this, args...)
             boundHandle = MH.dropArguments(callHandle, 0, type.parameterType(0));
@@ -672,17 +682,14 @@ public abstract class ScriptFunction extends ScriptObject {
     }
 
      private static MethodHandle bindImplicitThis(final Object fn, final MethodHandle mh) {
-         return MH.insertArguments(mh, 1, fn instanceof ScriptFunction ? ((ScriptFunction)fn).getImplicitThis() : ScriptRuntime.UNDEFINED);
+         final MethodHandle bound;
+         if(fn instanceof ScriptFunction && ((ScriptFunction)fn).needsWrappedThis()) {
+             bound = MH.filterArguments(mh, 1, GLOBALFILTER);
+         } else {
+             bound = mh;
+         }
+         return MH.insertArguments(bound, 1, ScriptRuntime.UNDEFINED);
      }
-
-     private MethodHandle bindImplicitThis(final MethodHandle mh) {
-         return MH.insertArguments(mh, 1, getImplicitThis());
-     }
-
-    private Object getImplicitThis() {
-        return needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED;
-    }
-
 
     /**
      * Used for noSuchMethod/noSuchProperty and JSAdapter hooks.

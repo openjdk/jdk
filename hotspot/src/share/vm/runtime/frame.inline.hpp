@@ -87,6 +87,13 @@ inline bool frame::is_first_frame() const {
   return is_entry_frame() && entry_frame_is_first();
 }
 
+#ifdef CC_INTERP
+inline oop* frame::interpreter_frame_temp_oop_addr() const {
+  interpreterState istate = get_interpreterState();
+  return (oop *)&istate->_oop_temp;
+}
+#endif // CC_INTERP
+
 // here are the platform-dependent bodies:
 
 #ifdef TARGET_ARCH_x86

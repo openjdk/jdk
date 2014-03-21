@@ -54,8 +54,8 @@ size_t CardTableModRefBS::cards_required(size_t covered_words)
 size_t CardTableModRefBS::compute_byte_map_size()
 {
   assert(_guard_index == cards_required(_whole_heap.word_size()) - 1,
-                                        "unitialized, check declaration order");
-  assert(_page_size != 0, "unitialized, check declaration order");
+                                        "uninitialized, check declaration order");
+  assert(_page_size != 0, "uninitialized, check declaration order");
   const size_t granularity = os::vm_allocation_granularity();
   return align_size_up(_guard_index + 1, MAX2(_page_size, granularity));
 }
@@ -419,8 +419,8 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
 // Note that these versions are precise!  The scanning code has to handle the
 // fact that the write barrier may be either precise or imprecise.
 
-void CardTableModRefBS::write_ref_field_work(void* field, oop newVal) {
-  inline_write_ref_field(field, newVal);
+void CardTableModRefBS::write_ref_field_work(void* field, oop newVal, bool release) {
+  inline_write_ref_field(field, newVal, release);
 }
 
 

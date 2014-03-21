@@ -26,16 +26,15 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
-import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.JSType.CONVERT_OBJECT_OPTIMISTIC;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
+import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.Callable;
-
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
@@ -89,7 +88,7 @@ public final class UserAccessorProperty extends SpillProperty {
 
     private static MethodHandle getINVOKE_UA_GETTER() {
 
-        return ((GlobalObject)Context.getGlobal()).getDynamicInvoker(INVOKE_UA_GETTER,
+        return Context.getGlobal().getDynamicInvoker(INVOKE_UA_GETTER,
                 new Callable<MethodHandle>() {
                     @Override
                     public MethodHandle call() {
@@ -103,7 +102,7 @@ public final class UserAccessorProperty extends SpillProperty {
     private static Object INVOKE_UA_SETTER = new Object();
 
     private static MethodHandle getINVOKE_UA_SETTER() {
-        return ((GlobalObject)Context.getGlobal()).getDynamicInvoker(INVOKE_UA_SETTER,
+        return Context.getGlobal().getDynamicInvoker(INVOKE_UA_SETTER,
                 new Callable<MethodHandle>() {
                     @Override
                     public MethodHandle call() {

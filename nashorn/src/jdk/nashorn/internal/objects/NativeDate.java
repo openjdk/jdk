@@ -114,10 +114,6 @@ public final class NativeDate extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     private NativeDate(final double time, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         final ScriptEnvironment env = Global.getEnv();
@@ -127,7 +123,7 @@ public final class NativeDate extends ScriptObject {
     }
 
     NativeDate(final double time, final Global global) {
-        this(time, global.getDatePrototype(), global.getDateMap());
+        this(time, global.getDatePrototype(), $nasgenmap$);
     }
 
     private NativeDate (final double time) {

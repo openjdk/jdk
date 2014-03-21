@@ -52,7 +52,7 @@ ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci)
   , _stack()
   , _locks(copy_from->locks_size())
 {
-  assert(kind != EmptyExceptionState || !Compilation::current()->env()->jvmti_can_access_local_variables(), "need locals");
+  assert(kind != EmptyExceptionState || !Compilation::current()->env()->should_retain_local_variables(), "need locals");
   if (kind != EmptyExceptionState) {
     // only allocate space if we need to copy the locals-array
     _locals = Values(copy_from->locals_size());

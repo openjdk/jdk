@@ -77,7 +77,7 @@ final class DebuggerSupport {
      * @return context global.
      */
     static Object getGlobal() {
-        return Context.getGlobalTrusted();
+        return Context.getGlobal();
     }
 
     /**
@@ -89,7 +89,7 @@ final class DebuggerSupport {
      * @return Result of eval as string, or, an exception or null depending on returnException.
      */
     static Object eval(final ScriptObject scope, final Object self, final String string, final boolean returnException) {
-        final ScriptObject global = Context.getGlobalTrusted();
+        final ScriptObject global = Context.getGlobal();
         final ScriptObject initialScope = scope != null ? scope : global;
         final Object callThis = self != null ? self : global;
         final Context context = global.getContext();

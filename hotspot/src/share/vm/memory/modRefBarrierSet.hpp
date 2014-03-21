@@ -60,7 +60,7 @@ public:
   void read_ref_field(void* field) {}
   void read_prim_field(HeapWord* field, size_t bytes) {}
 protected:
-  virtual void write_ref_field_work(void* field, oop new_val) = 0;
+  virtual void write_ref_field_work(void* field, oop new_val, bool release = false) = 0;
 public:
   void write_prim_field(HeapWord* field, size_t bytes,
                         juint val1, juint val2) {}

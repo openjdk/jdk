@@ -37,7 +37,6 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
-import jdk.nashorn.internal.objects.NativeJava;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 
@@ -54,7 +53,7 @@ import jdk.nashorn.internal.objects.annotations.Function;
  * var ArrayList = java.util.ArrayList
  * var list = new ArrayList
  * </pre>
- * You can also use {@link NativeJava#type(Object, Object)} to access Java classes. These two statements are mostly
+ * You can also use {@link jdk.nashorn.internal.objects.NativeJava#type(Object, Object)} to access Java classes. These two statements are mostly
  * equivalent:
  * <pre>
  * var listType1 = java.util.ArrayList

@@ -139,7 +139,6 @@ SharedHeap::StrongRootsScope::~StrongRootsScope() {
 void SharedHeap::process_strong_roots(bool activate_scope,
                                       ScanningOption so,
                                       OopClosure* roots,
-                                      CodeBlobClosure* code_roots,
                                       KlassClosure* klass_closure) {
   StrongRootsScope srs(this, activate_scope);
 
@@ -156,15 +155,17 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   if (!_process_strong_tasks->is_task_claimed(SH_PS_JNIHandles_oops_do))
     JNIHandles::oops_do(roots);
 
+  CodeBlobToOopClosure code_roots(roots, true);
+
   CLDToOopClosure roots_from_clds(roots);
   // If we limit class scanning to SO_SystemClasses we need to apply a CLD closure to
   // CLDs which are strongly reachable from the thread stacks.
   CLDToOopClosure* roots_from_clds_p = ((so & SO_SystemClasses) ? &roots_from_clds : NULL);
   // All threads execute this; the individual threads are task groups.
   if (CollectedHeap::use_parallel_gc_threads()) {
-    Threads::possibly_parallel_oops_do(roots, roots_from_clds_p, code_roots);
+    Threads::possibly_parallel_oops_do(roots, roots_from_clds_p, &code_roots);
   } else {
-    Threads::oops_do(roots, roots_from_clds_p, code_roots);
+    Threads::oops_do(roots, roots_from_clds_p, &code_roots);
   }
 
   if (!_process_strong_tasks-> is_task_claimed(SH_PS_ObjectSynchronizer_oops_do))
@@ -206,17 +207,17 @@ void SharedHeap::process_strong_roots(bool activate_scope,
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_CodeCache_oops_do)) {
     if (so & SO_ScavengeCodeCache) {
-      assert(code_roots != NULL, "must supply closure for code cache");
+      assert(&code_roots != NULL, "must supply closure for code cache");
 
       // We only visit parts of the CodeCache when scavenging.
-      CodeCache::scavenge_root_nmethods_do(code_roots);
+      CodeCache::scavenge_root_nmethods_do(&code_roots);
     }
     if (so & SO_AllCodeCache) {
-      assert(code_roots != NULL, "must supply closure for code cache");
+      assert(&code_roots != NULL, "must supply closure for code cache");
 
       // CMSCollector uses this to do intermediate-strength collections.
       // We scan the entire code cache, since CodeCache::do_unloading is not called.
-      CodeCache::blobs_do(code_roots);
+      CodeCache::blobs_do(&code_roots);
     }
     // Verify that the code cache contents are not subject to
     // movement by a scavenging collection.
@@ -233,13 +234,9 @@ public:
 };
 static AlwaysTrueClosure always_true;
 
-void SharedHeap::process_weak_roots(OopClosure* root_closure,
-                                    CodeBlobClosure* code_roots) {
+void SharedHeap::process_weak_roots(OopClosure* root_closure) {
   // Global (weak) JNI handles
   JNIHandles::weak_oops_do(&always_true, root_closure);
-
-  CodeCache::blobs_do(code_roots);
-  StringTable::oops_do(root_closure);
 }
 
 void SharedHeap::set_barrier_set(BarrierSet* bs) {

@@ -120,7 +120,8 @@ public:
     arg_info_data_tag,
     call_type_data_tag,
     virtual_call_type_data_tag,
-    parameters_type_data_tag
+    parameters_type_data_tag,
+    speculative_trap_data_tag
   };
 
   enum {
@@ -189,8 +190,11 @@ public:
   void set_header(intptr_t value) {
     _header._bits = value;
   }
-  void release_set_header(intptr_t value) {
-    OrderAccess::release_store_ptr(&_header._bits, value);
+  bool atomic_set_header(intptr_t value) {
+    if (Atomic::cmpxchg_ptr(value, (volatile intptr_t*)&_header._bits, 0) == 0) {
+      return true;
+    }
+    return false;
   }
   intptr_t header() {
     return _header._bits;
@@ -230,6 +234,11 @@ public:
   static ByteSize cell_offset(int index) {
     return byte_offset_of(DataLayout, _cells) + in_ByteSize(index * cell_size);
   }
+#ifdef CC_INTERP
+  static int cell_offset_in_bytes(int index) {
+    return (int)offset_of(DataLayout, _cells[index]);
+  }
+#endif // CC_INTERP
   // Return a value which, when or-ed as a byte into _flags, sets the flag.
   static int flag_number_to_byte_constant(int flag_number) {
     assert(0 <= flag_number && flag_number < flag_limit, "oob");
@@ -266,6 +275,7 @@ class   ArrayData;
 class     MultiBranchData;
 class     ArgInfoData;
 class     ParametersTypeData;
+class   SpeculativeTrapData;
 
 // ProfileData
 //
@@ -285,6 +295,8 @@ private:
 
   // This is a pointer to a section of profiling data.
   DataLayout* _data;
+
+  char* print_data_on_helper(const MethodData* md) const;
 
 protected:
   DataLayout* data() { return _data; }
@@ -367,6 +379,41 @@ protected:
     _data = data;
   }
 
+#ifdef CC_INTERP
+  // Static low level accessors for DataLayout with ProfileData's semantics.
+
+  static int cell_offset_in_bytes(int index) {
+    return DataLayout::cell_offset_in_bytes(index);
+  }
+
+  static void increment_uint_at_no_overflow(DataLayout* layout, int index,
+                                            int inc = DataLayout::counter_increment) {
+    uint count = ((uint)layout->cell_at(index)) + inc;
+    if (count == 0) return;
+    layout->set_cell_at(index, (intptr_t) count);
+  }
+
+  static int int_at(DataLayout* layout, int index) {
+    return (int)layout->cell_at(index);
+  }
+
+  static int uint_at(DataLayout* layout, int index) {
+    return (uint)layout->cell_at(index);
+  }
+
+  static oop oop_at(DataLayout* layout, int index) {
+    return cast_to_oop(layout->cell_at(index));
+  }
+
+  static void set_intptr_at(DataLayout* layout, int index, intptr_t value) {
+    layout->set_cell_at(index, (intptr_t) value);
+  }
+
+  static void set_flag_at(DataLayout* layout, int flag_number) {
+    layout->set_flag_at(flag_number);
+  }
+#endif // CC_INTERP
+
 public:
   // Constructor for invalid ProfileData.
   ProfileData();
@@ -400,6 +447,7 @@ public:
   virtual bool is_CallTypeData()    const { return false; }
   virtual bool is_VirtualCallTypeData()const { return false; }
   virtual bool is_ParametersTypeData() const { return false; }
+  virtual bool is_SpeculativeTrapData()const { return false; }
 
 
   BitData* as_BitData() const {
@@ -454,6 +502,10 @@ public:
     assert(is_ParametersTypeData(), "wrong type");
     return is_ParametersTypeData() ? (ParametersTypeData*)this : NULL;
   }
+  SpeculativeTrapData* as_SpeculativeTrapData() const {
+    assert(is_SpeculativeTrapData(), "wrong type");
+    return is_SpeculativeTrapData() ? (SpeculativeTrapData*)this : NULL;
+  }
 
 
   // Subclass specific initialization
@@ -469,12 +521,14 @@ public:
   // translation here, and the required translators are in the ci subclasses.
   virtual void translate_from(const ProfileData* data) {}
 
-  virtual void print_data_on(outputStream* st) const {
+  virtual void print_data_on(outputStream* st, const char* extra = NULL) const {
     ShouldNotReachHere();
   }
 
+  void print_data_on(outputStream* st, const MethodData* md) const;
+
 #ifndef PRODUCT
-  void print_shared(outputStream* st, const char* name) const;
+  void print_shared(outputStream* st, const char* name, const char* extra) const;
   void tab(outputStream* st, bool first = false) const;
 #endif
 };
@@ -521,8 +575,22 @@ public:
     return cell_offset(bit_cell_count);
   }
 
+#ifdef CC_INTERP
+  static int bit_data_size_in_bytes() {
+    return cell_offset_in_bytes(bit_cell_count);
+  }
+
+  static void set_null_seen(DataLayout* layout) {
+    set_flag_at(layout, null_seen_flag);
+  }
+
+  static DataLayout* advance(DataLayout* layout) {
+    return (DataLayout*) (((address)layout) + (ssize_t)BitData::bit_data_size_in_bytes());
+  }
+#endif // CC_INTERP
+
 #ifndef PRODUCT
-  void print_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -565,8 +633,27 @@ public:
     set_uint_at(count_off, count);
   }
 
+#ifdef CC_INTERP
+  static int counter_data_size_in_bytes() {
+    return cell_offset_in_bytes(counter_cell_count);
+  }
+
+  static void increment_count_no_overflow(DataLayout* layout) {
+    increment_uint_at_no_overflow(layout, count_off);
+  }
+
+  // Support counter decrementation at checkcast / subtype check failed.
+  static void decrement_count(DataLayout* layout) {
+    increment_uint_at_no_overflow(layout, count_off, -1);
+  }
+
+  static DataLayout* advance(DataLayout* layout) {
+    return (DataLayout*) (((address)layout) + (ssize_t)CounterData::counter_data_size_in_bytes());
+  }
+#endif // CC_INTERP
+
 #ifndef PRODUCT
-  void print_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -635,11 +722,25 @@ public:
     return cell_offset(displacement_off_set);
   }
 
+#ifdef CC_INTERP
+  static void increment_taken_count_no_overflow(DataLayout* layout) {
+    increment_uint_at_no_overflow(layout, taken_off_set);
+  }
+
+  static DataLayout* advance_taken(DataLayout* layout) {
+    return (DataLayout*) (((address)layout) + (ssize_t)int_at(layout, displacement_off_set));
+  }
+
+  static uint taken_count(DataLayout* layout) {
+    return (uint) uint_at(layout, taken_off_set);
+  }
+#endif // CC_INTERP
+
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -1050,7 +1151,7 @@ public:
   }
 
 #ifndef PRODUCT
-  virtual void print_data_on(outputStream* st) const;
+  virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -1156,9 +1257,46 @@ public:
   // GC support
   virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
 
+#ifdef CC_INTERP
+  static int receiver_type_data_size_in_bytes() {
+    return cell_offset_in_bytes(static_cell_count());
+  }
+
+  static Klass *receiver_unchecked(DataLayout* layout, uint row) {
+    Klass* recv = (Klass*)layout->cell_at(receiver_cell_index(row));
+    return recv;
+  }
+
+  static void increment_receiver_count_no_overflow(DataLayout* layout, Klass *rcvr) {
+    const int num_rows = row_limit();
+    // Receiver already exists?
+    for (int row = 0; row < num_rows; row++) {
+      if (receiver_unchecked(layout, row) == rcvr) {
+        increment_uint_at_no_overflow(layout, receiver_count_cell_index(row));
+        return;
+      }
+    }
+    // New receiver, find a free slot.
+    for (int row = 0; row < num_rows; row++) {
+      if (receiver_unchecked(layout, row) == NULL) {
+        set_intptr_at(layout, receiver_cell_index(row), (intptr_t)rcvr);
+        increment_uint_at_no_overflow(layout, receiver_count_cell_index(row));
+        return;
+      }
+    }
+    // Receiver did not match any saved receiver and there is no empty row for it.
+    // Increment total counter to indicate polymorphic case.
+    increment_count_no_overflow(layout);
+  }
+
+  static DataLayout* advance(DataLayout* layout) {
+    return (DataLayout*) (((address)layout) + (ssize_t)ReceiverTypeData::receiver_type_data_size_in_bytes());
+  }
+#endif // CC_INTERP
+
 #ifndef PRODUCT
   void print_receiver_data_on(outputStream* st) const;
-  void print_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -1190,8 +1328,18 @@ public:
     return cell_offset(static_cell_count());
   }
 
+#ifdef CC_INTERP
+  static int virtual_call_data_size_in_bytes() {
+    return cell_offset_in_bytes(static_cell_count());
+  }
+
+  static DataLayout* advance(DataLayout* layout) {
+    return (DataLayout*) (((address)layout) + (ssize_t)VirtualCallData::virtual_call_data_size_in_bytes());
+  }
+#endif // CC_INTERP
+
 #ifndef PRODUCT
-  void print_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -1317,7 +1465,7 @@ public:
   }
 
 #ifndef PRODUCT
-  virtual void print_data_on(outputStream* st) const;
+  virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -1412,11 +1560,15 @@ public:
     return cell_offset(bci_displacement_cell_index(row));
   }
 
+#ifdef CC_INTERP
+  static DataLayout* advance(MethodData *md, int bci);
+#endif // CC_INTERP
+
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -1476,11 +1628,25 @@ public:
     return cell_offset(branch_cell_count);
   }
 
+#ifdef CC_INTERP
+  static int branch_data_size_in_bytes() {
+    return cell_offset_in_bytes(branch_cell_count);
+  }
+
+  static void increment_not_taken_count_no_overflow(DataLayout* layout) {
+    increment_uint_at_no_overflow(layout, not_taken_off_set);
+  }
+
+  static DataLayout* advance_not_taken(DataLayout* layout) {
+    return (DataLayout*) (((address)layout) + (ssize_t)BranchData::branch_data_size_in_bytes());
+  }
+#endif // CC_INTERP
+
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -1514,6 +1680,20 @@ protected:
     int aindex = index + array_start_off_set;
     set_int_at(aindex, value);
   }
+
+#ifdef CC_INTERP
+  // Static low level accessors for DataLayout with ArrayData's semantics.
+
+  static void increment_array_uint_at_no_overflow(DataLayout* layout, int index) {
+    int aindex = index + array_start_off_set;
+    increment_uint_at_no_overflow(layout, aindex);
+  }
+
+  static int array_int_at(DataLayout* layout, int index) {
+    int aindex = index + array_start_off_set;
+    return int_at(layout, aindex);
+  }
+#endif // CC_INTERP
 
   // Code generation support for subclasses.
   static ByteSize array_element_offset(int index) {
@@ -1633,11 +1813,33 @@ public:
     return in_ByteSize(relative_displacement_off_set) * cell_size;
   }
 
+#ifdef CC_INTERP
+  static void increment_count_no_overflow(DataLayout* layout, int index) {
+    if (index == -1) {
+      increment_array_uint_at_no_overflow(layout, default_count_off_set);
+    } else {
+      increment_array_uint_at_no_overflow(layout, case_array_start +
+                                                  index * per_case_cell_count +
+                                                  relative_count_off_set);
+    }
+  }
+
+  static DataLayout* advance(DataLayout* layout, int index) {
+    if (index == -1) {
+      return (DataLayout*) (((address)layout) + (ssize_t)array_int_at(layout, default_disaplacement_off_set));
+    } else {
+      return (DataLayout*) (((address)layout) + (ssize_t)array_int_at(layout, case_array_start +
+                                                                              index * per_case_cell_count +
+                                                                              relative_displacement_off_set));
+    }
+  }
+#endif // CC_INTERP
+
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -1664,7 +1866,7 @@ public:
   }
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -1725,7 +1927,7 @@ public:
   }
 
 #ifndef PRODUCT
-  virtual void print_data_on(outputStream* st) const;
+  virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 
   static ByteSize stack_slot_offset(int i) {
@@ -1735,6 +1937,54 @@ public:
   static ByteSize type_offset(int i) {
     return cell_offset(type_local_offset(i));
   }
+};
+
+// SpeculativeTrapData
+//
+// A SpeculativeTrapData is used to record traps due to type
+// speculation. It records the root of the compilation: that type
+// speculation is wrong in the context of one compilation (for
+// method1) doesn't mean it's wrong in the context of another one (for
+// method2). Type speculation could have more/different data in the
+// context of the compilation of method2 and it's worthwhile to try an
+// optimization that failed for compilation of method1 in the context
+// of compilation of method2.
+// Space for SpeculativeTrapData entries is allocated from the extra
+// data space in the MDO. If we run out of space, the trap data for
+// the ProfileData at that bci is updated.
+class SpeculativeTrapData : public ProfileData {
+protected:
+  enum {
+    method_offset,
+    speculative_trap_cell_count
+  };
+public:
+  SpeculativeTrapData(DataLayout* layout) : ProfileData(layout) {
+    assert(layout->tag() == DataLayout::speculative_trap_data_tag, "wrong type");
+  }
+
+  virtual bool is_SpeculativeTrapData() const { return true; }
+
+  static int static_cell_count() {
+    return speculative_trap_cell_count;
+  }
+
+  virtual int cell_count() const {
+    return static_cell_count();
+  }
+
+  // Direct accessor
+  Method* method() const {
+    return (Method*)intptr_at(method_offset);
+  }
+
+  void set_method(Method* m) {
+    set_intptr_at(method_offset, (intptr_t)m);
+  }
+
+#ifndef PRODUCT
+  virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
+#endif
 };
 
 // MethodData*
@@ -1780,8 +2030,11 @@ public:
 // adjusted in the event of a change in control flow.
 //
 
+CC_INTERP_ONLY(class BytecodeInterpreter;)
+
 class MethodData : public Metadata {
   friend class VMStructs;
+  CC_INTERP_ONLY(friend class BytecodeInterpreter;)
 private:
   friend class ProfileData;
 
@@ -1803,7 +2056,7 @@ public:
 
   // Whole-method sticky bits and flags
   enum {
-    _trap_hist_limit    = 17,   // decoupled from Deoptimization::Reason_LIMIT
+    _trap_hist_limit    = 18,   // decoupled from Deoptimization::Reason_LIMIT
     _trap_hist_mask     = max_jubyte,
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
@@ -1858,6 +2111,7 @@ private:
   // Helper for size computation
   static int compute_data_size(BytecodeStream* stream);
   static int bytecode_cell_count(Bytecodes::Code code);
+  static bool is_speculative_trap_bytecode(Bytecodes::Code code);
   enum { no_profile_data = -1, variable_cell_count = -2 };
 
   // Helper for initialization
@@ -1901,8 +2155,9 @@ private:
   // What is the index of the first data entry?
   int first_di() const { return 0; }
 
+  ProfileData* bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp);
   // Find or create an extra ProfileData:
-  ProfileData* bci_to_extra_data(int bci, bool create_if_missing);
+  ProfileData* bci_to_extra_data(int bci, Method* m, bool create_if_missing);
 
   // return the argument info cell
   ArgInfoData *arg_info();
@@ -1925,6 +2180,10 @@ private:
   static bool profile_parameters_jsr292_only();
   static bool profile_all_parameters();
 
+  void clean_extra_data(BoolObjectClosure* is_alive);
+  void clean_extra_data_helper(DataLayout* dp, int shift, bool reset = false);
+  void verify_extra_data_clean(BoolObjectClosure* is_alive);
+
 public:
   static int header_size() {
     return sizeof(MethodData)/wordSize;
@@ -1933,7 +2192,7 @@ public:
   // Compute the size of a MethodData* before it is created.
   static int compute_allocation_size_in_bytes(methodHandle method);
   static int compute_allocation_size_in_words(methodHandle method);
-  static int compute_extra_data_count(int data_size, int empty_bc_count);
+  static int compute_extra_data_count(int data_size, int empty_bc_count, bool needs_speculative_traps);
 
   // Determine if a given bytecode can have profile information.
   static bool bytecode_has_profile(Bytecodes::Code code) {
@@ -2074,9 +2333,26 @@ public:
   ProfileData* bci_to_data(int bci);
 
   // Same, but try to create an extra_data record if one is needed:
-  ProfileData* allocate_bci_to_data(int bci) {
-    ProfileData* data = bci_to_data(bci);
-    return (data != NULL) ? data : bci_to_extra_data(bci, true);
+  ProfileData* allocate_bci_to_data(int bci, Method* m) {
+    ProfileData* data = NULL;
+    // If m not NULL, try to allocate a SpeculativeTrapData entry
+    if (m == NULL) {
+      data = bci_to_data(bci);
+    }
+    if (data != NULL) {
+      return data;
+    }
+    data = bci_to_extra_data(bci, m, true);
+    if (data != NULL) {
+      return data;
+    }
+    // If SpeculativeTrapData allocation fails try to allocate a
+    // regular entry
+    data = bci_to_data(bci);
+    if (data != NULL) {
+      return data;
+    }
+    return bci_to_extra_data(bci, NULL, true);
   }
 
   // Add a handful of extra data records, for trap tracking.
@@ -2084,7 +2360,7 @@ public:
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
   int extra_data_size() const { return (address)extra_data_limit()
                                - (address)extra_data_base(); }
-  static DataLayout* next_extra(DataLayout* dp) { return (DataLayout*)((address)dp + in_bytes(DataLayout::cell_offset(0))); }
+  static DataLayout* next_extra(DataLayout* dp);
 
   // Return (uint)-1 for overflow.
   uint trap_count(int reason) const {
@@ -2184,6 +2460,8 @@ public:
   static bool profile_return();
   static bool profile_parameters();
   static bool profile_return_jsr292_only();
+
+  void clean_method_data(BoolObjectClosure* is_alive);
 };
 
 #endif // SHARE_VM_OOPS_METHODDATAOOP_HPP

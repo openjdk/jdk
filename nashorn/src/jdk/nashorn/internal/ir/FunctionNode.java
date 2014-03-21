@@ -205,6 +205,9 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      */
     public static final int IS_PROGRAM = 1 << 14;
 
+    /** Does this function use the "this" keyword? */
+    public static final int USES_THIS                   = 1 << 15;
+
     /** Does this function or any nested functions contain an eval? */
     private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
 
@@ -555,6 +558,15 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      */
     public boolean usesReturnSymbol() {
         return isProgram() || isSplit() || getFlag(USES_RETURN_SYMBOL);
+    }
+
+    /**
+     * Return {@code true} if this function makes use of the {@code this} object.
+     *
+     * @return true if function uses {@code this} object
+     */
+    public boolean usesThis() {
+        return getFlag(USES_THIS);
     }
 
     /**

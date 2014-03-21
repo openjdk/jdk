@@ -62,13 +62,9 @@ public final class NativeSyntaxError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     @SuppressWarnings("LeakingThisInConstructor")
     NativeSyntaxError(final Object msg, final Global global) {
-        super(global.getSyntaxErrorPrototype(), global.getSyntaxErrorMap());
+        super(global.getSyntaxErrorPrototype(), $nasgenmap$);
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {

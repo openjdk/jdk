@@ -344,6 +344,11 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
   uint*      jmp_offset = NEW_RESOURCE_ARRAY(uint,nblocks);
   uint*      jmp_size   = NEW_RESOURCE_ARRAY(uint,nblocks);
   int*       jmp_nidx   = NEW_RESOURCE_ARRAY(int ,nblocks);
+
+  // Collect worst case block paddings
+  int* block_worst_case_pad = NEW_RESOURCE_ARRAY(int, nblocks);
+  memset(block_worst_case_pad, 0, nblocks * sizeof(int));
+
   DEBUG_ONLY( uint *jmp_target = NEW_RESOURCE_ARRAY(uint,nblocks); )
   DEBUG_ONLY( uint *jmp_rule = NEW_RESOURCE_ARRAY(uint,nblocks); )
 
@@ -460,6 +465,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
           last_avoid_back_to_back_adr += max_loop_pad;
         }
         blk_size += max_loop_pad;
+        block_worst_case_pad[i + 1] = max_loop_pad;
       }
     }
 
@@ -499,9 +505,16 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         if (bnum > i) { // adjust following block's offset
           offset -= adjust_block_start;
         }
+
+        // This block can be a loop header, account for the padding
+        // in the previous block.
+        int block_padding = block_worst_case_pad[i];
+        assert(i == 0 || block_padding == 0 || br_offs >= block_padding, "Should have at least a padding on top");
         // In the following code a nop could be inserted before
         // the branch which will increase the backward distance.
-        bool needs_padding = ((uint)br_offs == last_may_be_short_branch_adr);
+        bool needs_padding = ((uint)(br_offs - block_padding) == last_may_be_short_branch_adr);
+        assert(!needs_padding || jmp_offset[i] == 0, "padding only branches at the beginning of block");
+
         if (needs_padding && offset <= 0)
           offset -= nop_size;
 
@@ -1065,7 +1078,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
   // Compute prolog code size
   _method_size = 0;
   _frame_slots = OptoReg::reg2stack(_matcher->_old_SP)+_regalloc->_framesize;
-#ifdef IA64
+#if defined(IA64) && !defined(AIX)
   if (save_argument_registers()) {
     // 4815101: this is a stub with implicit and unknown precision fp args.
     // The usual spill mechanism can only generate stfd's in this case, which
@@ -1083,6 +1096,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
   assert(_frame_slots >= 0 && _frame_slots < 1000000, "sanity check");
 
   if (has_mach_constant_base_node()) {
+    uint add_size = 0;
     // Fill the constant table.
     // Note:  This must happen before shorten_branches.
     for (uint i = 0; i < _cfg->number_of_blocks(); i++) {
@@ -1096,6 +1110,9 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
         if (n->is_MachConstant()) {
           MachConstantNode* machcon = n->as_MachConstant();
           machcon->eval_constant(C);
+        } else if (n->is_Mach()) {
+          // On Power there are more nodes that issue constants.
+          add_size += (n->as_Mach()->ins_num_consts() * 8);
         }
       }
     }
@@ -1103,7 +1120,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
     // Calculate the offsets of the constants and the size of the
     // constant table (including the padding to the next section).
     constant_table().calculate_offsets_and_size();
-    const_req = constant_table().size();
+    const_req = constant_table().size() + add_size;
   }
 
   // Initialize the space for the BufferBlob used to find and verify
@@ -1374,7 +1391,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
             int offset = blk_starts[block_num] - current_offset;
             if (block_num >= i) {
               // Current and following block's offset are not
-              // finilized yet, adjust distance by the difference
+              // finalized yet, adjust distance by the difference
               // between calculated and final offsets of current block.
               offset -= (blk_starts[i] - blk_offset);
             }
@@ -1454,6 +1471,12 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           // it's followed by a flag-kill and a null-check.  Happens on
           // Intel all the time, with add-to-memory kind of opcodes.
           previous_offset = current_offset;
+        }
+
+        // Not an else-if!
+        // If this is a trap based cmp then add its offset to the list.
+        if (mach->is_TrapBasedCheckNode()) {
+          inct_starts[inct_cnt++] = current_offset;
         }
       }
 
@@ -1717,6 +1740,12 @@ void Compile::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_start
 
     // Handle implicit null exception table updates
     if (n->is_MachNullCheck()) {
+      uint block_num = block->non_connector_successor(0)->_pre_order;
+      _inc_table.append(inct_starts[inct_cnt++], blk_labels[block_num].loc_pos());
+      continue;
+    }
+    // Handle implicit exception table updates: trap instructions.
+    if (n->is_Mach() && n->as_Mach()->is_TrapBasedCheckNode()) {
       uint block_num = block->non_connector_successor(0)->_pre_order;
       _inc_table.append(inct_starts[inct_cnt++], blk_labels[block_num].loc_pos());
       continue;

@@ -1896,6 +1896,7 @@ loop:
         case THIS:
             final String name = type.getName();
             next();
+            lc.setFlag(lc.getCurrentFunction(), FunctionNode.USES_THIS);
             return new IdentNode(primaryToken, finish, name);
         case IDENT:
             final IdentNode ident = getIdent();

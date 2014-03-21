@@ -38,6 +38,18 @@
  * (see aix_close_init).
  *
  */
+
+/*
+   AIX needs a workaround for I/O cancellation, see:
+   http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/close.htm
+   ...
+   The close subroutine is blocked until all subroutines which use the file
+   descriptor return to usr space. For example, when a thread is calling close
+   and another thread is calling select with the same file descriptor, the
+   close subroutine does not return until the select call returns.
+   ...
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -49,7 +61,6 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include <sys/poll.h>
 
 /*
@@ -362,17 +373,9 @@ int NET_Connect(int s, struct sockaddr *addr, int addrlen) {
     BLOCKING_IO_RETURN_INT( s, connect(s, addr, addrlen) );
 }
 
-#ifndef USE_SELECT
 int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
     BLOCKING_IO_RETURN_INT( ufds[0].fd, poll(ufds, nfds, timeout) );
 }
-#else
-int NET_Select(int s, fd_set *readfds, fd_set *writefds,
-               fd_set *exceptfds, struct timeval *timeout) {
-    BLOCKING_IO_RETURN_INT( s-1,
-                            select(s, readfds, writefds, exceptfds, timeout) );
-}
-#endif
 
 /*
  * Wrapper for poll(s, timeout).

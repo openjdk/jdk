@@ -1622,7 +1622,7 @@ public class AudioSystem {
 
     /**
      * Obtains the set of services currently installed on the system
-     * using sun.misc.Service, the SPI mechanism in 1.3.
+     * using the SPI mechanism in 1.3.
      * @return a List of instances of providers for the requested service.
      * If no providers are available, a vector of length 0 will be returned.
      */

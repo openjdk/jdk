@@ -3961,7 +3961,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * Node class for a case sensitive/BMP-only sequence of literal
      * characters.
      */
-    static final class Slice extends SliceNode {
+    static class Slice extends SliceNode {
         Slice(int[] buf) {
             super(buf);
         }
@@ -4034,7 +4034,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * Node class for a case sensitive sequence of literal characters
      * including supplementary characters.
      */
-    static final class SliceS extends SliceNode {
+    static final class SliceS extends Slice {
         SliceS(int[] buf) {
             super(buf);
         }

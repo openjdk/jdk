@@ -42,10 +42,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.script.Bindings;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -64,7 +64,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     private static final AccessControlContext GET_CONTEXT_ACC_CTXT = getContextAccCtxt();
 
     private final ScriptObject sobj;
-    private final ScriptObject global;
+    private final Global  global;
     private final boolean strict;
 
     @Override
@@ -95,7 +95,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     @Override
     public Object call(final Object thiz, final Object... args) {
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
 
         try {
@@ -125,7 +125,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     @Override
     public Object newObject(final Object... args) {
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
 
         try {
@@ -177,7 +177,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      */
     public Object callMember(final String functionName, final Object... args) {
         functionName.getClass(); // null check
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
 
         try {
@@ -648,7 +648,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      */
     public static Object wrap(final Object obj, final Object homeGlobal) {
         if(obj instanceof ScriptObject) {
-            return homeGlobal instanceof ScriptObject ? new ScriptObjectMirror((ScriptObject)obj, (ScriptObject)homeGlobal) : obj;
+            return homeGlobal instanceof Global ? new ScriptObjectMirror((ScriptObject)obj, (Global)homeGlobal) : obj;
         }
         if(obj instanceof ConsString) {
             return obj.toString();
@@ -716,13 +716,13 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     // package-privates below this.
 
-    ScriptObjectMirror(final ScriptObject sobj, final ScriptObject global) {
+    ScriptObjectMirror(final ScriptObject sobj, final Global global) {
         assert sobj != null : "ScriptObjectMirror on null!";
-        assert global instanceof GlobalObject : "global is not a GlobalObject";
+        assert global != null : "home Global is null";
 
         this.sobj = sobj;
         this.global = global;
-        this.strict = ((GlobalObject)global).isStrictContext();
+        this.strict = global.isStrictContext();
     }
 
     // accessors for script engine
@@ -730,7 +730,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         return sobj;
     }
 
-    ScriptObject getHomeGlobal() {
+    Global getHomeGlobal() {
         return global;
     }
 
@@ -740,7 +740,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     // internals only below this.
     private <V> V inGlobal(final Callable<V> callable) {
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         if (globalChanged) {
             Context.setGlobal(global);

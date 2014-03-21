@@ -82,8 +82,11 @@
 #ifdef TARGET_ARCH_MODEL_arm
 # include "adfiles/ad_arm.hpp"
 #endif
-#ifdef TARGET_ARCH_MODEL_ppc
-# include "adfiles/ad_ppc.hpp"
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "adfiles/ad_ppc_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc_64
+# include "adfiles/ad_ppc_64.hpp"
 #endif
 
 
@@ -645,6 +648,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _dead_node_count(0),
 #ifndef PRODUCT
                   _trace_opto_output(TraceOptoOutput || method()->has_option("TraceOptoOutput")),
+                  _in_dump_cnt(0),
                   _printer(IdealGraphPrinter::printer()),
 #endif
                   _congraph(NULL),
@@ -701,10 +705,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 
   print_compile_messages();
 
-  if (UseOldInlining || PrintCompilation NOT_PRODUCT( || PrintOpto) )
-    _ilt = InlineTree::build_inline_tree_root();
-  else
-    _ilt = NULL;
+  _ilt = InlineTree::build_inline_tree_root();
 
   // Even if NO memory addresses are used, MergeMem nodes must have at least 1 slice
   assert(num_alias_types() >= AliasIdxRaw, "");
@@ -871,6 +872,10 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   int next_slot = _orig_pc_slot + (sizeof(address) / VMRegImpl::stack_slot_size);
   set_fixed_slots(next_slot);
 
+  // Compute when to use implicit null checks. Used by matching trap based
+  // nodes and NullCheck optimization.
+  set_allowed_deopt_reasons();
+
   // Now generate code
   Code_Gen();
   if (failing())  return;
@@ -948,6 +953,7 @@ Compile::Compile( ciEnv* ci_env,
     _inner_loops(0),
 #ifndef PRODUCT
     _trace_opto_output(TraceOptoOutput),
+    _in_dump_cnt(0),
     _printer(NULL),
 #endif
     _dead_node_list(comp_arena()),
@@ -959,7 +965,8 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_incrementally(false),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
-    _preserve_jvm_state(0) {
+    _preserve_jvm_state(0),
+    _allowed_reasons(0) {
   C = this;
 
 #ifndef PRODUCT
@@ -2264,6 +2271,12 @@ void Compile::Code_Gen() {
     peep.do_transform();
   }
 
+  // Do late expand if CPU requires this.
+  if (Matcher::require_postalloc_expand) {
+    NOT_PRODUCT(TracePhase t2c("postalloc_expand", &_t_postalloc_expand, true));
+    cfg.postalloc_expand(_regalloc);
+  }
+
   // Convert Nodes to instruction bits in a buffer
   {
     // %%%% workspace merge brought two timers together for one job
@@ -3015,42 +3028,6 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       n->set_req(MemBarNode::Precedent, top());
     }
     break;
-    // Must set a control edge on all nodes that produce a FlagsProj
-    // so they can't escape the block that consumes the flags.
-    // Must also set the non throwing branch as the control
-    // for all nodes that depends on the result. Unless the node
-    // already have a control that isn't the control of the
-    // flag producer
-  case Op_FlagsProj:
-    {
-      MathExactNode* math = (MathExactNode*)  n->in(0);
-      Node* ctrl = math->control_node();
-      Node* non_throwing = math->non_throwing_branch();
-      math->set_req(0, ctrl);
-
-      Node* result = math->result_node();
-      if (result != NULL) {
-        for (DUIterator_Fast jmax, j = result->fast_outs(jmax); j < jmax; j++) {
-          Node* out = result->fast_out(j);
-          // Phi nodes shouldn't be moved. They would only match below if they
-          // had the same control as the MathExactNode. The only time that
-          // would happen is if the Phi is also an input to the MathExact
-          //
-          // Cmp nodes shouldn't have control set at all.
-          if (out->is_Phi() ||
-              out->is_Cmp()) {
-            continue;
-          }
-
-          if (out->in(0) == NULL) {
-            out->set_req(0, non_throwing);
-          } else if (out->in(0) == ctrl) {
-            out->set_req(0, non_throwing);
-          }
-        }
-      }
-    }
-    break;
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
@@ -3272,7 +3249,8 @@ bool Compile::too_many_traps(ciMethod* method,
     // because of a transient condition during start-up in the interpreter.
     return false;
   }
-  if (md->has_trap_at(bci, reason) != 0) {
+  ciMethod* m = Deoptimization::reason_is_speculate(reason) ? this->method() : NULL;
+  if (md->has_trap_at(bci, m, reason) != 0) {
     // Assume PerBytecodeTrapLimit==0, for a more conservative heuristic.
     // Also, if there are multiple reasons, or if there is no per-BCI record,
     // assume the worst.
@@ -3290,7 +3268,7 @@ bool Compile::too_many_traps(ciMethod* method,
 // Less-accurate variant which does not require a method and bci.
 bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
                              ciMethodData* logmd) {
- if (trap_count(reason) >= (uint)PerMethodTrapLimit) {
+  if (trap_count(reason) >= Deoptimization::per_method_trap_limit(reason)) {
     // Too many traps globally.
     // Note that we use cumulative trap_count, not just md->trap_count.
     if (log()) {
@@ -3325,10 +3303,11 @@ bool Compile::too_many_recompiles(ciMethod* method,
   uint m_cutoff  = (uint) PerMethodRecompilationCutoff / 2 + 1;  // not zero
   Deoptimization::DeoptReason per_bc_reason
     = Deoptimization::reason_recorded_per_bytecode_if_any(reason);
+  ciMethod* m = Deoptimization::reason_is_speculate(reason) ? this->method() : NULL;
   if ((per_bc_reason == Deoptimization::Reason_none
-       || md->has_trap_at(bci, reason) != 0)
+       || md->has_trap_at(bci, m, reason) != 0)
       // The trap frequency measure we care about is the recompile count:
-      && md->trap_recompiled_at(bci)
+      && md->trap_recompiled_at(bci, m)
       && md->overflow_recompile_count() >= bc_cutoff) {
     // Do not emit a trap here if it has already caused recompilations.
     // Also, if there are multiple reasons, or if there is no per-BCI record,
@@ -3355,6 +3334,19 @@ bool Compile::too_many_recompiles(ciMethod* method,
   }
 }
 
+// Compute when not to trap. Used by matching trap based nodes and
+// NullCheck optimization.
+void Compile::set_allowed_deopt_reasons() {
+  _allowed_reasons = 0;
+  if (is_method_compilation()) {
+    for (int rs = (int)Deoptimization::Reason_none+1; rs < Compile::trapHistLength; rs++) {
+      assert(rs < BitsPerInt, "recode bit map");
+      if (!too_many_traps((Deoptimization::DeoptReason) rs)) {
+        _allowed_reasons |= nth_bit(rs);
+      }
+    }
+  }
+}
 
 #ifndef PRODUCT
 //------------------------------verify_graph_edges---------------------------
@@ -3919,16 +3911,18 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     // which may optimize it out.
     for (uint next = 0; next < worklist.size(); ++next) {
       Node *n  = worklist.at(next);
-      if (n->is_Type() && n->as_Type()->type()->isa_oopptr() != NULL &&
-          n->as_Type()->type()->is_oopptr()->speculative() != NULL) {
+      if (n->is_Type()) {
         TypeNode* tn = n->as_Type();
-        const TypeOopPtr* t = tn->type()->is_oopptr();
-        bool in_hash = igvn.hash_delete(n);
-        assert(in_hash, "node should be in igvn hash table");
-        tn->set_type(t->remove_speculative());
-        igvn.hash_insert(n);
-        igvn._worklist.push(n); // give it a chance to go away
-        modified++;
+        const Type* t = tn->type();
+        const Type* t_no_spec = t->remove_speculative();
+        if (t_no_spec != t) {
+          bool in_hash = igvn.hash_delete(n);
+          assert(in_hash, "node should be in igvn hash table");
+          tn->set_type(t_no_spec);
+          igvn.hash_insert(n);
+          igvn._worklist.push(n); // give it a chance to go away
+          modified++;
+        }
       }
       uint max = n->len();
       for( uint i = 0; i < max; ++i ) {
@@ -3942,6 +3936,27 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     if (modified > 0) {
       igvn.optimize();
     }
+#ifdef ASSERT
+    // Verify that after the IGVN is over no speculative type has resurfaced
+    worklist.clear();
+    worklist.push(root());
+    for (uint next = 0; next < worklist.size(); ++next) {
+      Node *n  = worklist.at(next);
+      const Type* t = igvn.type(n);
+      assert(t == t->remove_speculative(), "no more speculative types");
+      if (n->is_Type()) {
+        t = n->as_Type()->type();
+        assert(t == t->remove_speculative(), "no more speculative types");
+      }
+      uint max = n->len();
+      for( uint i = 0; i < max; ++i ) {
+        Node *m = n->in(i);
+        if (not_a_node(m))  continue;
+        worklist.push(m);
+      }
+    }
+    igvn.check_no_speculative_types();
+#endif
   }
 }
 
