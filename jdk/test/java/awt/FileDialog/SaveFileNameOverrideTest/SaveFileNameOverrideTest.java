@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
   test
-  @bug 6998877
+  @bug 6998877 8022531
   @summary After double-click on the folder names, FileNameOverrideTest FAILED
   @author Sergey.Bylokhov@oracle.com area=awt.filedialog
   @library ../../regtesthelpers
@@ -59,7 +59,8 @@ public class SaveFileNameOverrideTest extends Applet implements ActionListener {
 
         String[] instructions = {
                 "1) Click on 'Show File Dialog' button. A file dialog will come up.",
-                "2) Double-click on '" + clickDirName + "' and click OK.",
+                "2) Double-click on '" + clickDirName + "' and click a confirmation",
+                "   button, it can be 'OK', 'Save' or any other platform-dependent name.",
                 "3) See result of the test below"
         };
 
