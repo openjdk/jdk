@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@
 #include "oops/oop.inline2.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1StringDedup.hpp"
+#endif
 
 // --------------------------------------------------------------------------
 
@@ -727,6 +730,15 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
   } else {
     string = java_lang_String::create_from_unicode(name, len, CHECK_NULL);
   }
+
+#if INCLUDE_ALL_GCS
+  if (G1StringDedup::is_enabled()) {
+    // Deduplicate the string before it is interned. Note that we should never
+    // deduplicate a string after it has been interned. Doing so will counteract
+    // compiler optimizations done on e.g. interned string literals.
+    G1StringDedup::deduplicate(string());
+  }
+#endif
 
   // Grab the StringTable_lock before getting the_table() because it could
   // change at safepoint.
