@@ -27,6 +27,7 @@
 #include "string.h"
 #include "gdefs.h"
 #include "jlong.h"
+#include "jni_util.h"
 #include "sunfontids.h"
 #include "fontscalerdefs.h"
 #include "sun_font_SunFontManager.h"
@@ -81,100 +82,106 @@ static void initFontIDs(JNIEnv *env) {
      if (initialisedFontIDs) {
         return;
      }
-     tmpClass = (*env)->FindClass(env, "sun/font/TrueTypeFont");
-     sunFontIDs.ttReadBlockMID =
+     CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/TrueTypeFont"));
+     CHECK_NULL(sunFontIDs.ttReadBlockMID =
          (*env)->GetMethodID(env, tmpClass, "readBlock",
-                             "(Ljava/nio/ByteBuffer;II)I");
-     sunFontIDs.ttReadBytesMID =
-         (*env)->GetMethodID(env, tmpClass, "readBytes", "(II)[B");
+                             "(Ljava/nio/ByteBuffer;II)I"));
+     CHECK_NULL(sunFontIDs.ttReadBytesMID =
+         (*env)->GetMethodID(env, tmpClass, "readBytes", "(II)[B"));
 
-     tmpClass = (*env)->FindClass(env, "sun/font/Type1Font");
-     sunFontIDs.readFileMID =
+     CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/Type1Font"));
+     CHECK_NULL(sunFontIDs.readFileMID =
          (*env)->GetMethodID(env, tmpClass,
-                             "readFile", "(Ljava/nio/ByteBuffer;)V");
+                             "readFile", "(Ljava/nio/ByteBuffer;)V"));
 
-     tmpClass = (*env)->FindClass(env, "java/awt/geom/Point2D$Float");
+     CHECK_NULL(tmpClass =
+         (*env)->FindClass(env, "java/awt/geom/Point2D$Float"));
      sunFontIDs.pt2DFloatClass = (jclass)(*env)->NewGlobalRef(env, tmpClass);
-     sunFontIDs.pt2DFloatCtr =
-         (*env)->GetMethodID(env, sunFontIDs.pt2DFloatClass, "<init>","(FF)V");
+     CHECK_NULL(sunFontIDs.pt2DFloatCtr =
+         (*env)->GetMethodID(env, sunFontIDs.pt2DFloatClass, "<init>","(FF)V"));
 
-     sunFontIDs.xFID =
-         (*env)->GetFieldID(env, sunFontIDs.pt2DFloatClass, "x", "F");
-     sunFontIDs.yFID =
-         (*env)->GetFieldID(env, sunFontIDs.pt2DFloatClass, "y", "F");
+     CHECK_NULL(sunFontIDs.xFID =
+         (*env)->GetFieldID(env, sunFontIDs.pt2DFloatClass, "x", "F"));
+     CHECK_NULL(sunFontIDs.yFID =
+         (*env)->GetFieldID(env, sunFontIDs.pt2DFloatClass, "y", "F"));
 
-     tmpClass = (*env)->FindClass(env, "sun/font/StrikeMetrics");
-     sunFontIDs.strikeMetricsClass=(jclass)(*env)->NewGlobalRef(env, tmpClass);
+     CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/StrikeMetrics"));
+     CHECK_NULL(sunFontIDs.strikeMetricsClass =
+         (jclass)(*env)->NewGlobalRef(env, tmpClass));
 
-     sunFontIDs.strikeMetricsCtr =
+     CHECK_NULL(sunFontIDs.strikeMetricsCtr =
          (*env)->GetMethodID(env, sunFontIDs.strikeMetricsClass,
-                             "<init>", "(FFFFFFFFFF)V");
+                             "<init>", "(FFFFFFFFFF)V"));
 
-     tmpClass = (*env)->FindClass(env, "java/awt/geom/Rectangle2D$Float");
+     CHECK_NULL(tmpClass =
+         (*env)->FindClass(env, "java/awt/geom/Rectangle2D$Float"));
      sunFontIDs.rect2DFloatClass = (jclass)(*env)->NewGlobalRef(env, tmpClass);
-     sunFontIDs.rect2DFloatCtr =
-       (*env)->GetMethodID(env, sunFontIDs.rect2DFloatClass, "<init>", "()V");
-     sunFontIDs.rect2DFloatCtr4 =
-       (*env)->GetMethodID(env, sunFontIDs.rect2DFloatClass,
-                           "<init>", "(FFFF)V");
-     sunFontIDs.rectF2DX =
-         (*env)->GetFieldID(env, sunFontIDs.rect2DFloatClass, "x", "F");
-     sunFontIDs.rectF2DY =
-         (*env)->GetFieldID(env, sunFontIDs.rect2DFloatClass, "y", "F");
-     sunFontIDs.rectF2DWidth =
-         (*env)->GetFieldID(env, sunFontIDs.rect2DFloatClass, "width", "F");
-     sunFontIDs.rectF2DHeight =
-         (*env)->GetFieldID(env, sunFontIDs.rect2DFloatClass, "height", "F");
+     CHECK_NULL(sunFontIDs.rect2DFloatCtr =
+         (*env)->GetMethodID(env, sunFontIDs.rect2DFloatClass, "<init>", "()V"));
+     CHECK_NULL(sunFontIDs.rect2DFloatCtr4 =
+         (*env)->GetMethodID(env, sunFontIDs.rect2DFloatClass,
+                            "<init>", "(FFFF)V"));
+     CHECK_NULL(sunFontIDs.rectF2DX =
+         (*env)->GetFieldID(env, sunFontIDs.rect2DFloatClass, "x", "F"));
+     CHECK_NULL(sunFontIDs.rectF2DY =
+         (*env)->GetFieldID(env, sunFontIDs.rect2DFloatClass, "y", "F"));
+     CHECK_NULL(sunFontIDs.rectF2DWidth =
+         (*env)->GetFieldID(env, sunFontIDs.rect2DFloatClass, "width", "F"));
+     CHECK_NULL(sunFontIDs.rectF2DHeight =
+         (*env)->GetFieldID(env, sunFontIDs.rect2DFloatClass, "height", "F"));
 
-     tmpClass = (*env)->FindClass(env, "java/awt/geom/GeneralPath");
+     CHECK_NULL(tmpClass = (*env)->FindClass(env, "java/awt/geom/GeneralPath"));
      sunFontIDs.gpClass = (jclass)(*env)->NewGlobalRef(env, tmpClass);
-     sunFontIDs.gpCtr =
-       (*env)->GetMethodID(env, sunFontIDs.gpClass, "<init>", "(I[BI[FI)V");
-     sunFontIDs.gpCtrEmpty =
-       (*env)->GetMethodID(env, sunFontIDs.gpClass, "<init>", "()V");
+     CHECK_NULL(sunFontIDs.gpCtr =
+         (*env)->GetMethodID(env, sunFontIDs.gpClass, "<init>", "(I[BI[FI)V"));
+     CHECK_NULL(sunFontIDs.gpCtrEmpty =
+         (*env)->GetMethodID(env, sunFontIDs.gpClass, "<init>", "()V"));
 
-     tmpClass = (*env)->FindClass(env, "sun/font/Font2D");
-     sunFontIDs.f2dCharToGlyphMID =
-         (*env)->GetMethodID(env, tmpClass, "charToGlyph", "(I)I");
-     sunFontIDs.getMapperMID =
+     CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/Font2D"));
+     CHECK_NULL(sunFontIDs.f2dCharToGlyphMID =
+         (*env)->GetMethodID(env, tmpClass, "charToGlyph", "(I)I"));
+     CHECK_NULL(sunFontIDs.getMapperMID =
          (*env)->GetMethodID(env, tmpClass, "getMapper",
-                             "()Lsun/font/CharToGlyphMapper;");
-     sunFontIDs.getTableBytesMID =
-         (*env)->GetMethodID(env, tmpClass, "getTableBytes", "(I)[B");
-     sunFontIDs.canDisplayMID =
-         (*env)->GetMethodID(env, tmpClass, "canDisplay", "(C)Z");
+                             "()Lsun/font/CharToGlyphMapper;"));
+     CHECK_NULL(sunFontIDs.getTableBytesMID =
+         (*env)->GetMethodID(env, tmpClass, "getTableBytes", "(I)[B"));
+     CHECK_NULL(sunFontIDs.canDisplayMID =
+         (*env)->GetMethodID(env, tmpClass, "canDisplay", "(C)Z"));
 
-     tmpClass = (*env)->FindClass(env, "sun/font/CharToGlyphMapper");
-     sunFontIDs.charToGlyphMID =
-        (*env)->GetMethodID(env, tmpClass, "charToGlyph", "(I)I");
+     CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/CharToGlyphMapper"));
+     CHECK_NULL(sunFontIDs.charToGlyphMID =
+        (*env)->GetMethodID(env, tmpClass, "charToGlyph", "(I)I"));
 
-     tmpClass = (*env)->FindClass(env, "sun/font/PhysicalStrike");
-     sunFontIDs.getGlyphMetricsMID =
+     CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/PhysicalStrike"));
+     CHECK_NULL(sunFontIDs.getGlyphMetricsMID =
          (*env)->GetMethodID(env, tmpClass, "getGlyphMetrics",
-                             "(I)Ljava/awt/geom/Point2D$Float;");
-     sunFontIDs.getGlyphPointMID =
+                             "(I)Ljava/awt/geom/Point2D$Float;"));
+     CHECK_NULL(sunFontIDs.getGlyphPointMID =
          (*env)->GetMethodID(env, tmpClass, "getGlyphPoint",
-                             "(II)Ljava/awt/geom/Point2D$Float;");
-     sunFontIDs.adjustPointMID =
+                             "(II)Ljava/awt/geom/Point2D$Float;"));
+     CHECK_NULL(sunFontIDs.adjustPointMID =
          (*env)->GetMethodID(env, tmpClass, "adjustPoint",
-                             "(Ljava/awt/geom/Point2D$Float;)V");
-     sunFontIDs.pScalerContextFID =
-         (*env)->GetFieldID(env, tmpClass, "pScalerContext", "J");
+                             "(Ljava/awt/geom/Point2D$Float;)V"));
+     CHECK_NULL(sunFontIDs.pScalerContextFID =
+         (*env)->GetFieldID(env, tmpClass, "pScalerContext", "J"));
 
-     tmpClass = (*env)->FindClass(env, "sun/font/GlyphList");
-     sunFontIDs.glyphListX = (*env)->GetFieldID(env, tmpClass, "x", "F");
-     sunFontIDs.glyphListY = (*env)->GetFieldID(env, tmpClass, "y", "F");
-     sunFontIDs.glyphListLen = (*env)->GetFieldID(env, tmpClass, "len", "I");
-     sunFontIDs.glyphImages =
-         (*env)->GetFieldID(env, tmpClass, "images", "[J");
-     sunFontIDs.glyphListUsePos =
-         (*env)->GetFieldID(env, tmpClass, "usePositions", "Z");
-     sunFontIDs.glyphListPos =
-         (*env)->GetFieldID(env, tmpClass, "positions", "[F");
-     sunFontIDs.lcdRGBOrder =
-         (*env)->GetFieldID(env, tmpClass, "lcdRGBOrder", "Z");
-     sunFontIDs.lcdSubPixPos =
-         (*env)->GetFieldID(env, tmpClass, "lcdSubPixPos", "Z");
+     CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/GlyphList"));
+     CHECK_NULL(sunFontIDs.glyphListX =
+         (*env)->GetFieldID(env, tmpClass, "x", "F"));
+     CHECK_NULL(sunFontIDs.glyphListY =
+         (*env)->GetFieldID(env, tmpClass, "y", "F"));
+     CHECK_NULL(sunFontIDs.glyphListLen =
+         (*env)->GetFieldID(env, tmpClass, "len", "I"));
+     CHECK_NULL(sunFontIDs.glyphImages =
+         (*env)->GetFieldID(env, tmpClass, "images", "[J"));
+     CHECK_NULL(sunFontIDs.glyphListUsePos =
+         (*env)->GetFieldID(env, tmpClass, "usePositions", "Z"));
+     CHECK_NULL(sunFontIDs.glyphListPos =
+         (*env)->GetFieldID(env, tmpClass, "positions", "[F"));
+     CHECK_NULL(sunFontIDs.lcdRGBOrder =
+         (*env)->GetFieldID(env, tmpClass, "lcdRGBOrder", "Z"));
+     CHECK_NULL(sunFontIDs.lcdSubPixPos =
+         (*env)->GetFieldID(env, tmpClass, "lcdSubPixPos", "Z)"));
 
      initLCDGammaTables();
 
