@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
 #include "runtime/task.hpp"
 #include "runtime/rtmLocking.hpp"
 
