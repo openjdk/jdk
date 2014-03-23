@@ -127,6 +127,7 @@ import javax.swing.text.*;
  * @author  Sara Swanson
  * @author  Jill Nakata
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class StyleSheet extends StyleContext {
     // As the javadoc states, this class maintains a mapping between
     // a CSS selector (such as p.bar) and a Style.
@@ -763,6 +764,7 @@ public class StyleSheet extends StyleContext {
      * Large set of attributes that does conversion of requests
      * for attributes of type StyleConstants.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class LargeConversionSet extends SimpleAttributeSet {
 
         /**
@@ -1760,6 +1762,7 @@ public class StyleSheet extends StyleContext {
      * the insets of a View and making sure the background
      * is maintained according to the CSS attributes.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class BoxPainter implements Serializable {
 
         BoxPainter(AttributeSet a, CSS css, StyleSheet ss) {
@@ -2019,6 +2022,7 @@ public class StyleSheet extends StyleContext {
      * while not knowing anything about how the CSS values
      * are being cached.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class ListPainter implements Serializable {
 
         ListPainter(AttributeSet attr, StyleSheet ss) {
@@ -2448,6 +2452,7 @@ public class StyleSheet extends StyleContext {
     /**
      * Paints the background image.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static class BackgroundImagePainter implements Serializable {
         ImageIcon   backgroundImage;
         float       hPosition;
@@ -2615,6 +2620,7 @@ public class StyleSheet extends StyleContext {
      * CSS and HTML and StyleConstants. The AttributeSets used are
      * the CSS rules that match the Views Elements.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     class ViewAttributeSet extends MuxingAttributeSet {
         ViewAttributeSet(View v) {
             host = v;
@@ -2779,6 +2785,7 @@ public class StyleSheet extends StyleContext {
     // contain a SimpleAttributeSet that modify methods are delegated to,
     // or change getRule to return an AttributeSet and then don't make this
     // implement Style.
+    @SuppressWarnings("serial") // Same-version serialization only
     static class ResolvedStyle extends MuxingAttributeSet implements
                   Serializable, Style {
         ResolvedStyle(String name, AttributeSet[] attrs, int extendedIndex) {
@@ -3020,6 +3027,7 @@ public class StyleSheet extends StyleContext {
      * This is not thread safe, it is assumed the caller will take the
      * necessary precations if this is to be used in a threaded environment.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static class SelectorMapping implements Serializable {
         public SelectorMapping(int specificity) {
             this.specificity = specificity;

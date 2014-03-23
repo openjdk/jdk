@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import sun.swing.PrintColorUIResource;
  * @since 1.5
  * @see MetalLookAndFeel#setCurrentTheme
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class OceanTheme extends DefaultMetalTheme {
     private static final ColorUIResource PRIMARY1 =
                               new ColorUIResource(0x6382BF);
@@ -97,6 +98,7 @@ public class OceanTheme extends DefaultMetalTheme {
 
     // InternalFrame Icon
     // Delegates to different icons based on button state
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class IFIcon extends IconUIResource {
         private Icon pressed;
 
