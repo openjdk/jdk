@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -829,6 +829,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
      * Returns the default non continuous layout divider, which is an
      * instance of {@code Canvas} that fills in the background with dark gray.
      */
+    @SuppressWarnings("serial") // anonymous class
     protected Component createDefaultNonContinuousLayoutDivider() {
         return new Canvas() {
             public void paint(Graphics g) {

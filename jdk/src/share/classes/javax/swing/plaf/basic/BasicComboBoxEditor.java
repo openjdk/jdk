@@ -131,6 +131,7 @@ public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
         editor.removeActionListener(l);
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class BorderlessTextField extends JTextField {
         public BorderlessTextField(String value,int n) {
             super(value,n);
