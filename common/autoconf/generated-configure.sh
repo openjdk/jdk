@@ -1861,8 +1861,8 @@ Optional Packages:
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
                           client, minimal1, kernel, zero, zeroshark, core)
                           [server]
-  --with-debug-level      set the debug level (release, fastdebug, slowdebug)
-                          [release]
+  --with-debug-level      set the debug level (release, fastdebug, slowdebug,
+                          optimized (HotSpot build only)) [release]
   --with-conf-name        use this as the name of the configuration [generated
                           from important configuration options]
   --with-builddeps-conf   use this configuration file for the builddeps
@@ -4233,7 +4233,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1395236071
+DATE_WHEN_GENERATED=1395652496
 
 ###############################################################################
 #
@@ -14648,6 +14648,7 @@ $as_echo "$with_jvm_variants" >&6; }
   #
   # Set the debug level
   #    release: no debug information, all optimizations, no asserts.
+  #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
   #    fastdebug: debug information (-g), all optimizations, all asserts
   #    slowdebug: debug information (-g), no optimizations, all asserts
   #
@@ -14680,6 +14681,7 @@ fi
 $as_echo "$DEBUG_LEVEL" >&6; }
 
   if test "x$DEBUG_LEVEL" != xrelease && \
+      test "x$DEBUG_LEVEL" != xoptimized && \
       test "x$DEBUG_LEVEL" != xfastdebug && \
       test "x$DEBUG_LEVEL" != xslowdebug; then
     as_fn_error $? "Allowed debug levels are: release, fastdebug and slowdebug" "$LINENO" 5
@@ -14716,7 +14718,29 @@ $as_echo "$DEBUG_LEVEL" >&6; }
       HOTSPOT_DEBUG_LEVEL="jvmg"
       HOTSPOT_EXPORT="debug"
       ;;
+    optimized )
+      VARIANT="OPT"
+      FASTDEBUG="false"
+      DEBUG_CLASSFILES="false"
+      BUILD_VARIANT_RELEASE="-optimized"
+      HOTSPOT_DEBUG_LEVEL="optimized"
+      HOTSPOT_EXPORT="optimized"
+      ;;
   esac
+
+  # The debug level 'optimized' is a little special because it is currently only
+  # applicable to the HotSpot build where it means to build a completely
+  # optimized version of the VM without any debugging code (like for the
+  # 'release' debug level which is called 'product' in the HotSpot build) but
+  # with the exception that it can contain additional code which is otherwise
+  # protected by '#ifndef PRODUCT' macros. These 'optimized' builds are used to
+  # test new and/or experimental features which are not intended for customer
+  # shipment. Because these new features need to be tested and benchmarked in
+  # real world scenarios, we want to build the containing JDK at the 'release'
+  # debug level.
+  if test "x$DEBUG_LEVEL" = xoptimized; then
+    DEBUG_LEVEL="release"
+  fi
 
   #####
   # Generate the legacy makefile targets for hotspot.
@@ -42005,8 +42029,6 @@ $as_echo "$supports" >&6; }
       ;;
   esac
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: warnings are errors: $CFLAGS_WARNINGS_ARE_ERRORS" >&5
-$as_echo "warnings are errors: $CFLAGS_WARNINGS_ARE_ERRORS" >&6; }
 
 
 # Setup debug symbols (need objcopy from the toolchain for that)
@@ -50222,6 +50244,7 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
   printf "\n"
   printf "Configuration summary:\n"
   printf "* Debug level:    $DEBUG_LEVEL\n"
+  printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
   printf "* JDK variant:    $JDK_VARIANT\n"
   printf "* JVM variants:   $with_jvm_variants\n"
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
