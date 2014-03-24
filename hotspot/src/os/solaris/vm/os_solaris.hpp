@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,24 +310,6 @@ class Solaris {
     return _meminfo != NULL ? _meminfo(inaddr, addr_count, info_req, info_count,
                                        outdata, validity) : -1;
   }
-
-  enum {
-    clear_interrupted = true
-  };
-  static void setup_interruptible(JavaThread* thread);
-  static void setup_interruptible_already_blocked(JavaThread* thread);
-  static JavaThread* setup_interruptible();
-  static void cleanup_interruptible(JavaThread* thread);
-
-  // perf counter incrementers used by _INTERRUPTIBLE
-
-  static void bump_interrupted_before_count();
-  static void bump_interrupted_during_count();
-
-#ifdef ASSERT
-  static JavaThread* setup_interruptible_native();
-  static void cleanup_interruptible_native(JavaThread* thread);
-#endif
 
   static sigset_t* unblocked_signals();
   static sigset_t* vm_signals();
