@@ -28,19 +28,19 @@
  * @author kladko
  */
 
-import java.io.File;
-
 public class LotsOfDestroys {
     static final int RUNS = 400;
-    static final String ECHO = "/usr/bin/echo";
 
     public static void main(String[] args) throws Exception {
-        if (File.separatorChar == '\\' ||                // Windows
-                                !new File(ECHO).exists()) // no echo
+        if (! UnixCommands.isUnix) {
+            System.out.println("For UNIX only");
             return;
+        }
+        UnixCommands.ensureCommandsAvailable("echo");
 
-        for (int i = 0; i<= RUNS; i++) {
-            Process process = Runtime.getRuntime().exec(ECHO + " x");
+        for (int i = 0; i <= RUNS; i++) {
+            Process process = Runtime.getRuntime().exec(
+                    UnixCommands.echo() + " x");
             process.destroy();
         }
     }

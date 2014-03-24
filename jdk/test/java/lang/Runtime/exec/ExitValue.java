@@ -68,13 +68,18 @@ public class ExitValue
                                                 int expectedExitValue)
         throws Exception
     {
-        checkExitValue(new String[] { "/bin/sh", "-c", posixShellProgram },
+        checkExitValue(new String[] { UnixCommands.sh(), "-c", posixShellProgram },
                        expectedExitValue);
     }
 
     final static int EXIT_CODE = 5;
 
     public static void main(String[] args) throws Exception {
+        if (! UnixCommands.isUnix) {
+            System.out.println("For UNIX only");
+            return;
+        }
+        UnixCommands.ensureCommandsAvailable("sh", "true", "kill");
 
         String java = join(File.separator, new String []
             { System.getProperty("java.home"), "bin", "java" });
@@ -85,17 +90,14 @@ public class ExitValue
               "ExitValue$Run", String.valueOf(EXIT_CODE)
             }, EXIT_CODE);
 
-        checkExitValue(new String[] { "/bin/true" }, 0);
+        checkExitValue(new String[] { UnixCommands.findCommand("true") }, 0);
 
         checkPosixShellExitValue("exit", 0);
 
         checkPosixShellExitValue("exit 7", 7);
 
-        if (new File("/bin/kill").exists()) {
-            int sigoffset =
-                System.getProperty("os.name").equals("SunOS") ? 0 : 128;
-            checkPosixShellExitValue("/bin/kill -9 $$", sigoffset+9);
-        }
+        int sigoffset = UnixCommands.isSunOS ? 0 : 128;
+        checkPosixShellExitValue(UnixCommands.kill() + " -9 $$", sigoffset+9);
     }
 
     public static class Run {
