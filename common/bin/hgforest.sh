@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
@@ -24,12 +24,53 @@
 #
 
 # Shell script for a fast parallel forest command
-command="$1"
-pull_extra_base="$2"
 
-if [ "" = "$command" ] ; then
-  echo No command to hg supplied!
-  exit 1
+global_opts=""
+status_output="/dev/stdout"
+qflag="false"
+vflag="false"
+while [ $# -gt 0 ]
+do
+  case $1 in
+    -q | --quiet )
+      qflag="true"
+      global_opts="${global_opts} -q"
+      status_output="/dev/null"
+      ;;
+
+    -v | --verbose )
+      vflag="true"
+      global_opts="${global_opts} -v"
+      ;;
+
+    '--' ) # no more options
+      shift; break
+      ;;
+
+    -*)  # bad option
+      usage
+      ;;
+
+     * )  # non option
+      break
+      ;;
+  esac
+  shift
+done
+
+
+command="$1"; shift
+repo_base="$@"
+
+usage() {
+      echo "usage: $0 [-q|--quiet] [-v|--verbose] [--] <command> [repo_base_path]" > ${status_output}
+      exit 1
+}
+
+
+if [ "x" = "x$command" ] ; then
+  echo "ERROR: No command to hg supplied!"
+  usage
 fi
 
 # Clean out the temporary directory that stores the pid files.
@@ -40,17 +81,17 @@ mkdir -p ${tmp}
 safe_interrupt () {
   if [ -d ${tmp} ]; then
     if [ "`ls ${tmp}/*.pid`" != "" ]; then
-      echo "Waiting for processes ( `cat ${tmp}/*.pid | tr '\n' ' '`) to terminate nicely!"
+      echo "Waiting for processes ( `cat ${tmp}/*.pid | tr '\n' ' '`) to terminate nicely!" > ${status_output}
       sleep 1
       # Pipe stderr to dev/null to silence kill, that complains when trying to kill
       # a subprocess that has already exited.
       kill -TERM `cat ${tmp}/*.pid | tr '\n' ' '` 2> /dev/null
       wait
-      echo Interrupt complete!
+      echo "Interrupt complete!" > ${status_output}
     fi
+    rm -f -r ${tmp}
   fi
-  rm -f -r ${tmp}
-  exit 1
+  exit 130
 }
 
 nice_exit () {
@@ -58,28 +99,30 @@ nice_exit () {
     if [ "`ls ${tmp}`" != "" ]; then
       wait
     fi
+    rm -f -r ${tmp}
   fi
-  rm -f -r ${tmp}
 }
 
 trap 'safe_interrupt' INT QUIT
 trap 'nice_exit' EXIT
+
+subrepos="corba jaxp jaxws langtools jdk hotspot nashorn"
+subrepos_extra="closed jdk/src/closed jdk/make/closed jdk/test/closed hotspot/make/closed hotspot/src/closed hotspot/test/closed deploy install sponsors pubs"
 
 # Only look in specific locations for possible forests (avoids long searches)
 pull_default=""
 repos=""
 repos_extra=""
 if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
-  subrepos="corba jaxp jaxws langtools jdk hotspot nashorn"
   if [ -f .hg/hgrc ] ; then
     pull_default=`hg paths default`
     if [ "${pull_default}" = "" ] ; then
-      echo "ERROR: Need initial clone with 'hg paths default' defined"
+      echo "ERROR: Need initial clone with 'hg paths default' defined" > ${status_output}
       exit 1
     fi
   fi
   if [ "${pull_default}" = "" ] ; then
-    echo "ERROR: Need initial repository to use this script"
+    echo "ERROR: Need initial repository to use this script" > ${status_output}
     exit 1
   fi
   for i in ${subrepos} ; do
@@ -87,10 +130,9 @@ if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
       repos="${repos} ${i}"
     fi
   done
-  if [ "${pull_extra_base}" != "" ] ; then
-    subrepos_extra="closed jdk/src/closed jdk/make/closed jdk/test/closed hotspot/make/closed hotspot/src/closed hotspot/test/closed deploy install sponsors pubs"
+  if [ "${repo_base}" != "" ] ; then
     pull_default_tail=`echo ${pull_default} | sed -e 's@^.*://[^/]*/\(.*\)@\1@'`
-    pull_extra="${pull_extra_base}/${pull_default_tail}"
+    pull_extra="${repo_base}/${pull_default_tail}"
     for i in ${subrepos_extra} ; do
       if [ ! -f ${i}/.hg/hgrc ] ; then
         repos_extra="${repos_extra} ${i}"
@@ -100,78 +142,111 @@ if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
   at_a_time=2
   # Any repos to deal with?
   if [ "${repos}" = "" -a "${repos_extra}" = "" ] ; then
+    echo "No repositories to process." > ${status_output}
     exit
   fi
 else
-  hgdirs=`ls -d ./.hg ./*/.hg ./*/*/.hg ./*/*/*/.hg ./*/*/*/*/.hg 2>/dev/null`
-  # Derive repository names from the .hg directory locations
-  for i in ${hgdirs} ; do
-    repos="${repos} `echo ${i} | sed -e 's@/.hg$@@'`"
+  for i in . ${subrepos} ${subrepos_extra} ; do
+    if [ -d ${i}/.hg ] ; then
+      repos="${repos} ${i}"
+    fi
   done
+
+  # Any repos to deal with?
+  if [ "${repos}" = "" ] ; then
+    echo "No repositories to process." > ${status_output}
+    exit
+  fi
+
+  # any of the repos locked?
   for i in ${repos} ; do
     if [ -h ${i}/.hg/store/lock -o -f ${i}/.hg/store/lock ] ; then
       locked="${i} ${locked}"
     fi
   done
-  at_a_time=8
-  # Any repos to deal with?
-  if [ "${repos}" = "" ] ; then
-    echo "No repositories to process."
-    exit
-  fi
   if [ "${locked}" != "" ] ; then
-    echo "These repositories are locked: ${locked}"
-    exit
+    echo "ERROR: These repositories are locked: ${locked}" > ${status_output}
+    exit 1
   fi
+  at_a_time=8
 fi
 
 # Echo out what repositories we do a command on.
-echo "# Repositories: ${repos} ${repos_extra}"
-echo
+echo "# Repositories: ${repos} ${repos_extra}" > ${status_output}
 
-# Run the supplied command on all repos in parallel.
-n=0
-for i in ${repos} ${repos_extra} ; do
-  n=`expr ${n} '+' 1`
-  repopidfile=`echo ${i} | sed -e 's@./@@' -e 's@/@_@g'`
-  reponame=`echo ${i} | sed -e :a -e 's/^.\{1,20\}$/ &/;ta'`
-  pull_base="${pull_default}"
-  for j in $repos_extra ; do
+if [ "${command}" = "serve" ] ; then
+  # "serve" is run for all the repos.
+  (
+    (
+      (
+        echo "[web]"
+        echo "description = $(basename $(pwd))"
+        echo "allow_push = *"
+        echo "push_ssl = False"
+
+        echo "[paths]"
+        for i in ${repos} ${repos_extra} ; do
+          if [ "${i}" != "." ] ; then
+            echo "/$(basename $(pwd))/${i} = ${i}"
+          else
+            echo "/$(basename $(pwd)) = $(pwd)"
+          fi
+        done
+      ) > ${tmp}/serve.web-conf
+
+      echo "serving root repo $(basename $(pwd))"
+
+      (PYTHONUNBUFFERED=true hg${global_opts} serve -A ${status_output} -E ${status_output} --pid-file ${tmp}/serve.pid --web-conf ${tmp}/serve.web-conf; echo "$?" > ${tmp}/serve.pid.rc ) 2>&1 &
+    ) 2>&1 | sed -e "s@^@serve:   @" > ${status_output}
+  ) &
+else
+  # Run the supplied command on all repos in parallel.
+  n=0
+  for i in ${repos} ${repos_extra} ; do
+    n=`expr ${n} '+' 1`
+    repopidfile=`echo ${i} | sed -e 's@./@@' -e 's@/@_@g'`
+    reponame=`echo ${i} | sed -e :a -e 's/^.\{1,20\}$/ &/;ta'`
+    pull_base="${pull_default}"
+    for j in $repos_extra ; do
       if [ "$i" = "$j" ] ; then
           pull_base="${pull_extra}"
       fi
-  done
-  (
+    done
     (
-      if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
-        pull_newrepo="`echo ${pull_base}/${i} | sed -e 's@\([^:]/\)//*@\1@g'`"
-        echo hg clone ${pull_newrepo} ${i}
-        path="`dirname ${i}`"
-        if [ "${path}" != "." ] ; then
-          times=0
-          while [ ! -d "${path}" ]   ## nested repo, ensure containing dir exists
-          do
-            times=`expr ${times} '+' 1`
-            if [ `expr ${times} '%' 10` -eq 0 ] ; then
-              echo ${path} still not created, waiting...
-            fi
-            sleep 5
-          done
+      (
+        if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
+          pull_newrepo="`echo ${pull_base}/${i} | sed -e 's@\([^:]/\)//*@\1@g'`"
+          echo "hg clone ${pull_newrepo} ${i}" > ${status_output}
+          path="`dirname ${i}`"
+          if [ "${path}" != "." ] ; then
+            times=0
+            while [ ! -d "${path}" ]   ## nested repo, ensure containing dir exists
+            do
+              times=`expr ${times} '+' 1`
+              if [ `expr ${times} '%' 10` -eq 0 ] ; then
+                echo "${path} still not created, waiting..." > ${status_output}
+              fi
+              sleep 5
+            done
+          fi
+          (PYTHONUNBUFFERED=true hg${global_opts} clone ${pull_newrepo} ${i}; echo "$?" > ${tmp}/${repopidfile}.pid.rc ) 2>&1 &
+        else
+          echo "cd ${i} && hg${global_opts} ${command} ${repo_base}" > ${status_output}
+          cd ${i} && (PYTHONUNBUFFERED=true hg${global_opts} ${command} ${command_repo}; echo "$?" > ${tmp}/${repopidfile}.pid.rc ) 2>&1 &
         fi
-        (PYTHONUNBUFFERED=true hg clone ${pull_newrepo} ${i}; echo "$?" > ${tmp}/${repopidfile}.pid.rc )&
-      else
-        echo "cd ${i} && hg $*"
-        cd ${i} && (PYTHONUNBUFFERED=true hg "$@"; echo "$?" > ${tmp}/${repopidfile}.pid.rc )&
-      fi
-      echo $! > ${tmp}/${repopidfile}.pid
-    ) 2>&1 | sed -e "s@^@${reponame}:   @") &
 
-  if [ `expr ${n} '%' ${at_a_time}` -eq 0 ] ; then
-    sleep 2
-    echo Waiting 5 secs before spawning next background command.
-    sleep 3
-  fi
-done
+        echo $! > ${tmp}/${repopidfile}.pid
+      ) 2>&1 | sed -e "s@^@${reponame}:   @" > ${status_output}
+    ) &
+
+    if [ `expr ${n} '%' ${at_a_time}` -eq 0 ] ; then
+      sleep 2
+      echo "Waiting 5 secs before spawning next background command." > ${status_output}
+      sleep 3
+    fi
+  done
+fi
+
 # Wait for all hg commands to complete
 wait
 
@@ -181,7 +256,8 @@ if [ -d ${tmp} ]; then
   for rc in ${tmp}/*.pid.rc ; do
     exit_code=`cat ${rc} | tr -d ' \n\r'`
     if [ "${exit_code}" != "0" ] ; then
-      echo "WARNING: ${rc} exited abnormally."
+      repo="`echo ${rc} | sed -e s@^${tmp}@@ -e 's@/*\([^/]*\)\.pid\.rc$@\1@' -e 's@_@/@g'`"
+      echo "WARNING: ${repo} exited abnormally." > ${status_output}
       ec=1
     fi
   done
