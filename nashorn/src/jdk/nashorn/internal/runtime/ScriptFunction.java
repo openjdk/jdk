@@ -331,7 +331,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * assumptions.
      */
     private GuardedInvocation getBestInvoker(final MethodType callSiteType, final int callerProgramPoint) {
-        return data.getBestInvoker(callSiteType, callerProgramPoint);
+        return data.getBestInvoker(callSiteType, callerProgramPoint, scope);
     }
 
     /**
@@ -342,7 +342,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return bound invoke handle
      */
     public final MethodHandle getBoundInvokeHandle(final Object self) {
-        return MH.bindTo(bindToCalleeIfNeeded(data.getGenericInvoker()), self);
+        return MH.bindTo(bindToCalleeIfNeeded(data.getGenericInvoker(scope)), self);
     }
 
     /**
@@ -471,7 +471,7 @@ public abstract class ScriptFunction extends ScriptObject {
     protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc) {
         final MethodType type = desc.getMethodType();
         assert desc.getMethodType().returnType() == Object.class && !NashornCallSiteDescriptor.isOptimistic(desc);
-        final GuardedInvocation bestCtorInv = data.getBestConstructor(type);
+        final GuardedInvocation bestCtorInv = data.getBestConstructor(type, scope);
         //TODO - ClassCastException
         return new GuardedInvocation(pairArguments(bestCtorInv.getInvocation(), type), getFunctionGuard(this), bestCtorInv.getSwitchPoint());
     }
@@ -697,7 +697,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * These don't want a callee parameter, so bind that. Name binding is optional.
      */
     MethodHandle getCallMethodHandle(final MethodType type, final String bindName) {
-        return pairArguments(bindToNameIfNeeded(bindToCalleeIfNeeded(data.getGenericInvoker()), bindName), type);
+        return pairArguments(bindToNameIfNeeded(bindToCalleeIfNeeded(data.getGenericInvoker(scope)), bindName), type);
     }
 
     private static MethodHandle bindToNameIfNeeded(final MethodHandle methodHandle, final String bindName) {

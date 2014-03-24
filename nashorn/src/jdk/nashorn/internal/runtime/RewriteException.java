@@ -39,6 +39,7 @@ import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
+import jdk.nashorn.internal.objects.Global;
 
 /**
  * Used to signal to the linker to relink the callee
@@ -47,6 +48,9 @@ import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
 public class RewriteException extends Exception {
     private static final MethodHandleFunctionality MH = MethodHandleFactory.getFunctionality();
 
+    // Runtime scope in effect at the time of the compilation. Used to evaluate types of expressions and prevent overly
+    // optimistic assumptions (which will lead to unnecessary deoptimizing recompilations).
+    private ScriptObject runtimeScope;
     //contents of bytecode slots
     private Object[] byteCodeSlots;
     private final int[] previousContinuationEntryPoints;
@@ -84,8 +88,8 @@ public class RewriteException extends Exception {
      * @param e the {@link UnwarrantedOptimismException} that triggered this exception.
      * @param byteCodeSlots contents of local variable slots at the time of rewrite at the program point
      */
-    public RewriteException(final UnwarrantedOptimismException e, final Object[] byteCodeSlots) {
-        this(e, byteCodeSlots, null);
+    public RewriteException(final UnwarrantedOptimismException e, final Object[] byteCodeSlots, final String[] byteCodeSymbolNames, final ScriptObject runtimeScope) {
+        this(e, byteCodeSlots, byteCodeSymbolNames, runtimeScope, null);
     }
 
     /**
@@ -95,10 +99,26 @@ public class RewriteException extends Exception {
      * @param previousContinuationEntryPoints an array of continuation entry points that were already executed during
      * one logical invocation of the function (a rest-of triggering a rest-of triggering a...)
      */
-    public RewriteException(final UnwarrantedOptimismException e, final Object[] byteCodeSlots, final int[] previousContinuationEntryPoints) {
+    public RewriteException(final UnwarrantedOptimismException e, final Object[] byteCodeSlots, final String[] byteCodeSymbolNames, final ScriptObject runtimeScope, final int[] previousContinuationEntryPoints) {
         super("", e, false, Context.DEBUG);
         this.byteCodeSlots = byteCodeSlots;
+        this.runtimeScope = mergeSlotsWithScope(byteCodeSlots, byteCodeSymbolNames, runtimeScope);
         this.previousContinuationEntryPoints = previousContinuationEntryPoints;
+    }
+
+    private static ScriptObject mergeSlotsWithScope(final Object[] byteCodeSlots, final String[] byteCodeSymbolNames,
+            final ScriptObject runtimeScope) {
+        final ScriptObject locals = Global.newEmptyInstance();
+        final int l = Math.min(byteCodeSlots.length, byteCodeSymbolNames.length);
+        for(int i = 0; i < l; ++i) {
+            final String name = byteCodeSymbolNames[i];
+            final Object value = byteCodeSlots[i];
+            if(name != null) {
+                locals.set(name, value, true);
+            }
+        }
+        locals.setProto(runtimeScope);
+        return locals;
     }
 
     /**
@@ -127,6 +147,7 @@ public class RewriteException extends Exception {
     public Object getReturnValueDestructive() {
         assert byteCodeSlots != null;
         byteCodeSlots = null;
+        runtimeScope = null;
         return getUOE().getReturnValueDestructive();
     }
 
@@ -163,6 +184,14 @@ public class RewriteException extends Exception {
      */
     public int[] getPreviousContinuationEntryPoints() {
         return previousContinuationEntryPoints;
+    }
+
+    /**
+     * Returns the runtime scope that was in effect when the exception was thrown.
+     * @return the runtime scope.
+     */
+    public ScriptObject getRuntimeScope() {
+        return runtimeScope;
     }
 
     private static String stringify(final Object returnValue) {

@@ -24,18 +24,19 @@
  */
 package jdk.nashorn.internal.runtime;
 
+import static org.testng.Assert.fail;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import static org.testng.Assert.fail;
-import org.testng.annotations.Test;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 /**
  * @test
@@ -102,56 +103,54 @@ public class OptimisticRecompilationTest {
 
     @Test
     public void divisionByZeroTest() {
-       //Check that two Deoptimizing recompilations and RewriteExceptions happened
-       runTest("function f() {var x = { a: 2, b:1 }; x.a = Number.POSITIVE_INFINITY;"
-               + " x.b = 0; print(x.a/x.b);} f()",
-               getRecompilationPattern("double", "Infinity"), 2);
+        //Check that one Deoptimizing recompilation and RewriteExceptions happened
+        runTest("function f() {var x1 = { a: 2, b:1 }; x1.a = Number.POSITIVE_INFINITY;"
+                + " x1.b = 0; print(x1.a/x1.b);} f()",
+                getRecompilationPattern("double", "Infinity"), 1);
     }
 
     @Test
     public void divisionWithRemainderTest() {
        //Check that one Deoptimizing recompilation and RewriteException happened
-       runTest("function f() {var x = { a: 7, b:2 }; print(x.a/x.b);} f()",
+        runTest("function f() {var x2 = { a: 7, b:2 }; print(x2.a/x2.b);} f()",
                getRecompilationPattern("double", "3.5"), 1);
     }
 
     @Test
     public void infinityMultiplicationTest() {
-       //Check that three Deoptimizing recompilations and RewriteExceptions happened
-       runTest("function f() {var x = { a: Number.POSITIVE_INFINITY, "
-               + "b: Number.POSITIVE_INFINITY}; print(x.a*x.b);} f()",
-               getRecompilationPattern("double", "Infinity"), 3);
+        //Check that one deoptimizing recompilation and RewriteExceptions happened
+        runTest("function f() {var x3 = { a: Number.POSITIVE_INFINITY, "
+                + "b: Number.POSITIVE_INFINITY}; print(x3.a*x3.b);} f()",
+                getRecompilationPattern("double", "Infinity"), 1);
     }
 
     @Test
     public void maxValueMultiplicationTest() {
-       runTest("function f() {var x = { a: Number.MAX_VALUE, b: Number.MAX_VALUE};"
-               + " print(x.a*x.b);} f()",
-               getRecompilationPattern("double", "1.7976931348623157E308"), 3);
+        runTest("function f() {var x4 = { a: Number.MAX_VALUE, b: Number.MAX_VALUE};"
+                + " print(x4.a*x4.b);} f()",
+                getRecompilationPattern("double", "1.7976931348623157E308"), 1);
     }
 
     @Test
     public void divisionByInfinityTest() {
-       //Check that two Deoptimizing recompilations and RewriteExceptions happened
-       runTest("function f() {var x = { a: -1, b: Number.POSITIVE_INFINITY};"
-               + " print(x.a/x.b);} f()",
-               getRecompilationPattern("double", "Infinity"), 2);
+        //Check that one Deoptimizing recompilation and RewriteExceptions happened
+        runTest("function f() {var x5 = { a: -1, b: Number.POSITIVE_INFINITY};"
+                + " print(x5.a/x5.b);} f()",
+                getRecompilationPattern("double", "Infinity"), 1);
     }
 
     @Test
     public void divisionByStringTest() {
-       //Check that three Deoptimizing recompilations and RewriteExceptions happened
-       String str1 = getRecompilationPattern("double", "Infinity");
-       String str2 = getRecompilationPattern("object", "Hello");
-       runTest("function f() {var x = { a: Number.POSITIVE_INFINITY, b: 'Hello'};"
-               + " print(x.a/x.b);} f()", String.format("(?s)%s.*%1$s.*%s", str1, str2), 1);
+        //Check that one deoptimizing recompilations and RewriteExceptions happened
+        runTest("function f() {var x6 = { a: Number.POSITIVE_INFINITY, b: 'Hello'};"
+                + " print(x6.a/x6.b);} f()", getRecompilationPattern("double", "Infinity"), 1);
     }
 
     @Test
     public void nestedFunctionTest() {
        //Check that one Deoptimizing recompilations and RewriteExceptions happened
-       runTest("var a=3,b,c; function f() {var x = 2, y =1; function g(){ "
-               + "var y = x; var z = a; z = x*y; print(a*b); } g() } f()",
+        runTest("var a=3,b,c; function f() {var x7 = 2, y =1; function g(){ "
+                + "var y = x7; var z = a; z = x7*y; print(a*b); } g() } f()",
                getRecompilationPattern("object", "undefined"), 1);
     }
 
@@ -165,7 +164,7 @@ public class OptimisticRecompilationTest {
     @Test
     public void functionTest() {
        //Check that one Deoptimizing recompilations and RewriteExceptions happened
-       runTest("function f(a,b,c) { d = (a + b) * c; print(d);} f()",
+        runTest("function f(a,b,c) { h = (a + b) * c; print(h);} f()",
                getRecompilationPattern("double", "NaN"), 1);
     }
 }

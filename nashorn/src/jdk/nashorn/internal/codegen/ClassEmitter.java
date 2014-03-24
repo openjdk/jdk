@@ -49,14 +49,13 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.STRICT_MODE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.className;
 import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
-import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
+import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -285,7 +284,7 @@ public class ClassEmitter implements Emitter {
     }
 
     /**
-     * Constructs a primitive specific method for getting the ith entry from the constants table and cast.
+     * Constructs a primitive specific method for getting the ith entry from the constants table as an array.
      * @param clazz Array class.
      */
     private void defineGetArrayMethod(final Class<?> clazz) {
@@ -299,9 +298,8 @@ public class ClassEmitter implements Emitter {
                       .load(Type.INT, 0)
                       .arrayload()
                       .checkcast(clazz)
-                      .dup()
-                      .arraylength()
-                      .invoke(staticCallNoLookup(Arrays.class, "copyOf", clazz, clazz, int.class))
+                      .invoke(virtualCallNoLookup(clazz, "clone", Object.class))
+                      .checkcast(clazz)
                       ._return();
         getArrayMethod.end();
     }

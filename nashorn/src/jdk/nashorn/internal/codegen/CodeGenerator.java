@@ -178,9 +178,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private static final Type   SCRIPTFUNCTION_IMPL_TYPE   = Type.typeFor(ScriptFunction.class);
 
     private static final Call INIT_REWRITE_EXCEPTION = CompilerConstants.specialCallNoLookup(RewriteException.class,
-            "<init>", void.class, UnwarrantedOptimismException.class, Object[].class);
+            "<init>", void.class, UnwarrantedOptimismException.class, Object[].class, String[].class, ScriptObject.class);
     private static final Call INIT_REWRITE_EXCEPTION_REST_OF = CompilerConstants.specialCallNoLookup(RewriteException.class,
-            "<init>", void.class, UnwarrantedOptimismException.class, Object[].class, int[].class);
+            "<init>", void.class, UnwarrantedOptimismException.class, Object[].class, String[].class, ScriptObject.class, int[].class);
 
     private static final Call ENSURE_INT = CompilerConstants.staticCallNoLookup(OptimisticReturnFilters.class,
             "ensureInt", int.class, Object.class, int.class);
@@ -1535,7 +1535,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         try {
             final boolean markOptimistic;
             if (emittedMethods.add(functionNode.getName())) {
-                markOptimistic = generateUnwarrantedOptimismExceptionHandlers();
+                markOptimistic = generateUnwarrantedOptimismExceptionHandlers(functionNode);
                 generateContinuationHandler();
                 method.end(); // wrap up this method
                 unit   = lc.popCompileUnit(functionNode.getCompileUnit());
@@ -4133,7 +4133,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * entry to its immediately preceding one for longest matching prefix.
      * @return true if there is at least one exception handler
      */
-    private boolean generateUnwarrantedOptimismExceptionHandlers() {
+    private boolean generateUnwarrantedOptimismExceptionHandlers(final FunctionNode fn) {
         if(!useOptimisticTypes()) {
             return false;
         }
@@ -4274,8 +4274,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.dup(2);
                 method.dup(2);
                 method.pop();
+                loadConstant(getByteCodeSymbolNames(fn));
+                if (fn.compilerConstant(SCOPE).hasSlot()) {
+                    method.loadCompilerConstant(SCOPE);
+                } else {
+                    method.loadNull();
+                }
                 final CompilationEnvironment env = compiler.getCompilationEnvironment();
-                if(env.isCompileRestOf()) {
+                if (env.isCompileRestOf()) {
                     loadConstant(env.getContinuationEntryPoints());
                     method.invoke(INIT_REWRITE_EXCEPTION_REST_OF);
                 } else {
@@ -4285,6 +4291,26 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
         }
         return true;
+    }
+
+    private static String[] getByteCodeSymbolNames(final FunctionNode fn) {
+        // Only names of local variables on the function level are captured. This information is used to reduce
+        // deoptimizations, so as much as we can capture will help. We rely on the fact that function wide variables are
+        // all live all the time, so the array passed to rewrite exception contains one element for every slotted symbol
+        // here.
+        final List<String> names = new ArrayList<>();
+        for (final Symbol symbol: fn.getBody().getSymbols()) {
+            if (symbol.hasSlot()) {
+                if (symbol.isScope()) {
+                    // slot + scope can only be true for parameters
+                    assert symbol.isParam();
+                    names.add(null);
+                } else {
+                    names.add(symbol.getName());
+                }
+            }
+        }
+        return names.toArray(new String[names.size()]);
     }
 
     private static String commonPrefix(final String s1, final String s2) {

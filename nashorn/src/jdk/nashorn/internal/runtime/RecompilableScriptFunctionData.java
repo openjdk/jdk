@@ -320,7 +320,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return sb.toString();
     }
 
-    MethodHandle compileRestOfMethod(final MethodType fnCallSiteType, final Map<Integer, Type> invalidatedProgramPoints, final int[] continuationEntryPoints) {
+    MethodHandle compileRestOfMethod(final MethodType fnCallSiteType, final Map<Integer, Type> invalidatedProgramPoints, final int[] continuationEntryPoints, final ScriptObject runtimeScope) {
         LOG.info("Rest-of compilation of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
 
         final String scriptName = RECOMPILATION_PREFIX + RECOMPILE_ID.incrementAndGet() + "$restOf";
@@ -331,6 +331,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
                     CompilationPhases.EAGER.makeOptimistic(),
                     isStrict(),
                     this,
+                    runtimeScope,
                     isVariableArity() ? null : new ParamTypeMap(functionNodeId, explicitParams(fnCallSiteType)),
                     invalidatedProgramPoints,
                     continuationEntryPoints,
@@ -345,11 +346,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return lookupWithExplicitType(fn, MethodType.methodType(fn.getReturnType().getTypeClass(), RewriteException.class));
     }
 
-    private FunctionNode compileTypeSpecialization(final MethodType actualCallSiteType) {
-        return compile(actualCallSiteType, null, "Type specialized compilation");
+    private FunctionNode compileTypeSpecialization(final MethodType actualCallSiteType, final ScriptObject runtimeScope) {
+        return compile(actualCallSiteType, null, runtimeScope, "Type specialized compilation");
     }
 
-    FunctionNode compile(final MethodType actualCallSiteType, final Map<Integer, Type> invalidatedProgramPoints, final String reason) {
+    FunctionNode compile(final MethodType actualCallSiteType, final Map<Integer, Type> invalidatedProgramPoints, final ScriptObject runtimeScope, final String reason) {
         final String scriptName = RECOMPILATION_PREFIX + RECOMPILE_ID.incrementAndGet();
         final MethodType fnCallSiteType = actualCallSiteType == null ? null : actualCallSiteType.changeParameterType(0, ScriptFunction.class);
         LOG.info(reason, " of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
@@ -361,6 +362,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
                 phases.makeOptimistic(ScriptEnvironment.globalOptimistic()),
                 isStrict(),
                 this,
+                runtimeScope,
                 fnCallSiteType == null || isVariableArity() ?
                     null :
                     new ParamTypeMap(
@@ -506,11 +508,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    CompiledFunction getBest(final MethodType callSiteType) {
+    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope) {
         synchronized(code) {
-            final CompiledFunction existingBest = super.getBest(callSiteType);
+            final CompiledFunction existingBest = super.getBest(callSiteType, runtimeScope);
             // TODO: what if callSiteType is vararg?
-            return existingBest != null ? existingBest : addCode(compileTypeSpecialization(callSiteType), callSiteType);
+            return existingBest != null ? existingBest : addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
         }
     }
 

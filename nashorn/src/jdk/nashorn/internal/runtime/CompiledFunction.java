@@ -620,7 +620,7 @@ final class CompiledFunction {
                 return null;
             }
             SwitchPoint.invalidateAll(new SwitchPoint[] { optimisticAssumptions });
-            return data.compile(callSiteType, invalidatedProgramPoints, "Deoptimizing recompilation");
+            return data.compile(callSiteType, invalidatedProgramPoints, e.getRuntimeScope(), "Deoptimizing recompilation");
         }
 
         MethodHandle compileRestOfMethod(final MethodType callSiteType, final RewriteException e) {
@@ -634,7 +634,7 @@ final class CompiledFunction {
                 System.arraycopy(prevEntryPoints, 0, entryPoints, 1, l);
             }
             entryPoints[0] = e.getProgramPoint();
-            return data.compileRestOfMethod(callSiteType, invalidatedProgramPoints, entryPoints);
+            return data.compileRestOfMethod(callSiteType, invalidatedProgramPoints, entryPoints, e.getRuntimeScope());
         }
     }
 
