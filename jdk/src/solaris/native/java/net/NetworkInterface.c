@@ -231,7 +231,11 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
     }
 
     name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
-
+    if (name_utf == NULL) {
+       if (!(*env)->ExceptionCheck(env))
+           JNU_ThrowOutOfMemoryError(env, NULL);
+       return NULL;
+    }
     /*
      * Search the list of interface based on name
      */
@@ -499,7 +503,11 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(JNIEnv *
     const char* name_utf;
 
     name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
-
+    if (name_utf == NULL) {
+       if (!(*env)->ExceptionCheck(env))
+           JNU_ThrowOutOfMemoryError(env, NULL);
+       return NULL;
+    }
     if ((sock =openSocketWithFallback(env, name_utf)) < 0) {
        (*env)->ReleaseStringUTFChars(env, name, name_utf);
        return JNI_FALSE;
@@ -546,6 +554,11 @@ JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(JNIEnv *env, jclas
     const char* name_utf;
 
     name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
+    if (name_utf == NULL) {
+       if (!(*env)->ExceptionCheck(env))
+           JNU_ThrowOutOfMemoryError(env, NULL);
+       return ret;
+    }
 
     if ((sock =openSocketWithFallback(env, name_utf)) < 0) {
        (*env)->ReleaseStringUTFChars(env, name, name_utf);
@@ -569,7 +582,11 @@ static int getFlags0(JNIEnv *env, jstring name) {
     int flags = 0;
 
     name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
-
+    if (name_utf == NULL) {
+       if (!(*env)->ExceptionCheck(env))
+           JNU_ThrowOutOfMemoryError(env, NULL);
+       return -1;
+    }
     if ((sock = openSocketWithFallback(env, name_utf)) < 0) {
         (*env)->ReleaseStringUTFChars(env, name, name_utf);
         return -1;
@@ -613,10 +630,9 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
      * Create a NetworkInterface object and populate it
      */
     netifObj = (*env)->NewObject(env, ni_class, ni_ctrID);
+    CHECK_NULL_RETURN(netifObj, NULL);
     name = (*env)->NewStringUTF(env, ifs->name);
-    if (netifObj == NULL || name == NULL) {
-        return NULL;
-    }
+    CHECK_NULL_RETURN(name, NULL);
     (*env)->SetObjectField(env, netifObj, ni_nameID, name);
     (*env)->SetObjectField(env, netifObj, ni_descID, name);
     (*env)->SetIntField(env, netifObj, ni_indexID, ifs->index);
@@ -655,6 +671,8 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
             iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
             if (iaObj) {
                  setInetAddress_addr(env, iaObj, htonl(((struct sockaddr_in*)addrP->addr)->sin_addr.s_addr));
+            } else {
+                return NULL;
             }
             ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
             if (ibObj) {
@@ -665,10 +683,14 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
                     if (ia2Obj) {
                        setInetAddress_addr(env, ia2Obj, htonl(((struct sockaddr_in*)addrP->brdcast)->sin_addr.s_addr));
                        (*env)->SetObjectField(env, ibObj, ni_ib4broadcastID, ia2Obj);
+                    } else {
+                        return NULL;
                     }
                  }
                  (*env)->SetShortField(env, ibObj, ni_ib4maskID, addrP->mask);
                  (*env)->SetObjectArrayElement(env, bindArr, bind_index++, ibObj);
+            } else {
+                return NULL;
             }
         }
 
@@ -688,19 +710,19 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
                     setInet6Address_scopeid(env, iaObj, scope);
                     setInet6Address_scopeifname(env, iaObj, netifObj);
                 }
+            } else {
+                return NULL;
             }
             ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
             if (ibObj) {
                 (*env)->SetObjectField(env, ibObj, ni_ibaddressID, iaObj);
                 (*env)->SetShortField(env, ibObj, ni_ib4maskID, addrP->mask);
                 (*env)->SetObjectArrayElement(env, bindArr, bind_index++, ibObj);
+            } else {
+                return NULL;
             }
         }
 #endif
-
-        if (iaObj == NULL) {
-            return NULL;
-        }
 
         (*env)->SetObjectArrayElement(env, addrArr, addr_index++, iaObj);
         addrP = addrP->next;
@@ -893,9 +915,14 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
        // Deal with broadcast addr & subnet mask
        struct sockaddr * brdcast_to = (struct sockaddr *) ((char *) addrP + sizeof(netaddr) + addr_size);
        addrP->brdcast = getBroadcast(env, sock, name,  brdcast_to );
-
-       if ((mask = getSubnet(env, sock, name)) != -1)
+       if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+           return ifs;
+       }
+       if ((mask = getSubnet(env, sock, name)) != -1) {
            addrP->mask = mask;
+       } else if((*env)->ExceptionCheck(env)) {
+           return ifs;
+       }
      }
 
     /**
@@ -1377,6 +1404,7 @@ static int getMacAddress(JNIEnv *env, int sock, const char* ifname, const struct
     nddp = (struct kinfo_ndd *)malloc(size);
 
     if (!nddp) {
+        JNU_ThrowOutOfMemoryError(env, "Network interface getMacAddress native buffer allocation failed");
         return -1;
     }
 
