@@ -31,7 +31,6 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
-
 import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
@@ -143,7 +142,9 @@ public final class Symbol implements Comparable<Symbol> {
         this.slot       = slot;
         this.fieldIndex = -1;
         this.range      = Range.createUnknownRange();
-        trace("CREATE SYMBOL " + type);
+        if(shouldTrace()) {
+            trace("CREATE SYMBOL " + type);
+        }
     }
 
     /**
@@ -388,7 +389,9 @@ public final class Symbol implements Comparable<Symbol> {
      */
      public Symbol setIsScope() {
         if (!isScope()) {
-            trace("SET IS SCOPE");
+            if(shouldTrace()) {
+                trace("SET IS SCOPE");
+            }
             assert !isShared();
             flags |= IS_SCOPE;
         }
@@ -402,7 +405,9 @@ public final class Symbol implements Comparable<Symbol> {
      public Symbol setIsShared() {
          if (!isShared()) {
              assert isTemp();
-             trace("SET IS SHARED");
+             if(shouldTrace()) {
+                 trace("SET IS SHARED");
+             }
              flags |= IS_SHARED;
          }
          return this;
@@ -414,7 +419,9 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public void setIsFunctionDeclaration() {
         if (!isFunctionDeclaration()) {
-            trace("SET IS FUNCTION DECLARATION");
+            if(shouldTrace()) {
+                trace("SET IS FUNCTION DECLARATION");
+            }
             flags |= IS_FUNCTION_DECLARATION;
         }
     }
@@ -681,7 +688,9 @@ public final class Symbol implements Comparable<Symbol> {
     public Symbol setSlot(final int slot) {
         if (slot != this.slot) {
             assert !isShared();
-            trace("SET SLOT " + slot);
+            if(shouldTrace()) {
+                trace("SET SLOT " + slot);
+            }
             this.slot = slot;
         }
         return this;
@@ -731,7 +740,9 @@ public final class Symbol implements Comparable<Symbol> {
         final Type old = this.type;
         if (old != type) {
             assert !isShared() : this + " is a shared symbol and cannot have its type overridden to " + type;
-            trace("TYPE CHANGE: " + old + "=>" + type + " == " + type);
+            if(shouldTrace()) {
+                trace("TYPE CHANGE: " + old + "=>" + type + " == " + type);
+            }
             this.type = type;
         }
         return this;
@@ -776,12 +787,14 @@ public final class Symbol implements Comparable<Symbol> {
         return symbol;
     }
 
+    private boolean shouldTrace() {
+        return TRACE_SYMBOLS != null && (TRACE_SYMBOLS.isEmpty() || TRACE_SYMBOLS.contains(name));
+    }
+
     private void trace(final String desc) {
-        if (TRACE_SYMBOLS != null && (TRACE_SYMBOLS.isEmpty() || TRACE_SYMBOLS.contains(name))) {
-            Context.err(Debug.id(this) + " SYMBOL: '" + name + "' " + desc);
-            if (TRACE_SYMBOLS_STACKTRACE != null && (TRACE_SYMBOLS_STACKTRACE.isEmpty() || TRACE_SYMBOLS_STACKTRACE.contains(name))) {
-                new Throwable().printStackTrace(Context.getCurrentErr());
-            }
+        Context.err(Debug.id(this) + " SYMBOL: '" + name + "' " + desc);
+        if (TRACE_SYMBOLS_STACKTRACE != null && (TRACE_SYMBOLS_STACKTRACE.isEmpty() || TRACE_SYMBOLS_STACKTRACE.contains(name))) {
+            new Throwable().printStackTrace(Context.getCurrentErr());
         }
     }
 }
