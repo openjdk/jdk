@@ -173,6 +173,13 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     @Override
+    public boolean enterAccessNode(AccessNode accessNode) {
+        tagNeverOptimistic(accessNode.getBase());
+        tagNeverOptimistic(accessNode.getProperty());
+        return true;
+    };
+
+    @Override
     public Node leaveAccessNode(final AccessNode accessNode) {
         return end(ensureSymbolTypeOverride(accessNode, Type.OBJECT));
     }
@@ -355,6 +362,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         for (final Expression arg : callNode.getArgs()) {
             tagOptimistic(arg);
         }
+        tagNeverOptimistic(callNode.getFunction());
         return true;
     }
 
@@ -669,7 +677,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         if (!identNode.isInitializedHere()) {
             symbol.increaseUseCount();
         }
-        addLocalUse(identNode.getName());
+        addLocalUse(name);
         IdentNode node = (IdentNode)identNode.setSymbol(lc, symbol);
         if (isTaggedOptimistic(identNode) && symbol.isScope()) {
             node = ensureSymbolTypeOverride(node, symbol.getSymbolType());
@@ -791,6 +799,12 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean enterIndexNode(IndexNode indexNode) {
+        tagNeverOptimistic(indexNode.getBase());
+        return true;
     }
 
     @Override

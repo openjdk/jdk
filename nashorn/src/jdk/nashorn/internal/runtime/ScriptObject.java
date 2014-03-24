@@ -3024,7 +3024,7 @@ public abstract class ScriptObject implements PropertyAccess {
                 assert sobj != null : "no parent global object in scope";
             }
             //this will unbox any Number object to its primitive type in case the
-            //property supporst primitive types, so it doesn't matter that it comes
+            //property supports primitive types, so it doesn't matter that it comes
             //in as an Object.
             sobj.addSpillProperty(key, 0, value, true);
         }

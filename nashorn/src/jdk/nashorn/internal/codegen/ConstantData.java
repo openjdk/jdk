@@ -63,7 +63,7 @@ class ConstantData {
         private int calcHashCode() {
             final Class<?> cls = array.getClass();
 
-            if (cls == Object[].class) {
+            if (!cls.getComponentType().isPrimitive()) {
                 return Arrays.hashCode((Object[])array);
             } else if (cls == double[].class) {
                 return Arrays.hashCode((double[])array);
@@ -91,7 +91,7 @@ class ConstantData {
             final Class<?> cls = array.getClass();
 
             if (cls == otherArray.getClass()) {
-                if (cls == Object[].class) {
+                if (!cls.getComponentType().isPrimitive()) {
                     return Arrays.equals((Object[])array, (Object[])otherArray);
                 } else if (cls == double[].class) {
                     return Arrays.equals((double[])array, (double[])otherArray);

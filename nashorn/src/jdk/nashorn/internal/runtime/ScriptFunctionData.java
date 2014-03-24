@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
@@ -203,18 +202,18 @@ public abstract class ScriptFunctionData {
      * @return guarded invocation with method handle to best invoker and potentially a switch point guarding optimistic
      * assumptions.
      */
-     final GuardedInvocation getBestInvoker(final MethodType callSiteType, final int callerProgramPoint) {
-        final CompiledFunction cf = getBest(callSiteType);
+     final GuardedInvocation getBestInvoker(final MethodType callSiteType, final int callerProgramPoint, final ScriptObject runtimeScope) {
+        final CompiledFunction cf = getBest(callSiteType, runtimeScope);
         assert cf != null;
         return new GuardedInvocation(cf.createInvoker(callSiteType.returnType(), callerProgramPoint), cf.getOptimisticAssumptionsSwitchPoint());
     }
 
-    final GuardedInvocation getBestConstructor(final MethodType callSiteType) {
+    final GuardedInvocation getBestConstructor(final MethodType callSiteType, final ScriptObject runtimeScope) {
         if (!isConstructor()) {
             throw typeError("not.a.constructor", toSource());
         }
         // Constructor call sites don't have a "this", but getBest is meant to operate on "callee, this, ..." style
-        final CompiledFunction cf = getBest(callSiteType.insertParameterTypes(1, Object.class));
+        final CompiledFunction cf = getBest(callSiteType.insertParameterTypes(1, Object.class), runtimeScope);
         return new GuardedInvocation(cf.getConstructor(), cf.getOptimisticAssumptionsSwitchPoint());
     }
 
@@ -232,12 +231,12 @@ public abstract class ScriptFunctionData {
      * is generated, get the most generic of all versions of this function and adapt it
      * to Objects.
      *
-     * TODO this is only public because {@link JavaAdapterFactory} can't supply us with
-     * a MethodType that we can use for lookup due to boostrapping problems. Can be fixed
-     *
+     * @param runtimeScope the runtime scope. It can be used to evaluate types of scoped variables to guide the
+     * optimistic compilation, should the call to this method trigger code compilation. Can be null if current runtime
+     * scope is not known, but that might cause compilation of code that will need more deoptimization passes.
      * @return generic invoker of this script function
      */
-    public final MethodHandle getGenericInvoker() {
+    final MethodHandle getGenericInvoker(final ScriptObject runtimeScope) {
         MethodHandle invoker;
         final Reference<MethodHandle> ref = GENERIC_INVOKERS.get(this);
         if(ref != null) {
@@ -246,16 +245,16 @@ public abstract class ScriptFunctionData {
                 return invoker;
             }
         }
-        invoker = createGenericInvoker();
+        invoker = createGenericInvoker(runtimeScope);
         GENERIC_INVOKERS.put(this, new WeakReference<>(invoker));
         return invoker;
     }
 
-    private MethodHandle createGenericInvoker() {
-        return makeGenericMethod(getGeneric().createComposableInvoker());
+    private MethodHandle createGenericInvoker(final ScriptObject runtimeScope) {
+        return makeGenericMethod(getGeneric(runtimeScope).createComposableInvoker());
     }
 
-    final MethodHandle getGenericConstructor() {
+    final MethodHandle getGenericConstructor(final ScriptObject runtimeScope) {
         MethodHandle constructor;
         final Reference<MethodHandle> ref = GENERIC_CONSTRUCTORS.get(this);
         if(ref != null) {
@@ -264,29 +263,32 @@ public abstract class ScriptFunctionData {
                 return constructor;
             }
         }
-        constructor = createGenericConstructor();
+        constructor = createGenericConstructor(runtimeScope);
         GENERIC_CONSTRUCTORS.put(this, new WeakReference<>(constructor));
         return constructor;
     }
 
-    private MethodHandle createGenericConstructor() {
-        return makeGenericMethod(getGeneric().createComposableConstructor());
+    private MethodHandle createGenericConstructor(final ScriptObject runtimeScope) {
+        return makeGenericMethod(getGeneric(runtimeScope).createComposableConstructor());
     }
 
     /**
      * Returns the best function for the specified call site type.
      * @param callSiteType The call site type. Call site types are expected to have the form
      * {@code (callee, this[, args...])}.
+     * @param runtimeScope the runtime scope. It can be used to evaluate types of scoped variables to guide the
+     * optimistic compilation, should the call to this method trigger code compilation. Can be null if current runtime
+     * scope is not known, but that might cause compilation of code that will need more deoptimization passes.
      * @return the best function for the specified call site type.
      */
-    CompiledFunction getBest(final MethodType callSiteType) {
+    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope) {
         return code.best(callSiteType, isRecompilable());
     }
 
     abstract boolean isRecompilable();
 
-    CompiledFunction getGeneric() {
-        return getBest(getGenericType());
+    CompiledFunction getGeneric(final ScriptObject runtimeScope) {
+        return getBest(getGenericType(), runtimeScope);
     }
 
 
@@ -326,7 +328,8 @@ public abstract class ScriptFunctionData {
         final int boundFlags = flags & ~NEEDS_CALLEE & ~USES_THIS;
 
         final CompiledFunctions boundList = new CompiledFunctions(fn.getName());
-        final CompiledFunction bindTarget = new CompiledFunction(getGenericInvoker(), getGenericConstructor());
+        final ScriptObject runtimeScope = fn.getScope();
+        final CompiledFunction bindTarget = new CompiledFunction(getGenericInvoker(runtimeScope), getGenericConstructor(runtimeScope));
         boundList.add(bind(bindTarget, fn, self, allArgs));
 
         return new FinalScriptFunctionData(name, Math.max(0, getArity() - length), boundList, boundFlags);
@@ -518,7 +521,7 @@ public abstract class ScriptFunctionData {
      * @throws Throwable if there is an exception/error with the invocation or thrown from it
      */
     Object invoke(final ScriptFunction fn, final Object self, final Object... arguments) throws Throwable {
-        final MethodHandle mh      = getGenericInvoker();
+        final MethodHandle mh      = getGenericInvoker(fn.getScope());
         final Object       selfObj = convertThisObject(self);
         final Object[]     args    = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
 
@@ -572,7 +575,7 @@ public abstract class ScriptFunctionData {
     }
 
     Object construct(final ScriptFunction fn, final Object... arguments) throws Throwable {
-        final MethodHandle mh   = getGenericConstructor();
+        final MethodHandle mh   = getGenericConstructor(fn.getScope());
         final Object[]     args = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
 
         if (isVarArg(mh)) {

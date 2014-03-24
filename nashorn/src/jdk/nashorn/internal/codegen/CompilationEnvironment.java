@@ -35,9 +35,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.AccessNode;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.IdentNode;
+import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.Optimistic;
+import jdk.nashorn.internal.objects.NativeArray;
+import jdk.nashorn.internal.runtime.FindProperty;
+import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
+import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
  * Class for managing metadata during a compilation, e.g. which phases
@@ -51,6 +59,10 @@ public final class CompilationEnvironment {
     private final ParamTypeMap paramTypes;
 
     private RecompilableScriptFunctionData compiledFunction;
+
+    // Runtime scope in effect at the time of the compilation. Used to evaluate types of expressions and prevent overly
+    // optimistic assumptions (which will lead to unnecessary deoptimizing recompilations).
+    private final ScriptObject runtimeScope;
 
     private boolean strict;
 
@@ -169,14 +181,18 @@ public final class CompilationEnvironment {
     public CompilationEnvironment(
         final CompilationPhases phases,
         final boolean strict) {
-        this(phases, null, null, null, null, strict, false);
+        this(phases, null, null, null, null, null, strict, false);
     }
 
     /**
      * Constructor for compilation environment of the rest-of method
      * @param phases compilation phases
      * @param strict strict mode
-     * @param compiledFunction recompiled function
+     * @param compiledFunction the function being compiled
+     * @param runtimeScope the runtime scope in effect at the time of compilation. It can be used to evaluate types of
+     * scoped variables to guide the optimistic compilation, should the call to this method trigger code compilation.
+     * Can be null if current runtime scope is not known, but that might cause compilation of code that will need more
+     * subsequent deoptimization passes.
      * @param paramTypeMap known parameter types if any exist
      * @param invalidatedProgramPoints map of invalidated program points to their type
      * @param continuationEntryPoint program points used as the continuation entry points in the current rest-of sequence
@@ -186,11 +202,12 @@ public final class CompilationEnvironment {
         final CompilationPhases phases,
         final boolean strict,
         final RecompilableScriptFunctionData compiledFunction,
+        final ScriptObject runtimeScope,
         final ParamTypeMap paramTypeMap,
         final Map<Integer, Type> invalidatedProgramPoints,
         final int[] continuationEntryPoint,
         final boolean onDemand) {
-            this(phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, continuationEntryPoint, strict, onDemand);
+            this(phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, runtimeScope, continuationEntryPoint, strict, onDemand);
     }
 
     /**
@@ -198,6 +215,10 @@ public final class CompilationEnvironment {
      * @param phases compilation phases
      * @param strict strict mode
      * @param compiledFunction recompiled function
+     * @param runtimeScope the runtime scope in effect at the time of compilation. It can be used to evaluate types of
+     * scoped variables to guide the optimistic compilation, should the call to this method trigger code compilation.
+     * Can be null if current runtime scope is not known, but that might cause compilation of code that will need more
+     * subsequent deoptimization passes.
      * @param paramTypeMap known parameter types
      * @param invalidatedProgramPoints map of invalidated program points to their type
      * @param onDemand is this an on demand compilation
@@ -206,10 +227,11 @@ public final class CompilationEnvironment {
         final CompilationPhases phases,
         final boolean strict,
         final RecompilableScriptFunctionData compiledFunction,
+        final ScriptObject runtimeScope,
         final ParamTypeMap paramTypeMap,
         final Map<Integer, Type> invalidatedProgramPoints,
         final boolean onDemand) {
-        this(phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, null, strict, onDemand);
+        this(phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, runtimeScope, null, strict, onDemand);
     }
 
     private CompilationEnvironment(
@@ -217,17 +239,16 @@ public final class CompilationEnvironment {
             final ParamTypeMap paramTypes,
             final Map<Integer, Type> invalidatedProgramPoints,
             final RecompilableScriptFunctionData compiledFunction,
+            final ScriptObject runtimeScope,
             final int[] continuationEntryPoints,
             final boolean strict,
             final boolean onDemand) {
         this.phases                   = phases;
         this.paramTypes               = paramTypes;
         this.continuationEntryPoints  = continuationEntryPoints;
-        this.invalidatedProgramPoints =
-            invalidatedProgramPoints == null ?
-                Collections.unmodifiableMap(new HashMap<Integer, Type>()) :
-                invalidatedProgramPoints;
+        this.invalidatedProgramPoints = invalidatedProgramPoints == null ? new HashMap<Integer, Type>() : invalidatedProgramPoints;
         this.compiledFunction         = compiledFunction;
+        this.runtimeScope             = runtimeScope;
         this.strict                   = strict;
         this.optimistic               = phases.contains(CompilationPhase.PROGRAM_POINT_PHASE);
         this.onDemand                 = onDemand;
@@ -352,11 +373,92 @@ public final class CompilationEnvironment {
      */
     Type getOptimisticType(final Optimistic node) {
         assert useOptimisticTypes();
-        final Type invalidType = invalidatedProgramPoints.get(node.getProgramPoint());
-        if (invalidType != null) {
-            return invalidType;//.nextWider();
+        final int programPoint = node.getProgramPoint();
+        final Type validType = invalidatedProgramPoints.get(programPoint);
+        if (validType != null) {
+            return validType;
+        }
+        final Type mostOptimisticType = node.getMostOptimisticType();
+        final Type evaluatedType = getEvaluatedType(node);
+        if(evaluatedType != null) {
+            if(evaluatedType.widerThan(mostOptimisticType)) {
+                final Type newValidType = evaluatedType.isObject() || evaluatedType.isBoolean() ? Type.OBJECT : evaluatedType;
+                // Update invalidatedProgramPoints so we don't re-evaluate the expression next time. This is a heuristic
+                // as we're doing a tradeoff. Re-evaluating expressions on each recompile takes time, but it might
+                // notice a widening in the type of the expression and thus prevent an unnecessary deoptimization later.
+                // We'll presume though that the types of expressions are mostly stable, so if we evaluated it in one
+                // compilation, we'll keep to that and risk a low-probability deoptimization if its type gets widened
+                // in the future.
+                invalidatedProgramPoints.put(node.getProgramPoint(), newValidType);
+            }
+            return evaluatedType;
         }
         return node.getMostOptimisticType();
+    }
+
+
+    private Type getEvaluatedType(final Optimistic expr) {
+        if(expr instanceof IdentNode) {
+            return runtimeScope == null ? null : getPropertyType(runtimeScope, ((IdentNode)expr).getName());
+        } else if(expr instanceof AccessNode) {
+            final AccessNode accessNode = (AccessNode)expr;
+            final Object base = evaluateSafely(accessNode.getBase());
+            if(!(base instanceof ScriptObject)) {
+                return null;
+            }
+            return getPropertyType((ScriptObject)base, accessNode.getProperty().getName());
+        } else if(expr instanceof IndexNode) {
+            final IndexNode indexNode = (IndexNode)expr;
+            final Object base = evaluateSafely(indexNode.getBase());
+            if(!(base instanceof NativeArray)) {
+                // We only know how to deal with NativeArray. TODO: maybe manage buffers too
+                return null;
+            }
+            // NOTE: optimistic array getters throw UnwarrantedOptimismException based on the type of their underlying
+            // array storage, not based on values of individual elements. Thus, a LongArrayData will throw UOE for every
+            // optimistic int linkage attempt, even if the long value being returned in the first invocation would be
+            // representable as int. That way, we can presume that the array's optimistic type is the most optimistic
+            // type for which an element getter has a chance of executing successfully.
+            return ((NativeArray)base).getArray().getOptimisticType();
+        }
+        return null;
+    }
+
+    private static Type getPropertyType(final ScriptObject sobj, final String name) {
+        final FindProperty find = sobj.findProperty(name, true);
+        if(find == null) {
+            return null;
+        }
+        final Class<?> clazz = find.getProperty().getCurrentType();
+        return clazz == null ? null : Type.typeFor(clazz);
+    }
+
+    private Object evaluateSafely(Expression expr) {
+        if(expr instanceof IdentNode) {
+            return runtimeScope == null ? null : evaluatePropertySafely(runtimeScope, ((IdentNode)expr).getName());
+        } else if(expr instanceof AccessNode) {
+            final AccessNode accessNode = (AccessNode)expr;
+            final Object base = evaluateSafely(accessNode.getBase());
+            if(!(base instanceof ScriptObject)) {
+                return null;
+            }
+            return evaluatePropertySafely((ScriptObject)base, accessNode.getProperty().getName());
+        }
+        return null;
+    }
+
+    private static Object evaluatePropertySafely(final ScriptObject sobj, final String name) {
+        final FindProperty find = sobj.findProperty(name, true);
+        if(find == null) {
+            return null;
+        }
+        final Property property = find.getProperty();
+        final ScriptObject owner = find.getOwner();
+        if(property.hasGetterFunction(owner)) {
+            // Possible side effects; can't evaluate safely
+            return null;
+        }
+        return property.getObjectValue(owner, owner);
     }
 
     /**
