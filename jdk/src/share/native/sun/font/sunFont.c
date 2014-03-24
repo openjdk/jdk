@@ -181,7 +181,7 @@ static void initFontIDs(JNIEnv *env) {
      CHECK_NULL(sunFontIDs.lcdRGBOrder =
          (*env)->GetFieldID(env, tmpClass, "lcdRGBOrder", "Z"));
      CHECK_NULL(sunFontIDs.lcdSubPixPos =
-         (*env)->GetFieldID(env, tmpClass, "lcdSubPixPos", "Z)"));
+         (*env)->GetFieldID(env, tmpClass, "lcdSubPixPos", "Z"));
 
      initLCDGammaTables();
 
