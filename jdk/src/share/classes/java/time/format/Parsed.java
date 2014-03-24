@@ -136,10 +136,6 @@ final class Parsed implements TemporalAccessor {
      */
     boolean leapSecond;
     /**
-     * The effective chronology.
-     */
-    Chronology effectiveChrono;
-    /**
      * The resolver style to use.
      */
     private ResolverStyle resolverStyle;
@@ -241,7 +237,6 @@ final class Parsed implements TemporalAccessor {
             fieldValues.keySet().retainAll(resolverFields);
         }
         this.resolverStyle = resolverStyle;
-        chrono = effectiveChrono;
         resolveFields();
         resolveTimeLenient();
         crossCheck();
@@ -266,14 +261,16 @@ final class Parsed implements TemporalAccessor {
                     TemporalAccessor resolvedObject = targetField.resolve(fieldValues, this, resolverStyle);
                     if (resolvedObject != null) {
                         if (resolvedObject instanceof ChronoZonedDateTime) {
-                            ChronoZonedDateTime<?> czdt = (ChronoZonedDateTime) resolvedObject;
-                            if (zone.equals(czdt.getZone()) == false) {
+                            ChronoZonedDateTime<?> czdt = (ChronoZonedDateTime<?>) resolvedObject;
+                            if (zone == null) {
+                                zone = czdt.getZone();
+                            } else if (zone.equals(czdt.getZone()) == false) {
                                 throw new DateTimeException("ChronoZonedDateTime must use the effective parsed zone: " + zone);
                             }
                             resolvedObject = czdt.toLocalDateTime();
                         }
                         if (resolvedObject instanceof ChronoLocalDateTime) {
-                            ChronoLocalDateTime<?> cldt = (ChronoLocalDateTime) resolvedObject;
+                            ChronoLocalDateTime<?> cldt = (ChronoLocalDateTime<?>) resolvedObject;
                             updateCheckConflict(cldt.toLocalTime(), Period.ZERO);
                             updateCheckConflict(cldt.toLocalDate());
                             changedCount++;
