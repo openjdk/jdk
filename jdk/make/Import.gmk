@@ -252,7 +252,7 @@ define unzip-sec-file
 	$(ECHO) Unzipping $(<F)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	($(CD) $(JDK_OUTPUTDIR) && $(UNZIP) $< > $@.tmp)
+	($(CD) $(JDK_OUTPUTDIR) && $(UNZIP) -q -o $< > $@.tmp)
 	$(MV) $@.tmp $@
 endef
 

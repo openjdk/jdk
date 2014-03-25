@@ -372,6 +372,7 @@ class Zoneinfo {
         ZoneRec zrec = zone.get(zone.size()-1);
         tz.getOffsetIndex(zrec.getGmtOffset());
 
+        int lastGmtOffsetValue = -1;
         int currentSave = 0;
         boolean usedZone;
         for (int zindex = 0; zindex < zone.size(); zindex++) {
@@ -380,9 +381,12 @@ class Zoneinfo {
             gmtOffset = zrec.getGmtOffset();
             int stdOffset = zrec.getDirectSave();
 
+            if (gmtOffset != lastGmtOffsetValue) {
+                tz.setRawOffset(gmtOffset, fromTime);
+                lastGmtOffsetValue = gmtOffset;
+            }
             // If this is the last zone record, take the last rule info.
             if (!zrec.hasUntil()) {
-                tz.setRawOffset(gmtOffset, fromTime);
                 if (zrec.hasRuleReference()) {
                     tz.setLastRules(zrec.getRuleRef().getLastRules());
                 } else if (stdOffset != 0) {

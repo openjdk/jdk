@@ -205,7 +205,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         if (output != null) {
             ImageWriterSpi provider = getOriginatingProvider();
             if (provider != null) {
-                Class[] classes = provider.getOutputTypes();
+                Class<?>[] classes = provider.getOutputTypes();
                 boolean found = false;
                 for (int i = 0; i < classes.length; i++) {
                     if (classes[i].isInstance(output)) {
@@ -1964,10 +1964,10 @@ public abstract class ImageWriter implements ImageTranscoder {
              * If that throws MissingResourceException, then try the
              * system class loader.
              */
-            ClassLoader loader = (ClassLoader)
+            ClassLoader loader =
                 java.security.AccessController.doPrivileged(
-                   new java.security.PrivilegedAction() {
-                      public Object run() {
+                   new java.security.PrivilegedAction<ClassLoader>() {
+                      public ClassLoader run() {
                         return Thread.currentThread().getContextClassLoader();
                       }
                 });

@@ -31,9 +31,9 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicLong;
-import sun.security.action.GetPropertyAction;
 
 /**
  * An <code>ObjID</code> is used to identify a remote object exported
@@ -242,7 +242,7 @@ public final class ObjID implements Serializable {
 
     private static boolean useRandomIDs() {
         String value = AccessController.doPrivileged(
-            new GetPropertyAction("java.rmi.server.randomIDs"));
+            (PrivilegedAction<String>) () -> System.getProperty("java.rmi.server.randomIDs"));
         return value == null ? true : Boolean.parseBoolean(value);
     }
 }

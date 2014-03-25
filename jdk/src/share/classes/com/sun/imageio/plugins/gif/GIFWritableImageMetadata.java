@@ -258,14 +258,14 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
                 }
 
                 if (applicationIDs == null) {
-                    applicationIDs = new ArrayList();
-                    authenticationCodes = new ArrayList();
-                    applicationData = new ArrayList();
+                    applicationIDs = new ArrayList<>();
+                    authenticationCodes = new ArrayList<>();
+                    applicationData = new ArrayList<>();
                 }
 
                 applicationIDs.add(fromISO8859(applicationIDString));
                 authenticationCodes.add(fromISO8859(authenticationCodeString));
-                applicationData.add(applicationExtensionData);
+                applicationData.add((byte[]) applicationExtensionData);
             } else if (name.equals("CommentExtensions")) {
                 Node commentExtension = node.getFirstChild();
                 if (commentExtension != null) {
@@ -276,7 +276,7 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
                         }
 
                         if (comments == null) {
-                            comments = new ArrayList();
+                            comments = new ArrayList<>();
                         }
 
                         String comment =
@@ -367,7 +367,7 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
                         String value = getAttribute(childNode, "value");
                         byte[] comment = fromISO8859(value);
                         if (comments == null) {
-                            comments = new ArrayList();
+                            comments = new ArrayList<>();
                         }
                         comments.add(comment);
                     }

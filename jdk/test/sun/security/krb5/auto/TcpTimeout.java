@@ -63,7 +63,7 @@ public class TcpTimeout {
                     "udp_preference_limit = 1\n" +
                     "max_retries = 2\n" +
                     "default_realm = " + OneKDC.REALM + "\n" +
-                    "kdc_timeout = 5000\n");
+                    "kdc_timeout = " + BadKdc.toReal(5000) + "\n");
             fw.write("[realms]\n" + OneKDC.REALM + " = {\n" +
                     "kdc = " + OneKDC.KDCHOST + ":" + p1 + "\n" +
                     "kdc = " + OneKDC.KDCHOST + ":" + p2 + "\n" +

@@ -217,7 +217,7 @@ public abstract class SunClipboard extends Clipboard
             openClipboard(null);
 
             long[] formats = getClipboardFormats();
-            Long lFormat = (Long)DataTransferer.getInstance().
+            Long lFormat = DataTransferer.getInstance().
                     getFlavorsForFormats(formats, flavorMap).get(flavor);
 
             if (lFormat == null) {

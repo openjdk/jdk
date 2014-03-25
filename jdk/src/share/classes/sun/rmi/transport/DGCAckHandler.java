@@ -27,6 +27,7 @@ package sun.rmi.transport;
 
 import java.rmi.server.UID;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,7 +37,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import sun.rmi.runtime.RuntimeUtil;
-import sun.security.action.GetLongAction;
 
 /**
  * Holds strong references to a set of remote objects, or live remote
@@ -65,8 +65,8 @@ public class DGCAckHandler {
 
     /** timeout for holding references without receiving an acknowledgment */
     private static final long dgcAckTimeout =           // default 5 minutes
-        AccessController.doPrivileged(
-            new GetLongAction("sun.rmi.dgc.ackTimeout", 300000));
+        AccessController.doPrivileged((PrivilegedAction<Long>) () ->
+            Long.getLong("sun.rmi.dgc.ackTimeout", 300000));
 
     /** thread pool for scheduling delayed tasks */
     private static final ScheduledExecutorService scheduler =

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,14 @@ import sun.awt.image.ToolkitImage;
  * @see Component#setCursor
  * @author      ThomasBall
  */
-public class WCustomCursor extends CustomCursor {
+final class WCustomCursor extends CustomCursor {
 
-    public WCustomCursor(Image cursor, Point hotSpot, String name)
+    WCustomCursor(Image cursor, Point hotSpot, String name)
             throws IndexOutOfBoundsException {
         super(cursor, hotSpot, name);
     }
 
+    @Override
     protected void createNativeCursor(Image im, int[] pixels, int w, int h,
                                       int xHotSpot, int yHotSpot) {
         BufferedImage bimage = new BufferedImage(w, h,

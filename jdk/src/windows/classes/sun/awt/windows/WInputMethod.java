@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.Locale;
 import java.util.Map;
 import sun.awt.im.InputMethodAdapter;
 
-public class WInputMethod extends InputMethodAdapter
+final class WInputMethod extends InputMethodAdapter
 {
     /**
      * The input method context, which is used to dispatch input method
@@ -127,6 +127,7 @@ public class WInputMethod extends InputMethodAdapter
         }
     }
 
+    @Override
     protected void finalize() throws Throwable
     {
         // Release the resources used by the native input context.
@@ -137,10 +138,12 @@ public class WInputMethod extends InputMethodAdapter
         super.finalize();
     }
 
+    @Override
     public synchronized void setInputMethodContext(InputMethodContext context) {
         inputContext = context;
     }
 
+    @Override
     public final void dispose() {
         // Due to a memory management problem in Windows 98, we should retain
         // the native input context until this object is finalized. So do
@@ -152,10 +155,12 @@ public class WInputMethod extends InputMethodAdapter
      *
      * @see java.awt.im.spi.InputMethod#getControlObject
      */
+    @Override
     public Object getControlObject() {
         return null;
     }
 
+    @Override
     public boolean setLocale(Locale lang) {
         return setLocale(lang, false);
     }
@@ -178,6 +183,7 @@ public class WInputMethod extends InputMethodAdapter
         return false;
     }
 
+    @Override
     public Locale getLocale() {
         if (isActive) {
             currentLocale = getNativeLocale();
@@ -193,6 +199,7 @@ public class WInputMethod extends InputMethodAdapter
      *
      * @see java.awt.im.spi.InputMethod#setCharacterSubsets
      */
+    @Override
     public void setCharacterSubsets(Subset[] subsets) {
         if (subsets == null){
             setConversionStatus(context, cmode);
@@ -266,6 +273,7 @@ public class WInputMethod extends InputMethodAdapter
         }
     }
 
+    @Override
     public void dispatchEvent(AWTEvent e) {
         if (e instanceof ComponentEvent) {
             Component comp = ((ComponentEvent) e).getComponent();
@@ -281,6 +289,7 @@ public class WInputMethod extends InputMethodAdapter
         }
     }
 
+    @Override
     public void activate() {
         boolean isAc = haveActiveClient();
 
@@ -317,6 +326,7 @@ public class WInputMethod extends InputMethodAdapter
 
     }
 
+    @Override
     public void deactivate(boolean isTemporary)
     {
         // Sync currentLocale with the Windows keyboard layout which might be changed
@@ -336,6 +346,7 @@ public class WInputMethod extends InputMethodAdapter
      * Explicitly disable the native IME. Native IME is not disabled when
      * deactivate is called.
      */
+    @Override
     public void disableInputMethod() {
         if (lastFocussedComponentPeer != null) {
             disableNativeIME(lastFocussedComponentPeer);
@@ -348,6 +359,7 @@ public class WInputMethod extends InputMethodAdapter
      * Returns a string with information about the windows input method,
      * or null.
      */
+    @Override
     public String getNativeInputMethodInfo() {
         return getNativeIMMDescription();
     }
@@ -358,6 +370,7 @@ public class WInputMethod extends InputMethodAdapter
      * Calling stopListening to give other input method the keybaord input
      * focus.
      */
+    @Override
     protected void stopListening() {
         // Since the native input method is not disabled when deactivate is
         // called, we need to call disableInputMethod to explicitly turn off the
@@ -366,6 +379,7 @@ public class WInputMethod extends InputMethodAdapter
     }
 
     // implements sun.awt.im.InputMethodAdapter.setAWTFocussedComponent
+    @Override
     protected void setAWTFocussedComponent(Component component) {
         if (component == null) {
             return;
@@ -386,6 +400,7 @@ public class WInputMethod extends InputMethodAdapter
     }
 
     // implements java.awt.im.spi.InputMethod.hideWindows
+    @Override
     public void hideWindows() {
         if (awtFocussedComponentPeer != null) {
             /* Hide the native status window including the Windows language
@@ -401,6 +416,7 @@ public class WInputMethod extends InputMethodAdapter
     /**
      * @see java.awt.im.spi.InputMethod#removeNotify
      */
+    @Override
     public void removeNotify() {
         endCompositionNative(context, DISCARD_INPUT);
         awtFocussedComponent = null;
@@ -427,10 +443,12 @@ public class WInputMethod extends InputMethodAdapter
     }
 
     // see sun.awt.im.InputMethodAdapter.supportsBelowTheSpot
+    @Override
     protected boolean supportsBelowTheSpot() {
         return true;
     }
 
+    @Override
     public void endComposition()
     {
         //right now the native endCompositionNative() just cancel
@@ -442,6 +460,7 @@ public class WInputMethod extends InputMethodAdapter
     /**
      * @see java.awt.im.spi.InputMethod#setCompositionEnabled(boolean)
      */
+    @Override
     public void setCompositionEnabled(boolean enable) {
         setOpenStatus(context, enable);
     }
@@ -449,6 +468,7 @@ public class WInputMethod extends InputMethodAdapter
     /**
      * @see java.awt.im.spi.InputMethod#isCompositionEnabled
      */
+    @Override
     public boolean isCompositionEnabled() {
         return getOpenStatus(context);
     }
@@ -557,6 +577,7 @@ public class WInputMethod extends InputMethodAdapter
         // AWT Event thread.  Otherwise, a potential deadlock
         // could happen.
         Runnable r = new Runnable() {
+            @Override
             public void run() {
                 int x = 0;
                 int y = 0;

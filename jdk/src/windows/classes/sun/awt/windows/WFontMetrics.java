@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Hashtable;
  *
  * @author Jim Graham
  */
-class WFontMetrics extends FontMetrics {
+final class WFontMetrics extends FontMetrics {
 
     static {
         initIDs();
@@ -117,6 +117,7 @@ class WFontMetrics extends FontMetrics {
     /**
      * Get leading
      */
+    @Override
     public int getLeading() {
         return leading;
     }
@@ -124,6 +125,7 @@ class WFontMetrics extends FontMetrics {
     /**
      * Get ascent.
      */
+    @Override
     public int getAscent() {
         return ascent;
     }
@@ -131,6 +133,7 @@ class WFontMetrics extends FontMetrics {
     /**
      * Get descent
      */
+    @Override
     public int getDescent() {
         return descent;
     }
@@ -138,6 +141,7 @@ class WFontMetrics extends FontMetrics {
     /**
      * Get height
      */
+    @Override
     public int getHeight() {
         return height;
     }
@@ -145,6 +149,7 @@ class WFontMetrics extends FontMetrics {
     /**
      * Get maxAscent
      */
+    @Override
     public int getMaxAscent() {
         return maxAscent;
     }
@@ -152,6 +157,7 @@ class WFontMetrics extends FontMetrics {
     /**
      * Get maxDescent
      */
+    @Override
     public int getMaxDescent() {
         return maxDescent;
     }
@@ -159,6 +165,7 @@ class WFontMetrics extends FontMetrics {
     /**
      * Get maxAdvance
      */
+    @Override
     public int getMaxAdvance() {
         return maxAdvance;
     }
@@ -166,21 +173,25 @@ class WFontMetrics extends FontMetrics {
     /**
      * Return the width of the specified string in this Font.
      */
+    @Override
     public native int stringWidth(String str);
 
     /**
      * Return the width of the specified char[] in this Font.
      */
+    @Override
     public native int charsWidth(char data[], int off, int len);
 
     /**
      * Return the width of the specified byte[] in this Font.
      */
+    @Override
     public native int bytesWidth(byte data[], int off, int len);
 
     /**
      * Get the widths of the first 256 characters in the font.
      */
+    @Override
     public int[] getWidths() {
         return widths;
     }

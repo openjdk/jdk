@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,15 @@
  * questions.
  */
 
-package sun.lwawt.macosx.event;
+package sun.lwawt.macosx;
 
-import sun.lwawt.macosx.CocoaConstants;
 import java.awt.event.*;
 
 /**
  * A class representing Cocoa NSEvent class with the fields only necessary for
  * JDK functionality.
  */
-public final class NSEvent {
+final class NSEvent {
     private int type;
     private int modifierFlags;
 
@@ -50,14 +49,16 @@ public final class NSEvent {
     private short keyCode;
     private String charactersIgnoringModifiers;
 
-    public NSEvent(int type, int modifierFlags, short keyCode, String charactersIgnoringModifiers) {
+    // Called from native
+    NSEvent(int type, int modifierFlags, short keyCode, String charactersIgnoringModifiers) {
         this.type = type;
         this.modifierFlags = modifierFlags;
         this.keyCode = keyCode;
         this.charactersIgnoringModifiers = charactersIgnoringModifiers;
     }
 
-    public NSEvent(int type, int modifierFlags, int clickCount, int buttonNumber,
+    // Called from native
+    NSEvent(int type, int modifierFlags, int clickCount, int buttonNumber,
                    int x, int y, int absX, int absY,
                    double scrollDeltaY, double scrollDeltaX) {
         this.type = type;
@@ -72,51 +73,51 @@ public final class NSEvent {
         this.scrollDeltaX = scrollDeltaX;
     }
 
-    public int getType() {
+    int getType() {
         return type;
     }
 
-    public int getModifierFlags() {
+    int getModifierFlags() {
         return modifierFlags;
     }
 
-    public int getClickCount() {
+    int getClickCount() {
         return clickCount;
     }
 
-    public int getButtonNumber() {
+    int getButtonNumber() {
         return buttonNumber;
     }
 
-    public int getX() {
+    int getX() {
         return x;
     }
 
-    public int getY() {
+    int getY() {
         return y;
     }
 
-    public double getScrollDeltaY() {
+    double getScrollDeltaY() {
         return scrollDeltaY;
     }
 
-    public double getScrollDeltaX() {
+    double getScrollDeltaX() {
         return scrollDeltaX;
     }
 
-    public int getAbsX() {
+    int getAbsX() {
         return absX;
     }
 
-    public int getAbsY() {
+    int getAbsY() {
         return absY;
     }
 
-    public short getKeyCode() {
+    short getKeyCode() {
         return keyCode;
     }
 
-    public String getCharactersIgnoringModifiers() {
+    String getCharactersIgnoringModifiers() {
         return charactersIgnoringModifiers;
     }
 
@@ -131,7 +132,7 @@ public final class NSEvent {
     /*
      * Converts an NSEvent button number to a MouseEvent constant.
      */
-    public static int nsToJavaButton(int buttonNumber) {
+    static int nsToJavaButton(int buttonNumber) {
         int jbuttonNumber = buttonNumber + 1;
         switch (buttonNumber) {
             case CocoaConstants.kCGMouseButtonLeft:
@@ -150,7 +151,7 @@ public final class NSEvent {
     /*
      * Converts NPCocoaEvent types to AWT event types.
      */
-    public static int npToJavaEventType(int npEventType) {
+    static int npToJavaEventType(int npEventType) {
         int jeventType = 0;
         switch (npEventType) {
             case CocoaConstants.NPCocoaEventMouseDown:
@@ -184,7 +185,7 @@ public final class NSEvent {
     /*
      * Converts NSEvent types to AWT event types.
      */
-    public static int nsToJavaEventType(int nsEventType) {
+    static int nsToJavaEventType(int nsEventType) {
         int jeventType = 0;
         switch (nsEventType) {
             case CocoaConstants.NSLeftMouseDown:
@@ -227,31 +228,31 @@ public final class NSEvent {
     /*
      * Converts NSEvent mouse modifiers to AWT mouse modifiers.
      */
-    public static native int nsToJavaMouseModifiers(int buttonNumber,
+    static native int nsToJavaMouseModifiers(int buttonNumber,
                                                     int modifierFlags);
 
     /*
      * Converts NSEvent key modifiers to AWT key modifiers.
      */
-    public static native int nsToJavaKeyModifiers(int modifierFlags);
+    static native int nsToJavaKeyModifiers(int modifierFlags);
 
     /*
      * Converts NSEvent key info to AWT key info.
      */
-    public static native boolean nsToJavaKeyInfo(int[] in, int[] out);
+    static native boolean nsToJavaKeyInfo(int[] in, int[] out);
 
     /*
      * Converts NSEvent key modifiers to AWT key info.
      */
-    public static native void nsKeyModifiersToJavaKeyInfo(int[] in, int[] out);
+    static native void nsKeyModifiersToJavaKeyInfo(int[] in, int[] out);
 
     /*
      * There is a small number of NS characters that need to be converted
      * into other characters before we pass them to AWT.
      */
-    public static native char nsToJavaChar(char nsChar, int modifierFlags);
+    static native char nsToJavaChar(char nsChar, int modifierFlags);
 
-    public static boolean isPopupTrigger(int jmodifiers) {
+    static boolean isPopupTrigger(int jmodifiers) {
         final boolean isRightButtonDown = ((jmodifiers & InputEvent.BUTTON3_DOWN_MASK) != 0);
         final boolean isLeftButtonDown = ((jmodifiers & InputEvent.BUTTON1_DOWN_MASK) != 0);
         final boolean isControlDown = ((jmodifiers & InputEvent.CTRL_DOWN_MASK) != 0);

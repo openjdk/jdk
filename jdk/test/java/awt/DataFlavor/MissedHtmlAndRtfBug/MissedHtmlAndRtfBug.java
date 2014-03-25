@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,6 @@
  * questions.
  */
 
-/*
-  @bug 8005932
-  @summary Java 7 on mac os x only provides text clipboard formats
-  @author mikhail.cherkasov@oracle.com
-  @library ../../regtesthelpers
-  @library ../../regtesthelpers/process
-  @build Util
-  @build ProcessResults ProcessCommunicator
-  @run applet/othervm MissedHtmlAndRtfBug.html
-*/
-
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.*;
@@ -47,6 +36,7 @@ import sun.awt.OSInfo;
 import static java.lang.Thread.sleep;
 
 public class MissedHtmlAndRtfBug extends Applet {
+
     public void init() {
         setLayout(new BorderLayout());
     }//End  init()
@@ -82,9 +72,6 @@ public class MissedHtmlAndRtfBug extends Applet {
         args.add(concatStrings(DataFlavorSearcher.RICH_TEXT_NAMES));
 
         ProcessResults processResults =
-//                ProcessCommunicator.executeChildProcess(this.getClass(), "/Users/mcherkasov/ws/clipboard/DataFlover/out/production/DataFlover" +
-//                        " -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005 ",
-//                        args.toArray(new String[0]));
                 ProcessCommunicator.executeChildProcess(this.getClass(),
                         "." + File.separator + System.getProperty("java.class.path"), args.toArray(new String[]{}));
 
@@ -116,6 +103,13 @@ public class MissedHtmlAndRtfBug extends Applet {
             processResults.printProcessErrorOutput(System.err);
             throw new RuntimeException("TEST IS FAILED: Target has received" +
                     " corrupted data.");
+        }
+        if (InterprocessMessages.NO_DROP_HAPPENED ==
+                processResults.getExitValue()) {
+            processResults.printProcessErrorOutput(System.err);
+            throw new RuntimeException("Error. Drop did not happen." +
+                " Target frame is possibly covered by a window of other application." +
+                " Please, rerun the test with all windows minimized.");
         }
         processResults.verifyStdErr(System.err);
         processResults.verifyProcessExitValue(System.err);
@@ -184,7 +178,7 @@ public class MissedHtmlAndRtfBug extends Applet {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         Point dragSourcePoint = new Point(InterprocessArguments.DRAG_SOURCE_POINT_X_ARGUMENT.extractInt(args),
                 InterprocessArguments.DRAG_SOURCE_POINT_Y_ARGUMENT.extractInt(args));
         Point targetFrameLocation = new Point(InterprocessArguments.TARGET_FRAME_X_POSITION_ARGUMENT.extractInt(args),
@@ -197,6 +191,8 @@ public class MissedHtmlAndRtfBug extends Applet {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        sleep(5000);
+        System.exit(InterprocessMessages.NO_DROP_HAPPENED);
     }
 
 

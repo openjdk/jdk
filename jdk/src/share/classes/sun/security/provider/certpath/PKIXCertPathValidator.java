@@ -94,9 +94,6 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
             X509Certificate firstCert = certList.get(0);
             // check trusted certificate's subject
             selector.setSubject(firstCert.getIssuerX500Principal());
-            // check the validity period
-            selector.setValidityPeriod(firstCert.getNotBefore(),
-                                       firstCert.getNotAfter());
             /*
              * Facilitate certification path construction with authority
              * key identifier and subject key identifier.

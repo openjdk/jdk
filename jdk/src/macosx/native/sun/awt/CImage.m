@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,21 +143,23 @@ JNF_COCOA_ENTER(env);
     NSMutableArray * reps = [NSMutableArray arrayWithCapacity: num];
 
     jint * ws = (*env)->GetIntArrayElements(env, widths, NULL);
-    jint * hs = (*env)->GetIntArrayElements(env, heights, NULL);
+    if (ws != NULL) {
+        jint * hs = (*env)->GetIntArrayElements(env, heights, NULL);
+        if (hs != NULL) {
+            jsize i;
+            for (i = 0; i < num; i++) {
+                jintArray buffer = (*env)->GetObjectArrayElement(env, buffers, i);
 
-    jsize i;
-    for (i = 0; i < num; i++) {
-        jintArray buffer = (*env)->GetObjectArrayElement(env, buffers, i);
+                NSBitmapImageRep* imageRep = CImage_CreateImageRep(env, buffer, ws[i], hs[i]);
+                if (imageRep) {
+                    [reps addObject: imageRep];
+                }
+            }
 
-        NSBitmapImageRep* imageRep = CImage_CreateImageRep(env, buffer, ws[i], hs[i]);
-        if (imageRep) {
-            [reps addObject: imageRep];
+            (*env)->ReleaseIntArrayElements(env, heights, hs, JNI_ABORT);
         }
+        (*env)->ReleaseIntArrayElements(env, widths, ws, JNI_ABORT);
     }
-
-    (*env)->ReleaseIntArrayElements(env, heights, hs, JNI_ABORT);
-    (*env)->ReleaseIntArrayElements(env, widths, ws, JNI_ABORT);
-
     if ([reps count]) {
         NSImage *nsImage = [[NSImage alloc] initWithSize:NSMakeSize(0, 0)];
         [nsImage addRepresentations: reps];
@@ -318,5 +320,28 @@ JNF_COCOA_ENTER(env);
     [i setScalesWhenResized:TRUE];
     [i setSize:NSMakeSize(w, h)];
 
+JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CImage
+ * Method:    nativeResizeNSImageRepresentations
+ * Signature: (JDD)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CImage_nativeResizeNSImageRepresentations
+(JNIEnv *env, jclass clazz, jlong image, jdouble w, jdouble h)
+{
+    if (!image) return;
+    NSImage *i = (NSImage *)jlong_to_ptr(image);
+    
+JNF_COCOA_ENTER(env);
+    
+    NSImageRep *imageRep = nil;
+    NSArray *imageRepresentations = [i representations];
+    NSEnumerator *imageEnumerator = [imageRepresentations objectEnumerator];
+    while ((imageRep = [imageEnumerator nextObject]) != nil) {
+        [imageRep setSize:NSMakeSize(w, h)];
+    }
+    
 JNF_COCOA_EXIT(env);
 }
