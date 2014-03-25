@@ -22,7 +22,6 @@
  */
 
 /*
- * @ignore 8032222
  * @test CdsWriteError
  * @summary Test how VM handles situation when it is impossible to write the
  *          CDS archive. VM is expected to exit gracefully and display the
@@ -43,6 +42,12 @@ public class CdsWriteError {
                 "manipulates folder writable attribute, which is known to be " +
                 "often ignored by Windows");
 
+            return;
+        }
+
+        // This test has been unstable for Mac OSx (see JDK-8032222)
+        if (Platform.isOSX()) {
+            System.out.println("This test is skipped on Mac");
             return;
         }
 
