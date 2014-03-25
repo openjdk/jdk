@@ -198,14 +198,12 @@ CodeBlob* CodeCache::allocate(int size, bool is_critical) {
   }
   maxCodeCacheUsed = MAX2(maxCodeCacheUsed, ((address)_heap->high_boundary() -
                           (address)_heap->low_boundary()) - unallocated_capacity());
-  verify_if_often();
   print_trace("allocation", cb, size);
   return cb;
 }
 
 void CodeCache::free(CodeBlob* cb) {
   assert_locked_or_safepoint(CodeCache_lock);
-  verify_if_often();
 
   print_trace("free", cb);
   if (cb->is_nmethod()) {
@@ -221,7 +219,6 @@ void CodeCache::free(CodeBlob* cb) {
 
   _heap->deallocate(cb);
 
-  verify_if_often();
   assert(_number_of_blobs >= 0, "sanity check");
 }
 
@@ -244,12 +241,6 @@ void CodeCache::commit(CodeBlob* cb) {
 }
 
 
-void CodeCache::flush() {
-  assert_locked_or_safepoint(CodeCache_lock);
-  Unimplemented();
-}
-
-
 // Iteration over CodeBlobs
 
 #define FOR_ALL_BLOBS(var)       for (CodeBlob *var =       first() ; var != NULL; var =       next(var) )
@@ -269,7 +260,7 @@ bool CodeCache::contains(void *p) {
 CodeBlob* CodeCache::find_blob(void* start) {
   CodeBlob* result = find_blob_unsafe(start);
   if (result == NULL) return NULL;
-  // We could potientially look up non_entrant methods
+  // We could potentially look up non_entrant methods
   guarantee(!result->is_zombie() || result->is_locked_by_vm() || is_error_reported(), "unsafe access to zombie method");
   return result;
 }
@@ -741,16 +732,25 @@ void CodeCache::report_codemem_full() {
   }
 }
 
+void CodeCache::print_memory_overhead() {
+  size_t wasted_bytes = 0;
+  CodeBlob *cb;
+  for (cb = first(); cb != NULL; cb = next(cb)) {
+    HeapBlock* heap_block = ((HeapBlock*)cb) - 1;
+    wasted_bytes += heap_block->length() * CodeCacheSegmentSize - cb->size();
+  }
+  // Print bytes that are allocated in the freelist
+  ttyLocker ttl;
+  tty->print_cr("Number of elements in freelist: %d",    freelist_length());
+  tty->print_cr("Allocated in freelist:          %dkB",  bytes_allocated_in_freelist()/K);
+  tty->print_cr("Unused bytes in CodeBlobs:      %dkB",  (int)(wasted_bytes/K));
+  tty->print_cr("Segment map size:               %dkB",  allocated_segments()/K); // 1 byte per segment
+}
+
 //------------------------------------------------------------------------------------------------
 // Non-product version
 
 #ifndef PRODUCT
-
-void CodeCache::verify_if_often() {
-  if (VerifyCodeCacheOften) {
-    _heap->verify();
-  }
-}
 
 void CodeCache::print_trace(const char* event, CodeBlob* cb, int size) {
   if (PrintCodeCache2) {  // Need to add a new flag
@@ -774,7 +774,7 @@ void CodeCache::print_internals() {
   int nmethodUnloaded = 0;
   int nmethodJava = 0;
   int nmethodNative = 0;
-  int maxCodeSize = 0;
+  int max_nm_size = 0;
   ResourceMark rm;
 
   CodeBlob *cb;
@@ -798,13 +798,11 @@ void CodeCache::print_internals() {
       if(nm->is_not_entrant()) { nmethodNotEntrant++; }
       if(nm->is_zombie()) { nmethodZombie++; }
       if(nm->is_unloaded()) { nmethodUnloaded++; }
-      if(nm->is_native_method()) { nmethodNative++; }
+      if(nm->method() != NULL && nm->is_native_method()) { nmethodNative++; }
 
       if(nm->method() != NULL && nm->is_java_method()) {
         nmethodJava++;
-        if (nm->insts_size() > maxCodeSize) {
-          maxCodeSize = nm->insts_size();
-        }
+        max_nm_size = MAX2(max_nm_size, nm->size());
       }
     } else if (cb->is_runtime_stub()) {
       runtimeStubCount++;
@@ -820,18 +818,19 @@ void CodeCache::print_internals() {
   }
 
   int bucketSize = 512;
-  int bucketLimit = maxCodeSize / bucketSize + 1;
+  int bucketLimit = max_nm_size / bucketSize + 1;
   int *buckets = NEW_C_HEAP_ARRAY(int, bucketLimit, mtCode);
-  memset(buckets,0,sizeof(int) * bucketLimit);
+  memset(buckets, 0, sizeof(int) * bucketLimit);
 
   for (cb = first(); cb != NULL; cb = next(cb)) {
     if (cb->is_nmethod()) {
       nmethod* nm = (nmethod*)cb;
       if(nm->is_java_method()) {
-        buckets[nm->insts_size() / bucketSize]++;
-      }
+        buckets[nm->size() / bucketSize]++;
+       }
     }
   }
+
   tty->print_cr("Code Cache Entries (total of %d)",total);
   tty->print_cr("-------------------------------------------------");
   tty->print_cr("nmethods: %d",nmethodCount);
@@ -858,6 +857,7 @@ void CodeCache::print_internals() {
   }
 
   FREE_C_HEAP_ARRAY(int, buckets, mtCode);
+  print_memory_overhead();
 }
 
 #endif // !PRODUCT
