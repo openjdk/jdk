@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ awtJNI_ThreadYield(JNIEnv *env) {
         Boolean err = FALSE;
         if (threadClass == NULL) {
             jclass tc = (*env)->FindClass(env, "java/lang/Thread");
+            CHECK_NULL(tc);
             threadClass = (*env)->NewGlobalRef(env, tc);
             (*env)->DeleteLocalRef(env, tc);
             if (threadClass != NULL) {

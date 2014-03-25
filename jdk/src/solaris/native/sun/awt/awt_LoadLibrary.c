@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,10 +77,15 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
     return isHeadless;
 }
 
+#define CHECK_EXCEPTION_FATAL(env, message) \
+    if ((*env)->ExceptionCheck(env)) { \
+        (*env)->ExceptionClear(env); \
+        (*env)->FatalError(env, message); \
+    }
+
 /*
  * Pathnames to the various awt toolkits
  */
-
 
 #ifdef MACOSX
   #define LWAWT_PATH "/libawt_lwawt.dylib"
@@ -125,6 +130,8 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
      */
 
     fmProp = (*env)->NewStringUTF(env, "sun.font.fontmanager");
+    CHECK_EXCEPTION_FATAL(env, "Could not allocate font manager property");
+
 #ifdef MACOSX
         fmanager = (*env)->NewStringUTF(env, "sun.font.CFontManager");
         tk = LWAWT_PATH;
@@ -132,10 +139,13 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
         fmanager = (*env)->NewStringUTF(env, "sun.awt.X11FontManager");
         tk = XAWT_PATH;
 #endif
+    CHECK_EXCEPTION_FATAL(env, "Could not allocate font manager name");
+
     if (fmanager && fmProp) {
         JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "setProperty",
                                    "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
                                    fmProp, fmanager);
+        CHECK_EXCEPTION_FATAL(env, "Could not allocate set properties");
     }
 
 #ifndef MACOSX
@@ -154,9 +164,11 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
         (*env)->DeleteLocalRef(env, fmanager);
     }
 
+    jstring jbuf = JNU_NewStringPlatform(env, buf);
+    CHECK_EXCEPTION_FATAL(env, "Could not allocate library name");
     JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "load",
                                "(Ljava/lang/String;)V",
-                               JNU_NewStringPlatform(env, buf));
+                               jbuf);
 
     awtHandle = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
 
