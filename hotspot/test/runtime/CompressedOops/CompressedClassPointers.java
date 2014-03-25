@@ -83,8 +83,8 @@ public class CompressedClassPointers {
     public static void heapBaseMinAddressTest() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:HeapBaseMinAddress=1m",
-            "-XX:+PrintMiscellaneous",
-            "-XX:+Verbose",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+PrintCompressedOopsMode",
             "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("HeapBaseMinAddress must be at least");

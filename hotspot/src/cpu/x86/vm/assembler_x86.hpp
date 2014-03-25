@@ -590,10 +590,35 @@ private:
     vex_prefix(src, nds_enc, dst_enc, pre, VEX_OPCODE_0F, false, vector256);
   }
 
+  void vex_prefix_0F38(Register dst, Register nds, Address src) {
+    bool vex_w = false;
+    bool vector256 = false;
+    vex_prefix(src, nds->encoding(), dst->encoding(),
+               VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w, vector256);
+  }
+
+  void vex_prefix_0F38_q(Register dst, Register nds, Address src) {
+    bool vex_w = true;
+    bool vector256 = false;
+    vex_prefix(src, nds->encoding(), dst->encoding(),
+               VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w, vector256);
+  }
   int  vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
                              VexSimdPrefix pre, VexOpcode opc,
                              bool vex_w, bool vector256);
 
+  int  vex_prefix_0F38_and_encode(Register dst, Register nds, Register src) {
+    bool vex_w = false;
+    bool vector256 = false;
+    return vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(),
+                                 VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w, vector256);
+  }
+  int  vex_prefix_0F38_and_encode_q(Register dst, Register nds, Register src) {
+    bool vex_w = true;
+    bool vector256 = false;
+    return vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(),
+                                 VEX_SIMD_NONE, VEX_OPCODE_0F_38, vex_w, vector256);
+  }
   int  vex_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegister src,
                              VexSimdPrefix pre, bool vector256 = false,
                              VexOpcode opc = VEX_OPCODE_0F) {
@@ -896,6 +921,27 @@ private:
   void andq(Register dst, int32_t imm32);
   void andq(Register dst, Address src);
   void andq(Register dst, Register src);
+
+  // BMI instructions
+  void andnl(Register dst, Register src1, Register src2);
+  void andnl(Register dst, Register src1, Address src2);
+  void andnq(Register dst, Register src1, Register src2);
+  void andnq(Register dst, Register src1, Address src2);
+
+  void blsil(Register dst, Register src);
+  void blsil(Register dst, Address src);
+  void blsiq(Register dst, Register src);
+  void blsiq(Register dst, Address src);
+
+  void blsmskl(Register dst, Register src);
+  void blsmskl(Register dst, Address src);
+  void blsmskq(Register dst, Register src);
+  void blsmskq(Register dst, Address src);
+
+  void blsrl(Register dst, Register src);
+  void blsrl(Register dst, Address src);
+  void blsrq(Register dst, Register src);
+  void blsrq(Register dst, Address src);
 
   void bsfl(Register dst, Register src);
   void bsrl(Register dst, Register src);
@@ -1574,6 +1620,9 @@ private:
   void testq(Register dst, int32_t imm32);
   void testq(Register dst, Register src);
 
+  // BMI - count trailing zeros
+  void tzcntl(Register dst, Register src);
+  void tzcntq(Register dst, Register src);
 
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
