@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2002,2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -351,7 +352,7 @@ final class RangeToken extends Token implements java.io.Serializable {
                                                 // src2:      o----o
                                                 // src2:          o----o
                                                 // src2:  o------------o
-                if (src2begin <= src2begin && src1end <= src2end) {
+                if (src2begin <= src1begin && src1end <= src2end) {
                                                 // src1:    o--------o
                                                 // src2:  o------------o
                                                 // res:     o--------o
@@ -384,6 +385,7 @@ final class RangeToken extends Token implements java.io.Serializable {
                     result[wp++] = src2begin;
                     result[wp++] = src2end;
                     this.ranges[src1] = src2end+1;
+                    src2 += 2;
                 }
             } else if (src2end < src1begin) {
                                                 // Not overlapped
@@ -398,10 +400,6 @@ final class RangeToken extends Token implements java.io.Serializable {
                                            +","+tok.ranges[src2+1]
                                            +"]");
             }
-        }
-        while (src1 < this.ranges.length) {
-            result[wp++] = this.ranges[src1++];
-            result[wp++] = this.ranges[src1++];
         }
         this.ranges = new int[wp];
         System.arraycopy(result, 0, this.ranges, 0, wp);
@@ -464,8 +462,8 @@ final class RangeToken extends Token implements java.io.Serializable {
                 if (ch > 0xffff)
                     lowers.addRange(ch, ch);
                 else {
-                    char uch = Character.toUpperCase((char)ch);
-                    lowers.addRange(uch, uch);
+                    char lch = Character.toLowerCase((char)ch);
+                    lowers.addRange(lch, lch);
                 }
             }
         }
@@ -479,8 +477,10 @@ final class RangeToken extends Token implements java.io.Serializable {
 
     void dumpRanges() {
         System.err.print("RANGE: ");
-        if (this.ranges == null)
+        if (this.ranges == null) {
             System.err.println(" NULL");
+            return;
+        }
         for (int i = 0;  i < this.ranges.length;  i += 2) {
             System.err.print("["+this.ranges[i]+","+this.ranges[i+1]+"] ");
         }
@@ -552,10 +552,10 @@ final class RangeToken extends Token implements java.io.Serializable {
             else if (this == Token.token_spaces)
                 ret = "\\s";
             else {
-                StringBuffer sb = new StringBuffer();
-                sb.append("[");
+                StringBuilder sb = new StringBuilder();
+                sb.append('[');
                 for (int i = 0;  i < this.ranges.length;  i += 2) {
-                    if ((options & RegularExpression.SPECIAL_COMMA) != 0 && i > 0)  sb.append(",");
+                    if ((options & RegularExpression.SPECIAL_COMMA) != 0 && i > 0)  sb.append(',');
                     if (this.ranges[i] == this.ranges[i+1]) {
                         sb.append(escapeCharInCharClass(this.ranges[i]));
                     } else {
@@ -564,7 +564,7 @@ final class RangeToken extends Token implements java.io.Serializable {
                         sb.append(escapeCharInCharClass(this.ranges[i+1]));
                     }
                 }
-                sb.append("]");
+                sb.append(']');
                 ret = sb.toString();
             }
         } else {
@@ -578,7 +578,7 @@ final class RangeToken extends Token implements java.io.Serializable {
                 StringBuffer sb = new StringBuffer();
                 sb.append("[^");
                 for (int i = 0;  i < this.ranges.length;  i += 2) {
-                    if ((options & RegularExpression.SPECIAL_COMMA) != 0 && i > 0)  sb.append(",");
+                    if ((options & RegularExpression.SPECIAL_COMMA) != 0 && i > 0)  sb.append(',');
                     if (this.ranges[i] == this.ranges[i+1]) {
                         sb.append(escapeCharInCharClass(this.ranges[i]));
                     } else {
@@ -587,7 +587,7 @@ final class RangeToken extends Token implements java.io.Serializable {
                         sb.append(escapeCharInCharClass(this.ranges[i+1]));
                     }
                 }
-                sb.append("]");
+                sb.append(']');
                 ret = sb.toString();
             }
         }
