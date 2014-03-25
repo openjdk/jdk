@@ -1112,7 +1112,6 @@ void Assembler::bsfl(Register dst, Register src) {
 }
 
 void Assembler::bsrl(Register dst, Register src) {
-  assert(!VM_Version::supports_lzcnt(), "encoding is treated as LZCNT");
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)0xBD);
@@ -4977,7 +4976,6 @@ void Assembler::bsfq(Register dst, Register src) {
 }
 
 void Assembler::bsrq(Register dst, Register src) {
-  assert(!VM_Version::supports_lzcnt(), "encoding is treated as LZCNT");
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)0xBD);
