@@ -28,21 +28,25 @@
  *          directory is specified
  */
 
-import java.io.*;
+import java.io.File;
 
 public class ExecWithDir {
 
-    private static final String CMD = "/bin/true";
     private static final int N = 500;
 
     public static void main(String args[]) throws Exception {
-        if (! new File(CMD).canExecute())
+        if (! UnixCommands.isUnix) {
+            System.out.println("For UNIX only");
             return;
+        }
+        UnixCommands.ensureCommandsAvailable("true");
+
+        final String trueCmd = UnixCommands.findCommand("true");
         File dir = new File(".");
         for (int i = 1; i <= N; i++) {
             System.out.print(i);
             System.out.print(" e");
-            Process p = Runtime.getRuntime().exec(CMD, null, dir);
+            Process p = Runtime.getRuntime().exec(trueCmd, null, dir);
             System.out.print('w');
             int s = p.waitFor();
             System.out.println("x " + s);

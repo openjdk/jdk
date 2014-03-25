@@ -138,8 +138,10 @@ public class ChangingInterests {
             ServerSocketChannel.open().bind(new InetSocketAddress(0));
 
         final SocketChannel sc = SocketChannel.open();
+        sc.setOption(StandardSocketOptions.TCP_NODELAY, true);
         sc.connect(new InetSocketAddress(lh, ssc.socket().getLocalPort()));
         SocketChannel peer = ssc.accept();
+        peer.setOption(StandardSocketOptions.TCP_NODELAY, true);
 
         sc.configureBlocking(false);
 

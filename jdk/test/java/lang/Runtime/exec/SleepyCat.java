@@ -73,8 +73,8 @@ public class SleepyCat {
         // slower, making the child more likely to win the race!
         int iterations = 20;
         int timeout = 30;
-        String[] catArgs   = new String[] {"/bin/cat"};
-        String[] sleepArgs = new String[] {"/bin/sleep",
+        String[] catArgs   = new String[] {UnixCommands.cat()};
+        String[] sleepArgs = new String[] {UnixCommands.sleep(),
                                             String.valueOf(timeout+1)};
         Process[] cats   = new Process[iterations];
         Process[] sleeps = new Process[iterations];
@@ -126,8 +126,9 @@ public class SleepyCat {
         timer.schedule(sleeperExecutioner, timeout * 1000);
         byte[] buffer = new byte[10];
         String[] args =
-            new String[] {"/bin/sh", "-c",
-                          "exec sleep " + (timeout+1) + " >/dev/null"};
+            new String[] {UnixCommands.sh(), "-c",
+                          "exec " + UnixCommands.sleep() + " "
+                                  + (timeout+1) + " >/dev/null"};
 
         for (int i = 0;
              i < backgroundSleepers.length && !sleeperExecutioner.timedOut();
@@ -153,12 +154,13 @@ public class SleepyCat {
     }
 
     public static void main (String[] args) throws Exception {
-        try {
-            if (hang1() | hang2())
-                throw new Exception("Read from closed pipe hangs");
-        } catch (IOException e) {
-            // We will get here on non-Posix systems,
-            // which don't have cat and sleep and sh.
+        if (! UnixCommands.isUnix) {
+            System.out.println("For UNIX only");
+            return;
         }
+        UnixCommands.ensureCommandsAvailable("sh", "cat", "sleep");
+
+        if (hang1() | hang2())
+            throw new Exception("Read from closed pipe hangs");
     }
 }

@@ -71,6 +71,7 @@ TOOL_CHARACTERNAME = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.generatecharacter.CharacterName
 
 TOOL_DTDBUILDER = $(JAVA_SMALL) -Ddtd_home=$(JDK_TOPDIR)/make/data/dtdbuilder \
+    -Djava.awt.headless=true \
     -cp $(JDK_OUTPUTDIR)/btclasses build.tools.dtdbuilder.DTDBuilder
 
 TOOL_GENERATEBREAKITERATORDATA = $(JAVA_SMALL) \

@@ -46,9 +46,9 @@ static jlong H_PATH;
 
 /* Compute the low-order mask for the characters in the given string */
 static jlong lowMask(char* s) {
-    int n = strlen(s);
+    size_t n = strlen(s);
     jlong m = 0;
-    int i;
+    size_t i;
     for (i = 0; i < n; i++) {
         int c = (int)s[i];
         if (c < 64)
@@ -59,9 +59,9 @@ static jlong lowMask(char* s) {
 
 /* Compute the high-order mask for the characters in the given string */
 static jlong highMask(char* s) {
-    int n = strlen(s);
+    size_t n = strlen(s);
     jlong m = 0;
-    int i;
+    size_t i;
     for (i = 0; i < n; i++) {
         int c = (int)s[i];
         if ((c >= 64) && (c < 128))
@@ -168,7 +168,7 @@ static void initialize() {
  * illegal characters. Returns 0 if only validate characters are present.
  */
 int validatePathChars(const char* path) {
-    int i, n;
+    size_t i, n;
 
     /* initialize on first usage */
     if (L_HEX == 0) {

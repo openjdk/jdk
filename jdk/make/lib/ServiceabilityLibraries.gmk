@@ -49,7 +49,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH, \
     EXCLUDE_FILES := $(LIBATTACH_EXCLUDE_FILES), \
     LANG := C, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS), \
     CFLAGS_windows := /Gy, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libattach/mapfile-$(OPENJDK_TARGET_OS), \
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
@@ -79,7 +79,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
         $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/transport/socket, \
     LANG := C, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_CFLAGS_WARNINGS_ARE_ERRORS) -DUSE_MMAP \
         -I$(INCLUDEDIR) -I$(JDK_OUTPUTDIR)/include/$(OPENJDK_TARGET_OS) \
         -I$(JDK_TOPDIR)/src/share/transport/socket \
         -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/transport/socket \
@@ -115,7 +115,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/transport/shmem, \
       LANG := C, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
+      CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) -DUSE_MMAP \
           -I$(INCLUDEDIR) -I$(JDK_OUTPUTDIR)/include/$(OPENJDK_TARGET_OS) \
           -I$(JDK_TOPDIR)/src/share/transport/shmem \
           -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/transport/shmem \
@@ -144,7 +144,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
     SRC := $(JDK_TOPDIR)/src/share/back $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/back, \
     LANG := C, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) -DJDWP_LOGGING \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) -DJDWP_LOGGING \
         -I$(JDK_TOPDIR)/src/share/transport/export \
         -I$(JDK_TOPDIR)/src/share/back/export \
         -I$(JDK_TOPDIR)/src/share/npt \
@@ -179,7 +179,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSDT, \
         $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/tracing/dtrace, \
     LANG := C, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
         -I$(JDK_TOPDIR)/src/share/native/sun/tracing/dtrace, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsdt/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -248,7 +248,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     INCLUDE_FILES := $(LIBINSTRUMENT_FILES), \
     LANG := C, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(LIBINSTRUMENT_CFLAGS), \
+    CFLAGS := $(LIBINSTRUMENT_CFLAGS) $(CFLAGS_WARNINGS_ARE_ERRORS), \
     CFLAGS_debug := -DJPLIS_LOGGING, \
     CFLAGS_release := -DNO_JPLIS_LOGGING, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libinstrument/mapfile-vers, \
@@ -316,7 +316,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
     EXCLUDE_FILES := $(BUILD_LIBMANAGEMENT_EXCLUDES), \
     LANG := C, \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB) $(BUILD_LIBMANAGEMENT_CFLAGS), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) $(BUILD_LIBMANAGEMENT_CFLAGS), \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libmanagement/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -364,7 +364,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF, \
     SRC := $(BUILD_LIBHPROF_SRC), \
     LANG := C, \
     OPTIMIZATION := $(LIBHPROF_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB) \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
         $(BUILD_LIBHPROF_CFLAGS), \
     CFLAGS_debug := -DHPROF_LOGGING, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libhprof/mapfile-vers, \
@@ -392,7 +392,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA_CRW_DEMO, \
     SRC := $(JDK_TOPDIR)/src/share/demo/jvmti/java_crw_demo, \
     LANG := C, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
         -I$(JDK_TOPDIR)/src/share/demo/jvmti/java_crw_demo, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava_crw_demo/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -419,7 +419,7 @@ ifndef OPENJDK
         SRC := $(JDK_TOPDIR)/src/closed/share/native/oracle/jfr, \
         LANG := C, \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB) \
+        CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
             -I$(JDK_TOPDIR)/src/closed/share/javavm/export, \
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjfr/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \

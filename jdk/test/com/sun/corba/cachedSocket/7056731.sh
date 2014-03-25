@@ -102,7 +102,7 @@ echo "resume 1";
 sleep 5 # give time for Client to throw exception
 
 # JVM_PROC should have exited but just in case, include it.
-kill -9 $ORB_PROC $JVM_PROC
+kill -9 $ORB_PROC $JVM_PROC $SERVER_PROC
 
 grep "ORBUtilSystemException.writeErrorSend" client.$$
 result=$?
