@@ -891,6 +891,13 @@ definitions %{
 // This is a block of C++ code which provides values, functions, and
 // definitions necessary in the rest of the architecture description.
 source_hpp %{
+  // Header information of the source block.
+  // Method declarations/definitions which are used outside
+  // the ad-scope can conveniently be defined here.
+  //
+  // To keep related declarations/definitions/uses close together,
+  // we switch between source %{ }% and source_hpp %{ }% freely as needed.
+
   // Returns true if Node n is followed by a MemBar node that 
   // will do an acquire. If so, this node must not do the acquire
   // operation.
@@ -1114,6 +1121,40 @@ static inline void emit_long(CodeBuffer &cbuf, int value) {
 
 //=============================================================================
 
+%} // interrupt source
+
+source_hpp %{ // Header information of the source block.
+
+//--------------------------------------------------------------
+//---<  Used for optimization in Compile::Shorten_branches  >---
+//--------------------------------------------------------------
+
+const uint trampoline_stub_size     =  6 * BytesPerInstWord;
+
+class CallStubImpl {
+
+ public:
+
+  static void emit_trampoline_stub(MacroAssembler &_masm, int destination_toc_offset, int insts_call_instruction_offset);
+
+  // Size of call trampoline stub.
+  // This doesn't need to be accurate to the byte, but it
+  // must be larger than or equal to the real size of the stub.
+  static uint size_call_trampoline() {
+    return trampoline_stub_size;
+  }
+
+  // number of relocations needed by a call trampoline stub
+  static uint reloc_call_trampoline() {
+    return 5;
+  }
+
+};
+
+%} // end source_hpp
+
+source %{
+
 // Emit a trampoline stub for a call to a target which is too far away.
 //
 // code sequences:
@@ -1125,9 +1166,7 @@ static inline void emit_long(CodeBuffer &cbuf, int value) {
 //   load the call target from the constant pool
 //   branch via CTR (LR/link still points to the call-site above)
 
-const uint trampoline_stub_size = 6 * BytesPerInstWord;
-
-void emit_trampoline_stub(MacroAssembler &_masm, int destination_toc_offset, int insts_call_instruction_offset) {
+void CallStubImpl::emit_trampoline_stub(MacroAssembler &_masm, int destination_toc_offset, int insts_call_instruction_offset) {
   // Start the stub.
   address stub = __ start_a_stub(Compile::MAX_stubs_size/2);
   if (stub == NULL) {
@@ -1170,19 +1209,6 @@ void emit_trampoline_stub(MacroAssembler &_masm, int destination_toc_offset, int
   __ end_a_stub();
 }
 
-// Size of trampoline stub, this doesn't need to be accurate but it must
-// be larger or equal to the real size of the stub.
-// Used for optimization in Compile::Shorten_branches.
-uint size_call_trampoline() {
-  return trampoline_stub_size;
-}
-
-// Number of relocation entries needed by trampoline stub.
-// Used for optimization in Compile::Shorten_branches.
-uint reloc_call_trampoline() {
-  return 5;
-}
-
 //=============================================================================
 
 // Emit an inline branch-and-link call and a related trampoline stub.
@@ -1221,7 +1247,7 @@ EmitCallOffsets emit_call_with_trampoline_stub(MacroAssembler &_masm, address en
     const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
 
     // Emit the trampoline stub which will be related to the branch-and-link below.
-    emit_trampoline_stub(_masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
+    CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
     __ relocate(rtype);
   }
 
@@ -2023,17 +2049,34 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 
-uint size_exception_handler() {
-  // The exception_handler is a b64_patchable.
-  return MacroAssembler::b64_patchable_size;
-}
+%} // interrupt source
 
-uint size_deopt_handler() {
-  // The deopt_handler is a bl64_patchable.
-  return MacroAssembler::bl64_patchable_size;
-}
+source_hpp %{ // Header information of the source block.
 
-int emit_exception_handler(CodeBuffer &cbuf) {
+class HandlerImpl {
+
+ public:
+
+  static int emit_exception_handler(CodeBuffer &cbuf);
+  static int emit_deopt_handler(CodeBuffer& cbuf);
+
+  static uint size_exception_handler() {
+    // The exception_handler is a b64_patchable.
+    return MacroAssembler::b64_patchable_size;
+  }
+
+  static uint size_deopt_handler() {
+    // The deopt_handler is a bl64_patchable.
+    return MacroAssembler::bl64_patchable_size;
+  }
+
+};
+
+%} // end source_hpp
+
+source %{
+
+int HandlerImpl::emit_exception_handler(CodeBuffer &cbuf) {
   MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
@@ -2050,7 +2093,7 @@ int emit_exception_handler(CodeBuffer &cbuf) {
 
 // The deopt_handler is like the exception handler, but it calls to
 // the deoptimization blob instead of jumping to the exception blob.
-int emit_deopt_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_deopt_handler());
@@ -3438,7 +3481,7 @@ encode %{
         const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
 
         // Emit the trampoline stub which will be related to the branch-and-link below.
-        emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
+        CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
         __ relocate(_optimized_virtual ?
                     relocInfo::opt_virtual_call_type : relocInfo::static_call_type);
       }
@@ -3481,7 +3524,7 @@ encode %{
       const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
 
       // Emit the trampoline stub which will be related to the branch-and-link below.
-      emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
+      CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
       assert(_optimized_virtual, "methodHandle call should be a virtual call");
       __ relocate(relocInfo::opt_virtual_call_type);
     }
@@ -3531,7 +3574,7 @@ encode %{
       const address entry_point = !($meth$$method) ? 0 : (address)$meth$$method;
       const address entry_point_const = __ address_constant(entry_point, RelocationHolder::none);
       const int entry_point_const_toc_offset = __ offset_to_method_toc(entry_point_const);
-      emit_trampoline_stub(_masm, entry_point_const_toc_offset, __ offset());
+      CallStubImpl::emit_trampoline_stub(_masm, entry_point_const_toc_offset, __ offset());
 
       if (ra_->C->env()->failing())
         return;

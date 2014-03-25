@@ -1297,59 +1297,6 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 
 //=============================================================================
-uint size_exception_handler() {
-  // NativeCall instruction size is the same as NativeJump.
-  // exception handler starts out as jump and can be patched to
-  // a call be deoptimization.  (4932387)
-  // Note that this value is also credited (in output.cpp) to
-  // the size of the code section.
-  return NativeJump::instruction_size;
-}
-
-// Emit exception handler code.  Stuff framesize into a register
-// and call a VM stub routine.
-int emit_exception_handler(CodeBuffer& cbuf) {
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  MacroAssembler _masm(&cbuf);
-  address base =
-  __ start_a_stub(size_exception_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
-  int offset = __ offset();
-  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
-
-uint size_deopt_handler() {
-  // NativeCall instruction size is the same as NativeJump.
-  // exception handler starts out as jump and can be patched to
-  // a call be deoptimization.  (4932387)
-  // Note that this value is also credited (in output.cpp) to
-  // the size of the code section.
-  return 5 + NativeJump::instruction_size; // pushl(); jmp;
-}
-
-// Emit deopt handler code.
-int emit_deopt_handler(CodeBuffer& cbuf) {
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  MacroAssembler _masm(&cbuf);
-  address base =
-  __ start_a_stub(size_exception_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
-  int offset = __ offset();
-  InternalAddress here(__ pc());
-  __ pushptr(here.addr());
-
-  __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-  assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
 
 int Matcher::regnum_to_fpu_offset(int regnum) {
   return regnum - 32; // The FP registers are in the second chunk
