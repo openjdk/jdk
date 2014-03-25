@@ -735,4 +735,20 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
+
+  case "${TOOLCHAIN_TYPE}" in
+    microsoft)
+      CFLAGS_WARNINGS_ARE_ERRORS="/WX"
+      ;;
+    solstudio)
+      CFLAGS_WARNINGS_ARE_ERRORS="-errtags -errwarn=%all"
+      ;;
+    gcc)
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      ;;
+    clang)
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      ;;
+  esac
+  AC_SUBST(CFLAGS_WARNINGS_ARE_ERRORS)
 ])
