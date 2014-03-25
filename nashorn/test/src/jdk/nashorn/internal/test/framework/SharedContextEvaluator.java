@@ -34,10 +34,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import jdk.nashorn.api.scripting.NashornException;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.ScriptFunction;
-import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -110,12 +110,12 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
 
     @Override
     public int run(final OutputStream out, final OutputStream err, final String[] args) throws IOException {
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final Global oldGlobal = Context.getGlobal();
         try {
             ctxOut.setDelegatee(out);
             ctxErr.setDelegatee(err);
             final ErrorManager errors = context.getErrorManager();
-            final ScriptObject global = context.createGlobal();
+            final Global global = context.createGlobal();
             Context.setGlobal(global);
 
             // For each file on the command line.
