@@ -5308,12 +5308,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         return retValue;
     }
 
-    private void setLazyValue(Hashtable h, Class c, String s) {
-        h.put(c, new SwingLazyValue(s));
+    private void setLazyValue(Hashtable h, Class c, LazyClass lazyClass) {
+        h.put(c, new TableLazyValue(lazyClass));
     }
 
-    private void setLazyRenderer(Class c, String s) {
-        setLazyValue(defaultRenderersByColumnClass, c, s);
+    private void setLazyRenderer(Class c, LazyClass lazyClass) {
+        setLazyValue(defaultRenderersByColumnClass, c, lazyClass);
     }
 
     /**
@@ -5326,24 +5326,24 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         defaultRenderersByColumnClass = new UIDefaults(8, 0.75f);
 
         // Objects
-        setLazyRenderer(Object.class, "javax.swing.table.DefaultTableCellRenderer$UIResource");
+        setLazyRenderer(Object.class, LazyClass.UIResource);
 
         // Numbers
-        setLazyRenderer(Number.class, "javax.swing.JTable$NumberRenderer");
+        setLazyRenderer(Number.class, LazyClass.NumberRenderer);
 
         // Doubles and Floats
-        setLazyRenderer(Float.class, "javax.swing.JTable$DoubleRenderer");
-        setLazyRenderer(Double.class, "javax.swing.JTable$DoubleRenderer");
+        setLazyRenderer(Float.class, LazyClass.DoubleRenderer);
+        setLazyRenderer(Double.class, LazyClass.DoubleRenderer);
 
         // Dates
-        setLazyRenderer(Date.class, "javax.swing.JTable$DateRenderer");
+        setLazyRenderer(Date.class, LazyClass.DateRenderer);
 
         // Icons and ImageIcons
-        setLazyRenderer(Icon.class, "javax.swing.JTable$IconRenderer");
-        setLazyRenderer(ImageIcon.class, "javax.swing.JTable$IconRenderer");
+        setLazyRenderer(Icon.class, LazyClass.IconRenderer);
+        setLazyRenderer(ImageIcon.class, LazyClass.IconRenderer);
 
         // Booleans
-        setLazyRenderer(Boolean.class, "javax.swing.JTable$BooleanRenderer");
+        setLazyRenderer(Boolean.class, LazyClass.BooleanRenderer);
     }
 
     /**
@@ -5421,8 +5421,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
     }
 
-    private void setLazyEditor(Class c, String s) {
-        setLazyValue(defaultEditorsByColumnClass, c, s);
+    private void setLazyEditor(Class c, LazyClass lazyClass) {
+        setLazyValue(defaultEditorsByColumnClass, c, lazyClass);
     }
 
     /**
@@ -5433,13 +5433,13 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         defaultEditorsByColumnClass = new UIDefaults(3, 0.75f);
 
         // Objects
-        setLazyEditor(Object.class, "javax.swing.JTable$GenericEditor");
+        setLazyEditor(Object.class, LazyClass.GenericEditor);
 
         // Numbers
-        setLazyEditor(Number.class, "javax.swing.JTable$NumberEditor");
+        setLazyEditor(Number.class, LazyClass.NumberEditor);
 
         // Booleans
-        setLazyEditor(Boolean.class, "javax.swing.JTable$BooleanEditor");
+        setLazyEditor(Boolean.class, LazyClass.BooleanEditor);
     }
 
     /**
@@ -6545,6 +6545,53 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
     }
 
+    private enum LazyClass {
+
+        UIResource,
+        NumberRenderer,
+        DoubleRenderer,
+        DateRenderer,
+        IconRenderer,
+        BooleanRenderer,
+        GenericEditor,
+        NumberEditor,
+        BooleanEditor,
+    }
+
+    private static class TableLazyValue implements UIDefaults.LazyValue {
+
+        private LazyClass type;
+
+        public TableLazyValue(LazyClass type) {
+            this.type = type;
+        }
+
+        @Override
+        public Object createValue(UIDefaults table) {
+            switch (type) {
+                case UIResource:
+                    return new DefaultTableCellRenderer.UIResource();
+                case NumberRenderer:
+                    return new NumberRenderer();
+                case DoubleRenderer:
+                    return new DoubleRenderer();
+                case DateRenderer:
+                    return new DateRenderer();
+                case IconRenderer:
+                    return new IconRenderer();
+                case BooleanRenderer:
+                    return new BooleanRenderer();
+                case GenericEditor:
+                    return new GenericEditor();
+                case NumberEditor:
+                    return new NumberEditor();
+                case BooleanEditor:
+                    return new BooleanEditor();
+                default:
+                    return null;
+            }
+        }
+    }
 
 /////////////////
 // Accessibility support

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,10 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import sun.awt.FontDescriptor;
 import sun.awt.FontConfiguration;
-import sun.font.FontManager;
 import sun.font.SunFontManager;
-import sun.java2d.SunGraphicsEnvironment;
 import java.nio.charset.*;
 
-public class WFontConfiguration extends FontConfiguration {
+public final class WFontConfiguration extends FontConfiguration {
 
     // whether compatibility fallbacks for TimesRoman and Co. are used
     private boolean useCompatibilityFallbacks;
@@ -52,6 +50,7 @@ public class WFontConfiguration extends FontConfiguration {
         useCompatibilityFallbacks = "windows-1252".equals(encoding);
     }
 
+    @Override
     protected void initReorderMap() {
         if (encoding.equalsIgnoreCase("windows-31j")) {
             localeMap = new Hashtable();
@@ -81,6 +80,7 @@ public class WFontConfiguration extends FontConfiguration {
 //      reorderMap.put("windows-1252", "alphabetic");
     }
 
+    @Override
     protected void setOsNameAndVersion(){
         super.setOsNameAndVersion();
         if (osName.startsWith("Windows")){
@@ -103,6 +103,7 @@ public class WFontConfiguration extends FontConfiguration {
     }
 
     // overrides FontConfiguration.getFallbackFamilyName
+    @Override
     public String getFallbackFamilyName(String fontName, String defaultFallback) {
         // maintain compatibility with old font.properties files, where
         // default file had aliases for timesroman & Co, while others didn't.
@@ -115,6 +116,7 @@ public class WFontConfiguration extends FontConfiguration {
         return defaultFallback;
     }
 
+    @Override
     protected String makeAWTFontName(String platformFontName, String characterSubsetName) {
         String windowsCharset = (String) subsetCharsetMap.get(characterSubsetName);
         if (windowsCharset == null) {
@@ -123,6 +125,7 @@ public class WFontConfiguration extends FontConfiguration {
         return platformFontName + "," + windowsCharset;
     }
 
+    @Override
     protected String getEncoding(String awtFontName, String characterSubsetName) {
         String encoding = (String) subsetEncodingMap.get(characterSubsetName);
         if (encoding == null) {
@@ -131,15 +134,18 @@ public class WFontConfiguration extends FontConfiguration {
         return encoding;
     }
 
+    @Override
     protected Charset getDefaultFontCharset(String fontName) {
         return new WDefaultFontCharset(fontName);
     }
 
+    @Override
     public String getFaceNameFromComponentFontName(String componentFontName) {
         // for Windows, the platform name is the face name
         return componentFontName;
     }
 
+    @Override
     protected String getFileNameFromComponentFontName(String componentFontName) {
         return getFileNameFromPlatformName(componentFontName);
     }

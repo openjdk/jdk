@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,16 @@
  */
 package sun.awt.windows;
 
-import java.awt.*;
-import java.awt.peer.*;
-import java.lang.ref.WeakReference;
-import sun.awt.SunToolkit;
-import sun.awt.Win32GraphicsDevice;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.peer.CanvasPeer;
+
 import sun.awt.PaintEventDispatcher;
+import sun.awt.SunToolkit;
 
 class WCanvasPeer extends WComponentPeer implements CanvasPeer {
 
@@ -41,8 +45,10 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
         super(target);
     }
 
+    @Override
     native void create(WComponentPeer parent);
 
+    @Override
     void initialize() {
         eraseBackground = !SunToolkit.getSunAwtNoerasebackground();
         boolean eraseBackgroundOnResize = SunToolkit.getSunAwtErasebackgroundonresize();
@@ -60,6 +66,7 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
         }
     }
 
+    @Override
     public void paint(Graphics g) {
         Dimension d = ((Component)target).getSize();
         if (g instanceof Graphics2D ||
@@ -75,6 +82,7 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
         super.paint(g);
     }
 
+    @Override
     public boolean shouldClearRectBeforePaint() {
         return eraseBackground;
     }
@@ -99,6 +107,7 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
     private native void setNativeBackgroundErase(boolean doErase,
                                                  boolean doEraseOnResize);
 
+    @Override
     public GraphicsConfiguration getAppropriateGraphicsConfiguration(
             GraphicsConfiguration gc)
     {

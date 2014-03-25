@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 4290640 4785473
- * @run shell/timeout=300 Assert.sh
+ * @build package1.Class1 package2.Class2 package1.package3.Class3 Assert
+ * @run main/othervm Assert
  * @summary Test the assertion facility
  * @author Mike McCloskey
  */

@@ -627,14 +627,14 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         if (dropOperation == DnDConstants.ACTION_NONE)
             throw new IllegalArgumentException("invalid acceptDrop() action");
 
-        if (dropStatus != STATUS_WAIT) {
+        if (dropStatus == STATUS_WAIT || dropStatus == STATUS_ACCEPT) {
+            currentDA = currentA = mapOperation(dropOperation & currentSA);
+
+            dropStatus   = STATUS_ACCEPT;
+            dropComplete = false;
+        } else {
             throw new InvalidDnDOperationException("invalid acceptDrop()");
         }
-
-        currentDA = currentA = mapOperation(dropOperation & currentSA);
-
-        dropStatus   = STATUS_ACCEPT;
-        dropComplete = false;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@
  * @bug 6239117
  * @summary test logical channels work
  * @author Andreas Sterbenz
- * @ignore requires special hardware
- * @run main/manual TestExclusive
+ * @run main/manual TestChannel
  */
+
+// This test requires special hardware.
 
 import java.io.*;
 import java.util.*;

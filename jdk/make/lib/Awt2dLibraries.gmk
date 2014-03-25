@@ -1196,7 +1196,6 @@ endif
 ifndef BUILD_HEADLESS_ONLY
   LIBSPLASHSCREEN_DIRS := \
     $(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg \
-    $(JDK_TOPDIR)/src/share/native/sun/awt/libpng \
     $(JDK_TOPDIR)/src/share/native/sun/awt/splashscreen
 
   ifeq ($(USE_EXTERNAL_LIBGIF), true)
@@ -1204,6 +1203,11 @@ ifndef BUILD_HEADLESS_ONLY
   else
     LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/sun/awt/giflib
     GIFLIB_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/sun/awt/giflib
+  endif
+
+  ifeq ($(USE_EXTERNAL_LIBPNG), false)
+    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/sun/awt/libpng
+    LIBPNG_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/sun/awt/libpng
   endif
 
   ifneq ($(OPENJDK_TARGET_OS), macosx)
@@ -1268,11 +1272,13 @@ ifndef BUILD_HEADLESS_ONLY
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       LANG := C, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) $(GIFLIB_CFLAGS), \
+      CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) \
+                $(GIFLIB_CFLAGS) $(PNG_CFLAGS), \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsplashscreen/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX := $(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ) $(GIFLIB_LDFLAGS), \
+      LDFLAGS_SUFFIX := $(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ) \
+                        $(GIFLIB_LDFLAGS) $(PNG_LIBS), \
       LDFLAGS_SUFFIX_solaris := -lc, \
       VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
       RC_FLAGS := $(RC_FLAGS) \
@@ -1315,6 +1321,7 @@ ifndef OPENJDK
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX := $(LIBM) $(LDFLAGS_JDKLIB_SUFFIX), \
+      LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB), \
       LDFLAGS_SUFFIX_posix := -lm, \
       VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
       RC_FLAGS := $(RC_FLAGS) \

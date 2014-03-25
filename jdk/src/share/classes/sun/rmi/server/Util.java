@@ -57,8 +57,6 @@ import sun.rmi.registry.RegistryImpl;
 import sun.rmi.runtime.Log;
 import sun.rmi.transport.LiveRef;
 import sun.rmi.transport.tcp.TCPEndpoint;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A utility class with static methods for creating stubs/proxies and
@@ -70,7 +68,7 @@ public final class Util {
     /** "server" package log level */
     static final int logLevel = LogStream.parseLevel(
         AccessController.doPrivileged(
-            new GetPropertyAction("sun.rmi.server.logLevel")));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.server.logLevel")));
 
     /** server reference log */
     public static final Log serverRefLog =
@@ -79,8 +77,7 @@ public final class Util {
     /** cached value of property java.rmi.server.ignoreStubClasses */
     private static final boolean ignoreStubClasses =
         AccessController.doPrivileged(
-            new GetBooleanAction("java.rmi.server.ignoreStubClasses")).
-            booleanValue();
+            (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("java.rmi.server.ignoreStubClasses"));
 
     /** cache of  impl classes that have no corresponding stub class */
     private static final Map<Class<?>, Void> withoutStubs =

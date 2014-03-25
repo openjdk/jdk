@@ -339,7 +339,7 @@ public final class ImageIO {
             throw new IllegalArgumentException("input == null!");
         }
 
-        Iterator iter;
+        Iterator<ImageInputStreamSpi> iter;
         // Ensure category is present
         try {
             iter = theRegistry.getServiceProviders(ImageInputStreamSpi.class,
@@ -351,7 +351,7 @@ public final class ImageIO {
         boolean usecache = getUseCache() && hasCachePermission();
 
         while (iter.hasNext()) {
-            ImageInputStreamSpi spi = (ImageInputStreamSpi)iter.next();
+            ImageInputStreamSpi spi = iter.next();
             if (spi.getInputClass().isInstance(input)) {
                 try {
                     return spi.createInputStreamInstance(input,
@@ -401,7 +401,7 @@ public final class ImageIO {
             throw new IllegalArgumentException("output == null!");
         }
 
-        Iterator iter;
+        Iterator<ImageOutputStreamSpi> iter;
         // Ensure category is present
         try {
             iter = theRegistry.getServiceProviders(ImageOutputStreamSpi.class,
@@ -413,7 +413,7 @@ public final class ImageIO {
         boolean usecache = getUseCache() && hasCachePermission();
 
         while (iter.hasNext()) {
-            ImageOutputStreamSpi spi = (ImageOutputStreamSpi)iter.next();
+            ImageOutputStreamSpi spi = iter.next();
             if (spi.getOutputClass().isInstance(output)) {
                 try {
                     return spi.createOutputStreamInstance(output,
@@ -512,9 +512,9 @@ public final class ImageIO {
 
     static class ImageReaderIterator implements Iterator<ImageReader> {
         // Contains ImageReaderSpis
-        public Iterator iter;
+        private Iterator<ImageReaderSpi> iter;
 
-        public ImageReaderIterator(Iterator iter) {
+        public ImageReaderIterator(Iterator<ImageReaderSpi> iter) {
             this.iter = iter;
         }
 
@@ -525,7 +525,7 @@ public final class ImageIO {
         public ImageReader next() {
             ImageReaderSpi spi = null;
             try {
-                spi = (ImageReaderSpi)iter.next();
+                spi = iter.next();
                 return spi.createReaderInstance();
             } catch (IOException e) {
                 // Deregister the spi in this case, but only as
@@ -640,7 +640,7 @@ public final class ImageIO {
         if (input == null) {
             throw new IllegalArgumentException("input == null!");
         }
-        Iterator iter;
+        Iterator<ImageReaderSpi> iter;
         // Ensure category is present
         try {
             iter = theRegistry.getServiceProviders(ImageReaderSpi.class,
@@ -702,7 +702,7 @@ public final class ImageIO {
         if (formatName == null) {
             throw new IllegalArgumentException("formatName == null!");
         }
-        Iterator iter;
+        Iterator<ImageReaderSpi> iter;
         // Ensure category is present
         try {
             iter = theRegistry.getServiceProviders(ImageReaderSpi.class,
@@ -738,7 +738,7 @@ public final class ImageIO {
             throw new IllegalArgumentException("fileSuffix == null!");
         }
         // Ensure category is present
-        Iterator iter;
+        Iterator<ImageReaderSpi> iter;
         try {
             iter = theRegistry.getServiceProviders(ImageReaderSpi.class,
                                    new ContainsFilter(readerFileSuffixesMethod,
@@ -773,7 +773,7 @@ public final class ImageIO {
             throw new IllegalArgumentException("MIMEType == null!");
         }
         // Ensure category is present
-        Iterator iter;
+        Iterator<ImageReaderSpi> iter;
         try {
             iter = theRegistry.getServiceProviders(ImageReaderSpi.class,
                                       new ContainsFilter(readerMIMETypesMethod,
@@ -826,9 +826,9 @@ public final class ImageIO {
 
     static class ImageWriterIterator implements Iterator<ImageWriter> {
         // Contains ImageWriterSpis
-        public Iterator iter;
+        private Iterator<ImageWriterSpi> iter;
 
-        public ImageWriterIterator(Iterator iter) {
+        public ImageWriterIterator(Iterator<ImageWriterSpi> iter) {
             this.iter = iter;
         }
 
@@ -839,7 +839,7 @@ public final class ImageIO {
         public ImageWriter next() {
             ImageWriterSpi spi = null;
             try {
-                spi = (ImageWriterSpi)iter.next();
+                spi = iter.next();
                 return spi.createWriterInstance();
             } catch (IOException e) {
                 // Deregister the spi in this case, but only as a writerSpi
@@ -885,7 +885,7 @@ public final class ImageIO {
         if (formatName == null) {
             throw new IllegalArgumentException("formatName == null!");
         }
-        Iterator iter;
+        Iterator<ImageWriterSpi> iter;
         // Ensure category is present
         try {
             iter = theRegistry.getServiceProviders(ImageWriterSpi.class,
@@ -919,7 +919,7 @@ public final class ImageIO {
         if (fileSuffix == null) {
             throw new IllegalArgumentException("fileSuffix == null!");
         }
-        Iterator iter;
+        Iterator<ImageWriterSpi> iter;
         // Ensure category is present
         try {
             iter = theRegistry.getServiceProviders(ImageWriterSpi.class,
@@ -953,7 +953,7 @@ public final class ImageIO {
         if (MIMEType == null) {
             throw new IllegalArgumentException("MIMEType == null!");
         }
-        Iterator iter;
+        Iterator<ImageWriterSpi> iter;
         // Ensure category is present
         try {
             iter = theRegistry.getServiceProviders(ImageWriterSpi.class,
@@ -1002,7 +1002,7 @@ public final class ImageIO {
 
         ImageReaderSpi readerSpi = reader.getOriginatingProvider();
         if (readerSpi == null) {
-            Iterator readerSpiIter;
+            Iterator<ImageReaderSpi> readerSpiIter;
             // Ensure category is present
             try {
                 readerSpiIter =
@@ -1013,7 +1013,7 @@ public final class ImageIO {
             }
 
             while (readerSpiIter.hasNext()) {
-                ImageReaderSpi temp = (ImageReaderSpi) readerSpiIter.next();
+                ImageReaderSpi temp = readerSpiIter.next();
                 if (temp.isOwnReader(reader)) {
                     readerSpi = temp;
                     break;
@@ -1029,7 +1029,7 @@ public final class ImageIO {
             return null;
         }
 
-        Class writerSpiClass = null;
+        Class<?> writerSpiClass = null;
         try {
             writerSpiClass = Class.forName(writerNames[0], true,
                                            ClassLoader.getSystemClassLoader());
@@ -1082,7 +1082,7 @@ public final class ImageIO {
 
         ImageWriterSpi writerSpi = writer.getOriginatingProvider();
         if (writerSpi == null) {
-            Iterator writerSpiIter;
+            Iterator<ImageWriterSpi> writerSpiIter;
             // Ensure category is present
             try {
                 writerSpiIter =
@@ -1093,7 +1093,7 @@ public final class ImageIO {
             }
 
             while (writerSpiIter.hasNext()) {
-                ImageWriterSpi temp = (ImageWriterSpi) writerSpiIter.next();
+                ImageWriterSpi temp = writerSpiIter.next();
                 if (temp.isOwnWriter(writer)) {
                     writerSpi = temp;
                     break;
@@ -1109,7 +1109,7 @@ public final class ImageIO {
             return null;
         }
 
-        Class readerSpiClass = null;
+        Class<?> readerSpiClass = null;
         try {
             readerSpiClass = Class.forName(readerNames[0], true,
                                            ClassLoader.getSystemClassLoader());
@@ -1160,7 +1160,7 @@ public final class ImageIO {
             throw new IllegalArgumentException("formatName == null!");
         }
 
-        Iterator iter;
+        Iterator<ImageWriterSpi> iter;
         // Ensure category is present
         try {
             iter = theRegistry.getServiceProviders(ImageWriterSpi.class,
@@ -1178,9 +1178,9 @@ public final class ImageIO {
         implements Iterator<ImageTranscoder>
     {
         // Contains ImageTranscoderSpis
-        public Iterator iter;
+        public Iterator<ImageTranscoderSpi> iter;
 
-        public ImageTranscoderIterator(Iterator iter) {
+        public ImageTranscoderIterator(Iterator<ImageTranscoderSpi> iter) {
             this.iter = iter;
         }
 
@@ -1190,7 +1190,7 @@ public final class ImageIO {
 
         public ImageTranscoder next() {
             ImageTranscoderSpi spi = null;
-            spi = (ImageTranscoderSpi)iter.next();
+            spi = iter.next();
             return spi.createTranscoderInstance();
         }
 
@@ -1249,7 +1249,7 @@ public final class ImageIO {
         ServiceRegistry.Filter filter =
             new TranscoderFilter(readerSpi, writerSpi);
 
-        Iterator iter;
+        Iterator<ImageTranscoderSpi> iter;
         // Ensure category is present
         try {
             iter = theRegistry.getServiceProviders(ImageTranscoderSpi.class,
@@ -1435,12 +1435,12 @@ public final class ImageIO {
             throw new IllegalArgumentException("stream == null!");
         }
 
-        Iterator iter = getImageReaders(stream);
+        Iterator<ImageReader> iter = getImageReaders(stream);
         if (!iter.hasNext()) {
             return null;
         }
 
-        ImageReader reader = (ImageReader)iter.next();
+        ImageReader reader = iter.next();
         ImageReadParam param = reader.getDefaultReadParam();
         reader.setInput(stream, true, true);
         BufferedImage bi;

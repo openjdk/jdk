@@ -867,7 +867,7 @@ public abstract class FontConfiguration {
         return descriptors;
     }
 
-    private FontDescriptor[] buildFontDescriptors(int fontIndex, int styleIndex) {
+    protected FontDescriptor[] buildFontDescriptors(int fontIndex, int styleIndex) {
         String fontName = fontNames[fontIndex];
         String styleName = styleNames[styleIndex];
 

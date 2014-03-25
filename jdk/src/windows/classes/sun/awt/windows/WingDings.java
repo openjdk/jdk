@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,12 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.*;
 
-public class WingDings extends Charset {
+final class WingDings extends Charset {
     public WingDings () {
         super("WingDings", null);
     }
 
+    @Override
     public CharsetEncoder newEncoder() {
         return new Encoder(this);
     }
@@ -41,10 +42,12 @@ public class WingDings extends Charset {
     /* Seems like supporting a decoder is required, but we aren't going
      * to be publically exposing this class, so no need to waste work
      */
+    @Override
     public CharsetDecoder newDecoder() {
         throw new Error("Decoder isn't implemented for WingDings Charset");
     }
 
+    @Override
     public boolean contains(Charset cs) {
         return cs instanceof WingDings;
     }
@@ -54,6 +57,7 @@ public class WingDings extends Charset {
             super(cs, 1.0f, 1.0f);
         }
 
+        @Override
         public boolean canEncode(char c) {
             if(c >= 0x2701 && c <= 0x27be){
                 if (table[c - 0x2700] != 0x00)
@@ -64,6 +68,7 @@ public class WingDings extends Charset {
             return false;
         }
 
+        @Override
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
@@ -156,6 +161,7 @@ public class WingDings extends Charset {
         };
 
         /* The default implementation creates a decoder and we don't have one */
+        @Override
         public boolean isLegalReplacement(byte[] repl) {
             return true;
         }

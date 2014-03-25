@@ -1298,6 +1298,13 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # start date is 2013-09-08 00:00....
 # http://www.gob.cl/informa/2013/02/15/gobierno-anuncia-fechas-de-cambio-de-hora-para-el-ano-2013.htm
 
+# From Jose Miguel Garrido (2014-02-19):
+# Today appeared in the Diario Oficial a decree amending the time change
+# dates to 2014.
+# DST End: last Saturday of April 2014 (Sun 27 Apr 2014 03:00 UTC)
+# DST Start: first Saturday of September 2014 (Sun 07 Sep 2014 04:00 UTC)
+# http://www.diariooficial.interior.gob.cl//media/2014/02/19/do-20140219.pdf
+
 # NOTE: ChileAQ rules for Antarctic bases are stored separately in the
 # 'antarctica' file.
 
@@ -1631,6 +1638,9 @@ Rule	Para	2010	2012	-	Apr	Sun>=8	0:00	0	-
 # From Carlos Raul Perasso (2013-03-15):
 # The change in Paraguay is now final.  Decree number 10780
 # http://www.presidencia.gov.py/uploads/pdf/presidencia-3b86ff4b691c79d4f5927ca964922ec74772ce857c02ca054a52a37b49afc7fb.pdf
+# From Carlos Raul Perasso (2014-02-28):
+# Decree 1264 can be found at:
+# http://www.presidencia.gov.py/archivos/documentos/DECRETO1264_ey9r8zai.pdf
 Rule	Para	2013	max	-	Mar	Sun>=22	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -1689,18 +1699,19 @@ Zone America/Paramaribo	-3:40:40 -	LMT	1911
 Zone America/Port_of_Spain -4:06:04 -	LMT	1912 Mar 2
 			-4:00	-	AST
 
+# These all agree with Trinidad and Tobago since 1970.
 Link America/Port_of_Spain America/Anguilla
 Link America/Port_of_Spain America/Dominica
 Link America/Port_of_Spain America/Grenada
 Link America/Port_of_Spain America/Guadeloupe
-Link America/Port_of_Spain America/Marigot
+Link America/Port_of_Spain America/Marigot	# St Martin (French part)
 Link America/Port_of_Spain America/Montserrat
 Link America/Port_of_Spain America/St_Barthelemy
-Link America/Port_of_Spain America/St_Kitts
+Link America/Port_of_Spain America/St_Kitts	# St Kitts & Nevis
 Link America/Port_of_Spain America/St_Lucia
-Link America/Port_of_Spain America/St_Thomas
+Link America/Port_of_Spain America/St_Thomas	# Virgin Islands (US)
 Link America/Port_of_Spain America/St_Vincent
-Link America/Port_of_Spain America/Tortola
+Link America/Port_of_Spain America/Tortola	# Virgin Islands (UK)
 
 # Uruguay
 # From Paul Eggert (1993-11-18):

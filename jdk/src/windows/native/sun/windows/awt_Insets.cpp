@@ -46,14 +46,20 @@ Java_java_awt_Insets_initIDs(JNIEnv *env, jclass cls) {
     TRY;
 
     AwtInsets::leftID = env->GetFieldID(cls, "left", "I");
-    AwtInsets::rightID = env->GetFieldID(cls, "right", "I");
-    AwtInsets::topID = env->GetFieldID(cls, "top", "I");
-    AwtInsets::bottomID = env->GetFieldID(cls, "bottom", "I");
-
     DASSERT(AwtInsets::leftID != NULL);
+    CHECK_NULL(AwtInsets::leftID);
+
+    AwtInsets::rightID = env->GetFieldID(cls, "right", "I");
     DASSERT(AwtInsets::rightID != NULL);
+    CHECK_NULL(AwtInsets::rightID);
+
+    AwtInsets::topID = env->GetFieldID(cls, "top", "I");
     DASSERT(AwtInsets::topID != NULL);
+    CHECK_NULL(AwtInsets::topID);
+
+    AwtInsets::bottomID = env->GetFieldID(cls, "bottom", "I");
     DASSERT(AwtInsets::bottomID != NULL);
+    CHECK_NULL(AwtInsets::bottomID);
 
     CATCH_BAD_ALLOC;
 }

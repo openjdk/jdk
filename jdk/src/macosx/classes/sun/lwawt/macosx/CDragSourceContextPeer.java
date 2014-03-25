@@ -141,7 +141,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
             // Create native dragging source:
             final long nativeDragSource = createNativeDragSource(component, nativeViewPtr, transferable, triggerEvent,
                 (int) (dragOrigin.getX()), (int) (dragOrigin.getY()), extModifiers,
-                clickCount, timestamp, fDragCImage, dragImageOffset.x, dragImageOffset.y,
+                clickCount, timestamp, fDragCImage != null ? fDragCImage.ptr : 0L, dragImageOffset.x, dragImageOffset.y,
                 getDragSourceContext().getSourceActions(), formats, formatMap);
 
             if (nativeDragSource == 0)
@@ -484,7 +484,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
     // Native support:
     private native long createNativeDragSource(Component component, long nativePeer, Transferable transferable,
         InputEvent triggerEvent, int dragPosX, int dragPosY, int extModifiers, int clickCount, long timestamp,
-        CImage nsDragImage, int dragImageOffsetX, int dragImageOffsetY,
+        long nsDragImagePtr, int dragImageOffsetX, int dragImageOffsetY,
         int sourceActions, long[] formats, Map formatMap);
 
     private native void doDragging(long nativeDragSource);

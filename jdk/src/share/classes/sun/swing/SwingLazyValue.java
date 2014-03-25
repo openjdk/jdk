@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@ package sun.swing;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.AccessibleObject;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import javax.swing.UIDefaults;
 import sun.reflect.misc.ReflectUtil;
 
@@ -69,12 +66,10 @@ public class SwingLazyValue implements UIDefaults.LazyValue {
             if (methodName != null) {
                 Class<?>[] types = getClassArray(args);
                 Method m = c.getMethod(methodName, types);
-                makeAccessible(m);
                 return m.invoke(c, args);
             } else {
                 Class<?>[] types = getClassArray(args);
                 Constructor<?> constructor = c.getConstructor(types);
-                makeAccessible(constructor);
                 return constructor.newInstance(args);
             }
         } catch (Exception e) {
@@ -85,15 +80,6 @@ public class SwingLazyValue implements UIDefaults.LazyValue {
             // the exception would be thrown.
         }
         return null;
-    }
-
-    private void makeAccessible(final AccessibleObject object) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                object.setAccessible(true);
-                return null;
-            }
-        });
     }
 
     private Class<?>[] getClassArray(Object[] args) {

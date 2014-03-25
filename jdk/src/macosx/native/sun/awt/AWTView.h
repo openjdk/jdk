@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #import "CDragSource.h"
 #import "CDropTarget.h"
 
-@interface AWTView : NSView<NSTextInputClient> {
+@interface AWTView : NSView<NSTextInputClient, CDragSourceHolder, CDropTargetHolder> {
 @private
     jobject m_cPlatformView;
 
@@ -61,13 +61,7 @@
 
 - (id) initWithRect:(NSRect) rect platformView:(jobject)cPlatformView windowLayer:(CALayer*)windowLayer;
 - (void) deliverJavaMouseEvent: (NSEvent *) event;
-- (void) resetTrackingArea;
-- (void) deliverJavaKeyEventHelper: (NSEvent *) event;
 - (jobject) awtComponent:(JNIEnv *)env;
-
-- (void) setDragSource:(CDragSource *)source;
-- (void) setDropTarget:(CDropTarget *)target;
-
 
 // Input method-related events
 - (void)setInputMethod:(jobject)inputMethod;

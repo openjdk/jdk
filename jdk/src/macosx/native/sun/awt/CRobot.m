@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
+#import "jni_util.h"
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <ApplicationServices/ApplicationServices.h>
@@ -187,9 +190,8 @@ Java_sun_lwawt_macosx_CRobot_mouseEvent
     // volatile, otherwise it warns that it might be clobbered by 'longjmp'
     volatile CGPoint point;
 
-    // Translate the device relative point into a valid global CGPoint.
-    point.x = mouseLastX + globalDeviceBounds.origin.x;
-    point.y = mouseLastY + globalDeviceBounds.origin.y;
+    point.x = mouseLastX;
+    point.y = mouseLastY;
 
     __block CGMouseButton button = kCGMouseButtonLeft;
     __block CGEventType type = kCGEventMouseMoved;
@@ -343,6 +345,7 @@ Java_sun_lwawt_macosx_CRobot_nativeGetScreenPixels
 
     // get a pointer to the Java int array
     void *jPixelData = (*env)->GetPrimitiveArrayCritical(env, pixels, 0);
+    CHECK_NULL(jPixelData);
 
     // create a graphics context around the Java int array
     CGColorSpaceRef picColorSpace = CGColorSpaceCreateWithName(
