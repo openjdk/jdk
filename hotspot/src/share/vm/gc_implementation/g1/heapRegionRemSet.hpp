@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONREMSET_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONREMSET_HPP
 
+#include "gc_implementation/g1/g1CodeCacheRemSet.hpp"
 #include "gc_implementation/g1/sparsePRT.hpp"
 
 // Remembered set for a heap region.  Represent a set of "cards" that
@@ -42,6 +43,54 @@ class nmethod;
 // Essentially a wrapper around SparsePRTCleanupTask. See
 // sparsePRT.hpp for more details.
 class HRRSCleanupTask : public SparsePRTCleanupTask {
+};
+
+// The FromCardCache remembers the most recently processed card on the heap on
+// a per-region and per-thread basis.
+class FromCardCache : public AllStatic {
+ private:
+  // Array of card indices. Indexed by thread X and heap region to minimize
+  // thread contention.
+  static int** _cache;
+  static uint _max_regions;
+  static size_t _static_mem_size;
+
+ public:
+  enum {
+    InvalidCard = -1 // Card value of an invalid card, i.e. a card index not otherwise used.
+  };
+
+  static void clear(uint region_idx);
+
+  // Returns true if the given card is in the cache at the given location, or
+  // replaces the card at that location and returns false.
+  static bool contains_or_replace(uint worker_id, uint region_idx, int card) {
+    int card_in_cache = at(worker_id, region_idx);
+    if (card_in_cache == card) {
+      return true;
+    } else {
+      set(worker_id, region_idx, card);
+      return false;
+    }
+  }
+
+  static int at(uint worker_id, uint region_idx) {
+    return _cache[worker_id][region_idx];
+  }
+
+  static void set(uint worker_id, uint region_idx, int val) {
+    _cache[worker_id][region_idx] = val;
+  }
+
+  static void initialize(uint n_par_rs, uint max_num_regions);
+
+  static void shrink(uint new_num_regions);
+
+  static void print(outputStream* out = gclog_or_tty) PRODUCT_RETURN;
+
+  static size_t static_mem_size() {
+    return _static_mem_size;
+  }
 };
 
 // The "_coarse_map" is a bitmap with one bit for each region, where set
@@ -72,7 +121,7 @@ class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
   friend class HeapRegionRemSetIterator;
 
   G1CollectedHeap* _g1h;
-  Mutex            _m;
+  Mutex*           _m;
   HeapRegion*      _hr;
 
   // These are protected by "_m".
@@ -118,18 +167,13 @@ class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
   // false.
   bool del_single_region_table(size_t ind, HeapRegion* hr);
 
-  // Indexed by thread X heap region, to minimize thread contention.
-  static int** _from_card_cache;
-  static size_t _from_card_cache_max_regions;
-  static size_t _from_card_cache_mem_size;
-
   // link/add the given fine grain remembered set into the "all" list
   void link_to_all(PerRegionTable * prt);
   // unlink/remove the given fine grain remembered set into the "all" list
   void unlink_from_all(PerRegionTable * prt);
 
 public:
-  OtherRegionsTable(HeapRegion* hr);
+  OtherRegionsTable(HeapRegion* hr, Mutex* m);
 
   HeapRegion* hr() const { return _hr; }
 
@@ -141,7 +185,6 @@ public:
   // objects.
   void scrub(CardTableModRefBS* ctbs, BitMap* region_bm, BitMap* card_bm);
 
-  // Not const because it takes a lock.
   size_t occupied() const;
   size_t occ_fine() const;
   size_t occ_coarse() const;
@@ -170,11 +213,11 @@ public:
 
   // Declare the heap size (in # of regions) to the OtherRegionsTable.
   // (Uses it to initialize from_card_cache).
-  static void init_from_card_cache(size_t max_regions);
+  static void init_from_card_cache(uint max_regions);
 
   // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
   // Make sure any entries for higher regions are invalid.
-  static void shrink_from_card_cache(size_t new_n_regs);
+  static void shrink_from_card_cache(uint new_num_regions);
 
   static void print_from_card_cache();
 };
@@ -192,9 +235,11 @@ private:
   G1BlockOffsetSharedArray* _bosa;
   G1BlockOffsetSharedArray* bosa() const { return _bosa; }
 
-  // A list of code blobs (nmethods) whose code contains pointers into
+  // A set of code blobs (nmethods) whose code contains pointers into
   // the region that owns this RSet.
-  GrowableArray<nmethod*>* _strong_code_roots_list;
+  G1CodeRootSet _code_roots;
+
+  Mutex _m;
 
   OtherRegionsTable _other_regions;
 
@@ -218,17 +263,20 @@ private:
   static void print_event(outputStream* str, Event evnt);
 
 public:
-  HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
-                   HeapRegion* hr);
+  HeapRegionRemSet(G1BlockOffsetSharedArray* bosa, HeapRegion* hr);
 
-  static int num_par_rem_sets();
+  static uint num_par_rem_sets();
   static void setup_remset_size();
 
   HeapRegion* hr() const {
     return _other_regions.hr();
   }
 
-  size_t occupied() const {
+  size_t occupied() {
+    MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
+    return occupied_locked();
+  }
+  size_t occupied_locked() {
     return _other_regions.occupied();
   }
   size_t occ_fine() const {
@@ -260,6 +308,7 @@ public:
   // The region is being reclaimed; clear its remset, and any mention of
   // entries for this region in other remsets.
   void clear();
+  void clear_locked();
 
   // Attempt to claim the region.  Returns true iff this call caused an
   // atomic transition from Unclaimed to Claimed.
@@ -289,6 +338,7 @@ public:
   // The actual # of bytes this hr_remset takes up.
   // Note also includes the strong code root set.
   size_t mem_size() {
+    MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
     return _other_regions.mem_size()
       // This correction is necessary because the above includes the second
       // part.
@@ -299,13 +349,13 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return OtherRegionsTable::static_mem_size();
+    return OtherRegionsTable::static_mem_size() + G1CodeRootSet::static_mem_size();
   }
 
   // Returns the memory occupancy of all free_list data structures associated
   // with remembered sets.
   static size_t fl_mem_size() {
-    return OtherRegionsTable::fl_mem_size();
+    return OtherRegionsTable::fl_mem_size() + G1CodeRootSet::fl_mem_size();
   }
 
   bool contains_reference(OopOrNarrowOopStar from) const {
@@ -328,21 +378,21 @@ public:
   void strong_code_roots_do(CodeBlobClosure* blk) const;
 
   // Returns the number of elements in the strong code roots list
-  int strong_code_roots_list_length() {
-    return _strong_code_roots_list->length();
+  size_t strong_code_roots_list_length() {
+    return _code_roots.length();
   }
 
   // Returns true if the strong code roots contains the given
   // nmethod.
   bool strong_code_roots_list_contains(nmethod* nm) {
-    return _strong_code_roots_list->contains(nm);
+    return _code_roots.contains(nm);
   }
 
   // Returns the amount of memory, in bytes, currently
   // consumed by the strong code roots.
   size_t strong_code_roots_mem_size();
 
-  void print() const;
+  void print() PRODUCT_RETURN;
 
   // Called during a stop-world phase to perform any deferred cleanups.
   static void cleanup();
@@ -350,12 +400,13 @@ public:
   // Declare the heap size (in # of regions) to the HeapRegionRemSet(s).
   // (Uses it to initialize from_card_cache).
   static void init_heap(uint max_regions) {
-    OtherRegionsTable::init_from_card_cache((size_t) max_regions);
+    G1CodeRootSet::initialize();
+    OtherRegionsTable::init_from_card_cache(max_regions);
   }
 
   // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
   static void shrink_heap(uint new_n_regs) {
-    OtherRegionsTable::shrink_from_card_cache((size_t) new_n_regs);
+    OtherRegionsTable::shrink_from_card_cache(new_n_regs);
   }
 
 #ifndef PRODUCT
@@ -384,7 +435,7 @@ public:
 class HeapRegionRemSetIterator : public StackObj {
 
   // The region RSet over which we're iterating.
-  const HeapRegionRemSet* _hrrs;
+  HeapRegionRemSet* _hrrs;
 
   // Local caching of HRRS fields.
   const BitMap*             _coarse_map;
@@ -441,7 +492,7 @@ class HeapRegionRemSetIterator : public StackObj {
 public:
   // We require an iterator to be initialized before use, so the
   // constructor does little.
-  HeapRegionRemSetIterator(const HeapRegionRemSet* hrrs);
+  HeapRegionRemSetIterator(HeapRegionRemSet* hrrs);
 
   // If there remains one or more cards to be yielded, returns true and
   // sets "card_index" to one of those cards (which is then considered

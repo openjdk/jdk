@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "code/icBuffer.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/shared/gcHeapSummary.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
@@ -194,17 +195,19 @@ class G1PrepareCompactClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   ModRefBarrierSet* _mrbs;
   CompactPoint _cp;
-  HumongousRegionSet _humongous_proxy_set;
+  HeapRegionSetCount _humongous_regions_removed;
 
   void free_humongous_region(HeapRegion* hr) {
     HeapWord* end = hr->end();
-    size_t dummy_pre_used;
     FreeRegionList dummy_free_list("Dummy Free List for G1MarkSweep");
 
     assert(hr->startsHumongous(),
            "Only the start of a humongous region should be freed.");
-    _g1h->free_humongous_region(hr, &dummy_pre_used, &dummy_free_list,
-                                &_humongous_proxy_set, false /* par */);
+
+    hr->set_containing_set(NULL);
+    _humongous_regions_removed.increment(1u, hr->capacity());
+
+    _g1h->free_humongous_region(hr, &dummy_free_list, false /* par */);
     hr->prepare_for_compaction(&_cp);
     // Also clear the part of the card table that will be unused after
     // compaction.
@@ -217,16 +220,13 @@ public:
   : _g1h(G1CollectedHeap::heap()),
     _mrbs(_g1h->g1_barrier_set()),
     _cp(NULL, cs, cs->initialize_threshold()),
-    _humongous_proxy_set("G1MarkSweep Humongous Proxy Set") { }
+    _humongous_regions_removed() { }
 
   void update_sets() {
     // We'll recalculate total used bytes and recreate the free list
     // at the end of the GC, so no point in updating those values here.
-    _g1h->update_sets_after_freeing_regions(0, /* pre_used */
-                                            NULL, /* free_list */
-                                            NULL, /* old_proxy_set */
-                                            &_humongous_proxy_set,
-                                            false /* par */);
+    HeapRegionSetCount empty_set;
+    _g1h->remove_from_old_sets(empty_set, _humongous_regions_removed);
   }
 
   bool doHeapRegion(HeapRegion* hr) {
@@ -316,6 +316,10 @@ void G1MarkSweep::mark_sweep_phase3() {
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   sh->process_weak_roots(&GenMarkSweep::adjust_pointer_closure);
+
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::oops_do(&GenMarkSweep::adjust_pointer_closure);
+  }
 
   GenMarkSweep::adjust_marks();
 
