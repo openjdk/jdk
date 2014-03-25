@@ -57,10 +57,6 @@ public class PrototypeObject extends ScriptObject {
         map$ = PropertyMap.newMap(properties);
     }
 
-    static PropertyMap getInitialMap() {
-        return map$;
-    }
-
     private PrototypeObject(final Global global, final PropertyMap map) {
         super(global.getObjectPrototype(), map != map$? map.addAll(map$) : map$);
     }

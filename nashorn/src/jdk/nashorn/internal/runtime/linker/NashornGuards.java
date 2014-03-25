@@ -29,6 +29,11 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.ref.WeakReference;
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
+import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -40,6 +45,7 @@ public final class NashornGuards {
     private static final MethodHandle IS_SCRIPTOBJECT   = findOwnMH("isScriptObject", boolean.class, Object.class);
     private static final MethodHandle IS_SCRIPTFUNCTION = findOwnMH("isScriptFunction", boolean.class, Object.class);
     private static final MethodHandle IS_MAP            = findOwnMH("isMap", boolean.class, Object.class, PropertyMap.class);
+    private static final MethodHandle SAME_OBJECT       = findOwnMH("sameObject", boolean.class, Object.class, WeakReference.class);
     private static final MethodHandle IS_INSTANCEOF_2   = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
 
     // don't create me!
@@ -72,6 +78,55 @@ public final class NashornGuards {
      */
     public static MethodHandle getMapGuard(final PropertyMap map) {
         return MH.insertArguments(IS_MAP, 1, map);
+    }
+
+    /**
+     * Determine whether the given callsite needs a guard.
+     * @param property the property, or null
+     * @param desc the callsite descriptor
+     * @return true if a guard should be used for this callsite
+     */
+    static boolean needsGuard(final Property property, final CallSiteDescriptor desc) {
+        return property == null || property.isConfigurable()
+                || property.isBound() || !ObjectClassGenerator.OBJECT_FIELDS_ONLY
+                || !NashornCallSiteDescriptor.isFastScope(desc) || property.canChangeType();
+    }
+
+    /**
+     * Get the guard for a property access. This returns an identity guard for non-configurable global properties
+     * and a map guard for everything else.
+     *
+     * @param sobj the first object in the prototype chain
+     * @param property the property
+     * @param desc the callsite descriptor
+     * @return method handle for guard
+     */
+    public static MethodHandle getGuard(final ScriptObject sobj, final Property property, final CallSiteDescriptor desc) {
+        if (!needsGuard(property, desc)) {
+            return null;
+        }
+        if (NashornCallSiteDescriptor.isScope(desc)) {
+            if (property != null && property.isBound()) {
+                // This is a declared top level variables in main script or eval, use identity guard.
+                return getIdentityGuard(sobj);
+            }
+            if (!(sobj instanceof Global) && (property == null || property.isConfigurable())) {
+                // Undeclared variables in nested evals need stronger guards
+                return combineGuards(getIdentityGuard(sobj), getMapGuard(sobj.getMap()));
+            }
+        }
+        return getMapGuard(sobj.getMap());
+    }
+
+
+    /**
+     * Get a guard that checks referential identity of the current object.
+     *
+     * @param sobj the self object
+     * @return true if same self object instance
+     */
+    public static MethodHandle getIdentityGuard(final ScriptObject sobj) {
+        return MH.insertArguments(SAME_OBJECT, 1, new WeakReference<>(sobj));
     }
 
     /**
@@ -109,6 +164,11 @@ public final class NashornGuards {
     @SuppressWarnings("unused")
     private static boolean isMap(final Object self, final PropertyMap map) {
         return self instanceof ScriptObject && ((ScriptObject)self).getMap() == map;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean sameObject(final Object self, final WeakReference<ScriptObject> ref) {
+        return self == ref.get();
     }
 
     @SuppressWarnings("unused")

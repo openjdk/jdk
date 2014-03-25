@@ -42,12 +42,8 @@ abstract class ArrayBufferView extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     private ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength, final Global global) {
-        super(getInitialMap());
+        super($nasgenmap$);
         checkConstructorArgs(buffer, byteOffset, elementLength);
         this.setProto(getPrototype(global));
         this.setArray(factory().createArrayData(buffer, byteOffset, elementLength));

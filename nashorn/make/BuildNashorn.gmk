@@ -77,7 +77,7 @@ $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run: $(BUILD_NASGEN)
 	$(RM) -rf $(@D)/jdk $(@D)/netscape
 	$(CP) -R -p $(NASHORN_OUTPUTDIR)/nashorn_classes/* $(@D)/
 	$(FIXPATH) $(JAVA) \
-	    -cp "$(NASHORN_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes" \
+	    -Xbootclasspath/p:"$(NASHORN_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes" \
 	    jdk.nashorn.internal.tools.nasgen.Main $(@D) jdk.nashorn.internal.objects $(@D)
 	$(TOUCH) $@
 
