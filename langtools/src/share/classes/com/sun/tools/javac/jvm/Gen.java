@@ -1910,6 +1910,7 @@ public class Gen extends JCTree.Visitor {
         if (!c.isFalse()) {
             code.resolve(c.trueJumps);
             int startpc = genCrt ? code.curCP() : 0;
+            code.statBegin(tree.truepart.pos);
             genExpr(tree.truepart, pt).load();
             code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.truepart, CRT_FLOW_TARGET,
@@ -1919,6 +1920,7 @@ public class Gen extends JCTree.Visitor {
         if (elseChain != null) {
             code.resolve(elseChain);
             int startpc = genCrt ? code.curCP() : 0;
+            code.statBegin(tree.falsepart.pos);
             genExpr(tree.falsepart, pt).load();
             code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.falsepart, CRT_FLOW_TARGET,

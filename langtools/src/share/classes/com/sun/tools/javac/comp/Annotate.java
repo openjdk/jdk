@@ -808,9 +808,7 @@ public class Annotate {
                 Attribute.TypeCompound tc =
                     enterTypeAnnotation(a, syms.annotationType, env);
 
-                if (tc == null) {
-                    continue;
-                }
+                Assert.checkNonNull(tc, "Failed to create type annotation");
 
                 if (annotated.containsKey(a.type.tsym)) {
                     if (!allowRepeatedAnnos) {
@@ -827,10 +825,9 @@ public class Annotate {
                 }
             }
 
-            if (s != null) {
-                s.appendTypeAttributesWithCompletion(
-                    new AnnotateRepeatedContext<>(env, annotated, pos, log, true));
-            }
+            Assert.checkNonNull(s, "Symbol argument to actualEnterTypeAnnotations is null");
+            s.appendTypeAttributesWithCompletion(
+                new AnnotateRepeatedContext<>(env, annotated, pos, log, true));
         } finally {
             if (prevLintPos != null)
                 deferredLintHandler.setPos(prevLintPos);

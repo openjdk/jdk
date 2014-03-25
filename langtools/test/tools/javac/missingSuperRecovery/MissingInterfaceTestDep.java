@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4313429
- * @summary Compiling <Classname>.class on CLDC crashed the compiler.
- *
- * @compile/fail -source 1.4 -target 1.4 -XDfailcomplete=java.lang.NoClassDefFoundError NoNoClassDefFoundErrorError.java
- */
-
-class NoNoClassDefFoundErrorError {
-    public static void main() {
-        Class self = NoNoClassDefFoundErrorError.class;
-    }
-}
+public class MissingInterfaceTestDep implements Intermediate {}
+interface Intermediate extends Closeable { }
+interface Closeable {}
