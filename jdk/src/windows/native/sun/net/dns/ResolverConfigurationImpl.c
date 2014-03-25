@@ -39,6 +39,7 @@
 #define STS_NO_CONFIG       0x0             /* no configuration found */
 #define STS_SL_FOUND        0x1             /* search list found */
 #define STS_NS_FOUND        0x2             /* name servers found */
+#define STS_ERROR           -1              /* error return  lodConfig failed memory allccation failure*/
 
 #define IS_SL_FOUND(sts)    (sts & STS_SL_FOUND)
 #define IS_NS_FOUND(sts)    (sts & STS_NS_FOUND)
@@ -123,14 +124,14 @@ static int loadConfig(char *sl, char *ns) {
     size = sizeof(IP_ADAPTER_INFO);
     adapterP = (IP_ADAPTER_INFO *)malloc(size);
     if (adapterP == NULL) {
-        return -1;
+        return STS_ERROR;
     }
     ret = GetAdaptersInfo(adapterP, &size);
     if (ret == ERROR_BUFFER_OVERFLOW) {
         IP_ADAPTER_INFO *newAdapterP = (IP_ADAPTER_INFO *)realloc(adapterP, size);
         if (newAdapterP == NULL) {
             free(adapterP);
-            return -1;
+            return STS_ERROR;
         }
         adapterP = newAdapterP;
 
@@ -239,6 +240,7 @@ Java_sun_net_dns_ResolverConfigurationImpl_init0(JNIEnv *env, jclass cls)
 {
     searchlistID = (*env)->GetStaticFieldID(env, cls, "os_searchlist",
                                       "Ljava/lang/String;");
+    CHECK_NULL(searchlistID);
     nameserversID = (*env)->GetStaticFieldID(env, cls, "os_nameservers",
                                       "Ljava/lang/String;");
 }
@@ -258,16 +260,21 @@ Java_sun_net_dns_ResolverConfigurationImpl_loadDNSconfig0(JNIEnv *env, jclass cl
     searchlist[0] = '\0';
     nameservers[0] = '\0';
 
-    loadConfig(searchlist, nameservers);
+    if (loadConfig(searchlist, nameservers) != STS_ERROR) {
 
-    /*
-     * Populate static fields in sun.net.DefaultResolverConfiguration
-     */
-    obj = (*env)->NewStringUTF(env, searchlist);
-    (*env)->SetStaticObjectField(env, cls, searchlistID, obj);
+        /*
+         * Populate static fields in sun.net.DefaultResolverConfiguration
+         */
+        obj = (*env)->NewStringUTF(env, searchlist);
+        CHECK_NULL(obj);
+        (*env)->SetStaticObjectField(env, cls, searchlistID, obj);
 
-    obj = (*env)->NewStringUTF(env, nameservers);
-    (*env)->SetStaticObjectField(env, cls, nameserversID, obj);
+        obj = (*env)->NewStringUTF(env, nameservers);
+        CHECK_NULL(obj);
+        (*env)->SetStaticObjectField(env, cls, nameserversID, obj);
+    } else {
+        JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
+    }
 }
 
 

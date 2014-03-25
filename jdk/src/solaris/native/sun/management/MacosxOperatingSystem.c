@@ -29,6 +29,7 @@
 #include <mach/mach.h>
 #include <mach/task_info.h>
 
+#include "jvm.h"
 
 JNIEXPORT jdouble JNICALL
 Java_sun_management_OperatingSystemImpl_getSystemCpuLoad0

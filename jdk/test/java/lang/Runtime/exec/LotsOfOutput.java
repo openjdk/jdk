@@ -28,16 +28,16 @@
  * @author kladko
  */
 
-import java.io.File;
-
 public class LotsOfOutput {
-    static final String CAT = "/usr/bin/cat";
 
-    public static void main(String[] args) throws Exception{
-        if (File.separatorChar == '\\' ||                // Windows
-                                !new File(CAT).exists()) // no cat
+    public static void main(String[] args) throws Exception {
+        if (! UnixCommands.isUnix) {
+            System.out.println("For UNIX only");
             return;
-        Process p = Runtime.getRuntime().exec(CAT + " /dev/zero");
+        }
+        UnixCommands.ensureCommandsAvailable("cat");
+
+        Process p = Runtime.getRuntime().exec(UnixCommands.cat() + " /dev/zero");
         long initMemory = Runtime.getRuntime().totalMemory();
         for (int i=1; i< 10; i++) {
             Thread.sleep(100);

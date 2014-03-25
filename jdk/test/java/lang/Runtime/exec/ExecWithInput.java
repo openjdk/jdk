@@ -39,7 +39,6 @@ import java.io.*;
 
 public class ExecWithInput {
 
-    private static final String CAT = "/bin/cat";
     private static final int N = 200;
 
     static int go(int i) throws Exception {
@@ -50,8 +49,7 @@ public class ExecWithInput {
          * program exits. Under 1.4.1, cat sometimes gets stuck on a pipe
          * read and never terminates.
          */
-        //Process p = Runtime.getRuntime().exec(new String[] { CAT } );
-        Process p = Runtime.getRuntime().exec(CAT);
+        Process p = Runtime.getRuntime().exec(UnixCommands.cat());
 
         String input = i + ": line 1\n" + i + ": line 2\n";
         StringBufferInputStream in = new StringBufferInputStream(input);
@@ -65,12 +63,12 @@ public class ExecWithInput {
     }
 
     public static void main(String[] args) throws Exception {
-        if (!System.getProperty("os.name").equals("Linux"))
-            return;
-        if (File.separatorChar == '\\') {
-            // no /bin/cat on windows
+        if (! UnixCommands.isLinux) {
+            System.out.println("For Linux only");
             return;
         }
+        UnixCommands.ensureCommandsAvailable("cat");
+
         for (int i = 0; i < N; i++)
             go(i);
     }
@@ -93,7 +91,6 @@ public class ExecWithInput {
 
         public void run() {
             try {
-                int c;
                 byte[] buf = new byte[8192];
                 int n;
                 while ((n = in.read(buf)) != -1) {

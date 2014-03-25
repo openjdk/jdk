@@ -56,17 +56,24 @@ static int open_count;
 static void
 get_time_stamp(char *tbuf, size_t ltbuf)
 {
-    char format[MAXLEN_TIMESTAMP+1];
+    char timestamp_prefix[MAXLEN_TIMESTAMP+1];
+    char timestamp_postfix[MAXLEN_TIMESTAMP+1];
     unsigned millisecs = 0;
     time_t t = 0;
 
     GETMILLSECS(millisecs);
-    if ( time(&t) == (time_t)(-1) )
+    if ( time(&t) == (time_t)(-1) ) {
         t = 0;
-    (void)strftime(format, sizeof(format),
-                /* Break this string up for SCCS's sake */
-                "%" "d.%" "m.%" "Y %" "T.%%.3d %" "Z", localtime(&t));
-    (void)snprintf(tbuf, ltbuf, format, (int)(millisecs));
+    }
+    /* Break this up so that the format strings are string literals
+       and we avoid a compiler warning. */
+    (void)strftime(timestamp_prefix, sizeof(timestamp_prefix),
+                "%d.%m.%Y %T", localtime(&t));
+    (void)strftime(timestamp_postfix, sizeof(timestamp_postfix),
+                "%Z", localtime(&t));
+    (void)snprintf(tbuf, ltbuf,
+                   "%s.%.3d %s", timestamp_prefix,
+                   (int)(millisecs), timestamp_postfix);
 }
 
 /* Get basename of filename */
@@ -175,7 +182,7 @@ log_message_end(const char *format, ...)
                         "LOC=%s;PID=%d;THR=t@%d",
                         location_stamp,
                         (int)processPid,
-                        (int)tid);
+                        (int)(intptr_t)tid);
 
             /* Construct message string. */
             va_start(ap, format);

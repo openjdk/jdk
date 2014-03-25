@@ -35,9 +35,13 @@ environmentBlock9x(JNIEnv *env)
     jmethodID String_init_ID;
     jbyteArray bytes;
     jbyte *blockA;
+    jclass string_class;
+
+    string_class = JNU_ClassString(env);
+    CHECK_NULL_RETURN(string_class, NULL);
 
     String_init_ID =
-        (*env)->GetMethodID(env, JNU_ClassString(env), "<init>", "([B)V");
+        (*env)->GetMethodID(env, string_class, "<init>", "([B)V");
     CHECK_NULL_RETURN(String_init_ID, NULL);
 
     blockA = (jbyte *) GetEnvironmentStringsA();
@@ -54,10 +58,13 @@ environmentBlock9x(JNIEnv *env)
         while (blockA[i++])
             ;
 
-    if ((bytes = (*env)->NewByteArray(env, i)) == NULL) return NULL;
+    if ((bytes = (*env)->NewByteArray(env, i)) == NULL) {
+        FreeEnvironmentStringsA(blockA);
+        return NULL;
+    }
     (*env)->SetByteArrayRegion(env, bytes, 0, i, blockA);
     FreeEnvironmentStringsA(blockA);
-    return (*env)->NewObject(env, JNU_ClassString(env),
+    return (*env)->NewObject(env, string_class,
                              String_init_ID, bytes);
 }
 
