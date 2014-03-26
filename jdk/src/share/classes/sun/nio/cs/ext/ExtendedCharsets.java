@@ -30,8 +30,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.spi.CharsetProvider;
 import sun.nio.cs.AbstractCharsetProvider;
 import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
-
+import java.security.PrivilegedAction;
 
 /**
  * Provider for extended charsets.
@@ -1175,7 +1174,7 @@ public class ExtendedCharsets
             return;
 
         String map = AccessController.doPrivileged(
-            new GetPropertyAction("sun.nio.cs.map"));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.nio.cs.map"));
         boolean sjisIsMS932 = false;
         boolean iso2022jpIsMS50221 = false;
         boolean iso2022jpIsMS50220 = false;
@@ -1296,7 +1295,7 @@ public class ExtendedCharsets
             }
         }
         String osName = AccessController.doPrivileged(
-            new GetPropertyAction("os.name"));
+            (PrivilegedAction<String>) () -> System.getProperty("os.name"));
         if ("SunOS".equals(osName) || "Linux".equals(osName) || "AIX".equals(osName)
                || osName.contains("OS X")) {
             charset("x-COMPOUND_TEXT", "COMPOUND_TEXT",

@@ -33,15 +33,15 @@ import java.nio.channels.AlreadyBoundException;
 import java.util.Set;
 import java.util.HashSet;
 import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
+import java.security.PrivilegedAction;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.Net;
 import com.sun.nio.sctp.SctpSocketOption;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 
 public class SctpNet {
-    static final String osName = AccessController.doPrivileged(
-                    new GetPropertyAction("os.name"));
+    private static final String osName = AccessController.doPrivileged(
+        (PrivilegedAction<String>) () -> System.getProperty("os.name"));
 
     /* -- Miscellaneous SCTP utilities -- */
 

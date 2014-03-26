@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.security.InvalidKeyException;
 import java.security.KeyStoreSpi;
 import java.security.KeyStoreException;
+import java.security.PrivilegedAction;
 import java.security.UnrecoverableKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecurityPermission;
@@ -47,8 +48,6 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.UUID;
-
-import sun.security.action.GetPropertyAction;
 
 /**
  * Implementation of key store for Windows using the Microsoft Crypto API.
@@ -205,9 +204,8 @@ abstract class KeyStore extends KeyStoreSpi {
 
     KeyStore(String storeName) {
         // Get the compatibility mode
-        String prop =
-            AccessController.doPrivileged(
-                new GetPropertyAction(KEYSTORE_COMPATIBILITY_MODE_PROP));
+        String prop = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> System.getProperty(KEYSTORE_COMPATIBILITY_MODE_PROP));
 
         if ("false".equalsIgnoreCase(prop)) {
             keyStoreCompatibilityMode = false;
