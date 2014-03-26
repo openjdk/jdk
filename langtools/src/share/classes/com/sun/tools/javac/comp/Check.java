@@ -1625,7 +1625,7 @@ public class Check {
                  protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.weaker.access",
                       cannotOverride(m, other),
-                      other.flags() == 0 ?
+                      (other.flags() & AccessFlags) == 0 ?
                           "package" :
                           asFlagSet(other.flags() & AccessFlags));
             m.flags_field |= BAD_OVERRIDE;
