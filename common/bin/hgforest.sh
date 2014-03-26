@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
@@ -60,10 +60,10 @@ done
 
 
 command="$1"; shift
-repo_base="$@"
+command_args="$@"
 
 usage() {
-      echo "usage: $0 [-q|--quiet] [-v|--verbose] [--] <command> [repo_base_path]" > ${status_output}
+      echo "usage: $0 [-q|--quiet] [-v|--verbose] [--] <command> [commands...]" > ${status_output}
       exit 1
 }
 
@@ -113,26 +113,30 @@ subrepos_extra="closed jdk/src/closed jdk/make/closed jdk/test/closed hotspot/ma
 pull_default=""
 repos=""
 repos_extra=""
-if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
-  if [ -f .hg/hgrc ] ; then
-    pull_default=`hg paths default`
-    if [ "${pull_default}" = "" ] ; then
-      echo "ERROR: Need initial clone with 'hg paths default' defined" > ${status_output}
-      exit 1
-    fi
-  fi
-  if [ "${pull_default}" = "" ] ; then
+if [ "${command}" = "clone" -o "${command}" = "fclone" -o "${command}" = "tclone" ] ; then
+  if [ ! -f .hg/hgrc ] ; then
     echo "ERROR: Need initial repository to use this script" > ${status_output}
     exit 1
   fi
+
+  pull_default=`hg paths default`
+  if [ "${pull_default}" = "" ] ; then
+    echo "ERROR: Need initial clone with 'hg paths default' defined" > ${status_output}
+    exit 1
+  fi
+
   for i in ${subrepos} ; do
     if [ ! -f ${i}/.hg/hgrc ] ; then
       repos="${repos} ${i}"
     fi
   done
-  if [ "${repo_base}" != "" ] ; then
+  if [ "${command_args}" != "" ] ; then
     pull_default_tail=`echo ${pull_default} | sed -e 's@^.*://[^/]*/\(.*\)@\1@'`
-    pull_extra="${repo_base}/${pull_default_tail}"
+    if [ "x${pull_default}" = "x${pull_default_tail}" ] ; then
+      echo "ERROR: Need initial clone from non-local source" > ${status_output}
+      exit 1
+    fi
+    pull_extra="${command_args}/${pull_default_tail}"
     for i in ${subrepos_extra} ; do
       if [ ! -f ${i}/.hg/hgrc ] ; then
         repos_extra="${repos_extra} ${i}"
@@ -214,9 +218,8 @@ else
     done
     (
       (
-        if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
+        if [ "${command}" = "clone" -o "${command}" = "fclone" -o "${command}" = "tclone" ] ; then
           pull_newrepo="`echo ${pull_base}/${i} | sed -e 's@\([^:]/\)//*@\1@g'`"
-          echo "hg clone ${pull_newrepo} ${i}" > ${status_output}
           path="`dirname ${i}`"
           if [ "${path}" != "." ] ; then
             times=0
@@ -229,10 +232,11 @@ else
               sleep 5
             done
           fi
+          echo "hg clone ${pull_newrepo} ${i}" > ${status_output}
           (PYTHONUNBUFFERED=true hg${global_opts} clone ${pull_newrepo} ${i}; echo "$?" > ${tmp}/${repopidfile}.pid.rc ) 2>&1 &
         else
-          echo "cd ${i} && hg${global_opts} ${command} ${repo_base}" > ${status_output}
-          cd ${i} && (PYTHONUNBUFFERED=true hg${global_opts} ${command} ${command_repo}; echo "$?" > ${tmp}/${repopidfile}.pid.rc ) 2>&1 &
+          echo "cd ${i} && hg${global_opts} ${command} ${command_args}" > ${status_output}
+          cd ${i} && (PYTHONUNBUFFERED=true hg${global_opts} ${command} ${command_args}; echo "$?" > ${tmp}/${repopidfile}.pid.rc ) 2>&1 &
         fi
 
         echo $! > ${tmp}/${repopidfile}.pid
