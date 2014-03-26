@@ -25,6 +25,9 @@
 
 package com.sun.java.browser.dom;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 public abstract class DOMService
 {
     /**
@@ -43,8 +46,9 @@ public abstract class DOMService
     {
         try
         {
-            String provider = java.security.AccessController.doPrivileged(
-                   new sun.security.action.GetPropertyAction("com.sun.java.browser.dom.DOMServiceProvider"));
+            String provider = AccessController.doPrivileged(
+                (PrivilegedAction<String>) () ->
+                    System.getProperty("com.sun.java.browser.dom.DOMServiceProvider"));
 
             Class clazz = Class.forName("sun.plugin.dom.DOMService");
 

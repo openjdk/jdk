@@ -61,10 +61,8 @@ class FileSystemPreferences extends AbstractPreferences {
      * Sync interval in seconds.
      */
     private static final int SYNC_INTERVAL = Math.max(1,
-        Integer.parseInt(
-            AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction(
-                    "java.util.prefs.syncInterval", "30"))));
+        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+             Integer.getInteger("java.util.prefs.syncInterval", 30)));
 
     /**
      * Returns logger for error messages. Backing store exceptions are logged at
