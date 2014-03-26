@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @bug 5094318
  * @summary REGRESSION: Array cloning is not backwards compatible
  *
- * @compile -source 1.4 T5094318.java
- * @run main T5094318
  * @compile  T5094318.java
  * @run main/fail T5094318
  */

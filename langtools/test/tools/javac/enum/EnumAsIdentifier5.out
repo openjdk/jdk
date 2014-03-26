@@ -1,6 +1,0 @@
-- compiler.warn.source.no.bootclasspath: 1.5
-- compiler.warn.option.obsolete.source: 1.5
-- compiler.warn.option.obsolete.suppression
-EnumAsIdentifier.java:13:9: compiler.err.enum.as.identifier
-1 error
-3 warnings

@@ -62,13 +62,9 @@ public final class NativeTypeError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     @SuppressWarnings("LeakingThisInConstructor")
     NativeTypeError(final Object msg, final Global global) {
-        super(global.getTypeErrorPrototype(), getInitialMap());
+        super(global.getTypeErrorPrototype(), $nasgenmap$);
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {

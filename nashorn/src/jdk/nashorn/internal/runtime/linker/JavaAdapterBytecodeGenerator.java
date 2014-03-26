@@ -64,6 +64,7 @@ import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -134,6 +135,7 @@ final class JavaAdapterBytecodeGenerator {
     static final Type CONTEXT_TYPE       = Type.getType(Context.class);
     static final Type OBJECT_TYPE        = Type.getType(Object.class);
     static final Type SCRIPT_OBJECT_TYPE = Type.getType(ScriptObject.class);
+    static final Type GLOBAL_TYPE        = Type.getType(Global.class);
 
     static final String CONTEXT_TYPE_NAME = CONTEXT_TYPE.getInternalName();
     static final String OBJECT_TYPE_NAME  = OBJECT_TYPE.getInternalName();
@@ -143,8 +145,10 @@ final class JavaAdapterBytecodeGenerator {
     static final String GLOBAL_FIELD_NAME = "global";
 
     static final String SCRIPT_OBJECT_TYPE_DESCRIPTOR = SCRIPT_OBJECT_TYPE.getDescriptor();
+    static final String GLOBAL_TYPE_DESCRIPTOR = GLOBAL_TYPE.getDescriptor();
 
-    static final String SET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE, SCRIPT_OBJECT_TYPE);
+
+    static final String SET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE, GLOBAL_TYPE);
     static final String VOID_NOARG_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE);
 
     private static final Type SCRIPT_FUNCTION_TYPE = Type.getType(ScriptFunction.class);
@@ -167,7 +171,7 @@ final class JavaAdapterBytecodeGenerator {
     private static final String UNSUPPORTED_OPERATION_TYPE_NAME = UNSUPPORTED_OPERATION_TYPE.getInternalName();
 
     private static final String METHOD_HANDLE_TYPE_DESCRIPTOR = METHOD_HANDLE_TYPE.getDescriptor();
-    private static final String GET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(SCRIPT_OBJECT_TYPE);
+    private static final String GET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(GLOBAL_TYPE);
     private static final String GET_CLASS_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.getType(Class.class));
 
     // Package used when the adapter can't be defined in the adaptee's package (either because it's sealed, or because
@@ -259,7 +263,7 @@ final class JavaAdapterBytecodeGenerator {
     }
 
     private void generateGlobalFields() {
-        cw.visitField(ACC_PRIVATE | ACC_FINAL | (classOverride ? ACC_STATIC : 0), GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR, null, null).visitEnd();
+        cw.visitField(ACC_PRIVATE | ACC_FINAL | (classOverride ? ACC_STATIC : 0), GLOBAL_FIELD_NAME, GLOBAL_TYPE_DESCRIPTOR, null, null).visitEnd();
         usedFieldNames.add(GLOBAL_FIELD_NAME);
     }
 
@@ -363,7 +367,7 @@ final class JavaAdapterBytecodeGenerator {
         }
         // Assign "global = Context.getGlobal()"
         invokeGetGlobalWithNullCheck(mv);
-        mv.putstatic(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
+        mv.putstatic(generatedClassName, GLOBAL_FIELD_NAME, GLOBAL_TYPE_DESCRIPTOR);
 
         endInitMethod(mv);
     }
@@ -508,7 +512,7 @@ final class JavaAdapterBytecodeGenerator {
         // Assign "this.global = Context.getGlobal()"
         mv.visitVarInsn(ALOAD, 0);
         invokeGetGlobalWithNullCheck(mv);
-        mv.putfield(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
+        mv.putfield(generatedClassName, GLOBAL_FIELD_NAME, GLOBAL_TYPE_DESCRIPTOR);
 
         endInitMethod(mv);
     }
@@ -652,10 +656,10 @@ final class JavaAdapterBytecodeGenerator {
         // Load the creatingGlobal object
         if(classOverride) {
             // If class handle is defined, load the static defining global
-            mv.getstatic(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
+            mv.getstatic(generatedClassName, GLOBAL_FIELD_NAME, GLOBAL_TYPE_DESCRIPTOR);
         } else {
             mv.visitVarInsn(ALOAD, 0);
-            mv.getfield(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
+            mv.getfield(generatedClassName, GLOBAL_FIELD_NAME, GLOBAL_TYPE_DESCRIPTOR);
         }
         // stack: [creatingGlobal, handle]
         final Label setupGlobal = new Label();
@@ -674,7 +678,7 @@ final class JavaAdapterBytecodeGenerator {
         // stack: [creatingGlobal, creatingGlobal, handle]
 
         // Emit code for switching to the creating global
-        // ScriptObject currentGlobal = Context.getGlobal();
+        // Global currentGlobal = Context.getGlobal();
         invokeGetGlobal(mv);
         mv.dup();
 
@@ -744,7 +748,7 @@ final class JavaAdapterBytecodeGenerator {
         final Label methodEnd = new Label();
         mv.visitLabel(methodEnd);
 
-        mv.visitLocalVariable("currentGlobal", SCRIPT_OBJECT_TYPE_DESCRIPTOR, null, setupGlobal, methodEnd, currentGlobalVar);
+        mv.visitLocalVariable("currentGlobal", GLOBAL_TYPE_DESCRIPTOR, null, setupGlobal, methodEnd, currentGlobalVar);
         mv.visitLocalVariable("globalsDiffer", Type.INT_TYPE.getDescriptor(), null, setupGlobal, methodEnd, globalsDifferVar);
 
         if(throwableDeclared) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,29 @@ public abstract class CompilerWhiteBoxTest {
     }
 
     /**
+     * Checks, that {@linkplain #method} is not compiled at the given compilation
+     * level or above.
+     *
+     * @param compLevel
+     *
+     * @throws RuntimeException if {@linkplain #method} is in compiler queue or
+     *                          is compiled, or if {@linkplain #method} has zero
+     *                          compilation level.
+     */
+
+    protected final void checkNotCompiled(int compLevel) {
+        if (WHITE_BOX.isMethodQueuedForCompilation(method)) {
+            throw new RuntimeException(method + " must not be in queue");
+        }
+        if (WHITE_BOX.getMethodCompilationLevel(method, false) >= compLevel) {
+            throw new RuntimeException(method + " comp_level must be >= maxCompLevel");
+        }
+        if (WHITE_BOX.getMethodCompilationLevel(method, true) >= compLevel) {
+            throw new RuntimeException(method + " osr_comp_level must be >= maxCompLevel");
+        }
+    }
+
+    /**
      * Checks, that {@linkplain #method} is not compiled.
      *
      * @throws RuntimeException if {@linkplain #method} is in compiler queue or
@@ -379,6 +402,20 @@ public abstract class CompilerWhiteBoxTest {
 
         /** flag for OSR test case */
         boolean isOsr();
+    }
+
+    /**
+     * @return {@code true} if the current test case is OSR and the mode is
+     *          Xcomp, otherwise {@code false}
+     */
+    protected boolean skipXcompOSR() {
+        boolean result =  testCase.isOsr()
+                && CompilerWhiteBoxTest.MODE.startsWith("compiled ");
+        if (result && IS_VERBOSE) {
+            System.err.printf("Warning: %s is not applicable in %s%n",
+                    testCase.name(), CompilerWhiteBoxTest.MODE);
+        }
+        return result;
     }
 }
 

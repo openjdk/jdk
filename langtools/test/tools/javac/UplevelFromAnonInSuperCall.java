@@ -29,7 +29,6 @@
  * @author maddox (cribbed from bracha/lillibridge) gafter
  *
  * @compile UplevelFromAnonInSuperCall.java
- * @compile/fail -source 1.4 UplevelFromAnonInSuperCall.java
  */
 
 class UplevelFromAnonInSuperCall {

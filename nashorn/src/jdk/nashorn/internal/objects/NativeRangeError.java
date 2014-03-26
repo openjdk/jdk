@@ -62,10 +62,6 @@ public final class NativeRangeError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     @SuppressWarnings("LeakingThisInConstructor")
     private NativeRangeError(final Object msg, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
@@ -78,7 +74,7 @@ public final class NativeRangeError extends ScriptObject {
     }
 
     NativeRangeError(final Object msg, final Global global) {
-        this(msg, global.getRangeErrorPrototype(), getInitialMap());
+        this(msg, global.getRangeErrorPrototype(), $nasgenmap$);
     }
 
     private NativeRangeError(final Object msg) {

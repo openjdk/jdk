@@ -34,6 +34,7 @@ import java.util.RandomAccess;
 import java.util.concurrent.Callable;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
@@ -54,7 +55,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
     // These add to the back and front of the list
     private static final Object PUSH    = new Object();
     private static InvokeByName getPUSH() {
-        return ((GlobalObject)Context.getGlobal()).getInvokeByName(PUSH,
+        return Context.getGlobal().getInvokeByName(PUSH,
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
@@ -65,7 +66,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
 
     private static final Object UNSHIFT = new Object();
     private static InvokeByName getUNSHIFT() {
-        return ((GlobalObject)Context.getGlobal()).getInvokeByName(UNSHIFT,
+        return Context.getGlobal().getInvokeByName(UNSHIFT,
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
@@ -77,7 +78,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
     // These remove from the back and front of the list
     private static final Object POP = new Object();
     private static InvokeByName getPOP() {
-        return ((GlobalObject)Context.getGlobal()).getInvokeByName(POP,
+        return Context.getGlobal().getInvokeByName(POP,
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
@@ -88,7 +89,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
 
     private static final Object SHIFT = new Object();
     private static InvokeByName getSHIFT() {
-        return ((GlobalObject)Context.getGlobal()).getInvokeByName(SHIFT,
+        return Context.getGlobal().getInvokeByName(SHIFT,
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
@@ -100,7 +101,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
     // These insert and remove in the middle of the list
     private static final Object SPLICE_ADD = new Object();
     private static InvokeByName getSPLICE_ADD() {
-        return ((GlobalObject)Context.getGlobal()).getInvokeByName(SPLICE_ADD,
+        return Context.getGlobal().getInvokeByName(SPLICE_ADD,
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
@@ -111,7 +112,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
 
     private static final Object SPLICE_REMOVE = new Object();
     private static InvokeByName getSPLICE_REMOVE() {
-        return ((GlobalObject)Context.getGlobal()).getInvokeByName(SPLICE_REMOVE,
+        return  Context.getGlobal().getInvokeByName(SPLICE_REMOVE,
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {

@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.LinkRequestImpl;
-import jdk.nashorn.internal.objects.NativeJava;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -68,8 +67,8 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * generate the adapter class itself; see its documentation for details about the generated class.
  * </p><p>
  * You normally don't use this class directly, but rather either create adapters from script using
- * {@link NativeJava#extend(Object, Object...)}, using the {@code new} operator on abstract classes and interfaces (see
- * {@link NativeJava#type(Object, Object)}), or implicitly when passing script functions to Java methods expecting SAM
+ * {@link jdk.nashorn.internal.objects.NativeJava#extend(Object, Object...)}, using the {@code new} operator on abstract classes and interfaces (see
+ * {@link jdk.nashorn.internal.objects.NativeJava#type(Object, Object)}), or implicitly when passing script functions to Java methods expecting SAM
  * types.
  * </p>
  */
@@ -337,6 +336,7 @@ public final class JavaAdapterFactory {
     private static ProtectionDomain createMinimalPermissionDomain() {
         // Generated classes need to have at least the permission to access Nashorn runtime and runtime.linker packages.
         final Permissions permissions = new Permissions();
+        permissions.add(new RuntimePermission("accessClassInPackage.jdk.nashorn.internal.objects"));
         permissions.add(new RuntimePermission("accessClassInPackage.jdk.nashorn.internal.runtime"));
         permissions.add(new RuntimePermission("accessClassInPackage.jdk.nashorn.internal.runtime.linker"));
         return new ProtectionDomain(new CodeSource(null, (CodeSigner[])null), permissions);

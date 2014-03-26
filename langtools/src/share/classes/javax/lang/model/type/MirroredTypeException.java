@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,10 @@ public class MirroredTypeException extends MirroredTypesException {
 
     /**
      * Explicitly set all transient fields.
+     * @param s the serial stream
+     * @throws ClassNotFoundException for a missing class during
+     * deserialization
+     * @throws IOException for an IO problem during deserialization
      */
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {

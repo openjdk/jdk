@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -46,6 +48,7 @@ import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -153,16 +156,19 @@ public final class Context {
     /** Is Context global debug mode enabled ? */
     public static final boolean DEBUG = Options.getBooleanProperty("nashorn.debug");
 
-    private static final ThreadLocal<ScriptObject> currentGlobal = new ThreadLocal<>();
+    private static final ThreadLocal<Global> currentGlobal = new ThreadLocal<>();
+
+    // class cache
+    private ClassCache classCache;
 
     /**
      * Get the current global scope
      * @return the current global scope
      */
-    public static ScriptObject getGlobal() {
+    public static Global getGlobal() {
         // This class in a package.access protected package.
         // Trusted code only can call this method.
-        return getGlobalTrusted();
+        return currentGlobal.get();
     }
 
     /**
@@ -171,10 +177,19 @@ public final class Context {
      */
     public static void setGlobal(final ScriptObject global) {
         if (global != null && !(global instanceof Global)) {
-            throw new IllegalArgumentException("global is not an instance of Global!");
+            throw new IllegalArgumentException("not a global!");
         }
+        setGlobal((Global)global);
+    }
 
-        setGlobalTrusted(global);
+    /**
+     * Set the current global scope
+     * @param global the global scope
+     */
+    public static void setGlobal(final Global global) {
+        // This class in a package.access protected package.
+        // Trusted code only can call this method.
+        currentGlobal.set(global);
     }
 
     /**
@@ -195,7 +210,7 @@ public final class Context {
      * @return error writer of the current context
      */
     public static PrintWriter getCurrentErr() {
-        final ScriptObject global = getGlobalTrusted();
+        final ScriptObject global = getGlobal();
         return (global != null)? global.getContext().getErr() : new PrintWriter(System.err);
     }
 
@@ -348,6 +363,11 @@ public final class Context {
             this.classPathLoader = null;
         }
 
+        final int cacheSize = env._class_cache_size;
+        if (cacheSize > 0) {
+            classCache = new ClassCache(cacheSize);
+        }
+
         // print version info if asked.
         if (env._version) {
             getErr().println("nashorn " + Version.version());
@@ -395,7 +415,7 @@ public final class Context {
      * @return the property map of the current global scope
      */
     public static PropertyMap getGlobalMap() {
-        return Context.getGlobalTrusted().getMap();
+        return Context.getGlobal().getMap();
     }
 
     /**
@@ -425,7 +445,7 @@ public final class Context {
         final String  file       = (location == UNDEFINED || location == null) ? "<eval>" : location.toString();
         final Source  source     = new Source(file, string);
         final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
-        final ScriptObject global = Context.getGlobalTrusted();
+        final Global  global = Context.getGlobal();
 
         ScriptObject scope = initialScope;
 
@@ -457,7 +477,7 @@ public final class Context {
         // in the caller's environment. A new environment is created!
         if (strictFlag) {
             // Create a new scope object
-            final ScriptObject strictEvalScope = ((GlobalObject)global).newObject();
+            final ScriptObject strictEvalScope = global.newObject();
 
             // bless it as a "scope"
             strictEvalScope.setIsScope();
@@ -582,10 +602,10 @@ public final class Context {
      * @throws IOException if source cannot be found or loaded
      */
     public Object loadWithNewGlobal(final Object from, final Object...args) throws IOException {
-        final ScriptObject oldGlobal = getGlobalTrusted();
-        final ScriptObject newGlobal = AccessController.doPrivileged(new PrivilegedAction<ScriptObject>() {
+        final Global oldGlobal = getGlobal();
+        final Global newGlobal = AccessController.doPrivileged(new PrivilegedAction<Global>() {
            @Override
-           public ScriptObject run() {
+           public Global run() {
                try {
                    return newGlobal();
                } catch (final RuntimeException e) {
@@ -598,17 +618,17 @@ public final class Context {
         }, CREATE_GLOBAL_ACC_CTXT);
         // initialize newly created Global instance
         initGlobal(newGlobal);
-        setGlobalTrusted(newGlobal);
+        setGlobal(newGlobal);
 
         final Object[] wrapped = args == null? ScriptRuntime.EMPTY_ARRAY :  ScriptObjectMirror.wrapArray(args, oldGlobal);
-        newGlobal.put("arguments", ((GlobalObject)newGlobal).wrapAsObject(wrapped), env._strict);
+        newGlobal.put("arguments", newGlobal.wrapAsObject(wrapped), env._strict);
 
         try {
             // wrap objects from newGlobal's world as mirrors - but if result
             // is from oldGlobal's world, unwrap it!
             return ScriptObjectMirror.unwrap(ScriptObjectMirror.wrap(load(newGlobal, from), newGlobal), oldGlobal);
         } finally {
-            setGlobalTrusted(oldGlobal);
+            setGlobal(oldGlobal);
         }
     }
 
@@ -637,7 +657,7 @@ public final class Context {
      * Checks that the given Class can be accessed from no permissions context.
      *
      * @param clazz Class object
-     * @throw SecurityException if not accessible
+     * @throws SecurityException if not accessible
      */
     public static void checkPackageAccess(final Class<?> clazz) {
         final SecurityManager sm = System.getSecurityManager();
@@ -654,12 +674,12 @@ public final class Context {
      * Checks that the given package name can be accessed from no permissions context.
      *
      * @param pkgName package name
-     * @throw SecurityException if not accessible
+     * @throws SecurityException if not accessible
      */
     public static void checkPackageAccess(final String pkgName) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            checkPackageAccess(sm, pkgName.endsWith(".")? pkgName : pkgName + ".");
+            checkPackageAccess(sm, pkgName.endsWith(".") ? pkgName : pkgName + ".");
         }
     }
 
@@ -783,7 +803,7 @@ public final class Context {
      *
      * @return the initialized global scope object.
      */
-    public ScriptObject createGlobal() {
+    public Global createGlobal() {
         return initGlobal(newGlobal());
     }
 
@@ -791,7 +811,7 @@ public final class Context {
      * Create a new uninitialized global scope object
      * @return the global script object
      */
-    public ScriptObject newGlobal() {
+    public Global newGlobal() {
         return new Global(this);
     }
 
@@ -801,20 +821,16 @@ public final class Context {
      * @param global the global
      * @return the initialized global scope object.
      */
-    public ScriptObject initGlobal(final ScriptObject global) {
-        if (! (global instanceof GlobalObject)) {
-            throw new IllegalArgumentException("not a global object!");
-        }
-
+    public Global initGlobal(final Global global) {
         // Need only minimal global object, if we are just compiling.
         if (!env._compile_only) {
-            final ScriptObject oldGlobal = Context.getGlobalTrusted();
+            final Global oldGlobal = Context.getGlobal();
             try {
-                Context.setGlobalTrusted(global);
+                Context.setGlobal(global);
                 // initialize global scope with builtin global objects
-                ((GlobalObject)global).initBuiltinObjects();
+                global.initBuiltinObjects();
             } finally {
-                Context.setGlobalTrusted(oldGlobal);
+                Context.setGlobal(oldGlobal);
             }
         }
 
@@ -822,30 +838,15 @@ public final class Context {
     }
 
     /**
-     * Trusted variants - package-private
+     * Trusted variant - package-private
      */
-
-    /**
-     * Return the current global scope
-     * @return current global scope
-     */
-    static ScriptObject getGlobalTrusted() {
-        return currentGlobal.get();
-    }
-
-    /**
-     * Set the current global scope
-     */
-    static void setGlobalTrusted(ScriptObject global) {
-         currentGlobal.set(global);
-    }
 
     /**
      * Return the current global's context
      * @return current global's context
      */
     static Context getContextTrusted() {
-        return Context.getGlobalTrusted().getContext();
+        return ((ScriptObject)Context.getGlobal()).getContext();
     }
 
     /**
@@ -914,7 +915,7 @@ public final class Context {
         }
 
         // Package as a JavaScript function and pass function back to shell.
-        return ((GlobalObject)Context.getGlobalTrusted()).newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, scope, strict);
+        return Context.getGlobal().newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, scope, strict);
     }
 
     private ScriptFunction compileScript(final Source source, final ScriptObject scope, final ErrorManager errMan) {
@@ -925,16 +926,10 @@ public final class Context {
         // start with no errors, no warnings.
         errMan.reset();
 
-        GlobalObject global = null;
-        Class<?> script;
-
-        if (env._class_cache_size > 0) {
-            global = (GlobalObject)Context.getGlobalTrusted();
-            script = global.findCachedClass(source);
-            if (script != null) {
-                Compiler.LOG.fine("Code cache hit for ", source, " avoiding recompile.");
-                return script;
-            }
+        Class<?> script = findCachedClass(source);
+        if (script != null) {
+            Compiler.LOG.fine("Code cache hit for ", source, " avoiding recompile.");
+            return script;
         }
 
         final FunctionNode functionNode = new Parser(env, source, errMan, strict).parse();
@@ -963,10 +958,7 @@ public final class Context {
 
         final FunctionNode newFunctionNode = compiler.compile(functionNode);
         script = compiler.install(newFunctionNode);
-
-        if (global != null) {
-            global.cacheClass(source, script);
-        }
+        cacheClass(source, script);
 
         return script;
     }
@@ -988,4 +980,60 @@ public final class Context {
     private long getUniqueScriptId() {
         return uniqueScriptId.getAndIncrement();
     }
+
+    /**
+     * Cache for compiled script classes.
+     */
+    @SuppressWarnings("serial")
+    private static class ClassCache extends LinkedHashMap<Source, ClassReference> {
+        private final int size;
+        private final ReferenceQueue<Class<?>> queue;
+
+        ClassCache(int size) {
+            super(size, 0.75f, true);
+            this.size = size;
+            this.queue = new ReferenceQueue<>();
+        }
+
+        void cache(final Source source, final Class<?> clazz) {
+            put(source, new ClassReference(clazz, queue, source));
+        }
+
+        @Override
+        protected boolean removeEldestEntry(final Map.Entry<Source, ClassReference> eldest) {
+            return size() > size;
+        }
+
+        @Override
+        public ClassReference get(Object key) {
+            for (ClassReference ref; (ref = (ClassReference)queue.poll()) != null; ) {
+                remove(ref.source);
+            }
+            return super.get(key);
+        }
+
+    }
+
+    private static class ClassReference extends SoftReference<Class<?>> {
+        private final Source source;
+
+        ClassReference(final Class<?> clazz, final ReferenceQueue<Class<?>> queue, final Source source) {
+            super(clazz, queue);
+            this.source = source;
+        }
+    }
+
+    // Class cache management
+    private Class<?> findCachedClass(final Source source) {
+        ClassReference ref = classCache == null ? null : classCache.get(source);
+        return ref != null ? ref.get() : null;
+    }
+
+    private void cacheClass(final Source source, final Class<?> clazz) {
+        if (classCache != null) {
+            classCache.cache(source, clazz);
+        }
+    }
+
+
 }
