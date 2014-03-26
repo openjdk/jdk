@@ -287,19 +287,6 @@ public final class CompilationEnvironment {
     }
 
     /**
-     * Check if a program point was invalidated during a previous run
-     * of this method, i.e. we did an optimistic assumption that now is wrong.
-     * This is the basis of generating a wider type. getOptimisticType
-     * in this class will query for invalidation and suggest a wider type
-     * upon recompilation if this info exists.
-     * @param programPoint program point to check
-     * @return true if it was invalidated during a previous run
-     */
-    boolean isInvalidated(final int programPoint) {
-        return invalidatedProgramPoints.get(programPoint) != null;
-    }
-
-    /**
      * Get the parameter type at a parameter position if known from previous runtime calls
      * or optimistic profiles.
      *
@@ -393,7 +380,7 @@ public final class CompilationEnvironment {
             }
             return evaluatedType;
         }
-        return node.getMostOptimisticType();
+        return mostOptimisticType;
     }
 
 
@@ -429,8 +416,25 @@ public final class CompilationEnvironment {
         if(find == null) {
             return null;
         }
-        final Class<?> clazz = find.getProperty().getCurrentType();
-        return clazz == null ? null : Type.typeFor(clazz);
+
+        final Property property = find.getProperty();
+        final Class<?> propertyClass = property.getCurrentType();
+        if (propertyClass == null) {
+            // propertyClass == null means its Undefined, which is object
+            return Type.OBJECT;
+        } else if (propertyClass.isPrimitive()) {
+            return Type.typeFor(propertyClass);
+        }
+
+        final ScriptObject owner = find.getOwner();
+        if(property.hasGetterFunction(owner)) {
+            // Can have side effects, so we can't safely evaluate it; since !propertyClass.isPrimitive(), it's Object.
+            return Type.OBJECT;
+        }
+
+        // Safely evaluate the property, and return the narrowest type for the actual value (e.g. Type.INT for a boxed
+        // integer).
+        return Type.typeFor(ObjectClassGenerator.unboxedFieldType(property.getObjectValue(owner, owner)));
     }
 
     private Object evaluateSafely(Expression expr) {

@@ -58,7 +58,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -354,7 +353,11 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     private boolean useOptimisticTypes() {
-        return env.useOptimisticTypes() && !lc.isInSplitNode();
+        return env.useOptimisticTypes() &&
+                // an inner function in on-demand compilation is not compiled, so no need to evaluate expressions in it
+                (!env.isOnDemandCompilation() || lc.getOutermostFunction() == lc.getCurrentFunction()) &&
+                // No optimistic compilation within split nodes for now
+                !lc.isInSplitNode();
     }
 
     @Override
@@ -1169,7 +1172,6 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
                 tagNeverOptimistic(binaryNode.rhs());
             }
         }
-        //tagOptimistic(binaryNode.lhs());
         tagOptimistic(binaryNode.rhs());
 
         return true;
@@ -1221,6 +1223,8 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
 
     @Override
     public boolean enterASSIGN(final BinaryNode binaryNode) {
+        // left hand side of an ordinary assignment need never be optimistic (it's written only, not read).
+        tagNeverOptimistic(binaryNode.lhs());
         return enterAssignmentNode(binaryNode);
     }
 
@@ -2068,7 +2072,10 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         // if we are running with optimistic types, this starts out as e.g. int, and based on previous
         // failed assumptions it can be wider, for example double if we have failed this assumption
         // in a previous run
-        Type optimisticType = getOptimisticType(node);
+        final boolean isNeverOptimistic = isTaggedNeverOptimistic(node);
+
+        // avoid optimistic type evaluation if the node is never optimistic
+        Type optimisticType = isNeverOptimistic ? node.getMostPessimisticType() : getOptimisticType(node);
 
         if (argumentsType != null) {
             optimisticType = Type.widest(optimisticType, argumentsType);
@@ -2082,7 +2089,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             return expr;
         }
 
-        if (isTaggedNeverOptimistic(expr)) {
+        if (isNeverOptimistic) {
             return expr;
         }
 
