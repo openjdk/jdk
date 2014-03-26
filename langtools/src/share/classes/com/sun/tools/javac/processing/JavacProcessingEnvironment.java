@@ -761,14 +761,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         public Set<TypeElement> visitType(TypeElement e, Set<TypeElement> p) {
             // Type parameters are not considered to be enclosed by a type
             scan(e.getTypeParameters(), p);
-            return scan(e.getEnclosedElements(), p);
+            return super.visitType(e, p);
         }
 
         @Override
         public Set<TypeElement> visitExecutable(ExecutableElement e, Set<TypeElement> p) {
             // Type parameters are not considered to be enclosed by an executable
             scan(e.getTypeParameters(), p);
-            return scan(e.getEnclosedElements(), p);
+            return super.visitExecutable(e, p);
         }
 
         void addAnnotations(Element e, Set<TypeElement> p) {
