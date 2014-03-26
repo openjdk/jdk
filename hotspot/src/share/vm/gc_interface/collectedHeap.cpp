@@ -85,15 +85,15 @@ GCHeapSummary CollectedHeap::create_heap_summary() {
 
 MetaspaceSummary CollectedHeap::create_metaspace_summary() {
   const MetaspaceSizes meta_space(
-      MetaspaceAux::allocated_capacity_bytes(),
+      MetaspaceAux::committed_bytes(),
       MetaspaceAux::allocated_used_bytes(),
       MetaspaceAux::reserved_bytes());
   const MetaspaceSizes data_space(
-      MetaspaceAux::allocated_capacity_bytes(Metaspace::NonClassType),
+      MetaspaceAux::committed_bytes(Metaspace::NonClassType),
       MetaspaceAux::allocated_used_bytes(Metaspace::NonClassType),
       MetaspaceAux::reserved_bytes(Metaspace::NonClassType));
   const MetaspaceSizes class_space(
-      MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType),
+      MetaspaceAux::committed_bytes(Metaspace::ClassType),
       MetaspaceAux::allocated_used_bytes(Metaspace::ClassType),
       MetaspaceAux::reserved_bytes(Metaspace::ClassType));
 
