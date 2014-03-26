@@ -100,7 +100,7 @@ public final class SunNativeProvider extends Provider {
                             gssLibs = new String[]{ defaultLib };
                         }
                         for (String libName: gssLibs) {
-                            if (GSSLibStub.init(libName)) {
+                            if (GSSLibStub.init(libName, DEBUG)) {
                                 debug("Loaded GSS library: " + libName);
                                 Oid[] mechs = GSSLibStub.indicateMechs();
                                 HashMap<String, String> map =
