@@ -2018,8 +2018,8 @@ void ConcurrentMark::cleanup() {
     // that calculated by walking the marking bitmap.
 
     // Bitmaps to hold expected values
-    BitMap expected_region_bm(_region_bm.size(), false);
-    BitMap expected_card_bm(_card_bm.size(), false);
+    BitMap expected_region_bm(_region_bm.size(), true);
+    BitMap expected_card_bm(_card_bm.size(), true);
 
     G1ParVerifyFinalCountTask g1_par_verify_task(g1h,
                                                  &_region_bm,
