@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8034181
- * @summary SIGBUS at Java_sun_nio_ch_SctpChannelImpl_receive0
+ * @summary SIGBUS in SctpChannelImpl receive
  * @author chegar
  */
 
@@ -48,6 +48,9 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public class ReceiveIntoDirect {
     /* suitably small message to NOT overrun small buffers */
     final byte[] msgBytes =  "Hello".getBytes(US_ASCII);
+
+    /* number of client connections/combinations (accepted by the server) */
+    final int NUM_CONNECTIONS = 75;
 
     void test(String[] args) throws IOException {
         SocketAddress address = null;
@@ -178,7 +181,7 @@ public class ReceiveIntoDirect {
         @Override
         public void run() {
             try {
-                for (int i=0; i<75; i++) {  // there are 75 client combinations
+                for (int i=0; i<NUM_CONNECTIONS; i++) {
                     SctpChannel sc = ssc.accept();
 
                     /* send a small message */
