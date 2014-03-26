@@ -1037,7 +1037,7 @@ public class ClassWriter extends ClassFile {
             }
             databuf.appendChar(pool.get(inner));
             databuf.appendChar(
-                inner.owner.kind == TYP ? pool.get(inner.owner) : 0);
+                inner.owner.kind == TYP && !inner.name.isEmpty() ? pool.get(inner.owner) : 0);
             databuf.appendChar(
                 !inner.name.isEmpty() ? pool.get(inner.name) : 0);
             databuf.appendChar(flags);

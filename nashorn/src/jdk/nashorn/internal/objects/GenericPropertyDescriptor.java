@@ -55,12 +55,8 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     GenericPropertyDescriptor(final boolean configurable, final boolean enumerable, final Global global) {
-        super(global.getObjectPrototype(), getInitialMap());
+        super(global.getObjectPrototype(), $nasgenmap$);
         this.configurable = configurable;
         this.enumerable   = enumerable;
     }

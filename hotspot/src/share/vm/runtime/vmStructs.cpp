@@ -2336,6 +2336,12 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /* ConstMethod anon-enum */                                             \
   /********************************/                                      \
                                                                           \
+  declare_constant(Method::_jfr_towrite)                                  \
+  declare_constant(Method::_caller_sensitive)                             \
+  declare_constant(Method::_force_inline)                                 \
+  declare_constant(Method::_dont_inline)                                  \
+  declare_constant(Method::_hidden)                                       \
+                                                                          \
   declare_constant(ConstMethod::_has_linenumber_table)                    \
   declare_constant(ConstMethod::_has_checked_exceptions)                  \
   declare_constant(ConstMethod::_has_localvariable_table)                 \

@@ -25,6 +25,9 @@
 
 # Setup common to Zero (non-Shark) and Shark versions of VM
 
+# override this from the main file because some version of llvm do not like -Wundef
+WARNING_FLAGS = -Wpointer-arith -Wsign-compare -Wunused-function -Wunused-value
+
 # The copied fdlibm routines in sharedRuntimeTrig.o must not be optimized
 OPT_CFLAGS/sharedRuntimeTrig.o = $(OPT_CFLAGS/NOOPT)
 # The copied fdlibm routines in sharedRuntimeTrans.o must not be optimized

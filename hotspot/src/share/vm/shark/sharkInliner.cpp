@@ -744,6 +744,10 @@ bool SharkInlinerHelper::do_field_access(bool is_get, bool is_field) {
 }
 
 bool SharkInliner::attempt_inline(ciMethod *target, SharkState *state) {
+  if (!Inline) {
+    return false;
+  }
+
   if (SharkIntrinsics::is_intrinsic(target)) {
     SharkIntrinsics::inline_intrinsic(target, state);
     return true;

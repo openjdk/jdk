@@ -653,6 +653,9 @@ LIBDL
 LIBM
 LIBZIP_CAN_USE_MMAP
 USE_EXTERNAL_LIBZ
+USE_EXTERNAL_LIBPNG
+PNG_LIBS
+PNG_CFLAGS
 USE_EXTERNAL_LIBGIF
 USE_EXTERNAL_LIBJPEG
 ALSA_LIBS
@@ -793,8 +796,9 @@ JAXWS_TOPDIR
 JAXP_TOPDIR
 CORBA_TOPDIR
 LANGTOOLS_TOPDIR
+JAVA_FLAGS_SMALL
+JAVA_FLAGS_BIG
 JAVA_FLAGS
-BOOT_JDK_JVMARGS
 JAVAC_FLAGS
 BOOT_JDK_SOURCETARGET
 JARSIGNER
@@ -1071,6 +1075,7 @@ with_alsa
 with_alsa_include
 with_alsa_lib
 with_giflib
+with_libpng
 with_zlib
 with_stdc__lib
 with_msvcr_dll
@@ -1183,6 +1188,8 @@ FREETYPE_CFLAGS
 FREETYPE_LIBS
 ALSA_CFLAGS
 ALSA_LIBS
+PNG_CFLAGS
+PNG_LIBS
 LIBFFI_CFLAGS
 LIBFFI_LIBS
 CCACHE'
@@ -1921,6 +1928,8 @@ Optional Packages:
   --with-alsa-lib         specify directory for the alsa library
   --with-giflib           use giflib from build system or OpenJDK source
                           (system, bundled) [bundled]
+  --with-libpng           use libpng from build system or OpenJDK source
+                          (system, bundled) [bundled]
   --with-zlib             use zlib from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-stdc++lib=<static>,<dynamic>,<default>
@@ -2045,6 +2054,8 @@ Some influential environment variables:
               linker flags for FREETYPE, overriding pkg-config
   ALSA_CFLAGS C compiler flags for ALSA, overriding pkg-config
   ALSA_LIBS   linker flags for ALSA, overriding pkg-config
+  PNG_CFLAGS  C compiler flags for PNG, overriding pkg-config
+  PNG_LIBS    linker flags for PNG, overriding pkg-config
   LIBFFI_CFLAGS
               C compiler flags for LIBFFI, overriding pkg-config
   LIBFFI_LIBS linker flags for LIBFFI, overriding pkg-config
@@ -4221,7 +4232,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1394011255
+DATE_WHEN_GENERATED=1394794899
 
 ###############################################################################
 #
@@ -25856,67 +25867,6 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command " >&5
 $as_echo_n "checking flags for boot jdk java command ... " >&6; }
 
-  # Starting amount of heap memory.
-
-  $ECHO "Check if jvm arg is ok: -Xms64M" >&5
-  $ECHO "Command: $JAVA -Xms64M -version" >&5
-  OUTPUT=`$JAVA -Xms64M -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -Xms64M"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  # Maximum amount of heap memory.
-  # Maximum stack size.
-  if test "x$BUILD_NUM_BITS" = x32; then
-    JVM_MAX_HEAP=1100M
-    STACK_SIZE=768
-  else
-    # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
-    # pointers are used. Apparently, we need to increase the heap and stack
-    # space for the jvm. More specifically, when running javac to build huge
-    # jdk batch
-    JVM_MAX_HEAP=1600M
-    STACK_SIZE=1536
-  fi
-
-  $ECHO "Check if jvm arg is ok: -Xmx$JVM_MAX_HEAP" >&5
-  $ECHO "Command: $JAVA -Xmx$JVM_MAX_HEAP -version" >&5
-  OUTPUT=`$JAVA -Xmx$JVM_MAX_HEAP -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -Xmx$JVM_MAX_HEAP"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  $ECHO "Check if jvm arg is ok: -XX:ThreadStackSize=$STACK_SIZE" >&5
-  $ECHO "Command: $JAVA -XX:ThreadStackSize=$STACK_SIZE -version" >&5
-  OUTPUT=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:ThreadStackSize=$STACK_SIZE"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
   # Disable special log output when a debug build is used as Boot JDK...
 
   $ECHO "Check if jvm arg is ok: -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput" >&5
@@ -25957,9 +25907,133 @@ $as_echo "$boot_jdk_jvmargs" >&6; }
   # For now, general JAVA_FLAGS are the same as the boot jdk jvmargs
   JAVA_FLAGS=$boot_jdk_jvmargs
 
-  BOOT_JDK_JVMARGS=$boot_jdk_jvmargs
 
-  JAVA_FLAGS=$JAVA_FLAGS
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for big workloads" >&5
+$as_echo_n "checking flags for boot jdk java command for big workloads... " >&6; }
+
+  # Starting amount of heap memory.
+
+  $ECHO "Check if jvm arg is ok: -Xms64M" >&5
+  $ECHO "Command: $JAVA -Xms64M -version" >&5
+  OUTPUT=`$JAVA -Xms64M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -Xms64M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  # Maximum amount of heap memory.
+  # Maximum stack size.
+  if test "x$BUILD_NUM_BITS" = x32; then
+    JVM_MAX_HEAP=1100M
+    STACK_SIZE=768
+  else
+    # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
+    # pointers are used. Apparently, we need to increase the heap and stack
+    # space for the jvm. More specifically, when running javac to build huge
+    # jdk batch
+    JVM_MAX_HEAP=1600M
+    STACK_SIZE=1536
+  fi
+
+  $ECHO "Check if jvm arg is ok: -Xmx$JVM_MAX_HEAP" >&5
+  $ECHO "Command: $JAVA -Xmx$JVM_MAX_HEAP -version" >&5
+  OUTPUT=`$JAVA -Xmx$JVM_MAX_HEAP -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -Xmx$JVM_MAX_HEAP"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -XX:ThreadStackSize=$STACK_SIZE" >&5
+  $ECHO "Command: $JAVA -XX:ThreadStackSize=$STACK_SIZE -version" >&5
+  OUTPUT=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -XX:ThreadStackSize=$STACK_SIZE"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs_big" >&5
+$as_echo "$boot_jdk_jvmargs_big" >&6; }
+
+  JAVA_FLAGS_BIG=$boot_jdk_jvmargs_big
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for small workloads" >&5
+$as_echo_n "checking flags for boot jdk java command for small workloads... " >&6; }
+
+  # Use serial gc for small short lived tools if possible
+
+  $ECHO "Check if jvm arg is ok: -XX:+UseSerialGC" >&5
+  $ECHO "Command: $JAVA -XX:+UseSerialGC -version" >&5
+  OUTPUT=`$JAVA -XX:+UseSerialGC -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -XX:+UseSerialGC"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -Xms32M" >&5
+  $ECHO "Command: $JAVA -Xms32M -version" >&5
+  OUTPUT=`$JAVA -Xms32M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xms32M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -Xmx512M" >&5
+  $ECHO "Command: $JAVA -Xmx512M -version" >&5
+  OUTPUT=`$JAVA -Xmx512M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xmx512M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs_small" >&5
+$as_echo "$boot_jdk_jvmargs_small" >&6; }
+
+  JAVA_FLAGS_SMALL=$boot_jdk_jvmargs_small
 
 
 
@@ -26297,8 +26371,28 @@ fi
   # Use indirect variable referencing
   toolchain_var_name=VALID_TOOLCHAINS_$OPENJDK_BUILD_OS
   VALID_TOOLCHAINS=${!toolchain_var_name}
-  # First toolchain type in the list is the default
-  DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
+
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # On Mac OS X, default toolchain to clang after Xcode 5
+    XCODE_VERSION_OUTPUT=`xcodebuild -version 2>&1 | $HEAD -n 1`
+    $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
+    if test $? -ne 0; then
+      as_fn_error $? "Failed to determine Xcode version." "$LINENO" 5
+    fi
+    XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
+        $SED -e 's/^Xcode \([1-9][0-9.]*\)/\1/' | \
+        $CUT -f 1 -d .`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Xcode major version: $XCODE_MAJOR_VERSION" >&5
+$as_echo "$as_me: Xcode major version: $XCODE_MAJOR_VERSION" >&6;}
+    if test $XCODE_MAJOR_VERSION -ge 5; then
+        DEFAULT_TOOLCHAIN="clang"
+    else
+        DEFAULT_TOOLCHAIN="gcc"
+    fi
+  else
+    # First toolchain type in the list is the default
+    DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
+  fi
 
   if test "x$with_toolchain_type" = xlist; then
     # List all toolchains
@@ -41236,6 +41330,26 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
       SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
     fi
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    PICFLAG=''
+    C_FLAG_REORDER=''
+    CXX_FLAG_REORDER=''
+
+    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      # Linking is different on MacOSX
+      SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
+      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1'
+      SET_SHARED_LIBRARY_MAPFILE=''
+    else
+      # Default works for linux, might work on other platforms as well.
+      SHARED_LIBRARY_FLAGS='-shared'
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN$1'
+      SET_SHARED_LIBRARY_ORIGIN="-Xlinker -z -Xlinker origin $SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
+      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
+    fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     PICFLAG="-KPIC"
     C_FLAG_REORDER='-xF'
@@ -41297,6 +41411,8 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
   # Generate make dependency files
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     C_FLAG_DEPS="-MMD -MF"
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    C_FLAG_DEPS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     C_FLAG_DEPS="-xMMD -xMF"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
@@ -41315,6 +41431,9 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       CFLAGS_DEBUG_SYMBOLS="-g"
       CXXFLAGS_DEBUG_SYMBOLS="-g"
     fi
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    CFLAGS_DEBUG_SYMBOLS="-g"
+    CXXFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     CFLAGS_DEBUG_SYMBOLS="-g -xs"
     CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
@@ -41357,6 +41476,20 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     # The remaining toolchains share opt flags between CC and CXX;
     # setup for C and duplicate afterwards.
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        # On MacOSX we optimize for size, something
+        # we should do for all platforms?
+        C_O_FLAG_HIGHEST="-Os"
+        C_O_FLAG_HI="-Os"
+        C_O_FLAG_NORM="-Os"
+        C_O_FLAG_NONE=""
+      else
+        C_O_FLAG_HIGHEST="-O3"
+        C_O_FLAG_HI="-O3"
+        C_O_FLAG_NORM="-O2"
+        C_O_FLAG_NONE="-O0"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then
         # On MacOSX we optimize for size, something
         # we should do for all platforms?
@@ -46786,6 +46919,118 @@ fi
     USE_EXTERNAL_LIBGIF=true
   else
     as_fn_error $? "Invalid value of --with-giflib: ${with_giflib}, use 'system' or 'bundled'" "$LINENO" 5
+  fi
+
+
+  ###############################################################################
+  #
+  # Check for the png library
+  #
+
+
+# Check whether --with-libpng was given.
+if test "${with_libpng+set}" = set; then :
+  withval=$with_libpng;
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which libpng to use" >&5
+$as_echo_n "checking for which libpng to use... " >&6; }
+
+  # default is bundled
+  DEFAULT_LIBPNG=bundled
+
+  #
+  # if user didn't specify, use DEFAULT_LIBPNG
+  #
+  if test "x${with_libpng}" = "x"; then
+      with_libpng=${DEFAULT_LIBPNG}
+  fi
+
+  if test "x${with_libpng}" = "xbundled"; then
+      USE_EXTERNAL_LIBPNG=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
+$as_echo "bundled" >&6; }
+  elif test "x${with_libpng}" = "xsystem"; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PNG" >&5
+$as_echo_n "checking for PNG... " >&6; }
+
+if test -n "$PNG_CFLAGS"; then
+    pkg_cv_PNG_CFLAGS="$PNG_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpng\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpng") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PNG_CFLAGS=`$PKG_CONFIG --cflags "libpng" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PNG_LIBS"; then
+    pkg_cv_PNG_LIBS="$PNG_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpng\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpng") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PNG_LIBS=`$PKG_CONFIG --libs "libpng" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PNG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libpng" 2>&1`
+        else
+	        PNG_PKG_ERRORS=`$PKG_CONFIG --print-errors "libpng" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PNG_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                 LIBPNG_FOUND=no
+elif test $pkg_failed = untried; then
+	 LIBPNG_FOUND=no
+else
+	PNG_CFLAGS=$pkg_cv_PNG_CFLAGS
+	PNG_LIBS=$pkg_cv_PNG_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	 LIBPNG_FOUND=yes
+fi
+      if test "x${LIBPNG_FOUND}" = "xyes"; then
+          USE_EXTERNAL_LIBPNG=true
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: system" >&5
+$as_echo "system" >&6; }
+      else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: system not found" >&5
+$as_echo "system not found" >&6; }
+          as_fn_error $? "--with-libpng=system specified, but no libpng found!" "$LINENO" 5
+      fi
+  else
+      as_fn_error $? "Invalid value of --with-libpng: ${with_libpng}, use 'system' or 'bundled'" "$LINENO" 5
   fi
 
 

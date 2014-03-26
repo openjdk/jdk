@@ -180,7 +180,6 @@ public class Driver {
 
     protected File compileTestFile(File f, String testClass, String... extraParams) {
         List<String> options = new ArrayList<>();
-        options.addAll(Arrays.asList("-source", "1.8"));
         options.addAll(Arrays.asList(extraParams));
         options.add(f.getPath());
         int rc = com.sun.tools.javac.Main.compile(options.toArray(new String[options.size()]));

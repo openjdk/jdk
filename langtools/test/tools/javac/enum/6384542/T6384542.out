@@ -1,9 +1,0 @@
-T6384542.java:10:8: compiler.err.static.import.not.supported.in.source: 1.4
-T6384542.java:12:8: compiler.err.enums.not.supported.in.source: 1.4
-T6384542.java:14:13: compiler.err.unsupported.fp.lit: 1.4
-T6384542.java:15:9: compiler.err.generics.not.supported.in.source: 1.4
-T6384542.java:16:35: compiler.err.varargs.not.supported.in.source: 1.4
-T6384542.java:17:25: compiler.err.foreach.not.supported.in.source: 1.4
-T6384542.java:21:6: compiler.err.annotations.not.supported.in.source: 1.4
-T6384542.java:24:8: compiler.err.expected3: class, interface, enum
-8 errors

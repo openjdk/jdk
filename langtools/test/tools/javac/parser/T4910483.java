@@ -21,10 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug     4910483
- * @summary javac shouldn't throw NPE while compiling invalid RuntimeInvisibleParameterAnnotations
+ * @summary Javadoc renders the string ".*\\.pdf" as ".\*\.pdf"
  * @run main T4910483
  */
 

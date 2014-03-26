@@ -45,27 +45,11 @@ $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
 $(eval $(call SetupJavaCompilation,BUILD_JAXP, \
     SETUP := GENERATE_NEWBYTECODE_DEBUG, \
     SRC := $(JAXP_TOPDIR)/src, \
+    CLEAN := .properties, \
     BIN := $(JAXP_OUTPUTDIR)/classes, \
-    SRCZIP := $(JAXP_OUTPUTDIR)/dist/lib/src.zip))
-
-# Imitate the property cleaning mechanism in the old build. This will likely be replaced
-# by the unified functionality in JavaCompilation.gmk, but keep it the same as old build
-# for now, even though it actually breaks properties containing # in the value.
-# Using nawk to avoid solaris sed.
-$(JAXP_OUTPUTDIR)/classes/%.properties: $(JAXP_TOPDIR)/src/%.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@ $@.tmp
-	$(CAT) $< | LANG=C $(NAWK) '{ sub(/#.*$$/,"#"); print }' > $@.tmp
-	$(MV) $@.tmp $@
-
-SRC_PROP_FILES := $(shell $(FIND) $(JAXP_TOPDIR)/src -name "*.properties")
-TARGET_PROP_FILES := $(patsubst $(JAXP_TOPDIR)/src/%, $(JAXP_OUTPUTDIR)/classes/%, $(SRC_PROP_FILES))
-
-$(eval $(call SetupArchive,ARCHIVE_JAXP, $(BUILD_JAXP) $(TARGET_PROP_FILES), \
-    SRCS := $(JAXP_OUTPUTDIR)/classes, \
-    SUFFIXES := .class .properties, \
+    SRCZIP := $(JAXP_OUTPUTDIR)/dist/lib/src.zip, \
     JAR := $(JAXP_OUTPUTDIR)/dist/lib/classes.jar))
 
-all: $(JAXP_OUTPUTDIR)/dist/lib/classes.jar $(JAXP_OUTPUTDIR)/dist/lib/src.zip
+all: $(BUILD_JAXP)
 
 .PHONY: default all

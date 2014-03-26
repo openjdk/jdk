@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread)
   _vm_object_alloc_event_collector = NULL;
   _the_class_for_redefinition_verification = NULL;
   _scratch_class_for_redefinition_verification = NULL;
+  _cur_stack_depth = UNKNOWN_STACK_DEPTH;
 
   // JVMTI ForceEarlyReturn support
   _pending_step_for_earlyret = false;
@@ -213,12 +214,9 @@ void JvmtiThreadState::leave_interp_only_mode() {
 
 // Helper routine used in several places
 int JvmtiThreadState::count_frames() {
-#ifdef ASSERT
-  uint32_t debug_bits = 0;
-#endif
-  assert(SafepointSynchronize::is_at_safepoint() ||
-         JvmtiEnv::is_thread_fully_suspended(get_thread(), false, &debug_bits),
-         "at safepoint or must be suspended");
+  guarantee(SafepointSynchronize::is_at_safepoint() ||
+    (JavaThread *)Thread::current() == get_thread(),
+    "must be current thread or at safepoint");
 
   if (!get_thread()->has_last_Java_frame()) return 0;  // no Java frames
 
@@ -243,15 +241,9 @@ int JvmtiThreadState::count_frames() {
 
 
 void JvmtiThreadState::invalidate_cur_stack_depth() {
-  Thread *cur = Thread::current();
-  uint32_t debug_bits = 0;
-
-  // The caller can be the VMThread at a safepoint, the current thread
-  // or the target thread must be suspended.
-  guarantee((cur->is_VM_thread() && SafepointSynchronize::is_at_safepoint()) ||
-    (JavaThread *)cur == get_thread() ||
-    JvmtiEnv::is_thread_fully_suspended(get_thread(), false, &debug_bits),
-    "sanity check");
+  guarantee(SafepointSynchronize::is_at_safepoint() ||
+    (JavaThread *)Thread::current() == get_thread(),
+    "must be current thread or at safepoint");
 
   _cur_stack_depth = UNKNOWN_STACK_DEPTH;
 }
@@ -280,10 +272,9 @@ void JvmtiThreadState::decr_cur_stack_depth() {
 }
 
 int JvmtiThreadState::cur_stack_depth() {
-  uint32_t debug_bits = 0;
-  guarantee(JavaThread::current() == get_thread() ||
-    JvmtiEnv::is_thread_fully_suspended(get_thread(), false, &debug_bits),
-    "must be current thread or suspended");
+  guarantee(SafepointSynchronize::is_at_safepoint() ||
+    (JavaThread *)Thread::current() == get_thread(),
+    "must be current thread or at safepoint");
 
   if (!is_interp_only_mode() || _cur_stack_depth == UNKNOWN_STACK_DEPTH) {
     _cur_stack_depth = count_frames();

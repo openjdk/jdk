@@ -574,7 +574,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
                 MethodCounters::invocation_counter_offset() +
                 InvocationCounter::counter_offset());
   const Address backedge_counter  (rax,
-                MethodCounter::backedge_counter_offset() +
+                MethodCounters::backedge_counter_offset() +
                 InvocationCounter::counter_offset());
 
   __ get_method_counters(rbx, rax, done);
@@ -982,16 +982,18 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   //      to save/restore.
   address entry_point = __ pc();
 
-  const Address constMethod       (rbx, Method::const_offset());
   const Address access_flags      (rbx, Method::access_flags_offset());
-  const Address size_of_parameters(rcx, ConstMethod::size_of_parameters_offset());
 
   // rsi/r13 == state/locals rdi == prevstate
   const Register locals = rdi;
 
   // get parameter size (always needed)
-  __ movptr(rcx, constMethod);
-  __ load_unsigned_short(rcx, size_of_parameters);
+  {
+    const Address constMethod       (rbx, Method::const_offset());
+    const Address size_of_parameters(rcx, ConstMethod::size_of_parameters_offset());
+    __ movptr(rcx, constMethod);
+    __ load_unsigned_short(rcx, size_of_parameters);
+  }
 
   // rbx: Method*
   // rcx: size of parameters
@@ -1111,14 +1113,16 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   const Register method = rbx;
   const Register thread = LP64_ONLY(r15_thread) NOT_LP64(rdi);
   const Register t      = InterpreterRuntime::SignatureHandlerGenerator::temp();    // rcx|rscratch1
-  const Address constMethod       (method, Method::const_offset());
-  const Address size_of_parameters(t, ConstMethod::size_of_parameters_offset());
 
-  // allocate space for parameters
+ // allocate space for parameters
   __ movptr(method, STATE(_method));
   __ verify_method_ptr(method);
-  __ movptr(t, constMethod);
-  __ load_unsigned_short(t, size_of_parameters);
+  {
+    const Address constMethod       (method, Method::const_offset());
+    const Address size_of_parameters(t, ConstMethod::size_of_parameters_offset());
+    __ movptr(t, constMethod);
+    __ load_unsigned_short(t, size_of_parameters);
+  }
   __ shll(t, 2);
 #ifdef _LP64
   __ subptr(rsp, t);
@@ -2221,7 +2225,6 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::empty                  : entry_point = ((InterpreterGenerator*)this)->generate_empty_entry();        break;
     case Interpreter::accessor               : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();     break;
     case Interpreter::abstract               : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();     break;
-    case Interpreter::method_handle          : entry_point = ((InterpreterGenerator*)this)->generate_method_handle_entry(); break;
 
     case Interpreter::java_lang_math_sin     : // fall thru
     case Interpreter::java_lang_math_cos     : // fall thru
@@ -2229,7 +2232,10 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::java_lang_math_abs     : // fall thru
     case Interpreter::java_lang_math_log     : // fall thru
     case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    : entry_point = ((InterpreterGenerator*)this)->generate_math_entry(kind);     break;
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     : // fall thru
+      entry_point = ((InterpreterGenerator*)this)->generate_math_entry(kind);     break;
     case Interpreter::java_lang_ref_reference_get
                                              : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
     default                                  : ShouldNotReachHere();                                                       break;
@@ -2450,5 +2456,23 @@ int AbstractInterpreter::layout_activation(Method* method,
   }
   return frame_size/BytesPerWord;
 }
+
+bool AbstractInterpreter::can_be_compiled(methodHandle m) {
+  switch (method_kind(m)) {
+    case Interpreter::java_lang_math_sin     : // fall thru
+    case Interpreter::java_lang_math_cos     : // fall thru
+    case Interpreter::java_lang_math_tan     : // fall thru
+    case Interpreter::java_lang_math_abs     : // fall thru
+    case Interpreter::java_lang_math_log     : // fall thru
+    case Interpreter::java_lang_math_log10   : // fall thru
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     :
+      return false;
+    default:
+      return true;
+  }
+}
+
 
 #endif // CC_INTERP (all)

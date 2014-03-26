@@ -79,6 +79,9 @@ class Matcher : public PhaseTransform {
 
   // Find shared Nodes, or Nodes that otherwise are Matcher roots
   void find_shared( Node *n );
+#ifdef X86
+  bool is_bmi_pattern(Node *n, Node *m);
+#endif
 
   // Debug and profile information for nodes in old space:
   GrowableArray<Node_Notes*>* _old_node_note_array;

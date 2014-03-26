@@ -827,6 +827,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
   }
 
   if (is_interpreted_frame()) {
+#ifndef CC_INTERP
     DESCRIBE_FP_OFFSET(interpreter_frame_d_scratch_fp);
     DESCRIBE_FP_OFFSET(interpreter_frame_l_scratch_fp);
     DESCRIBE_FP_OFFSET(interpreter_frame_padding);
@@ -837,6 +838,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     if ((esp >= sp()) && (esp < fp())) {
       values.describe(-1, esp, "*Lesp");
     }
+#endif
   }
 
   if (!is_compiled_frame()) {

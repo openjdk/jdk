@@ -38,31 +38,27 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
     /**
      * Constructor - used for bind
      *
-     * @param name          name
-     * @param arity         arity
-     * @param functions     precompiled code
-     * @param isStrict      strict
-     * @param isBuiltin     builtin
-     * @param isConstructor constructor
+     * @param name      name
+     * @param arity     arity
+     * @param functions precompiled code
+     * @param flags     {@link ScriptFunctionData} flags
      */
-    FinalScriptFunctionData(final String name, int arity, CompiledFunctions functions, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
-        super(name, arity, isStrict, isBuiltin, isConstructor);
+    FinalScriptFunctionData(final String name, final int arity, final CompiledFunctions functions, final int flags) {
+        super(name, arity, flags);
         code.addAll(functions);
     }
 
     /**
-     * Constructor - used from ScriptFunction. This assumes that we have code alraedy for the
+     * Constructor - used from ScriptFunction. This assumes that we have code already for the
      * method (typically a native method) and possibly specializations.
      *
-     * @param name           name
-     * @param mh             method handle for generic version of method
-     * @param specs          specializations
-     * @param isStrict       strict
-     * @param isBuiltin      builtin
-     * @param isConstructor  constructor
+     * @param name  name
+     * @param mh    method handle for generic version of method
+     * @param specs specializations
+     * @param flags {@link ScriptFunctionData} flags
      */
-    FinalScriptFunctionData(final String name, final MethodHandle mh, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
-        super(name, arity(mh), isStrict, isBuiltin, isConstructor);
+    FinalScriptFunctionData(final String name, final MethodHandle mh, final MethodHandle[] specs, final int flags) {
+        super(name, arity(mh), flags);
 
         addInvoker(mh);
         if (specs != null) {

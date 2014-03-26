@@ -374,24 +374,7 @@ static void usage() {
         "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"
 
 #define RANGE0 "[*" RANGEBASE "]"
-#define RANGEDOT "[*" RANGEBASE ".]"
 #define RANGESLASH "[*" RANGEBASE "/]"
-
-
-// Accept several syntaxes for these patterns
-//  original syntax
-//   cmd  java.lang.String foo
-//  PrintCompilation syntax
-//   cmd  java.lang.String::foo
-//  VM syntax
-//   cmd  java/lang/String[. ]foo
-//
-
-static const char* patterns[] = {
-  "%*[ \t]%255" RANGEDOT    " "     "%255"  RANGE0 "%n",
-  "%*[ \t]%255" RANGEDOT   "::"     "%255"  RANGE0 "%n",
-  "%*[ \t]%255" RANGESLASH "%*[ .]" "%255"  RANGE0 "%n",
-};
 
 static MethodMatcher::Mode check_mode(char name[], const char*& error_msg) {
   int match = MethodMatcher::Exact;
@@ -421,12 +404,10 @@ static bool scan_line(const char * line,
                       int* bytes_read, const char*& error_msg) {
   *bytes_read = 0;
   error_msg = NULL;
-  for (uint i = 0; i < ARRAY_SIZE(patterns); i++) {
-    if (2 == sscanf(line, patterns[i], class_name, method_name, bytes_read)) {
-      *c_mode = check_mode(class_name, error_msg);
-      *m_mode = check_mode(method_name, error_msg);
-      return *c_mode != MethodMatcher::Unknown && *m_mode != MethodMatcher::Unknown;
-    }
+  if (2 == sscanf(line, "%*[ \t]%255" RANGESLASH "%*[ ]" "%255"  RANGE0 "%n", class_name, method_name, bytes_read)) {
+    *c_mode = check_mode(class_name, error_msg);
+    *m_mode = check_mode(method_name, error_msg);
+    return *c_mode != MethodMatcher::Unknown && *m_mode != MethodMatcher::Unknown;
   }
   return false;
 }

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,15 +579,27 @@ REGISTER_DECLARATION(FloatRegister, F13_ARG13,  F13); // volatile
 
 // Register declarations to be used in frame manager assembly code.
 // Use only non-volatile registers in order to keep values across C-calls.
+#ifdef CC_INTERP
 REGISTER_DECLARATION(Register, R14_state,      R14);      // address of new cInterpreter.
 REGISTER_DECLARATION(Register, R15_prev_state, R15);      // address of old cInterpreter
+#else // CC_INTERP
+REGISTER_DECLARATION(Register, R14_bcp,        R14);
+REGISTER_DECLARATION(Register, R15_esp,        R15);
+REGISTER_DECLARATION(FloatRegister, F15_ftos,  F15);
+#endif // CC_INTERP
 REGISTER_DECLARATION(Register, R16_thread,     R16);      // address of current thread
 REGISTER_DECLARATION(Register, R17_tos,        R17);      // address of Java tos (prepushed).
 REGISTER_DECLARATION(Register, R18_locals,     R18);      // address of first param slot (receiver).
 REGISTER_DECLARATION(Register, R19_method,     R19);      // address of current method
 #ifndef DONT_USE_REGISTER_DEFINES
+#ifdef CC_INTERP
 #define R14_state         AS_REGISTER(Register, R14)
 #define R15_prev_state    AS_REGISTER(Register, R15)
+#else // CC_INTERP
+#define R14_bcp           AS_REGISTER(Register, R14)
+#define R15_esp           AS_REGISTER(Register, R15)
+#define F15_ftos          AS_REGISTER(FloatRegister, F15)
+#endif // CC_INTERP
 #define R16_thread        AS_REGISTER(Register, R16)
 #define R17_tos           AS_REGISTER(Register, R17)
 #define R18_locals        AS_REGISTER(Register, R18)
@@ -608,6 +620,14 @@ REGISTER_DECLARATION(Register, R26_tmp6, R26);
 REGISTER_DECLARATION(Register, R27_tmp7, R27);
 REGISTER_DECLARATION(Register, R28_tmp8, R28);
 REGISTER_DECLARATION(Register, R29_tmp9, R29);
+#ifndef CC_INTERP
+REGISTER_DECLARATION(Register, R24_dispatch_addr,     R24);
+REGISTER_DECLARATION(Register, R25_templateTableBase, R25);
+REGISTER_DECLARATION(Register, R26_monitor,           R26);
+REGISTER_DECLARATION(Register, R27_constPoolCache,    R27);
+REGISTER_DECLARATION(Register, R28_mdx,               R28);
+#endif // CC_INTERP
+
 #ifndef DONT_USE_REGISTER_DEFINES
 #define R21_tmp1         AS_REGISTER(Register, R21)
 #define R22_tmp2         AS_REGISTER(Register, R22)
@@ -618,6 +638,16 @@ REGISTER_DECLARATION(Register, R29_tmp9, R29);
 #define R27_tmp7         AS_REGISTER(Register, R27)
 #define R28_tmp8         AS_REGISTER(Register, R28)
 #define R29_tmp9         AS_REGISTER(Register, R29)
+#ifndef CC_INTERP
+//    Lmonitors  : monitor pointer
+//    LcpoolCache: constant pool cache
+//    mdx: method data index
+#define R24_dispatch_addr     AS_REGISTER(Register, R24)
+#define R25_templateTableBase AS_REGISTER(Register, R25)
+#define R26_monitor           AS_REGISTER(Register, R26)
+#define R27_constPoolCache    AS_REGISTER(Register, R27)
+#define R28_mdx               AS_REGISTER(Register, R28)
+#endif
 
 #define CCR4_is_synced AS_REGISTER(ConditionRegister, CCR4)
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.regex.*;
 public class ClassVersionChecker {
 
     int errors;
-    String[] jdk = {"","1.2","1.3","1.4","1.5","1.6","1.7","1.8"};
+    String[] jdk = {"","1.6","1.7","1.8"};
     File javaFile = null;
 
     public static void main(String[] args) throws Throwable {
@@ -47,7 +47,7 @@ public class ClassVersionChecker {
     void run() throws Exception {
         writeTestFile();
         /* Rules applicable for -source and -target combinations
-         * 1. If both empty, version num is for 1.7
+         * 1. If both empty, version num is for the current release
          * 2. If source is not empty and target is empty, version is based on source
          * 3. If both non-empty, version is based on target
          */
@@ -57,14 +57,10 @@ public class ClassVersionChecker {
          * -1 => invalid combinations
          */
         int[][] ver =
-                {{52, -1, -1, -1, -1, -1, -1, -1},
-                 {48, 46, 47, 48, 49, 50, 51, 52},
-                 {48, 46, 47, 48, 49, 50, 51, 52},
-                 {48, -1, -1, 48, 49, 50, 51, 52},
-                 {52, -1, -1, -1, 49, 50, 51, 52},
-                 {52, -1, -1, -1, -1, 50, 51, 52},
-                 {52, -1, -1, -1, -1, -1, 51, 52},
-                 {52, -1, -1, -1, -1, -1, -1, 52}};
+                {{52, -1, -1, -1},
+                 {52, 50, 51, 52},
+                 {52, -1, 51, 52},
+                 {52, -1, -1, 52}};
 
         // Loop to run all possible combinations of source/target values
         for (int i = 0; i< ver.length; i++) {
