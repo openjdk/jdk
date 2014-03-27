@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,6 +510,44 @@ WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
   return features_string;
 WB_END
 
+
+WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
+  ResourceMark rm(THREAD);
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  jobjectArray result = NULL;
+  if (code == NULL) {
+    return result;
+  }
+  int insts_size = code->insts_size();
+
+  ThreadToNativeFromVM ttn(thread);
+  jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  result = env->NewObjectArray(2, clazz, NULL);
+  if (result == NULL) {
+    return result;
+  }
+
+  clazz = env->FindClass(vmSymbols::java_lang_Integer()->as_C_string());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  jmethodID constructor = env->GetMethodID(clazz, vmSymbols::object_initializer_name()->as_C_string(), vmSymbols::int_void_signature()->as_C_string());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  jobject obj = env->NewObject(clazz, constructor, code->comp_level());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 0, obj);
+
+  jbyteArray insts = env->NewByteArray(insts_size);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetByteArrayRegion(insts, 0, insts_size, (jbyte*) code->insts_begin());
+  env->SetObjectArrayElement(result, 1, insts);
+
+  return result;
+WB_END
+
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -622,6 +660,8 @@ static JNINativeMethod methods[] = {
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
+  {CC"getNMethod",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
+                                                      (void*)&WB_GetNMethod         },
 };
 
 #undef CC
