@@ -1451,6 +1451,8 @@ private:
   // Pemutation of 64bit words
   void vpermq(XMMRegister dst, XMMRegister src, int imm8, bool vector256);
 
+  void pause();
+
   // SSE4.2 string instructions
   void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
   void pcmpestri(XMMRegister xmm1, Address src, int imm8);
@@ -1534,6 +1536,8 @@ private:
   void rcll(Register dst, int imm8);
 
   void rclq(Register dst, int imm8);
+
+  void rdtsc();
 
   void ret(int imm16);
 
@@ -1632,15 +1636,21 @@ private:
   void ucomiss(XMMRegister dst, Address src);
   void ucomiss(XMMRegister dst, XMMRegister src);
 
+  void xabort(int8_t imm8);
+
   void xaddl(Address dst, Register src);
 
   void xaddq(Address dst, Register src);
+
+  void xbegin(Label& abort, relocInfo::relocType rtype = relocInfo::none);
 
   void xchgl(Register reg, Address adr);
   void xchgl(Register dst, Register src);
 
   void xchgq(Register reg, Address adr);
   void xchgq(Register dst, Register src);
+
+  void xend();
 
   // Get Value of Extended Control Register
   void xgetbv();

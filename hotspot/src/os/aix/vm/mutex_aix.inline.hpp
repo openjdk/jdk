@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,6 @@
 
 #include "os_aix.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
-#include "thread_aix.inline.hpp"
+#include "runtime/thread.inline.hpp"
 
 #endif // OS_AIX_VM_MUTEX_AIX_INLINE_HPP

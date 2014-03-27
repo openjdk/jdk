@@ -193,6 +193,12 @@ class nmethod : public CodeBlob {
 
   jbyte _scavenge_root_state;
 
+#if INCLUDE_RTM_OPT
+  // RTM state at compile time. Used during deoptimization to decide
+  // whether to restart collecting RTM locking abort statistic again.
+  RTMState _rtm_state;
+#endif
+
   // Nmethod Flushing lock. If non-zero, then the nmethod is not removed
   // and is not made into a zombie. However, once the nmethod is made into
   // a zombie, it will be locked one final time if CompiledMethodUnload
@@ -413,6 +419,12 @@ class nmethod : public CodeBlob {
   bool  is_not_entrant() const                    { return _state == not_entrant; }
   bool  is_zombie() const                         { return _state == zombie; }
   bool  is_unloaded() const                       { return _state == unloaded;   }
+
+#if INCLUDE_RTM_OPT
+  // rtm state accessing and manipulating
+  RTMState  rtm_state() const                     { return _rtm_state; }
+  void set_rtm_state(RTMState state)              { _rtm_state = state; }
+#endif
 
   // Make the nmethod non entrant. The nmethod will continue to be
   // alive.  It is used when an uncommon trap happens.  Returns true
