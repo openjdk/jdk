@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,40 @@ public final class Utils {
         Collections.addAll(opts, safeSplitString(VM_OPTIONS));
         Collections.addAll(opts, safeSplitString(JAVA_OPTIONS));
         return opts.toArray(new String[0]);
+    }
+
+    /**
+     * Returns the default JTReg arguments for a jvm running a test without
+     * options that matches regular expresions in {@code filters}.
+     * This is the combination of JTReg arguments test.vm.opts and test.java.opts.
+     * @param filters Regular expressions used to filter out options.
+     * @return An array of options, or an empty array if no opptions.
+     */
+    public static String[] getFilteredTestJavaOpts(String... filters) {
+        String options[] = getTestJavaOpts();
+
+        if (filters.length == 0) {
+            return options;
+        }
+
+        List<String> filteredOptions = new ArrayList<String>(options.length);
+        Pattern patterns[] = new Pattern[filters.length];
+        for (int i = 0; i < filters.length; i++) {
+            patterns[i] = Pattern.compile(filters[i]);
+        }
+
+        for (String option : options) {
+            boolean matched = false;
+            for (int i = 0; i < patterns.length && !matched; i++) {
+                Matcher matcher = patterns[i].matcher(option);
+                matched = matcher.find();
+            }
+            if (!matched) {
+                filteredOptions.add(option);
+            }
+        }
+
+        return filteredOptions.toArray(new String[filteredOptions.size()]);
     }
 
     /**
