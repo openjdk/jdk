@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,7 @@ public class WhiteBox {
   public native boolean enqueueMethodForCompilation(Executable method, int compLevel, int entry_bci);
   public native void    clearMethodState(Executable method);
   public native int     getMethodEntryBci(Executable method);
+  public native Object[] getNMethod(Executable method, boolean isOsr);
 
   // Intered strings
   public native boolean isInStringTable(String str);
