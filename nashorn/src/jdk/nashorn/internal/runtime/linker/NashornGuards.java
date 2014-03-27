@@ -49,7 +49,8 @@ public final class NashornGuards {
     private static final MethodHandle IS_INSTANCEOF_2     = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
     private static final MethodHandle IS_SCRIPTOBJECT     = findOwnMH("isScriptObject", boolean.class, Object.class);
     private static final MethodHandle SAME_OBJECT       = findOwnMH("sameObject", boolean.class, Object.class, WeakReference.class);
-    private static final MethodHandle IS_SCRIPTFUNCTION = findOwnMH("isScriptFunction", boolean.class, Object.class);
+    //TODO - maybe put this back in ScriptFunction instead of the ClassCastException.class relinkage
+    //private static final MethodHandle IS_SCRIPTFUNCTION = findOwnMH("isScriptFunction", boolean.class, Object.class);
 
     private static final boolean CCE_ONLY = Options.getBooleanProperty("nashorn.cce");
 

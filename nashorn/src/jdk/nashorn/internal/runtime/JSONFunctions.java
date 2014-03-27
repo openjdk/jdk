@@ -90,7 +90,7 @@ public final class JSONFunctions {
         }
 
         final Global global = Context.getGlobal();
-        Object unfiltered = convertNode(global, node);
+        final Object unfiltered = convertNode(global, node);
         return applyReviver(global, unfiltered, reviver);
     }
 
@@ -101,7 +101,6 @@ public final class JSONFunctions {
     // apply 'reviver' function if available
     private static Object applyReviver(final Global global, final Object unfiltered, final Object reviver) {
         if (reviver instanceof ScriptFunction) {
-            assert global instanceof Global;
             final ScriptObject root = global.newObject();
             root.addOwnProperty("", Property.WRITABLE_ENUMERABLE_CONFIGURABLE, unfiltered);
             return walk(root, "", (ScriptFunction)reviver);
@@ -140,8 +139,6 @@ public final class JSONFunctions {
 
     // Converts IR node to runtime value
     private static Object convertNode(final Global global, final Node node) {
-        assert global instanceof Global;
-
         if (node instanceof LiteralNode) {
             // check for array literal
             if (node.tokenType() == TokenType.ARRAY) {

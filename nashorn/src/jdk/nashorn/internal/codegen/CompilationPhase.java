@@ -1,5 +1,6 @@
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.codegen.Compiler.info;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.ATTR;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.CONSTANT_FOLDED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.FINALIZED;
@@ -127,7 +128,7 @@ enum CompilationPhase {
                         accept(new Attr(compiler.getCompilationEnvironment(), ts));
 
             if (compiler.getEnv()._print_mem_usage) {
-                Compiler.LOG.info("Attr temporary symbol count: " + ts.getTotalSymbolCount());
+                info("Attr temporary symbol count:", ts.getTotalSymbolCount());
             }
 
             return newFunctionNode;

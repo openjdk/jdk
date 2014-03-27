@@ -172,11 +172,11 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     @Override
-    public boolean enterAccessNode(AccessNode accessNode) {
+    public boolean enterAccessNode(final AccessNode accessNode) {
         tagNeverOptimistic(accessNode.getBase());
         tagNeverOptimistic(accessNode.getProperty());
         return true;
-    };
+    }
 
     @Override
     public Node leaveAccessNode(final AccessNode accessNode) {
@@ -423,7 +423,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     private Symbol defineSymbol(final Block block, final String name, final int symbolFlags) {
         int     flags    = symbolFlags;
         Symbol  symbol   = findSymbol(block, name); // Locate symbol.
-        boolean isGlobal = (flags & KINDMASK) == IS_GLOBAL;
+        final boolean isGlobal = (flags & KINDMASK) == IS_GLOBAL;
 
         if (isGlobal) {
             flags |= IS_SCOPE;
@@ -805,7 +805,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     @Override
-    public boolean enterIndexNode(IndexNode indexNode) {
+    public boolean enterIndexNode(final IndexNode indexNode) {
         tagNeverOptimistic(indexNode.getBase());
         return true;
     }

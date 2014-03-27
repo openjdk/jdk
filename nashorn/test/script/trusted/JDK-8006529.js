@@ -39,7 +39,7 @@
  * and FunctionNode because of package-access check and so reflective calls.
  */
 
-var forName = java.lang.Class["forName(String)"];
+var forName             = java.lang.Class["forName(String)"];
 var Parser              = forName("jdk.nashorn.internal.parser.Parser").static
 var Compiler            = forName("jdk.nashorn.internal.codegen.Compiler").static
 var Context             = forName("jdk.nashorn.internal.runtime.Context").static

@@ -49,6 +49,8 @@ import java.security.ProtectionDomain;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -910,7 +912,10 @@ public final class Context {
 
         Class<?> script = findCachedClass(source);
         if (script != null) {
-            Compiler.LOG.fine("Code cache hit for ", source, " avoiding recompile.");
+            final DebugLogger LOG = Compiler.getLogger();
+            if (LOG.isEnabled()) {
+                LOG.fine(new RuntimeEvent<>(Level.INFO, source), "Code cache hit for ", source, " avoiding recompile.");
+            }
             return script;
         }
 
@@ -978,7 +983,7 @@ public final class Context {
         private final int size;
         private final ReferenceQueue<Class<?>> queue;
 
-        ClassCache(int size) {
+        ClassCache(final int size) {
             super(size, 0.75f, true);
             this.size = size;
             this.queue = new ReferenceQueue<>();
@@ -994,7 +999,7 @@ public final class Context {
         }
 
         @Override
-        public ClassReference get(Object key) {
+        public ClassReference get(final Object key) {
             for (ClassReference ref; (ref = (ClassReference)queue.poll()) != null; ) {
                 remove(ref.source);
             }
@@ -1014,7 +1019,7 @@ public final class Context {
 
     // Class cache management
     private Class<?> findCachedClass(final Source source) {
-        ClassReference ref = classCache == null ? null : classCache.get(source);
+        final ClassReference ref = classCache == null ? null : classCache.get(source);
         return ref != null ? ref.get() : null;
     }
 
