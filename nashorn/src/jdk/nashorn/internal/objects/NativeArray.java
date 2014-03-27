@@ -389,7 +389,7 @@ public final class NativeArray extends ScriptObject {
      * @return true if argument is an array
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object isArray(final Object self, final Object arg) {
+    public static boolean isArray(final Object self, final Object arg) {
         return isArray(arg) || (arg instanceof JSObject && ((JSObject)arg).isArray());
     }
 
@@ -488,7 +488,7 @@ public final class NativeArray extends ScriptObject {
      * @return locale specific string representation for array
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toLocaleString(final Object self) {
+    public static String toLocaleString(final Object self) {
         final StringBuilder sb = new StringBuilder();
         final Iterator<Object> iter = arrayLikeIterator(self, true);
 
@@ -534,7 +534,7 @@ public final class NativeArray extends ScriptObject {
      * @return the new NativeArray
      */
     @Constructor(arity = 1)
-    public static Object construct(final boolean newObj, final Object self, final Object... args) {
+    public static NativeArray construct(final boolean newObj, final Object self, final Object... args) {
         switch (args.length) {
         case 0:
             return new NativeArray(0);
@@ -587,7 +587,7 @@ public final class NativeArray extends ScriptObject {
      * @return the new NativeArray
      */
     @SpecializedConstructor
-    public static Object construct(final boolean newObj, final Object self) {
+    public static NativeArray construct(final boolean newObj, final Object self) {
         return new NativeArray(0);
     }
 
@@ -602,7 +602,7 @@ public final class NativeArray extends ScriptObject {
      * @return the new NativeArray
      */
     @SpecializedConstructor
-    public static Object construct(final boolean newObj, final Object self, final int length) {
+    public static NativeArray construct(final boolean newObj, final Object self, final int length) {
         if (length >= 0) {
             return new NativeArray(length);
         }
@@ -621,7 +621,7 @@ public final class NativeArray extends ScriptObject {
      * @return the new NativeArray
      */
     @SpecializedConstructor
-    public static Object construct(final boolean newObj, final Object self, final long length) {
+    public static NativeArray construct(final boolean newObj, final Object self, final long length) {
         if (length >= 0L && length <= JSType.MAX_UINT) {
             return new NativeArray(length);
         }
@@ -640,7 +640,7 @@ public final class NativeArray extends ScriptObject {
      * @return the new NativeArray
      */
     @SpecializedConstructor
-    public static Object construct(final boolean newObj, final Object self, final double length) {
+    public static NativeArray construct(final boolean newObj, final Object self, final double length) {
         final long uint32length = JSType.toUint32(length);
 
         if (uint32length == length) {
@@ -658,7 +658,7 @@ public final class NativeArray extends ScriptObject {
      * @return resulting NativeArray
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object concat(final Object self, final Object... args) {
+    public static NativeArray concat(final Object self, final Object... args) {
         final ArrayList<Object> list = new ArrayList<>();
         concatToList(list, Global.toObject(self));
 
@@ -705,7 +705,7 @@ public final class NativeArray extends ScriptObject {
      * @return string representation after join
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object join(final Object self, final Object separator) {
+    public static String join(final Object self, final Object separator) {
         final StringBuilder    sb   = new StringBuilder();
         final Iterator<Object> iter = arrayLikeIterator(self, true);
         final String           sep  = separator == ScriptRuntime.UNDEFINED ? "," : JSType.toString(separator);
@@ -973,7 +973,7 @@ public final class NativeArray extends ScriptObject {
      * @return sorted array
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object sort(final Object self, final Object comparefn) {
+    public static ScriptObject sort(final Object self, final Object comparefn) {
         try {
             final ScriptObject sobj    = (ScriptObject) self;
             final long         len     = JSType.toUint32(sobj.getLength());
@@ -1177,7 +1177,7 @@ public final class NativeArray extends ScriptObject {
      * @return index of element, or -1 if not found
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object indexOf(final Object self, final Object searchElement, final Object fromIndex) {
+    public static long indexOf(final Object self, final Object searchElement, final Object fromIndex) {
         try {
             final ScriptObject sobj = (ScriptObject)Global.toObject(self);
             final long         len  = JSType.toUint32(sobj.getLength());
@@ -1213,7 +1213,7 @@ public final class NativeArray extends ScriptObject {
      * @return index of element, or -1 if not found
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object lastIndexOf(final Object self, final Object... args) {
+    public static long lastIndexOf(final Object self, final Object... args) {
         try {
             final ScriptObject sobj = (ScriptObject)Global.toObject(self);
             final long         len  = JSType.toUint32(sobj.getLength());
@@ -1248,7 +1248,7 @@ public final class NativeArray extends ScriptObject {
      * @return true if callback function return true for every element in the array, false otherwise
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object every(final Object self, final Object callbackfn, final Object thisArg) {
+    public static boolean every(final Object self, final Object callbackfn, final Object thisArg) {
         return applyEvery(Global.toObject(self), callbackfn, thisArg);
     }
 
@@ -1272,7 +1272,7 @@ public final class NativeArray extends ScriptObject {
      * @return true if callback function returned true for any element in the array, false otherwise
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object some(final Object self, final Object callbackfn, final Object thisArg) {
+    public static boolean some(final Object self, final Object callbackfn, final Object thisArg) {
         return new IteratorAction<Boolean>(Global.toObject(self), callbackfn, thisArg, false) {
             private final MethodHandle someInvoker = getSOME_CALLBACK_INVOKER();
 
@@ -1313,7 +1313,7 @@ public final class NativeArray extends ScriptObject {
      * @return array with elements transformed by map function
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object map(final Object self, final Object callbackfn, final Object thisArg) {
+    public static NativeArray map(final Object self, final Object callbackfn, final Object thisArg) {
         return new IteratorAction<NativeArray>(Global.toObject(self), callbackfn, thisArg, null) {
             private final MethodHandle mapInvoker = getMAP_CALLBACK_INVOKER();
 
@@ -1342,7 +1342,7 @@ public final class NativeArray extends ScriptObject {
      * @return filtered array
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object filter(final Object self, final Object callbackfn, final Object thisArg) {
+    public static NativeArray filter(final Object self, final Object callbackfn, final Object thisArg) {
         return new IteratorAction<NativeArray>(Global.toObject(self), callbackfn, thisArg, new NativeArray()) {
             private long to = 0;
             private final MethodHandle filterInvoker = getFILTER_CALLBACK_INVOKER();
