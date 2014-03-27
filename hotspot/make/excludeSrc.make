@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -87,9 +87,10 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 	g1BlockOffsetTable.cpp g1CardCounts.cpp g1CollectedHeap.cpp g1CollectorPolicy.cpp \
 	g1ErgoVerbose.cpp g1GCPhaseTimes.cpp g1HRPrinter.cpp g1HotCardCache.cpp g1Log.cpp \
 	g1MMUTracker.cpp g1MarkSweep.cpp g1MemoryPool.cpp g1MonitoringSupport.cpp g1OopClosures.cpp \
-	g1RemSet.cpp g1RemSetSummary.cpp g1SATBCardTableModRefBS.cpp g1_globals.cpp heapRegion.cpp \
+	g1RemSet.cpp g1RemSetSummary.cpp g1SATBCardTableModRefBS.cpp g1StringDedup.cpp g1StringDedupStat.cpp \
+	g1StringDedupTable.cpp g1StringDedupThread.cpp g1StringDedupQueue.cpp g1_globals.cpp heapRegion.cpp \
 	g1BiasedArray.cpp heapRegionRemSet.cpp heapRegionSeq.cpp heapRegionSet.cpp heapRegionSets.cpp \
-	ptrQueue.cpp satbQueue.cpp sparsePRT.cpp survRateGroup.cpp vm_operations_g1.cpp \
+	ptrQueue.cpp satbQueue.cpp sparsePRT.cpp survRateGroup.cpp vm_operations_g1.cpp g1CodeCacheRemSet.cpp \
 	adjoiningGenerations.cpp adjoiningVirtualSpaces.cpp asPSOldGen.cpp asPSYoungGen.cpp \
 	cardTableExtension.cpp gcTaskManager.cpp gcTaskThread.cpp objectStartArray.cpp \
 	parallelScavengeHeap.cpp parMarkBitMap.cpp pcTasks.cpp psAdaptiveSizePolicy.cpp \

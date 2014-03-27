@@ -109,6 +109,8 @@
 
 #define MAX_PATH    (2 * K)
 
+#define MAX_SECS 100000000
+
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 
@@ -2434,7 +2436,6 @@ class Semaphore : public StackObj {
     sem_t _semaphore;
 };
 
-
 Semaphore::Semaphore() {
   sem_init(&_semaphore, 0, 0);
 }
@@ -2456,8 +2457,22 @@ bool Semaphore::trywait() {
 }
 
 bool Semaphore::timedwait(unsigned int sec, int nsec) {
+
   struct timespec ts;
-  unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
+  // Semaphore's are always associated with CLOCK_REALTIME
+  os::Linux::clock_gettime(CLOCK_REALTIME, &ts);
+  // see unpackTime for discussion on overflow checking
+  if (sec >= MAX_SECS) {
+    ts.tv_sec += MAX_SECS;
+    ts.tv_nsec = 0;
+  } else {
+    ts.tv_sec += sec;
+    ts.tv_nsec += nsec;
+    if (ts.tv_nsec >= NANOSECS_PER_SEC) {
+      ts.tv_nsec -= NANOSECS_PER_SEC;
+      ++ts.tv_sec; // note: this must be <= max_secs
+    }
+  }
 
   while (1) {
     int result = sem_timedwait(&_semaphore, &ts);
@@ -4560,6 +4575,11 @@ void os::Linux::check_signal_handler(int sig) {
     tty->print_cr("  found:%s", get_signal_handler_name(thisHandler, buf, O_BUFLEN));
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
+    // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
+    if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
+      tty->print_cr("Running in non-interactive shell, %s handler is replaced by shell",
+                    exception_name(sig, buf, O_BUFLEN));
+    }
   } else if(os::Linux::get_our_sigflags(sig) != 0 && (int)act.sa_flags != os::Linux::get_our_sigflags(sig)) {
     tty->print("Warning: %s handler flags ", exception_name(sig, buf, O_BUFLEN));
     tty->print("expected:" PTR32_FORMAT, os::Linux::get_our_sigflags(sig));
@@ -5656,7 +5676,6 @@ void os::PlatformEvent::unpark() {
  * is no need to track notifications.
  */
 
-#define MAX_SECS 100000000
 /*
  * This code is common to linux and solaris and will be moved to a
  * common place in dolphin.
