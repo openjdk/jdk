@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@
 # include "bytes_ppc.hpp"
 #endif
 
-// A constantPool is an array containing class constants as described in the
+// A ConstantPool is an array containing class constants as described in the
 // class file.
 //
 // Most of the constant pool entries are written during class parsing, which
@@ -81,9 +81,10 @@ class CPSlot VALUE_OBJ_CLASS_SPEC {
 };
 
 class KlassSizeStats;
+
 class ConstantPool : public Metadata {
   friend class VMStructs;
-  friend class BytecodeInterpreter;  // Directly extracts an oop in the pool for fast instanceof/checkcast
+  friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
  private:
   Array<u1>*           _tags;        // the tag array describing the constant pool's contents
@@ -747,13 +748,13 @@ class ConstantPool : public Metadata {
   friend class SystemDictionary;
 
   // Used by compiler to prevent classloading.
-  static Method*          method_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static bool       has_appendix_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static oop            appendix_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static bool    has_method_type_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static oop         method_type_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static Klass*            klass_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static Klass*        klass_ref_at_if_loaded      (constantPoolHandle this_oop, int which);
+  static Method*          method_at_if_loaded      (constantPoolHandle this_cp, int which);
+  static bool       has_appendix_at_if_loaded      (constantPoolHandle this_cp, int which);
+  static oop            appendix_at_if_loaded      (constantPoolHandle this_cp, int which);
+  static bool    has_method_type_at_if_loaded      (constantPoolHandle this_cp, int which);
+  static oop         method_type_at_if_loaded      (constantPoolHandle this_cp, int which);
+  static Klass*            klass_at_if_loaded      (constantPoolHandle this_cp, int which);
+  static Klass*        klass_ref_at_if_loaded      (constantPoolHandle this_cp, int which);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
   // future by other Java code. These take constant pool indices rather than
@@ -811,19 +812,19 @@ class ConstantPool : public Metadata {
   }
 
   // Performs the LinkResolver checks
-  static void verify_constant_pool_resolve(constantPoolHandle this_oop, KlassHandle klass, TRAPS);
+  static void verify_constant_pool_resolve(constantPoolHandle this_cp, KlassHandle klass, TRAPS);
 
   // Implementation of methods that needs an exposed 'this' pointer, in order to
   // handle GC while executing the method
-  static Klass* klass_at_impl(constantPoolHandle this_oop, int which, TRAPS);
-  static oop string_at_impl(constantPoolHandle this_oop, int which, int obj_index, TRAPS);
+  static Klass* klass_at_impl(constantPoolHandle this_cp, int which, TRAPS);
+  static oop string_at_impl(constantPoolHandle this_cp, int which, int obj_index, TRAPS);
 
   // Resolve string constants (to prevent allocation during compilation)
-  static void resolve_string_constants_impl(constantPoolHandle this_oop, TRAPS);
+  static void resolve_string_constants_impl(constantPoolHandle this_cp, TRAPS);
 
-  static oop resolve_constant_at_impl(constantPoolHandle this_oop, int index, int cache_index, TRAPS);
-  static void save_and_throw_exception(constantPoolHandle this_oop, int which, int tag_value, TRAPS);
-  static oop resolve_bootstrap_specifier_at_impl(constantPoolHandle this_oop, int index, TRAPS);
+  static oop resolve_constant_at_impl(constantPoolHandle this_cp, int index, int cache_index, TRAPS);
+  static void save_and_throw_exception(constantPoolHandle this_cp, int which, int tag_value, TRAPS);
+  static oop resolve_bootstrap_specifier_at_impl(constantPoolHandle this_cp, int index, TRAPS);
 
  public:
   // Merging ConstantPool* support:

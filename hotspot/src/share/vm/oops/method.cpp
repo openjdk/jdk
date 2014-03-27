@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,12 +577,12 @@ bool Method::is_static_initializer() const {
 }
 
 
-objArrayHandle Method::resolved_checked_exceptions_impl(Method* this_oop, TRAPS) {
-  int length = this_oop->checked_exceptions_length();
+objArrayHandle Method::resolved_checked_exceptions_impl(Method* method, TRAPS) {
+  int length = method->checked_exceptions_length();
   if (length == 0) {  // common case
     return objArrayHandle(THREAD, Universe::the_empty_class_klass_array());
   } else {
-    methodHandle h_this(THREAD, this_oop);
+    methodHandle h_this(THREAD, method);
     objArrayOop m_oop = oopFactory::new_objArray(SystemDictionary::Class_klass(), length, CHECK_(objArrayHandle()));
     objArrayHandle mirrors (THREAD, m_oop);
     for (int i = 0; i < length; i++) {
