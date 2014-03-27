@@ -334,17 +334,9 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots) {
 }
 
 
-Klass* Klass::subklass() const {
-  return _subklass == NULL ? NULL : _subklass;
-}
-
 InstanceKlass* Klass::superklass() const {
   assert(super() == NULL || super()->oop_is_instance(), "must be instance klass");
   return _super == NULL ? NULL : InstanceKlass::cast(_super);
-}
-
-Klass* Klass::next_sibling() const {
-  return _next_sibling == NULL ? NULL : _next_sibling;
 }
 
 void Klass::set_subklass(Klass* s) {
@@ -365,7 +357,7 @@ void Klass::append_to_sibling_list() {
   assert((!super->is_interface()    // interfaces cannot be supers
           && (super->superklass() == NULL || !is_interface())),
          "an interface can only be a subklass of Object");
-  Klass* prev_first_subklass = super->subklass_oop();
+  Klass* prev_first_subklass = super->subklass();
   if (prev_first_subklass != NULL) {
     // set our sibling to be the superklass' previous first subklass
     set_next_sibling(prev_first_subklass);
@@ -405,7 +397,7 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
     assert(current->is_loader_alive(is_alive), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass_oop();
+    Klass* sub = current->subklass();
     while (sub != NULL && !sub->is_loader_alive(is_alive)) {
 #ifndef PRODUCT
       if (TraceClassUnloading && WizardMode) {
@@ -413,7 +405,7 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
         tty->print_cr("[Unlinking class (subclass) %s]", sub->external_name());
       }
 #endif
-      sub = sub->next_sibling_oop();
+      sub = sub->next_sibling();
     }
     current->set_subklass(sub);
     if (sub != NULL) {
@@ -421,13 +413,13 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
     }
 
     // Find and set the first alive sibling
-    Klass* sibling = current->next_sibling_oop();
+    Klass* sibling = current->next_sibling();
     while (sibling != NULL && !sibling->is_loader_alive(is_alive)) {
       if (TraceClassUnloading && WizardMode) {
         ResourceMark rm;
         tty->print_cr("[Unlinking class (sibling) %s]", sibling->external_name());
       }
-      sibling = sibling->next_sibling_oop();
+      sibling = sibling->next_sibling();
     }
     current->set_next_sibling(sibling);
     if (sibling != NULL) {

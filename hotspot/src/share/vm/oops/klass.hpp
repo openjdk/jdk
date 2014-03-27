@@ -56,34 +56,6 @@
 // actual type.  (See oop.inline.hpp for some of the forwarding code.)
 // ALL FUNCTIONS IMPLEMENTING THIS DISPATCH ARE PREFIXED WITH "oop_"!
 
-//  Klass layout:
-//    [C++ vtbl ptr  ] (contained in Metadata)
-//    [layout_helper ]
-//    [super_check_offset   ] for fast subtype checks
-//    [name          ]
-//    [secondary_super_cache] for fast subtype checks
-//    [secondary_supers     ] array of 2ndary supertypes
-//    [primary_supers 0]
-//    [primary_supers 1]
-//    [primary_supers 2]
-//    ...
-//    [primary_supers 7]
-//    [java_mirror   ]
-//    [super         ]
-//    [subklass      ] first subclass
-//    [next_sibling  ] link to chain additional subklasses
-//    [next_link     ]
-//    [class_loader_data]
-//    [modifier_flags]
-//    [access_flags  ]
-//    [last_biased_lock_bulk_revocation_time] (64 bits)
-//    [prototype_header]
-//    [biased_lock_revocation_count]
-//    [_modified_oops]
-//    [_accumulated_modified_oops]
-//    [trace_id]
-
-
 // Forward declarations.
 template <class T> class Array;
 template <class T> class GrowableArray;
@@ -257,9 +229,9 @@ class Klass : public Metadata {
   // Use InstanceKlass::contains_field_offset to classify field offsets.
 
   // sub/superklass links
+  Klass* subklass() const              { return _subklass; }
+  Klass* next_sibling() const          { return _next_sibling; }
   InstanceKlass* superklass() const;
-  Klass* subklass() const;
-  Klass* next_sibling() const;
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
 
   void set_next_link(Klass* k) { _next_link = k; }
@@ -281,8 +253,6 @@ class Klass : public Metadata {
   bool has_accumulated_modified_oops()   { return _accumulated_modified_oops == 1; }
 
  protected:                                // internal accessors
-  Klass* subklass_oop() const            { return _subklass; }
-  Klass* next_sibling_oop() const        { return _next_sibling; }
   void     set_subklass(Klass* s);
   void     set_next_sibling(Klass* s);
 

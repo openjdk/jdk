@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   // the f1 method has signature '(Ljl/Object;Ljl/invoke/MethodType;)Ljl/Object;',
   // not '(Ljava/lang/String;)Ljava/util/List;'.
   // The fact that String and List are involved is encoded in the MethodType in refs[f2].
-  // This allows us to create fewer method oops, while keeping type safety.
+  // This allows us to create fewer Methods, while keeping type safety.
   //
 
   objArrayHandle resolved_references = cpool->resolved_references();
