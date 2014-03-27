@@ -25,6 +25,9 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.codegen.Compiler.info;
+import static jdk.nashorn.internal.codegen.Compiler.warning;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -98,10 +101,10 @@ final class DumpBytecode {
                 try (final FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(bytecode);
                 }
-                Compiler.LOG.info("Wrote class to '" + file.getAbsolutePath() + '\'');
+                info("Wrote class to '" + file.getAbsolutePath() + '\'');
             }
         } catch (final IOException e) {
-            Compiler.LOG.warning("Skipping class dump for ",
+            warning("Skipping class dump for ",
                     className,
                     ": ",
                     ECMAErrors.getMessage(
@@ -109,5 +112,4 @@ final class DumpBytecode {
                         dir.toString()));
         }
     }
-
 }

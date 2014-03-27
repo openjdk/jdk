@@ -219,8 +219,7 @@ public abstract class ScriptFunctionData {
 
     /**
      * If we can have lazy code generation, this is a hook to ensure that the code has been compiled.
-     * This does not guarantee the code been installed in this {@code ScriptFunctionData} instance;
-     * use {@link #ensureCodeGenerated()} to install the actual method handles.
+     * This does not guarantee the code been installed in this {@code ScriptFunctionData} instance
      */
     protected void ensureCompiled() {
         //empty

@@ -52,7 +52,9 @@ public class RewriteException extends Exception {
     // optimistic assumptions (which will lead to unnecessary deoptimizing recompilations).
     private ScriptObject runtimeScope;
     //contents of bytecode slots
+
     private Object[] byteCodeSlots;
+
     private final int[] previousContinuationEntryPoints;
 
     /** Methodhandle for getting the contents of the bytecode slots in the exception */
@@ -68,6 +70,42 @@ public class RewriteException extends Exception {
     private static final Call POPULATE_ARRAY           = staticCall(MethodHandles.lookup(), RewriteException.class, "populateArray", Object[].class, Object[].class, int.class, Object[].class);
 
     /**
+     * Constructor for a rewrite exception thrown from an optimistic function.
+     * @param e the {@link UnwarrantedOptimismException} that triggered this exception.
+     * @param byteCodeSlots contents of local variable slots at the time of rewrite at the program point
+     * @param byteCodeSymbolNames byte code symbol names
+     * @param runtimeScope the runtime scope used for known type information when recompiling
+     */
+    public RewriteException(
+            final UnwarrantedOptimismException e,
+            final Object[] byteCodeSlots,
+            final String[] byteCodeSymbolNames,
+            final ScriptObject runtimeScope) {
+        this(e, byteCodeSlots, byteCodeSymbolNames, runtimeScope, null);
+    }
+
+    /**
+     * Constructor for a rewrite exception thrown from a rest-of method.
+     * @param e the {@link UnwarrantedOptimismException} that triggered this exception.
+     * @param byteCodeSymbolNames byte code symbol names
+     * @param byteCodeSlots contents of local variable slots at the time of rewrite at the program point
+     * @param runtimeScope the runtime scope used for known type information when recompiling
+     * @param previousContinuationEntryPoints an array of continuation entry points that were already executed during
+     * one logical invocation of the function (a rest-of triggering a rest-of triggering a...)
+     */
+    public RewriteException(
+            final UnwarrantedOptimismException e,
+            final Object[] byteCodeSlots,
+            final String[] byteCodeSymbolNames,
+            final ScriptObject runtimeScope,
+            final int[] previousContinuationEntryPoints) {
+        super("", e, false, Context.DEBUG);
+        this.byteCodeSlots = byteCodeSlots;
+        this.runtimeScope  = mergeSlotsWithScope(byteCodeSlots, byteCodeSymbolNames, runtimeScope);
+        this.previousContinuationEntryPoints = previousContinuationEntryPoints;
+    }
+
+    /**
      * Bootstrap method for populate array
      * @param lookup     lookup
      * @param name       name (ignored)
@@ -81,29 +119,6 @@ public class RewriteException extends Exception {
         mh = MH.asCollector(mh, Object[].class, type.parameterCount() - 1);
         mh = MH.asType(mh, type);
         return new ConstantCallSite(mh);
-    }
-
-    /**
-     * Constructor for a rewrite exception thrown from an optimistic function.
-     * @param e the {@link UnwarrantedOptimismException} that triggered this exception.
-     * @param byteCodeSlots contents of local variable slots at the time of rewrite at the program point
-     */
-    public RewriteException(final UnwarrantedOptimismException e, final Object[] byteCodeSlots, final String[] byteCodeSymbolNames, final ScriptObject runtimeScope) {
-        this(e, byteCodeSlots, byteCodeSymbolNames, runtimeScope, null);
-    }
-
-    /**
-     * Constructor for a rewrite exception thrown from a rest-of method.
-     * @param e the {@link UnwarrantedOptimismException} that triggered this exception.
-     * @param byteCodeSlots contents of local variable slots at the time of rewrite at the program point
-     * @param previousContinuationEntryPoints an array of continuation entry points that were already executed during
-     * one logical invocation of the function (a rest-of triggering a rest-of triggering a...)
-     */
-    public RewriteException(final UnwarrantedOptimismException e, final Object[] byteCodeSlots, final String[] byteCodeSymbolNames, final ScriptObject runtimeScope, final int[] previousContinuationEntryPoints) {
-        super("", e, false, Context.DEBUG);
-        this.byteCodeSlots = byteCodeSlots;
-        this.runtimeScope = mergeSlotsWithScope(byteCodeSlots, byteCodeSymbolNames, runtimeScope);
-        this.previousContinuationEntryPoints = previousContinuationEntryPoints;
     }
 
     private static ScriptObject mergeSlotsWithScope(final Object[] byteCodeSlots, final String[] byteCodeSymbolNames,
@@ -204,7 +219,7 @@ public class RewriteException extends Exception {
 
     @Override
     public String getMessage() {
-        return "programPoint=" + getProgramPoint() + " slots=" + Arrays.asList(byteCodeSlots) + ", returnValue=" + stringify(getReturnValueNonDestructive()) + ", returnType=" + getReturnType();
+        return "programPoint=" + getProgramPoint() + " slots=" + (byteCodeSlots == null ? "null" : Arrays.asList(byteCodeSlots)) + ", returnValue=" + stringify(getReturnValueNonDestructive()) + ", returnType=" + getReturnType();
     }
 
     /**

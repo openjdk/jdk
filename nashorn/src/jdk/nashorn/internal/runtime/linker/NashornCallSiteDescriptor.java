@@ -30,9 +30,11 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.AbstractCallSiteDescriptor;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
+import jdk.nashorn.internal.ir.debug.NashornTextifier;
 
 /**
  * Nashorn-specific implementation of Dynalink's {@link CallSiteDescriptor}. The reason we have our own subclass is that
@@ -96,7 +98,7 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
     private static final ClassValue<ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor>> canonicals =
             new ClassValue<ConcurrentMap<NashornCallSiteDescriptor,NashornCallSiteDescriptor>>() {
         @Override
-        protected ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor> computeValue(Class<?> type) {
+        protected ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor> computeValue(final Class<?> type) {
             return new ConcurrentHashMap<>();
         }
     };
@@ -107,6 +109,12 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
     private final MethodType methodType;
     private final int flags;
 
+    /**
+     * Function used by {@link NashornTextifier} to represent call site flags in
+     * human readable form
+     * @param flags call site flags
+     * @return human readable form of this callsite descriptor
+     */
     public static String toString(final int flags) {
         final StringBuilder sb = new StringBuilder();
         if ((flags & CALLSITE_SCOPE) != 0) {

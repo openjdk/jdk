@@ -89,7 +89,15 @@ public final class ObjectClassGenerator {
      * Debug field logger
      * Should we print debugging information for fields when they are generated and getters/setters are called?
      */
-    public static final DebugLogger LOG = new DebugLogger("fields", "nashorn.fields.debug");
+    private static final DebugLogger LOG = new DebugLogger("fields", "nashorn.fields.debug");
+
+    /**
+     * Get the field logger
+     * @return logger
+     */
+    public static DebugLogger getLogger() {
+        return LOG;
+    }
 
     private static final Set<String> FIELDS_TO_INSTRUMENT;
     static {

@@ -50,19 +50,6 @@ public final class NativeArrayBuffer extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    @Constructor(arity = 1)
-    public static Object constructor(final boolean newObj, final Object self, final Object... args) {
-        if (!newObj) {
-            throw typeError("constructor.requires.new", "ArrayBuffer");
-        }
-
-        if (args.length == 0) {
-            throw new RuntimeException("missing length argument");
-        }
-
-        return new NativeArrayBuffer(JSType.toInt32(args[0]));
-    }
-
     /**
      * Constructor
      * @param nb native byte buffer to wrap
@@ -100,7 +87,27 @@ public final class NativeArrayBuffer extends ScriptObject {
         this(cloneBuffer(other.getNioBuffer(), begin, end));
     }
 
-    private static ByteBuffer cloneBuffer(ByteBuffer original, final int begin, final int end) {
+    /**
+     * Constructor
+     * @param newObj is this invoked with new
+     * @param self   self reference
+     * @param args   arguments to constructor
+     * @return new NativeArrayBuffer
+     */
+    @Constructor(arity = 1)
+    public static Object constructor(final boolean newObj, final Object self, final Object... args) {
+        if (!newObj) {
+            throw typeError("constructor.requires.new", "ArrayBuffer");
+        }
+
+        if (args.length == 0) {
+            throw new RuntimeException("missing length argument");
+        }
+
+        return new NativeArrayBuffer(JSType.toInt32(args[0]));
+    }
+
+    private static ByteBuffer cloneBuffer(final ByteBuffer original, final int begin, final int end) {
         final ByteBuffer clone = ByteBuffer.allocateDirect(original.capacity());
         original.rewind();//copy from the beginning
         clone.put(original);

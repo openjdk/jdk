@@ -104,7 +104,15 @@ public final class Compiler {
 
     /** logger for compiler, trampolines, splits and related code generation events
      *  that affect classes */
-    public static final DebugLogger LOG = new DebugLogger("compiler");
+    private static final DebugLogger LOG = new DebugLogger("compiler");
+
+    /**
+     * Get the logger used for this compiler
+     * @return logger
+     */
+    public static DebugLogger getLogger() {
+        return LOG;
+    }
 
     static {
         if (!ScriptEnvironment.globalOptimistic()) {
@@ -170,21 +178,28 @@ public final class Compiler {
     }
 
     private static void printMemoryUsage(final String phaseName, final FunctionNode functionNode) {
-        LOG.info(phaseName + " finished. Doing IR size calculation...");
+        if (!LOG.isEnabled()) {
+            return;
+        }
+
+        info(phaseName, "finished. Doing IR size calculation...");
 
         final ObjectSizeCalculator osc = new ObjectSizeCalculator(ObjectSizeCalculator.getEffectiveMemoryLayoutSpecification());
         osc.calculateObjectSize(functionNode);
 
-        final List<ClassHistogramElement> list = osc.getClassHistogram();
+        final List<ClassHistogramElement> list      = osc.getClassHistogram();
+        final StringBuilder               sb        = new StringBuilder();
+        final long                        totalSize = osc.calculateObjectSize(functionNode);
 
-        final StringBuilder sb = new StringBuilder();
-        final long totalSize = osc.calculateObjectSize(functionNode);
-        sb.append(phaseName).append(" Total size = ").append(totalSize / 1024 / 1024).append("MB");
+        sb.append(phaseName).
+            append(" Total size = ").
+            append(totalSize / 1024 / 1024).
+            append("MB");
         LOG.info(sb);
 
         Collections.sort(list, new Comparator<ClassHistogramElement>() {
             @Override
-            public int compare(ClassHistogramElement o1, ClassHistogramElement o2) {
+            public int compare(final ClassHistogramElement o1, final ClassHistogramElement o2) {
                 final long diff = o1.getBytes() - o2.getBytes();
                 if (diff < 0) {
                     return 1;
@@ -197,9 +212,9 @@ public final class Compiler {
         });
         for (final ClassHistogramElement e : list) {
             final String line = String.format("    %-48s %10d bytes (%8d instances)", e.getClazz(), e.getBytes(), e.getInstances());
-            LOG.info(line);
+            info(line);
             if (e.getBytes() < totalSize / 200) {
-                LOG.info("    ...");
+                info("    ...");
                 break; // never mind, so little memory anyway
             }
         }
@@ -506,5 +521,37 @@ public final class Compiler {
      */
     public static String binaryName(final String name) {
         return name.replace('/', '.');
+    }
+
+    /**
+     * Log hook; level finest
+     * @param args args
+     */
+    public static void finest(final Object... args) {
+        LOG.finest(args);
+    }
+
+    /**
+     * Log hook; level fine
+     * @param args args
+     */
+    public static void fine(final Object... args) {
+        LOG.fine(args);
+    }
+
+    /**
+     * Log hook; level info
+     * @param args args
+     */
+    public static void info(final Object... args) {
+        LOG.info(args);
+    }
+
+    /**
+     * Log hook; level warning
+     * @param args args
+     */
+    public static void warning(final Object... args) {
+        LOG.warning(args);
     }
 }

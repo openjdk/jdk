@@ -220,7 +220,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
             return this;
         }
         if (DEBUG_FIELDS && ObjectClassGenerator.shouldInstrument(getName()) && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), callSiteType)) {
-            ObjectClassGenerator.LOG.info(getClass().getName(), " ", this, " => ", callSiteType, " instead of ", getType());
+            ObjectClassGenerator.getLogger().info(getClass().getName(), " ", this, " => ", callSiteType, " instead of ", getType());
         }
         return new IdentNode(this, name, callSiteType, flags, programPoint);
     }

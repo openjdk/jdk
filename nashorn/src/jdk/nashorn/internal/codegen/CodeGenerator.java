@@ -3493,7 +3493,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @param block the block we are in
      * @param ident identifier for block or function where applicable
      */
-    @SuppressWarnings("resource")
     private void printSymbols(final Block block, final String ident) {
         if (!compiler.getEnv()._print_symbols) {
             return;
@@ -4287,6 +4286,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 } else {
                     method.invoke(INIT_REWRITE_EXCEPTION);
                 }
+
                 method.athrow();
             }
         }
@@ -4398,10 +4398,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.lineNumber(0);
 
         final Type[] lvarTypes = ci.localVariableTypes;
-        final int lvarCount = lvarTypes.length;
+        final int    lvarCount = lvarTypes.length;
 
-        final Type exceptionType = Type.typeFor(RewriteException.class);
-        method.load(exceptionType, 0);
+        final Type rewriteExceptionType = Type.typeFor(RewriteException.class);
+        method.load(rewriteExceptionType, 0);
         method.dup();
         // Get local variable array
         method.invoke(RewriteException.GET_BYTECODE_SLOTS);
@@ -4424,7 +4424,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final boolean isStackEmpty = stackStoreSpec.length == 0;
         if(!isStackEmpty) {
             // Store the RewriteException into an unused local variable slot.
-            method.store(exceptionType, lvarCount);
+            method.store(rewriteExceptionType, lvarCount);
             // Load arguments on the stack
             for(int i = 0; i < stackStoreSpec.length; ++i) {
                 final int slot = stackStoreSpec[i];

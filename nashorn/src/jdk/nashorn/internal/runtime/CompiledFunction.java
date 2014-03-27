@@ -27,7 +27,6 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
-
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -36,6 +35,8 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Level;
+
 import jdk.internal.dynalink.support.CatchExceptionCombinator;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -60,7 +61,7 @@ final class CompiledFunction {
     private static final MethodHandle HANDLE_REWRITE_EXCEPTION = findOwnMH("handleRewriteException", MethodHandle.class, CompiledFunction.class, OptimismInfo.class, RewriteException.class);
     private static final MethodHandle RESTOF_INVOKER = MethodHandles.exactInvoker(MethodType.methodType(Object.class, RewriteException.class));
 
-    private static final DebugLogger LOG = new DebugLogger("recompile", "nashorn.codegen.debug");
+    private static final DebugLogger LOG = RecompilableScriptFunctionData.getLogger();
 
     /**
      * The method type may be more specific than the invoker, if. e.g.
@@ -561,7 +562,9 @@ final class CompiledFunction {
         final MethodType callSiteType = type.parameterType(0) == ScriptFunction.class ? type : type.insertParameterTypes(0, ScriptFunction.class);
 
         final FunctionNode fn = oldOptimismInfo.recompile(callSiteType, re);
-        LOG.info("    RewriteException ", re.getMessageShort());
+        if (LOG.isEnabled()) {
+            LOG.info(new RuntimeEvent<>(Level.INFO, re), "\tRewriteException ", re.getMessageShort());
+        }
 
         // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already
         // recompiled a deoptimized version for an inner invocation.
@@ -578,7 +581,7 @@ final class CompiledFunction {
             invoker = newInvoker.asType(type.changeReturnType(newInvoker.type().returnType()));
             constructor = null; // Will be regenerated when needed
             // Note that we only adjust the switch point after we set the invoker/constructor. This is important.
-            if(isOptimistic) {
+            if (isOptimistic) {
                 // Otherwise, set a new switch point.
                 oldOptimismInfo.newOptimisticAssumptions();
             } else {

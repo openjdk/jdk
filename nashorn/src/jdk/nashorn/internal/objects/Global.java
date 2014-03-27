@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -54,7 +55,6 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
-import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
@@ -490,20 +490,6 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     /**
-     * Create a new ScriptFunction object
-     *
-     * @param name   function name
-     * @param handle invocation handle for function
-     * @param scope  the scope
-     * @param strict are we in strict mode
-     *
-     * @return new script function
-     */
-    public ScriptFunction newScriptFunction(final String name, final MethodHandle handle, final ScriptObject scope, final boolean strict) {
-        return new ScriptFunctionImpl(name, handle, scope, null, strict ? ScriptFunctionData.IS_STRICT_CONSTRUCTOR : ScriptFunctionData.IS_CONSTRUCTOR);
-    }
-
-    /**
      * Wrap a Java object as corresponding script object
      *
      * @param obj object to wrap
@@ -538,7 +524,7 @@ public final class Global extends ScriptObject implements Scope {
      *
      * @return guarded invocation
      */
-    public GuardedInvocation primitiveLookup(final LinkRequest request, final Object self) {
+    public static GuardedInvocation primitiveLookup(final LinkRequest request, final Object self) {
         if (self instanceof String || self instanceof ConsString) {
             return NativeString.lookupPrimitive(request, self);
         } else if (self instanceof Number) {
@@ -730,6 +716,7 @@ public final class Global extends ScriptObject implements Scope {
      * @param value of the data property
      * @param configurable is the property configurable?
      * @param enumerable is the property enumerable?
+     * @param writable is the property writable?
      * @return newly created DataPropertyDescriptor object
      */
     public PropertyDescriptor newDataDescriptor(final Object value, final boolean configurable, final boolean enumerable, final boolean writable) {
@@ -1829,7 +1816,6 @@ public final class Global extends ScriptObject implements Scope {
         this.addOwnProperty("Debug", Attribute.NOT_ENUMERABLE, initConstructor("Debug"));
     }
 
-    @SuppressWarnings("resource")
     private static Object printImpl(final boolean newLine, final Object... objects) {
         final PrintWriter out = Global.getEnv().getOut();
         final StringBuilder sb = new StringBuilder();

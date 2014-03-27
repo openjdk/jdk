@@ -1890,7 +1890,7 @@ public abstract class ScriptObject implements PropertyAccess {
 
         mh = find.getGetter(returnType, programPoint);
         // Get the appropriate guard for this callsite and property.
-        MethodHandle guard = NashornGuards.getGuard(this, property, desc, explicitInstanceOfCheck);
+        final MethodHandle guard = NashornGuards.getGuard(this, property, desc, explicitInstanceOfCheck);
         final ScriptObject owner = find.getOwner();
         final Class<ClassCastException> exception = explicitInstanceOfCheck ? null : ClassCastException.class;
 
@@ -1915,11 +1915,10 @@ public abstract class ScriptObject implements PropertyAccess {
                 exception);
     }
 
-    private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name,
-                                                              final boolean isMethod, final boolean isScope) {
-    ObjectClassGenerator.LOG.warning("Megamorphic getter: " + desc + " " + name + " " +isMethod);
+    private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod, final boolean isScope) {
+        ObjectClassGenerator.getLogger().warning("Megamorphic getter: " + desc + " " + name + " " +isMethod);
         final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod, isScope);
-        final MethodHandle guard = getScriptObjectGuard(desc.getMethodType(), true);
+        final MethodHandle guard   = getScriptObjectGuard(desc.getMethodType(), true);
         return new GuardedInvocation(invoker, guard);
     }
 
@@ -2004,7 +2003,7 @@ public abstract class ScriptObject implements PropertyAccess {
         }
 
         for (ScriptObject obj = this; obj != owner && obj.getProto() != null; obj = obj.getProto()) {
-            ScriptObject parent = obj.getProto();
+            final ScriptObject parent = obj.getProto();
             parent.getMap().addListener(name, obj.getMap());
         }
 

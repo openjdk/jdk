@@ -39,7 +39,6 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ConsString;
-import jdk.nashorn.internal.runtime.Context;
 
 /**
  * Internal linker for String, Boolean, and Number objects, only ever used by Nashorn engine and not exposed to other
@@ -62,10 +61,9 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
         final LinkRequest request = origRequest.withoutRuntimeContext(); // Nashorn has no runtime context
 
         final Object self = request.getReceiver();
-        final Global global = Context.getGlobal();
         final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor) request.getCallSiteDescriptor();
 
-        return Bootstrap.asTypeSafeReturn(global.primitiveLookup(request, self), linkerServices, desc);
+        return Bootstrap.asTypeSafeReturn(Global.primitiveLookup(request, self), linkerServices, desc);
     }
 
     /**

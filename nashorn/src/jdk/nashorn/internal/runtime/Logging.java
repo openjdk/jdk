@@ -31,9 +31,11 @@ import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
@@ -74,6 +76,8 @@ public final class Logging {
 
     /** Maps logger name to loggers. Names are typically per package */
     private static final Map<String, Logger> loggers = new HashMap<>();
+
+    private static final Set<String> quietLoggers = new HashSet<>();
 
     private static String lastPart(final String packageName) {
         final String[] parts = packageName.split("\\.");
@@ -116,6 +120,16 @@ public final class Logging {
     }
 
     /**
+     * Is this logger "quiet", i.e. does it put events in the debug event
+     * queue, but refrains from printing anything?
+     * @param name logger name
+     * @return true if quiet
+     */
+    public static boolean loggerIsQuiet(final String name) {
+        return quietLoggers.contains(name);
+    }
+
+    /**
      * Initialization function that is called to instantiate the logging system. It takes
      * logger names (keys) and logging labels respectively
      *
@@ -126,18 +140,20 @@ public final class Logging {
         try {
             for (final Entry<String, String> entry : map.entrySet()) {
                 Level level;
-
                 final String key   = entry.getKey();
                 final String value = entry.getValue();
+                final String name = Logging.lastPart(key);
+
                 if ("".equals(value)) {
                     level = Level.INFO;
+                } else if ("quiet".equals(value)) {
+                    level = Level.INFO;
+                    quietLoggers.add(name);
                 } else {
                     level = Level.parse(value.toUpperCase(Locale.ENGLISH));
                 }
 
-                final String name = Logging.lastPart(key);
                 final Logger logger = instantiateLogger(name, level);
-
                 Logging.loggers.put(name, logger);
             }
         } catch (final IllegalArgumentException | SecurityException e) {

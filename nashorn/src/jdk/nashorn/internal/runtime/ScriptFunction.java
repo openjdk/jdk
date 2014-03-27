@@ -68,7 +68,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
     private static final MethodHandle WRAPFILTER = findOwnMH_S("wrapFilter", Object.class, Object.class);
 
-    private static final MethodHandle GLOBALFILTER = findOwnMH_S("globalFilter", Object.class, Object.class);
+    private static final MethodHandle SCRIPTFUNCTION_GLOBALFILTER = findOwnMH_S("globalFilter", Object.class, Object.class);
 
     /** method handle to scope getter for this ScriptFunction */
     public static final Call GET_SCOPE = virtualCallNoLookup(ScriptFunction.class, "getScope", ScriptObject.class);
@@ -554,7 +554,7 @@ public abstract class ScriptFunction extends ScriptObject {
         if (data.needsCallee()) {
             if (scopeCall && needsWrappedThis()) {
                 // (callee, this, args...) => (callee, [this], args...)
-                boundHandle = MH.filterArguments(callHandle, 1, GLOBALFILTER);
+                boundHandle = MH.filterArguments(callHandle, 1, SCRIPTFUNCTION_GLOBALFILTER);
             } else {
                 // It's already (callee, this, args...), just what we need
                 boundHandle = callHandle;
@@ -566,7 +566,7 @@ public abstract class ScriptFunction extends ScriptObject {
         } else if (scopeCall && needsWrappedThis()) {
             // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
             // (this, args...) => ([this], args...)
-            boundHandle = MH.filterArguments(callHandle, 0, GLOBALFILTER);
+            boundHandle = MH.filterArguments(callHandle, 0, SCRIPTFUNCTION_GLOBALFILTER);
             // ([this], args...) => ([callee], [this], args...)
             boundHandle = MH.dropArguments(boundHandle, 0, type.parameterType(0));
         } else {
@@ -684,7 +684,7 @@ public abstract class ScriptFunction extends ScriptObject {
      private static MethodHandle bindImplicitThis(final Object fn, final MethodHandle mh) {
          final MethodHandle bound;
          if(fn instanceof ScriptFunction && ((ScriptFunction)fn).needsWrappedThis()) {
-             bound = MH.filterArguments(mh, 1, GLOBALFILTER);
+             bound = MH.filterArguments(mh, 1, SCRIPTFUNCTION_GLOBALFILTER);
          } else {
              bound = mh;
          }

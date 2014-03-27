@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.SPLIT_PREFIX;
+import static jdk.nashorn.internal.codegen.Compiler.finest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +43,6 @@ import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -64,8 +64,6 @@ final class Splitter extends NodeVisitor<LexicalContext> {
     /** Weight threshold for when to start a split. */
     public static final long SPLIT_THRESHOLD = Options.getIntProperty("nashorn.compiler.splitter.threshold", 32 * 1024);
 
-    private static final DebugLogger LOG = Compiler.LOG;
-
     /**
      * Constructor.
      *
@@ -85,10 +83,10 @@ final class Splitter extends NodeVisitor<LexicalContext> {
      * @param fn the function to split
      * @param top whether this is the topmost compiled function (it's either a program, or we're doing a recompilation).
      */
-    FunctionNode split(final FunctionNode fn, boolean top) {
+    FunctionNode split(final FunctionNode fn, final boolean top) {
         FunctionNode functionNode = fn;
 
-        LOG.finest("Initiating split of '", functionNode.getName(), "'");
+        finest("Initiating split of '", functionNode.getName(), "'");
 
         long weight = WeighNodes.weigh(functionNode);
 
@@ -97,7 +95,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
         assert lc.isEmpty() : "LexicalContext not empty";
 
         if (weight >= SPLIT_THRESHOLD) {
-            LOG.finest("Splitting '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
+            finest("Splitting '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
             functionNode = (FunctionNode)functionNode.accept(this);
 
             if (functionNode.isSplit()) {
@@ -134,7 +132,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
 
             @Override
             public Node leaveFunctionNode(final FunctionNode nestedFunction) {
-                FunctionNode split = new Splitter(compiler, nestedFunction, outermostCompileUnit).split(nestedFunction, false);
+                final FunctionNode split = new Splitter(compiler, nestedFunction, outermostCompileUnit).split(nestedFunction, false);
                 lc.replace(nestedFunction, split);
                 return split;
             }

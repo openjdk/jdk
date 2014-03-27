@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.LOG;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.PRIMITIVE_FIELD_TYPE;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.createGetter;
@@ -57,6 +56,8 @@ public class AccessorProperty extends Property {
     private static final MethodHandle REPLACE_MAP = findOwnMH("replaceMap", Object.class, Object.class, PropertyMap.class, String.class, Class.class, Class.class);
 
     private static final int NOOF_TYPES = getNumberOfAccessorTypes();
+
+    private static final DebugLogger LOG = ObjectClassGenerator.getLogger();
 
     /**
      * Properties in different maps for the same structure class will share their field getters and setters. This could

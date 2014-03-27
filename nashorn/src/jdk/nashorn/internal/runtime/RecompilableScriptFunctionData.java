@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompilationEnvironment;
 import jdk.nashorn.internal.codegen.CompilationEnvironment.CompilationPhases;
@@ -111,6 +112,14 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     private static final AtomicInteger RECOMPILE_ID = new AtomicInteger(0);
 
     private static final DebugLogger LOG = new DebugLogger("recompile");
+
+    /**
+     * Get the recompilation logger
+     * @return the logger
+     */
+    public static DebugLogger getLogger() {
+        return LOG;
+    }
 
     private final Map<String, Integer> externalScopeDepths;
 
@@ -310,7 +319,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
             final Map.Entry<Integer, Type> entry = iter.next();
             sb.append('[').
                     append(entry.getKey()).
-                    append("=>").
+                    append("->").
                     append(entry.getValue().getShortDescriptor()).
                     append(']');
             if (iter.hasNext()) {
@@ -321,7 +330,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     MethodHandle compileRestOfMethod(final MethodType fnCallSiteType, final Map<Integer, Type> invalidatedProgramPoints, final int[] continuationEntryPoints, final ScriptObject runtimeScope) {
-        LOG.info("Rest-of compilation of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
+        if (LOG.isEnabled()) {
+            LOG.info("Rest-of compilation of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
+        }
 
         final String scriptName = RECOMPILATION_PREFIX + RECOMPILE_ID.incrementAndGet() + "$restOf";
         FunctionNode fn = reparse(scriptName);
@@ -343,6 +354,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
         compiler.install(fn);
 
+        // look up the rest of method
         return lookupWithExplicitType(fn, MethodType.methodType(fn.getReturnType().getTypeClass(), RewriteException.class));
     }
 
@@ -353,7 +365,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     FunctionNode compile(final MethodType actualCallSiteType, final Map<Integer, Type> invalidatedProgramPoints, final ScriptObject runtimeScope, final String reason) {
         final String scriptName = RECOMPILATION_PREFIX + RECOMPILE_ID.incrementAndGet();
         final MethodType fnCallSiteType = actualCallSiteType == null ? null : actualCallSiteType.changeParameterType(0, ScriptFunction.class);
-        LOG.info(reason, " of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
+
+        if (LOG.isEnabled()) {
+            LOG.info(reason, " of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
+        }
         FunctionNode fn = reparse(scriptName);
 
         final CompilationPhases phases = CompilationPhases.EAGER;
@@ -509,7 +524,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     @Override
     CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope) {
-        synchronized(code) {
+        synchronized (code) {
             final CompiledFunction existingBest = super.getBest(callSiteType, runtimeScope);
             // TODO: what if callSiteType is vararg?
             return existingBest != null ? existingBest : addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
