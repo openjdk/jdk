@@ -30,6 +30,7 @@
 #include "gc_implementation/g1/g1AllocRegion.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegionSet.inline.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "utilities/taskqueue.hpp"
 

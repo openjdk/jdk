@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,4 +46,43 @@ PaddedEnd<T>* PaddedArray<T, flags, alignment>::create_unfreeable(uint length) {
   }
 
   return aligned_padded_array;
+}
+
+template <class T, MEMFLAGS flags, size_t alignment>
+T** Padded2DArray<T, flags, alignment>::create_unfreeable(uint rows, uint columns, size_t* allocation_size) {
+  // Calculate and align the size of the first dimension's table.
+  size_t table_size = align_size_up_(rows * sizeof(T*), alignment);
+  // The size of the separate rows.
+  size_t row_size = align_size_up_(columns * sizeof(T), alignment);
+  // Total size consists of the indirection table plus the rows.
+  size_t total_size = table_size + rows * row_size + alignment;
+
+  // Allocate a chunk of memory large enough to allow alignment of the chunk.
+  void* chunk = AllocateHeap(total_size, flags);
+  // Clear the allocated memory.
+  memset(chunk, 0, total_size);
+  // Align the chunk of memory.
+  T** result = (T**)align_pointer_up(chunk, alignment);
+  void* data_start = (void*)((uintptr_t)result + table_size);
+
+  // Fill in the row table.
+  for (size_t i = 0; i < rows; i++) {
+    result[i] = (T*)((uintptr_t)data_start + i * row_size);
+  }
+
+  if (allocation_size != NULL) {
+    *allocation_size = total_size;
+  }
+
+  return result;
+}
+
+template <class T, MEMFLAGS flags, size_t alignment>
+T* PaddedPrimitiveArray<T, flags, alignment>::create_unfreeable(size_t length) {
+  // Allocate a chunk of memory large enough to allow for some alignment.
+  void* chunk = AllocateHeap(length * sizeof(T) + alignment, flags);
+
+  memset(chunk, 0, length * sizeof(T) + alignment);
+
+  return (T*)align_pointer_up(chunk, alignment);
 }
