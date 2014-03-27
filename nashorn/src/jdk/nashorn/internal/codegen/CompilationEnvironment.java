@@ -420,8 +420,9 @@ public final class CompilationEnvironment {
         final Property property = find.getProperty();
         final Class<?> propertyClass = property.getCurrentType();
         if (propertyClass == null) {
-            // propertyClass == null means its Undefined, which is object
-            return Type.OBJECT;
+            // propertyClass == null means its value is Undefined. It is probably not initialized yet, so we won't make
+            // a type assumption yet.
+            return null;
         } else if (propertyClass.isPrimitive()) {
             return Type.typeFor(propertyClass);
         }
