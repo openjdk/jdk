@@ -273,7 +273,6 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * commits or rolls back an active transaction prior to calling the
      * <code>close</code> method.  If the <code>close</code> method is called
      * and there is an active transaction, the results are implementation-defined.
-     * <P>
      *
      * @exception SQLException SQLException if a database access error occurs
      */
@@ -632,7 +631,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * Installs the given <code>TypeMap</code> object as the type map for
      * this <code>Connection</code> object.  The type map will be used for the
      * custom mapping of SQL structured types and distinct types.
-     *<p>
+     * <p>
      * You must set the the values for the <code>TypeMap</code> prior to
      * callng <code>setMap</code> as a JDBC driver may create an internal copy
      * of the <code>TypeMap</code>:
@@ -1114,7 +1113,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
          *                                              completes, this method returns false.  A value of
          *                                              0 indicates a timeout is not applied to the
          *                                              database operation.
-         * <p>
+         *
          * @return true if the connection is valid, false otherwise
          * @exception SQLException if the value supplied for <code>timeout</code>
          * is less then 0
@@ -1165,16 +1164,16 @@ public interface Connection  extends Wrapper, AutoCloseable {
          * <li>ClientHostname   -       The hostname of the computer the application
          *                                                      using the connection is running on.</li>
          * </ul>
-         * <p>
+         *
          * @param name          The name of the client info property to set
          * @param value         The value to set the client info property to.  If the
          *                                      value is null, the current value of the specified
          *                                      property is cleared.
-         * <p>
+         *
          * @throws      SQLClientInfoException if the database server returns an error while
          *                      setting the client info value on the database server or this method
          * is called on a closed connection
-         * <p>
+         *
          * @since 1.6
          */
          void setClientInfo(String name, String value)
@@ -1198,13 +1197,13 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * some databases do not allow multiple client info properties to be set
      * atomically.  For those databases, one or more properties may have been
      * set before the error occurred.
-     * <p>
+     *
      *
      * @param properties                the list of client info properties to set
-     * <p>
+     *
      * @see java.sql.Connection#setClientInfo(String, String) setClientInfo(String, String)
      * @since 1.6
-     * <p>
+     *
      * @throws SQLClientInfoException if the database server returns an error while
      *                  setting the clientInfo values on the database server or this method
      * is called on a closed connection
@@ -1222,15 +1221,15 @@ public interface Connection  extends Wrapper, AutoCloseable {
          * <p>
          * Applications may use the <code>DatabaseMetaData.getClientInfoProperties</code>
          * method to determine the client info properties supported by the driver.
-         * <p>
+         *
          * @param name          The name of the client info property to retrieve
-         * <p>
+         *
          * @return                      The value of the client info property specified
-         * <p>
+         *
          * @throws SQLException         if the database server returns an error when
-         *                                                      fetching the client info value from the database
-         *or this method is called on a closed connection
-         * <p>
+         *                              fetching the client info value from the database
+         *                              or this method is called on a closed connection
+         *
          * @since 1.6
          *
          * @see java.sql.DatabaseMetaData#getClientInfoProperties
@@ -1243,14 +1242,14 @@ public interface Connection  extends Wrapper, AutoCloseable {
          * property supported by the driver.  The value of a client info property
          * may be null if the property has not been set and does not have a
          * default value.
-         * <p>
+         *
          * @return      A <code>Properties</code> object that contains the name and current value of
          *                      each of the client info properties supported by the driver.
-         * <p>
+         *
          * @throws      SQLException if the database server returns an error when
          *                      fetching the client info values from the database
          * or this method is called on a closed connection
-         * <p>
+         *
          * @since 1.6
          */
          Properties getClientInfo()
@@ -1294,7 +1293,7 @@ SQLException;
   * <code>Struct.getSQLTypeName</code>.
 
   * @param attributes the attributes that populate the returned object
-  *  @return a Struct object that maps to the given SQL type and is populated with the given attributes
+  * @return a Struct object that maps to the given SQL type and is populated with the given attributes
   * @throws SQLException if a database error occurs, the typeName is null or this method is called on a closed connection
   * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this data type
   * @since 1.6
@@ -1426,7 +1425,7 @@ throws SQLException;
      * problems, the connection will be marked as closed, any resources held by
      * the connection will be released and both the connection and
      * statement will be unusable.
-     *<p>
+     * <p>
      * When the driver determines that the {@code setNetworkTimeout} timeout
      * value has expired, the JDBC driver marks the connection
      * closed and releases any resources held by the connection.

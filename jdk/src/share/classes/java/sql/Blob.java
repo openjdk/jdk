@@ -269,12 +269,11 @@ public interface Blob {
      * This method frees the <code>Blob</code> object and releases the resources that
      * it holds. The object is invalid once the <code>free</code>
      * method is called.
-     *<p>
+     * <p>
      * After <code>free</code> has been called, any attempt to invoke a
      * method other than <code>free</code> will result in a <code>SQLException</code>
      * being thrown.  If <code>free</code> is called multiple times, the subsequent
      * calls to <code>free</code> are treated as a no-op.
-     *<p>
      *
      * @throws SQLException if an error occurs releasing
      * the Blob's resources

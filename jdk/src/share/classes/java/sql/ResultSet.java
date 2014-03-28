@@ -1259,7 +1259,6 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * If an input stream is open for the current row, a call to the method
      * <code>previous</code> will implicitly close it.  A <code>ResultSet</code>
      *  object's warning change is cleared when a new row is read.
-     *<p>
      *
      * @return <code>true</code> if the cursor is now positioned on a valid row;
      * <code>false</code> if the cursor is positioned before the first row
@@ -3206,7 +3205,6 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * row. The updater methods do not update the underlying database; instead
      * the <code>updateRow</code> or <code>insertRow</code> methods are called
      * to update the database.
-     * <p>
      *
      * @param columnIndex the first column is 1, the second 2, ...
      * @param xmlObject the value for the column to be updated
@@ -3232,7 +3230,6 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * row. The updater methods do not update the underlying database; instead
      * the <code>updateRow</code> or <code>insertRow</code> methods are called
      * to update the database.
-     * <p>
      *
      * @param columnLabel the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
      * @param xmlObject the column value

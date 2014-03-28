@@ -1160,13 +1160,13 @@ public interface CallableStatement extends PreparedStatement {
      * <P>
      * This method throws an exception if there is an ambiguity, for example, if the
      * object is of a class implementing more than one of the interfaces named above.
-     *<p>
+     * <p>
      *<b>Note:</b> Not all databases allow for a non-typed Null to be sent to
      * the backend. For maximum portability, the <code>setNull</code> or the
      * <code>setObject(String parameterName, Object x, int sqlType)</code>
      * method should be used
      * instead of <code>setObject(String parameterName, Object x)</code>.
-     *<p>
+     *
      * @param parameterName the name of the parameter
      * @param x the object containing the input parameter value
      * @exception SQLException if parameterName does not correspond to a named
@@ -2025,7 +2025,7 @@ public interface CallableStatement extends PreparedStatement {
      * <code>NVARCHAR</code>
      * or <code>LONGNVARCHAR</code> parameter as
      * a <code>String</code> in the Java programming language.
-     *  <p>
+     * <p>
      * For the fixed-length type JDBC <code>NCHAR</code>,
      * the <code>String</code> object
      * returned has exactly the same value the SQL

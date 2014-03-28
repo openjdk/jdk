@@ -203,7 +203,6 @@ public class BatchUpdateException extends SQLException {
    * The <code>cause</code> is not initialized, and may subsequently be
    * initialized by a call to the
    * {@link Throwable#initCause(java.lang.Throwable)} method.
-   * <p>
    *
    * @since 1.2
    * @see #BatchUpdateException(java.lang.String, java.lang.String, int, long[],
@@ -378,7 +377,7 @@ public class BatchUpdateException extends SQLException {
    * there are commands in the batch; otherwise, it will contain an
    * update count for each command that executed successfully before
    * the <code>BatchUpdateException</code> was thrown.
-   *<P>
+   * <P>
    * The possible return values for this method were modified for
    * the Java 2 SDK, Standard Edition, version 1.3.  This was done to
    * accommodate the new option of continuing to process commands
@@ -410,7 +409,7 @@ public class BatchUpdateException extends SQLException {
    * <p>
    * This constructor should be used when the returned update count may exceed
    * {@link Integer#MAX_VALUE}.
-   * <p>
+   *
    * @param reason a description of the error
    * @param SQLState an XOPEN or SQL:2003 code identifying the exception
    * @param vendorCode an exception code used by a particular
@@ -448,7 +447,7 @@ public class BatchUpdateException extends SQLException {
    * <p>
    * This method should be used when {@code Statement.executeLargeBatch} is
    * invoked and the returned update count may exceed {@link Integer#MAX_VALUE}.
-   * <p>
+   *
    * @return an array of <code>long</code> containing the update counts
    * for the updates that were executed successfully before this error
    * occurred.  Or, if the driver continues to process commands after an
