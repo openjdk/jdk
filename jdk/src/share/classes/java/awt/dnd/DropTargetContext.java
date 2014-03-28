@@ -61,7 +61,7 @@ public class DropTargetContext implements Serializable {
     /**
      * Construct a <code>DropTargetContext</code>
      * given a specified <code>DropTarget</code>.
-     * <P>
+     *
      * @param dt the DropTarget to associate with
      */
 
@@ -74,7 +74,7 @@ public class DropTargetContext implements Serializable {
     /**
      * This method returns the <code>DropTarget</code> associated with this
      * <code>DropTargetContext</code>.
-     * <P>
+     *
      * @return the <code>DropTarget</code> associated with this <code>DropTargetContext</code>
      */
 
@@ -83,7 +83,7 @@ public class DropTargetContext implements Serializable {
     /**
      * This method returns the <code>Component</code> associated with
      * this <code>DropTargetContext</code>.
-     * <P>
+     *
      * @return the Component associated with this Context
      */
 
@@ -91,7 +91,7 @@ public class DropTargetContext implements Serializable {
 
     /**
      * Called when associated with the <code>DropTargetContextPeer</code>.
-     * <P>
+     *
      * @param dtcp the <code>DropTargetContextPeer</code>
      */
 
@@ -111,7 +111,7 @@ public class DropTargetContext implements Serializable {
     /**
      * This method sets the current actions acceptable to
      * this <code>DropTarget</code>.
-     * <P>
+     *
      * @param actions an <code>int</code> representing the supported action(s)
      */
 
@@ -130,7 +130,7 @@ public class DropTargetContext implements Serializable {
     /**
      * This method returns an <code>int</code> representing the
      * current actions this <code>DropTarget</code> will accept.
-     * <P>
+     *
      * @return the current actions acceptable to this <code>DropTarget</code>
      */
 
@@ -145,9 +145,9 @@ public class DropTargetContext implements Serializable {
     /**
      * This method signals that the drop is completed and
      * if it was successful or not.
-     * <P>
+     *
      * @param success true for success, false if not
-     * <P>
+     *
      * @throws InvalidDnDOperationException if a drop is not outstanding/extant
      */
 
@@ -160,7 +160,7 @@ public class DropTargetContext implements Serializable {
 
     /**
      * accept the Drag.
-     * <P>
+     *
      * @param dragOperation the supported action(s)
      */
 
@@ -186,7 +186,7 @@ public class DropTargetContext implements Serializable {
      * called to signal that the drop is acceptable
      * using the specified operation.
      * must be called during DropTargetListener.drop method invocation.
-     * <P>
+     *
      * @param dropOperation the supported action(s)
      */
 
@@ -212,7 +212,7 @@ public class DropTargetContext implements Serializable {
     /**
      * get the available DataFlavors of the
      * <code>Transferable</code> operand of this operation.
-     * <P>
+     *
      * @return a <code>DataFlavor[]</code> containing the
      * supported <code>DataFlavor</code>s of the
      * <code>Transferable</code> operand.
@@ -227,7 +227,7 @@ public class DropTargetContext implements Serializable {
      * This method returns a the currently available DataFlavors
      * of the <code>Transferable</code> operand
      * as a <code>java.util.List</code>.
-     * <P>
+     *
      * @return the currently available
      * DataFlavors as a <code>java.util.List</code>
      */
@@ -240,9 +240,9 @@ public class DropTargetContext implements Serializable {
      * This method returns a <code>boolean</code>
      * indicating if the given <code>DataFlavor</code> is
      * supported by this <code>DropTargetContext</code>.
-     * <P>
+     *
      * @param df the <code>DataFlavor</code>
-     * <P>
+     *
      * @return if the <code>DataFlavor</code> specified is supported
      */
 
@@ -252,9 +252,9 @@ public class DropTargetContext implements Serializable {
 
     /**
      * get the Transferable (proxy) operand of this operation
-     * <P>
+     *
      * @throws InvalidDnDOperationException if a drag is not outstanding/extant
-     * <P>
+     *
      * @return the <code>Transferable</code>
      */
 
@@ -279,7 +279,7 @@ public class DropTargetContext implements Serializable {
 
     /**
      * Get the <code>DropTargetContextPeer</code>
-     * <P>
+     *
      * @return the platform peer
      */
 
@@ -322,7 +322,7 @@ public class DropTargetContext implements Serializable {
          * data transfer for a particular drag-n-drop operation and
          * a <code>boolean</code> which indicates whether the
          * drag-n-drop operation is local (within the same JVM).
-         * <p>
+         *
          * @param t the <code>Transferable</code> object
          * @param local <code>true</code>, if <code>t</code> represents
          *        the result of local drag-n-drop operation
@@ -336,7 +336,7 @@ public class DropTargetContext implements Serializable {
         /**
          * Returns an array of DataFlavor objects indicating the flavors
          * the data can be provided in by the encapsulated transferable.
-         * <p>
+         *
          * @return an array of data flavors in which the data can be
          *         provided by the encapsulated transferable
          */

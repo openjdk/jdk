@@ -48,7 +48,7 @@ public class InvalidDnDOperationException extends IllegalStateException {
 
     /**
      * Create an Exception with its own descriptive message
-     * <P>
+     *
      * @param msg the detail message
      */
 
