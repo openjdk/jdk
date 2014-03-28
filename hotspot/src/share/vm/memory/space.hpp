@@ -81,31 +81,6 @@ class GenRemSet;
 class CardTableRS;
 class DirtyCardToOopClosure;
 
-// An oop closure that is circumscribed by a filtering memory region.
-class SpaceMemRegionOopsIterClosure: public ExtendedOopClosure {
- private:
-  ExtendedOopClosure* _cl;
-  MemRegion   _mr;
- protected:
-  template <class T> void do_oop_work(T* p) {
-    if (_mr.contains(p)) {
-      _cl->do_oop(p);
-    }
-  }
- public:
-  SpaceMemRegionOopsIterClosure(ExtendedOopClosure* cl, MemRegion mr):
-    _cl(cl), _mr(mr) {}
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-  virtual bool do_metadata() {
-    // _cl is of type ExtendedOopClosure instead of OopClosure, so that we can check this.
-    assert(!_cl->do_metadata(), "I've checked all call paths, this shouldn't happen.");
-    return false;
-  }
-  virtual void do_klass(Klass* k)                         { ShouldNotReachHere(); }
-  virtual void do_class_loader_data(ClassLoaderData* cld) { ShouldNotReachHere(); }
-};
-
 // A Space describes a heap area. Class Space is an abstract
 // base class.
 //
@@ -220,11 +195,6 @@ class Space: public CHeapObj<mtGC> {
   // space, calling "cl.do_oop" on each.  Fields in objects allocated by
   // applications of the closure are not included in the iteration.
   virtual void oop_iterate(ExtendedOopClosure* cl);
-
-  // Same as above, restricted to the intersection of a memory region and
-  // the space.  Fields in objects allocated by applications of the closure
-  // are not included in the iteration.
-  virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl) = 0;
 
   // Iterate over all objects in the space, calling "cl.do_object" on
   // each.  Objects allocated by applications of the closure are not
@@ -866,7 +836,6 @@ class ContiguousSpace: public CompactibleSpace {
 
   // Iteration
   void oop_iterate(ExtendedOopClosure* cl);
-  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* blk);
   // For contiguous spaces this method will iterate safely over objects
   // in the space (i.e., between bottom and top) when at a safepoint.

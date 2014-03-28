@@ -543,10 +543,6 @@ class Generation: public CHeapObj<mtGC> {
   // generation, calling "cl.do_oop" on each.
   virtual void oop_iterate(ExtendedOopClosure* cl);
 
-  // Same as above, restricted to the intersection of a memory region and
-  // the generation.
-  virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
-
   // Iterate over all objects in the generation, calling "cl.do_object" on
   // each.
   virtual void object_iterate(ObjectClosure* cl);
