@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -1152,6 +1153,21 @@ void MethodData::init() {
   _highest_comp_level = 0;
   _highest_osr_comp_level = 0;
   _would_profile = true;
+
+#if INCLUDE_RTM_OPT
+  _rtm_state = NoRTM; // No RTM lock eliding by default
+  if (UseRTMLocking &&
+      !CompilerOracle::has_option_string(_method, "NoRTMLockEliding")) {
+    if (CompilerOracle::has_option_string(_method, "UseRTMLockEliding") || !UseRTMDeopt) {
+      // Generate RTM lock eliding code without abort ratio calculation code.
+      _rtm_state = UseRTM;
+    } else if (UseRTMDeopt) {
+      // Generate RTM lock eliding code and include abort ratio calculation
+      // code if UseRTMDeopt is on.
+      _rtm_state = ProfileRTM;
+    }
+  }
+#endif
 
   // Initialize flags and trap history.
   _nof_decompiles = 0;

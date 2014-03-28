@@ -308,9 +308,6 @@
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \
                                                                             \
-  product_pd(intx, SafepointPollOffset,                                     \
-          "Offset added to polling address (Intel only)")                   \
-                                                                            \
   develop(bool, ComputeExactFPURegisterUsage, true,                         \
           "Compute additional live set for fpu registers to simplify fpu stack merge (Intel only)") \
                                                                             \

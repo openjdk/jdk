@@ -2425,6 +2425,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
   }
 
+  if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
+      VM_Version::is_cpuinfo_segv_addr(pc)) {
+    // Verify that OS save/restore AVX registers.
+    return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
+  }
+
   if (t != NULL && t->is_Java_thread()) {
     JavaThread* thread = (JavaThread*) t;
     bool in_java = thread->thread_state() == _thread_in_Java;

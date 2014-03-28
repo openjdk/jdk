@@ -109,6 +109,8 @@
 
 #define MAX_PATH    (2 * K)
 
+#define MAX_SECS 100000000
+
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 
@@ -2434,7 +2436,6 @@ class Semaphore : public StackObj {
     sem_t _semaphore;
 };
 
-
 Semaphore::Semaphore() {
   sem_init(&_semaphore, 0, 0);
 }
@@ -2456,8 +2457,22 @@ bool Semaphore::trywait() {
 }
 
 bool Semaphore::timedwait(unsigned int sec, int nsec) {
+
   struct timespec ts;
-  unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
+  // Semaphore's are always associated with CLOCK_REALTIME
+  os::Linux::clock_gettime(CLOCK_REALTIME, &ts);
+  // see unpackTime for discussion on overflow checking
+  if (sec >= MAX_SECS) {
+    ts.tv_sec += MAX_SECS;
+    ts.tv_nsec = 0;
+  } else {
+    ts.tv_sec += sec;
+    ts.tv_nsec += nsec;
+    if (ts.tv_nsec >= NANOSECS_PER_SEC) {
+      ts.tv_nsec -= NANOSECS_PER_SEC;
+      ++ts.tv_sec; // note: this must be <= max_secs
+    }
+  }
 
   while (1) {
     int result = sem_timedwait(&_semaphore, &ts);
@@ -5661,7 +5676,6 @@ void os::PlatformEvent::unpark() {
  * is no need to track notifications.
  */
 
-#define MAX_SECS 100000000
 /*
  * This code is common to linux and solaris and will be moved to a
  * common place in dolphin.
