@@ -351,7 +351,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   Mutex* freelistLock() const { return &_freelistLock; }
 
   // Iteration support
-  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
   void oop_iterate(ExtendedOopClosure* cl);
 
   void object_iterate(ObjectClosure* blk);

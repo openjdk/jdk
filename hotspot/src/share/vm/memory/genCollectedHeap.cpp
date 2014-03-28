@@ -837,12 +837,6 @@ void GenCollectedHeap::oop_iterate(ExtendedOopClosure* cl) {
   }
 }
 
-void GenCollectedHeap::oop_iterate(MemRegion mr, ExtendedOopClosure* cl) {
-  for (int i = 0; i < _n_gens; i++) {
-    _gens[i]->oop_iterate(mr, cl);
-  }
-}
-
 void GenCollectedHeap::object_iterate(ObjectClosure* cl) {
   for (int i = 0; i < _n_gens; i++) {
     _gens[i]->object_iterate(cl);
