@@ -30,8 +30,6 @@
 #include "runtime/prefetch.hpp"
 #include "utilities/top.hpp"
 
-// The following classes are C++ `closures` for iterating over objects, roots and spaces
-
 class CodeBlob;
 class nmethod;
 class ReferenceProcessor;
@@ -39,22 +37,11 @@ class DataLayout;
 class KlassClosure;
 class ClassLoaderData;
 
-// Closure provides abortability.
+// The following classes are C++ `closures` for iterating over objects, roots and spaces
 
-class Closure : public StackObj {
- protected:
-  bool _abort;
-  void set_abort() { _abort = true; }
- public:
-  Closure() : _abort(false) {}
-  // A subtype can use this mechanism to indicate to some iterator mapping
-  // functions that the iteration should cease.
-  bool abort() { return _abort; }
-  void clear_abort() { _abort = false; }
-};
+class Closure : public StackObj { };
 
 // OopClosure is used for iterating through references to Java objects.
-
 class OopClosure : public Closure {
  public:
   virtual void do_oop(oop* o) = 0;

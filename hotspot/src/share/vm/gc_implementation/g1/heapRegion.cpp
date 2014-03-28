@@ -472,9 +472,6 @@ HeapRegion::object_iterate_mem_careful(MemRegion mr,
     } else if (!g1h->is_obj_dead(obj)) {
       cl->do_object(obj);
     }
-    if (cl->abort()) return cur;
-    // The check above must occur before the operation below, since an
-    // abort might invalidate the "size" operation.
     cur += obj->size();
   }
   return NULL;
