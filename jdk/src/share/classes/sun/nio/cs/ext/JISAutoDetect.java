@@ -117,6 +117,8 @@ public class JISAutoDetect
     }
 
     private static class Decoder extends CharsetDecoder {
+        private final static String osName = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> System.getProperty("os.name"));
 
         private final static String SJISName = getSJISName();
         private final static String EUCJPName = getEUCJPName();
@@ -239,8 +241,6 @@ public class JISAutoDetect
             return ((CharsetDecoder) detectedDecoder).charset();
         }
 
-        private static final String osName = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty("os.name"));
 
         /**
          * Returned Shift_JIS Charset name is OS dependent
