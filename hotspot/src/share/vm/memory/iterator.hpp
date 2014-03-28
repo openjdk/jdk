@@ -27,7 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
-#include "runtime/prefetch.hpp"
 #include "utilities/top.hpp"
 
 class CodeBlob;
@@ -83,11 +82,6 @@ class ExtendedOopClosure : public OopClosure {
   void do_klass_nv(Klass* k)        { ShouldNotReachHere(); }
 
   virtual void do_class_loader_data(ClassLoaderData* cld) { ShouldNotReachHere(); }
-
-  // Controls how prefetching is done for invocations of this closure.
-  Prefetch::style prefetch_style() { // Note that this is non-virtual.
-    return Prefetch::do_none;
-  }
 
   // True iff this closure may be safely applied more than once to an oop
   // location without an intervening "major reset" (like the end of a GC).
