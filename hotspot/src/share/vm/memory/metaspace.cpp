@@ -3343,37 +3343,22 @@ size_t Metaspace::capacity_bytes_slow(MetadataType mdtype) const {
 }
 
 void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
-  if (SafepointSynchronize::is_at_safepoint()) {
-    assert(Thread::current()->is_VM_thread(), "should be the VM thread");
-    // Don't take Heap_lock
-    MutexLockerEx ml(vsm()->lock(), Mutex::_no_safepoint_check_flag);
-    if (word_size < TreeChunk<Metablock, FreeList<Metablock> >::min_size()) {
-      // Dark matter.  Too small for dictionary.
-#ifdef ASSERT
-      Copy::fill_to_words((HeapWord*)ptr, word_size, 0xf5f5f5f5);
-#endif
-      return;
-    }
-    if (is_class && using_class_space()) {
-      class_vsm()->deallocate(ptr, word_size);
-    } else {
-      vsm()->deallocate(ptr, word_size);
-    }
-  } else {
-    MutexLockerEx ml(vsm()->lock(), Mutex::_no_safepoint_check_flag);
+  assert(!SafepointSynchronize::is_at_safepoint()
+         || Thread::current()->is_VM_thread(), "should be the VM thread");
 
-    if (word_size < TreeChunk<Metablock, FreeList<Metablock> >::min_size()) {
-      // Dark matter.  Too small for dictionary.
+  MutexLockerEx ml(vsm()->lock(), Mutex::_no_safepoint_check_flag);
+
+  if (word_size < TreeChunk<Metablock, FreeList<Metablock> >::min_size()) {
+    // Dark matter.  Too small for dictionary.
 #ifdef ASSERT
-      Copy::fill_to_words((HeapWord*)ptr, word_size, 0xf5f5f5f5);
+    Copy::fill_to_words((HeapWord*)ptr, word_size, 0xf5f5f5f5);
 #endif
-      return;
-    }
-    if (is_class && using_class_space()) {
-      class_vsm()->deallocate(ptr, word_size);
-    } else {
-      vsm()->deallocate(ptr, word_size);
-    }
+    return;
+  }
+  if (is_class && using_class_space()) {
+    class_vsm()->deallocate(ptr, word_size);
+  } else {
+    vsm()->deallocate(ptr, word_size);
   }
 }
 

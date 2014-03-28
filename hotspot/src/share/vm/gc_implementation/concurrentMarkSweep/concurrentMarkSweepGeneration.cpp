@@ -3164,16 +3164,6 @@ ConcurrentMarkSweepGeneration::younger_refs_iterate(OopsInGenClosure* cl) {
 }
 
 void
-ConcurrentMarkSweepGeneration::oop_iterate(MemRegion mr, ExtendedOopClosure* cl) {
-  if (freelistLock()->owned_by_self()) {
-    Generation::oop_iterate(mr, cl);
-  } else {
-    MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
-    Generation::oop_iterate(mr, cl);
-  }
-}
-
-void
 ConcurrentMarkSweepGeneration::oop_iterate(ExtendedOopClosure* cl) {
   if (freelistLock()->owned_by_self()) {
     Generation::oop_iterate(cl);
