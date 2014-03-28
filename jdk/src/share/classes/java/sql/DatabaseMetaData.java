@@ -1417,7 +1417,7 @@ public interface DatabaseMetaData extends Wrapper {
      * A possible value for the column
      * <code>COLUMN_TYPE</code>
      * in the <code>ResultSet</code>
-    * returned by the method <code>getProcedureColumns</code>.
+     * returned by the method <code>getProcedureColumns</code>.
      */
     int procedureColumnOut = 4;
     /**
@@ -2367,7 +2367,6 @@ public interface DatabaseMetaData extends Wrapper {
      * <P>If SQL distinct or structured types are supported, then information on the
      * individual types may be obtained from the getUDTs() method.
      *
-
      *
      * <P>Each type description has the following columns:
      *  <OL>
@@ -2377,7 +2376,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>LITERAL_PREFIX</B> String {@code =>} prefix used to quote a literal
      *      (may be <code>null</code>)
      *  <LI><B>LITERAL_SUFFIX</B> String {@code =>} suffix used to quote a literal
-     (may be <code>null</code>)
+     *  (may be <code>null</code>)
      *  <LI><B>CREATE_PARAMS</B> String {@code =>} parameters used in creating
      *      the type (may be <code>null</code>)
      *  <LI><B>NULLABLE</B> short {@code =>} can you use NULL for this type.
@@ -2821,7 +2820,7 @@ public interface DatabaseMetaData extends Wrapper {
 
     /**
      * Retrieves the connection that produced this metadata object.
-     * <P>
+     *
      * @return the connection that produced this metadata object
      * @exception SQLException if a database access error occurs
      * @since 1.2
@@ -2870,9 +2869,9 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @return <code>true</code> if auto-generated keys can be retrieved
      *         after a statement has executed; <code>false</code> otherwise
-     *<p>If <code>true</code> is returned, the JDBC driver must support the
+     * <p>If <code>true</code> is returned, the JDBC driver must support the
      * returning of auto-generated keys for at least SQL INSERT statements
-     *<p>
+     *
      * @exception SQLException if a database access error occurs
      * @since 1.4
      */
@@ -3138,7 +3137,7 @@ public interface DatabaseMetaData extends Wrapper {
      * whether the value returned by the method
      * <code>SQLException.getSQLState</code> is an
      * X/Open (now know as Open Group) SQL CLI SQLSTATE value.
-     * <P>
+     *
      * @since 1.4
      */
     int sqlStateXOpen = 1;
@@ -3148,7 +3147,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>DatabaseMetaData.getSQLStateType</code> which is used to indicate
      * whether the value returned by the method
      * <code>SQLException.getSQLState</code> is an SQLSTATE value.
-     * <P>
+     *
      * @since 1.6
      */
     int sqlStateSQL = 2;
@@ -3282,12 +3281,12 @@ public interface DatabaseMetaData extends Wrapper {
          * </ol>
          * <p>
          * The <code>ResultSet</code> is sorted by the NAME column
-         * <p>
+         *
          * @return      A <code>ResultSet</code> object; each row is a supported client info
          * property
-         * <p>
+         *
          *  @exception SQLException if a database access error occurs
-         * <p>
+         *
          * @since 1.6
          */
         ResultSet getClientInfoProperties()
