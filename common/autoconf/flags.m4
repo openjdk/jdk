@@ -119,6 +119,32 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
     # FIXME: likely bug, should be CCXXFLAGS_JDK? or one for C or CXX.
     CCXXFLAGS="$CCXXFLAGS -nologo"
   fi
+
+  if test "x$SYSROOT" != "x"; then
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+        # Solaris Studio does not have a concept of sysroot. Instead we must
+        # make sure the default include and lib dirs are appended to each 
+        # compile and link command line.
+        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
+        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+      SYSROOT_CFLAGS="--sysroot=\"$SYSROOT\""
+      SYSROOT_LDFLAGS="--sysroot=\"$SYSROOT\""
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\""
+      SYSROOT_LDFLAGS="-isysroot \"$SYSROOT\""
+    fi
+    # Propagate the sysroot args to hotspot
+    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
+  fi
+  AC_SUBST(SYSROOT_CFLAGS)
+  AC_SUBST(SYSROOT_LDFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
@@ -421,9 +447,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   LDFLAGS_JDK="${LDFLAGS_JDK} $with_extra_ldflags"
 
   # Hotspot needs these set in their legacy form
-  LEGACY_EXTRA_CFLAGS=$with_extra_cflags
-  LEGACY_EXTRA_CXXFLAGS=$with_extra_cxxflags
-  LEGACY_EXTRA_LDFLAGS=$with_extra_ldflags
+  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $with_extra_cflags"
+  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $with_extra_cxxflags"
+  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $with_extra_ldflags"
 
   AC_SUBST(LEGACY_EXTRA_CFLAGS)
   AC_SUBST(LEGACY_EXTRA_CXXFLAGS)
@@ -521,7 +547,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
       CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_LITTLE_ENDIAN"
     fi
   else
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN"
+    # Same goes for _BIG_ENDIAN. Do we really need to set *ENDIAN on Solaris if they
+    # are defined in the system?
+    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN="
+    else
+      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN"
+    fi
   fi
   
   # Setup target OS define. Use OS target name but in upper case.

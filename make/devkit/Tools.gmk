@@ -49,8 +49,8 @@ ARCH := $(word 1,$(subst -, ,$(TARGET)))
 # Define external dependencies
 
 # Latest that could be made to work.
-gcc_ver := gcc-4.7.3
-binutils_ver := binutils-2.22
+gcc_ver := gcc-4.8.2
+binutils_ver := binutils-2.24
 ccache_ver := ccache-3.1.9
 mpfr_ver := mpfr-3.0.1
 gmp_ver := gmp-4.3.2
@@ -64,6 +64,7 @@ GMP := http://ftp.gnu.org/pub/gnu/gmp/${gmp_ver}.tar.bz2
 MPC := http://www.multiprecision.org/mpc/download/${mpc_ver}.tar.gz
 
 # RPMs in OEL5.5
+LINUX_VERSION := OEL5.5
 RPM_LIST := \
     kernel-headers \
     glibc-2 glibc-headers glibc-devel \
@@ -121,7 +122,7 @@ RESULT := $(OUTPUT_ROOT)/result
 BUILDDIR := $(OUTPUT_ROOT)/$(HOST)/$(TARGET)
 PREFIX := $(RESULT)/$(HOST)
 TARGETDIR := $(PREFIX)/$(TARGET)
-SYSROOT := $(TARGETDIR)/sys-root
+SYSROOT := $(TARGETDIR)/sysroot
 DOWNLOAD := $(OUTPUT_ROOT)/download
 SRCDIR := $(OUTPUT_ROOT)/src
 
@@ -184,7 +185,7 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
 
 ##########################################################################################
 
-# Note: MUST create a <sys-root>/usr/lib even if not really needed.
+# Note: MUST create a <sysroot>/usr/lib even if not really needed.
 # gcc will use a path relative to it to resolve lib64. (x86_64).
 # we're creating multi-lib compiler with 32bit libc as well, so we should
 # have it anyway, but just to make sure...
@@ -459,15 +460,31 @@ $(TARGETDIR)/%.done : $(BUILDDIR)/%/Makefile
 
 ##########################################################################################
 
+$(PREFIX)/devkit.info: FRC
+	@echo 'Creating devkit.info in the root of the kit'
+	rm -f $@
+	touch $@
+	echo '# This file describes to configure how to interpret the contents of this' >> $@
+	echo '# devkit' >> $@
+	echo '' >> $@
+	echo 'DEVKIT_NAME="$(gcc_ver) - $(LINUX_VERSION)"' >> $@
+	echo 'DEVKIT_TOOLCHAIN_PATH="$$DEVKIT_ROOT/bin"' >> $@
+	echo 'DEVKIT_SYSROOT="$$DEVKIT_ROOT/$$host/sysroot"' >> $@
+
+##########################################################################################
+
 bfdlib : $(bfdlib)
 binutils : $(binutils)
 rpms : $(rpms)
 libs : $(libs)
 sysroot : rpms libs
 gcc : sysroot $(gcc) $(gccpatch)
-all : binutils gcc bfdlib
+all : binutils gcc bfdlib $(PREFIX)/devkit.info
 
 # this is only built for host. so separate.
 ccache : $(ccache)
+
+# Force target
+FRC:
 
 .PHONY : gcc all binutils bfdlib link_libs rpms libs sysroot
