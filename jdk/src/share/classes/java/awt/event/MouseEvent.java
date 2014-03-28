@@ -930,7 +930,7 @@ public class MouseEvent extends InputEvent {
      * and will cause the returning an unspecified string.
      * Zero parameter means that no modifiers were passed and will
      * cause the returning an empty string.
-     * <p>
+     *
      * @param modifiers A modifier mask describing the modifier keys and
      *                  mouse buttons that were down during the event
      * @return string   string text description of the combination of modifier

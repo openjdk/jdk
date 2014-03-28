@@ -53,7 +53,7 @@ import java.util.EventListener;
      * drag initiating gesture. To initiate the drag and drop operation,
      * if appropriate, {@link DragGestureEvent#startDrag startDrag()} method on
      * the {@code DragGestureEvent} has to be invoked.
-     * <P>
+     *
      * @see java.awt.dnd.DragGestureRecognizer
      * @see java.awt.dnd.DragGestureEvent
      * @param dge the <code>DragGestureEvent</code> describing

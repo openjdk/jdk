@@ -91,7 +91,7 @@ public interface DropTargetListener extends EventListener {
     /**
      * Called if the user has modified
      * the current drop gesture.
-     * <P>
+     *
      * @param dtde the <code>DropTargetDragEvent</code>
      */
 
@@ -144,7 +144,7 @@ public interface DropTargetListener extends EventListener {
      * <code>DropTargetDropEvent.isLocalTransfer()</code> returns
      * <code>true</code>. Otherwise, the behavior of the call is
      * implementation-dependent.
-     * <P>
+     *
      * @param dtde the <code>DropTargetDropEvent</code>
      */
 
