@@ -356,7 +356,7 @@ public class TestReducedParser extends AbstractTestPrinterParser {
             {"yyMMdd", "200703",    STRICT, 0, 6, 2020, 7, 3},
             {"ddMMyy", "230714",    LENIENT, 0, 6, 2014, 7, 23},
             {"ddMMyy", "230714",    STRICT, 0, 6, 2014, 7, 23},
-            {"ddMMyy", "25062001",  LENIENT, 0, 8, 2001, 20, 2506},
+            {"ddMMyy", "25062001",  LENIENT, 0, 8, 2001, 6, 25},
             {"ddMMyy", "25062001",  STRICT, 0, 6, 2020, 6, 25},
             {"ddMMy",  "27052002",  LENIENT, 0, 8, 2002, 5, 27},
             {"ddMMy",  "27052002",  STRICT, 0, 8, 2002, 5, 27},
