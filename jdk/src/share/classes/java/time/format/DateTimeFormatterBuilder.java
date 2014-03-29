@@ -2596,8 +2596,16 @@ public final class DateTimeFormatterBuilder {
             return value;
         }
 
-        boolean isFixedWidth() {
-            return subsequentWidth == -1;
+        /**
+         * For NumberPrinterParser, the width is fixed depending on the
+         * minWidth, maxWidth, signStyle and whether subsequent fields are fixed.
+         * @param context the context
+         * @return true if the field is fixed width
+         * @see DateTimeFormatterBuilder#appendValue(java.time.temporal.TemporalField, int)
+         */
+        boolean isFixedWidth(DateTimeParseContext context) {
+            return subsequentWidth == -1 ||
+                (subsequentWidth > 0 && minWidth == maxWidth && signStyle == SignStyle.NOT_NEGATIVE);
         }
 
         @Override
@@ -2626,12 +2634,12 @@ public final class DateTimeFormatterBuilder {
                     return ~position;
                 }
             }
-            int effMinWidth = (context.isStrict() || isFixedWidth() ? minWidth : 1);
+            int effMinWidth = (context.isStrict() || isFixedWidth(context) ? minWidth : 1);
             int minEndPos = position + effMinWidth;
             if (minEndPos > length) {
                 return ~position;
             }
-            int effMaxWidth = (context.isStrict() || isFixedWidth() ? maxWidth : 9) + Math.max(subsequentWidth, 0);
+            int effMaxWidth = (context.isStrict() || isFixedWidth(context) ? maxWidth : 9) + Math.max(subsequentWidth, 0);
             long total = 0;
             BigInteger totalBig = null;
             int pos = position;
@@ -2864,6 +2872,21 @@ public final class DateTimeFormatterBuilder {
         ReducedPrinterParser withSubsequentWidth(int subsequentWidth) {
             return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate,
                     this.subsequentWidth + subsequentWidth);
+        }
+
+        /**
+         * For a ReducedPrinterParser, fixed width is false if the mode is strict,
+         * otherwise it is set as for NumberPrinterParser.
+         * @param context the context
+         * @return if the field is fixed width
+         * @see DateTimeFormatterBuilder#appendValueReduced(java.time.temporal.TemporalField, int, int, int)
+         */
+        @Override
+        boolean isFixedWidth(DateTimeParseContext context) {
+           if (context.isStrict() == false) {
+               return false;
+           }
+           return super.isFixedWidth(context);
         }
 
         @Override
