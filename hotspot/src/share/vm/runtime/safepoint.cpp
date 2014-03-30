@@ -535,7 +535,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   // rotate log files?
   if (UseGCLogFileRotation) {
-    gclog_or_tty->rotate_log();
+    gclog_or_tty->rotate_log(false);
   }
 
   if (MemTracker::is_on()) {

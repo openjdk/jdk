@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1020,19 +1020,12 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     }
 
     if (owning_thread != NULL) {  // monitor is owned
-      if ((address)owning_thread == owner) {
-        // the owner field is the JavaThread *
-        assert(mon != NULL,
-          "must have heavyweight monitor with JavaThread * owner");
-        ret.entry_count = mon->recursions() + 1;
-      } else {
-        // The owner field is the Lock word on the JavaThread's stack
-        // so the recursions field is not valid. We have to count the
-        // number of recursive monitor entries the hard way. We pass
-        // a handle to survive any GCs along the way.
-        ResourceMark rm;
-        ret.entry_count = count_locked_objects(owning_thread, hobj);
-      }
+      // The recursions field of a monitor does not reflect recursions
+      // as lightweight locks before inflating the monitor are not included.
+      // We have to count the number of recursive monitor entries the hard way.
+      // We pass a handle to survive any GCs along the way.
+      ResourceMark rm;
+      ret.entry_count = count_locked_objects(owning_thread, hobj);
     }
     // implied else: entry_count == 0
   }
