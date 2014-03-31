@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,15 @@ public class JAXMStreamSource extends StreamSource {
         } else if (is instanceof ByteInputStream) {
             this.in = (ByteInputStream) is;
         } else {
-            ByteOutputStream bout = new ByteOutputStream();
-            bout.write(is);
-            this.in = bout.newInputStream();
+            ByteOutputStream bout = null;
+            try {
+                bout = new ByteOutputStream();
+                bout.write(is);
+                this.in = bout.newInputStream();
+            } finally {
+                if (bout != null)
+                    bout.close();
+            }
         }
     }
 
