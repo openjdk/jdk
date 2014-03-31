@@ -374,7 +374,7 @@ void GenCollectedHeap::do_collection(bool  full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, collector_policy());
 
-  const size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
+  const size_t metadata_prev_used = MetaspaceAux::used_bytes();
 
   print_heap_before_gc();
 
