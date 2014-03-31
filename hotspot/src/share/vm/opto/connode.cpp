@@ -399,7 +399,7 @@ Node *ConstraintCastNode::Identity( PhaseTransform *phase ) {
 // Take 'join' of input and cast-up type
 const Type *ConstraintCastNode::Value( PhaseTransform *phase ) const {
   if( in(0) && phase->type(in(0)) == Type::TOP ) return Type::TOP;
-const Type* ft = phase->type(in(1))->filter_speculative(_type);
+  const Type* ft = phase->type(in(1))->filter_speculative(_type);
 
 #ifdef ASSERT
   // Previous versions of this function had some special case logic,
@@ -493,7 +493,17 @@ const Type *CheckCastPPNode::Value( PhaseTransform *phase ) const {
       result =  my_type->cast_to_ptr_type( my_type->join_ptr(in_ptr) );
     }
   }
-  return result;
+
+  // This is the code from TypePtr::xmeet() that prevents us from
+  // having 2 ways to represent the same type. We have to replicate it
+  // here because we don't go through meet/join.
+  if (result->remove_speculative() == result->speculative()) {
+    result = result->remove_speculative();
+  }
+
+  // Same as above: because we don't go through meet/join, remove the
+  // speculative type if we know we won't use it.
+  return result->cleanup_speculative();
 
   // JOIN NOT DONE HERE BECAUSE OF INTERFACE ISSUES.
   // FIX THIS (DO THE JOIN) WHEN UNION TYPES APPEAR!

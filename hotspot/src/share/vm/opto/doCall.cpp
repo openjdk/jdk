@@ -249,8 +249,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           }
           CallGenerator* miss_cg;
           Deoptimization::DeoptReason reason = morphism == 2 ?
-                                    Deoptimization::Reason_bimorphic :
-                                    (speculative_receiver_type == NULL ? Deoptimization::Reason_class_check : Deoptimization::Reason_speculate_class_check);
+            Deoptimization::Reason_bimorphic : Deoptimization::reason_class_check(speculative_receiver_type != NULL);
           if ((morphism == 1 || (morphism == 2 && next_hit_cg != NULL)) &&
               !too_many_traps(jvms->method(), jvms->bci(), reason)
              ) {
@@ -631,13 +630,7 @@ void Parse::do_call() {
     }
     BasicType ct = ctype->basic_type();
     if (ct == T_OBJECT || ct == T_ARRAY) {
-      ciKlass* better_type = method()->return_profiled_type(bci());
-      if (UseTypeSpeculation && better_type != NULL) {
-        // If profiling reports a single type for the return value,
-        // feed it to the type system so it can propagate it as a
-        // speculative type
-        record_profile_for_speculation(stack(sp()-1), better_type);
-      }
+      record_profiled_return_for_speculation();
     }
   }
 

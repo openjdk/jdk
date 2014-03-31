@@ -4658,7 +4658,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
     ciKlass* src_k = NULL;
     if (!has_src) {
-      src_k = src_type->speculative_type();
+      src_k = src_type->speculative_type_not_null();
       if (src_k != NULL && src_k->is_array_klass()) {
         could_have_src = true;
       }
@@ -4666,7 +4666,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
     ciKlass* dest_k = NULL;
     if (!has_dest) {
-      dest_k = dest_type->speculative_type();
+      dest_k = dest_type->speculative_type_not_null();
       if (dest_k != NULL && dest_k->is_array_klass()) {
         could_have_dest = true;
       }
@@ -4738,13 +4738,13 @@ bool LibraryCallKit::inline_arraycopy() {
     ciKlass* src_k = top_src->klass();
     ciKlass* dest_k = top_dest->klass();
     if (!src_spec) {
-      src_k = src_type->speculative_type();
+      src_k = src_type->speculative_type_not_null();
       if (src_k != NULL && src_k->is_array_klass()) {
           could_have_src = true;
       }
     }
     if (!dest_spec) {
-      dest_k = dest_type->speculative_type();
+      dest_k = dest_type->speculative_type_not_null();
       if (dest_k != NULL && dest_k->is_array_klass()) {
         could_have_dest = true;
       }

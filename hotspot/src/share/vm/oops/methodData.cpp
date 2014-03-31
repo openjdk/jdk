@@ -801,6 +801,8 @@ bool MethodData::is_speculative_trap_bytecode(Bytecodes::Code code) {
   case Bytecodes::_invokeinterface:
   case Bytecodes::_if_acmpeq:
   case Bytecodes::_if_acmpne:
+  case Bytecodes::_ifnull:
+  case Bytecodes::_ifnonnull:
   case Bytecodes::_invokestatic:
 #ifdef COMPILER2
     return UseTypeSpeculation;
