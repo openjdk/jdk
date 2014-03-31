@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,28 +162,27 @@ open_debug_file (const char *pathname, unsigned int crc)
 static struct elf_section *find_section_by_name(char *name,
                                                 int fd,
                                                 ELF_EHDR *ehdr,
-                                                ELF_SHDR *shbuf,
                                                 struct elf_section *scn_cache)
 {
-  ELF_SHDR* cursct = NULL;
   char *strtab;
   int cnt;
+  int strtab_size;
 
+  // Section cache have to already contain data for e_shstrndx section.
+  // If it's not true - elf file is broken, so just bail out
   if (scn_cache[ehdr->e_shstrndx].c_data == NULL) {
-    if ((scn_cache[ehdr->e_shstrndx].c_data
-         = read_section_data(fd, ehdr, cursct)) == NULL) {
-      return NULL;
-    }
+    return NULL;
   }
 
   strtab = scn_cache[ehdr->e_shstrndx].c_data;
+  strtab_size = scn_cache[ehdr->e_shstrndx].c_shdr->sh_size;
 
-  for (cursct = shbuf, cnt = 0;
-       cnt < ehdr->e_shnum;
-       cnt++, cursct++) {
-    if (strcmp(cursct->sh_name + strtab, name) == 0) {
-      scn_cache[cnt].c_data = read_section_data(fd, ehdr, cursct);
-      return &scn_cache[cnt];
+  for (cnt = 0; cnt < ehdr->e_shnum; ++cnt) {
+    if (scn_cache[cnt].c_shdr->sh_name < strtab_size) {
+      if (strcmp(scn_cache[cnt].c_shdr->sh_name + strtab, name) == 0) {
+        scn_cache[cnt].c_data = read_section_data(fd, ehdr, scn_cache[cnt].c_shdr);
+        return &scn_cache[cnt];
+      }
     }
   }
 
@@ -195,12 +194,11 @@ static struct elf_section *find_section_by_name(char *name,
 static int open_file_from_debug_link(const char *name,
                                      int fd,
                                      ELF_EHDR *ehdr,
-                                     ELF_SHDR *shbuf,
                                      struct elf_section *scn_cache)
 {
   int debug_fd;
   struct elf_section *debug_link = find_section_by_name(".gnu_debuglink", fd, ehdr,
-                                                        shbuf, scn_cache);
+                                                         scn_cache);
   if (debug_link == NULL)
     return -1;
   char *debug_filename = debug_link->c_data;
@@ -221,7 +219,6 @@ static int open_file_from_debug_link(const char *name,
 
   /* Look in the same directory as the object.  */
   strcpy(last_slash+1, debug_filename);
-
   debug_fd = open_debug_file(debug_pathname, crc);
   if (debug_fd >= 0) {
     free(debug_pathname);
@@ -261,10 +258,9 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
 static struct symtab *build_symtab_from_debug_link(const char *name,
                                      int fd,
                                      ELF_EHDR *ehdr,
-                                     ELF_SHDR *shbuf,
                                      struct elf_section *scn_cache)
 {
-  fd = open_file_from_debug_link(name, fd, ehdr, shbuf, scn_cache);
+  fd = open_file_from_debug_link(name, fd, ehdr, scn_cache);
 
   if (fd >= 0) {
     struct symtab *symtab = build_symtab_internal(fd, NULL, /* try_debuginfo */ false);
@@ -463,7 +459,7 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
 
     // Then, if that doesn't work, the debug link
     if (symtab == NULL) {
-      symtab = build_symtab_from_debug_link(filename, fd, &ehdr, shbuf,
+      symtab = build_symtab_from_debug_link(filename, fd, &ehdr,
                                             scn_cache);
     }
 
