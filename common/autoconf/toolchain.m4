@@ -189,6 +189,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # it for DLL resolution in runtime.
   if test "x$OPENJDK_BUILD_OS" = "xwindows" && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
     TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
+    # Reset path to VS_PATH. It will include everything that was on PATH at the time we
+    # ran TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV.
+    PATH="$VS_PATH"
+    # The microsoft toolchain also requires INCLUDE and LIB to be set.
+    export INCLUDE="$VS_INCLUDE"
+    export LIB="$VS_LIB"
   fi
 
   # autoconf magic only relies on PATH, so update it if tools dir is specified

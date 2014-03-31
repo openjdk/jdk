@@ -774,9 +774,9 @@ ac_ct_PROPER_COMPILER_CC
 PROPER_COMPILER_CC
 TOOLCHAIN_PATH_CC
 POTENTIAL_CC
-VS_PATH
 VS_LIB
 VS_INCLUDE
+VS_PATH
 CYGWIN_LINK
 EXE_SUFFIX
 OBJ_SUFFIX
@@ -4243,7 +4243,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1395839362
+DATE_WHEN_GENERATED=1396297437
 
 ###############################################################################
 #
@@ -27353,47 +27353,62 @@ $as_echo "$as_me: Rewriting VS_ENV_CMD to \"$new_complete\"" >&6;}
     # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
     { $as_echo "$as_me:${as_lineno-$LINENO}: Trying to extract Visual Studio environment variables" >&5
 $as_echo "$as_me: Trying to extract Visual Studio environment variables" >&6;}
-    cd $OUTPUT_ROOT
-    # FIXME: The code betweeen ---- was inlined from a separate script and is not properly adapted
-    # to autoconf standards.
 
-    #----
+    # We need to create a couple of temporary files.
+    VS_ENV_TMP_DIR="$OUTPUT_ROOT/vs-env"
+    $MKDIR -p $VS_ENV_TMP_DIR
 
-    # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment)
-    # but calculate the difference in Cygwin environment before/after running it and then
-    # apply the diff.
+    # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
+    # Instead create a shell script which will set the relevant variables when run.
+    WINPATH_VS_ENV_CMD="$VS_ENV_CMD"
 
-    if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then
-      _vs10varsall=`cygpath -a -m -s "$VS_ENV_CMD"`
-      _dosvs10varsall=`cygpath -a -w -s $_vs10varsall`
-      _dosbash=`cygpath -a -w -s \`which bash\`.*`
-    else
-      _dosvs10varsall=`cmd //c echo $VS_ENV_CMD`
-      _dosbash=`cmd //c echo \`which bash\``
-    fi
+  unix_path="$WINPATH_VS_ENV_CMD"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    windows_path=`$CYGPATH -m "$unix_path"`
+    WINPATH_VS_ENV_CMD="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    windows_path=`cmd //c echo $unix_path`
+    WINPATH_VS_ENV_CMD="$windows_path"
+  fi
 
-    # generate the set of exported vars before/after the vs10 setup
-    $ECHO "@echo off"                                           >  localdevenvtmp.bat
-    $ECHO "$_dosbash -c \"export -p\" > localdevenvtmp.export0" >> localdevenvtmp.bat
-    $ECHO "call $_dosvs10varsall $VS_ENV_ARGS"                  >> localdevenvtmp.bat
-    $ECHO "$_dosbash -c \"export -p\" > localdevenvtmp.export1" >> localdevenvtmp.bat
+    WINPATH_BASH="$BASH"
+
+  unix_path="$WINPATH_BASH"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    windows_path=`$CYGPATH -m "$unix_path"`
+    WINPATH_BASH="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    windows_path=`cmd //c echo $unix_path`
+    WINPATH_BASH="$windows_path"
+  fi
+
+
+    # Generate a DOS batch file which runs $VS_ENV_CMD, and then creates a shell
+    # script (executable by bash) that will setup the important variables.
+    EXTRACT_VC_ENV_BAT_FILE="$VS_ENV_TMP_DIR/extract-vs-env.bat"
+    $ECHO "@echo off" >  $EXTRACT_VC_ENV_BAT_FILE
+    # This will end up something like:
+    # call C:/progra~2/micros~2.0/vc/bin/amd64/vcvars64.bat
+    $ECHO "call $WINPATH_VS_ENV_CMD $VS_ENV_ARGS" >> $EXTRACT_VC_ENV_BAT_FILE
+    # These will end up something like:
+    # C:/CygWin/bin/bash -c 'echo VS_PATH=\"$PATH\" > localdevenv.sh
+    # The trailing space for everyone except PATH is no typo, but is needed due
+    # to trailing \ in the Windows paths. These will be stripped later.
+    $ECHO "$WINPATH_BASH -c 'echo VS_PATH="'\"$PATH\" > set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VCINSTALLDIR="'\"$VCINSTALLDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo WindowsSdkDir="'\"$WindowsSdkDir \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo WINDOWSSDKDIR="'\"$WINDOWSSDKDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
 
     # Now execute the newly created bat file.
-    # The | cat is to stop SetEnv.Cmd to mess with system colors on msys
-    cmd /c localdevenvtmp.bat | cat
-
-    # apply the diff (less some non-vs10 vars named by "!")
-    $SORT localdevenvtmp.export0 | $GREP -v "!" > localdevenvtmp.export0.sort
-    $SORT localdevenvtmp.export1 | $GREP -v "!" > localdevenvtmp.export1.sort
-    $COMM -1 -3 localdevenvtmp.export0.sort localdevenvtmp.export1.sort > localdevenv.sh
-
-    # cleanup
-    $RM localdevenvtmp*
-    #----
+    # The | cat is to stop SetEnv.Cmd to mess with system colors on msys.
+    # Change directory so we don't need to mess with Windows paths in redirects.
+    cd $VS_ENV_TMP_DIR
+    cmd /c extract-vs-env.bat | $CAT
     cd $CURDIR
-    if test ! -s $OUTPUT_ROOT/localdevenv.sh; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+
+    if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: Could not succesfully extract the envionment variables needed for the VS setup." >&5
 $as_echo "$as_me: Could not succesfully extract the envionment variables needed for the VS setup." >&6;}
       { $as_echo "$as_me:${as_lineno-$LINENO}: Try setting --with-tools-dir to the VC/bin directory within the VS installation" >&5
@@ -27407,31 +27422,34 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     # the configure script to find and run the compiler in the proper way.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Setting extracted environment variables" >&5
 $as_echo "$as_me: Setting extracted environment variables" >&6;}
-    . $OUTPUT_ROOT/localdevenv.sh
+    . $VS_ENV_TMP_DIR/set-vs-env.sh
+    # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
+    # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR.
   else
     # We did not find a vsvars bat file, let's hope we are run from a VS command prompt.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Cannot locate a valid Visual Studio installation, checking current environment" >&5
 $as_echo "$as_me: Cannot locate a valid Visual Studio installation, checking current environment" >&6;}
   fi
 
-  # At this point, we should have corrent variables in the environment, or we can't continue.
+  # At this point, we should have correct variables in the environment, or we can't continue.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Visual Studio variables" >&5
 $as_echo_n "checking for Visual Studio variables... " >&6; }
 
   if test "x$VCINSTALLDIR" != x || test "x$WindowsSDKDir" != x || test "x$WINDOWSSDKDIR" != x; then
-    if test "x$INCLUDE" = x || test "x$LIB" = x; then
+    if test "x$VS_INCLUDE" = x || test "x$VS_LIB" = x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: present but broken" >&5
 $as_echo "present but broken" >&6; }
       as_fn_error $? "Your VC command prompt seems broken, INCLUDE and/or LIB is missing." "$LINENO" 5
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      # Remove any trailing \ from INCLUDE and LIB to avoid trouble in spec.gmk.
-      VS_INCLUDE=`$ECHO "$INCLUDE" | $SED 's/\\\\$//'`
-      VS_LIB=`$ECHO "$LIB" | $SED 's/\\\\$//'`
-      # Remove any paths containing # (typically F#) as that messes up make
-      PATH=`$ECHO "$PATH" | $SED 's/[^:#]*#[^:]*://g'`
-      VS_PATH="$PATH"
+      # Remove any trailing "\" and " " from the variables.
+      VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED 's/\\\\* *$//'`
+      VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\* *$//'`
+      VCINSTALLDIR=`$ECHO "$VCINSTALLDIR" | $SED 's/\\\\* *$//'`
+      WindowsSDKDir=`$ECHO "$WindowsSDKDir" | $SED 's/\\\\* *$//'`
+      WINDOWSSDKDIR=`$ECHO "$WINDOWSSDKDIR" | $SED 's/\\\\* *$//'`
+
 
 
 
@@ -27456,6 +27474,12 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
+    # Reset path to VS_PATH. It will include everything that was on PATH at the time we
+    # ran TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV.
+    PATH="$VS_PATH"
+    # The microsoft toolchain also requires INCLUDE and LIB to be set.
+    export INCLUDE="$VS_INCLUDE"
+    export LIB="$VS_LIB"
   fi
 
   # autoconf magic only relies on PATH, so update it if tools dir is specified
