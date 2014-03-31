@@ -1288,7 +1288,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   print_heap_before_gc();
   trace_heap_before_gc(gc_tracer);
 
-  size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
+  size_t metadata_prev_used = MetaspaceAux::used_bytes();
 
   verify_region_sets_optional();
 
