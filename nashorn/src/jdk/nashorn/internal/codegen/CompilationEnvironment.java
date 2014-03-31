@@ -42,6 +42,7 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.Optimistic;
 import jdk.nashorn.internal.objects.NativeArray;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
@@ -435,10 +436,10 @@ public final class CompilationEnvironment {
 
         // Safely evaluate the property, and return the narrowest type for the actual value (e.g. Type.INT for a boxed
         // integer).
-        return Type.typeFor(ObjectClassGenerator.unboxedFieldType(property.getObjectValue(owner, owner)));
+        return Type.typeFor(JSType.unboxedFieldType(property.getObjectValue(owner, owner)));
     }
 
-    private Object evaluateSafely(Expression expr) {
+    private Object evaluateSafely(final Expression expr) {
         if(expr instanceof IdentNode) {
             return runtimeScope == null ? null : evaluatePropertySafely(runtimeScope, ((IdentNode)expr).getName());
         } else if(expr instanceof AccessNode) {

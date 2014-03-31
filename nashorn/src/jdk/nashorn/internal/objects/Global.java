@@ -47,6 +47,7 @@ import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.GlobalConstants;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
@@ -425,6 +426,7 @@ public final class Global extends ScriptObject implements Scope {
         super(checkAndGetMap(context));
         this.context = context;
         this.setIsScope();
+        GlobalConstants.instance().invalidateAll();
     }
 
     /**
@@ -890,7 +892,7 @@ public final class Global extends ScriptObject implements Scope {
      * @param self  self reference
      * @param code  exit code
      *
-     * @return undefined (will never be reacheD)
+     * @return undefined (will never be reached)
      */
     public static Object exit(final Object self, final Object code) {
         System.exit(JSType.toInt32(code));
@@ -1867,6 +1869,8 @@ public final class Global extends ScriptObject implements Scope {
                 res.setInitialProto(getObjectPrototype());
             }
 
+            res.setIsBuiltin();
+
             return res;
 
         } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
@@ -1971,6 +1975,11 @@ public final class Global extends ScriptObject implements Scope {
 
     void setLastRegExpResult(final RegExpResult regExpResult) {
         this.lastRegExpResult = regExpResult;
+    }
+
+    @Override
+    protected boolean isGlobal() {
+        return true;
     }
 
 }

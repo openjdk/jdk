@@ -201,7 +201,7 @@ abstract class ArrayBufferView extends ScriptObject {
     }
 
     protected static Object setImpl(final Object self, final Object array, final Object offset0) {
-        final ArrayBufferView dest = ((ArrayBufferView)self);
+        final ArrayBufferView dest = (ArrayBufferView)self;
         final int length;
         if (array instanceof ArrayBufferView) {
             // void set(TypedArray array, optional unsigned long offset)
@@ -245,7 +245,7 @@ abstract class ArrayBufferView extends ScriptObject {
     }
 
     protected static Object subarrayImpl(final Object self, final Object begin0, final Object end0) {
-        final ArrayBufferView arrayView       = ((ArrayBufferView)self);
+        final ArrayBufferView arrayView       = (ArrayBufferView)self;
         final int             byteOffset      = arrayView.byteOffset;
         final int             bytesPerElement = arrayView.bytesPerElement();
         final int             elementLength   = arrayView.elementLength();

@@ -134,8 +134,8 @@ public final class NativeArray extends ScriptObject {
 
     NativeArray(final ArrayData arrayData, final Global global) {
         super(global.getArrayPrototype(), $nasgenmap$);
-        this.setArray(arrayData);
-        this.setIsArray();
+        setArray(arrayData);
+        setIsArray();
     }
 
     @Override
@@ -307,7 +307,7 @@ public final class NativeArray extends ScriptObject {
             }
 
             // Step 3h and 3i
-            final boolean newWritable = (!newLenDesc.has(WRITABLE) || newLenDesc.isWritable());
+            final boolean newWritable = !newLenDesc.has(WRITABLE) || newLenDesc.isWritable();
             if (!newWritable) {
                 newLenDesc.setWritable(true);
             }
@@ -405,7 +405,7 @@ public final class NativeArray extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object isArray(final Object self, final Object arg) {
-        return isArray(arg) || (arg instanceof JSObject && ((JSObject)arg).isArray());
+        return isArray(arg) || arg instanceof JSObject && ((JSObject)arg).isArray();
     }
 
     /**
@@ -716,7 +716,7 @@ public final class NativeArray extends ScriptObject {
     private static void concatToList(final ArrayList<Object> list, final Object obj) {
         final boolean isScriptArray = isArray(obj);
         final boolean isScriptObject = isScriptArray || obj instanceof ScriptObject;
-        if (isScriptArray || obj instanceof Iterable || (obj != null && obj.getClass().isArray())) {
+        if (isScriptArray || obj instanceof Iterable || obj != null && obj.getClass().isArray()) {
             final Iterator<Object> iter = arrayLikeIterator(obj, true);
             if (iter.hasNext()) {
                 for (int i = 0; iter.hasNext(); ++i) {
@@ -979,7 +979,7 @@ public final class NativeArray extends ScriptObject {
             } else {
                 boolean hasPrevious = true;
                 for (long k = 1; k < len; k++) {
-                    boolean hasCurrent = sobj.has(k);
+                    final boolean hasCurrent = sobj.has(k);
                     if (hasCurrent) {
                         sobj.set(k - 1, sobj.get(k), true);
                     } else if (hasPrevious) {
@@ -1016,7 +1016,7 @@ public final class NativeArray extends ScriptObject {
         final ScriptObject sobj                = (ScriptObject)obj;
         final long         len                 = JSType.toUint32(sobj.getLength());
         final long         relativeStart       = JSType.toLong(start);
-        final long         relativeEnd         = (end == ScriptRuntime.UNDEFINED) ? len : JSType.toLong(end);
+        final long         relativeEnd         = end == ScriptRuntime.UNDEFINED ? len : JSType.toLong(end);
 
         long k = relativeStart < 0 ? Math.max(len + relativeStart, 0) : Math.min(relativeStart, len);
         final long finale = relativeEnd < 0 ? Math.max(len + relativeEnd, 0) : Math.min(relativeEnd, len);
@@ -1146,8 +1146,8 @@ public final class NativeArray extends ScriptObject {
             return ScriptRuntime.UNDEFINED;
         }
 
-        final Object start = (args.length > 0) ? args[0] : ScriptRuntime.UNDEFINED;
-        final Object deleteCount = (args.length > 1) ? args[1] : ScriptRuntime.UNDEFINED;
+        final Object start = args.length > 0 ? args[0] : ScriptRuntime.UNDEFINED;
+        final Object deleteCount = args.length > 1 ? args[1] : ScriptRuntime.UNDEFINED;
 
         Object[] items;
 
@@ -1176,7 +1176,7 @@ public final class NativeArray extends ScriptObject {
                 for (int i = 0; i < items.length; i++, k++) {
                     sobj.defineOwnProperty(k, items[i]);
                 }
-            } catch (UnsupportedOperationException uoe) {
+            } catch (final UnsupportedOperationException uoe) {
                 returnValue = slowSplice(sobj, actualStart, actualDeleteCount, items, len);
             }
         } else {
@@ -1199,7 +1199,7 @@ public final class NativeArray extends ScriptObject {
         }
 
         if (items.length < deleteCount) {
-            for (long k = start; k < (len - deleteCount); k++) {
+            for (long k = start; k < len - deleteCount; k++) {
                 final long from = k + deleteCount;
                 final long to   = k + items.length;
 
@@ -1210,7 +1210,7 @@ public final class NativeArray extends ScriptObject {
                 }
             }
 
-            for (long k = len; k > (len - deleteCount + items.length); k--) {
+            for (long k = len; k > len - deleteCount + items.length; k--) {
                 sobj.delete(k - 1, true);
             }
         } else if (items.length > deleteCount) {
@@ -1313,7 +1313,7 @@ public final class NativeArray extends ScriptObject {
             }
 
 
-            for (long k = Math.max(0, (n < 0) ? (len - Math.abs(n)) : n); k < len; k++) {
+            for (long k = Math.max(0, n < 0 ? len - Math.abs(n) : n); k < len; k++) {
                 if (sobj.has(k)) {
                     if (ScriptRuntime.EQ_STRICT(sobj.get(k), searchElement)) {
                         return k;
@@ -1344,10 +1344,10 @@ public final class NativeArray extends ScriptObject {
                 return -1;
             }
 
-            final Object searchElement = (args.length > 0) ? args[0] : ScriptRuntime.UNDEFINED;
-            final long   n             = (args.length > 1) ? JSType.toLong(args[1]) : (len - 1);
+            final Object searchElement = args.length > 0 ? args[0] : ScriptRuntime.UNDEFINED;
+            final long   n             = args.length > 1 ? JSType.toLong(args[1]) : len - 1;
 
-            for (long k = (n < 0) ? (len - Math.abs(n)) : Math.min(n, len - 1); k >= 0; k--) {
+            for (long k = n < 0 ? len - Math.abs(n) : Math.min(n, len - 1); k >= 0; k--) {
                 if (sobj.has(k)) {
                     if (ScriptRuntime.EQ_STRICT(sobj.get(k), searchElement)) {
                         return k;
@@ -1380,7 +1380,7 @@ public final class NativeArray extends ScriptObject {
 
             @Override
             protected boolean forEach(final Object val, final long i) throws Throwable {
-                return (result = (boolean)everyInvoker.invokeExact(callbackfn, thisArg, val, i, self));
+                return result = (boolean)everyInvoker.invokeExact(callbackfn, thisArg, val, i, self);
             }
         }.apply();
     }

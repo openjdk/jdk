@@ -26,33 +26,35 @@
  *
  * @test
  * @run
+ * @fork
  */
 
 // var with getter side effect
-Object.defineProperty(this, "a", { get: function() {print("get a"); return 1; }});
+Object.defineProperty(this, "a1", { get: function() {print("get a"); return 1; }});
 
 // var with both getter and conversion side effect
-Object.defineProperty(this, "b", { get: function() {print("get b"); return {valueOf: function() { print("conv b"); return 10; }}; }});
+Object.defineProperty(this, "b1", { get: function() {print("get b"); return {valueOf: function() { print("conv b"); return 10; }}; }});
 
 (function() {
     // var with toPrimitive conversion side effect
-    var c = {valueOf: function() { print("conv c"); return 100; }};
-
-    print(b + (c + a));
-    print(b + (c + b));
-    print(b + (a + b));
-    print(b + (b + c));
-    print(b + (b + c));
-    print(b + (c + (a - b)));
-    print(b + (c + (c - b)));
-    print(b + (c + (b - c)));
-    print(b + (b + (a ? 2 : 3)));
-    print(b + (b + (b ? 2 : 3)));
-    print(b + (b + (c ? 2 : 3)));
-    print(b + ((-c) + (-a)));
-    print(b + ((-c) + (-b)));
-    print(b + ((-c) + (-c)));
-    try { print(b + new a); } catch (e) {}
-    try { print(b + new b); } catch (e) {}
-    try { print(b + new c); } catch (e) {}
+    var c1 = {valueOf: function() { print("conv c"); return 100; }};
+    print("start");
+    print(b1 + (c1 + a1));
+    print("done with first");
+    print(b1 + (c1 + b1));
+    print(b1 + (a1 + b1));
+    print(b1 + (b1 + c1));
+    print(b1 + (b1 + c1));
+    print(b1 + (c1 + (a1 - b1)));
+    print(b1 + (c1 + (c1 - b1)));
+    print(b1 + (c1 + (b1 - c1)));
+    print(b1 + (b1 + (a1 ? 2 : 3)));
+    print(b1 + (b1 + (b1 ? 2 : 3)));
+    print(b1 + (b1 + (c1 ? 2 : 3)));
+    print(b1 + ((-c1) + (-a1)));
+    print(b1 + ((-c1) + (-b1)));
+    print(b1 + ((-c1) + (-c1)));
+    try { print(b1 + new a1); } catch (e) {}
+    try { print(b1 + new b1); } catch (e) {}
+    try { print(b1 + new c1); } catch (e) {}
 })();

@@ -35,7 +35,7 @@ var WeakReferenceArray = Java.type("java.lang.ref.WeakReference[]");
 var refArray = new WeakReferenceArray(N);
 
 for (var i = 0; i < N; i ++) {
-    var object = new java.lang.Object();
+    var object = new java.awt.Color(0,0,0);//lang.Object();
     array[i] = object;
     refArray[i] = new java.lang.ref.WeakReference(object);
 }
@@ -48,11 +48,11 @@ for (var i = 0; i < N; i ++) {
 
 java.lang.System.gc();
 java.lang.System.gc();
+java.lang.System.gc();
 
 for (var i = 0; i < N; i ++) {
     if (refArray[i].get() != null) {
-        print("Reference found at " + i);
-        exit(0);
+        print("Reference found at " + i + " " + refArray + " " + refArray[i].get());
     }
 }
 

@@ -316,7 +316,7 @@ public final class NativeError extends ScriptObject {
 
         final Object exception = ECMAException.getException(sobj);
         if (exception instanceof Throwable) {
-            Object value = getScriptStackString(sobj, (Throwable)exception);
+            final Object value = getScriptStackString(sobj, (Throwable)exception);
             sobj.put(STACK, value, false);
             return value;
         }

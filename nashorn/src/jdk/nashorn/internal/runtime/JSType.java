@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
@@ -280,7 +281,7 @@ public enum JSType {
         }
 
         if (obj instanceof ScriptObject) {
-            return (obj instanceof ScriptFunction) ? JSType.FUNCTION : JSType.OBJECT;
+            return obj instanceof ScriptFunction ? JSType.FUNCTION : JSType.OBJECT;
         }
 
         if (obj instanceof Boolean) {
@@ -438,7 +439,7 @@ public enum JSType {
      *
      * @return the string form of the primitive form of the object
      */
-    public static String toPrimitiveToString(Object obj) {
+    public static String toPrimitiveToString(final Object obj) {
         return toString(toPrimitive(obj));
     }
 
@@ -900,7 +901,7 @@ public enum JSType {
     }
 
     // Minimum and maximum range between which every long value can be precisely represented as a double.
-    private static final long MAX_PRECISE_DOUBLE = (1L << 53);
+    private static final long MAX_PRECISE_DOUBLE = 1L << 53;
     private static final long MIN_PRECISE_DOUBLE = -MAX_PRECISE_DOUBLE;
 
     /**
@@ -972,7 +973,7 @@ public enum JSType {
      * @return a uint16
      */
     public static int toUint16(final long num) {
-        return ((int)num) & 0xffff;
+        return (int)num & 0xffff;
     }
 
     /**
@@ -982,7 +983,7 @@ public enum JSType {
      * @return a uint16
      */
     public static int toUint16(final double num) {
-        return ((int)doubleToInt32(num)) & 0xffff;
+        return (int)doubleToInt32(num) & 0xffff;
     }
 
     private static long doubleToInt32(final double num) {
@@ -996,7 +997,7 @@ public enum JSType {
             return 0;
         }
         // This is rather slow and could probably be sped up using bit-fiddling.
-        final double d = (num >= 0) ? Math.floor(num) : Math.ceil(num);
+        final double d = num >= 0 ? Math.floor(num) : Math.ceil(num);
         return (long)(d % INT32_LIMIT);
     }
 
@@ -1285,7 +1286,7 @@ public enum JSType {
     public static int addExact(final int x, final int y, final int programPoint) throws UnwarrantedOptimismException {
         try {
             return Math.addExact(x, y);
-        } catch (ArithmeticException e) {
+        } catch (final ArithmeticException e) {
             throw new UnwarrantedOptimismException((long)x + (long)y, programPoint);
         }
     }
@@ -1305,7 +1306,7 @@ public enum JSType {
     public static long addExact(final long x, final long y, final int programPoint) throws UnwarrantedOptimismException {
         try {
             return Math.addExact(x, y);
-        } catch (ArithmeticException e) {
+        } catch (final ArithmeticException e) {
             throw new UnwarrantedOptimismException((double)x + (double)y, programPoint);
         }
     }
@@ -1325,7 +1326,7 @@ public enum JSType {
     public static int subExact(final int x, final int y, final int programPoint) throws UnwarrantedOptimismException {
         try {
             return Math.subtractExact(x, y);
-        } catch (ArithmeticException e) {
+        } catch (final ArithmeticException e) {
             throw new UnwarrantedOptimismException((long)x - (long)y, programPoint);
         }
     }
@@ -1345,7 +1346,7 @@ public enum JSType {
     public static long subExact(final long x, final long y, final int programPoint) throws UnwarrantedOptimismException {
         try {
             return Math.subtractExact(x, y);
-        } catch (ArithmeticException e) {
+        } catch (final ArithmeticException e) {
             throw new UnwarrantedOptimismException((double)x - (double)y, programPoint);
         }
     }
@@ -1365,7 +1366,7 @@ public enum JSType {
     public static int mulExact(final int x, final int y, final int programPoint) throws UnwarrantedOptimismException {
         try {
             return Math.multiplyExact(x, y);
-        } catch (ArithmeticException e) {
+        } catch (final ArithmeticException e) {
             throw new UnwarrantedOptimismException((long)x * (long)y, programPoint);
         }
     }
@@ -1681,5 +1682,48 @@ public enum JSType {
             throw new RuntimeException(t);
         }
     }
+
+    /**
+     * Create a method handle constant of the correct primitive type
+     * for a constant object
+     * @param o object
+     * @return constant function that returns object
+     */
+    public static MethodHandle unboxConstant(final Object o) {
+        if (o != null) {
+            if (o.getClass() == Integer.class) {
+                return MH.constant(int.class, ((Integer)o).intValue());
+            } else if (o.getClass() == Long.class) {
+                return MH.constant(long.class, ((Long)o).longValue());
+            } else if (o.getClass() == Double.class) {
+                return MH.constant(double.class, ((Double)o).doubleValue());
+            }
+        }
+        return MH.constant(Object.class, o);
+    }
+
+    /**
+     * Get the unboxed (primitive) type for an object
+     * @param o object
+     * @return primive type or Object.class if not primitive
+     */
+    public static Class<?> unboxedFieldType(final Object o) {
+        if (OBJECT_FIELDS_ONLY) {
+            return Object.class;
+        }
+
+        if (o == null) {
+            return Object.class;
+        } else if (o.getClass() == Integer.class) {
+            return int.class;
+        } else if (o.getClass() == Long.class) {
+            return long.class;
+        } else if (o.getClass() == Double.class) {
+            return double.class;
+        } else {
+            return Object.class;
+        }
+    }
+
 
 }
