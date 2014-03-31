@@ -1288,7 +1288,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
               (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
             TypeNode* ccast = new (C) CheckCastPPNode(control(), obj, tboth);
             const Type* tcc = ccast->as_Type()->type();
-            assert(tcc != obj_type && tcc->higher_equal_speculative(obj_type), "must improve");
+            assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
             // Delay transform() call to allow recovery of pre-cast value
             // at the control merge.
             _gvn.set_type_bottom(ccast);
@@ -1352,7 +1352,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
 
   if (ccast != NULL) {
     const Type* tcc = ccast->as_Type()->type();
-    assert(tcc != tval && tcc->higher_equal_speculative(tval), "must improve");
+    assert(tcc != tval && tcc->higher_equal(tval), "must improve");
     // Delay transform() call to allow recovery of pre-cast value
     // at the control merge.
     ccast->set_req(0, control());
@@ -1393,7 +1393,7 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
       Node* addp = load_klass->in(2);
       Node* obj = addp->in(AddPNode::Address);
       const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
-      if (obj_type->speculative_type() != NULL) {
+      if (obj_type->speculative_type_not_null() != NULL) {
         ciKlass* k = obj_type->speculative_type();
         inc_sp(2);
         obj = maybe_cast_profiled_obj(obj, k);
@@ -2277,6 +2277,14 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = null();
     b = pop();
+    if (!_gvn.type(b)->speculative_maybe_null() &&
+        !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
+      inc_sp(1);
+      Node* null_ctl = top();
+      b = null_check_oop(b, &null_ctl, true, true, true);
+      assert(null_ctl->is_top(), "no null control here");
+      dec_sp(1);
+    }
     c = _gvn.transform( new (C) CmpPNode(b, a) );
     do_ifnull(btest, c);
     break;

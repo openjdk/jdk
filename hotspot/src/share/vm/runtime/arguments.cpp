@@ -3801,10 +3801,6 @@ jint Arguments::apply_ergo() {
     AlwaysIncrementalInline = false;
   }
 #endif
-  if (IncrementalInline && FLAG_IS_DEFAULT(MaxNodeLimit)) {
-    // incremental inlining: bump MaxNodeLimit
-    FLAG_SET_DEFAULT(MaxNodeLimit, (intx)75000);
-  }
   if (!UseTypeSpeculation && FLAG_IS_DEFAULT(TypeProfileLevel)) {
     // nothing to use the profiling, turn if off
     FLAG_SET_DEFAULT(TypeProfileLevel, 0);
