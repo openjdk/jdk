@@ -280,12 +280,10 @@ class ProfileData : public ResourceObj {
   friend class ReturnTypeEntry;
   friend class TypeStackSlotEntries;
 private:
-#ifndef PRODUCT
   enum {
     tab_width_one = 16,
     tab_width_two = 36
   };
-#endif // !PRODUCT
 
   // This is a pointer to a section of profiling data.
   DataLayout* _data;
@@ -521,10 +519,8 @@ public:
 
   void print_data_on(outputStream* st, const MethodData* md) const;
 
-#ifndef PRODUCT
   void print_shared(outputStream* st, const char* name, const char* extra) const;
   void tab(outputStream* st, bool first = false) const;
-#endif
 };
 
 // BitData
@@ -583,9 +579,7 @@ public:
   }
 #endif // CC_INTERP
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // CounterData
@@ -646,9 +640,7 @@ public:
   }
 #endif // CC_INTERP
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // JumpData
@@ -733,9 +725,7 @@ public:
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // Entries in a ProfileData object to record types: it can either be
@@ -808,9 +798,7 @@ public:
     return with_status((intptr_t)k, in);
   }
 
-#ifndef PRODUCT
   static void print_klass(outputStream* st, intptr_t k);
-#endif
 
   // GC support
   static bool is_loader_alive(BoolObjectClosure* is_alive_cl, intptr_t p);
@@ -919,9 +907,7 @@ public:
   // GC support
   void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st) const;
-#endif
 };
 
 // Type entry used for return from a call. A single cell to record the
@@ -964,9 +950,7 @@ public:
   // GC support
   void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st) const;
-#endif
 };
 
 // Entries to collect type information at a call: contains arguments
@@ -1144,9 +1128,7 @@ public:
     }
   }
 
-#ifndef PRODUCT
   virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // ReceiverTypeData
@@ -1288,10 +1270,8 @@ public:
   }
 #endif // CC_INTERP
 
-#ifndef PRODUCT
   void print_receiver_data_on(outputStream* st) const;
   void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // VirtualCallData
@@ -1332,9 +1312,7 @@ public:
   }
 #endif // CC_INTERP
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // VirtualCallTypeData
@@ -1458,9 +1436,7 @@ public:
     }
   }
 
-#ifndef PRODUCT
   virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // RetData
@@ -1561,9 +1537,7 @@ public:
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // BranchData
@@ -1639,9 +1613,7 @@ public:
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // ArrayData
@@ -1832,9 +1804,7 @@ public:
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 class ArgInfoData : public ArrayData {
@@ -1859,9 +1829,7 @@ public:
     array_set_int_at(arg, val);
   }
 
-#ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // ParametersTypeData
@@ -1920,9 +1888,7 @@ public:
     _parameters.clean_weak_klass_links(is_alive_closure);
   }
 
-#ifndef PRODUCT
   virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 
   static ByteSize stack_slot_offset(int i) {
     return cell_offset(stack_slot_local_offset(i));
@@ -1976,9 +1942,7 @@ public:
     set_intptr_at(method_offset, (intptr_t)m);
   }
 
-#ifndef PRODUCT
   virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
-#endif
 };
 
 // MethodData*
@@ -2457,15 +2421,11 @@ public:
   void set_size(int object_size_in_bytes) { _size = object_size_in_bytes; }
 
   // Printing
-#ifndef PRODUCT
   void print_on      (outputStream* st) const;
-#endif
   void print_value_on(outputStream* st) const;
 
-#ifndef PRODUCT
   // printing support for method data
   void print_data_on(outputStream* st) const;
-#endif
 
   const char* internal_name() const { return "{method data}"; }
 

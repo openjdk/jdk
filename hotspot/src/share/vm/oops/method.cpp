@@ -329,14 +329,12 @@ bool Method::was_executed_more_than(int n) {
   }
 }
 
-#ifndef PRODUCT
 void Method::print_invocation_count() {
   if (is_static()) tty->print("static ");
   if (is_final()) tty->print("final ");
   if (is_synchronized()) tty->print("synchronized ");
   if (is_native()) tty->print("native ");
-  method_holder()->name()->print_symbol_on(tty);
-  tty->print(".");
+  tty->print("%s::", method_holder()->external_name());
   name()->print_symbol_on(tty);
   signature()->print_symbol_on(tty);
 
@@ -349,12 +347,12 @@ void Method::print_invocation_count() {
   tty->print_cr ("  interpreter_invocation_count: %8d ", interpreter_invocation_count());
   tty->print_cr ("  invocation_counter:           %8d ", invocation_count());
   tty->print_cr ("  backedge_counter:             %8d ", backedge_count());
+#ifndef PRODUCT
   if (CountCompiledCalls) {
     tty->print_cr ("  compiled_invocation_count: %8d ", compiled_invocation_count());
   }
-
-}
 #endif
+}
 
 // Build a MethodData* object to hold information about this method
 // collected in the interpreter.
@@ -1443,10 +1441,6 @@ void Method::print_name(outputStream* st) {
 #endif // !PRODUCT || INCLUDE_JVMTI
 
 
-//-----------------------------------------------------------------------------------
-// Non-product code
-
-#ifndef PRODUCT
 void Method::print_codes_on(outputStream* st) const {
   print_codes_on(0, code_size(), st);
 }
@@ -1460,7 +1454,6 @@ void Method::print_codes_on(int from, int to, outputStream* st) const {
   BytecodeTracer::set_closure(BytecodeTracer::std_closure());
   while (s.next() >= 0) BytecodeTracer::trace(mh, s.bcp(), st);
 }
-#endif // not PRODUCT
 
 
 // Simple compression of line number tables. We use a regular compressed stream, except that we compress deltas
