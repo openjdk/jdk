@@ -126,7 +126,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     // load engine.js and return content as a char[]
-    @SuppressWarnings("resource")
     private static char[] loadEngineJSSource() {
         final String script = "resources/engine.js";
         try {

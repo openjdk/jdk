@@ -139,12 +139,11 @@ public final class MethodHandleFactory {
      * @return return value unmodified
      */
     static Object traceReturn(final DebugLogger logger, final Object value) {
-        final String str = "\treturn" +
+        final String str = "    return" +
                 (VOID_TAG.equals(value) ?
                     ";" :
                     " " + stripName(value) + "; // [type=" + (value == null ? "null" : stripName(value.getClass()) + ']'));
         logger.log(TRACE_LEVEL, str);
-        logger.log(TRACE_LEVEL, Debug.firstJSFrame());
         return value;
     }
 
@@ -225,12 +224,13 @@ public final class MethodHandleFactory {
      * Add a debug printout to a method handle, tracing parameters and return values
      *
      * @param logger a specific logger to which to write the output
+     * @param level level over which to print
      * @param mh  method handle to trace
      * @param tag start of trace message
      * @return traced method handle
      */
-    public static MethodHandle addDebugPrintout(final DebugLogger logger, final MethodHandle mh, final Object tag) {
-        return addDebugPrintout(logger, mh, 0, true, tag);
+    public static MethodHandle addDebugPrintout(final DebugLogger logger, final Level level, final MethodHandle mh, final Object tag) {
+        return addDebugPrintout(logger, level, mh, 0, true, tag);
     }
 
 
@@ -238,18 +238,19 @@ public final class MethodHandleFactory {
      * Add a debug printout to a method handle, tracing parameters and return values
      *
      * @param logger a specific logger to which to write the output
+     * @param level level over which to print
      * @param mh  method handle to trace
      * @param paramStart first param to print/trace
      * @param printReturnValue should we print/trace return value if available?
      * @param tag start of trace message
      * @return  traced method handle
      */
-    public static MethodHandle addDebugPrintout(final DebugLogger logger, final MethodHandle mh, final int paramStart, final boolean printReturnValue, final Object tag) {
+    public static MethodHandle addDebugPrintout(final DebugLogger logger, final Level level, final MethodHandle mh, final int paramStart, final boolean printReturnValue, final Object tag) {
         final MethodType type = mh.type();
 
         //if there is no logger, or if it's set to log only coarser events
         //than the trace level, skip and return
-        if (logger != null && logger.levelCoarserThan(TRACE_LEVEL)) {
+        if (logger != null && logger.levelCoarserThan(level)) {
             return mh;
         }
 
@@ -501,7 +502,7 @@ public final class MethodHandleFactory {
         }
 
         public MethodHandle debug(final MethodHandle master, final String str, final Object... args) {
-            return addDebugPrintout(LOG, master, Integer.MAX_VALUE, false, str + ' ' + describe(args));
+            return addDebugPrintout(LOG, Level.INFO, master, Integer.MAX_VALUE, false, str + ' ' + describe(args));
         }
 
         @Override

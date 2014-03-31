@@ -126,7 +126,7 @@ public final class DebugLogger {
             quote = '\'';
         }
 
-        return (startQuote == '\0' ? "" : startQuote) + str + (endQuote == '\0' ? "" : endQuote);
+        return (startQuote == '\0' ? quote : startQuote) + str + (endQuote == '\0' ? quote : endQuote);
     }
 
     /**

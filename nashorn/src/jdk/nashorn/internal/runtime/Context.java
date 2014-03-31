@@ -192,6 +192,9 @@ public final class Context {
     public static void setGlobal(final Global global) {
         // This class in a package.access protected package.
         // Trusted code only can call this method.
+        assert getGlobal() != global;
+        //same code can be cached between globals, then we need to invalidate method handle constants
+        GlobalConstants.instance().invalidateAll();
         currentGlobal.set(global);
     }
 
@@ -232,7 +235,6 @@ public final class Context {
      * @param str  text to write
      * @param crlf write a carriage return/new line after text
      */
-    @SuppressWarnings("resource")
     public static void err(final String str, final boolean crlf) {
         final PrintWriter err = Context.getCurrentErr();
         if (err != null) {
@@ -1028,6 +1030,4 @@ public final class Context {
             classCache.cache(source, clazz);
         }
     }
-
-
 }

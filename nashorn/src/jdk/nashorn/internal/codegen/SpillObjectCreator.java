@@ -28,13 +28,12 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.unboxedFieldType;
-
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.LiteralNode;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -84,7 +83,7 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
                     final Property property = propertyMap.findProperty(key);
                     if (property != null) {
                         // normal property key
-                        property.setCurrentType(unboxedFieldType(constantValue));
+                        property.setCurrentType(JSType.unboxedFieldType(constantValue));
                         final int slot = property.getSlot();
                         if (!OBJECT_FIELDS_ONLY && constantValue instanceof Number) {
                             jpresetValues[slot] = ObjectClassGenerator.pack((Number)constantValue);

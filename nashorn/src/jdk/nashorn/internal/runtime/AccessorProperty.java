@@ -349,7 +349,7 @@ public class AccessorProperty extends Property {
      * @param initialValue initial value
      */
     protected final void setInitialValue(final ScriptObject owner, final Object initialValue) {
-        setCurrentType(ObjectClassGenerator.unboxedFieldType(initialValue));
+        setCurrentType(JSType.unboxedFieldType(initialValue));
         if (initialValue instanceof Integer) {
             invokeSetter(owner, ((Integer)initialValue).intValue());
         } else if (initialValue instanceof Long) {
@@ -669,6 +669,7 @@ public class AccessorProperty extends Property {
         if (DEBUG_FIELDS && LOG.levelFinerThanOrEqual(Level.INFO) && shouldInstrument(getKey())) {
            return MethodHandleFactory.addDebugPrintout(
                LOG,
+               Level.INFO,
                mh,
                tag + " '" + getKey() + "' (property="+ Debug.id(this) + ", slot=" + getSlot() + " " + getClass().getSimpleName() + " forType=" + stripName(forType) + ", type=" + stripName(type) + ')');
         }

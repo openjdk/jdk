@@ -42,6 +42,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -119,7 +120,6 @@ public final class ScriptRuntime {
                 return (int)d;
             }
         }
-
         return deflt;
     }
 

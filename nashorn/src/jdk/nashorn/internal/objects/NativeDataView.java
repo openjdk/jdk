@@ -88,15 +88,15 @@ public class NativeDataView extends ScriptObject {
     // underlying ByteBuffer
     private final ByteBuffer buf;
 
-    private NativeDataView(NativeArrayBuffer arrBuf) {
+    private NativeDataView(final NativeArrayBuffer arrBuf) {
         this(arrBuf, arrBuf.getBuffer(), 0);
     }
 
-    private NativeDataView(NativeArrayBuffer arrBuf, int offset) {
+    private NativeDataView(final NativeArrayBuffer arrBuf, final int offset) {
         this(arrBuf, bufferFrom(arrBuf, offset), offset);
     }
 
-    private NativeDataView(NativeArrayBuffer arrBuf, int offset, int length) {
+    private NativeDataView(final NativeArrayBuffer arrBuf, final int offset, final int length) {
         this(arrBuf, bufferFrom(arrBuf, offset, length), offset, length);
     }
 
@@ -235,7 +235,7 @@ public class NativeDataView extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static int getUint8(final Object self, final Object byteOffset) {
         try {
-            return (0xFF & getBuffer(self).get(JSType.toInt32(byteOffset)));
+            return 0xFF & getBuffer(self).get(JSType.toInt32(byteOffset));
         } catch (final IllegalArgumentException iae) {
             throw rangeError(iae, "dataview.offset");
         }
@@ -251,7 +251,7 @@ public class NativeDataView extends ScriptObject {
     @SpecializedFunction
     public static int getUint8(final Object self, final int byteOffset) {
         try {
-            return (0xFF & getBuffer(self).get(byteOffset));
+            return 0xFF & getBuffer(self).get(byteOffset);
         } catch (final IllegalArgumentException iae) {
             throw rangeError(iae, "dataview.offset");
         }

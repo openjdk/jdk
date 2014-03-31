@@ -174,7 +174,7 @@ final class SetMethodCreator {
         final String      name     = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
 
         //fast type specific setter
-        MethodHandle fastSetter = property.getSetter(type, newMap); //0 sobj, 1 value, slot folded for spill property already
+        final MethodHandle fastSetter = property.getSetter(type, newMap); //0 sobj, 1 value, slot folded for spill property already
 
         //slow setter, that calls ScriptObject.set with appropraite type and key name
         MethodHandle slowSetter = ScriptObject.SET_SLOW[getAccessorTypeIndex(type)];
@@ -188,7 +188,7 @@ final class SetMethodCreator {
         MethodHandle casMap = MH.insertArguments(ScriptObject.CAS_MAP, 1, oldMap, newMap);
         casMap = MH.dropArguments(casMap, 1, type);
         casMap = MH.asType(casMap, casMap.type().changeParameterType(0, Object.class));
-        MethodHandle casGuard = MH.guardWithTest(casMap, fastSetter, slowSetter);
+        final MethodHandle casGuard = MH.guardWithTest(casMap, fastSetter, slowSetter);
 
         //outermost level needs an extendable check. if object can be extended, guard is true and
         //we can run the cas setter. The setter goes to "nop" VOID_RETURN if false or throws an

@@ -43,7 +43,7 @@ for each(var color in colors) {
 
 var capitals = new java.util.LinkedHashMap()
 capitals.Sweden = "Stockholm"
-capitals.Hungary = "Budapet"
+capitals.Hungary = "Budapest"
 capitals.Croatia = "Zagreb"
 
 for(var key in capitals) {

@@ -35,6 +35,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
+
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
@@ -169,6 +170,7 @@ public class RewriteException extends Exception {
     private Object getReturnValueNonDestructive() {
         return getUOE().getReturnValueNonDestructive();
     }
+
     /**
      * Get return type
      * @return return type
@@ -213,13 +215,18 @@ public class RewriteException extends Exception {
         if (returnValue == null) {
             return "null";
         }
-        final String str = returnValue.toString();
-        return returnValue instanceof Long ? (str + 'L') : str;
+        String str = returnValue.toString();
+        if (returnValue instanceof String) {
+            str = '\'' + str + '\'';
+        } else if (returnValue instanceof Long) {
+            str = str + 'l';
+        }
+        return str;
     }
 
     @Override
     public String getMessage() {
-        return "programPoint=" + getProgramPoint() + " slots=" + (byteCodeSlots == null ? "null" : Arrays.asList(byteCodeSlots)) + ", returnValue=" + stringify(getReturnValueNonDestructive()) + ", returnType=" + getReturnType();
+        return getMessage(false);
     }
 
     /**
@@ -227,7 +234,38 @@ public class RewriteException extends Exception {
      * @return short message
      */
     public String getMessageShort() {
-        return "[programPoint=" + getProgramPoint() + " returnType=" + getReturnType() + " (" + stringify(getReturnValueNonDestructive()) + ")]";
+        return getMessage(true);
+    }
+
+    private String getMessage(final boolean isShort) {
+        final StringBuilder sb = new StringBuilder();
+
+        //program point
+        sb.append("[pp=").
+            append(getProgramPoint()).
+            append(", ");
+
+        //slot contents
+        if (!isShort) {
+            final Object[] slots = getByteCodeSlots();
+            if (slots != null) {
+                sb.append("slots=").
+                    append(Arrays.asList(slots)).
+                    append(", ");
+            }
+        }
+
+        //return type
+        sb.append("type=").
+            append(getReturnType()).
+            append(", ");
+
+        //return value
+        sb.append("value=").
+            append(stringify(getReturnValueNonDestructive())).
+            append(")]");
+
+        return sb.toString();
     }
 
 }

@@ -174,7 +174,13 @@ public final class NashornGuards {
      * @return true if both guard1 and guard2 returned true
      */
     public static MethodHandle combineGuards(final MethodHandle guard1, final MethodHandle guard2) {
-        return MH.guardWithTest(guard1, guard2, MH.dropArguments(MH.constant(boolean.class, false), 0, Object.class));
+        if (guard1 == null) {
+            return guard2;
+        } else if (guard2 == null) {
+            return guard1;
+        } else {
+            return MH.guardWithTest(guard1, guard2, MH.dropArguments(MH.constant(boolean.class, false), 0, Object.class));
+        }
     }
 
     @SuppressWarnings("unused")

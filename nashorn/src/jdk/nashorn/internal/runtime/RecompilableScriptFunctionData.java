@@ -213,6 +213,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     @Override
     public String toString() {
+        return super.toString() + '@' + functionNodeId;
+    }
+
+    @Override
+    public String toStringVerbose() {
         final StringBuilder sb = new StringBuilder();
 
         sb.append("fid=").append(functionNodeId).append(' ');
@@ -309,6 +314,13 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return (isProgram ? program : extractFunctionFromScript(program)).setName(null, functionName).setSourceURL(null,  sourceURL);
     }
 
+    private static String getShortDescriptor(final Object value) {
+        if (value.getClass() == Object.class) {
+            return "O";
+        }
+        return value.getClass().getSimpleName();
+    }
+
     private static String stringifyInvalidations(final Map<Integer, Type> ipp) {
         if (ipp == null) {
             return "";
@@ -320,7 +332,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
             sb.append('[').
                     append(entry.getKey()).
                     append("->").
-                    append(entry.getValue().getShortDescriptor()).
+                    append(getShortDescriptor(entry.getValue())).
                     append(']');
             if (iter.hasNext()) {
                 sb.append(' ');

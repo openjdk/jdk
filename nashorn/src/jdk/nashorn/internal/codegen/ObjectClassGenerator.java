@@ -779,29 +779,6 @@ public final class ObjectClassGenerator {
     }
 
     /**
-     * Get the unboxed (primitive) type for an object
-     * @param o object
-     * @return primive type or Object.class if not primitive
-     */
-    public static Class<?> unboxedFieldType(final Object o) {
-        if (OBJECT_FIELDS_ONLY) {
-            return Object.class;
-        }
-
-        if (o == null) {
-            return Object.class;
-        } else if (o.getClass() == Integer.class) {
-            return int.class;
-        } else if (o.getClass() == Long.class) {
-            return long.class;
-        } else if (o.getClass() == Double.class) {
-            return double.class;
-        } else {
-            return Object.class;
-        }
-    }
-
-    /**
      * Add padding to field count to avoid creating too many classes and have some spare fields
      * @param count the field count
      * @return the padded field count

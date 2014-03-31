@@ -179,6 +179,14 @@ public abstract class ScriptFunctionData {
      */
     @Override
     public String toString() {
+        return name.isEmpty() ? "<anonymous>" : name;
+    }
+
+    /**
+     * Verbose description of data
+     * @return verbose description
+     */
+    public String toStringVerbose() {
         final StringBuilder sb = new StringBuilder();
 
         sb.append("name='").

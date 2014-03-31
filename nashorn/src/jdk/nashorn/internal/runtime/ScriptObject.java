@@ -62,6 +62,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -118,6 +119,9 @@ public abstract class ScriptObject implements PropertyAccess {
 
     /** Is length property not-writable? */
     public static final int IS_LENGTH_NOT_WRITABLE = 1 << 3;
+
+    /** Is this a builtin object? */
+    public static final int IS_BUILTIN = 1 << 4;
 
     /**
      * Spill growth rate - by how many elements does {@link ScriptObject#primitiveSpill} and
@@ -252,6 +256,14 @@ public abstract class ScriptObject implements PropertyAccess {
         this.objectSpill    = objectSpill;
         assert primitiveSpill.length == objectSpill.length : " primitive spill pool size is not the same length as object spill pool size";
         this.spillLength = spillAllocationLength(primitiveSpill.length);
+    }
+
+    /**
+     * Check whether this is a global object
+     * @return true if global
+     */
+    protected boolean isGlobal() {
+        return false;
     }
 
     private static int alignUp(final int size, final int alignment) {
@@ -906,9 +918,11 @@ public abstract class ScriptObject implements PropertyAccess {
                 if (property instanceof UserAccessorProperty) {
                     ((UserAccessorProperty)property).setAccessors(this, getMap(), null);
                 }
+                GlobalConstants.instance().delete(property.getKey());
                 return true;
             }
         }
+
     }
 
     /**
@@ -1550,6 +1564,21 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     /**
+     * Tag this script object as built in
+     */
+    public final void setIsBuiltin() {
+        flags |= IS_BUILTIN;
+    }
+
+    /**
+     * Check if this script object is built in
+     * @return true if build in
+     */
+    public final boolean isBuiltin() {
+        return (flags & IS_BUILTIN) != 0;
+    }
+
+    /**
      * Clears the properties from a ScriptObject
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
      *
@@ -1879,7 +1908,12 @@ public abstract class ScriptObject implements PropertyAccess {
             default:
                 throw new AssertionError(operator); // never invoked with any other operation
             }
-       }
+        }
+
+        final GuardedInvocation inv = GlobalConstants.instance().findGetMethod(find, this, desc, request, operator);
+        if (inv != null) {
+            return inv;
+        }
 
         final Class<?> returnType = desc.getMethodType().returnType();
         final Property property   = find.getProperty();
@@ -2064,7 +2098,14 @@ public abstract class ScriptObject implements PropertyAccess {
             }
         }
 
-        return new SetMethodCreator(this, find, desc, explicitInstanceOfCheck).createGuardedInvocation();
+        final GuardedInvocation inv = new SetMethodCreator(this, find, desc, explicitInstanceOfCheck).createGuardedInvocation();
+
+        final GuardedInvocation cinv = GlobalConstants.instance().findSetMethod(find, this, inv, desc, request);
+        if (cinv != null) {
+            return cinv;
+        }
+
+        return inv;
     }
 
     private GuardedInvocation createEmptySetMethod(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final String strictErrorMessage, final boolean canBeFastScope) {
