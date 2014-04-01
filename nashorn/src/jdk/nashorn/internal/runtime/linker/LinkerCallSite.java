@@ -519,7 +519,7 @@ public class LinkerCallSite extends ChainedCallSite {
 
     @Override
     protected int getMaxChainLength() {
-        return 16;
+        return 8;
     }
 
     /**

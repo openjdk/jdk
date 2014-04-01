@@ -639,8 +639,9 @@ public final class NativeObject {
             final ArrayList<Property> propList = new ArrayList<>();
             for (final Property prop : properties) {
                 if (prop.isEnumerable()) {
-                    prop.setValue(sourceObj, sourceObj, sourceObj.get(prop.getKey()), false);
+                    final Object value = sourceObj.get(prop.getKey());
                     prop.setCurrentType(Object.class);
+                    prop.setValue(sourceObj, sourceObj, value, false);
                     propList.add(prop);
                 }
             }
@@ -739,7 +740,7 @@ public final class NativeObject {
         targetObj.addBoundProperties(source, properties.toArray(new AccessorProperty[properties.size()]));
     }
 
-    private static MethodHandle getBoundBeanMethodGetter(Object source, MethodHandle methodGetter) {
+    private static MethodHandle getBoundBeanMethodGetter(final Object source, final MethodHandle methodGetter) {
         try {
             // NOTE: we're relying on the fact that "dyn:getMethod:..." return value is constant for any given method
             // name and object linked with BeansLinker. (Actually, an even stronger assumption is true: return value is
@@ -773,7 +774,7 @@ public final class NativeObject {
         return guard == null || (boolean)guard.invoke(obj);
     }
 
-    private static LinkRequest createLinkRequest(String operation, MethodType methodType, Object source) {
+    private static LinkRequest createLinkRequest(final String operation, final MethodType methodType, final Object source) {
         return new LinkRequestImpl(CallSiteDescriptorFactory.create(MethodHandles.publicLookup(), operation,
                 methodType), null, 0, false, source);
     }

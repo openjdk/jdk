@@ -489,13 +489,16 @@ public final class PropertyHashMap implements Map <String, Property> {
             return new Element(list.getLink(), property);
         }
 
-        Element previous = list;
+        final Element head = new Element(null, list.getProperty());
+        Element previous = head;
         for (Element element = list.getLink(); element != null; element = element.getLink()) {
             if (element.match(key, hashCode)) {
                 previous.setLink(new Element(element.getLink(), property));
-                return list;
+                return head;
             }
-            previous = element;
+            final Element next = new Element(null, element.getProperty());
+            previous.setLink(next);
+            previous = next;
         }
         return list;
     }
@@ -680,7 +683,7 @@ public final class PropertyHashMap implements Map <String, Property> {
 
             Element elem = this;
             do {
-                sb.append(elem.getValue().toStringShort());
+                sb.append(elem.getValue());
                 elem = elem.link;
                 if (elem != null) {
                     sb.append(" -> ");

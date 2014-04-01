@@ -42,6 +42,7 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.logging.Level;
+
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -168,6 +169,7 @@ public class AccessorProperty extends Property {
         this.objectGetter    = bindTo(property.objectGetter, delegate);
         this.objectSetter    = bindTo(property.objectSetter, delegate);
 
+        property.GETTER_CACHE = new MethodHandle[NOOF_TYPES];
         // Properties created this way are bound to a delegate
         setCurrentType(property.getCurrentType());
     }
@@ -199,7 +201,6 @@ public class AccessorProperty extends Property {
         this.primitiveSetter = primitiveSetter;
         this.objectGetter    = objectGetter;
         this.objectSetter    = objectSetter;
-//        setCurrentType(OBJECT_FIELDS_ONLY ? Object.class : initialType);
         initializeType();
     }
 
@@ -614,7 +615,6 @@ public class AccessorProperty extends Property {
         return getCurrentType() == null;
     }
 
-    //TODO final
     @Override
     public MethodHandle getSetter(final Class<?> type, final PropertyMap currentMap) {
         final int      i       = getAccessorTypeIndex(type);
@@ -623,12 +623,16 @@ public class AccessorProperty extends Property {
 
         //if we are asking for an object setter, but are still a primitive type, we might try to box it
         MethodHandle mh;
-
         if (needsInvalidator(i, ci)) {
             final Property     newProperty = getWiderProperty(type);
             final PropertyMap  newMap      = getWiderMap(currentMap, newProperty);
+
             final MethodHandle widerSetter = newProperty.getSetter(type, newMap);
-            mh = MH.filterArguments(widerSetter, 0, MH.insertArguments(REPLACE_MAP, 1, newMap, getKey(), getCurrentType(), type));
+            final Class<?>   ct = getCurrentType();
+            mh = MH.filterArguments(widerSetter, 0, MH.insertArguments(REPLACE_MAP, 1, newMap, getKey(), ct, type));
+            if (ct != null && ct.isPrimitive() && !type.isPrimitive()) {
+                 mh = ObjectClassGenerator.createGuardBoxedPrimitiveSetter(ct, generateSetter(ct, ct), mh);
+            }
         } else {
             mh = generateSetter(forType, type);
         }

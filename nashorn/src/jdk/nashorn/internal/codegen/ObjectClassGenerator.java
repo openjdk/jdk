@@ -76,7 +76,14 @@ import jdk.nashorn.internal.runtime.options.Options;
 public final class ObjectClassGenerator {
 
     /**
-     * Marker for scope parameters.g
+     * Type guard to make sure we don't unnecessarily explode field storages. Rather unbox e.g.
+     * a java.lang.Number than blow up the field. Gradually, optimistic types should create almost
+     * no boxed types
+     */
+    private static final MethodHandle IS_TYPE_GUARD = findOwnMH("isType", boolean.class, Class.class, Object.class);
+
+    /**
+     * Marker for scope parameters
      */
     private static final String SCOPE_MARKER = "P";
 
@@ -778,6 +785,57 @@ public final class ObjectClassGenerator {
         }
     }
 
+    @SuppressWarnings("unused")
+    private static boolean isType(final Class<?> boxedForType, final Object x) {
+        return x != null && x.getClass() == boxedForType;
+    }
+
+    private static Class<? extends Number> getBoxedType(final Class<?> forType) {
+        if (forType == int.class) {
+            return Integer.class;
+        }
+
+        if (forType == long.class) {
+            return Long.class;
+        }
+
+        if (forType == double.class) {
+            return Double.class;
+        }
+
+        assert false;
+        return null;
+    }
+
+    /**
+     * If we are setting boxed types (because the compiler couldn't determine which they were) to
+     * a primitive field, we can reuse the primitive field getter, as long as we are setting an element
+     * of the same boxed type as the primitive type representation
+     *
+     * @param forType           the current type
+     * @param primitiveSetter   primitive setter for the current type with an element of the current type
+     * @param objectSetter      the object setter
+     *
+     * @return method handle that checks if the element to be set is of the currenttype, even though it's boxed
+     *  and instead of using the generic object setter, that would blow up the type and invalidate the map,
+     *  unbox it and call the primitive setter instead
+     */
+    public static MethodHandle createGuardBoxedPrimitiveSetter(final Class<?> forType, final MethodHandle primitiveSetter, final MethodHandle objectSetter) {
+        final Class<? extends Number> boxedForType = getBoxedType(forType);
+        //object setter that checks for primitive if current type is primitive
+        return MH.guardWithTest(
+            MH.insertArguments(
+                MH.dropArguments(
+                    IS_TYPE_GUARD,
+                    1,
+                    Object.class),
+                0,
+                boxedForType),
+                MH.asType(
+                    primitiveSetter,
+                    objectSetter.type()),
+                objectSetter);
+    }
     /**
      * Add padding to field count to avoid creating too many classes and have some spare fields
      * @param count the field count

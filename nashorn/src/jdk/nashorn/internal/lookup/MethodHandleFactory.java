@@ -142,7 +142,7 @@ public final class MethodHandleFactory {
         final String str = "    return" +
                 (VOID_TAG.equals(value) ?
                     ";" :
-                    " " + stripName(value) + "; // [type=" + (value == null ? "null" : stripName(value.getClass()) + ']'));
+                    " " + stripName(value) + "; // [type=" + (value == null ? "null]" : stripName(value.getClass()) + ']'));
         logger.log(TRACE_LEVEL, str);
         return value;
     }
