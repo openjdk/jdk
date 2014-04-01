@@ -29,11 +29,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
-
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 /**
@@ -80,8 +80,10 @@ public class RuntimeNode extends Expression implements Optimistic {
         NE_STRICT(TokenType.NE_STRICT, Type.BOOLEAN, 2, true),
         /** != operator with at least one object */
         NE(TokenType.NE, Type.BOOLEAN, 2, true),
-        /** Verify type */
-        TYPE_GUARD(TokenType.VOID, Type.INT, 2);
+        /** is undefined */
+        IS_UNDEFINED(TokenType.EQ_STRICT, Type.BOOLEAN, 2),
+        /** is not undefined */
+        IS_NOT_UNDEFINED(TokenType.NE_STRICT, Type.BOOLEAN, 2);
 
         /** token type */
         private final TokenType tokenType;
@@ -193,6 +195,17 @@ public class RuntimeNode extends Expression implements Optimistic {
         }
 
         /**
+         * Is this an undefined check?
+         *
+         * @param request request
+         *
+         * @return true if undefined check
+         */
+        public static boolean isUndefinedCheck(final Request request) {
+            return request == IS_UNDEFINED || request == IS_NOT_UNDEFINED;
+        }
+
+        /**
          * Is this an EQ or EQ_STRICT?
          *
          * @param request a request
@@ -300,6 +313,8 @@ public class RuntimeNode extends Expression implements Optimistic {
             case LT:
             case GE:
             case GT:
+            case IS_UNDEFINED:
+            case IS_NOT_UNDEFINED:
                 return true;
             default:
                 return false;
@@ -404,6 +419,19 @@ public class RuntimeNode extends Expression implements Optimistic {
     }
 
     /**
+     * Reset the request for this runtime node
+     * @param request request
+     * @return new runtime node or same if same request
+     */
+    public RuntimeNode setRequest(final Request request) {
+       if (this.request == request) {
+           return this;
+       }
+       return new RuntimeNode(this, request, isFinal, args, programPoint);
+   }
+
+
+    /**
      * Is this node final - i.e. it can never be replaced with other nodes again
      * @return true if final
      */
@@ -473,7 +501,12 @@ public class RuntimeNode extends Expression implements Optimistic {
         return Collections.unmodifiableList(args);
     }
 
-    private RuntimeNode setArgs(final List<Expression> args) {
+    /**
+     * Set the arguments of this runtime node
+     * @param args new arguments
+     * @return new runtime node, or identical if no change
+     */
+    public RuntimeNode setArgs(final List<Expression> args) {
         if (this.args == args) {
             return this;
         }

@@ -477,6 +477,20 @@ public final class CompilationEnvironment {
         return optimistic;
     }
 
+    RecompilableScriptFunctionData getProgram() {
+        if (compiledFunction == null) {
+            return null;
+        }
+        RecompilableScriptFunctionData program = compiledFunction;
+        while (true) {
+            final RecompilableScriptFunctionData parent = program.getParent();
+            if (parent == null) {
+                return program;
+            }
+            program = parent;
+        }
+    }
+
     RecompilableScriptFunctionData getScriptFunctionData(final int functionId) {
         return compiledFunction == null ? null : compiledFunction.getScriptFunctionData(functionId);
     }

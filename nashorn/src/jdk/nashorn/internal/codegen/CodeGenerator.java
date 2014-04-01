@@ -1991,6 +1991,56 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return node instanceof LiteralNode<?> && ((LiteralNode<?>) node).isNull();
     }
 
+
+    private boolean undefinedCheck(final RuntimeNode runtimeNode, final List<Expression> args) {
+        final Request request = runtimeNode.getRequest();
+
+        if (!Request.isUndefinedCheck(request)) {
+            return false;
+        }
+
+        final Expression lhs = args.get(0);
+        final Expression rhs = args.get(1);
+
+        if (!rhs.getSymbol().isScope()) {
+            return false; //disallow undefined as local var or parameter
+        }
+
+        //make sure that undefined has not been overridden or scoped as a local var
+        //between us and global
+        final CompilationEnvironment  env = compiler.getCompilationEnvironment();
+        RecompilableScriptFunctionData data = env.getScriptFunctionData(lc.getCurrentFunction().getId());
+        final RecompilableScriptFunctionData program = compiler.getCompilationEnvironment().getProgram();
+        assert data != null;
+        while (data != program) {
+            if (data.hasInternalSymbol("undefined")) {
+                return false;
+            }
+            data = data.getParent();
+        }
+
+        load(lhs);
+        if (lhs.getType().isPrimitive()) {
+            method.pop(); //throw away lhs, but it still needs to be evaluated for side effects, even if not in scope, as it can be optimistic
+            method.load(request == Request.IS_NOT_UNDEFINED);
+            method.store(runtimeNode.getSymbol());
+        } else {
+            final Label isUndefined  = new Label("ud_check_true");
+            final Label notUndefined = new Label("ud_check_false");
+            final Label end          = new Label("end");
+            method.loadUndefined(Type.OBJECT);
+            method.if_acmpeq(isUndefined);
+            method.label(notUndefined);
+            method.load(request == Request.IS_NOT_UNDEFINED);
+            method._goto(end);
+            method.label(isUndefined);
+            method.load(request == Request.IS_UNDEFINED);
+            method.label(end);
+            method.store(runtimeNode.getSymbol());
+        }
+        return true;
+    }
+
     private boolean nullCheck(final RuntimeNode runtimeNode, final List<Expression> args) {
         final Request request = runtimeNode.getRequest();
 
@@ -2078,7 +2128,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
-        assert args.size() == 2;
+        assert args.size() == 2 : node;
         final Type returnType = node.getType();
 
         new OptimisticOperation() {
@@ -2135,7 +2185,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          *
          * TODO - remove this - Access Specializer will always know after Attr/Lower
          */
-        final List<Expression> args = runtimeNode.getArgs();
+        final List<Expression> args = new ArrayList<>(runtimeNode.getArgs());
         if (runtimeNode.isPrimitive() && !runtimeNode.isFinal() && isReducible(runtimeNode.getRequest())) {
             final Expression lhs = args.get(0);
 
@@ -2186,14 +2236,25 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
            return false;
         }
 
-        if (!runtimeNode.isFinal() && specializationCheck(runtimeNode.getRequest(), runtimeNode, args)) {
+        if (undefinedCheck(runtimeNode, args)) {
+            return false;
+        }
+
+        final RuntimeNode newRuntimeNode;
+        if (Request.isUndefinedCheck(runtimeNode.getRequest())) {
+            newRuntimeNode = runtimeNode.setRequest(runtimeNode.getRequest() == Request.IS_UNDEFINED ? Request.EQ_STRICT : Request.NE_STRICT);
+        } else {
+            newRuntimeNode = runtimeNode;
+        }
+
+        if (!newRuntimeNode.isFinal() && specializationCheck(newRuntimeNode.getRequest(), newRuntimeNode, args)) {
            return false;
         }
 
         new OptimisticOperation() {
             @Override
             void loadStack() {
-                for (final Expression arg : args) {
+                for (final Expression arg : newRuntimeNode.getArgs()) {
                     load(arg, Type.OBJECT);
                 }
             }
@@ -2201,17 +2262,17 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             void consumeStack() {
                 method.invokestatic(
                         CompilerConstants.className(ScriptRuntime.class),
-                        runtimeNode.getRequest().toString(),
+                        newRuntimeNode.getRequest().toString(),
                         new FunctionSignature(
                             false,
                             false,
-                            runtimeNode.getType(),
-                            args.size()).toString());
+                            newRuntimeNode.getType(),
+                            newRuntimeNode.getArgs().size()).toString());
             }
-        }.emit(runtimeNode);
+        }.emit(newRuntimeNode);
 
-        method.convert(runtimeNode.getType());
-        method.store(runtimeNode.getSymbol());
+        method.convert(newRuntimeNode.getType());
+        method.store(newRuntimeNode.getSymbol());
 
         return false;
     }

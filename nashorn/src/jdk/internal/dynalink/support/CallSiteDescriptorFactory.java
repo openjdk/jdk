@@ -86,6 +86,7 @@ package jdk.internal.dynalink.support;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
@@ -103,7 +104,7 @@ import jdk.internal.dynalink.CallSiteDescriptor;
  * @author Attila Szegedi
  */
 public class CallSiteDescriptorFactory {
-    private static final WeakHashMap<CallSiteDescriptor, WeakReference<CallSiteDescriptor>> publicDescs =
+    private static final WeakHashMap<CallSiteDescriptor, Reference<CallSiteDescriptor>> publicDescs =
             new WeakHashMap<>();
 
 
@@ -134,16 +135,25 @@ public class CallSiteDescriptorFactory {
 
     static CallSiteDescriptor getCanonicalPublicDescriptor(final CallSiteDescriptor desc) {
         synchronized(publicDescs) {
-            final WeakReference<CallSiteDescriptor> ref = publicDescs.get(desc);
+            final Reference<CallSiteDescriptor> ref = publicDescs.get(desc);
             if(ref != null) {
                 final CallSiteDescriptor canonical = ref.get();
                 if(canonical != null) {
                     return canonical;
                 }
             }
-            publicDescs.put(desc, new WeakReference<>(desc));
+            publicDescs.put(desc, createReference(desc));
         }
         return desc;
+    }
+
+    /**
+     * Override this to use a different kind of references for the cache
+     * @param desc desc
+     * @return reference
+     */
+    protected static Reference<CallSiteDescriptor> createReference(final CallSiteDescriptor desc) {
+        return new WeakReference<>(desc);
     }
 
     private static CallSiteDescriptor createPublicCallSiteDescriptor(String[] tokenizedName, MethodType methodType) {

@@ -28,7 +28,6 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.CompilerConstants.CALLEE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
-
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.Expression;
@@ -38,6 +37,8 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.RuntimeNode;
+import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
@@ -81,6 +82,35 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
         return forNode.
             setInit(lc, init == null ? null : discard(init)).
             setModify(lc, modify == null ? null : discard(modify));
+    }
+
+    private static Node createIsUndefined(final Expression parent, final Expression lhs, final Expression rhs, final Request request) {
+        if ("undefined".equals(rhs.getSymbol().getName())) {
+            return new RuntimeNode(parent, request, lhs, rhs);
+        }
+        return parent;
+    }
+
+    @Override
+    public Node leaveEQ_STRICT(final BinaryNode binaryNode) {
+        return createIsUndefined(binaryNode, binaryNode.lhs(), binaryNode.rhs(), Request.IS_UNDEFINED);
+    }
+
+    @Override
+    public Node leaveNE_STRICT(final BinaryNode binaryNode) {
+        return createIsUndefined(binaryNode, binaryNode.lhs(), binaryNode.rhs(), Request.IS_NOT_UNDEFINED);
+    }
+
+    @Override
+    public Node leaveRuntimeNode(final RuntimeNode runtimeNode) {
+        switch (runtimeNode.getRequest()) {
+        case EQ_STRICT:
+            return createIsUndefined(runtimeNode, runtimeNode.getArgs().get(0), runtimeNode.getArgs().get(1), Request.IS_UNDEFINED);
+        case NE_STRICT:
+            return createIsUndefined(runtimeNode, runtimeNode.getArgs().get(0), runtimeNode.getArgs().get(1), Request.IS_NOT_UNDEFINED);
+        default:
+            return runtimeNode;
+        }
     }
 
     @Override
@@ -194,7 +224,7 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
 
     private static Expression discard(final Expression expr) {
         if (expr.getSymbol() != null) {
-            UnaryNode discard = new UnaryNode(Token.recast(expr.getToken(), TokenType.DISCARD), expr);
+            final UnaryNode discard = new UnaryNode(Token.recast(expr.getToken(), TokenType.DISCARD), expr);
             //discard never has a symbol in the discard node - then it would be a nop
             assert !expr.isTerminal();
             return discard;

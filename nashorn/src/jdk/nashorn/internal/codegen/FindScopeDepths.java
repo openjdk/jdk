@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -41,6 +42,7 @@ import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 
@@ -57,6 +59,9 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> {
     private final CompilationEnvironment env;
     private final Map<Integer, Map<Integer, RecompilableScriptFunctionData>> fnIdToNestedFunctions = new HashMap<>();
     private final Map<Integer, Map<String, Integer>> externalSymbolDepths = new HashMap<>();
+    private final Map<Integer, Set<String>> internalSymbols = new HashMap<>();
+
+    private final static DebugLogger LOG = new DebugLogger("scopedepths");
 
     FindScopeDepths(final Compiler compiler) {
         super(new LexicalContext());
@@ -123,7 +128,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> {
         return null;
     }
 
-    private static Block findGlobalBlock(final LexicalContext lc, final FunctionNode fn, final Block block) {
+    private static Block findGlobalBlock(final LexicalContext lc, final Block block) {
         final Iterator<Block> iter = lc.getBlocks(block);
         Block globalBlock = null;
         while (iter.hasNext()) {
@@ -174,7 +179,8 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> {
                 allocatorMap,
                 nestedFunctions,
                 compiler.getSourceURL(),
-                externalSymbolDepths.get(fnId)
+                externalSymbolDepths.get(fnId),
+                internalSymbols.get(fnId)
                 );
 
         if (lc.getOutermostFunction() != newFunctionNode) {
@@ -223,14 +229,14 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> {
 
         final Map<String, Integer> internals = new HashMap<>();
 
+        final Block globalBlock = findGlobalBlock(lc, block);
+        final Block bodyBlock   = findBodyBlock(lc, fn, block);
+
+        assert globalBlock != null;
+        assert bodyBlock   != null;
+
         for (final Symbol symbol : symbols) {
             Iterator<Block> iter;
-
-            final Block globalBlock = findGlobalBlock(lc, fn, block);
-            final Block bodyBlock   = findBodyBlock(lc, fn, block);
-
-            assert globalBlock != null;
-            assert bodyBlock   != null;
 
             final int internalDepth = findInternalDepth(lc, fn, block, symbol);
             final boolean internal = internalDepth >= 0;
@@ -258,7 +264,19 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> {
             }
         }
 
+        addInternalSymbols(fn, internals.keySet());
+
+        if (LOG.isEnabled()) {
+            LOG.info(fn.getName() + " internals=" + internals + " externals=" + externalSymbolDepths.get(fn.getId()));
+        }
+
         return true;
+    }
+
+    private void addInternalSymbols(final FunctionNode functionNode, final Set<String> symbols) {
+        final int fnId = functionNode.getId();
+        assert internalSymbols.get(fnId) == null || internalSymbols.get(fnId).equals(symbols); //e.g. cloned finally block
+        internalSymbols.put(fnId, symbols);
     }
 
     private void addExternalSymbol(final FunctionNode functionNode, final Symbol symbol, final int depthAtStart) {
@@ -268,7 +286,6 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> {
             depths = new HashMap<>();
             externalSymbolDepths.put(fnId, depths);
         }
-        //System.err.println("PUT " + functionNode.getName() + " " + symbol + " " +depthAtStart);
         depths.put(symbol.getName(), depthAtStart);
     }
 }
