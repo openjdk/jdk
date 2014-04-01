@@ -319,9 +319,6 @@ void os::Linux::initialize_system_info() {
 }
 
 void os::init_system_properties_values() {
-//  char arch[12];
-//  sysinfo(SI_ARCHITECTURE, arch, sizeof(arch));
-
   // The next steps are taken in the product version:
   //
   // Obtain the JAVA_HOME value from the location of libjvm.so.
@@ -348,140 +345,101 @@ void os::init_system_properties_values() {
   // Important note: if the location of libjvm.so changes this
   // code needs to be changed accordingly.
 
-  // The next few definitions allow the code to be verbatim:
-#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n), mtInternal)
-#define getenv(n) ::getenv(n)
-
-/*
- * See ld(1):
- *      The linker uses the following search paths to locate required
- *      shared libraries:
- *        1: ...
- *        ...
- *        7: The default directories, normally /lib and /usr/lib.
- */
+// See ld(1):
+//      The linker uses the following search paths to locate required
+//      shared libraries:
+//        1: ...
+//        ...
+//        7: The default directories, normally /lib and /usr/lib.
 #if defined(AMD64) || defined(_LP64) && (defined(SPARC) || defined(PPC) || defined(S390))
 #define DEFAULT_LIBPATH "/usr/lib64:/lib64:/lib:/usr/lib"
 #else
 #define DEFAULT_LIBPATH "/lib:/usr/lib"
 #endif
 
+// Base path of extensions installed on the system.
+#define SYS_EXT_DIR     "/usr/java/packages"
 #define EXTENSIONS_DIR  "/lib/ext"
 #define ENDORSED_DIR    "/lib/endorsed"
-#define REG_DIR         "/usr/java/packages"
 
+  // Buffer that fits several sprintfs.
+  // Note that the space for the colon and the trailing null are provided
+  // by the nulls included by the sizeof operator.
+  const size_t bufsize =
+    MAX3((size_t)MAXPATHLEN,  // For dll_dir & friends.
+         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + sizeof(SYS_EXT_DIR) + sizeof(EXTENSIONS_DIR), // extensions dir
+         (size_t)MAXPATHLEN + sizeof(ENDORSED_DIR)); // endorsed dir
+  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+
+  // sysclasspath, java_home, dll_dir
   {
-    /* sysclasspath, java_home, dll_dir */
-    {
-        char *home_path;
-        char *dll_path;
-        char *pslash;
-        char buf[MAXPATHLEN];
-        os::jvm_path(buf, sizeof(buf));
+    char *pslash;
+    os::jvm_path(buf, bufsize);
 
-        // Found the full path to libjvm.so.
-        // Now cut the path to <java_home>/jre if we can.
-        *(strrchr(buf, '/')) = '\0';  /* get rid of /libjvm.so */
+    // Found the full path to libjvm.so.
+    // Now cut the path to <java_home>/jre if we can.
+    *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
+    pslash = strrchr(buf, '/');
+    if (pslash != NULL) {
+      *pslash = '\0';            // Get rid of /{client|server|hotspot}.
+    }
+    Arguments::set_dll_dir(buf);
+
+    if (pslash != NULL) {
+      pslash = strrchr(buf, '/');
+      if (pslash != NULL) {
+        *pslash = '\0';          // Get rid of /<arch>.
         pslash = strrchr(buf, '/');
-        if (pslash != NULL)
-            *pslash = '\0';           /* get rid of /{client|server|hotspot} */
-        dll_path = malloc(strlen(buf) + 1);
-        if (dll_path == NULL)
-            return;
-        strcpy(dll_path, buf);
-        Arguments::set_dll_dir(dll_path);
-
         if (pslash != NULL) {
-            pslash = strrchr(buf, '/');
-            if (pslash != NULL) {
-                *pslash = '\0';       /* get rid of /<arch> */
-                pslash = strrchr(buf, '/');
-                if (pslash != NULL)
-                    *pslash = '\0';   /* get rid of /lib */
-            }
+          *pslash = '\0';        // Get rid of /lib.
         }
-
-        home_path = malloc(strlen(buf) + 1);
-        if (home_path == NULL)
-            return;
-        strcpy(home_path, buf);
-        Arguments::set_java_home(home_path);
-
-        if (!set_boot_path('/', ':'))
-            return;
+      }
     }
-
-    /*
-     * Where to look for native libraries
-     *
-     * Note: Due to a legacy implementation, most of the library path
-     * is set in the launcher.  This was to accomodate linking restrictions
-     * on legacy Linux implementations (which are no longer supported).
-     * Eventually, all the library path setting will be done here.
-     *
-     * However, to prevent the proliferation of improperly built native
-     * libraries, the new path component /usr/java/packages is added here.
-     * Eventually, all the library path setting will be done here.
-     */
-    {
-        char *ld_library_path;
-
-        /*
-         * Construct the invariant part of ld_library_path. Note that the
-         * space for the colon and the trailing null are provided by the
-         * nulls included by the sizeof operator (so actually we allocate
-         * a byte more than necessary).
-         */
-        ld_library_path = (char *) malloc(sizeof(REG_DIR) + sizeof("/lib/") +
-            strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH));
-        sprintf(ld_library_path, REG_DIR "/lib/%s:" DEFAULT_LIBPATH, cpu_arch);
-
-        /*
-         * Get the user setting of LD_LIBRARY_PATH, and prepended it.  It
-         * should always exist (until the legacy problem cited above is
-         * addressed).
-         */
-        char *v = getenv("LD_LIBRARY_PATH");
-        if (v != NULL) {
-            char *t = ld_library_path;
-            /* That's +1 for the colon and +1 for the trailing '\0' */
-            ld_library_path = (char *) malloc(strlen(v) + 1 + strlen(t) + 1);
-            sprintf(ld_library_path, "%s:%s", v, t);
-        }
-        Arguments::set_library_path(ld_library_path);
-    }
-
-    /*
-     * Extensions directories.
-     *
-     * Note that the space for the colon and the trailing null are provided
-     * by the nulls included by the sizeof operator (so actually one byte more
-     * than necessary is allocated).
-     */
-    {
-        char *buf = malloc(strlen(Arguments::get_java_home()) +
-            sizeof(EXTENSIONS_DIR) + sizeof(REG_DIR) + sizeof(EXTENSIONS_DIR));
-        sprintf(buf, "%s" EXTENSIONS_DIR ":" REG_DIR EXTENSIONS_DIR,
-            Arguments::get_java_home());
-        Arguments::set_ext_dirs(buf);
-    }
-
-    /* Endorsed standards default directory. */
-    {
-        char * buf;
-        buf = malloc(strlen(Arguments::get_java_home()) + sizeof(ENDORSED_DIR));
-        sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
-        Arguments::set_endorsed_dirs(buf);
-    }
+    Arguments::set_java_home(buf);
+    set_boot_path('/', ':');
   }
 
-#undef malloc
-#undef getenv
+  // Where to look for native libraries.
+  //
+  // Note: Due to a legacy implementation, most of the library path
+  // is set in the launcher. This was to accomodate linking restrictions
+  // on legacy Linux implementations (which are no longer supported).
+  // Eventually, all the library path setting will be done here.
+  //
+  // However, to prevent the proliferation of improperly built native
+  // libraries, the new path component /usr/java/packages is added here.
+  // Eventually, all the library path setting will be done here.
+  {
+    // Get the user setting of LD_LIBRARY_PATH, and prepended it. It
+    // should always exist (until the legacy problem cited above is
+    // addressed).
+    const char *v = ::getenv("LD_LIBRARY_PATH");
+    const char *v_colon = ":";
+    if (v == NULL) { v = ""; v_colon = ""; }
+    // That's +1 for the colon and +1 for the trailing '\0'.
+    char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char,
+                                                     strlen(v) + 1 +
+                                                     sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1,
+                                                     mtInternal);
+    sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
+    Arguments::set_library_path(ld_library_path);
+    FREE_C_HEAP_ARRAY(char, ld_library_path, mtInternal);
+  }
+
+  // Extensions directories.
+  sprintf(buf, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
+  Arguments::set_ext_dirs(buf);
+
+  // Endorsed standards default directory.
+  sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
+  Arguments::set_endorsed_dirs(buf);
+
+  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+
+#undef DEFAULT_LIBPATH
+#undef SYS_EXT_DIR
 #undef EXTENSIONS_DIR
 #undef ENDORSED_DIR
-
-  // Done
-  return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
