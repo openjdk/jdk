@@ -440,6 +440,14 @@ int Compile::frame_size_in_words() const {
   return words;
 }
 
+// To bang the stack of this compiled method we use the stack size
+// that the interpreter would need in case of a deoptimization. This
+// removes the need to bang the stack in the deoptimization blob which
+// in turn simplifies stack overflow handling.
+int Compile::bang_size_in_bytes() const {
+  return MAX2(_interpreter_frame_size, frame_size_in_bytes());
+}
+
 // ============================================================================
 //------------------------------CompileWrapper---------------------------------
 class CompileWrapper : public StackObj {
@@ -664,7 +672,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _print_inlining_list(NULL),
                   _print_inlining_stream(NULL),
                   _print_inlining_idx(0),
-                  _preserve_jvm_state(0) {
+                  _preserve_jvm_state(0),
+                  _interpreter_frame_size(0) {
   C = this;
 
   CompileWrapper cw(this);
@@ -969,7 +978,8 @@ Compile::Compile( ciEnv* ci_env,
     _print_inlining_stream(NULL),
     _print_inlining_idx(0),
     _preserve_jvm_state(0),
-    _allowed_reasons(0) {
+    _allowed_reasons(0),
+    _interpreter_frame_size(0) {
   C = this;
 
 #ifndef PRODUCT
@@ -3078,8 +3088,12 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
       Node* m = n->in(i);
       ++i;
       if (m != NULL && !frc._visited.test_set(m->_idx)) {
-        if (m->is_SafePoint() && m->as_SafePoint()->jvms() != NULL)
+        if (m->is_SafePoint() && m->as_SafePoint()->jvms() != NULL) {
+          // compute worst case interpreter size in case of a deoptimization
+          update_interpreter_frame_size(m->as_SafePoint()->jvms()->interpreter_frame_size());
+
           sfpt.push(m);
+        }
         cnt = m->req();
         nstack.push(n, i); // put on stack parent and next input's index
         n = m;
