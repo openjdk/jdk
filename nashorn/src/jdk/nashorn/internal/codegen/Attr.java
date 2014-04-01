@@ -1413,7 +1413,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         return leaveBinaryArithmetic(binaryNode);
     }
 
-    private Node leaveCmp(final BinaryNode binaryNode) {
+    private BinaryNode leaveCmp(final BinaryNode binaryNode) {
         //infect untyped comp with opportunistic type from other
         final Expression lhs = binaryNode.lhs();
         final Expression rhs = binaryNode.rhs();
@@ -1423,7 +1423,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         final Type widest = Type.widest(lhs.getType(), rhs.getType());
         ensureSymbol(lhs, widest);
         ensureSymbol(rhs, widest);
-        return end(ensureSymbol(binaryNode, Type.BOOLEAN));
+        return (BinaryNode)end(ensureSymbol(binaryNode, Type.BOOLEAN));
     }
 
     private boolean enterBinaryArithmetic(final BinaryNode binaryNode) {

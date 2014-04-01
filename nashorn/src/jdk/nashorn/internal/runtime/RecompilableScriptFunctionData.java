@@ -123,6 +123,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     private final Map<String, Integer> externalScopeDepths;
 
+    private final Set<String> internalSymbols;
+
     private static final int GET_SET_PREFIX_LENGTH = "*et ".length();
 
     /**
@@ -135,6 +137,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
      * @param nestedFunctions     nested function map
      * @param sourceURL           source URL
      * @param externalScopeDepths external scope depths
+     * @param internalSymbols     internal symbols to method, defined in its scope
      */
     public RecompilableScriptFunctionData(
         final FunctionNode functionNode,
@@ -143,7 +146,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         final PropertyMap allocatorMap,
         final Map<Integer, RecompilableScriptFunctionData> nestedFunctions,
         final String sourceURL,
-        final Map<String, Integer> externalScopeDepths) {
+        final Map<String, Integer> externalScopeDepths,
+        final Set<String> internalSymbols) {
 
         super(functionName(functionNode),
               Math.min(functionNode.getParameters().size(), MAX_ARITY),
@@ -161,13 +165,27 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         this.sourceURL           = sourceURL;
         this.allocatorClassName  = allocatorClassName;
         this.allocatorMap        = allocatorMap;
-        this.nestedFunctions     = nestedFunctions;//deepTraverse(nestedFunctions);
+        this.nestedFunctions     = nestedFunctions;
         this.externalScopeDepths = externalScopeDepths;
+        this.internalSymbols     = internalSymbols;
 
         for (final RecompilableScriptFunctionData nfn : nestedFunctions.values()) {
             assert nfn.getParent() == null;
             nfn.setParent(this);
         }
+    }
+
+    /**
+     * Check if a symbol is internally defined in a function. For example
+     * if "undefined" is internally defined in the outermost program function,
+     * it has not been reassigned or overridden and can be optimized
+     *
+     * @param symbolName symbol name
+     * @return true if symbol is internal to this ScriptFunction
+     */
+
+    public boolean hasInternalSymbol(final String symbolName) {
+        return internalSymbols.contains(symbolName);
     }
 
     /**
