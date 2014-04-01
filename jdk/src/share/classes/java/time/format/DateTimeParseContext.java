@@ -64,10 +64,12 @@ package java.time.format;
 import java.time.ZoneId;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
+import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -77,8 +79,8 @@ import java.util.function.Consumer;
  * It has the ability to store and retrieve the parsed values and manage optional segments.
  * It also provides key information to the parsing methods.
  * <p>
- * Once parsing is complete, the {@link #toParsed()} is used to obtain the data.
- * It contains a method to resolve  the separate parsed fields into meaningful values.
+ * Once parsing is complete, the {@link #toUnresolved()} is used to obtain the unresolved
+ * result data. The {@link #toResolved()} is used to obtain the resolved result.
  *
  * @implSpec
  * This class is a mutable context intended for use from a single thread.
@@ -309,15 +311,26 @@ final class DateTimeParseContext {
     }
 
     /**
-     * Gets the result of the parse.
+     * Gets the unresolved result of the parse.
      *
      * @return the result of the parse, not null
      */
-    Parsed toParsed() {
-        Parsed parsed = currentParsed();
-        parsed.effectiveChrono = getEffectiveChronology();
-        return parsed;
+    Parsed toUnresolved() {
+        return currentParsed();
     }
+
+    /**
+     * Gets the resolved result of the parse.
+     *
+     * @return the result of the parse, not null
+     */
+    TemporalAccessor toResolved(ResolverStyle resolverStyle, Set<TemporalField> resolverFields) {
+        Parsed parsed = currentParsed();
+        parsed.chrono = getEffectiveChronology();
+        parsed.zone = (parsed.zone != null ? parsed.zone : formatter.getZone());
+        return parsed.resolve(resolverStyle, resolverFields);
+    }
+
 
     //-----------------------------------------------------------------------
     /**

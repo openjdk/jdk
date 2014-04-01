@@ -38,7 +38,7 @@ public interface FlavorListener extends EventListener {
      * Invoked when the target {@link Clipboard} of the listener
      * has changed its available {@link DataFlavor}s.
      * <p>
-     * Some notifications may be redundant &#151; they are not
+     * Some notifications may be redundant &#8212; they are not
      * caused by a change of the set of DataFlavors available
      * on the clipboard.
      * For example, if the clipboard subsystem supposes that
