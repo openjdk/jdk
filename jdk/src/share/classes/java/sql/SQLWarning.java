@@ -52,7 +52,7 @@ public class SQLWarning extends SQLException {
      * The <code>cause</code> is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
-     * <p>
+     *
      * @param reason a description of the warning
      * @param SQLState an XOPEN or SQL:2003 code identifying the warning
      * @param vendorCode a database vendor-specific warning code
@@ -73,7 +73,7 @@ public class SQLWarning extends SQLException {
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method. The vendor code
      * is initialized to 0.
-     * <p>
+     *
      * @param reason a description of the warning
      * @param SQLState an XOPEN or SQL:2003 code identifying the warning
      */
@@ -92,7 +92,7 @@ public class SQLWarning extends SQLException {
      * The <code>cause</code> is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
-     * <p>
+     *
      * @param reason a description of the warning
      */
     public SQLWarning(String reason) {
@@ -123,7 +123,7 @@ public class SQLWarning extends SQLException {
      * The <code>reason</code>  is initialized to <code>null</code> if
      * <code>cause==null</code> or to <code>cause.toString()</code> if
      * <code>cause!=null</code>.
-     * <p>
+     *
      * @param cause the underlying reason for this <code>SQLWarning</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
      *     the cause is non-existent or unknown.
      */
@@ -138,7 +138,7 @@ public class SQLWarning extends SQLException {
      * <code>reason</code> and  <code>cause</code>.
      * The <code>SQLState</code> is  initialized to <code>null</code>
      * and the vendor code is initialized to 0.
-     * <p>
+     *
      * @param reason a description of the warning
      * @param cause  the underlying reason for this <code>SQLWarning</code>
      * (which is saved for later retrieval by the <code>getCause()</code> method);
@@ -154,7 +154,7 @@ public class SQLWarning extends SQLException {
      * with a given
      * <code>reason</code>, <code>SQLState</code> and  <code>cause</code>.
      * The vendor code is initialized to 0.
-     * <p>
+     *
      * @param reason a description of the warning
      * @param SQLState an XOPEN or SQL:2003 code identifying the warning
      * @param cause the underlying reason for this <code>SQLWarning</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
@@ -171,7 +171,7 @@ public class SQLWarning extends SQLException {
      * with a given
      * <code>reason</code>, <code>SQLState</code>, <code>vendorCode</code>
      * and  <code>cause</code>.
-     * <p>
+     *
      * @param reason a description of the warning
      * @param SQLState an XOPEN or SQL:2003 code identifying the warning
      * @param vendorCode a database vendor-specific warning code

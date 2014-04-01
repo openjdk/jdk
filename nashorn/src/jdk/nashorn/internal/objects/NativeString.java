@@ -32,6 +32,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,21 +70,20 @@ public final class NativeString extends ScriptObject {
 
     private final CharSequence value;
 
-    static final MethodHandle WRAPFILTER = findWrapFilter();
+    // Method handle to create an object wrapper for a primitive string
+    private static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", MH.type(NativeString.class, Object.class));
+    // Method handle to retrieve the String prototype object
+    private static final MethodHandle PROTOFILTER = findOwnMH("protoFilter", MH.type(Object.class, Object.class));
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
-
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
 
     private NativeString(final CharSequence value) {
         this(value, Global.instance());
     }
 
     NativeString(final CharSequence value, final Global global) {
-        this(value, global.getStringPrototype(), getInitialMap());
+        this(value, global.getStringPrototype(), $nasgenmap$);
     }
 
     private NativeString(final CharSequence value, final ScriptObject proto, final PropertyMap map) {
@@ -1199,12 +1199,17 @@ public final class NativeString extends ScriptObject {
      */
     public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Object receiver) {
         final MethodHandle guard = NashornGuards.getInstanceOf2Guard(String.class, ConsString.class);
-        return PrimitiveLookup.lookupPrimitive(request, guard, new NativeString((CharSequence)receiver), WRAPFILTER);
+        return PrimitiveLookup.lookupPrimitive(request, guard, new NativeString((CharSequence)receiver), WRAPFILTER, PROTOFILTER);
     }
 
     @SuppressWarnings("unused")
     private static NativeString wrapFilter(final Object receiver) {
         return new NativeString((CharSequence)receiver);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object protoFilter(final Object object) {
+        return Global.instance().getStringPrototype();
     }
 
     private static CharSequence getCharSequence(final Object self) {
@@ -1254,7 +1259,7 @@ public final class NativeString extends ScriptObject {
         return key >= 0 && key < value.length();
     }
 
-    private static MethodHandle findWrapFilter() {
-        return MH.findStatic(MethodHandles.lookup(), NativeString.class, "wrapFilter", MH.type(NativeString.class, Object.class));
+    private static MethodHandle findOwnMH(final String name, final MethodType type) {
+        return MH.findStatic(MethodHandles.lookup(), NativeString.class, name, type);
     }
 }

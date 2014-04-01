@@ -54,7 +54,6 @@ import sun.awt.datatransfer.DataTransferer;
  * which correspond to platform-independent MIME types. This mapping is used
  * by the data transfer subsystem to transfer data between Java and native
  * applications, and between Java applications in separate VMs.
- * <p>
  *
  * @since 1.2
  */

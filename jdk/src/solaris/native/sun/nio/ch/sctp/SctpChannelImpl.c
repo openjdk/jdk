@@ -38,8 +38,7 @@
 #include "sun_nio_ch_sctp_ResultContainer.h"
 #include "sun_nio_ch_sctp_PeerAddrChange.h"
 
-/* sizeof(union sctp_notification */
-#define NOTIFICATION_BUFFER_SIZE 280
+static int SCTP_NOTIFICATION_SIZE = sizeof(union sctp_notification);
 
 #define MESSAGE_IMPL_CLASS              "sun/nio/ch/sctp/MessageInfoImpl"
 #define RESULT_CONTAINER_CLASS          "sun/nio/ch/sctp/ResultContainer"
@@ -463,20 +462,47 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
         if (msg->msg_flags & MSG_NOTIFICATION) {
             char *bufp = (char*)addr;
             union sctp_notification *snp;
+            jboolean allocated = JNI_FALSE;
 
-            if (!(msg->msg_flags & MSG_EOR) && length < NOTIFICATION_BUFFER_SIZE) {
-                char buf[NOTIFICATION_BUFFER_SIZE];
+            if (rv > SCTP_NOTIFICATION_SIZE) {
+                JNU_ThrowInternalError(env, "should not reach here");
+                return -1;
+            }
+
+            if (!(msg->msg_flags & MSG_EOR) && length < SCTP_NOTIFICATION_SIZE) {
+                char* newBuf;
                 int rvSAVE = rv;
-                memcpy(buf, addr, rv);
-                iov->iov_base = buf + rv;
-                iov->iov_len = NOTIFICATION_BUFFER_SIZE - rv;
+
+                if ((newBuf = malloc(SCTP_NOTIFICATION_SIZE)) == NULL) {
+                    JNU_ThrowOutOfMemoryError(env, "Out of native heap space.");
+                    return -1;
+                }
+                allocated = JNI_TRUE;
+
+                memcpy(newBuf, addr, rv);
+                iov->iov_base = newBuf + rv;
+                iov->iov_len = SCTP_NOTIFICATION_SIZE - rv;
                 if ((rv = recvmsg(fd, msg, flags)) < 0) {
                     handleSocketError(env, errno);
                     return 0;
                 }
-                bufp = buf;
+                bufp = newBuf;
                 rv += rvSAVE;
             }
+#ifdef __sparc
+              else if ((intptr_t)addr & 0x3) {
+                /* the given buffer is not 4 byte aligned */
+                char* newBuf;
+                if ((newBuf = malloc(SCTP_NOTIFICATION_SIZE)) == NULL) {
+                    JNU_ThrowOutOfMemoryError(env, "Out of native heap space.");
+                    return -1;
+                }
+                allocated = JNI_TRUE;
+
+                memcpy(newBuf, addr, rv);
+                bufp = newBuf;
+            }
+#endif
             snp = (union sctp_notification *) bufp;
             if (handleNotification(env, fd, resultContainerObj, snp, rv,
                                    (msg->msg_flags & MSG_EOR),
@@ -484,7 +510,14 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
                 /* We have received a notification that is of interest to
                    to the Java API. The appropriate notification will be
                    set in the result container. */
+                if (allocated == JNI_TRUE) {
+                    free(bufp);
+                }
                 return 0;
+            }
+
+            if (allocated == JNI_TRUE) {
+                free(bufp);
             }
 
             // set iov back to addr, and reset msg_controllen

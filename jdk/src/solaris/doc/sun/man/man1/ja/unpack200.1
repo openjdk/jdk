@@ -1,178 +1,201 @@
-." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH unpack200 1 "07 May 2011"
-
-.LP
-.SH "名前"
-unpack200 \- JAR アンパックツール
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-終了ステータス 
-.TP 2
-o
-関連項目 
-.TP 2
-o
-注意事項 
+'\" t
+.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: unpack200
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: Javaデプロイメント・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "unpack200" "1" "2013年11月21日" "JDK 8" "Javaデプロイメント・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+unpack200 \- pack200(1)で作成されたパック・ファイルを、WebデプロイメントのためにJARファイルに変換します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIunpack200\fR [ \fIoptions\fR ] input\-file \fIJAR\-file\fR
+.fi
+.if n \{\
 .RE
-
-.LP
-.SH "形式"
-.LP
-.LP
-\f4unpack200\fP\f2 [ \fP\f2options\fP ] \f2input\-file\fP \f2JAR\-file\fP
-.LP
-.LP
-オプションの指定順序に決まりはありません。コマンド行に指定された最後のオプションが、それ以前に指定されたすべてのオプションより優先されます。
-.LP
-.RS 3
-.TP 3
-input\-file 
-入力ファイルの名前。入力ファイルは通常、pack200 gzip ファイルか pack200 ファイルです。このほかに、0 を設定すれば pack200(1) から作成された JAR ファイルも入力ファイルとして使用できます。この場合、入力ファイルの内容が Pack200 マーカーとともに出力 JAR ファイルにコピーされます。 
-.TP 3
-JAR\-file 
-出力 JAR ファイル名。 
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
 .RE
-
-.LP
-.SH " 説明"
-.LP
-.LP
-\f2unpack200\fP は、pack200(1) で作成されたパックファイルを JAR ファイルに変換する \f2ネイティブ実装\fPです。一般的な使用方法:
-.LP
-.LP
-\f2% unpack200 myarchive.pack.gz myarchive.jar\fP
-.LP
-.LP
-この例では、 \f2デフォルトの unpack200 設定で、myarchive.pack.gz\fP から \f2myarchive.jar\fP が \f2作成されます\fP 。
-.LP
+.PP
+\fIinput\-file\fR
+.RS 4
+入力ファイルの名前。pack200 gzipファイルかpack200ファイルを指定できます。入力ファイルには、\fIpack200\fR(1)で作成されたJARファイルを指定することもできます(手間は\fI0\fRです)。この場合、入力ファイルの内容はPack2000マーカーで出力JARファイルにコピーされます。
+.RE
+.PP
+\fIJAR\-file\fR
+.RS 4
+出力JARファイル名。
+.RE
+.SH "説明"
+.PP
+\fIunpack200\fRコマンドは、\fIpack200\fR\fI(1)\fRで作成されたパック・ファイルをJARファイルに変換するネイティブ実装です。一般的な使用方法は次のとおりです。次の例では、デフォルトの\fIunpack200\fRコマンド設定で、\fImyarchive\&.jar\fRファイルが\fImyarchive\&.pack\&.gz\fRから作成されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+unpack200 myarchive\&.pack\&.gz myarchive\&.jar
+.fi
+.if n \{\
+.RE
+.\}
 .SH "オプション"
-.LP
-.LP
-\f4\-Hvalue \-\-deflate\-hint=\fP\f2value\fP
-.LP
-.LP
-JAR ファイル内のすべてのエントリに \f2true\fP 、 \f2false\fP、 \f2keep\fP としてデフレーションを設定します。デフォルトモードは \f2keep\fP です。 \f2true\fP または \f2false 場合、\fPデフォルトの動作をオーバーライドして、出力 JAR ファイル内のすべてのエントリのデフレーションモードを設定します。
-.LP
-.LP
-\f4\-r \-\-remove\-pack\-file\fP
-.LP
-.LP
-入力パックファイルを削除します。
-.LP
-.LP
-\f4\-v \-\-verbose\fP
-.LP
-.LP
-最小限のメッセージを出力します。このオプションを複数指定すると、より長いメッセージが出力されます。
-.LP
-.LP
-\f4\-q \-\-quiet\fP
-.LP
-.LP
-メッセージを表示せずに動作します。
-.LP
-.LP
-\f4\-lfilename \-\-log\-file=\fP\f2filename\fP
-.LP
-.LP
-出力メッセージのログファイルを指定します。
-.LP
-.LP
-\f4\-? \-h \-\-help\fP
-.LP
-.LP
-このコマンドに関するヘルプ情報を出力します。
-.LP
-.LP
-\f4\-V \-\-version\fP
-.LP
-.LP
-このコマンドに関するバージョン情報を出力します。
-.LP
-.LP
-\f4\-J\fP\f2option\fP
-.LP
-.LP
-unpack200 によって呼び出される Java 起動ツールに \f2オプション\fP を \f2渡します\fP。
-.LP
-.SH "終了ステータス"
-.LP
-.LP
-次の終了値が返されます。
-.LP
-.LP
-\f2\ 0\fP " 成功"
-.LP
-.LP
-\f2>0\fP " エラー"
-.LP
-.SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-pack200(1) 
-.TP 2
-o
-.na
-\f2Java SE のドキュメント\fP @
-.fi
-http://java.sun.com/javase/6/docs/index.html 
-.TP 2
-o
-.na
-\f2「Java 配備ガイド \- Pack200」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/pack200.html 
-.TP 2
-o
-jar(1) \- Java Archive ツール」 
-.TP 2
-o
-jarsigner(1) \- JAR 署名および検証ツール」 
-.TP 2
-o
-\f2attributes(5)\fP のマニュアルページ 
+.PP
+\-Hvalue \-\-deflate\-hint=\fIvalue\fR
+.RS 4
+JARファイル内のすべてのエントリに\fItrue\fR、\fIfalse\fRまたは\fIkeep\fRのデフレーションを設定します。デフォルト・モードは\fIkeep\fRです。値が\fItrue\fRまたは\fIfalse\fR場合、\fI\-\-deflate=hint\fRオプションはデフォルトの動作をオーバーライドして、出力JARファイル内のすべてのエントリのデフレーション・モードが設定されます。
 .RE
-
-.LP
-.SH "注意事項"
-.LP
-.LP
-このコマンドと \f2unpack(1) を\fP混同しないでください。これらは別製品です。
-.LP
-.LP
-SDK に付属する Java SE API 仕様との相違が見つかった場合には、仕様を優先してください。
-.LP
- 
+.PP
+\-r \-\-remove\-pack\-file
+.RS 4
+入力パック・ファイルを削除します。
+.RE
+.PP
+\-v \-\-verbose
+.RS 4
+最小限のメッセージが表示されます。このオプションの複数の仕様には、より詳細なメッセージが表示されます。
+.RE
+.PP
+\-q \-\-quiet
+.RS 4
+メッセージを表示せずに動作するように指定します。
+.RE
+.PP
+\-lfilename \-\-log\-file=\fIfilename\fR
+.RS 4
+出力メッセージが記録されるログ・ファイルを指定します。
+.RE
+.PP
+\-? \-h \-\-help
+.RS 4
+\fIunpack200\fRコマンドに関するヘルプ情報を出力します。
+.RE
+.PP
+\-V \-\-version
+.RS 4
+\fIunpack200\fRコマンドに関するバージョン情報を出力します。
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+Java仮想マシンにoptionを渡します。\fIoption\fRには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+.RE
+.SH "注意"
+.PP
+このコマンドと\fIunpack\fRコマンドを混同しないでください。これらは別製品です。
+.PP
+JDKに付属するJava SE API仕様との相違が見つかった場合には、仕様を優先してください。
+.SH "終了ステータス"
+.PP
+次の終了値が返されます: 正常終了の場合は0、エラーが発生した場合は0より大きい値。
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+pack200(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jar(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jarsigner(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「Pack200 and Compression」
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/deployment/deployment\-guide/pack200\&.html)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「Java SE Technical Documentation」
+(http://docs\&.oracle\&.com/javase/)
+.RE
+.br
+'pl 8.5i
+'bp

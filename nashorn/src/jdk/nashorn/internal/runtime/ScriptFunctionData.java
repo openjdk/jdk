@@ -32,6 +32,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 
 /**
@@ -47,33 +48,44 @@ public abstract class ScriptFunctionData {
     /** All versions of this function that have been generated to code */
     protected final CompiledFunctions code;
 
+    /** Function flags */
+    protected int flags;
+
     private int arity;
-
-    private final boolean isStrict;
-
-    private final boolean isBuiltin;
-
-    private final boolean isConstructor;
 
     private static final MethodHandle NEWFILTER     = findOwnMH("newFilter", Object.class, Object.class, Object.class);
     private static final MethodHandle BIND_VAR_ARGS = findOwnMH("bindVarArgs", Object[].class, Object[].class, Object[].class);
+
+    /** Is this a strict mode function? */
+    public static final int IS_STRICT      = 1 << 0;
+    /** Is this a built-in function? */
+    public static final int IS_BUILTIN     = 1 << 1;
+    /** Is this a constructor function? */
+    public static final int IS_CONSTRUCTOR = 1 << 2;
+    /** Does this function expect a callee argument? */
+    public static final int NEEDS_CALLEE   = 1 << 3;
+    /** Does this function make use of the this-object argument? */
+    public static final int USES_THIS      = 1 << 4;
+
+    /** Flag for strict or built-in functions */
+    public static final int IS_STRICT_OR_BUILTIN = IS_STRICT | IS_BUILTIN;
+    /** Flag for built-in constructors */
+    public static final int IS_BUILTIN_CONSTRUCTOR = IS_BUILTIN | IS_CONSTRUCTOR;
+    /** Flag for strict constructors */
+    public static final int IS_STRICT_CONSTRUCTOR = IS_STRICT | IS_CONSTRUCTOR;
 
     /**
      * Constructor
      *
      * @param name          script function name
      * @param arity         arity
-     * @param isStrict      is the function strict
-     * @param isBuiltin     is the function built in
-     * @param isConstructor is the function a constructor
+     * @param flags         the function flags
      */
-    ScriptFunctionData(final String name, final int arity, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
-        this.name          = name;
-        this.arity         = arity;
-        this.code          = new CompiledFunctions();
-        this.isStrict      = isStrict;
-        this.isBuiltin     = isBuiltin;
-        this.isConstructor = isConstructor;
+    ScriptFunctionData(final String name, final int arity, final int flags) {
+        this.name  = name;
+        this.arity = arity;
+        this.code  = new CompiledFunctions();
+        this.flags = flags;
     }
 
     final int getArity() {
@@ -105,21 +117,21 @@ public abstract class ScriptFunctionData {
      * @return true if strict, false otherwise
      */
     public boolean isStrict() {
-        return isStrict;
+        return (flags & IS_STRICT) != 0;
     }
 
     boolean isBuiltin() {
-        return isBuiltin;
+        return (flags & IS_BUILTIN) != 0;
     }
 
     boolean isConstructor() {
-        return isConstructor;
+        return (flags & IS_CONSTRUCTOR) != 0;
     }
 
     boolean needsCallee() {
-        // we don't know if we need a callee or not unless we are generated
-        ensureCodeGenerated();
-        return code.needsCallee();
+        // we don't know if we need a callee or not unless code has been compiled
+        ensureCompiled();
+        return (flags & NEEDS_CALLEE) != 0;
     }
 
     /**
@@ -128,7 +140,7 @@ public abstract class ScriptFunctionData {
      * @return true if this argument must be an object
      */
     boolean needsWrappedThis() {
-        return !isStrict && !isBuiltin;
+        return (flags & USES_THIS) != 0 && (flags & IS_STRICT_OR_BUILTIN) == 0;
     }
 
     String toSource() {
@@ -202,6 +214,15 @@ public abstract class ScriptFunctionData {
     }
 
     /**
+     * If we can have lazy code generation, this is a hook to ensure that the code has been compiled.
+     * This does not guarantee the code been installed in this {@code ScriptFunctionData} instance;
+     * use {@link #ensureCodeGenerated()} to install the actual method handles.
+     */
+    protected void ensureCompiled() {
+        //empty
+    }
+
+    /**
      * Return a generic Object/Object invoker for this method. It will ensure code
      * is generated, get the most generic of all versions of this function and adapt it
      * to Objects.
@@ -259,6 +280,8 @@ public abstract class ScriptFunctionData {
 
         final Object[] allArgs = args == null ? ScriptRuntime.EMPTY_ARRAY : args;
         final int length = args == null ? 0 : args.length;
+        // Clear the callee and this flags
+        final int boundFlags = flags & ~NEEDS_CALLEE & ~USES_THIS;
 
         CompiledFunctions boundList = new CompiledFunctions();
         if (code.size() == 1) {
@@ -273,8 +296,7 @@ public abstract class ScriptFunctionData {
             boundList.add(bind(inv, fn, self, allArgs));
         }
 
-        ScriptFunctionData boundData = new FinalScriptFunctionData(name, arity == -1 ? -1 : Math.max(0, arity - length), boundList, isStrict(), isBuiltin(), isConstructor());
-        return boundData;
+        return new FinalScriptFunctionData(name, arity == -1 ? -1 : Math.max(0, arity - length), boundList, boundFlags);
     }
 
     /**
@@ -351,11 +373,11 @@ public abstract class ScriptFunctionData {
     private Object convertThisObject(final Object thiz) {
         if (!(thiz instanceof ScriptObject) && needsWrappedThis()) {
             if (JSType.nullOrUndefined(thiz)) {
-                return Context.getGlobalTrusted();
+                return Context.getGlobal();
             }
 
             if (isPrimitiveThis(thiz)) {
-                return ((GlobalObject)Context.getGlobalTrusted()).wrapAsObject(thiz);
+                return Context.getGlobal().wrapAsObject(thiz);
             }
         }
 
