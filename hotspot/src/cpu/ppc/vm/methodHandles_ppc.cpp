@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,7 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
 
 void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register target, Register temp,
                                             bool for_compiler_entry) {
+  Label L_no_such_method;
   assert(method == R19_method, "interpreter calling convention");
   assert_different_registers(method, target, temp);
 
@@ -131,15 +132,29 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     __ lwz(temp, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
     __ cmplwi(CCR0, temp, 0);
     __ beq(CCR0, run_compiled_code);
+    // Null method test is replicated below in compiled case,
+    // it might be able to address across the verify_thread()
+    __ cmplwi(CCR0, R19_method, 0);
+    __ beq(CCR0, L_no_such_method);
     __ ld(target, in_bytes(Method::interpreter_entry_offset()), R19_method);
     __ mtctr(target);
     __ bctr();
     __ BIND(run_compiled_code);
   }
 
+  // Compiled case, either static or fall-through from runtime conditional
+  __ cmplwi(CCR0, R19_method, 0);
+  __ beq(CCR0, L_no_such_method);
+
   const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
                                                      Method::from_interpreted_offset();
   __ ld(target, in_bytes(entry_offset), R19_method);
+  __ mtctr(target);
+  __ bctr();
+
+  __ bind(L_no_such_method);
+  assert(StubRoutines::throw_AbstractMethodError_entry() != NULL, "not yet generated!");
+  __ load_const_optimized(target, StubRoutines::throw_AbstractMethodError_entry());
   __ mtctr(target);
   __ bctr();
 }

@@ -29,6 +29,8 @@ import java.awt.event.InputEvent;
 import java.awt.Component;
 import java.awt.Point;
 
+import java.io.InvalidObjectException;
+import java.util.Collections;
 import java.util.TooManyListenersException;
 import java.util.ArrayList;
 
@@ -411,10 +413,21 @@ public abstract class DragGestureRecognizer implements Serializable {
      *
      * @since 1.4
      */
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        DragSource newDragSource = (DragSource)f.get("dragSource", null);
+        if (newDragSource == null) {
+            throw new InvalidObjectException("null DragSource");
+        }
+        dragSource = newDragSource;
+
+        component = (Component)f.get("component", null);
+        sourceActions = f.get("sourceActions", 0) & (DnDConstants.ACTION_COPY_OR_MOVE | DnDConstants.ACTION_LINK);
+        events = (ArrayList<InputEvent>)f.get("events", new ArrayList<>(1));
 
         dragGestureListener = (DragGestureListener)s.readObject();
     }

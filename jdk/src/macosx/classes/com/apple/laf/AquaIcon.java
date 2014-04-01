@@ -295,7 +295,14 @@ public class AquaIcon {
         }
 
         Image createImage() {
-            return AquaUtils.getCImageCreator().createSystemImageFromSelector(selector, getIconWidth(), getIconHeight());
+            int w = getIconWidth();
+            int h = getIconHeight();
+            return new AquaImageFactory.MultiResolutionIconImage(
+                    AquaUtils.getCImageCreator().createSystemImageFromSelector(
+                            selector, w, h),
+                    AquaUtils.getCImageCreator().createSystemImageFromSelector(
+                            selector, 2 * w, 2 * h)
+            );
         }
     }
 }

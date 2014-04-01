@@ -478,6 +478,18 @@ public:
 
   int invocation_count() { return _invocation_counter; }
   int backedge_count()   { return _backedge_counter;   }
+
+#if INCLUDE_RTM_OPT
+  // return cached value
+  int rtm_state() {
+    if (is_empty()) {
+      return NoRTM;
+    } else {
+      return get_MethodData()->rtm_state();
+    }
+  }
+#endif
+
   // Transfer information about the method to MethodData*.
   // would_profile means we would like to profile this method,
   // meaning it's not trivial.

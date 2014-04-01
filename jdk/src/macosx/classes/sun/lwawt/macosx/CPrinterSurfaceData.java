@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,11 @@ public class CPrinterSurfaceData extends OSXSurfaceData{
 //    public static final SurfaceType IntArgbPQ = SurfaceType.IntArgb.deriveSubType(DESC_INT_ARGB_PQ);
     public static final SurfaceType IntRgbPQ = SurfaceType.IntRgb.deriveSubType(DESC_INT_RGB_PQ);
 
-    public static SurfaceData createData(PageFormat pf, long context) {
+    static SurfaceData createData(PageFormat pf, long context) {
         return new CPrinterSurfaceData(CPrinterGraphicsConfig.getConfig(pf), context);
     }
 
-    public CPrinterSurfaceData(GraphicsConfiguration gc, long context) {
+    private CPrinterSurfaceData(GraphicsConfiguration gc, long context) {
         super(IntRgbPQ, gc.getColorModel(), gc, gc.getBounds());
         initOps(context, this.fGraphicsStates, this.fGraphicsStatesObject, gc.getBounds().width, gc.getBounds().height);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,15 @@
  * questions.
  */
 
+
 package sun.lwawt.macosx;
 
-import sun.lwawt.LWToolkit;
-import sun.lwawt.LWWindowPeer;
-import sun.lwawt.macosx.CocoaConstants;
-import sun.lwawt.macosx.event.NSEvent;
+import java.awt.AWTKeyStroke;
+import java.awt.Point;
+import java.awt.Toolkit;
 
 import sun.awt.EmbeddedFrame;
-
-import java.awt.*;
-import java.awt.event.*;
+import sun.lwawt.LWWindowPeer;
 
 public class CEmbeddedFrame extends EmbeddedFrame {
 
@@ -48,7 +46,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
 
     public void addNotify() {
         if (getPeer() == null) {
-            LWToolkit toolkit = (LWToolkit)Toolkit.getDefaultToolkit();
+            LWCToolkit toolkit = (LWCToolkit)Toolkit.getDefaultToolkit();
             LWWindowPeer peer = toolkit.createEmbeddedFrame(this);
             setPeer(peer);
             responder = new CPlatformResponder(peer, true);

@@ -39,17 +39,17 @@ import java.util.Set;
  * the current node) may be queried.
  *
  */
-class DigraphNode implements Cloneable, Serializable {
+class DigraphNode<E> implements Cloneable, Serializable {
     private static final long serialVersionUID = 5308261378582246841L;
 
     /** The data associated with this node. */
-    protected Object data;
+    protected E data;
 
     /**
      * A <code>Set</code> of neighboring nodes pointed to by this
      * node.
      */
-    protected Set outNodes = new HashSet();
+    protected Set<DigraphNode<E>> outNodes = new HashSet<>();
 
     /** The in-degree of the node. */
     protected int inDegree = 0;
@@ -58,14 +58,14 @@ class DigraphNode implements Cloneable, Serializable {
      * A <code>Set</code> of neighboring nodes that point to this
      * node.
      */
-    private Set inNodes = new HashSet();
+    private Set<DigraphNode<E>> inNodes = new HashSet<>();
 
-    public DigraphNode(Object data) {
+    public DigraphNode(E data) {
         this.data = data;
     }
 
     /** Returns the <code>Object</code> referenced by this node. */
-    public Object getData() {
+    public E getData() {
         return data;
     }
 
@@ -73,7 +73,7 @@ class DigraphNode implements Cloneable, Serializable {
      * Returns an <code>Iterator</code> containing the nodes pointed
      * to by this node.
      */
-    public Iterator getOutNodes() {
+    public Iterator<DigraphNode<E>> getOutNodes() {
         return outNodes.iterator();
     }
 
@@ -86,7 +86,7 @@ class DigraphNode implements Cloneable, Serializable {
      * @return <code>true</code> if the node was not previously the
      * target of an edge.
      */
-    public boolean addEdge(DigraphNode node) {
+    public boolean addEdge(DigraphNode<E> node) {
         if (outNodes.contains(node)) {
             return false;
         }
@@ -105,7 +105,7 @@ class DigraphNode implements Cloneable, Serializable {
      *
      * @return <code>true</code> if the node is the target of an edge.
      */
-    public boolean hasEdge(DigraphNode node) {
+    public boolean hasEdge(DigraphNode<E> node) {
         return outNodes.contains(node);
     }
 
@@ -116,7 +116,7 @@ class DigraphNode implements Cloneable, Serializable {
      * @return <code>true</code> if the node was previously the target
      * of an edge.
      */
-    public boolean removeEdge(DigraphNode node) {
+    public boolean removeEdge(DigraphNode<E> node) {
         if (!outNodes.contains(node)) {
             return false;
         }
@@ -132,15 +132,17 @@ class DigraphNode implements Cloneable, Serializable {
      * appropriately.
      */
     public void dispose() {
-        Object[] inNodesArray = inNodes.toArray();
+        @SuppressWarnings("unchecked")
+        DigraphNode<E>[] inNodesArray = (DigraphNode<E>[])inNodes.toArray();
         for(int i=0; i<inNodesArray.length; i++) {
-            DigraphNode node = (DigraphNode) inNodesArray[i];
+            DigraphNode<E> node = inNodesArray[i];
             node.removeEdge(this);
         }
 
-        Object[] outNodesArray = outNodes.toArray();
+        @SuppressWarnings("unchecked")
+        DigraphNode<E>[] outNodesArray = (DigraphNode<E>[])outNodes.toArray();
         for(int i=0; i<outNodesArray.length; i++) {
-            DigraphNode node = (DigraphNode) outNodesArray[i];
+            DigraphNode<E> node = outNodesArray[i];
             removeEdge(node);
         }
     }

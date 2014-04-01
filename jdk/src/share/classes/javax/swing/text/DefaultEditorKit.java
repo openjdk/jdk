@@ -317,9 +317,7 @@ public class DefaultEditorKit extends EditorKit {
         int offs = pos;
         Object endOfLineProperty = doc.getProperty(EndOfLineStringProperty);
         if (endOfLineProperty == null) {
-            try {
-                endOfLineProperty = System.getProperty("line.separator");
-            } catch (SecurityException se) { }
+            endOfLineProperty = System.lineSeparator();
         }
         String endOfLine;
         if (endOfLineProperty instanceof String) {

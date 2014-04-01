@@ -80,6 +80,9 @@ public class SwingUtilities2 {
     public static final Object LAF_STATE_KEY =
             new StringBuffer("LookAndFeel State");
 
+    public static final Object MENU_SELECTION_MANAGER_LISTENER_KEY =
+            new StringBuffer("MenuSelectionManager listener key");
+
     // Maintain a cache of CACHE_SIZE fonts and the left side bearing
      // of the characters falling into the range MIN_CHAR_INDEX to
      // MAX_CHAR_INDEX. The values in fontCache are created as needed.
@@ -189,7 +192,6 @@ public class SwingUtilities2 {
         new StringUIClientPropertyKey ("maxTextOffset");
 
     // security stuff
-    private static Field inputEvent_CanAccessSystemClipboard_Field = null;
     private static final String UntrustedClipboardAccess =
         "UNTRUSTED_CLIPBOARD_ACCESS_KEY";
 
@@ -1263,41 +1265,6 @@ public class SwingUtilities2 {
     }
 
     /**
-     * returns canAccessSystemClipboard field from InputEvent
-     *
-     * @param ie InputEvent to get the field from
-     */
-    private static synchronized boolean inputEvent_canAccessSystemClipboard(InputEvent ie) {
-        if (inputEvent_CanAccessSystemClipboard_Field == null) {
-            inputEvent_CanAccessSystemClipboard_Field =
-                AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Field>() {
-                        public Field run() {
-                            try {
-                                Field field = InputEvent.class.
-                                    getDeclaredField("canAccessSystemClipboard");
-                                field.setAccessible(true);
-                                return field;
-                            } catch (SecurityException e) {
-                            } catch (NoSuchFieldException e) {
-                            }
-                            return null;
-                        }
-                    });
-        }
-        if (inputEvent_CanAccessSystemClipboard_Field == null) {
-            return false;
-        }
-        boolean ret = false;
-        try {
-            ret = inputEvent_CanAccessSystemClipboard_Field.
-                getBoolean(ie);
-        } catch(IllegalAccessException e) {
-        }
-        return ret;
-    }
-
-    /**
      * Returns true if the given event is corrent gesture for
      * accessing clipboard
      *
@@ -1350,7 +1317,8 @@ public class SwingUtilities2 {
              */
             if (e instanceof InputEvent
                 && (! checkGesture || isAccessClipboardGesture((InputEvent)e))) {
-                return inputEvent_canAccessSystemClipboard((InputEvent)e);
+                return AWTAccessor.getInputEventAccessor().
+                        canAccessSystemClipboard((InputEvent) e);
             } else {
                 return false;
             }
@@ -1965,5 +1933,12 @@ public class SwingUtilities2 {
             }
         }
         return path;
+    }
+
+    /**
+     * Used to listen to "blit" repaints in RepaintManager.
+     */
+    public interface RepaintListener {
+        void repaintPerformed(JComponent c, int x, int y, int w, int h);
     }
 }

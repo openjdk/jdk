@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Implementation of VMManagement interface that accesses the management
@@ -173,10 +172,8 @@ class VMManagementImpl implements VMManagement {
     }
 
     public String   getBootClassPath( ) {
-        PrivilegedAction<String> pa
-            = new GetPropertyAction("sun.boot.class.path");
-        String result =  AccessController.doPrivileged(pa);
-        return result;
+        return AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> System.getProperty("sun.boot.class.path"));
     }
 
     public long getUptime() {

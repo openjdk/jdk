@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 
 import com.sun.java.swing.SwingUtilities3;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import sun.awt.AWTAccessor;
 
 import sun.awt.SubRegionShowable;
 import sun.java2d.SunGraphics2D;
@@ -68,12 +71,6 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
     // have changed and so show only attempts to show from the backbuffer
     // if we get a blit strategy.
     //
-
-    //
-    // Methods used to create BufferStrategy for Applets.
-    //
-    private static Method COMPONENT_CREATE_BUFFER_STRATEGY_METHOD;
-    private static Method COMPONENT_GET_BUFFER_STRATEGY_METHOD;
 
     private static final PlatformLogger LOGGER = PlatformLogger.getLogger(
                            "javax.swing.BufferStrategyPaintManager");
@@ -142,44 +139,6 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
      * paint loop is done.
      */
     private boolean disposeBufferOnEnd;
-
-    private static Method getGetBufferStrategyMethod() {
-        if (COMPONENT_GET_BUFFER_STRATEGY_METHOD == null) {
-            getMethods();
-        }
-        return COMPONENT_GET_BUFFER_STRATEGY_METHOD;
-    }
-
-    private static Method getCreateBufferStrategyMethod() {
-        if (COMPONENT_CREATE_BUFFER_STRATEGY_METHOD == null) {
-            getMethods();
-        }
-        return COMPONENT_CREATE_BUFFER_STRATEGY_METHOD;
-    }
-
-    private static void getMethods() {
-        java.security.AccessController.doPrivileged(
-                            new java.security.PrivilegedAction<Object>() {
-            public Object run() {
-                try {
-                    COMPONENT_CREATE_BUFFER_STRATEGY_METHOD = Component.class.
-                              getDeclaredMethod("createBufferStrategy",
-                                                new Class[] { int.class,
-                                                BufferCapabilities.class });
-                    COMPONENT_CREATE_BUFFER_STRATEGY_METHOD.
-                                            setAccessible(true);
-                    COMPONENT_GET_BUFFER_STRATEGY_METHOD = Component.class.
-                              getDeclaredMethod("getBufferStrategy");
-                    COMPONENT_GET_BUFFER_STRATEGY_METHOD.setAccessible(true);
-                } catch (SecurityException e) {
-                    assert false;
-                } catch (NoSuchMethodException nsme) {
-                    assert false;
-                }
-                return null;
-            }
-        });
-    }
 
     BufferStrategyPaintManager() {
         bufferInfos = new ArrayList<BufferInfo>(1);
@@ -766,16 +725,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                     componentBS = ((Window)root).getBufferStrategy();
                 }
                 else {
-                    try {
-                        componentBS = (BufferStrategy)
-                                 getGetBufferStrategyMethod().invoke(root);
-                    } catch (InvocationTargetException ite) {
-                        assert false;
-                    } catch (IllegalArgumentException iae) {
-                        assert false;
-                    } catch (IllegalAccessException iae2) {
-                        assert false;
-                    }
+                    componentBS = AWTAccessor.getComponentAccessor().getBufferStrategy(root);
                 }
                 if (componentBS != ourBS) {
                     // Component has a different BS, dispose ours.
@@ -839,19 +789,16 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
             BufferStrategy bs = null;
             if (SunToolkit.isInstanceOf(root, "java.applet.Applet")) {
                 try {
-                    getCreateBufferStrategyMethod().invoke(root, 2, caps);
-                    bs = (BufferStrategy)getGetBufferStrategyMethod().
-                                            invoke(root);
-                } catch (InvocationTargetException ite) {
+                    AWTAccessor.ComponentAccessor componentAccessor
+                            = AWTAccessor.getComponentAccessor();
+                    componentAccessor.createBufferStrategy(root, 2, caps);
+                    bs = componentAccessor.getBufferStrategy(root);
+                } catch (AWTException e) {
                     // Type is not supported
                     if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
                         LOGGER.finer("createBufferStratety failed",
-                                     ite);
+                                     e);
                     }
-                } catch (IllegalArgumentException iae) {
-                    assert false;
-                } catch (IllegalAccessException iae2) {
-                    assert false;
                 }
             }
             else {

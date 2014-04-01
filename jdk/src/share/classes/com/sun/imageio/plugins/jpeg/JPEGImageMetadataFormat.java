@@ -82,7 +82,7 @@ public class JPEGImageMetadataFormat extends JPEGMetadataFormat {
                      "2",
                      "0", "255",
                      true, true);
-        List resUnits = new ArrayList();
+        List<String> resUnits = new ArrayList<>();
         resUnits.add("0");
         resUnits.add("1");
         resUnits.add("2");
@@ -125,7 +125,7 @@ public class JPEGImageMetadataFormat extends JPEGMetadataFormat {
         addElement("JFIFthumbPalette", "app0JFXX", CHILD_POLICY_EMPTY);
         addElement("JFIFthumbRGB", "app0JFXX", CHILD_POLICY_EMPTY);
 
-        List codes = new ArrayList();
+        List<String> codes = new ArrayList<>();
         codes.add("16"); // Hex 10
         codes.add("17"); // Hex 11
         codes.add("19"); // Hex 13
@@ -192,7 +192,7 @@ public class JPEGImageMetadataFormat extends JPEGMetadataFormat {
                      "0", "65535",
                      true, true);
 
-        List transforms = new ArrayList();
+        List<String> transforms = new ArrayList<>();
         transforms.add("0");
         transforms.add("1");
         transforms.add("2");
@@ -205,7 +205,7 @@ public class JPEGImageMetadataFormat extends JPEGMetadataFormat {
 
         addElement("componentSpec", "sof", CHILD_POLICY_EMPTY);
 
-        List procs = new ArrayList();
+        List<String> procs = new ArrayList<>();
         procs.add("0");
         procs.add("1");
         procs.add("2");
@@ -234,7 +234,7 @@ public class JPEGImageMetadataFormat extends JPEGMetadataFormat {
                      null,
                      "0", "65535",
                      true, true);
-        List comps = new ArrayList();
+        List<String> comps = new ArrayList<>();
         comps.add("1");
         comps.add("2");
         comps.add("3");
@@ -267,7 +267,7 @@ public class JPEGImageMetadataFormat extends JPEGMetadataFormat {
                      null,
                      "1", "255",
                      true, true);
-        List tabids = new ArrayList();
+        List<String> tabids = new ArrayList<>();
         tabids.add("0");
         tabids.add("1");
         tabids.add("2");

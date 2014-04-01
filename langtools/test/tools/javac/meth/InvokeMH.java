@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Generate call sites for method handle
  * @author jrose
  *
- * @compile -source 7 -target 7 -XDallowTransitionalJSR292=no InvokeMH.java
+ * @compile InvokeMH.java
  */
 
 /*

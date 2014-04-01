@@ -115,7 +115,7 @@ public final class IIORegistry extends ServiceRegistry {
      * A <code>Vector</code> containing the valid IIO registry
      * categories (superinterfaces) to be used in the constructor.
      */
-    private static final Vector initialCategories = new Vector(5);
+    private static final Vector<Class<?>> initialCategories = new Vector<>(5);
 
     static {
         initialCategories.add(ImageReaderSpi.class);
@@ -198,9 +198,10 @@ public final class IIORegistry extends ServiceRegistry {
 
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
-        Iterator categories = getCategories();
+        Iterator<Class<?>> categories = getCategories();
         while (categories.hasNext()) {
-            Class<IIOServiceProvider> c = (Class)categories.next();
+            @SuppressWarnings("unchecked")
+            Class<IIOServiceProvider> c = (Class<IIOServiceProvider>)categories.next();
             Iterator<IIOServiceProvider> riter =
                     ServiceLoader.load(c, loader).iterator();
             while (riter.hasNext()) {
@@ -234,12 +235,13 @@ public final class IIORegistry extends ServiceRegistry {
           file read capability is restricted (like the
           applet context case).
          */
-        PrivilegedAction doRegistration =
-            new PrivilegedAction() {
+        PrivilegedAction<Object> doRegistration =
+            new PrivilegedAction<Object>() {
                 public Object run() {
-                    Iterator categories = getCategories();
+                    Iterator<Class<?>> categories = getCategories();
                     while (categories.hasNext()) {
-                        Class<IIOServiceProvider> c = (Class)categories.next();
+                        @SuppressWarnings("unchecked")
+                        Class<IIOServiceProvider> c = (Class<IIOServiceProvider>)categories.next();
                         for (IIOServiceProvider p : ServiceLoader.loadInstalled(c)) {
                             registerServiceProvider(p);
                         }

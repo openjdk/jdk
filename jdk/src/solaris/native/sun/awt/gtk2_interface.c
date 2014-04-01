@@ -32,6 +32,7 @@
 #include "java_awt_Transparency.h"
 #include "jvm_md.h"
 #include "sizecalc.h"
+#include <jni_util.h>
 
 #define GTK2_LIB_VERSIONED VERSIONED_JNI_LIB_NAME("gtk-x11-2.0", "0")
 #define GTK2_LIB JNI_LIB_NAME("gtk-x11-2.0")
@@ -438,10 +439,82 @@ gboolean gtk2_check_version()
     }
 }
 
+#define ADD_SUPPORTED_ACTION(actionStr) \
+do { \
+    jfieldID fld_action = (*env)->GetStaticFieldID(env, cls_action, actionStr, "Ljava/awt/Desktop$Action;"); \
+    if (!(*env)->ExceptionCheck(env)) { \
+        jobject action = (*env)->GetStaticObjectField(env, cls_action, fld_action); \
+        (*env)->CallBooleanMethod(env, supportedActions, mid_arrayListAdd, action); \
+    } else { \
+        (*env)->ExceptionClear(env); \
+    } \
+} while(0);
+
+
+void update_supported_actions(JNIEnv *env) {
+    GVfs * (*fp_g_vfs_get_default) (void);
+    const gchar * const * (*fp_g_vfs_get_supported_uri_schemes) (GVfs * vfs);
+    const gchar * const * schemes = NULL;
+
+    jclass cls_action = (*env)->FindClass(env, "java/awt/Desktop$Action");
+    CHECK_NULL(cls_action);
+    jclass cls_xDesktopPeer = (*env)->FindClass(env, "sun/awt/X11/XDesktopPeer");
+    CHECK_NULL(cls_xDesktopPeer);
+    jfieldID fld_supportedActions = (*env)->GetStaticFieldID(env, cls_xDesktopPeer, "supportedActions", "Ljava/util/List;");
+    CHECK_NULL(fld_supportedActions);
+    jobject supportedActions = (*env)->GetStaticObjectField(env, cls_xDesktopPeer, fld_supportedActions);
+
+    jclass cls_arrayList = (*env)->FindClass(env, "java/util/ArrayList");
+    CHECK_NULL(cls_arrayList);
+    jmethodID mid_arrayListAdd = (*env)->GetMethodID(env, cls_arrayList, "add", "(Ljava/lang/Object;)Z");
+    CHECK_NULL(mid_arrayListAdd);
+    jmethodID mid_arrayListClear = (*env)->GetMethodID(env, cls_arrayList, "clear", "()V");
+    CHECK_NULL(mid_arrayListClear);
+
+    (*env)->CallVoidMethod(env, supportedActions, mid_arrayListClear);
+
+    ADD_SUPPORTED_ACTION("OPEN");
+
+    /**
+     * gtk_show_uri() documentation says:
+     *
+     * > you need to install gvfs to get support for uri schemes such as http://
+     * > or ftp://, as only local files are handled by GIO itself.
+     *
+     * So OPEN action was safely added here.
+     * However, it looks like Solaris 11 have gvfs support only for 32-bit
+     * applications only by default.
+     */
+
+    fp_g_vfs_get_default = dl_symbol("g_vfs_get_default");
+    fp_g_vfs_get_supported_uri_schemes = dl_symbol("g_vfs_get_supported_uri_schemes");
+    dlerror();
+
+    if (fp_g_vfs_get_default && fp_g_vfs_get_supported_uri_schemes) {
+        GVfs * vfs = fp_g_vfs_get_default();
+        schemes = vfs ? fp_g_vfs_get_supported_uri_schemes(vfs) : NULL;
+        if (schemes) {
+            int i = 0;
+            while (schemes[i]) {
+                if (strcmp(schemes[i], "http") == 0) {
+                    ADD_SUPPORTED_ACTION("BROWSE");
+                    ADD_SUPPORTED_ACTION("MAIL");
+                    break;
+                }
+                i++;
+            }
+        }
+    } else {
+#ifdef INTERNAL_BUILD
+        fprintf(stderr, "Cannot load g_vfs_get_supported_uri_schemes\n");
+#endif /* INTERNAL_BUILD */
+    }
+
+}
 /**
  * Functions for awt_Desktop.c
  */
-gboolean gtk2_show_uri_load() {
+gboolean gtk2_show_uri_load(JNIEnv *env) {
      gboolean success = FALSE;
      dlerror();
      const char *gtk_version = fp_gtk_check_version(2, 14, 0);
@@ -464,9 +537,12 @@ gboolean gtk2_show_uri_load() {
 #ifdef INTERNAL_BUILD
              fprintf(stderr, "dlsym(gtk_show_uri) returned NULL\n");
 #endif /* INTERNAL_BUILD */
-         } else {
-             success = TRUE;
-         }
+        } else {
+#ifdef __solaris__
+            update_supported_actions(env);
+#endif
+            success = TRUE;
+        }
      }
      return success;
 }
@@ -533,7 +609,10 @@ gboolean gtk2_load(JNIEnv *env)
         }
 
         /* GLib */
-        fp_glib_check_version = dl_symbol("glib_check_version");
+        fp_glib_check_version = dlsym(gtk2_libhandle, "glib_check_version");
+        if (!fp_glib_check_version) {
+            dlerror();
+        }
         fp_g_free = dl_symbol("g_free");
         fp_g_object_unref = dl_symbol("g_object_unref");
 
@@ -709,7 +788,7 @@ gboolean gtk2_load(JNIEnv *env)
         /**
          * GLib thread system
          */
-        if (fp_glib_check_version(2, 20, 0) == NULL) {
+        if (GLIB_CHECK_VERSION(2, 20, 0)) {
             fp_g_thread_get_initialized = dl_symbol_gthread("g_thread_get_initialized");
         }
         fp_g_thread_init = dl_symbol_gthread("g_thread_init");
@@ -827,7 +906,7 @@ gboolean gtk2_load(JNIEnv *env)
         // We can use g_thread_get_initialized () but it is available only for
         // GLib >= 2.20. We rely on GThreadHelper for GLib < 2.20.
         gboolean is_g_thread_get_initialized = FALSE;
-        if (fp_glib_check_version(2, 20, 0) == NULL) {
+        if (GLIB_CHECK_VERSION(2, 20, 0)) {
             is_g_thread_get_initialized = fp_g_thread_get_initialized();
         }
 

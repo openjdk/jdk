@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,13 @@
  */
 package sun.awt.windows;
 
-import java.util.*;
 import java.awt.*;
 import java.awt.peer.*;
 
 import sun.awt.*;
 import sun.awt.im.*;
 
-class WDialogPeer extends WWindowPeer implements DialogPeer {
+final class WDialogPeer extends WWindowPeer implements DialogPeer {
     // Toolkit & peer internals
 
     // Platform default background for dialogs.  Gets set on target if
@@ -54,6 +53,7 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
     }
 
     native void createAwtDialog(WComponentPeer parent);
+    @Override
     void create(WComponentPeer parent) {
         preCreate(parent);
         createAwtDialog(parent);
@@ -62,6 +62,7 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
     native void showModal();
     native void endModal();
 
+    @Override
     void initialize() {
         Dialog target = (Dialog)this.target;
         // Need to set target's background to default _before_ a call
@@ -78,6 +79,7 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
         setResizable(target.isResizable());
     }
 
+    @Override
     protected void realShow() {
         Dialog dlg = (Dialog)target;
         if (dlg.getModalityType() != Dialog.ModalityType.MODELESS) {
@@ -87,8 +89,9 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
         }
     }
 
+    @Override
     @SuppressWarnings("deprecation")
-    public void hide() {
+    void hide() {
         Dialog dlg = (Dialog)target;
         if (dlg.getModalityType() != Dialog.ModalityType.MODELESS) {
             endModal();
@@ -97,6 +100,7 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
         }
     }
 
+    @Override
     public void blockWindows(java.util.List<Window> toBlock) {
         for (Window w : toBlock) {
             WWindowPeer wp = (WWindowPeer)AWTAccessor.getComponentAccessor().getPeer(w);
@@ -106,6 +110,7 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
         }
     }
 
+    @Override
     public Dimension getMinimumSize() {
         if (((Dialog)target).isUndecorated()) {
             return super.getMinimumSize();
@@ -119,6 +124,7 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
         return ((Dialog)target).isUndecorated();
     }
 
+    @Override
     public void reshape(int x, int y, int width, int height) {
         if (((Dialog)target).isUndecorated()) {
             super.reshape(x, y, width, height);

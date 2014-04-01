@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,10 @@
 @interface AWTView()
 @property (retain) CDropTarget *_dropTarget;
 @property (retain) CDragSource *_dragSource;
+
+-(void) deliverResize: (NSRect) rect;
+-(void) resetTrackingArea;
+-(void) deliverJavaKeyEventHelper: (NSEvent*) event;
 @end
 
 // Uncomment this line to see fprintfs of each InputMethod API being called on this View
@@ -363,7 +367,7 @@ AWT_ASSERT_APPKIT_THREAD;
     // TODO: need consitent way for doing that both with global as well as with local coordinates.
     // The reason to do it here is one more native method for getting screen dimension otherwise.
 
-    NSRect screenRect = [[NSScreen mainScreen] frame];
+    NSRect screenRect = [[[NSScreen screens] objectAtIndex:0] frame];
     absP.y = screenRect.size.height - absP.y;
     jint clickCount;
 
@@ -376,7 +380,7 @@ AWT_ASSERT_APPKIT_THREAD;
         clickCount = [event clickCount];
     }
 
-    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/event/NSEvent");
+    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
     static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDD)V");
     jobject jEvent = JNFNewObject(env, jctor_NSEvent,
                                   [event type],
@@ -393,7 +397,7 @@ AWT_ASSERT_APPKIT_THREAD;
     }
 
     static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
-    static JNF_MEMBER_CACHE(jm_deliverMouseEvent, jc_PlatformView, "deliverMouseEvent", "(Lsun/lwawt/macosx/event/NSEvent;)V");
+    static JNF_MEMBER_CACHE(jm_deliverMouseEvent, jc_PlatformView, "deliverMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
     JNFCallVoidMethod(env, m_cPlatformView, jm_deliverMouseEvent, jEvent);
 }
 
@@ -441,7 +445,7 @@ AWT_ASSERT_APPKIT_THREAD;
         characters = JNFNSToJavaString(env, [event characters]);
     }
 
-    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/event/NSEvent");
+    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
     static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IISLjava/lang/String;)V");
     jobject jevent = JNFNewObject(env, jctor_NSEvent,
                                   [event type],
@@ -451,7 +455,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
     static JNF_MEMBER_CACHE(jm_deliverKeyEvent, jc_PlatformView,
-                            "deliverKeyEvent", "(Lsun/lwawt/macosx/event/NSEvent;)V");
+                            "deliverKeyEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
     JNFCallVoidMethod(env, m_cPlatformView, jm_deliverKeyEvent, jevent);
 
     if (characters != NULL) {

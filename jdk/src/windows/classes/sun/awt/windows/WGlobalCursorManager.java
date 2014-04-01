@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package sun.awt.windows;
 import java.awt.*;
 import sun.awt.GlobalCursorManager;
 
-public final class WGlobalCursorManager extends GlobalCursorManager {
+final class WGlobalCursorManager extends GlobalCursorManager {
     private static WGlobalCursorManager manager;
 
     public static GlobalCursorManager getCursorManager() {
@@ -46,12 +46,16 @@ public final class WGlobalCursorManager extends GlobalCursorManager {
         WGlobalCursorManager.getCursorManager().updateCursorLater(heavy);
     }
 
+    @Override
     protected native void setCursor(Component comp, Cursor cursor, boolean u);
+    @Override
     protected native void getCursorPos(Point p);
     /*
      * two native methods to call corresponding methods in Container and
      * Component
      */
+    @Override
     protected native Component findHeavyweightUnderCursor(boolean useCache);
+    @Override
     protected native Point getLocationOnScreen(Component com);
 }

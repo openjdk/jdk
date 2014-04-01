@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ package sun.font;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.font.TextAttribute;
+import java.text.AttributedCharacterIterator;
 import java.util.ArrayList;
 import java.util.Map;
 import sun.text.CodePointIterator;
@@ -222,7 +223,8 @@ public final class FontResolver {
      *        is Font.PLAIN
      * @see #getFontIndex
      */
-    public Font getFont(int index, Map attributes) {
+    public Font getFont(int index,
+                        Map<? extends AttributedCharacterIterator.Attribute, ?> attributes) {
         Font font = defaultFont;
 
         if (index >= 2) {

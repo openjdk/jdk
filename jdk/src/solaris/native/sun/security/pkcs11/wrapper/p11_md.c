@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -88,6 +88,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     const char *getFunctionListStr;
 
     const char *libraryNameStr = (*env)->GetStringUTFChars(env, jPkcs11ModulePath, 0);
+    if (libraryNameStr == NULL) {
+        return;
+    }
     TRACE1("DEBUG: connect to PKCS#11 module: %s ... ", libraryNameStr);
 
 
@@ -123,6 +126,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     // with the old JAR file jGetFunctionList is null, temporarily check for that
     if (jGetFunctionList != NULL) {
         getFunctionListStr = (*env)->GetStringUTFChars(env, jGetFunctionList, 0);
+        if (getFunctionListStr == NULL) {
+            return;
+        }
         C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule, getFunctionListStr);
         (*env)->ReleaseStringUTFChars(env, jGetFunctionList, getFunctionListStr);
     }

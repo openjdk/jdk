@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
 
     // WComponentPeer overrides
 
+    @Override
     public Dimension getMinimumSize() {
         FontMetrics fm = getFontMetrics(((Choice)target).getFont());
         Choice c = (Choice)target;
@@ -45,23 +46,29 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
         }
         return new Dimension(28 + w, Math.max(fm.getHeight() + 6, 15));
     }
+    @Override
     public boolean isFocusable() {
         return true;
     }
 
     // ChoicePeer implementation
 
+    @Override
     public native void select(int index);
 
+    @Override
     public void add(String item, int index) {
         addItem(item, index);
     }
 
+    @Override
     public boolean shouldClearRectBeforePaint() {
         return false;
     }
 
+    @Override
     public native void removeAll();
+    @Override
     public native void remove(int index);
 
     /**
@@ -72,6 +79,7 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
     }
     public native void addItems(String[] items, int index);
 
+    @Override
     public synchronized native void reshape(int x, int y, int width, int height);
 
     private WindowListener windowListener;
@@ -82,8 +90,10 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
         super(target);
     }
 
+    @Override
     native void create(WComponentPeer parent);
 
+    @Override
     @SuppressWarnings("deprecation")
     void initialize() {
         Choice opt = (Choice)target;
@@ -104,9 +114,11 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
             WWindowPeer wpeer = (WWindowPeer)parentWindow.getPeer();
             if (wpeer != null) {
                 windowListener = new WindowAdapter() {
+                        @Override
                         public void windowIconified(WindowEvent e) {
                             closeList();
                         }
+                        @Override
                         public void windowClosing(WindowEvent e) {
                             closeList();
                         }
@@ -117,6 +129,7 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
         super.initialize();
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     protected void disposeImpl() {
         // TODO: we should somehow reset the listener when the choice
@@ -136,6 +149,7 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
     void handleAction(final int index) {
         final Choice c = (Choice)target;
         WToolkit.executeOnEventHandlerThread(c, new Runnable() {
+            @Override
             public void run() {
                 c.select(index);
                 postEvent(new ItemEvent(c, ItemEvent.ITEM_STATE_CHANGED,

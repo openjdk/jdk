@@ -375,10 +375,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
      * @return Symbol for given name or null for redefinition.
      */
     private Symbol defineSymbol(final Block block, final String name, final int symbolFlags) {
-        int    flags  = symbolFlags;
-        Symbol symbol = findSymbol(block, name); // Locate symbol.
+        int     flags    = symbolFlags;
+        Symbol  symbol   = findSymbol(block, name); // Locate symbol.
+        boolean isGlobal = (flags & KINDMASK) == IS_GLOBAL;
 
-        if ((flags & KINDMASK) == IS_GLOBAL) {
+        if (isGlobal) {
             flags |= IS_SCOPE;
         }
 
@@ -414,6 +415,8 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             // Determine where to create it.
             if ((flags & Symbol.KINDMASK) == IS_VAR && ((flags & IS_INTERNAL) == IS_INTERNAL || (flags & IS_LET) == IS_LET)) {
                 symbolBlock = block; //internal vars are always defined in the block closest to them
+            } else if (isGlobal) {
+                symbolBlock = lc.getOutermostFunction().getBody();
             } else {
                 symbolBlock = lc.getFunctionBody(function);
             }

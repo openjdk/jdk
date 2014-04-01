@@ -25,8 +25,6 @@
 
 package javax.swing;
 
-import sun.swing.JLightweightFrame;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.ComponentPeer;
@@ -37,9 +35,7 @@ import javax.swing.event.*;
 import javax.swing.border.*;
 import javax.accessibility.*;
 
-
 import java.io.Serializable;
-
 
 /**
  * The "viewport" or "porthole" through which you see the underlying
@@ -363,18 +359,6 @@ public class JViewport extends JComponent implements Accessible
         child.removeComponentListener(viewListener);
         super.remove(child);
     }
-
-    @Override
-    public void addNotify() {
-        super.addNotify();
-        // JLightweightFrame does not support BLIT_SCROLL_MODE, so it should be replaced
-        Window rootWindow = SwingUtilities.getWindowAncestor(this);
-        if (rootWindow instanceof JLightweightFrame
-                && getScrollMode() == BLIT_SCROLL_MODE) {
-            setScrollMode(BACKINGSTORE_SCROLL_MODE);
-        }
-    }
-
 
     /**
      * Scrolls the view so that <code>Rectangle</code>
@@ -1109,13 +1093,15 @@ public class JViewport extends JComponent implements Accessible
                         Graphics g = JComponent.safelyGetGraphics(this);
                         flushViewDirtyRegion(g, dirty);
                         view.setLocation(newX, newY);
-                        g.setClip(0,0,getWidth(), Math.min(getHeight(),
-                                                           jview.getHeight()));
+                        Rectangle r = new Rectangle(
+                            0, 0, getWidth(), Math.min(getHeight(), jview.getHeight()));
+                        g.setClip(r);
                         // Repaint the complete component if the blit succeeded
                         // and needsRepaintAfterBlit returns true.
                         repaintAll = (windowBlitPaint(g) &&
                                       needsRepaintAfterBlit());
                         g.dispose();
+                        rm.notifyRepaintPerformed(this, r.x, r.y, r.width, r.height);
                         rm.markCompletelyClean((JComponent)getParent());
                         rm.markCompletelyClean(this);
                         rm.markCompletelyClean(jview);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@ import java.awt.image.*;
 import java.awt.TrayIcon;
 import java.awt.SystemTray;
 import java.awt.event.InputEvent;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +46,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import sun.awt.datatransfer.DataTransferer;
 import sun.util.logging.PlatformLogger;
 import sun.misc.SoftCache;
 import sun.font.FontDesignMetrics;
@@ -198,6 +202,8 @@ public abstract class SunToolkit extends Toolkit
     public abstract SystemTrayPeer createSystemTray(SystemTray target);
 
     public abstract boolean isTraySupported();
+
+    public abstract DataTransferer getDataTransferer();
 
     @SuppressWarnings("deprecation")
     public abstract FontPeer getFontPeer(String name, int style);
@@ -714,33 +720,7 @@ public abstract class SunToolkit extends Toolkit
     static final SoftCache imgCache = new SoftCache();
 
     static Image getImageFromHash(Toolkit tk, URL url) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                java.security.Permission perm =
-                    url.openConnection().getPermission();
-                if (perm != null) {
-                    try {
-                        sm.checkPermission(perm);
-                    } catch (SecurityException se) {
-                        // fallback to checkRead/checkConnect for pre 1.2
-                        // security managers
-                        if ((perm instanceof java.io.FilePermission) &&
-                            perm.getActions().indexOf("read") != -1) {
-                            sm.checkRead(perm.getName());
-                        } else if ((perm instanceof
-                            java.net.SocketPermission) &&
-                            perm.getActions().indexOf("connect") != -1) {
-                            sm.checkConnect(url.getHost(), url.getPort());
-                        } else {
-                            throw se;
-                        }
-                    }
-                }
-            } catch (java.io.IOException ioe) {
-                    sm.checkConnect(url.getHost(), url.getPort());
-            }
-        }
+        checkPermissions(url);
         synchronized (imgCache) {
             Image img = (Image)imgCache.get(url);
             if (img == null) {
@@ -756,10 +736,7 @@ public abstract class SunToolkit extends Toolkit
 
     static Image getImageFromHash(Toolkit tk,
                                                String filename) {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(filename);
-        }
+        checkPermissions(filename);
         synchronized (imgCache) {
             Image img = (Image)imgCache.get(filename);
             if (img == null) {
@@ -781,15 +758,156 @@ public abstract class SunToolkit extends Toolkit
         return getImageFromHash(this, url);
     }
 
-    public Image createImage(String filename) {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(filename);
+    protected Image getImageWithResolutionVariant(String fileName,
+            String resolutionVariantName) {
+        synchronized (imgCache) {
+            Image image = getImageFromHash(this, fileName);
+            if (image instanceof MultiResolutionImage) {
+                return image;
+            }
+            Image resolutionVariant = getImageFromHash(this, resolutionVariantName);
+            image = createImageWithResolutionVariant(image, resolutionVariant);
+            imgCache.put(fileName, image);
+            return image;
         }
+    }
+
+    protected Image getImageWithResolutionVariant(URL url,
+            URL resolutionVariantURL) {
+        synchronized (imgCache) {
+            Image image = getImageFromHash(this, url);
+            if (image instanceof MultiResolutionImage) {
+                return image;
+            }
+            Image resolutionVariant = getImageFromHash(this, resolutionVariantURL);
+            image = createImageWithResolutionVariant(image, resolutionVariant);
+            imgCache.put(url, image);
+            return image;
+        }
+    }
+
+
+    public Image createImage(String filename) {
+        checkPermissions(filename);
         return createImage(new FileImageSource(filename));
     }
 
     public Image createImage(URL url) {
+        checkPermissions(url);
+        return createImage(new URLImageSource(url));
+    }
+
+    public Image createImage(byte[] data, int offset, int length) {
+        return createImage(new ByteArrayImageSource(data, offset, length));
+    }
+
+    public Image createImage(ImageProducer producer) {
+        return new ToolkitImage(producer);
+    }
+
+    public static Image createImageWithResolutionVariant(Image image,
+            Image resolutionVariant) {
+        return new MultiResolutionToolkitImage(image, resolutionVariant);
+    }
+
+    public int checkImage(Image img, int w, int h, ImageObserver o) {
+        if (!(img instanceof ToolkitImage)) {
+            return ImageObserver.ALLBITS;
+        }
+
+        ToolkitImage tkimg = (ToolkitImage)img;
+        int repbits;
+        if (w == 0 || h == 0) {
+            repbits = ImageObserver.ALLBITS;
+        } else {
+            repbits = tkimg.getImageRep().check(o);
+        }
+        return (tkimg.check(o) | repbits) & checkResolutionVariant(img, w, h, o);
+    }
+
+    public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
+        if (w == 0 || h == 0) {
+            return true;
+        }
+
+        // Must be a ToolkitImage
+        if (!(img instanceof ToolkitImage)) {
+            return true;
+        }
+
+        ToolkitImage tkimg = (ToolkitImage)img;
+        if (tkimg.hasError()) {
+            if (o != null) {
+                o.imageUpdate(img, ImageObserver.ERROR|ImageObserver.ABORT,
+                              -1, -1, -1, -1);
+            }
+            return false;
+        }
+        ImageRepresentation ir = tkimg.getImageRep();
+        return ir.prepare(o) & prepareResolutionVariant(img, w, h, o);
+    }
+
+    private int checkResolutionVariant(Image img, int w, int h, ImageObserver o) {
+        ToolkitImage rvImage = getResolutionVariant(img);
+        // Ignore the resolution variant in case of error
+        return (rvImage == null || rvImage.hasError()) ? 0xFFFF :
+                checkImage(rvImage, 2 * w, 2 * h, MultiResolutionToolkitImage.
+                                getResolutionVariantObserver(
+                                        img, o, w, h, 2 * w, 2 * h));
+    }
+
+    private boolean prepareResolutionVariant(Image img, int w, int h,
+            ImageObserver o) {
+
+        ToolkitImage rvImage = getResolutionVariant(img);
+        // Ignore the resolution variant in case of error
+        return rvImage == null || rvImage.hasError() || prepareImage(
+                rvImage, 2 * w, 2 * h,
+                MultiResolutionToolkitImage.getResolutionVariantObserver(
+                        img, o, w, h, 2 * w, 2 * h));
+    }
+
+    private static ToolkitImage getResolutionVariant(Image image) {
+        if (image instanceof MultiResolutionToolkitImage) {
+            Image resolutionVariant = ((MultiResolutionToolkitImage) image).
+                    getResolutionVariant();
+            if (resolutionVariant instanceof ToolkitImage) {
+                return (ToolkitImage) resolutionVariant;
+            }
+        }
+        return null;
+    }
+
+    protected static boolean imageCached(Object key) {
+        return imgCache.containsKey(key);
+    }
+
+    protected static boolean imageExists(String filename) {
+        checkPermissions(filename);
+        return filename != null && new File(filename).exists();
+    }
+
+    @SuppressWarnings("try")
+    protected static boolean imageExists(URL url) {
+        checkPermissions(url);
+        if (url != null) {
+            try (InputStream is = url.openStream()) {
+                return true;
+            }catch(IOException e){
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private static void checkPermissions(String filename) {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkRead(filename);
+        }
+    }
+
+    private static void checkPermissions(URL url) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -817,52 +935,6 @@ public abstract class SunToolkit extends Toolkit
                     sm.checkConnect(url.getHost(), url.getPort());
             }
         }
-        return createImage(new URLImageSource(url));
-    }
-
-    public Image createImage(byte[] data, int offset, int length) {
-        return createImage(new ByteArrayImageSource(data, offset, length));
-    }
-
-    public Image createImage(ImageProducer producer) {
-        return new ToolkitImage(producer);
-    }
-
-    public int checkImage(Image img, int w, int h, ImageObserver o) {
-        if (!(img instanceof ToolkitImage)) {
-            return ImageObserver.ALLBITS;
-        }
-
-        ToolkitImage tkimg = (ToolkitImage)img;
-        int repbits;
-        if (w == 0 || h == 0) {
-            repbits = ImageObserver.ALLBITS;
-        } else {
-            repbits = tkimg.getImageRep().check(o);
-        }
-        return tkimg.check(o) | repbits;
-    }
-
-    public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
-        if (w == 0 || h == 0) {
-            return true;
-        }
-
-        // Must be a ToolkitImage
-        if (!(img instanceof ToolkitImage)) {
-            return true;
-        }
-
-        ToolkitImage tkimg = (ToolkitImage)img;
-        if (tkimg.hasError()) {
-            if (o != null) {
-                o.imageUpdate(img, ImageObserver.ERROR|ImageObserver.ABORT,
-                              -1, -1, -1, -1);
-            }
-            return false;
-        }
-        ImageRepresentation ir = tkimg.getImageRep();
-        return ir.prepare(o);
     }
 
     /**
@@ -1118,19 +1190,6 @@ public abstract class SunToolkit extends Toolkit
      */
     public Locale getDefaultKeyboardLocale() {
         return getStartupLocale();
-    }
-
-    private static String dataTransfererClassName = null;
-
-    protected static void setDataTransfererClassName(String className) {
-        dataTransfererClassName = className;
-    }
-
-    public static String getDataTransfererClassName() {
-        if (dataTransfererClassName == null) {
-            Toolkit.getDefaultToolkit(); // transferer set during toolkit init
-        }
-        return dataTransfererClassName;
     }
 
     // Support for window closing event notifications

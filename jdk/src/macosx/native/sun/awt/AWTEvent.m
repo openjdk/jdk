@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -633,12 +633,12 @@ Java_java_awt_AWTEvent_nativeSetSource
 }
 
 /*
- * Class:     sun_lwawt_macosx_event_NSEvent
+ * Class:     sun_lwawt_macosx_NSEvent
  * Method:    nsToJavaMouseModifiers
  * Signature: (II)I
  */
 JNIEXPORT jint JNICALL
-Java_sun_lwawt_macosx_event_NSEvent_nsToJavaMouseModifiers
+Java_sun_lwawt_macosx_NSEvent_nsToJavaMouseModifiers
 (JNIEnv *env, jclass cls, jint buttonNumber, jint modifierFlags)
 {
     jint jmodifiers = 0;
@@ -653,12 +653,12 @@ JNF_COCOA_EXIT(env);
 }
 
 /*
- * Class:     sun_lwawt_macosx_event_NSEvent
+ * Class:     sun_lwawt_macosx_NSEvent
  * Method:    nsToJavaKeyModifiers
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL
-Java_sun_lwawt_macosx_event_NSEvent_nsToJavaKeyModifiers
+Java_sun_lwawt_macosx_NSEvent_nsToJavaKeyModifiers
 (JNIEnv *env, jclass cls, jint modifierFlags)
 {
     jint jmodifiers = 0;
@@ -673,12 +673,12 @@ JNF_COCOA_EXIT(env);
 }
 
 /*
- * Class:     sun_lwawt_macosx_event_NSEvent
+ * Class:     sun_lwawt_macosx_NSEvent
  * Method:    nsToJavaKeyInfo
  * Signature: ([I[I)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_sun_lwawt_macosx_event_NSEvent_nsToJavaKeyInfo
+Java_sun_lwawt_macosx_NSEvent_nsToJavaKeyInfo
 (JNIEnv *env, jclass cls, jintArray inData, jintArray outData)
 {
     BOOL postsTyped = NO;
@@ -715,12 +715,12 @@ JNF_COCOA_EXIT(env);
 }
 
 /*
- * Class:     sun_lwawt_macosx_event_NSEvent
+ * Class:     sun_lwawt_macosx_NSEvent
  * Method:    nsKeyModifiersToJavaKeyInfo
  * Signature: ([I[I)V
  */
 JNIEXPORT void JNICALL
-Java_sun_lwawt_macosx_event_NSEvent_nsKeyModifiersToJavaKeyInfo
+Java_sun_lwawt_macosx_NSEvent_nsKeyModifiersToJavaKeyInfo
 (JNIEnv *env, jclass cls, jintArray inData, jintArray outData)
 {
 JNF_COCOA_ENTER(env);
@@ -753,12 +753,12 @@ JNF_COCOA_EXIT(env);
 }
 
 /*
- * Class:     sun_lwawt_macosx_event_NSEvent
+ * Class:     sun_lwawt_macosx_NSEvent
  * Method:    nsToJavaChar
  * Signature: (CI)C
  */
 JNIEXPORT jint JNICALL
-Java_sun_lwawt_macosx_event_NSEvent_nsToJavaChar
+Java_sun_lwawt_macosx_NSEvent_nsToJavaChar
 (JNIEnv *env, jclass cls, jchar nsChar, jint modifierFlags)
 {
     jchar javaChar = 0;

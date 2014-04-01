@@ -129,13 +129,13 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
 
   // !!! don't need this unless we have more than one sun layout engine...
     public LayoutEngine getEngine(LayoutEngineKey key) {
-        ConcurrentHashMap cache = (ConcurrentHashMap)cacheref.get();
+        ConcurrentHashMap<LayoutEngineKey, LayoutEngine> cache = cacheref.get();
         if (cache == null) {
-            cache = new ConcurrentHashMap();
-            cacheref = new SoftReference(cache);
+            cache = new ConcurrentHashMap<>();
+            cacheref = new SoftReference<>(cache);
         }
 
-        LayoutEngine e = (LayoutEngine)cache.get(key);
+        LayoutEngine e = cache.get(key);
         if (e == null) {
             LayoutEngineKey copy = key.copy();
             e = new SunLayoutEngine(copy);
@@ -143,7 +143,8 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         }
         return e;
     }
-    private SoftReference cacheref = new SoftReference(null);
+    private SoftReference<ConcurrentHashMap<LayoutEngineKey, LayoutEngine>> cacheref =
+        new SoftReference<>(null);
 
     private SunLayoutEngine(LayoutEngineKey key) {
         this.key = key;

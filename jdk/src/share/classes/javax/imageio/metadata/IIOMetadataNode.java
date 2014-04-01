@@ -50,9 +50,9 @@ class IIODOMException extends DOMException {
 
 class IIONamedNodeMap implements NamedNodeMap {
 
-    List nodes;
+    List<? extends Node> nodes;
 
-    public IIONamedNodeMap(List nodes) {
+    public IIONamedNodeMap(List<? extends Node> nodes) {
         this.nodes = nodes;
     }
 
@@ -61,9 +61,9 @@ class IIONamedNodeMap implements NamedNodeMap {
     }
 
     public Node getNamedItem(String name) {
-        Iterator iter = nodes.iterator();
+        Iterator<? extends Node> iter = nodes.iterator();
         while (iter.hasNext()) {
-            Node node = (Node)iter.next();
+            Node node = iter.next();
             if (name.equals(node.getNodeName())) {
                 return node;
             }
@@ -73,7 +73,7 @@ class IIONamedNodeMap implements NamedNodeMap {
     }
 
     public Node item(int index) {
-        Node node = (Node)nodes.get(index);
+        Node node = nodes.get(index);
         return node;
     }
 
@@ -111,9 +111,9 @@ class IIONamedNodeMap implements NamedNodeMap {
 
 class IIONodeList implements NodeList {
 
-    List nodes;
+    List<? extends Node> nodes;
 
-    public IIONodeList(List nodes) {
+    public IIONodeList(List<? extends Node> nodes) {
         this.nodes = nodes;
     }
 
@@ -125,7 +125,7 @@ class IIONodeList implements NodeList {
         if (index < 0 || index > nodes.size()) {
             return null;
         }
-        return (Node)nodes.get(index);
+        return nodes.get(index);
     }
 }
 
@@ -285,7 +285,7 @@ public class IIOMetadataNode implements Element, NodeList {
      * A <code>List</code> of <code>IIOAttr</code> nodes representing
      * attributes.
      */
-    private List attributes = new ArrayList();
+    private List<IIOAttr> attributes = new ArrayList<>();
 
     /**
      * Constructs an empty <code>IIOMetadataNode</code>.
@@ -789,7 +789,7 @@ public class IIOMetadataNode implements Element, NodeList {
     private void removeAttribute(String name, boolean checkPresent) {
         int numAttributes = attributes.size();
         for (int i = 0; i < numAttributes; i++) {
-            IIOAttr attr = (IIOAttr)attributes.get(i);
+            IIOAttr attr = attributes.get(i);
             if (name.equals(attr.getName())) {
                 attr.setOwnerElement(null);
                 attributes.remove(i);
@@ -873,12 +873,12 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     public NodeList getElementsByTagName(String name) {
-        List l = new ArrayList();
+        List<Node> l = new ArrayList<>();
         getElementsByTagName(name, l);
         return new IIONodeList(l);
     }
 
-    private void getElementsByTagName(String name, List l) {
+    private void getElementsByTagName(String name, List<Node> l) {
         if (nodeName.equals(name)) {
             l.add(this);
         }

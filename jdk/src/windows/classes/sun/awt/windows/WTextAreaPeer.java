@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ final class WTextAreaPeer extends WTextComponentPeer implements TextAreaPeer {
     public Dimension getPreferredSize(int rows, int cols) {
         return getMinimumSize(rows, cols);
     }
+
     @Override
     public Dimension getMinimumSize(int rows, int cols) {
         FontMetrics fm = getFontMetrics(((TextArea)target).getFont());
