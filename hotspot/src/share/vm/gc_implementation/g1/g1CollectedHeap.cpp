@@ -6598,13 +6598,13 @@ public:
     if (hr->is_young()) {
       // TODO
     } else if (hr->startsHumongous()) {
-      assert(hr->containing_set() == _humongous_set, err_msg("Heap region %u is starts humongous but not in humongous set.", hr->region_num()));
+      assert(hr->containing_set() == _humongous_set, err_msg("Heap region %u is starts humongous but not in humongous set.", hr->hrs_index()));
       _humongous_count.increment(1u, hr->capacity());
     } else if (hr->is_empty()) {
-      assert(hr->containing_set() == _free_list, err_msg("Heap region %u is empty but not on the free list.", hr->region_num()));
+      assert(hr->containing_set() == _free_list, err_msg("Heap region %u is empty but not on the free list.", hr->hrs_index()));
       _free_count.increment(1u, hr->capacity());
     } else {
-      assert(hr->containing_set() == _old_set, err_msg("Heap region %u is old but not in the old set.", hr->region_num()));
+      assert(hr->containing_set() == _old_set, err_msg("Heap region %u is old but not in the old set.", hr->hrs_index()));
       _old_count.increment(1u, hr->capacity());
     }
     return false;
