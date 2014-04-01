@@ -84,17 +84,17 @@ public class GIFImageMetadata extends GIFMetadata {
 
     // Fields from ApplicationExtension
     // List of byte[]
-    public List applicationIDs = null; // new ArrayList();
+    public List<byte[]> applicationIDs = null;
 
     // List of byte[]
-    public List authenticationCodes = null; // new ArrayList();
+    public List<byte[]> authenticationCodes = null;
 
     // List of byte[]
-    public List applicationData = null; // new ArrayList();
+    public List<byte[]> applicationData = null;
 
     // Fields from CommentExtension
     // List of byte[]
-    public List comments = null; // new ArrayList();
+    public List<byte[]> comments = null;
 
     protected GIFImageMetadata(boolean standardMetadataFormatSupported,
                                String nativeMetadataFormatName,
@@ -225,13 +225,13 @@ public class GIFImageMetadata extends GIFMetadata {
             for (int i = 0; i < numAppExtensions; i++) {
                 IIOMetadataNode appExtNode =
                     new IIOMetadataNode("ApplicationExtension");
-                byte[] applicationID = (byte[])applicationIDs.get(i);
+                byte[] applicationID = applicationIDs.get(i);
                 appExtNode.setAttribute("applicationID",
                                         toISO8859(applicationID));
-                byte[] authenticationCode = (byte[])authenticationCodes.get(i);
+                byte[] authenticationCode = authenticationCodes.get(i);
                 appExtNode.setAttribute("authenticationCode",
                                         toISO8859(authenticationCode));
-                byte[] appData = (byte[])applicationData.get(i);
+                byte[] appData = applicationData.get(i);
                 appExtNode.setUserObject(appData.clone());
                 node.appendChild(appExtNode);
             }
@@ -246,7 +246,7 @@ public class GIFImageMetadata extends GIFMetadata {
             for (int i = 0; i < numComments; i++) {
                 IIOMetadataNode commentNode =
                     new IIOMetadataNode("CommentExtension");
-                byte[] comment = (byte[])comments.get(i);
+                byte[] comment = comments.get(i);
                 commentNode.setAttribute("value", toISO8859(comment));
                 node.appendChild(commentNode);
             }
@@ -374,7 +374,7 @@ public class GIFImageMetadata extends GIFMetadata {
         if (comments == null) {
             return null;
         }
-        Iterator commentIter = comments.iterator();
+        Iterator<byte[]> commentIter = comments.iterator();
         if (!commentIter.hasNext()) {
             return null;
         }
@@ -383,7 +383,7 @@ public class GIFImageMetadata extends GIFMetadata {
         IIOMetadataNode node = null; // scratch node
 
         while (commentIter.hasNext()) {
-            byte[] comment = (byte[])commentIter.next();
+            byte[] comment = commentIter.next();
             String s = null;
             try {
                 s = new String(comment, "ISO-8859-1");

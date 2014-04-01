@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class JPEGImageReader extends ImageReader {
      * List of stream positions for images, reinitialized every time
      * a new input source is set.
      */
-    private List imagePositions = null;
+    private List<Long> imagePositions = null;
 
     /**
      * The number of images in the stream, or 0.
@@ -223,9 +223,9 @@ public class JPEGImageReader extends ImageReader {
     private DisposerRecord disposerRecord;
 
     /** Sets up static C structures. */
-    private static native void initReaderIDs(Class iisClass,
-                                             Class qTableClass,
-                                             Class huffClass);
+    private static native void initReaderIDs(Class<?> iisClass,
+                                             Class<?> qTableClass,
+                                             Class<?> huffClass);
 
     public JPEGImageReader(ImageReaderSpi originator) {
         super(originator);
@@ -375,7 +375,7 @@ public class JPEGImageReader extends ImageReader {
             currentImage = 0;
         }
         if (seekForwardOnly) {
-            Long pos = (Long) imagePositions.get(imagePositions.size()-1);
+            Long pos = imagePositions.get(imagePositions.size()-1);
             iis.flushBefore(pos.longValue());
         }
         tablesOnlyChecked = true;
@@ -392,6 +392,7 @@ public class JPEGImageReader extends ImageReader {
         }
     }
 
+    @SuppressWarnings("fallthrough")
     private int getNumImagesOnThread(boolean allowSearch)
       throws IOException {
         if (numImages != 0) {
@@ -481,12 +482,12 @@ public class JPEGImageReader extends ImageReader {
             checkTablesOnly();
         }
         if (imageIndex < imagePositions.size()) {
-            iis.seek(((Long)(imagePositions.get(imageIndex))).longValue());
+            iis.seek(imagePositions.get(imageIndex).longValue());
         } else {
             // read to start of image, saving positions
             // First seek to the last position we already have, and skip the
             // entire image
-            Long pos = (Long) imagePositions.get(imagePositions.size()-1);
+            Long pos = imagePositions.get(imagePositions.size()-1);
             iis.seek(pos.longValue());
             skipImage();
             // Now add all intervening positions, skipping images
@@ -766,7 +767,7 @@ public class JPEGImageReader extends ImageReader {
         }
     }
 
-    public Iterator getImageTypes(int imageIndex)
+    public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex)
         throws IOException {
         setThreadLock();
         try {
@@ -776,7 +777,7 @@ public class JPEGImageReader extends ImageReader {
         }
     }
 
-    private Iterator getImageTypesOnThread(int imageIndex)
+    private Iterator<ImageTypeSpecifier> getImageTypesOnThread(int imageIndex)
         throws IOException {
         if (currentImage != imageIndex) {
             cbLock.check();
@@ -1063,7 +1064,7 @@ public class JPEGImageReader extends ImageReader {
 
         if (!wantRaster){
             // Can we read this image?
-            Iterator imageTypes = getImageTypes(imageIndex);
+            Iterator<ImageTypeSpecifier> imageTypes = getImageTypes(imageIndex);
             if (imageTypes.hasNext() == false) {
                 throw new IIOException("Unsupported Image Type");
             }
@@ -1187,8 +1188,8 @@ public class JPEGImageReader extends ImageReader {
         // and set knownPassCount
         if (imageIndex == imageMetadataIndex) { // We have metadata
             knownPassCount = 0;
-            for (Iterator iter = imageMetadata.markerSequence.iterator();
-                 iter.hasNext();) {
+            for (Iterator<MarkerSegment> iter =
+                    imageMetadata.markerSequence.iterator(); iter.hasNext();) {
                 if (iter.next() instanceof SOSMarkerSegment) {
                     knownPassCount++;
                 }
@@ -1565,7 +1566,7 @@ public class JPEGImageReader extends ImageReader {
 
         // reset local Java structures
         numImages = 0;
-        imagePositions = new ArrayList();
+        imagePositions = new ArrayList<>();
         currentImage = -1;
         image = null;
         raster = null;

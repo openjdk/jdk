@@ -404,7 +404,7 @@ public class Analyzer<V extends Value> implements Opcodes {
      *         instruction of the method. The size of the returned array is
      *         equal to the number of instructions (and labels) of the method. A
      *         given frame is <tt>null</tt> if the corresponding instruction
-     *         cannot be reached, or if an error occurred during the analysis of
+     *         cannot be reached, or if an error occured during the analysis of
      *         the method.
      */
     public Frame<V>[] getFrames() {

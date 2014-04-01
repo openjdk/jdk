@@ -25,7 +25,6 @@
  * @test
  * @bug 7038363
  * @summary cast from object to primitive should be for source >= 1.7
- * @compile/fail/ref=CastObjectToPrimitiveTest.out -XDrawDiagnostics -Xlint:-options -source 5 CastObjectToPrimitiveTest.java
  * @compile/fail/ref=CastObjectToPrimitiveTest.out -XDrawDiagnostics -Xlint:-options -source 6 CastObjectToPrimitiveTest.java
  * @compile CastObjectToPrimitiveTest.java
  */

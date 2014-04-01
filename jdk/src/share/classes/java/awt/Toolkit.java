@@ -26,10 +26,6 @@
 package java.awt;
 
 import java.beans.PropertyChangeEvent;
-import java.util.MissingResourceException;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.StringTokenizer;
 import java.awt.event.*;
 import java.awt.peer.*;
 import java.awt.im.InputMethodHighlight;
@@ -855,50 +851,39 @@ public abstract class Toolkit {
      */
     public static synchronized Toolkit getDefaultToolkit() {
         if (toolkit == null) {
-            try {
-                // We disable the JIT during toolkit initialization.  This
-                // tends to touch lots of classes that aren't needed again
-                // later and therefore JITing is counter-productiive.
-                java.lang.Compiler.disable();
-
-                java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        String nm = null;
-                        Class<?> cls = null;
-                        try {
-                            nm = System.getProperty("awt.toolkit");
+            java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    Class<?> cls = null;
+                    String nm = System.getProperty("awt.toolkit");
+                    try {
+                        cls = Class.forName(nm);
+                    } catch (ClassNotFoundException e) {
+                        ClassLoader cl = ClassLoader.getSystemClassLoader();
+                        if (cl != null) {
                             try {
-                                cls = Class.forName(nm);
-                            } catch (ClassNotFoundException e) {
-                                ClassLoader cl = ClassLoader.getSystemClassLoader();
-                                if (cl != null) {
-                                    try {
-                                        cls = cl.loadClass(nm);
-                                    } catch (ClassNotFoundException ee) {
-                                        throw new AWTError("Toolkit not found: " + nm);
-                                    }
-                                }
+                                cls = cl.loadClass(nm);
+                            } catch (final ClassNotFoundException ignored) {
+                                throw new AWTError("Toolkit not found: " + nm);
                             }
-                            if (cls != null) {
-                                toolkit = (Toolkit)cls.newInstance();
-                                if (GraphicsEnvironment.isHeadless()) {
-                                    toolkit = new HeadlessToolkit(toolkit);
-                                }
-                            }
-                        } catch (InstantiationException e) {
-                            throw new AWTError("Could not instantiate Toolkit: " + nm);
-                        } catch (IllegalAccessException e) {
-                            throw new AWTError("Could not access Toolkit: " + nm);
                         }
-                        return null;
                     }
-                });
-                loadAssistiveTechnologies();
-            } finally {
-                // Make sure to always re-enable the JIT.
-                java.lang.Compiler.enable();
-            }
+                    try {
+                        if (cls != null) {
+                            toolkit = (Toolkit)cls.newInstance();
+                            if (GraphicsEnvironment.isHeadless()) {
+                                toolkit = new HeadlessToolkit(toolkit);
+                            }
+                        }
+                    } catch (final InstantiationException ignored) {
+                        throw new AWTError("Could not instantiate Toolkit: " + nm);
+                    } catch (final IllegalAccessException ignored) {
+                        throw new AWTError("Could not access Toolkit: " + nm);
+                    }
+                    return null;
+                }
+            });
+            loadAssistiveTechnologies();
         }
         return toolkit;
     }

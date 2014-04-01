@@ -2768,14 +2768,18 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 # According to the articles linked below, Turkey will change into summer
 # time zone (GMT+3) on March 28, 2011 at 3:00 a.m. instead of March 27.
 # This change is due to a nationwide exam on 27th.
-#
-# <a href="http://www.worldbulletin.net/?aType=haber&ArticleID=70872">
 # http://www.worldbulletin.net/?aType=haber&ArticleID=70872
-# </a>
 # Turkish:
-# <a href="http://www.hurriyet.com.tr/ekonomi/17230464.asp?gid=373">
 # http://www.hurriyet.com.tr/ekonomi/17230464.asp?gid=373
-# </a>
+
+# From Faruk Pasin (2014-02-14):
+# The DST for Turkey has been changed for this year because of the
+# Turkish Local election....
+# http://www.sabah.com.tr/Ekonomi/2014/02/12/yaz-saatinde-onemli-degisiklik
+# ... so Turkey will move clocks forward one hour on March 31 at 3:00 a.m.
+# From Paul Eggert (2014-02-17):
+# Here is an English-language source:
+# http://www.worldbulletin.net/turkey/129016/turkey-switches-to-daylight-saving-time-march-31
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Turkey	1916	only	-	May	 1	0:00	1:00	S
@@ -2844,6 +2848,8 @@ Zone	Europe/Istanbul	1:55:52 -	LMT	1880
 			2:00	Turkey	EE%sT	2007
 			2:00	EU	EE%sT	2011 Mar 27 1:00u
 			2:00	-	EET	2011 Mar 28 1:00u
+			2:00	EU	EE%sT	2014 Mar 30 1:00u
+			2:00	-	EET	2014 Mar 31 1:00u
 			2:00	EU	EE%sT
 Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 
@@ -2865,19 +2871,13 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # approval from 266 deputies.
 #
 # Ukraine abolishes transter back to the winter time (in Russian)
-# <a href="http://news.mail.ru/politics/6861560/">
 # http://news.mail.ru/politics/6861560/
-# </a>
 #
 # The Ukrainians will no longer change the clock (in Russian)
-# <a href="http://www.segodnya.ua/news/14290482.html">
 # http://www.segodnya.ua/news/14290482.html
-# </a>
 #
 # Deputies cancelled the winter time (in Russian)
-# <a href="http://www.pravda.com.ua/rus/news/2011/09/20/6600616/">
 # http://www.pravda.com.ua/rus/news/2011/09/20/6600616/
-# </a>
 #
 # From Philip Pizzey (2011-10-18):
 # Today my Ukrainian colleagues have informed me that the
@@ -2888,18 +2888,39 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # As far as I understand, the recent change to the Ukrainian time zone
 # (Europe/Kiev) to introduce permanent daylight saving time (similar
 # to Russia) was reverted today:
-#
-# <a href="http://portal.rada.gov.ua/rada/control/en/publish/article/info_left?art_id=287324&cat_id=105995">
 # http://portal.rada.gov.ua/rada/control/en/publish/article/info_left?art_id=287324&cat_id=105995
-# </a>
 #
 # Also reported by Alexander Bokovoy (2011-10-18) who also noted:
 # The law documents themselves are at
-#
-# <a href="http://w1.c1.rada.gov.ua/pls/zweb_n/webproc4_1?id=&pf3511=41484">
 # http://w1.c1.rada.gov.ua/pls/zweb_n/webproc4_1?id=&pf3511=41484
-# </a>
 
+# From Vladimir in Moscow via Alois Treindl re Kiev time 1991/2 (2014-02-28):
+# First in Ukraine they changed Time zone from UTC+3 to UTC+2 with DST:
+#       03 25 1990 02:00 -03.00 1       Time Zone 3 with DST
+#       07 01 1990 02:00 -02.00 1       Time Zone 2 with DST
+# * Ukrainian Government's Resolution of 18.06.1990, No. 134.
+# http://search.ligazakon.ua/l_doc2.nsf/link1/T001500.html
+#
+# They did not end DST in September, 1990 (according to the law,
+# "summer time" was still in action):
+#       09 30 1990 03:00 -02.00 1       Time Zone 2 with DST
+# * Ukrainian Government's Resolution of 21.09.1990, No. 272.
+# http://search.ligazakon.ua/l_doc2.nsf/link1/KP900272.html
+#
+# Again no change in March, 1991 ("summer time" in action):
+#       03 31 1991 02:00 -02.00 1       Time Zone 2 with DST
+#
+# DST ended in September 1991 ("summer time" ended):
+#       09 29 1991 03:00 -02.00 0       Time Zone 2, no DST
+# * Ukrainian Government's Resolution of 25.09.1991, No. 225.
+# http://www.uazakon.com/documents/date_21/pg_iwgdoc.htm
+# This is an answer.
+#
+# Since 1992 they had normal DST procedure:
+#       03 29 1992 02:00 -02.00 1       DST started
+#       09 27 1992 03:00 -02.00 0       DST ended
+# * Ukrainian Government's Resolution of 20.03.1992, No. 139.
+# http://www.uazakon.com/documents/date_8u/pg_grcasa.htm
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 # Most of Ukraine since 1970 has been like Kiev.
@@ -2910,9 +2931,8 @@ Zone Europe/Kiev	2:02:04 -	LMT	1880
 			2:00	-	EET	1930 Jun 21
 			3:00	-	MSK	1941 Sep 20
 			1:00	C-Eur	CE%sT	1943 Nov  6
-			3:00	Russia	MSK/MSD	1990
-			3:00	-	MSK	1990 Jul  1 2:00
-			2:00	-	EET	1992
+			3:00	Russia	MSK/MSD	1990 Jul  1 2:00
+			2:00	1:00	EEST	1991 Sep 29 3:00
 			2:00	E-Eur	EE%sT	1995
 			2:00	EU	EE%sT
 # Ruthenia used CET 1990/1991.

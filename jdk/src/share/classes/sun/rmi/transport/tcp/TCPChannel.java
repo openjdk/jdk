@@ -34,6 +34,7 @@ import java.rmi.ConnectIOException;
 import java.rmi.RemoteException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -48,8 +49,6 @@ import sun.rmi.transport.Channel;
 import sun.rmi.transport.Connection;
 import sun.rmi.transport.Endpoint;
 import sun.rmi.transport.TransportConstants;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetLongAction;
 
 /**
  * TCPChannel is the socket-based implementation of the RMI Channel
@@ -87,19 +86,18 @@ public class TCPChannel implements Channel {
 
     /** client-side connection idle usage timeout */
     private static final long idleTimeout =             // default 15 seconds
-        AccessController.doPrivileged(
-            new GetLongAction("sun.rmi.transport.connectionTimeout", 15000));
+        AccessController.doPrivileged((PrivilegedAction<Long>) () ->
+            Long.getLong("sun.rmi.transport.connectionTimeout", 15000));
 
     /** client-side connection handshake read timeout */
     private static final int handshakeTimeout =         // default 1 minute
-        AccessController.doPrivileged(
-            new GetIntegerAction("sun.rmi.transport.tcp.handshakeTimeout",
-                                 60000));
+        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+            Integer.getInteger("sun.rmi.transport.tcp.handshakeTimeout", 60000));
 
     /** client-side connection response read timeout (after handshake) */
     private static final int responseTimeout =          // default infinity
-        AccessController.doPrivileged(
-            new GetIntegerAction("sun.rmi.transport.tcp.responseTimeout", 0));
+        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+            Integer.getInteger("sun.rmi.transport.tcp.responseTimeout", 0));
 
     /** thread pool for scheduling delayed tasks */
     private static final ScheduledExecutorService scheduler =

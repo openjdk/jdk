@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,30 +40,39 @@
 JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_createNativeDragSource
   (JNIEnv *env, jobject jthis, jobject jcomponent, jlong jnativepeer, jobject jtransferable,
    jobject jtrigger, jint jdragposx, jint jdragposy, jint jextmodifiers, jint jclickcount, jlong jtimestamp,
-   jobject jnsdragimage, jint jdragimageoffsetx, jint jdragimageoffsety,
+   jlong nsdragimageptr, jint jdragimageoffsetx, jint jdragimageoffsety,
    jint jsourceactions, jlongArray jformats, jobject jformatmap)
 {
     id controlObj = (id) jlong_to_ptr(jnativepeer);
     __block CDragSource* dragSource = nil;
 
 JNF_COCOA_ENTER(env);
+
+    // Global references are disposed when the DragSource is removed
+    jobject gComponent = JNFNewGlobalRef(env, jcomponent);
+    jobject gDragSourceContextPeer = JNFNewGlobalRef(env, jthis);
+    jobject gTransferable = JNFNewGlobalRef(env, jtransferable);
+    jobject gTriggerEvent = JNFNewGlobalRef(env, jtrigger);
+    jlongArray gFormats = JNFNewGlobalRef(env, jformats);
+    jobject gFormatMap = JNFNewGlobalRef(env, jformatmap);
+
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        dragSource = [[CDragSource alloc] init:jthis
-                                     component:jcomponent
+        dragSource = [[CDragSource alloc] init:gDragSourceContextPeer
+                                     component:gComponent
                                        control:controlObj
-                                  transferable:jtransferable
-                                  triggerEvent:jtrigger
+                                  transferable:gTransferable
+                                  triggerEvent:gTriggerEvent
                                       dragPosX:jdragposx
                                       dragPosY:jdragposy
                                      modifiers:jextmodifiers
                                     clickCount:jclickcount
                                      timeStamp:jtimestamp
-                                     dragImage:jnsdragimage
+                                     dragImage:nsdragimageptr
                               dragImageOffsetX:jdragimageoffsetx
                               dragImageOffsetY:jdragimageoffsety
                                  sourceActions:jsourceactions
-                                       formats:jformats
-                                     formatMap:jformatmap];
+                                       formats:gFormats
+                                     formatMap:gFormatMap];
     }];
 JNF_COCOA_EXIT(env);
 

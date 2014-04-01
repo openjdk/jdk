@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,23 @@ import sun.awt.datatransfer.*;
  * sun.awt.datatransfer.DataTransferer.
  */
 
-public class CClipboard extends SunClipboard {
+final class CClipboard extends SunClipboard {
 
     public CClipboard(String name) {
         super(name);
     }
 
+    @Override
     public long getID() {
         return 0;
     }
 
+    @Override
     protected void clearNativeContext() {
         // Leaving Empty, as WClipboard.clearNativeContext is empty as well.
     }
 
+    @Override
     protected void setContentsNative(Transferable contents) {
 
         // Don't use delayed Clipboard rendering for the Transferable's data.
@@ -89,6 +92,39 @@ public class CClipboard extends SunClipboard {
         notifyChanged();
     }
 
+    @Override
+    protected native long[] getClipboardFormats();
+    @Override
+    protected native byte[] getClipboardData(long format) throws IOException;
+
+    // 1.5 peer method
+    @Override
+    protected void unregisterClipboardViewerChecked() {
+        // no-op because we lack OS support. This requires 4048791, which requires 4048792
+    }
+
+    // 1.5 peer method
+    @Override
+    protected void registerClipboardViewerChecked()    {
+        // no-op because we lack OS support. This requires 4048791, which requires 4048792
+    }
+
+    // 1.5 peer method
+    // no-op. This appears to be win32 specific. Filed 4048790 for investigation
+    //protected Transferable createLocaleTransferable(long[] formats) throws IOException;
+
+    private native void declareTypes(long[] formats, SunClipboard newOwner);
+    private native void setData(byte[] data, long format);
+
+    /**
+     * Invokes native check whether a change count on the general pasteboard is different
+     * than when we set it. The different count value means the current owner lost
+     * pasteboard ownership and someone else put data on the clipboard.
+     * @since 1.7
+     */
+    native void checkPasteboard();
+
+    /*** Native Callbacks ***/
     private void notifyLostOwnership() {
         lostOwnershipImpl();
     }
@@ -100,32 +136,4 @@ public class CClipboard extends SunClipboard {
         }
         clipboard.checkChange(clipboard.getClipboardFormats());
     }
-
-    protected native long[] getClipboardFormats();
-    protected native byte[] getClipboardData(long format) throws IOException;
-
-    // 1.5 peer method
-    protected void unregisterClipboardViewerChecked() {
-        // no-op because we lack OS support. This requires 4048791, which requires 4048792
-    }
-
-    // 1.5 peer method
-    protected void registerClipboardViewerChecked()    {
-        // no-op because we lack OS support. This requires 4048791, which requires 4048792
-    }
-
-    // 1.5 peer method
-    // no-op. This appears to be win32 specific. Filed 4048790 for investigation
-    //protected Transferable createLocaleTransferable(long[] formats) throws IOException;
-
-    public native void declareTypes(long[] formats, SunClipboard newOwner);
-    public native void setData(byte[] data, long format);
-
-    /**
-     * Invokes native check whether a change count on the general pasteboard is different
-     * than when we set it. The different count value means the current owner lost
-     * pasteboard ownership and someone else put data on the clipboard.
-     * @since 1.7
-     */
-    public native void checkPasteboard();
 }

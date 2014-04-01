@@ -26,22 +26,16 @@
 package sun.rmi.runtime;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.OutputStream;
 import java.rmi.server.LogStream;
-import java.util.logging.ConsoleHandler;
+import java.security.PrivilegedAction;
 import java.util.logging.Handler;
-import java.util.logging.Formatter;
 import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
-import java.util.Map;
-import java.util.HashMap;
 
 /**
  * Utility which provides an abstract "logger" like RMI internal API
@@ -71,10 +65,8 @@ public abstract class Log {
     /* selects log implementation */
     private static final LogFactory logFactory;
     static {
-        boolean useOld =
-            Boolean.valueOf(java.security.AccessController.
-                doPrivileged(new sun.security.action.GetPropertyAction(
-                    "sun.rmi.log.useOld"))).booleanValue();
+        boolean useOld = java.security.AccessController.doPrivileged(
+            (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("sun.rmi.log.useOld"));
 
         /* set factory to select the logging facility to use */
         logFactory = (useOld ? (LogFactory) new LogStreamLogFactory() :

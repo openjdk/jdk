@@ -39,11 +39,11 @@ import java.rmi.server.RemoteCall;
 import java.rmi.server.RemoteObject;
 import java.rmi.server.RemoteRef;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import sun.rmi.runtime.Log;
 import sun.rmi.transport.Connection;
 import sun.rmi.transport.LiveRef;
 import sun.rmi.transport.StreamRemoteCall;
-import sun.security.action.GetBooleanAction;
 
 /**
  * NOTE: There is a JDK-internal dependency on the existence of this
@@ -64,8 +64,8 @@ public class UnicastRef implements RemoteRef {
      */
     public static final Log clientCallLog =
         Log.getLog("sun.rmi.client.call", "RMI",
-                   AccessController.doPrivileged(
-                       new GetBooleanAction("sun.rmi.client.logCalls")));
+                   AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
+                       Boolean.getBoolean("sun.rmi.client.logCalls")));
     private static final long serialVersionUID = 8258372400816541186L;
 
     protected LiveRef ref;

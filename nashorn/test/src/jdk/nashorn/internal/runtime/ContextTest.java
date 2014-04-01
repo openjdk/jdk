@@ -29,6 +29,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import java.util.Map;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.testng.annotations.Test;
 
@@ -45,7 +46,7 @@ public class ContextTest {
         final Options options = new Options("");
         final ErrorManager errors = new ErrorManager();
         final Context cx = new Context(options, errors, Thread.currentThread().getContextClassLoader());
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final Global oldGlobal = Context.getGlobal();
         Context.setGlobal(cx.createGlobal());
         try {
             String code = "22 + 10";
@@ -65,7 +66,7 @@ public class ContextTest {
         final ErrorManager errors = new ErrorManager();
         final Context cx = new Context(options, errors, Thread.currentThread().getContextClassLoader());
         final boolean strict = cx.getEnv()._strict;
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final Global oldGlobal = Context.getGlobal();
         Context.setGlobal(cx.createGlobal());
 
         try {

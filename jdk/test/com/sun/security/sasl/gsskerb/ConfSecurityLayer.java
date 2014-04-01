@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,15 @@
  * @test
  * @bug 5014493
  * @summary SaslServer.wrap throws NullPointerException when security
- *    layer negotiated
- * @ignore see run-conf-wjaas.csh for instructions for how to run this test
+ *    layer negotiated.
+ * @run main/manual ConfSecurityLayer
  */
+
 /*
- * Can set logging to FINEST to view exchange.
+ * Set logging to FINEST to view exchange.
+ * See run-conf-wjaas.csh for instructions for how to run this test.
  */
+
 import javax.security.sasl.*;
 import javax.security.auth.callback.*;
 import java.security.*;

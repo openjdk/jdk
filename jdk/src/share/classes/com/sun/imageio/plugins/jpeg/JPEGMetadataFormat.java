@@ -56,7 +56,7 @@ abstract class JPEGMetadataFormat extends IIOMetadataFormatImpl {
                      DATATYPE_INTEGER,
                      false,
                      "0");
-        List tabids = new ArrayList();
+        List<String> tabids = new ArrayList<>();
         tabids.add("0");
         tabids.add("1");
         tabids.add("2");
@@ -74,7 +74,7 @@ abstract class JPEGMetadataFormat extends IIOMetadataFormatImpl {
 
         addElement("dht", parentName, 1, 4);
         addElement("dhtable", "dht", CHILD_POLICY_EMPTY);
-        List classes = new ArrayList();
+        List<String> classes = new ArrayList<>();
         classes.add("0");
         classes.add("1");
         addAttribute("dhtable",

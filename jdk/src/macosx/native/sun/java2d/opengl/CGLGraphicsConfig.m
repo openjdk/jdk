@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,18 +433,18 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getOGLCapabilities
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_java2d_opengl_CGLGraphicsConfig_getMaxTextureSize
+Java_sun_java2d_opengl_CGLGraphicsConfig_nativeGetMaxTextureSize
     (JNIEnv *env, jclass cglgc)
 {
-    J2dTraceLn(J2D_TRACE_INFO, "CGLGraphicsConfig_getMaxTextureSize");
+    J2dTraceLn(J2D_TRACE_INFO, "CGLGraphicsConfig_nativeGetMaxTextureSize");
 
     __block int max = 0;
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         [sharedContext makeCurrentContext];
         j2d_glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max);
+        [NSOpenGLContext clearCurrentContext];
     }];
 
     return (jint)max;
 }
-

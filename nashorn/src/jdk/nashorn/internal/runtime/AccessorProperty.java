@@ -141,10 +141,12 @@ public final class AccessorProperty extends Property {
     private Class<?> currentType;
 
     /**
-     * Delegate constructor. This is used when adding properties to the Global scope, which
-     * is necessary for outermost levels in a script (the ScriptObject is represented by
-     * a JO-prefixed ScriptObject class, but the properties need to be in the Global scope
-     * and are thus rebound with that as receiver
+     * Delegate constructor for bound properties. This is used for properties created by
+     * {@link ScriptRuntime#mergeScope} and the Nashorn {@code Object.bindProperties} method.
+     * The former is used to add a script's defined globals to the current global scope while
+     * still storing them in a JO-prefixed ScriptObject class.
+     *
+     * <p>All properties created by this constructor have the {@link #IS_BOUND} flag set.</p>
      *
      * @param property  accessor property to rebind
      * @param delegate  delegate object to rebind receiver to
@@ -157,6 +159,8 @@ public final class AccessorProperty extends Property {
         this.objectGetter    = bindTo(property.ensureObjectGetter(), delegate);
         this.objectSetter    = bindTo(property.ensureObjectSetter(), delegate);
 
+        // Properties created this way are bound to a delegate
+        this.flags |= IS_BOUND;
         setCurrentType(property.getCurrentType());
     }
 

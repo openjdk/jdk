@@ -39,7 +39,29 @@ public class BadKdc {
     //                                               ^ kdc#         ^ timeout
     static final Pattern re = Pattern.compile(
             ">>> KDCCommunication: kdc=kdc.rabbit.hole UDP:(\\d)...., " +
-            "timeout=(\\d)000,");
+            "timeout=(\\d+),");
+
+    // Ratio for timeout values of all timeout tests. Not final so that
+    // each test can choose their own.
+    static float ratio = 2f;
+
+    static void setRatio(float ratio) {
+        BadKdc.ratio = ratio;
+    }
+
+    static float getRatio() {
+        return ratio;
+    }
+
+    // Gets real timeout value. This method is called when writing krb5.conf
+    static int toReal(int from) {
+        return (int)(from * ratio + .5);
+    }
+
+    // De-ratio a millisecond value to second
+    static int toSymbolicSec(int from) {
+        return (int)(from / ratio / 1000f + 0.5);
+    }
 
     /*
      * There are several cases this test fails:
@@ -101,7 +123,7 @@ public class BadKdc {
 
         fw.write("[libdefaults]\n" +
                 "default_realm = " + OneKDC.REALM + "\n" +
-                "kdc_timeout = 2000\n");
+                "kdc_timeout = " + toReal(2000) + "\n");
         fw.write("[realms]\n" + OneKDC.REALM + " = {\n" +
                 "kdc = " + OneKDC.KDCHOST + ":" + p1 + "\n" +
                 "kdc = " + OneKDC.KDCHOST + ":" + p2 + "\n" +
@@ -184,7 +206,8 @@ public class BadKdc {
             Matcher m = re.matcher(line);
             if (m.find()) {
                 System.out.println(line);
-                sb.append(m.group(1)).append(m.group(2));
+                sb.append(m.group(1))
+                        .append(toSymbolicSec(Integer.parseInt(m.group(2))));
             }
         }
         if (failed) sb.append('-');
