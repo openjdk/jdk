@@ -30,6 +30,8 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/universe.inline.hpp"
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/matcher.hpp"
