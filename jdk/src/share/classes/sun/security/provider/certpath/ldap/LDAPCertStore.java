@@ -50,8 +50,6 @@ import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.Debug;
 import sun.security.x509.X500Name;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A <code>CertStore</code> that retrieves <code>Certificates</code> and
@@ -146,7 +144,7 @@ public final class LDAPCertStore extends CertStoreSpi {
 
     static {
         String s = AccessController.doPrivileged(
-                                new GetPropertyAction(PROP_LIFETIME));
+            (PrivilegedAction<String>) () -> System.getProperty(PROP_LIFETIME));
         if (s != null) {
             LIFETIME = Integer.parseInt(s); // throws NumberFormatException
         } else {
@@ -249,7 +247,7 @@ public final class LDAPCertStore extends CertStoreSpi {
 
         // If property is set to true, disable application resource file lookup.
         boolean disableAppResourceFiles = AccessController.doPrivileged(
-            new GetBooleanAction(PROP_DISABLE_APP_RESOURCE_FILES));
+            (PrivilegedAction<Boolean>) () -> Boolean.getBoolean(PROP_DISABLE_APP_RESOURCE_FILES));
         if (disableAppResourceFiles) {
             if (debug != null) {
                 debug.println("LDAPCertStore disabling app resource files");

@@ -229,10 +229,12 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 
   // abstract method entry
 
+#ifndef CC_INTERP
   //  pop return address, reset last_sp to NULL
   __ empty_expression_stack();
   __ restore_bcp();      // rsi must be correct for exception handler   (was destroyed)
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
+#endif
 
   // throw exception
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));

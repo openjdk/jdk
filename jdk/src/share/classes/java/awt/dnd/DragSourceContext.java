@@ -289,7 +289,7 @@ public class DragSourceContext
 
     /**
      * Returns the current drag <code>Cursor</code>.
-     * <P>
+     *
      * @return the current drag <code>Cursor</code>
      */
 
@@ -300,11 +300,11 @@ public class DragSourceContext
      * <code>DragSourceContext</code> if one has not already been added.
      * If a <code>DragSourceListener</code> already exists,
      * this method throws a <code>TooManyListenersException</code>.
-     * <P>
+     *
      * @param dsl the <code>DragSourceListener</code> to add.
      * Note that while <code>null</code> is not prohibited,
      * it is not acceptable as a parameter.
-     * <P>
+     *
      * @throws TooManyListenersException if
      * a <code>DragSourceListener</code> has already been added
      */

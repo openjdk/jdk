@@ -6022,6 +6022,19 @@ instruct countLeadingZerosL_bsr(rRegI dst, rRegL src, rFlagsReg cr) %{
 %}
 
 instruct countTrailingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
+  predicate(UseCountTrailingZerosInstruction);
+  match(Set dst (CountTrailingZerosI src));
+  effect(KILL cr);
+
+  format %{ "tzcntl    $dst, $src\t# count trailing zeros (int)" %}
+  ins_encode %{
+    __ tzcntl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosI_bsf(rRegI dst, rRegI src, rFlagsReg cr) %{
+  predicate(!UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI src));
   effect(KILL cr);
 
@@ -6041,6 +6054,19 @@ instruct countTrailingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
 %}
 
 instruct countTrailingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
+  predicate(UseCountTrailingZerosInstruction);
+  match(Set dst (CountTrailingZerosL src));
+  effect(KILL cr);
+
+  format %{ "tzcntq    $dst, $src\t# count trailing zeros (long)" %}
+  ins_encode %{
+    __ tzcntq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosL_bsf(rRegI dst, rRegL src, rFlagsReg cr) %{
+  predicate(!UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosL src));
   effect(KILL cr);
 
@@ -8622,6 +8648,122 @@ instruct andI_mem_imm(memory dst, immI src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
+// BMI1 instructions
+instruct andnI_rReg_rReg_mem(rRegI dst, rRegI src1, memory src2, immI_M1 minus_1, rFlagsReg cr) %{
+  match(Set dst (AndI (XorI src1 minus_1) (LoadI src2)));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "andnl  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ andnl($dst$$Register, $src1$$Register, $src2$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct andnI_rReg_rReg_rReg(rRegI dst, rRegI src1, rRegI src2, immI_M1 minus_1, rFlagsReg cr) %{
+  match(Set dst (AndI (XorI src1 minus_1) src2));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "andnl  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ andnl($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI0 imm_zero, rFlagsReg cr) %{
+  match(Set dst (AndI (SubI imm_zero src) src));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "blsil  $dst, $src" %}
+
+  ins_encode %{
+    __ blsil($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsiI_rReg_mem(rRegI dst, memory src, immI0 imm_zero, rFlagsReg cr) %{
+  match(Set dst (AndI (SubI imm_zero (LoadI src) ) (LoadI src) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "blsil  $dst, $src" %}
+
+  ins_encode %{
+    __ blsil($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsmskI_rReg_mem(rRegI dst, memory src, immI_M1 minus_1, rFlagsReg cr)
+%{
+  match(Set dst (XorI (AddI (LoadI src) minus_1) (LoadI src) ) );
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "blsmskl $dst, $src" %}
+
+  ins_encode %{
+    __ blsmskl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsmskI_rReg_rReg(rRegI dst, rRegI src, immI_M1 minus_1, rFlagsReg cr)
+%{
+  match(Set dst (XorI (AddI src minus_1) src));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "blsmskl $dst, $src" %}
+
+  ins_encode %{
+    __ blsmskl($dst$$Register, $src$$Register);
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsrI_rReg_rReg(rRegI dst, rRegI src, immI_M1 minus_1, rFlagsReg cr)
+%{
+  match(Set dst (AndI (AddI src minus_1) src) );
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "blsrl  $dst, $src" %}
+
+  ins_encode %{
+    __ blsrl($dst$$Register, $src$$Register);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsrI_rReg_mem(rRegI dst, memory src, immI_M1 minus_1, rFlagsReg cr)
+%{
+  match(Set dst (AndI (AddI (LoadI src) minus_1) (LoadI src) ) );
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "blsrl  $dst, $src" %}
+
+  ins_encode %{
+    __ blsrl($dst$$Register, $src$$Address);
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
 // Or Instructions
 // Or Register with Register
 instruct orI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
@@ -8851,6 +8993,122 @@ instruct andL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
   ins_encode(REX_mem_wide(dst), OpcSE(src),
              RM_opc_mem(secondary, dst), Con8or32(src));
   ins_pipe(ialu_mem_imm);
+%}
+
+// BMI1 instructions
+instruct andnL_rReg_rReg_mem(rRegL dst, rRegL src1, memory src2, immL_M1 minus_1, rFlagsReg cr) %{
+  match(Set dst (AndL (XorL src1 minus_1) (LoadL src2)));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "andnq  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ andnq($dst$$Register, $src1$$Register, $src2$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct andnL_rReg_rReg_rReg(rRegL dst, rRegL src1, rRegL src2, immL_M1 minus_1, rFlagsReg cr) %{
+  match(Set dst (AndL (XorL src1 minus_1) src2));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "andnq  $dst, $src1, $src2" %}
+
+  ins_encode %{
+  __ andnq($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsiL_rReg_rReg(rRegL dst, rRegL src, immL0 imm_zero, rFlagsReg cr) %{
+  match(Set dst (AndL (SubL imm_zero src) src));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "blsiq  $dst, $src" %}
+
+  ins_encode %{
+    __ blsiq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsiL_rReg_mem(rRegL dst, memory src, immL0 imm_zero, rFlagsReg cr) %{
+  match(Set dst (AndL (SubL imm_zero (LoadL src) ) (LoadL src) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "blsiq  $dst, $src" %}
+
+  ins_encode %{
+    __ blsiq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsmskL_rReg_mem(rRegL dst, memory src, immL_M1 minus_1, rFlagsReg cr)
+%{
+  match(Set dst (XorL (AddL (LoadL src) minus_1) (LoadL src) ) );
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "blsmskq $dst, $src" %}
+
+  ins_encode %{
+    __ blsmskq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsmskL_rReg_rReg(rRegL dst, rRegL src, immL_M1 minus_1, rFlagsReg cr)
+%{
+  match(Set dst (XorL (AddL src minus_1) src));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "blsmskq $dst, $src" %}
+
+  ins_encode %{
+    __ blsmskq($dst$$Register, $src$$Register);
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsrL_rReg_rReg(rRegL dst, rRegL src, immL_M1 minus_1, rFlagsReg cr)
+%{
+  match(Set dst (AndL (AddL src minus_1) src) );
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "blsrq  $dst, $src" %}
+
+  ins_encode %{
+    __ blsrq($dst$$Register, $src$$Register);
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsrL_rReg_mem(rRegL dst, memory src, immL_M1 minus_1, rFlagsReg cr)
+%{
+  match(Set dst (AndL (AddL (LoadL src) minus_1) (LoadL src)) );
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "blsrq  $dst, $src" %}
+
+  ins_encode %{
+    __ blsrq($dst$$Register, $src$$Address);
+  %}
+
+  ins_pipe(ialu_reg);
 %}
 
 // Or Instructions

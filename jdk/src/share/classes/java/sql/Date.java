@@ -150,7 +150,7 @@ public class Date extends java.util.Date {
 
     /**
      * Formats a date in the date escape format yyyy-mm-dd.
-     * <P>
+     *
      * @return a String in yyyy-mm-dd format
      */
     @SuppressWarnings("deprecation")

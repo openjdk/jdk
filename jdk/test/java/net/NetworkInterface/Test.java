@@ -30,6 +30,7 @@ import java.net.InetAddress;
 import java.util.Enumeration;
 
 public class Test {
+    static final boolean isWindows = System.getProperty("os.name").startsWith("Windows");
 
     public static void main(String args[]) throws Exception {
 
@@ -37,6 +38,11 @@ public class Test {
 
         while (nifs.hasMoreElements()) {
             NetworkInterface ni = (NetworkInterface)nifs.nextElement();
+
+            //JDK-8038276: Should not test on Windows with Teredo Tunneling Pseudo-Interface
+            String dName = ni.getDisplayName();
+            if (isWindows && dName != null && dName.contains("Teredo"))
+                continue;
 
             String name = ni.getName();
             System.out.println("\n" + name);

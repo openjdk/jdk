@@ -1295,6 +1295,7 @@ void ConstantPool::copy_entry_to(constantPoolHandle from_cp, int from_i,
   } break;
 
   case JVM_CONSTANT_UnresolvedClass:
+  case JVM_CONSTANT_UnresolvedClassInError:
   {
     // Can be resolved after checking tag, so check the slot first.
     CPSlot entry = from_cp->slot_at(from_i);

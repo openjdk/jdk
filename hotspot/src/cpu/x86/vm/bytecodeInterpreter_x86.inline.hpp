@@ -250,7 +250,7 @@ inline jint BytecodeInterpreter::VMintSub(jint op1, jint op2) {
   return op1 - op2;
 }
 
-inline jint BytecodeInterpreter::VMintUshr(jint op1, jint op2) {
+inline juint BytecodeInterpreter::VMintUshr(jint op1, jint op2) {
   return ((juint) op1) >> (op2 & 0x1f);
 }
 
