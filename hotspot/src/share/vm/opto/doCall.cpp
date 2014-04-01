@@ -31,6 +31,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"

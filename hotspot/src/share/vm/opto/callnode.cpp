@@ -27,6 +27,7 @@
 #include "compiler/oopMap.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
