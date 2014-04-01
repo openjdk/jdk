@@ -522,7 +522,7 @@ public interface Statement extends Wrapper, AutoCloseable {
     /**
      * Empties this <code>Statement</code> object's current list of
      * SQL commands.
-     * <P>
+     *
      * @exception SQLException if a database access error occurs,
      *  this method is called on a closed <code>Statement</code> or the
      * driver does not support batch updates
@@ -1009,13 +1009,13 @@ public interface Statement extends Wrapper, AutoCloseable {
          * By default, a <code>Statement</code> is not poolable when created, and
          * a <code>PreparedStatement</code> and <code>CallableStatement</code>
          * are poolable when created.
-         * <p>
+         *
          * @param poolable              requests that the statement be pooled if true and
          *                                              that the statement not be pooled if false
-         * <p>
+         *
          * @throws SQLException if this method is called on a closed
          * <code>Statement</code>
-         * <p>
+         *
          * @since 1.6
          */
         void setPoolable(boolean poolable)
@@ -1024,15 +1024,15 @@ public interface Statement extends Wrapper, AutoCloseable {
         /**
          * Returns a  value indicating whether the <code>Statement</code>
          * is poolable or not.
-         * <p>
+         *
          * @return              <code>true</code> if the <code>Statement</code>
          * is poolable; <code>false</code> otherwise
-         * <p>
+         *
          * @throws SQLException if this method is called on a closed
          * <code>Statement</code>
-         * <p>
+         *
          * @since 1.6
-         * <p>
+         *
          * @see java.sql.Statement#setPoolable(boolean) setPoolable(boolean)
          */
         boolean isPoolable()

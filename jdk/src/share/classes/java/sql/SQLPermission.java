@@ -104,7 +104,7 @@ import java.security.*;
  * registered Drivers and release its resources.</td>
  * </tr>
  * </table>
- *<p>
+ *
  * @since 1.3
  * @see java.security.BasicPermission
  * @see java.security.Permission

@@ -1932,8 +1932,8 @@ public final class DateTimeFormatter {
      */
     private TemporalAccessor parseResolved0(final CharSequence text, final ParsePosition position) {
         ParsePosition pos = (position != null ? position : new ParsePosition(0));
-        Parsed unresolved = parseUnresolved0(text, pos);
-        if (unresolved == null || pos.getErrorIndex() >= 0 || (position == null && pos.getIndex() < text.length())) {
+        DateTimeParseContext context = parseUnresolved0(text, pos);
+        if (context == null || pos.getErrorIndex() >= 0 || (position == null && pos.getIndex() < text.length())) {
             String abbr;
             if (text.length() > 64) {
                 abbr = text.subSequence(0, 64).toString() + "...";
@@ -1948,7 +1948,7 @@ public final class DateTimeFormatter {
                         pos.getIndex(), text, pos.getIndex());
             }
         }
-        return unresolved.resolve(resolverStyle, resolverFields);
+        return context.toResolved(resolverStyle, resolverFields);
     }
 
     /**
@@ -1991,10 +1991,14 @@ public final class DateTimeFormatter {
      * @throws IndexOutOfBoundsException if the position is invalid
      */
     public TemporalAccessor parseUnresolved(CharSequence text, ParsePosition position) {
-        return parseUnresolved0(text, position);
+        DateTimeParseContext context = parseUnresolved0(text, position);
+        if (context == null) {
+            return null;
+        }
+        return context.toUnresolved();
     }
 
-    private Parsed parseUnresolved0(CharSequence text, ParsePosition position) {
+    private DateTimeParseContext parseUnresolved0(CharSequence text, ParsePosition position) {
         Objects.requireNonNull(text, "text");
         Objects.requireNonNull(position, "position");
         DateTimeParseContext context = new DateTimeParseContext(this);
@@ -2005,7 +2009,7 @@ public final class DateTimeFormatter {
             return null;
         }
         position.setIndex(pos);  // errorIndex not updated from input
-        return context.toParsed();
+        return context;
     }
 
     //-----------------------------------------------------------------------
@@ -2126,23 +2130,23 @@ public final class DateTimeFormatter {
         @Override
         public Object parseObject(String text, ParsePosition pos) {
             Objects.requireNonNull(text, "text");
-            Parsed unresolved;
+            DateTimeParseContext context;
             try {
-                unresolved = formatter.parseUnresolved0(text, pos);
+                context = formatter.parseUnresolved0(text, pos);
             } catch (IndexOutOfBoundsException ex) {
                 if (pos.getErrorIndex() < 0) {
                     pos.setErrorIndex(0);
                 }
                 return null;
             }
-            if (unresolved == null) {
+            if (context == null) {
                 if (pos.getErrorIndex() < 0) {
                     pos.setErrorIndex(0);
                 }
                 return null;
             }
             try {
-                TemporalAccessor resolved = unresolved.resolve(formatter.resolverStyle, formatter.resolverFields);
+                TemporalAccessor resolved = context.toResolved(formatter.resolverStyle, formatter.resolverFields);
                 if (parseType == null) {
                     return resolved;
                 }

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,10 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/top.hpp"
-#ifdef TARGET_OS_FAMILY_aix
-# include "thread_aix.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
+#include "runtime/thread.inline.hpp"
 
 #define __ _masm->
 
@@ -79,11 +74,11 @@ class StubGenerator: public StubCodeGenerator {
 
     StubCodeMark mark(this, "StubRoutines", "call_stub");
 
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
     // some sanity checks
-    assert((sizeof(frame::abi_48) % 16) == 0,                 "unaligned");
-    assert((sizeof(frame::abi_112) % 16) == 0,                "unaligned");
+    assert((sizeof(frame::abi_minframe) % 16) == 0,           "unaligned");
+    assert((sizeof(frame::abi_reg_args) % 16) == 0,           "unaligned");
     assert((sizeof(frame::spill_nonvolatiles) % 16) == 0,     "unaligned");
     assert((sizeof(frame::parent_ijava_frame_abi) % 16) == 0, "unaligned");
     assert((sizeof(frame::entry_frame_locals) % 16) == 0,     "unaligned");
@@ -221,7 +216,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       BLOCK_COMMENT("Call frame manager or native entry.");
       // Call frame manager or native entry.
-      Register r_new_arg_entry = R14_state;
+      Register r_new_arg_entry = R14; // PPC_state;
       assert_different_registers(r_new_arg_entry, r_top_of_arguments_addr,
                                  r_arg_method, r_arg_thread);
 
@@ -234,7 +229,11 @@ class StubGenerator: public StubCodeGenerator {
       //   R16_thread  -  JavaThread*
 
       // Tos must point to last argument - element_size.
+#ifdef CC_INTERP
       const Register tos = R17_tos;
+#else
+      const Register tos = R15_esp;
+#endif
       __ addi(tos, r_top_of_arguments_addr, -Interpreter::stackElementSize);
 
       // initialize call_stub locals (step 2)
@@ -248,8 +247,11 @@ class StubGenerator: public StubCodeGenerator {
       assert(tos != r_arg_thread && R19_method != r_arg_thread, "trashed r_arg_thread");
 
       // Set R15_prev_state to 0 for simplifying checks in callee.
+#ifdef CC_INTERP
       __ li(R15_prev_state, 0);
-
+#else
+      __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
+#endif
       // Stack on entry to frame manager / native entry:
       //
       //      F0      [TOP_IJAVA_FRAME_ABI]
@@ -444,7 +446,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Save LR/CR and copy exception pc (LR) into R4_ARG2.
     __ save_LR_CR(R4_ARG2);
-    __ push_frame_abi112(0, R0);
+    __ push_frame_reg_args(0, R0);
     // Find exception handler.
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                      SharedRuntime::exception_handler_for_return_address),
@@ -519,7 +521,7 @@ class StubGenerator: public StubCodeGenerator {
     MacroAssembler* masm = new MacroAssembler(&code);
 
     OopMapSet* oop_maps  = new OopMapSet();
-    int frame_size_in_bytes = frame::abi_112_size;
+    int frame_size_in_bytes = frame::abi_reg_args_size;
     OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
     StubCodeMark mark(this, "StubRoutines", "throw_exception");
@@ -529,7 +531,7 @@ class StubGenerator: public StubCodeGenerator {
     __ save_LR_CR(R11_scratch1);
 
     // Push a frame.
-    __ push_frame_abi112(0, R11_scratch1);
+    __ push_frame_reg_args(0, R11_scratch1);
 
     address frame_complete_pc = __ pc();
 
@@ -551,8 +553,11 @@ class StubGenerator: public StubCodeGenerator {
     if (arg2 != noreg) {
       __ mr(R5_ARG3, arg2);
     }
-    __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, runtime_entry),
-              relocInfo::none);
+#if defined(ABI_ELFv2)
+    __ call_c(runtime_entry, relocInfo::none);
+#else
+    __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, runtime_entry), relocInfo::none);
+#endif
 
     // Set an oopmap for the call site.
     oop_maps->add_gc_map((int)(gc_map_pc - start), map);
@@ -614,7 +619,7 @@ class StubGenerator: public StubCodeGenerator {
         // With G1, don't generate the call if we statically know that the target in uninitialized
         if (!dest_uninitialized) {
           const int spill_slots = 4 * wordSize;
-          const int frame_size  = frame::abi_112_size + spill_slots;
+          const int frame_size  = frame::abi_reg_args_size + spill_slots;
           Label filtered;
 
           // Is marking active?
@@ -628,7 +633,7 @@ class StubGenerator: public StubCodeGenerator {
           __ beq(CCR0, filtered);
 
           __ save_LR_CR(R0);
-          __ push_frame_abi112(spill_slots, R0);
+          __ push_frame_reg_args(spill_slots, R0);
           __ std(from,  frame_size - 1 * wordSize, R1_SP);
           __ std(to,    frame_size - 2 * wordSize, R1_SP);
           __ std(count, frame_size - 3 * wordSize, R1_SP);
@@ -672,7 +677,7 @@ class StubGenerator: public StubCodeGenerator {
           if (branchToEnd) {
             __ save_LR_CR(R0);
             // We need this frame only to spill LR.
-            __ push_frame_abi112(0, R0);
+            __ push_frame_reg_args(0, R0);
             __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), addr, count);
             __ pop_frame();
             __ restore_LR_CR(R0);
@@ -742,7 +747,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "zero_words_aligned8");
 
     // Implemented as in ClearArray.
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
     Register base_ptr_reg   = R3_ARG1; // tohw (needs to be 8b aligned)
     Register cnt_dwords_reg = R4_ARG2; // count (in dwords)
@@ -820,7 +825,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_handler_for_unsafe_access() {
     StubCodeMark mark(this, "StubRoutines", "handler_for_unsafe_access");
-    address start = __ emit_fd();
+    address start = __ function_entry();
     __ unimplemented("StubRoutines::handler_for_unsafe_access", 93);
     return start;
   }
@@ -861,7 +866,7 @@ class StubGenerator: public StubCodeGenerator {
   // to read from the safepoint polling page.
   address generate_load_from_poll() {
     StubCodeMark mark(this, "StubRoutines", "generate_load_from_poll");
-    address start = __ emit_fd();
+    address start = __ function_entry();
     __ unimplemented("StubRoutines::verify_oop", 95);  // TODO PPC port
     return start;
   }
@@ -885,7 +890,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_fill(BasicType t, bool aligned, const char* name) {
     StubCodeMark mark(this, "StubRoutines", name);
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
     const Register to    = R3_ARG1;   // source array address
     const Register value = R4_ARG2;   // fill value
@@ -1123,7 +1128,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_byte_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
     Register tmp1 = R6_ARG4;
     Register tmp2 = R7_ARG5;
@@ -1254,15 +1259,21 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_byte_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
     Register tmp1 = R6_ARG4;
     Register tmp2 = R7_ARG5;
     Register tmp3 = R8_ARG6;
 
+#if defined(ABI_ELFv2)
+     address nooverlap_target = aligned ?
+       StubRoutines::arrayof_jbyte_disjoint_arraycopy() :
+       StubRoutines::jbyte_disjoint_arraycopy();
+#else
     address nooverlap_target = aligned ?
       ((FunctionDescriptor*)StubRoutines::arrayof_jbyte_disjoint_arraycopy())->entry() :
       ((FunctionDescriptor*)StubRoutines::jbyte_disjoint_arraycopy())->entry();
+#endif
 
     array_overlap_test(nooverlap_target, 0);
     // Do reverse copy. We assume the case of actual overlap is rare enough
@@ -1345,7 +1356,7 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp3 = R8_ARG6;
     Register tmp4 = R9_ARG7;
 
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
       Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8;
     // don't try anything fancy if arrays don't have many elements
@@ -1474,15 +1485,21 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_short_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
     Register tmp1 = R6_ARG4;
     Register tmp2 = R7_ARG5;
     Register tmp3 = R8_ARG6;
 
+#if defined(ABI_ELFv2)
+    address nooverlap_target = aligned ?
+        StubRoutines::arrayof_jshort_disjoint_arraycopy() :
+        StubRoutines::jshort_disjoint_arraycopy();
+#else
     address nooverlap_target = aligned ?
         ((FunctionDescriptor*)StubRoutines::arrayof_jshort_disjoint_arraycopy())->entry() :
         ((FunctionDescriptor*)StubRoutines::jshort_disjoint_arraycopy())->entry();
+#endif
 
     array_overlap_test(nooverlap_target, 1);
 
@@ -1597,7 +1614,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_int_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
-    address start = __ emit_fd();
+    address start = __ function_entry();
     generate_disjoint_int_copy_core(aligned);
     __ blr();
     return start;
@@ -1681,11 +1698,17 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_int_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
+#if defined(ABI_ELFv2)
+    address nooverlap_target = aligned ?
+      StubRoutines::arrayof_jint_disjoint_arraycopy() :
+      StubRoutines::jint_disjoint_arraycopy();
+#else
     address nooverlap_target = aligned ?
       ((FunctionDescriptor*)StubRoutines::arrayof_jint_disjoint_arraycopy())->entry() :
       ((FunctionDescriptor*)StubRoutines::jint_disjoint_arraycopy())->entry();
+#endif
 
     array_overlap_test(nooverlap_target, 2);
 
@@ -1767,7 +1790,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_long_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
-    address start = __ emit_fd();
+    address start = __ function_entry();
     generate_disjoint_long_copy_core(aligned);
     __ blr();
 
@@ -1849,11 +1872,17 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_long_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
+#if defined(ABI_ELFv2)
+    address nooverlap_target = aligned ?
+      StubRoutines::arrayof_jlong_disjoint_arraycopy() :
+      StubRoutines::jlong_disjoint_arraycopy();
+#else
     address nooverlap_target = aligned ?
       ((FunctionDescriptor*)StubRoutines::arrayof_jlong_disjoint_arraycopy())->entry() :
       ((FunctionDescriptor*)StubRoutines::jlong_disjoint_arraycopy())->entry();
+#endif
 
     array_overlap_test(nooverlap_target, 3);
     generate_conjoint_long_copy_core(aligned);
@@ -1875,11 +1904,17 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_oop_copy(bool aligned, const char * name, bool dest_uninitialized) {
     StubCodeMark mark(this, "StubRoutines", name);
 
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
+#if defined(ABI_ELFv2)
+    address nooverlap_target = aligned ?
+      StubRoutines::arrayof_oop_disjoint_arraycopy() :
+      StubRoutines::oop_disjoint_arraycopy();
+#else
     address nooverlap_target = aligned ?
       ((FunctionDescriptor*)StubRoutines::arrayof_oop_disjoint_arraycopy())->entry() :
       ((FunctionDescriptor*)StubRoutines::oop_disjoint_arraycopy())->entry();
+#endif
 
     gen_write_ref_array_pre_barrier(R3_ARG1, R4_ARG2, R5_ARG3, dest_uninitialized, R9_ARG7);
 
@@ -1910,7 +1945,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_oop_copy(bool aligned, const char * name, bool dest_uninitialized) {
     StubCodeMark mark(this, "StubRoutines", name);
-    address start = __ emit_fd();
+    address start = __ function_entry();
 
     gen_write_ref_array_pre_barrier(R3_ARG1, R4_ARG2, R5_ARG3, dest_uninitialized, R9_ARG7);
 
@@ -1991,7 +2026,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
 
     // Entry point, pc or function descriptor.
-    *entry = __ emit_fd();
+    *entry = __ function_entry();
 
     // Load *adr into R4_ARG2, may fault.
     *fault_pc = __ pc();
@@ -2056,7 +2091,7 @@ class StubGenerator: public StubCodeGenerator {
       guarantee(!UseAESIntrinsics, "not yet implemented.");
     }
 
-    // PPC uses stubs for safefetch.
+    // Safefetch stubs.
     generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
                                                        &StubRoutines::_safefetch32_fault_pc,
                                                        &StubRoutines::_safefetch32_continuation_pc);

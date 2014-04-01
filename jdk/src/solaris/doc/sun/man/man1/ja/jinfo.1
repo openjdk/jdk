@@ -1,166 +1,186 @@
-." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jinfo 1 "07 May 2011"
-
-.LP
-.SH "名前"
-jinfo \- 構成情報
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-パラメータ 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jinfo
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: トラブルシューティング・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jinfo" "1" "2013年11月21日" "JDK 8" "トラブルシューティング・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jinfo \- 構成情報を生成します。このコマンドは試験的なもので、サポートされていません。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3jinfo\fP [ option ] pid
-.fl
-\f3jinfo\fP [ option ] executable core
-.fl
-\f3jinfo\fP [ option ] [server\-id@]remote\-hostname\-or\-IP 
-.fl
+\fIjinfo\fR [ \fIoption\fR ] \fIpid\fR
 .fi
-
-.LP
-.SH "パラメータ"
-.LP
-.RS 3
-.TP 3
-option 
-各オプションは互いに排他的です。オプションを使用する場合、コマンド名の直後に記述します。 
+.if n \{\
 .RE
-
-.LP
-.RS 3
-.TP 3
-pid 
-出力する構成情報のプロセス ID。プロセスは Java プロセスである必要があります。マシン上で実行している Java プロセスの一覧を取得するには、jps(1) を使用します。 
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjinfo\fR [ \fIoption \fR] \fIexecutable core\fR
+.fi
+.if n \{\
 .RE
-
-.LP
-.RS 3
-.TP 3
-executable 
-コアダンプの作成元の Java 実行可能ファイルです。 
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjinfo\fR [ \fIoption \fR] \fI[ servier\-id ] remote\-hostname\-or\-IP\fR
+.fi
+.if n \{\
 .RE
-
-.LP
-.RS 3
-.TP 3
-core 
-出力する構成情報のコアファイル。 
+.\}
+.PP
+\fIオプション\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
 .RE
-
-.LP
-.RS 3
-.TP 3
-remote\-hostname\-or\-IP 
-リモートデバッグサーバー (jsadebugd(1) を参照) のホスト名または IP アドレスです。 
+.PP
+\fIpid\fR
+.RS 4
+構成情報が出力されるプロセスID。プロセスはJavaプロセスである必要があります。マシン上で実行しているJavaプロセスの一覧を取得するには、jps(1)コマンドを使用します。
 .RE
-
-.LP
-.RS 3
-.TP 3
-server\-id 
-複数のデバッグサーバーが同一のリモートホストで実行している場合の、オプション固有の ID です。 
+.PP
+\fI実行可能ファイル\fR
+.RS 4
+コア・ダンプの作成元のJava実行可能ファイル。
 .RE
-
-.LP
+.PP
+\fIコア\fR
+.RS 4
+構成情報が出力されるコア・ファイル。
+.RE
+.PP
+\fIremote\-hostname\-or\-IP\fR
+.RS 4
+リモート・デバッグ・サーバーの\fIホスト名\fRまたは\fIIP\fRアドレス。jsadebugd(1)を参照してください。
+.RE
+.PP
+\fIserver\-id\fR
+.RS 4
+複数のデバッグ・サーバーが同一のリモート・ホストで実行している場合の、オプション固有のID。
+.RE
 .SH "説明"
-.LP
-.LP
-\f3jinfo\fP は、指定された Java プロセスやコアファイルまたはリモートデバッグサーバーの Java 構成情報を出力します。構成情報は、Java システムプロパティーと Java 仮想マシンのコマンド行フラグから構成されます。指定されたプロセスが 64 ビット VM 上で実行されている場合、\f2\-J\-d64\fP オプションを指定しなければならない場合があります。次に例を示します。
-.br
-jinfo \-J\-d64 \-sysprops pid
-.LP
-.LP
-\f3注 \- このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。dbgeng.dll が存在していない Windows システムでは、「Debugging Tools For Windows」をインストールしないとこれらのツールが正常に動作しません。また、 \fP\f4PATH\fP\f3 環境変数には、ターゲットプロセスによって使用される \fP\f4jvm.dll\fP\f3 の場所、またはクラッシュダンプファイルが生成された場所が含まれるようにしてください。\fP
-.LP
-.LP
-\f3次に例を示します。 \fP\f4set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
-.LP
+.PP
+\fIjinfo\fRコマンドは、指定されたJavaプロセスやコア・ファイルまたはリモート・デバッグ・サーバーのJava構成情報を出力します。構成情報には、Javaシステム・プロパティとJava仮想マシン(JVM)のコマンドライン・フラグが含まれています。指定されたプロセスが64ビットJVM上で実行されている場合、\fI\-J\-d64\fRオプションを指定する必要がある場合があります。次に例を示します。\fIjinfo\fR
+\fI\-J\-d64 \-sysprops pid\fR。
+.PP
+このユーティリティはサポート対象外であり、将来のJDKのリリースでは利用できなくなる可能性があります。\fIdbgeng\&.dll\fRが存在していないWindowsシステムでは、Debugging Tools For Windowsをインストールしないとこれらのツールが正常に動作しません。\fIPATH\fR環境変数には、ターゲット・プロセスによって使用されるjvm\&.dllの場所、またはクラッシュ・ダンプ・ファイルが生成された場所が含まれるようにしてください。たとえば、\fIset PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fRです。
 .SH "オプション"
-.LP
-.RS 3
-.TP 3
-<オプションなし> 
-コマンド行フラグを、システムプロパティー名と値のペアとともに出力します。
-.br
-.TP 3
-\-flag name 
-指定されたコマンド行フラグの名前と値を出力します。
-.br
-.TP 3
-\-flag [+|\-]name 
-指定されたブール型のコマンド行フラグを有効または無効にします。
-.br
-.TP 3
-\-flag name=value 
-指定されたコマンド行フラグを指定された値に設定します。
-.br
-.TP 3
-\-flags 
-JVM に渡されるコマンド行フラグをペアで出力します。
-.br
-.TP 3
-\-sysprops 
-Java システムプロパティーを名前と値のペアとして出力します。
-.br
-.TP 3
-\-h 
-ヘルプメッセージを出力します。 
-.TP 3
-\-help 
-ヘルプメッセージを出力します。 
+.PP
+no\-option
+.RS 4
+コマンドライン・フラグを、システム・プロパティ名と値のペアとともに出力します。
 .RE
-
-.LP
+.PP
+\-flag \fIname\fR
+.RS 4
+指定されたコマンドライン・フラグの名前と値を出力します。
+.RE
+.PP
+\-flag \fI[+|\-]name\fR
+.RS 4
+指定されたブール型のコマンドライン・フラグを有効または無効にします。
+.RE
+.PP
+\-flag \fIname=value\fR
+.RS 4
+指定されたコマンドライン・フラグを指定された値に設定します。
+.RE
+.PP
+\-flags
+.RS 4
+JVMに渡されるコマンドライン・フラグを出力します。
+.RE
+.PP
+\-sysprops
+.RS 4
+Javaシステム・プロパティを名前と値のペアとして出力します。
+.RE
+.PP
+\-h
+.RS 4
+ヘルプ・メッセージが出力されます。
+.RE
+.PP
+\-help
+.RS 4
+ヘルプ・メッセージが出力されます。
+.RE
 .SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-jps(1) 
-.TP 2
-o
-jsadebugd(1) 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jps(1)
 .RE
-
-.LP
- 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jsadebugd(1)
+.RE
+.br
+'pl 8.5i
+'bp

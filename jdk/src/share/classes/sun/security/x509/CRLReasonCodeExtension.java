@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,29 +34,9 @@ import sun.security.util.*;
 
 /**
  * The reasonCode is a non-critical CRL entry extension that identifies
- * the reason for the certificate revocation. CAs are strongly
- * encouraged to include reason codes in CRL entries; however, the
- * reason code CRL entry extension should be absent instead of using the
- * unspecified (0) reasonCode value.
- * <p>The ASN.1 syntax for this is:
- * <pre>
- *  id-ce-cRLReason OBJECT IDENTIFIER ::= { id-ce 21 }
- *
- *  -- reasonCode ::= { CRLReason }
- *
- * CRLReason ::= ENUMERATED {
- *    unspecified             (0),
- *    keyCompromise           (1),
- *    cACompromise            (2),
- *    affiliationChanged      (3),
- *    superseded              (4),
- *    cessationOfOperation    (5),
- *    certificateHold         (6),
- *    removeFromCRL           (8),
- *    privilegeWithdrawn      (9),
- *    aACompromise           (10) }
- * </pre>
+ * the reason for the certificate revocation.
  * @author Hemma Prafullchandra
+ * @see java.security.cert.CRLReason
  * @see Extension
  * @see CertAttrSet
  */
@@ -64,22 +44,10 @@ public class CRLReasonCodeExtension extends Extension
         implements CertAttrSet<String> {
 
     /**
-     * Attribute name and Reason codes
+     * Attribute name
      */
     public static final String NAME = "CRLReasonCode";
     public static final String REASON = "reason";
-
-    public static final int UNSPECIFIED = 0;
-    public static final int KEY_COMPROMISE = 1;
-    public static final int CA_COMPROMISE = 2;
-    public static final int AFFLIATION_CHANGED = 3;
-    public static final int SUPERSEDED = 4;
-    public static final int CESSATION_OF_OPERATION = 5;
-    public static final int CERTIFICATE_HOLD = 6;
-    // note 7 missing in syntax
-    public static final int REMOVE_FROM_CRL = 8;
-    public static final int PRIVILEGE_WITHDRAWN = 9;
-    public static final int AA_COMPROMISE = 10;
 
     private static CRLReason[] values = CRLReason.values();
 
@@ -181,7 +149,7 @@ public class CRLReasonCodeExtension extends Extension
      * Returns a printable representation of the Reason code.
      */
     public String toString() {
-        return super.toString() + "    Reason Code: " + values[reasonCode];
+        return super.toString() + "    Reason Code: " + getReasonCode();
     }
 
     /**

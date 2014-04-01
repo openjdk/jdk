@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
  * @bug     6266772
  * @summary javac crashes, assertion failure in Lower.java
  * @author  Peter von der Ah\u00e9
- * @compile/fail -source 1.4 T6266772.java
- * @compile T6266772.java
- * @run main T6266772
  */
 
 public class T6266772 {

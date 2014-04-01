@@ -164,11 +164,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     public static final int HAS_EVAL                    = 1 << 5;
 
     /** Does a nested function contain eval? If it does, then all variables in this function might be get/set by it. */
-    public static final int HAS_NESTED_EVAL = 1 << 6;
+    public static final int HAS_NESTED_EVAL             = 1 << 6;
 
     /** Does this function have any blocks that create a scope? This is used to determine if the function needs to
      * have a local variable slot for the scope symbol. */
-    public static final int HAS_SCOPE_BLOCK = 1 << 7;
+    public static final int HAS_SCOPE_BLOCK             = 1 << 7;
 
     /**
      * Flag this function as one that defines the identifier "arguments" as a function parameter or nested function
@@ -196,6 +196,9 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
 
     /** Can this function be specialized? */
     public static final int CAN_SPECIALIZE              = 1 << 14;
+
+    /** Does this function use the "this" keyword? */
+    public static final int USES_THIS                   = 1 << 15;
 
     /** Does this function or any nested functions contain an eval? */
     private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
@@ -588,6 +591,15 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      */
     public boolean needsCallee() {
         return needsParentScope() || needsSelfSymbol() || isSplit() || (needsArguments() && !isStrict());
+    }
+
+    /**
+     * Return {@code true} if this function makes use of the {@code this} object.
+     *
+     * @return true if function uses {@code this} object
+     */
+    public boolean usesThis() {
+        return getFlag(USES_THIS);
     }
 
     /**
