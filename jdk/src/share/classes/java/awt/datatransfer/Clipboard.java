@@ -27,13 +27,12 @@ package java.awt.datatransfer;
 
 import java.awt.EventQueue;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Arrays;
 
 import java.io.IOException;
-
-import sun.awt.EventListenerAggregate;
 
 /**
  * A class that implements a mechanism to transfer data using
@@ -68,7 +67,7 @@ public class Clipboard {
      *
      * @since 1.5
      */
-    private EventListenerAggregate flavorListeners;
+    private final Set<FlavorListener> flavorListeners = new HashSet<>();
 
     /**
      * A set of <code>DataFlavor</code>s that is available on
@@ -86,6 +85,7 @@ public class Clipboard {
      */
     public Clipboard(String name) {
         this.name = name;
+        currentDataFlavors = getAvailableDataFlavorSet();
     }
 
     /**
@@ -131,11 +131,7 @@ public class Clipboard {
         this.contents = contents;
 
         if (oldOwner != null && oldOwner != owner) {
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    oldOwner.lostOwnership(Clipboard.this, oldContents);
-                }
-            });
+            EventQueue.invokeLater(() -> oldOwner.lostOwnership(Clipboard.this, oldContents));
         }
         fireFlavorsChanged();
     }
@@ -261,10 +257,6 @@ public class Clipboard {
         if (listener == null) {
             return;
         }
-        if (flavorListeners == null) {
-            currentDataFlavors = getAvailableDataFlavorSet();
-            flavorListeners = new EventListenerAggregate(FlavorListener.class);
-        }
         flavorListeners.add(listener);
     }
 
@@ -286,7 +278,7 @@ public class Clipboard {
      * @since 1.5
      */
     public synchronized void removeFlavorListener(FlavorListener listener) {
-        if (listener == null || flavorListeners == null) {
+        if (listener == null) {
             return;
         }
         flavorListeners.remove(listener);
@@ -305,8 +297,7 @@ public class Clipboard {
      * @since 1.5
      */
     public synchronized FlavorListener[] getFlavorListeners() {
-        return flavorListeners == null ? new FlavorListener[0] :
-                (FlavorListener[])flavorListeners.getListenersCopy();
+        return flavorListeners.toArray(new FlavorListener[flavorListeners.size()]);
     }
 
     /**
@@ -317,24 +308,14 @@ public class Clipboard {
      * @since 1.5
      */
     private void fireFlavorsChanged() {
-        if (flavorListeners == null) {
-            return;
-        }
         Set<DataFlavor> prevDataFlavors = currentDataFlavors;
         currentDataFlavors = getAvailableDataFlavorSet();
-        if (prevDataFlavors.equals(currentDataFlavors)) {
+        if (Objects.equals(prevDataFlavors, currentDataFlavors)) {
             return;
         }
-        FlavorListener[] flavorListenerArray =
-                (FlavorListener[])flavorListeners.getListenersInternal();
-        for (int i = 0; i < flavorListenerArray.length; i++) {
-            final FlavorListener listener = flavorListenerArray[i];
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    listener.flavorsChanged(new FlavorEvent(Clipboard.this));
-                }
-            });
-        }
+        flavorListeners.forEach(listener ->
+                EventQueue.invokeLater(() ->
+                        listener.flavorsChanged(new FlavorEvent(Clipboard.this))));
     }
 
     /**
