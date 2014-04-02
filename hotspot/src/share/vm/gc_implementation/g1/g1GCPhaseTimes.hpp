@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,15 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_collection_par_time_ms;
   double _cur_collection_code_root_fixup_time_ms;
   double _cur_strong_code_root_migration_time_ms;
+  double _cur_strong_code_root_purge_time_ms;
+
+  double _cur_evac_fail_recalc_used;
+  double _cur_evac_fail_restore_remsets;
+  double _cur_evac_fail_remove_self_forwards;
+
+  double                  _cur_string_dedup_fixup_time_ms;
+  WorkerDataArray<double> _cur_string_dedup_queue_fixup_worker_times_ms;
+  WorkerDataArray<double> _cur_string_dedup_table_fixup_worker_times_ms;
 
   double _cur_clear_ct_time_ms;
   double _cur_ref_proc_time_ms;
@@ -141,6 +150,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
+
+  double _recorded_redirty_logged_cards_time_ms;
 
   double _recorded_young_free_cset_time_ms;
   double _recorded_non_young_free_cset_time_ms;
@@ -223,6 +234,37 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_strong_code_root_migration_time_ms = ms;
   }
 
+  void record_strong_code_root_purge_time(double ms) {
+    _cur_strong_code_root_purge_time_ms = ms;
+  }
+
+  void record_evac_fail_recalc_used_time(double ms) {
+    _cur_evac_fail_recalc_used = ms;
+  }
+
+  void record_evac_fail_restore_remsets(double ms) {
+    _cur_evac_fail_restore_remsets = ms;
+  }
+
+  void record_evac_fail_remove_self_forwards(double ms) {
+    _cur_evac_fail_remove_self_forwards = ms;
+  }
+
+  void note_string_dedup_fixup_start();
+  void note_string_dedup_fixup_end();
+
+  void record_string_dedup_fixup_time(double ms) {
+    _cur_string_dedup_fixup_time_ms = ms;
+  }
+
+  void record_string_dedup_queue_fixup_worker_time(uint worker_id, double ms) {
+    _cur_string_dedup_queue_fixup_worker_times_ms.set(worker_id, ms);
+  }
+
+  void record_string_dedup_table_fixup_worker_time(uint worker_id, double ms) {
+    _cur_string_dedup_table_fixup_worker_times_ms.set(worker_id, ms);
+  }
+
   void record_ref_proc_time(double ms) {
     _cur_ref_proc_time_ms = ms;
   }
@@ -249,6 +291,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_non_young_cset_choice_time_ms(double time_ms) {
     _recorded_non_young_cset_choice_time_ms = time_ms;
+  }
+
+  void record_redirty_logged_cards_time_ms(double time_ms) {
+    _recorded_redirty_logged_cards_time_ms = time_ms;
   }
 
   void record_cur_collection_start_sec(double time_ms) {

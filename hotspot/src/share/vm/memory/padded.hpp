@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,25 @@ class PaddedArray {
   // Creates an aligned padded array.
   // The memory can't be deleted since the raw memory chunk is not returned.
   static PaddedEnd<T>* create_unfreeable(uint length);
+};
+
+// Helper class to create an array of references to arrays of primitive types
+// Both the array of references and the data arrays are aligned to the given
+// alignment. The allocated memory is zero-filled.
+template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+class Padded2DArray {
+ public:
+  // Creates an aligned padded 2D array.
+  // The memory cannot be deleted since the raw memory chunk is not returned.
+  static T** create_unfreeable(uint rows, uint columns, size_t* allocation_size = NULL);
+};
+
+// Helper class to create an array of T objects. The array as a whole will
+// start at a multiple of alignment and its size will be aligned to alignment.
+template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+class PaddedPrimitiveArray {
+ public:
+  static T* create_unfreeable(size_t length);
 };
 
 #endif // SHARE_VM_MEMORY_PADDED_HPP

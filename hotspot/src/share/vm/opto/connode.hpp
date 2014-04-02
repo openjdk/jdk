@@ -642,6 +642,19 @@ public:
   virtual const Type *bottom_type() const { return TypeInt::INT; }
 };
 
+//------------------------------Opaque3Node------------------------------------
+// A node to prevent unwanted optimizations. Will be optimized only during
+// macro nodes expansion.
+class Opaque3Node : public Opaque2Node {
+  int _opt; // what optimization it was used for
+public:
+  enum { RTM_OPT };
+  Opaque3Node(Compile* C, Node *n, int opt) : Opaque2Node(C, n), _opt(opt) {}
+  virtual int Opcode() const;
+  bool rtm_opt() const { return (_opt == RTM_OPT); }
+};
+
+
 //----------------------PartialSubtypeCheckNode--------------------------------
 // The 2nd slow-half of a subtype check.  Scan the subklass's 2ndary superklass
 // array for an instance of the superklass.  Set a hidden internal cache on a

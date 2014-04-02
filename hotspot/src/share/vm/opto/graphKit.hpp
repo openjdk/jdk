@@ -338,6 +338,7 @@ class GraphKit : public Phase {
   // Convert between int and long, and size_t.
   // (See macros ConvI2X, etc., in type.hpp for ConvI2X, etc.)
   Node* ConvI2L(Node* offset);
+  Node* ConvI2UL(Node* offset);
   Node* ConvL2I(Node* offset);
   // Find out the klass of an object.
   Node* load_object_klass(Node* object);
