@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
     }
 
     /* ToolBarBorder and drag-off handle, based loosly on MetalBumps */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class ToolBarBorder extends AbstractBorder implements UIResource, javax.swing.SwingConstants {
         protected void fillHandle(final Graphics g, final int x1, final int y1, final int x2, final int y2, final boolean horizontal) {
             g.setColor(UIManager.getColor("ToolBar.borderHandleColor"));

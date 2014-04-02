@@ -1,278 +1,263 @@
-." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jps 1 "07 May 2011"
-
-.LP
-.SH "名前"
-jps \- Java 仮想マシンプロセスステータスツール
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-パラメータ 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-ホスト識別子 
-.TP 2
-o
-出力形式 
-.TP 2
-o
-例 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jps
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: モニタリング・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jps" "1" "2013年11月21日" "JDK 8" "モニタリング・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jps \- ターゲット・システム上で計測されたJava仮想マシン(JVM)を一覧表示します。このコマンドは試験的なもので、サポートされていません。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3jps\fP [ \f2options\fP ] [ \f2hostid\fP ]
-.br
-
-.fl
+\fIjps\fR [ \fIoptions\fR ] [ \fIhostid\fR ]
 .fi
-
-.LP
-.SH "パラメータ"
-.LP
-.RS 3
-.TP 3
-options 
-コマンド行オプション。 
-.TP 3
-hostid 
-プロセスレポートを生成するホストのホスト識別子。\f2hostid\fP には、通信プロトコル、ポート番号、実装に固有な他のデータを指定したオプションコンポーネントを含めることができます。 
+.if n \{\
 .RE
-
-.LP
-.SH " 説明"
-.LP
-.LP
-\f3jps\fP ツールは、ターゲットシステム上で計測された HotSpot Java 仮想マシン (JVM) を一覧表示します。このツールで表示できるレポート情報は、アクセス権を持った JVM に関するものに限定されます。
-.LP
-.LP
-\f2hostid\fP を指定せずに \f3jps\fP を実行した場合、ローカルホストで計測された JVM が検索されます。\f2hostid\fP を指定して起動した場合、指定されたプロトコルとポートを使用して、指定されたホスト上の JVM を検索します。\f3jstatd\fP プロセスがターゲットホスト上で実行されていると想定されます。
-.LP
-.LP
-\f3jps\fP コマンドは、ターゲットシステムで計測された各 JVM について、ローカル VM 識別子、つまり \f2lvmid\fP をレポートします。\f3lvmid\fP は、必須ではありませんが、一般的には JVM プロセスに対するオペレーティングシステムのプロセス識別子です。オプションを指定しない場合、\f3jps\fP によって、各 Java アプリケーションの \f2lvmid\fP が一覧表示され、それぞれにアプリケーションのクラス名または JAR ファイル名が簡単な形式で示されます。この簡単な形式のクラス名と JAR ファイル名では、クラスのパッケージ情報または JAR ファイルパス情報が省略されています。
-.LP
-.LP
-\f3jps\fP コマンドは、\f3Java\fP 起動ツールを使用して \f2main\fP メソッドに渡されるクラス名と引数を検索します。独自の起動ツールを使用してターゲット JVM を起動した場合は、 \f2main\fP メソッドに渡されるクラス名 (または JAR ファイル名) と引数は利用できません。この場合、\f3jps\fP コマンドは、main メソッドへ渡されるクラス名 (または JAR ファイル名) と引数に対して、文字列 \f2Unknown\fP を出力します。
-.LP
-.LP
-\f3jps\fP コマンドで生成される JVM のリストは、このコマンドを実行する主体に与えられたアクセス権に基づき、制限される場合があります。このコマンドは、オペレーティングシステム独自のアクセス制御機構による決定に基づいて、主体にアクセス権が与えられている JVM だけを一覧表示します。
-.LP
-.LP
-\f3注:\fP このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。現在、Windows 98 および Windows Me プラットフォームでは使用できません。
-.LP
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIhostid\fR
+.RS 4
+プロセス・レポートを生成するホストの識別子。\fIhostid\fRには、通信プロトコル、ポート番号、実装に固有な他のデータを指定したオプション・コンポーネントを含めることができます。ホスト識別子を参照してください。
+.RE
+.SH "説明"
+.PP
+\fIjps\fRコマンドは、ターゲット・システム上で計測されたJava HotSpot VMを一覧表示します。このコマンドで表示できるレポート情報は、アクセス権を持ったJVMに関するものに限定されます。
+.PP
+\fIhostid\fRを指定せずに\fIjps\fRコマンドを実行した場合、ローカル・ホストで計測されたJVMが検索されます。\fIhostid\fRを指定して起動した場合、指定されたプロトコルとポートを使用して、指定されたホスト上のJVMを検索します。\fIjstatd\fRプロセスがターゲット・ホスト上で実行されていると想定されます。
+.PP
+\fIjps\fRコマンドは、ターゲット・システムで計測された各JVMについて、ローカルVM識別子、つまり\fIlvmid\fRをレポートします。\fIlvmid\fRは、一般的にはJVMプロセスに対するオペレーティング・システムのプロセス識別子ですが、必ずしもそうであるとは限りません。オプションを指定しない場合、\fIjps\fRによって、各Javaアプリケーションの\fIlvmid\fRが一覧表示され、それぞれにアプリケーションのクラス名またはJARファイル名が簡単な形式で示されます。この簡単な形式のクラス名とJARファイル名では、クラスのパッケージ情報またはJARファイル・パス情報が省略されています。
+.PP
+\fIjps\fRコマンドは、Java起動ツールを使用してmainメソッドに渡されるクラス名と引数を検索します。独自の起動ツールを使用してターゲットJVMを起動した場合は、\fImain\fRメソッドに渡されるクラス名またはJARファイル名と引数は利用できません。この場合、\fIjps\fRコマンドは、\fImain\fRメソッドに渡されるクラス名またはJARファイル名と引数に対して、文字列\fIUnknown\fRを出力します。
+.PP
+\fIjps\fRコマンドで生成されるJVMのリストは、このコマンドを実行するプリンシパルに与えられたアクセス権に基づき、制限される場合があります。このコマンドは、オペレーティング・システム独自のアクセス制御機構による決定に基づいて、プリンシパルにアクセス権が与えられているJVMのみを一覧表示します。
 .SH "オプション"
-.LP
-.LP
-\f3jps\fP コマンドでは、コマンドの出力を変更するオプションが多数サポートされています。将来、これらのオプションは、変更または廃止される可能性があります。
-.LP
-.RS 3
-.TP 3
-\-q 
-クラス名、JAR ファイル名、および \f2main\fP メソッドに渡された引数の出力を抑制し、ローカル VM 識別子の一覧のみを生成します。 
-.TP 3
-\-m 
-main メソッドに渡される引数を出力します。この出力は、組み込まれている JVM に対して null になることもあります。  
-.TP 3
-\-l 
-アプリケーションの主要なクラスのフルパッケージ名、またはアプリケーションの JAR ファイルへのフルパス名を出力します。 
-.TP 3
-\-v 
-JVM に渡される引数を出力します。 
-.TP 3
-\-V 
-フラグファイル (.hotspotrc ファイルまたは \-XX:Flags=<\f2filename\fP> の引数で指定されたファイル) を通じて JVM に渡される引数を出力します。 
-.TP 3
-\-Joption 
-\f3jps\fP が呼び出す \f3java\fP 起動ツールに、\f2option\fP を渡します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。\f3\-J\fP を使って、Java で記述されたアプリケーションを実行する背後の VM にオプション渡すことは、よく行われています。 
+.PP
+\fIjps\fRコマンドでは、コマンドの出力を変更するオプションが多数サポートされています。将来、これらのオプションは、変更または廃止される可能性があります。
+.PP
+\-q
+.RS 4
+クラス名、JARファイル名、および\fImain\fRメソッドに渡された引数の出力を抑制し、ローカルVM識別子の一覧のみを生成します。
 .RE
-
-.LP
-.SS 
-ホスト識別子
-.LP
-.LP
-ホスト識別子、つまり \f2hostid\fP は、ターゲットシステムを示す文字列です。\f2hostid\fP 文字列の構文の大部分は、URI の構文に対応しています。
-.LP
-.nf
-\f3
-.fl
-[\fP\f4protocol\fP\f3:][[//]\fP\f4hostname\fP\f3][:\fP\f4port\fP\f3][/\fP\f4servername\fP\f3]\fP
-.br
-\f3
-.fl
-\fP
-.fi
-
-.LP
-.RS 3
-.TP 3
-protocol 
-通信プロトコルです。\f2protocol\fP が省略され、\f2hostname\fP が指定されていない場合、デフォルトのプロトコルが、プラットフォーム固有の最適化されたローカルプロトコルになります。\f2protocol\fP が省略され、\f2hostname\fP が指定されている場合は、デフォルトプロトコルは \f3rmi\fP になります。 
-.TP 3
-hostname 
-ターゲットホストを示すホスト名または IP アドレスです。\f2hostname\fP が省略されている場合は、ターゲットホストはローカルホストになります。 
-.TP 3
-port 
-リモートサーバーと通信するためのデフォルトポートです。\f2hostname\fP が省略されているか、\f2protocol\fP で最適化されたローカルプロトコルが指定されている場合、\f2port\fP は無視されます。そうでなければ、\f2port\fP パラメータの扱いは、実装によって異なります。デフォルトの \f3rmi\fP プロトコルの場合、\f2port\fP は、リモートホスト上の rmiregistry のポート番号を示します。\f2port\fP が省略され、\f2protocol\fP で \f3rmi\fP が指定されている場合、デフォルトの rmiregistry ポート (1099) が使用されます。 
-.TP 3
-servername 
-このパラメータの扱いは、実装によって異なります。最適化されたローカルプロトコルの場合、このフィールドは無視されます。\f3rmi\fP プロトコルの場合、このパラメータは、リモートホスト上の RMI リモートオブジェクトの名前を示す文字列になります。jstatd(1) コマンドについては、\f3\-n\fP オプションを参照してください。 
+.PP
+\-m
+.RS 4
+\fImain\fRメソッドに渡される引数を出力します。この出力は、組み込まれているJVMに対して\fInull\fRになることもあります。
 .RE
-
-.LP
-.SH "出力形式"
-.LP
-.LP
-\f3jps\fP コマンドの出力は、次のパターンに従います。
-.LP
+.PP
+\-l
+.RS 4
+アプリケーションの\fImain\fRクラスのフル・パッケージ名、またはアプリケーションのJARファイルへのフルパス名を出力します。
+.RE
+.PP
+\-v
+.RS 4
+JVMに渡される引数を表示します。
+.RE
+.PP
+\-V
+.RS 4
+クラス名、JARファイル名、およびmaiメソッドに渡された引数の出力を抑制し、ローカルVM識別子の一覧のみを生成します。
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+JVMに\fIoption\fRを渡します。optionには、Javaアプリケーション起動ツールのリファレンス・ページに記載されている\fIオプション\fRを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+.RE
+.SH "ホスト識別子"
+.PP
+ホスト識別子、つまり\fIhostid\fRは、ターゲット・システムを示す文字列です。\fIhostid\fR文字列の構文は、URIの構文に対応しています。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f4lvmid\fP\f3 [ [ \fP\f4classname\fP\f3 | \fP\f4JARfilename\fP\f3 | "Unknown"] [ \fP\f4arg\fP\f3* ] [ \fP\f4jvmarg\fP\f3* ] ]\fP
-.br
-\f3
-.fl
-\fP
+[protocol:][[//]hostname][:port][/servername]
 .fi
-
-.LP
-.LP
-すべての出力トークンは空白で区切ります。\f2arg\fP の中で空白を使用すると、実際の定位置パラメータに引数をマッピングしようとするときに、あいまいになります。
-.br
-.br
-\f3注\fP: 将来のリリースでこの形式は変更される可能性があるため、\f3jps\fP の出力を解析するスクリプトは作成しないことをお勧めします。\f3jps\fP 出力を解析するスクリプトを作成すると、このツールの将来のリリースで、作成したスクリプトを変更する必要が予測されます。
-.br
-
-.LP
+.if n \{\
+.RE
+.\}
+.PP
+\fIprotocol\fR
+.RS 4
+通信プロトコルです。\fIprotocol\fRが省略され、\fIhostname\fRが指定されていない場合、デフォルトのプロトコルが、プラットフォーム固有の最適化されたローカル・プロトコルになります。プロトコルが省略され、ホスト名が指定されている場合は、デフォルト・プロトコルは\fIrmi\fRになります。
+.RE
+.PP
+hostname
+.RS 4
+ターゲット・ホストを示すホスト名またはIPアドレスです。\fIhostname\fRパラメータが省略されている場合は、ターゲット・ホストはローカル・ホストになります。
+.RE
+.PP
+port
+.RS 4
+リモート・サーバーと通信するためのデフォルト・ポートです。\fIhostname\fRパラメータが省略されているか、\fIprotocol\fRパラメータが、最適化されたローカル・プロトコルを指定している場合、\fIport\fRパラメータは無視されます。それ以外の場合、\fIport\fRパラメータの扱いは、実装によって異なります。デフォルトの
+\fIrmi\fRプロトコルの場合、\fIport\fRパラメータは、リモート・ホスト上のrmiregistryのポート番号を示します。\fIport\fRパラメータが省略されているか、\fIprotocol\fRパラメータが\fIrmi\fRを示している場合、デフォルトのrmiregistryポート(1099)が使用されます。
+.RE
+.PP
+servername
+.RS 4
+このパラメータの扱いは、実装によって異なります。最適化されたローカル・プロトコルの場合、このフィールドは無視されます。\fIrmi\fRプロトコルの場合、このパラメータは、リモート・ホスト上のRMIリモート・オブジェクトの名前を示す文字列になります。詳細は、\fIjstatd\fRコマンドの\fI\-n\fRオプションを参照してください。
+.RE
+.SH "出力フォーマット"
+.PP
+\fIjps\fRコマンドの出力は、次のパターンに従います。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+lvmid [ [ classname | JARfilename | "Unknown"] [ arg* ] [ jvmarg* ] ]
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+すべての出力トークンは空白文字で区切られます。\fIarg\fR値の中で空白を使用すると、実際の定位置パラメータに引数をマッピングしようとするときに、あいまいになります。
+.PP
+\fB注意:\fR
+将来のリリースでこの形式は変更される可能性があるため、\fIjps\fRの出力を解析するスクリプトは作成しないことをお薦めします。\fIjps\fR出力を解析するスクリプトを作成すると、このツールの将来のリリースで、作成したスクリプトの変更が必要になる可能性があります。
 .SH "例"
-.LP
-.LP
-この節では、\f3jps\fP コマンドの例を示します。
-.LP
-.LP
-ローカルホスト上で計測された JVM を一覧表示する場合:
-.LP
+.PP
+この項では、\fIjps\fRコマンドの例を示します。
+.PP
+ローカル・ホスト上で計測されたJVMを一覧表示する場合:
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3jps\fP
-.br
-
-.fl
-18027 Java2Demo.JAR
-.br
-
-.fl
+jps
+18027 Java2Demo\&.JAR
 18032 jps
-.br
-
-.fl
 18005 jstat
-.br
-
-.fl
 .fi
-
-.LP
-.LP
-リモートホスト上で計測された JVM を一覧表示する場合:
-.LP
-.LP
-この例では、\f3jstat\fP サーバーと、その内部 RMI レジストリまたは別の外部 \f3rmiregistry\fP プロセスのいずれかとが、リモートホストのデフォルトポート (ポート 1099) で実行されていると想定しています。また、ローカルホストが、リモートホストへの有効なアクセス権を持っていることも想定しています。この例には、\f2\-l\fP オプションも含まれ、クラス名または JAR ファイル名を詳細な形式で出力します。
-.LP
-.nf
-\f3
-.fl
-\fP\f3jps \-l remote.domain\fP
-.br
-
-.fl
-3002 /opt/jdk1.7.0/demo/jfc/Java2D/Java2Demo.JAR
-.br
-
-.fl
-2857 sun.tools.jstatd.jstatd
-.br
-
-.fl
-.fi
-
-.LP
-.LP
-RMI レジストリにデフォルトではないポートを使用して、リモートホスト上で計測された JVM を一覧表示する場合:
-.LP
-.LP
-この例では、内部 RMI レジストリがポート 2002 にバインドされた \f3jstatd\fP サーバーが、リモートホスト上で実行していると想定しています。また、\f2\-m\fP オプションを使用して、一覧表示されたそれぞれの Java アプリケーションの \f2main\fP メソッドに渡される引数を組み込んでいます。
-.LP
-.nf
-\f3
-.fl
-\fP\f3jps \-m remote.domain:2002\fP
-.br
-
-.fl
-3002 /opt/jdk1.7.0/demo/jfc/Java2D/Java2Demo.JAR
-.br
-
-.fl
-3102 sun.tools.jstatd.jstatd \-p 2002
-.fl
-.fi
-
-.LP
-.SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-「java(1) \- Java アプリケーション起動ツール」 
-.TP 2
-o
-「jstat(1) \- Java 仮想マシン統計データ監視ツール」 
-.TP 2
-o
-「jstatd(1) \- 仮想マシン jstat デーモン」 
-.TP 2
-o
-「rmiregistry(1) \- Java リモートオブジェクトレジストリ」 
+.if n \{\
 .RE
-
-.LP
- 
+.\}
+.PP
+次の例では、リモート・ホスト上で計測されたJVMを一覧表示します。この例では、\fIjstat\fRサーバーと、その内部RMIレジストリまたは別の外部rmiregistryプロセスのいずれかが、リモート・ホストのデフォルト・ポート(ポート1099)で実行されていると想定しています。また、ローカル・ホストが、リモート・ホストへの有効なアクセス権を持っていることも想定しています。この例には、\fI\-l\fRオプションも含まれ、クラス名またはJARファイル名を詳細な形式で出力します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jps \-l remote\&.domain
+3002 /opt/jdk1\&.7\&.0/demo/jfc/Java2D/Java2Demo\&.JAR
+2857 sun\&.tools\&.jstatd\&.jstatd
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+次の例では、RMIレジストリにデフォルトではないポートを使用して、リモート・ホスト上で計測されたJVMを一覧表示します。この例では、内部RMIレジストリがポート2002にバインドされた\fIjstatd\fRサーバーが、リモート・ホスト上で実行されていると想定しています。また、\fI\-m\fRオプションを使用して、一覧表示されたそれぞれのJavaアプリケーションの\fImain\fRメソッドに渡される引数を組み込んでいます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jps \-m remote\&.domain:2002
+3002 /opt/jdk1\&.7\&.0/demo/jfc/Java2D/Java2Demo\&.JAR
+3102 sun\&.tools\&.jstatd\&.jstatd \-p 2002
+.fi
+.if n \{\
+.RE
+.\}
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+java(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jstat(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jstatd(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+rmiregistry(1)
+.RE
+.br
+'pl 8.5i
+'bp

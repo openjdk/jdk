@@ -55,6 +55,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import javax.management.AttributeNotFoundException;
 import javax.management.openmbean.CompositeData;
+
+import sun.misc.JavaBeansIntrospectorAccess;
+import sun.misc.SharedSecrets;
 import sun.reflect.misc.MethodUtil;
 import sun.reflect.misc.ReflectUtil;
 
@@ -549,16 +552,9 @@ public class Introspector {
                 // Java Beans introspection
                 //
                 Class<?> clazz = complex.getClass();
-                Method readMethod = null;
-                if (BeansHelper.isAvailable()) {
-                    Object bi = BeansHelper.getBeanInfo(clazz);
-                    Object[] pds = BeansHelper.getPropertyDescriptors(bi);
-                    for (Object pd: pds) {
-                        if (BeansHelper.getPropertyName(pd).equals(element)) {
-                            readMethod = BeansHelper.getReadMethod(pd);
-                            break;
-                        }
-                    }
+                Method readMethod;
+                if (BeansIntrospector.isAvailable()) {
+                    readMethod = BeansIntrospector.getReadMethod(clazz, element);
                 } else {
                     // Java Beans not available so use simple introspection
                     // to locate method
@@ -580,6 +576,30 @@ public class Introspector {
         } catch (Exception e) {
             throw EnvHelp.initCause(
                 new AttributeNotFoundException(e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Provides access to java.beans.Introspector if available.
+     */
+    private static class BeansIntrospector {
+        private static final JavaBeansIntrospectorAccess JBIA;
+        static {
+            // ensure that java.beans.Introspector is initialized (if present)
+            try {
+                Class.forName("java.beans.Introspector", true,
+                              BeansIntrospector.class.getClassLoader());
+            } catch (ClassNotFoundException ignore) { }
+
+            JBIA = SharedSecrets.getJavaBeansIntrospectorAccess();
+        }
+
+        static boolean isAvailable() {
+            return JBIA != null;
+        }
+
+        static Method getReadMethod(Class<?> clazz, String property) throws Exception {
+            return JBIA.getReadMethod(clazz, property);
         }
     }
 
@@ -694,123 +714,6 @@ public class Introspector {
                 }
             }
             return null;
-        }
-    }
-
-    /**
-     * A class that provides access to the JavaBeans Introspector and
-     * PropertyDescriptors without creating a static dependency on java.beans.
-     */
-    private static class BeansHelper {
-        private static final Class<?> introspectorClass =
-            getClass("java.beans.Introspector");
-        private static final Class<?> beanInfoClass =
-            (introspectorClass == null) ? null : getClass("java.beans.BeanInfo");
-        private static final Class<?> getPropertyDescriptorClass =
-            (beanInfoClass == null) ? null : getClass("java.beans.PropertyDescriptor");
-
-        private static final Method getBeanInfo =
-            getMethod(introspectorClass, "getBeanInfo", Class.class);
-        private static final Method getPropertyDescriptors =
-            getMethod(beanInfoClass, "getPropertyDescriptors");
-        private static final Method getPropertyName =
-            getMethod(getPropertyDescriptorClass, "getName");
-        private static final Method getReadMethod =
-            getMethod(getPropertyDescriptorClass, "getReadMethod");
-
-        private static Class<?> getClass(String name) {
-            try {
-                return Class.forName(name, true, null);
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
-        private static Method getMethod(Class<?> clazz,
-                                        String name,
-                                        Class<?>... paramTypes)
-        {
-            if (clazz != null) {
-                try {
-                    return clazz.getMethod(name, paramTypes);
-                } catch (NoSuchMethodException e) {
-                    throw new AssertionError(e);
-                }
-            } else {
-                return null;
-            }
-        }
-
-        private BeansHelper() { }
-
-        /**
-         * Returns {@code true} if java.beans is available.
-         */
-        static boolean isAvailable() {
-            return introspectorClass != null;
-        }
-
-        /**
-         * Invokes java.beans.Introspector.getBeanInfo(Class)
-         */
-        static Object getBeanInfo(Class<?> clazz) throws Exception {
-            try {
-                return getBeanInfo.invoke(null, clazz);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof Exception)
-                    throw (Exception)cause;
-                throw new AssertionError(e);
-            } catch (IllegalAccessException iae) {
-                throw new AssertionError(iae);
-            }
-        }
-
-        /**
-         * Invokes java.beans.BeanInfo.getPropertyDescriptors()
-         */
-        static Object[] getPropertyDescriptors(Object bi) {
-            try {
-                return (Object[])getPropertyDescriptors.invoke(bi);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof RuntimeException)
-                    throw (RuntimeException)cause;
-                throw new AssertionError(e);
-            } catch (IllegalAccessException iae) {
-                throw new AssertionError(iae);
-            }
-        }
-
-        /**
-         * Invokes java.beans.PropertyDescriptor.getName()
-         */
-        static String getPropertyName(Object pd) {
-            try {
-                return (String)getPropertyName.invoke(pd);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof RuntimeException)
-                    throw (RuntimeException)cause;
-                throw new AssertionError(e);
-            } catch (IllegalAccessException iae) {
-                throw new AssertionError(iae);
-            }
-        }
-
-        /**
-         * Invokes java.beans.PropertyDescriptor.getReadMethod()
-         */
-        static Method getReadMethod(Object pd) {
-            try {
-                return (Method)getReadMethod.invoke(pd);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof RuntimeException)
-                    throw (RuntimeException)cause;
-                throw new AssertionError(e);
-            } catch (IllegalAccessException iae) {
-                throw new AssertionError(iae);
-            }
         }
     }
 }

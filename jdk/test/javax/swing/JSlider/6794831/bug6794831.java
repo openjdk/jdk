@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,20 @@
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicSliderUI;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class bug6794831 {
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
 
-    public static void main(String args[]) throws InterruptedException {
+    public static void main(String args[])
+            throws InterruptedException, InvocationTargetException {
         new bug6794831().run();
     }
 
-    private void run() throws InterruptedException {
-        SwingUtilities.invokeLater(new Runnable() {
+    private void run() throws InterruptedException, InvocationTargetException {
+        SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 for (UIManager.LookAndFeelInfo lookAndFeelInfo : UIManager.getInstalledLookAndFeels()) {
                     try {

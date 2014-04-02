@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,6 +240,7 @@ public class BasicRootPaneUI extends RootPaneUI implements
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     private static class RootPaneInputMap extends ComponentInputMapUIResource {
         public RootPaneInputMap(JComponent c) {
             super(c);

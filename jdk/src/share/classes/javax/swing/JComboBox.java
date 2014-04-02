@@ -1417,6 +1417,28 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
+        if (super.processKeyBinding(ks, e, condition, pressed)) {
+            return true;
+        }
+
+        if (!isEditable() || condition != WHEN_FOCUSED || getEditor() == null
+                || !Boolean.TRUE.equals(getClientProperty("JComboBox.isTableCellEditor"))) {
+            return false;
+        }
+
+        Component editorComponent = getEditor().getEditorComponent();
+        if (editorComponent instanceof JComponent) {
+            JComponent component = (JComponent) editorComponent;
+            return component.processKeyBinding(ks, e, WHEN_FOCUSED, pressed);
+        }
+        return false;
+    }
+
+    /**
      * Sets the object that translates a keyboard character into a list
      * selection. Typically, the first selection with a matching first
      * character becomes the selected item.

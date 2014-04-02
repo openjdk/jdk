@@ -82,6 +82,39 @@ static long eventCount;
 
 @end
 
+@interface JavaRunnable : NSObject { }
+@property jobject runnable;
+- (id)initWithRunnable:(jobject)gRunnable;
+- (void)perform;
+@end
+
+@implementation JavaRunnable
+@synthesize runnable = _runnable;
+
+- (id)initWithRunnable:(jobject)gRunnable {
+    if (self = [super init]) {
+        self.runnable = gRunnable;
+    }
+    return self;
+}
+
+- (void)dealloc {
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    if (self.runnable) {
+        (*env)->DeleteGlobalRef(env, self.runnable);
+    }
+    [super dealloc];
+}
+
+- (void)perform {
+    JNIEnv* env = [ThreadUtilities getJNIEnv];
+    static JNF_CLASS_CACHE(sjc_Runnable, "java/lang/Runnable");
+    static JNF_MEMBER_CACHE(jm_Runnable_run, sjc_Runnable, "run", "()V");
+    JNFCallVoidMethod(env, self.runnable, jm_Runnable_run);
+    [self release];
+}
+@end
+
 /*
  * Class:     sun_lwawt_macosx_LWCToolkit
  * Method:    nativeSyncQueue
@@ -291,17 +324,15 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_LWCToolkit_createAWTRunLoopMediato
 {
 AWT_ASSERT_APPKIT_THREAD;
 
-    AWTRunLoopObject *o = nil;
+    jlong result;
 
+JNF_COCOA_ENTER(env);
     // We double retain because this object is owned by both main thread and "other" thread
     // We release in both doAWTRunLoop and stopAWTRunLoop
-    o = [[AWTRunLoopObject alloc] init];
-    if (o) {
-        CFRetain(o); // GC
-        CFRetain(o); // GC
-        [o release];
-    }
-    return ptr_to_jlong(o);
+    result = ptr_to_jlong([[[AWTRunLoopObject alloc] init] retain]);
+JNF_COCOA_EXIT(env);
+
+    return result;
 }
 
 /*
@@ -336,10 +367,7 @@ JNF_COCOA_ENTER(env);
 
         }
     }
-
-   
-    CFRelease(mediatorObject);
-
+    [mediatorObject release];
 JNF_COCOA_EXIT(env);
 }
 
@@ -357,10 +385,29 @@ JNF_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThread:@selector(endRunLoop) on:mediatorObject withObject:nil waitUntilDone:NO];
 
-    CFRelease(mediatorObject);
+    [mediatorObject release];
 
 JNF_COCOA_EXIT(env);
 }
+
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    performOnMainThreadAfterDelay
+ * Signature: (Ljava/lang/Runnable;J)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_performOnMainThreadAfterDelay
+(JNIEnv *env, jclass clz, jobject runnable, jlong delay)
+{
+JNF_COCOA_ENTER(env);
+    jobject gRunnable = (*env)->NewGlobalRef(env, runnable);
+    CHECK_NULL(gRunnable);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^() {
+        JavaRunnable* performer = [[JavaRunnable alloc] initWithRunnable:gRunnable];
+        [performer performSelector:@selector(perform) withObject:nil afterDelay:(delay/1000.0)];
+    }];
+JNF_COCOA_EXIT(env);
+}
+
 
 /*
  * Class:     sun_lwawt_macosx_LWCToolkit
@@ -438,4 +485,3 @@ Java_sun_font_FontManager_populateFontFileNameMap
 {
 
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include "jni_util.h"
 #include "awt.h"
 #include <jni.h>
 #include <shellapi.h>
@@ -41,7 +42,12 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
   (JNIEnv *env, jclass cls, jstring fileOrUri_j, jstring verb_j)
 {
     LPCWSTR fileOrUri_c = JNU_GetStringPlatformChars(env, fileOrUri_j, JNI_FALSE);
+    CHECK_NULL_RETURN(fileOrUri_c, NULL);
     LPCWSTR verb_c = JNU_GetStringPlatformChars(env, verb_j, JNI_FALSE);
+    if (verb_c == NULL) {
+        JNU_ReleaseStringPlatformChars(env, fileOrUri_j, fileOrUri_c);
+        return NULL;
+    }
 
     // 6457572: ShellExecute possibly changes FPU control word - saving it here
     unsigned oldcontrol87 = _control87(0, 0);

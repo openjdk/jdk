@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include "jni_util.h"
 #include "awt.h"
 #include "sun_java2d_windows_GDIRenderer.h"
 #include "java_awt_geom_PathIterator.h"
@@ -387,13 +388,20 @@ Java_sun_java2d_windows_GDIRenderer_doDrawPoly
         return;
     }
 
-    POINT tmpPts[POLYTEMPSIZE], *pPoints;
+    POINT tmpPts[POLYTEMPSIZE], *pPoints = NULL;
+
     jint *xpoints = (jint *) env->GetPrimitiveArrayCritical(xpointsarray, NULL);
-    jint *ypoints = (jint *) env->GetPrimitiveArrayCritical(ypointsarray, NULL);
-    pPoints = TransformPoly(xpoints, ypoints, transx, transy,
-                            tmpPts, &npoints, isclosed, TRUE);
-    env->ReleasePrimitiveArrayCritical(xpointsarray, xpoints, JNI_ABORT);
-    env->ReleasePrimitiveArrayCritical(ypointsarray, ypoints, JNI_ABORT);
+
+    if (xpoints != NULL) {
+        jint *ypoints = (jint *) env->GetPrimitiveArrayCritical(ypointsarray, NULL);
+        if (ypoints != NULL) {
+            pPoints = TransformPoly(xpoints, ypoints, transx, transy,
+                                    tmpPts, &npoints, isclosed, TRUE);
+            env->ReleasePrimitiveArrayCritical(ypointsarray, ypoints, JNI_ABORT);
+        }
+        env->ReleasePrimitiveArrayCritical(xpointsarray, xpoints, JNI_ABORT);
+    }
+
     if (pPoints == NULL) {
         return;
     }
@@ -654,13 +662,19 @@ Java_sun_java2d_windows_GDIRenderer_doFillPoly
         return;
     }
 
-    POINT tmpPts[POLYTEMPSIZE], *pPoints;
+    POINT tmpPts[POLYTEMPSIZE], *pPoints = NULL;
+
     jint *xpoints = (jint *) env->GetPrimitiveArrayCritical(xpointsarray, NULL);
-    jint *ypoints = (jint *) env->GetPrimitiveArrayCritical(ypointsarray, NULL);
-    pPoints = TransformPoly(xpoints, ypoints, transx, transy,
-                            tmpPts, &npoints, FALSE, FALSE);
-    env->ReleasePrimitiveArrayCritical(xpointsarray, xpoints, JNI_ABORT);
-    env->ReleasePrimitiveArrayCritical(ypointsarray, ypoints, JNI_ABORT);
+    if (xpoints != NULL) {
+        jint *ypoints = (jint *) env->GetPrimitiveArrayCritical(ypointsarray, NULL);
+        if (ypoints != NULL) {
+            pPoints = TransformPoly(xpoints, ypoints, transx, transy,
+                                tmpPts, &npoints, FALSE, FALSE);
+            env->ReleasePrimitiveArrayCritical(ypointsarray, xpoints, JNI_ABORT);
+        }
+        env->ReleasePrimitiveArrayCritical(xpointsarray, xpoints, JNI_ABORT);
+    }
+
     if (pPoints == NULL) {
         return;
     }
@@ -720,13 +734,26 @@ Java_sun_java2d_windows_GDIRenderer_doShape
     if (hdc == NULL) {
         return;
     }
+
+    jbyte *types = (jbyte *) env->GetPrimitiveArrayCritical(typesarray,
+                                                            NULL);
+    if (types == NULL) {
+        wsdo->ReleaseDC(env, wsdo, hdc);
+        return;
+    }
+
+    jfloat *coords = (jfloat *) env->GetPrimitiveArrayCritical(coordsarray,
+                                                               NULL);
+    if (coords == NULL) {
+        env->ReleasePrimitiveArrayCritical(typesarray, types, JNI_ABORT);
+        wsdo->ReleaseDC(env, wsdo, hdc);
+        return;
+    }
+
     ::SetPolyFillMode(hdc, (rule == java_awt_geom_PathIterator_WIND_NON_ZERO
                             ? WINDING : ALTERNATE));
     ::BeginPath(hdc);
-    jbyte *types = (jbyte *) env->GetPrimitiveArrayCritical(typesarray,
-                                                            NULL);
-    jfloat *coords = (jfloat *) env->GetPrimitiveArrayCritical(coordsarray,
-                                                               NULL);
+
     int index = 0;
     BOOL ok = TRUE;
     BOOL isempty = TRUE;

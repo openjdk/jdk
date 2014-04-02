@@ -85,7 +85,7 @@ extern int wcanonicalizeWithPrefix(const WCHAR *canonicalPrefix, const WCHAR *pa
  * Retrieves the fully resolved (final) path for the given path or NULL
  * if the function fails.
  */
-static WCHAR* getFinalPath(const WCHAR *path)
+static WCHAR* getFinalPath(JNIEnv *env, const WCHAR *path)
 {
     HANDLE h;
     WCHAR *result;
@@ -121,6 +121,7 @@ static WCHAR* getFinalPath(const WCHAR *path)
                 len = (*GetFinalPathNameByHandle_func)(h, result, len, 0);
             } else {
                 len = 0;
+                JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
             }
         }
 
@@ -141,6 +142,7 @@ static WCHAR* getFinalPath(const WCHAR *path)
                 /* copy result without prefix into new buffer */
                 WCHAR *tmp = (WCHAR*)malloc(resultLen * sizeof(WCHAR));
                 if (tmp == NULL) {
+                    JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
                     len = 0;
                 } else {
                     WCHAR *p = result;
@@ -164,6 +166,8 @@ static WCHAR* getFinalPath(const WCHAR *path)
             free(result);
             result = NULL;
         }
+    } else {
+        JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
     }
 
     error = GetLastError();
@@ -257,6 +261,8 @@ Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
                     rv = (*env)->NewString(env, cp, (jsize)wcslen(cp));
                 }
                 free(cp);
+            } else {
+                JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
             }
         } else if (wcanonicalize(path, canonicalPath, MAX_PATH_LENGTH) >= 0) {
             rv = (*env)->NewString(env, canonicalPath, (jsize)wcslen(canonicalPath));
@@ -288,6 +294,8 @@ Java_java_io_WinNTFileSystem_canonicalizeWithPrefix0(JNIEnv *env, jobject this,
                       rv = (*env)->NewString(env, cp, (jsize)wcslen(cp));
                     }
                     free(cp);
+                } else {
+                    JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
                 }
             } else if (wcanonicalizeWithPrefix(canonicalPrefix,
                                                pathWithCanonicalPrefix,
@@ -433,7 +441,7 @@ Java_java_io_WinNTFileSystem_setPermission(JNIEnv *env, jobject this,
     if ((a != INVALID_FILE_ATTRIBUTES) &&
         ((a & FILE_ATTRIBUTE_REPARSE_POINT) != 0))
     {
-        WCHAR *fp = getFinalPath(pathbuf);
+        WCHAR *fp = getFinalPath(env, pathbuf);
         if (fp == NULL) {
             a = INVALID_FILE_ATTRIBUTES;
         } else {
@@ -628,6 +636,7 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
     if (search_path == 0) {
         free (pathbuf);
         errno = ENOMEM;
+        JNU_ThrowOutOfMemoryError(env, "native memory allocation faiuled");
         return NULL;
     }
     wcscpy(search_path, pathbuf);
@@ -803,7 +812,7 @@ Java_java_io_WinNTFileSystem_setReadOnly(JNIEnv *env, jobject this,
     if ((a != INVALID_FILE_ATTRIBUTES) &&
         ((a & FILE_ATTRIBUTE_REPARSE_POINT) != 0))
     {
-        WCHAR *fp = getFinalPath(pathbuf);
+        WCHAR *fp = getFinalPath(env, pathbuf);
         if (fp == NULL) {
             a = INVALID_FILE_ATTRIBUTES;
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,7 +295,7 @@ class HiddenTagView extends EditableView implements DocumentListener {
     static final Border StartBorder = new StartTagBorder();
     static final Border EndBorder = new EndTagBorder();
 
-
+    @SuppressWarnings("serial") // Same-version serialization only
     static class StartTagBorder implements Border, Serializable {
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
@@ -326,7 +326,7 @@ class HiddenTagView extends EditableView implements DocumentListener {
         }
     } // End of class HiddenTagView.StartTagBorder
 
-
+    @SuppressWarnings("serial") // Same-version serialization only
     static class EndTagBorder implements Border, Serializable {
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {

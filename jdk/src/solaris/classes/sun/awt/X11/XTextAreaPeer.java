@@ -63,7 +63,6 @@ import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
-
 final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
     private final AWTTextPane textPane;
@@ -615,7 +614,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
-
+    @SuppressWarnings("serial") // JDK-implementation class
     static final class XAWTCaret extends DefaultCaret {
         @Override
         public void focusGained(FocusEvent e) {
@@ -647,6 +646,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     final class XAWTScrollBarButton extends BasicArrowButton {
 
         private UIDefaults uidefaults = XToolkit.getUIDefaults();
@@ -907,6 +907,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     final class AWTTextArea extends JTextArea implements DocumentListener {
 
         private boolean isFocused = false;
@@ -1105,6 +1106,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     private class AWTTextPane extends JScrollPane implements FocusListener {
 
         private final JTextArea jtext;
@@ -1190,6 +1192,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             return xwin.getGraphics();
         }
 
+        @SuppressWarnings("serial") // JDK-implementation class
         final class XAWTScrollBar extends ScrollBar {
 
             XAWTScrollBar(int i) {
@@ -1205,6 +1208,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     static class BevelBorder extends AbstractBorder implements UIResource {
         private Color darkShadow = SystemColor.controlDkShadow;
         private Color lightShadow = SystemColor.controlLtHighlight;

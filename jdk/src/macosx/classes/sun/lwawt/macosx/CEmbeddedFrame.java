@@ -33,6 +33,7 @@ import java.awt.Toolkit;
 import sun.awt.EmbeddedFrame;
 import sun.lwawt.LWWindowPeer;
 
+@SuppressWarnings("serial") // JDK implementation class
 public class CEmbeddedFrame extends EmbeddedFrame {
 
     private CPlatformResponder responder;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import sun.swing.MenuItemCheckIconFactory;
  * @author Georges Saab
  * @author Rich Schiavi
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class WindowsIconFactory implements Serializable
 {
     private static Icon frame_closeIcon;
@@ -160,6 +161,7 @@ public class WindowsIconFactory implements Serializable
     }
 
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class FrameButtonIcon implements Icon, Serializable {
         private Part part;
 
@@ -296,6 +298,7 @@ public class WindowsIconFactory implements Serializable
 
 
 
+        @SuppressWarnings("serial") // Same-version serialization only
         private static class ResizeIcon implements Icon, Serializable {
             public void paintIcon(Component c, Graphics g, int x, int y) {
                 g.setColor(UIManager.getColor("InternalFrame.resizeIconHighlight"));
@@ -315,6 +318,7 @@ public class WindowsIconFactory implements Serializable
             public int getIconHeight() { return 13; }
         };
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class CheckBoxIcon implements Icon, Serializable
     {
         final static int csize = 13;
@@ -428,6 +432,7 @@ public class WindowsIconFactory implements Serializable
         }
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class RadioButtonIcon implements Icon, UIResource, Serializable
     {
         public void paintIcon(Component c, Graphics g, int x, int y) {
@@ -542,6 +547,7 @@ public class WindowsIconFactory implements Serializable
     } // end class RadioButtonIcon
 
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class CheckBoxMenuItemIcon implements Icon, UIResource, Serializable
     {
         public void paintIcon(Component c, Graphics g, int x, int y) {
@@ -567,6 +573,7 @@ public class WindowsIconFactory implements Serializable
     } // End class CheckBoxMenuItemIcon
 
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class RadioButtonMenuItemIcon implements Icon, UIResource, Serializable
     {
         public void paintIcon(Component c, Graphics g, int x, int y) {
@@ -583,6 +590,7 @@ public class WindowsIconFactory implements Serializable
     } // End class RadioButtonMenuItemIcon
 
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class MenuItemCheckIcon implements Icon, UIResource, Serializable{
         public void paintIcon(Component c, Graphics g, int x, int y) {
             /* For debugging:
@@ -597,6 +605,7 @@ public class WindowsIconFactory implements Serializable
 
     } // End class MenuItemCheckIcon
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class MenuItemArrowIcon implements Icon, UIResource, Serializable {
         public void paintIcon(Component c, Graphics g, int x, int y) {
             /* For debugging:
@@ -611,6 +620,7 @@ public class WindowsIconFactory implements Serializable
 
     } // End class MenuItemArrowIcon
 
+    @SuppressWarnings("serial") // Same-version serialization only
     private static class MenuArrowIcon implements Icon, UIResource, Serializable {
         public void paintIcon(Component c, Graphics g, int x, int y) {
             if (WindowsMenuItemUI.isVistaPainting()) {
@@ -722,6 +732,7 @@ public class WindowsIconFactory implements Serializable
          * JRadioButtonMenuItem.
          * Note: to be used on Vista only.
          */
+        @SuppressWarnings("serial") // Same-version serialization only
         private static class VistaMenuItemCheckIcon
               implements Icon, UIResource, Serializable {
 

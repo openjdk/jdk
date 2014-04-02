@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.swing.event.TreeExpansionEvent;
  *
  * @author Scott Violet
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class ExpandVetoException extends Exception {
     /** The event that the exception was created for. */
     protected TreeExpansionEvent      event;

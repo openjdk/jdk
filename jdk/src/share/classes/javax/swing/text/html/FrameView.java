@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,6 +458,7 @@ class FrameView extends ComponentView implements HyperlinkListener {
     /** Editor pane rendering frame of HTML document
      *  It uses the same editor kits classes as outermost JEditorPane
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class FrameEditorPane extends JEditorPane implements FrameEditorPaneTag {
         public EditorKit getEditorKitForContentType(String type) {
             EditorKit editorKit = super.getEditorKitForContentType(type);

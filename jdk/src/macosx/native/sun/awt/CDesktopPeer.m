@@ -79,7 +79,7 @@ JNF_COCOA_ENTER(env);
 
     LSApplicationParameters params = {0, flags, NULL, NULL, NULL, NULL, NULL};
     status = LSOpenURLsWithRole((CFArrayRef)[NSArray arrayWithObject:url], kLSRolesAll, NULL, &params, NULL, 0);
-    CFRelease(url);
+    [url release];
 
 JNF_COCOA_EXIT(env);
     return status;
