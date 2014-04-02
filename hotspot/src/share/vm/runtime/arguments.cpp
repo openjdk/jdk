@@ -301,10 +301,12 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseMPSS",                       JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseStringCache",                JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseOldInlining",                JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "SafepointPollOffset",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
 #ifdef PRODUCT
   { "DesiredMethodLimit",
                            JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
 #endif // PRODUCT
+  { "UseVMInterruptibleIO",          JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -1185,11 +1187,6 @@ void Arguments::set_parnew_gc_flags() {
     FLAG_SET_DEFAULT(OldPLABSize, (intx)1024);
   }
 
-  // AlwaysTenure flag should make ParNew promote all at first collection.
-  // See CR 6362902.
-  if (AlwaysTenure) {
-    FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, 0);
-  }
   // When using compressed oops, we use local overflow stacks,
   // rather than using a global overflow list chained through
   // the klass word of the object's pre-image.
@@ -2246,6 +2243,8 @@ bool Arguments::check_vm_args_consistency() {
                                        "G1ConcRSHotCardLimit");
     status = status && verify_interval(G1ConcRSLogCacheSize, 0, 31,
                                        "G1ConcRSLogCacheSize");
+    status = status && verify_interval(StringDeduplicationAgeThreshold, 1, markOopDesc::max_age,
+                                       "StringDeduplicationAgeThreshold");
   }
   if (UseConcMarkSweepGC) {
     status = status && verify_min_value(CMSOldPLABNumRefills, 1, "CMSOldPLABNumRefills");
@@ -2340,10 +2339,8 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_percentage(YoungGenerationSizeSupplement, "YoungGenerationSizeSupplement");
   status = status && verify_percentage(TenuredGenerationSizeSupplement, "TenuredGenerationSizeSupplement");
 
-  // the "age" field in the oop header is 4 bits; do not want to pull in markOop.hpp
-  // just for that, so hardcode here.
-  status = status && verify_interval(MaxTenuringThreshold, 0, 15, "MaxTenuringThreshold");
-  status = status && verify_interval(InitialTenuringThreshold, 0, MaxTenuringThreshold, "MaxTenuringThreshold");
+  status = status && verify_interval(MaxTenuringThreshold, 0, markOopDesc::max_age + 1, "MaxTenuringThreshold");
+  status = status && verify_interval(InitialTenuringThreshold, 0, MaxTenuringThreshold, "InitialTenuringThreshold");
   status = status && verify_percentage(TargetSurvivorRatio, "TargetSurvivorRatio");
   status = status && verify_percentage(MarkSweepDeadRatio, "MarkSweepDeadRatio");
 
@@ -3069,14 +3066,31 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // but disallow DR and offlining (5008695).
       FLAG_SET_CMDLINE(bool, BindGCTaskThreadsToCPUs, true);
 
+    // Need to keep consistency of MaxTenuringThreshold and AlwaysTenure/NeverTenure;
+    // and the last option wins.
     } else if (match_option(option, "-XX:+NeverTenure", &tail)) {
-      // The last option must always win.
-      FLAG_SET_CMDLINE(bool, AlwaysTenure, false);
       FLAG_SET_CMDLINE(bool, NeverTenure, true);
+      FLAG_SET_CMDLINE(bool, AlwaysTenure, false);
+      FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, markOopDesc::max_age + 1);
     } else if (match_option(option, "-XX:+AlwaysTenure", &tail)) {
-      // The last option must always win.
       FLAG_SET_CMDLINE(bool, NeverTenure, false);
       FLAG_SET_CMDLINE(bool, AlwaysTenure, true);
+      FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, 0);
+    } else if (match_option(option, "-XX:MaxTenuringThreshold=", &tail)) {
+      uintx max_tenuring_thresh = 0;
+      if(!parse_uintx(tail, &max_tenuring_thresh, 0)) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid MaxTenuringThreshold: %s\n", option->optionString);
+      }
+      FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, max_tenuring_thresh);
+
+      if (MaxTenuringThreshold == 0) {
+        FLAG_SET_CMDLINE(bool, NeverTenure, false);
+        FLAG_SET_CMDLINE(bool, AlwaysTenure, true);
+      } else {
+        FLAG_SET_CMDLINE(bool, NeverTenure, false);
+        FLAG_SET_CMDLINE(bool, AlwaysTenure, false);
+      }
     } else if (match_option(option, "-XX:+CMSPermGenSweepingEnabled", &tail) ||
                match_option(option, "-XX:-CMSPermGenSweepingEnabled", &tail)) {
       jio_fprintf(defaultStream::error_stream(),
@@ -3226,11 +3240,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, MaxDirectMemorySize, max_direct_memory_size);
-    } else if (match_option(option, "-XX:+UseVMInterruptibleIO", &tail)) {
-      // NOTE! In JDK 9, the UseVMInterruptibleIO flag will completely go
-      //       away and will cause VM initialization failures!
-      warning("-XX:+UseVMInterruptibleIO is obsolete and will be removed in a future release.");
-      FLAG_SET_CMDLINE(bool, UseVMInterruptibleIO, true);
 #if !INCLUDE_MANAGEMENT
     } else if (match_option(option, "-XX:+ManagementServer", &tail)) {
         jio_fprintf(defaultStream::error_stream(),
@@ -3781,9 +3790,6 @@ jint Arguments::apply_ergo() {
 #endif // CC_INTERP
 
 #ifdef COMPILER2
-  if (!UseBiasedLocking || EmitSync != 0) {
-    UseOptoBiasInlining = false;
-  }
   if (!EliminateLocks) {
     EliminateNestedLocks = false;
   }
@@ -3844,6 +3850,11 @@ jint Arguments::apply_ergo() {
       UseBiasedLocking = false;
     }
   }
+#ifdef COMPILER2
+  if (!UseBiasedLocking || EmitSync != 0) {
+    UseOptoBiasInlining = false;
+  }
+#endif
 
   return JNI_OK;
 }

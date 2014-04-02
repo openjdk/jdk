@@ -462,8 +462,9 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   int into_cset_n_buffers = into_cset_dcqs.completed_buffers_num();
 
   if (_g1->evacuation_failed()) {
-    // Restore remembered sets for the regions pointing into the collection set.
+    double restore_remembered_set_start = os::elapsedTime();
 
+    // Restore remembered sets for the regions pointing into the collection set.
     if (G1DeferredRSUpdate) {
       // If deferred RS updates are enabled then we just need to transfer
       // the completed buffers from (a) the DirtyCardQueueSet used to hold
@@ -482,6 +483,8 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
       }
       assert(n_completed_buffers == into_cset_n_buffers, "missed some buffers");
     }
+
+    _g1->g1_policy()->phase_times()->record_evac_fail_restore_remsets((os::elapsedTime() - restore_remembered_set_start) * 1000.0);
   }
 
   // Free any completed buffers in the DirtyCardQueueSet used to hold cards

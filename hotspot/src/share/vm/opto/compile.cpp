@@ -694,9 +694,10 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   set_print_inlining(PrintInlining || method()->has_option("PrintInlining") NOT_PRODUCT( || PrintOptoInlining));
   set_print_intrinsics(PrintIntrinsics || method()->has_option("PrintIntrinsics"));
 
-  if (ProfileTraps) {
+  if (ProfileTraps RTM_OPT_ONLY( || UseRTMLocking )) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
+    // Need MDO to record RTM code generation state.
     method()->ensure_method_data();
   }
 
@@ -907,7 +908,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                            compiler,
                            env()->comp_level(),
                            has_unsafe_access(),
-                           SharedRuntime::is_wide_vector(max_vector_size())
+                           SharedRuntime::is_wide_vector(max_vector_size()),
+                           rtm_state()
                            );
 
     if (log() != NULL) // Print code cache state into compiler log
@@ -1073,7 +1075,23 @@ void Compile::Init(int aliaslevel) {
   set_do_scheduling(OptoScheduling);
   set_do_count_invocations(false);
   set_do_method_data_update(false);
-
+  set_rtm_state(NoRTM); // No RTM lock eliding by default
+#if INCLUDE_RTM_OPT
+  if (UseRTMLocking && has_method() && (method()->method_data_or_null() != NULL)) {
+    int rtm_state = method()->method_data()->rtm_state();
+    if (method_has_option("NoRTMLockEliding") || ((rtm_state & NoRTM) != 0)) {
+      // Don't generate RTM lock eliding code.
+      set_rtm_state(NoRTM);
+    } else if (method_has_option("UseRTMLockEliding") || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
+      // Generate RTM lock eliding code without abort ratio calculation code.
+      set_rtm_state(UseRTM);
+    } else if (UseRTMDeopt) {
+      // Generate RTM lock eliding code and include abort ratio calculation
+      // code if UseRTMDeopt is on.
+      set_rtm_state(ProfileRTM);
+    }
+  }
+#endif
   if (debug_info()->recording_non_safepoints()) {
     set_node_note_array(new(comp_arena()) GrowableArray<Node_Notes*>
                         (comp_arena(), 8, 0, NULL));
@@ -2581,6 +2599,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
   case Op_Opaque2:              // Remove Opaque Nodes before matching
+  case Op_Opaque3:
     n->subsume_by(n->in(1), this);
     break;
   case Op_CallStaticJava:

@@ -1112,7 +1112,6 @@ void Assembler::bsfl(Register dst, Register src) {
 }
 
 void Assembler::bsrl(Register dst, Register src) {
-  assert(!VM_Version::supports_lzcnt(), "encoding is treated as LZCNT");
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)0xBD);
@@ -2343,6 +2342,11 @@ void Assembler::vpermq(XMMRegister dst, XMMRegister src, int imm8, bool vector25
   emit_int8(imm8);
 }
 
+void Assembler::pause() {
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)0x90);
+}
+
 void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
   assert(VM_Version::supports_sse4_2(), "");
   InstructionMark im(this);
@@ -2667,6 +2671,11 @@ void Assembler::rcll(Register dst, int imm8) {
   }
 }
 
+void Assembler::rdtsc() {
+  emit_int8((unsigned char)0x0F);
+  emit_int8((unsigned char)0x31);
+}
+
 // copies data from [esi] to [edi] using rcx pointer sized words
 // generic
 void Assembler::rep_mov() {
@@ -2976,6 +2985,11 @@ void Assembler::ucomiss(XMMRegister dst, XMMRegister src) {
   emit_simd_arith_nonds(0x2E, dst, src, VEX_SIMD_NONE);
 }
 
+void Assembler::xabort(int8_t imm8) {
+  emit_int8((unsigned char)0xC6);
+  emit_int8((unsigned char)0xF8);
+  emit_int8((unsigned char)(imm8 & 0xFF));
+}
 
 void Assembler::xaddl(Address dst, Register src) {
   InstructionMark im(this);
@@ -2983,6 +2997,24 @@ void Assembler::xaddl(Address dst, Register src) {
   emit_int8(0x0F);
   emit_int8((unsigned char)0xC1);
   emit_operand(src, dst);
+}
+
+void Assembler::xbegin(Label& abort, relocInfo::relocType rtype) {
+  InstructionMark im(this);
+  relocate(rtype);
+  if (abort.is_bound()) {
+    address entry = target(abort);
+    assert(entry != NULL, "abort entry NULL");
+    intptr_t offset = entry - pc();
+    emit_int8((unsigned char)0xC7);
+    emit_int8((unsigned char)0xF8);
+    emit_int32(offset - 6); // 2 opcode + 4 address
+  } else {
+    abort.add_patch_at(code(), locator());
+    emit_int8((unsigned char)0xC7);
+    emit_int8((unsigned char)0xF8);
+    emit_int32(0);
+  }
 }
 
 void Assembler::xchgl(Register dst, Address src) { // xchg
@@ -2996,6 +3028,12 @@ void Assembler::xchgl(Register dst, Register src) {
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
   emit_int8((unsigned char)0x87);
   emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::xend() {
+  emit_int8((unsigned char)0x0F);
+  emit_int8((unsigned char)0x01);
+  emit_int8((unsigned char)0xD5);
 }
 
 void Assembler::xgetbv() {
@@ -4938,7 +4976,6 @@ void Assembler::bsfq(Register dst, Register src) {
 }
 
 void Assembler::bsrq(Register dst, Register src) {
-  assert(!VM_Version::supports_lzcnt(), "encoding is treated as LZCNT");
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)0xBD);

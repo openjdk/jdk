@@ -1125,6 +1125,17 @@ Node* GraphKit::ConvI2L(Node* offset) {
   }
   return _gvn.transform( new (C) ConvI2LNode(offset));
 }
+
+Node* GraphKit::ConvI2UL(Node* offset) {
+  juint offset_con = (juint) find_int_con(offset, Type::OffsetBot);
+  if (offset_con != (juint) Type::OffsetBot) {
+    return longcon((julong) offset_con);
+  }
+  Node* conv = _gvn.transform( new (C) ConvI2LNode(offset));
+  Node* mask = _gvn.transform( ConLNode::make(C, (julong) max_juint) );
+  return _gvn.transform( new (C) AndLNode(conv, mask) );
+}
+
 Node* GraphKit::ConvL2I(Node* offset) {
   // short-circuit a common case
   jlong offset_con = find_long_con(offset, (jlong)Type::OffsetBot);
@@ -3151,10 +3162,14 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   Node* mem = reset_memory();
 
   FastLockNode * flock = _gvn.transform(new (C) FastLockNode(0, obj, box) )->as_FastLock();
-  if (PrintPreciseBiasedLockingStatistics) {
+  if (UseBiasedLocking && PrintPreciseBiasedLockingStatistics) {
     // Create the counters for this fast lock.
     flock->create_lock_counter(sync_jvms()); // sync_jvms used to get current bci
   }
+
+  // Create the rtm counters for this fast lock if needed.
+  flock->create_rtm_lock_counter(sync_jvms()); // sync_jvms used to get current bci
+
   // Add monitor to debug info for the slow path.  If we block inside the
   // slow path and de-opt, we need the monitor hanging around
   map()->push_monitor( flock );

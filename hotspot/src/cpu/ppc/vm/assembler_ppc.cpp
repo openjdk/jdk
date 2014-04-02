@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -37,6 +36,7 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
@@ -384,10 +384,10 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
       bool load_xa = (xa != 0) || (xb < 0);
       bool return_xd = false;
 
-      if (load_xa) lis(tmp, xa);
-      if (xc) lis(d, xc);
+      if (load_xa) { lis(tmp, xa); }
+      if (xc) { lis(d, xc); }
       if (load_xa) {
-        if (xb) ori(tmp, tmp, xb); // No addi, we support tmp == R0.
+        if (xb) { ori(tmp, tmp, (unsigned short)xb); } // No addi, we support tmp == R0.
       } else {
         li(tmp, xb); // non-negative
       }
@@ -409,18 +409,18 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
     // opt 4: avoid adding 0
     if (xa) { // Highest 16-bit needed?
       lis(d, xa);
-      if (xb) addi(d, d, xb);
+      if (xb) { addi(d, d, xb); }
     } else {
       li(d, xb);
     }
     sldi(d, d, 32);
-    if (xc) addis(d, d, xc);
+    if (xc) { addis(d, d, xc); }
   }
 
   // opt 5: Return offset to be inserted into following instruction.
   if (return_simm16_rest) return xd;
 
-  if (xd) addi(d, d, xd);
+  if (xd) { addi(d, d, xd); }
   return 0;
 }
 
@@ -696,4 +696,5 @@ void Assembler::test_asm() {
   tty->print_cr("\ntest_asm disassembly (0x%lx 0x%lx):", code()->insts_begin(), code()->insts_end());
   code()->decode();
 }
+
 #endif // !PRODUCT

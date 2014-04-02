@@ -92,13 +92,17 @@ public:
 //------------------------------FastLockNode-----------------------------------
 class FastLockNode: public CmpNode {
 private:
-  BiasedLockingCounters* _counters;
+  BiasedLockingCounters*        _counters;
+  RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
+  RTMLockingCounters* _stack_rtm_counters; // RTM lock counters for stack locks
 
 public:
   FastLockNode(Node *ctrl, Node *oop, Node *box) : CmpNode(oop,box) {
     init_req(0,ctrl);
     init_class_id(Class_FastLock);
     _counters = NULL;
+    _rtm_counters = NULL;
+    _stack_rtm_counters = NULL;
   }
   Node* obj_node() const { return in(1); }
   Node* box_node() const { return in(2); }
@@ -107,13 +111,17 @@ public:
   // FastLock and FastUnlockNode do not hash, we need one for each correspoding
   // LockNode/UnLockNode to avoid creating Phi's.
   virtual uint hash() const ;                  // { return NO_HASH; }
+  virtual uint size_of() const;
   virtual uint cmp( const Node &n ) const ;    // Always fail, except on self
   virtual int Opcode() const;
   virtual const Type *Value( PhaseTransform *phase ) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
   void create_lock_counter(JVMState* s);
-  BiasedLockingCounters* counters() const { return _counters; }
+  void create_rtm_lock_counter(JVMState* state);
+  BiasedLockingCounters*        counters() const { return _counters; }
+  RTMLockingCounters*       rtm_counters() const { return _rtm_counters; }
+  RTMLockingCounters* stack_rtm_counters() const { return _stack_rtm_counters; }
 };
 
 

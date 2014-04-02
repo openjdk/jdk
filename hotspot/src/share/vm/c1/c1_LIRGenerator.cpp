@@ -2526,7 +2526,7 @@ void LIRGenerator::do_Goto(Goto* x) {
     // need to free up storage used for OSR entry point
     LIR_Opr osrBuffer = block()->next()->operand();
     BasicTypeList signature;
-    signature.append(T_INT);
+    signature.append(NOT_LP64(T_INT) LP64_ONLY(T_LONG)); // pass a pointer to osrBuffer
     CallingConvention* cc = frame_map()->c_calling_convention(&signature);
     __ move(osrBuffer, cc->args()->at(0));
     __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_end),
