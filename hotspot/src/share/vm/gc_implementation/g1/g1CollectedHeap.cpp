@@ -3529,6 +3529,29 @@ public:
   }
 };
 
+bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
+                                       const HeapRegion* hr,
+                                       const VerifyOption vo) const {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
+  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
+  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+  default:                            ShouldNotReachHere();
+  }
+  return false; // keep some compilers happy
+}
+
+bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
+                                       const VerifyOption vo) const {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
+  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
+  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+  default:                            ShouldNotReachHere();
+  }
+  return false; // keep some compilers happy
+}
+
 void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" %-20s", "garbage-first heap");
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
