@@ -219,6 +219,9 @@ public enum Source {
     public boolean allowTypeAnnotations() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowAnnotationsAfterTypeParams() {
+        return compareTo(JDK1_8) >= 0;
+    }
     public boolean allowRepeatedAnnotations() {
         return compareTo(JDK1_8) >= 0;
     }

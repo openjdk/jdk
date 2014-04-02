@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8025524
+ * @bug 8025524 8031625
  * @summary Test for constructor name which should be a non-qualified name.
  * @author Bhavesh Patel
  * @library ../lib/
@@ -37,6 +37,21 @@ public class TestConstructors extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
+        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
+            "<dt><span class=\"seeLabel\">See Also:</span></dt>" + NL +
+            "<dd><a href=\"../pkg1/Outer.Inner.html#Inner--\"><code>Inner()</code></a>, " + NL +
+            "<a href=\"../pkg1/Outer.Inner.html#Inner-int-\"><code>Inner(int)</code></a>, " + NL +
+            "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner--\"><code>NestedInner()</code></a>, " + NL +
+            "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\"><code>NestedInner(int)</code></a>, " + NL +
+            "<a href=\"../pkg1/Outer.html#Outer--\"><code>Outer()</code></a>, " + NL +
+            "<a href=\"../pkg1/Outer.html#Outer-int-\"><code>Outer(int)</code></a>"
+        },
+        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
+            "Link: <a href=\"../pkg1/Outer.Inner.html#Inner--\"><code>Inner()</code></a>, " +
+            "<a href=\"../pkg1/Outer.html#Outer-int-\"><code>Outer(int)</code></a>, " +
+            "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\"><code>" +
+            "NestedInner(int)</code></a>"
+        },
         {BUG_ID + FS + "pkg1" + FS + "Outer.html",
             "<a href=\"../pkg1/Outer.html#Outer--\">Outer</a></span>()"
         },
@@ -87,6 +102,18 @@ public class TestConstructors extends JavadocTester {
         },
         {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.NestedInner.html",
             "Outer.Inner.NestedInner-int-"
+        },
+        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
+            "<a href=\"../pkg1/Outer.Inner.html#Outer.Inner--\"><code>Outer.Inner()</code></a>"
+        },
+        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
+            "<a href=\"../pkg1/Outer.Inner.html#Outer.Inner-int-\"><code>Outer.Inner(int)</code></a>"
+        },
+        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
+            "<a href=\"../pkg1/Outer.Inner.NestedInner.html#Outer.Inner.NestedInner--\"><code>Outer.Inner.NestedInner()</code></a>"
+        },
+        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
+            "<a href=\"../pkg1/Outer.Inner.NestedInner.html#Outer.Inner.NestedInner-int-\"><code>Outer.Inner.NestedInner(int)</code></a>"
         }
     };
 
