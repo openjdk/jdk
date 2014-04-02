@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.xml.soap.SOAPMessage;
 import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.SAXException;
+import com.sun.xml.internal.org.jvnet.staxex.util.SaajStaxWriter;
 
 import com.sun.xml.internal.bind.marshaller.SAX2DOMEx;
 import com.sun.xml.internal.ws.api.SOAPVersion;
@@ -265,7 +266,7 @@ public class SAAJFactory {
          */
         public SOAPMessage readAsSOAPMessage(final SOAPVersion soapVersion, final Message message) throws SOAPException {
         SOAPMessage msg = soapVersion.getMessageFactory().createMessage();
-        SaajStaxWriter writer = new SaajStaxWriter(msg);
+        SaajStaxWriter writer = new SaajStaxWriter(msg, soapVersion.nsUri);
         try {
             message.writeTo(writer);
         } catch (XMLStreamException e) {

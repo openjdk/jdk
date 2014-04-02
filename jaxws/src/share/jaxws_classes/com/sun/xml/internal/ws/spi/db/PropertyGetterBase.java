@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.xml.internal.ws.spi.db;
 
+import javax.xml.ws.WebServiceException;
+
 /**
  * This is the Gtter of a bean property.
  *
@@ -46,7 +48,7 @@ public abstract class PropertyGetterBase implements PropertyGetter {
                 method.getName().length() > 3) {
                 return true;
             } else {
-                if (method.getReturnType().equals(boolean.class) &&
+                if ((method.getReturnType().equals(boolean.class) || method.getReturnType().equals(Boolean.class)) &&
                     method.getName().startsWith("is") &&
                     method.getName().length() > 2) {
                     return true;
@@ -54,5 +56,12 @@ public abstract class PropertyGetterBase implements PropertyGetter {
             }
         }
         return false;
+    }
+
+    static void verifyWrapperType(Class wrapperType) {
+        String className = wrapperType.getName();
+        if (className.startsWith("java.") || className.startsWith("javax.")) {
+            throw new WebServiceException("Invalid wrapper type " + className);
+        }
     }
 }

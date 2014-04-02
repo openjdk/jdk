@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,13 +193,17 @@ public final class MimeBodyPart {
             SharedInputStream sis = (SharedInputStream) is;
             contentStream = sis.newStream(sis.getPosition(), -1);
         } else {
+            ByteOutputStream bos = null;
             try {
-                ByteOutputStream bos = new ByteOutputStream();
+                bos = new ByteOutputStream();
                 bos.write(is);
                 content = bos.getBytes();
                 contentLength = bos.getCount();
             } catch (IOException ioex) {
                 throw new MessagingException("Error reading input stream", ioex);
+            } finally {
+                if (bos != null)
+                    bos.close();
             }
         }
 
@@ -1075,8 +1079,12 @@ public final class MimeBodyPart {
      */
     protected void updateHeaders() throws MessagingException {
         DataHandler dh = getDataHandler();
-        if (dh == null) // Huh ?
-            return;
+        /*
+         * Code flow indicates null is never returned from
+         * getdataHandler() - findbugs
+         */
+        //if (dh == null) // Huh ?
+        //    return;
 
         try {
             String type = dh.getContentType();
