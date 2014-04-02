@@ -46,10 +46,24 @@ AC_DEFUN([ADD_JVM_ARG_IF_OK],
 # Appends a string to a path variable, only adding the : when needed.
 AC_DEFUN([BASIC_APPEND_TO_PATH],
 [
-  if test "x[$]$1" = x; then
-    $1="$2"
-  else
-    $1="[$]$1:$2"
+  if test "x$2" != x; then
+    if test "x[$]$1" = x; then
+      $1="$2"
+    else
+      $1="[$]$1:$2"
+    fi
+  fi
+])
+
+# Prepends a string to a path variable, only adding the : when needed.
+AC_DEFUN([BASIC_PREPEND_TO_PATH],
+[
+  if test "x$2" != x; then
+    if test "x[$]$1" = x; then
+      $1="$2"
+    else
+      $1="$2:[$]$1"
+    fi
   fi
 ])
 
@@ -442,43 +456,95 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
+])
+
+AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
+[
+  AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
+      [use this devkit for compilers, tools and resources])],
+      [
+        BASIC_FIXUP_PATH([with_devkit])
+        DEVKIT_ROOT="$with_devkit"
+        # Check for a meta data info file in the root of the devkit
+        if test -f "$DEVKIT_ROOT/devkit.info"; then
+          # This potentially sets the following:
+          # DEVKIT_NAME: A descriptive name of the devkit
+          # DEVKIT_TOOLCHAIN_PATH: Corresponds to --with-toolchain-path
+          # DEVKIT_EXTRA_PATH: Corresponds to --with-extra-path
+          # DEVKIT_SYSROOT: Corresponds to --with-sysroot
+          . $DEVKIT_ROOT/devkit.info
+        fi
+
+        AC_MSG_CHECKING([for devkit])
+        if test "x$DEVKIT_NAME" != x; then
+          AC_MSG_RESULT([$DEVKIT_NAME in $DEVKIT_ROOT])
+        else
+          AC_MSG_RESULT([$DEVKIT_ROOT])
+        fi
+
+        if test "x$DEVKIT_EXTRA_PATH" != x; then
+          BASIC_PREPEND_TO_PATH([EXTRA_PATH],$DEVKIT_EXTRA_PATH)
+        fi
+
+        # Fallback default of just /bin if DEVKIT_PATH is not defined
+        if test "x$DEVKIT_TOOLCHAIN_PATH" = x; then
+          DEVKIT_TOOLCHAIN_PATH="$DEVKIT_ROOT/bin"
+        fi
+        BASIC_PREPEND_TO_PATH([TOOLCHAIN_PATH],$DEVKIT_TOOLCHAIN_PATH)
+
+        # If DEVKIT_SYSROOT is set, use that, otherwise try a couple of known
+        # places for backwards compatiblity.
+        if test "x$DEVKIT_SYSROOT" != x; then
+          SYSROOT="$DEVKIT_SYSROOT"
+        elif test -d "$DEVKIT_ROOT/$host_alias/libc"; then
+          SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
+        elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
+          SYSROOT="$DEVKIT_ROOT/$host/sys-root"
+        fi
+      ]
+  )
+
+  # You can force the sysroot if the sysroot encoded into the compiler tools
+  # is not correct.
+  AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
+      [alias for --with-sysroot for backwards compatability])],
+      [SYSROOT=$with_sys_root]
+  )
+
+  AC_ARG_WITH(sysroot, [AS_HELP_STRING([--with-sysroot],
+      [use this directory as sysroot)])],
+      [SYSROOT=$with_sysroot]
+  )
+
+  AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
+      [alias for --with-toolchain-path for backwards compatibility])],
+      [BASIC_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_tools_dir)]
+  )
+
+  AC_ARG_WITH([toolchain-path], [AS_HELP_STRING([--with-toolchain-path],
+      [prepend these directories when searching for toolchain binaries (compilers etc)])],
+      [BASIC_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_toolchain_path)]
+  )
+
+  AC_ARG_WITH([extra-path], [AS_HELP_STRING([--with-extra-path],
+      [prepend these directories to the default path])],
+      [BASIC_PREPEND_TO_PATH([EXTRA_PATH],$with_extra_path)]
+  )
+
+  # Prepend the extra path to the global path
+  BASIC_PREPEND_TO_PATH([PATH],$EXTRA_PATH)
 
   if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
     # Add extra search paths on solaris for utilities like ar and as etc...
     PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
   fi
 
-  # You can force the sys-root if the sys-root encoded into the cross compiler tools
-  # is not correct.
-  AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
-      [pass this sys-root to the compilers and tools (for cross-compiling)])])
-
-  if test "x$with_sys_root" != x; then
-    SYS_ROOT=$with_sys_root
-  else
-    SYS_ROOT=/
-  fi
-  AC_SUBST(SYS_ROOT)
-
-  AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
-      [search this directory for compilers and tools (for cross-compiling)])],
-      [TOOLS_DIR=$with_tools_dir]
-  )
-
-  AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
-      [use this directory as base for tools-dir and sys-root (for cross-compiling)])],
-      [
-        if test "x$with_sys_root" != x; then
-          AC_MSG_ERROR([Cannot specify both --with-devkit and --with-sys-root at the same time])
-        fi
-        BASIC_FIXUP_PATH([with_devkit])
-        BASIC_APPEND_TO_PATH([TOOLS_DIR],$with_devkit/bin)
-        if test -d "$with_devkit/$host_alias/libc"; then
-          SYS_ROOT=$with_devkit/$host_alias/libc
-        elif test -d "$with_devkit/$host/sys-root"; then
-          SYS_ROOT=$with_devkit/$host/sys-root
-        fi
-      ])
+  AC_MSG_CHECKING([for sysroot])
+  AC_MSG_RESULT([$SYSROOT])
+  AC_MSG_CHECKING([for toolchain path])
+  AC_MSG_RESULT([$TOOLCHAIN_PATH])
+  AC_MSG_CHECKING([for extra path])
+  AC_MSG_RESULT([$EXTRA_PATH])
 ])
 
 AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
@@ -648,10 +714,10 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
     fi
 
     if test "x$FOUND_MAKE" = x; then
-      if test "x$TOOLS_DIR" != x; then
-        # We have a tools-dir, check that as well before giving up.
+      if test "x$TOOLCHAIN_PATH" != x; then
+        # We have a toolchain path, check that as well before giving up.
         OLD_PATH=$PATH
-        PATH=$TOOLS_DIR:$PATH
+        PATH=$TOOLCHAIN_PATH:$PATH
         AC_PATH_PROGS(CHECK_TOOLSDIR_GMAKE, gmake)
         BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_GMAKE", [gmake in tools-dir])
         if test "x$FOUND_MAKE" = x; then
