@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
-package pkg;
+// key: compiler.err.annotations.after.type.params.not.supported.in.source
+// key: compiler.warn.source.no.bootclasspath
+// options: -source 7
 
-@FunctionalInterface
-public interface A {
+@interface Anno { }
 
-    public void method1();
-
-    public default void defaultMethod() { }
+class AnnotationsAfterTypeParamsNotSupportedInSource {
+    <T> @Anno int m() {
+        return 0;
+    }
 }

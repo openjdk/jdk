@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,6 +504,11 @@ public class Main {
                     new DocLint().init(t, doclintOpts.toArray(new String[doclintOpts.size()]));
                     comp.keepComments = true;
                 }
+            }
+
+            if (options.get(XSTDOUT) != null) {
+                // Stdout reassigned - ask compiler to close it when it is done
+                comp.closeables = comp.closeables.prepend(log.getWriter(WriterKind.NOTICE));
             }
 
             fileManager = context.get(JavaFileManager.class);
