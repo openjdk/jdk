@@ -2112,10 +2112,8 @@ public class Attr extends JCTree.Visitor {
                 //
                 // This expression is then *transformed* as follows:
                 //
-                // (1) add a STATIC flag to the class definition
-                //     if the current environment is static
-                // (2) add an extends or implements clause
-                // (3) add a constructor.
+                // (1) add an extends or implements clause
+                // (2) add a constructor.
                 //
                 // For instance, if C is a class, and ET is the type of E,
                 // the expression
@@ -2132,7 +2130,6 @@ public class Attr extends JCTree.Visitor {
                 //       }
                 //       ...
                 //     }
-                if (Resolve.isStatic(env)) cdef.mods.flags |= STATIC;
 
                 if (clazztype.tsym.isInterface()) {
                     cdef.implementing = List.of(clazz);

@@ -1072,9 +1072,6 @@ public class Check {
             if (sym.isLocal()) {
                 mask = LocalClassFlags;
                 if (sym.name.isEmpty()) { // Anonymous class
-                    // Anonymous classes in static methods are themselves static;
-                    // that's why we admit STATIC here.
-                    mask |= STATIC;
                     // JLS: Anonymous classes are final.
                     implicit |= FINAL;
                 }
