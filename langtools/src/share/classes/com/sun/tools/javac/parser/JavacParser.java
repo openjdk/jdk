@@ -3360,7 +3360,7 @@ public class JavacParser implements Parser {
             ? arguments() : List.<JCExpression>nil();
         JCClassDecl body = null;
         if (token.kind == LBRACE) {
-            JCModifiers mods1 = F.at(Position.NOPOS).Modifiers(Flags.ENUM | Flags.STATIC);
+            JCModifiers mods1 = F.at(Position.NOPOS).Modifiers(Flags.ENUM);
             List<JCTree> defs = classOrInterfaceBody(names.empty, false);
             body = toP(F.at(identPos).AnonymousClassDef(mods1, defs));
         }
