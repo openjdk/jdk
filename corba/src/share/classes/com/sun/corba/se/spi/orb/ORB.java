@@ -253,7 +253,9 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
                 Method method = clazz.getMethod("getAppletContext");
                 appletContext = method.invoke(javaAwtAccess);
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                throw new InternalError(e);
+                InternalError err = new InternalError();
+                err.initCause(e);
+                throw err;
             }
 
             if (appletContext != null) {
