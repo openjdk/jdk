@@ -25,6 +25,8 @@
 
 package com.sun.corba.se.spi.orb;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map ;
 import java.util.HashMap ;
 import java.util.Properties ;
@@ -245,7 +247,15 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
         SecurityManager sm = System.getSecurityManager();
         JavaAWTAccess javaAwtAccess = sun.misc.SharedSecrets.getJavaAWTAccess();
         if (sm != null && javaAwtAccess != null) {
-            final Object appletContext = javaAwtAccess.getAppletContext();
+            Object appletContext;
+            try {
+                Class<?> clazz = JavaAWTAccess.class;
+                Method method = clazz.getMethod("getAppletContext");
+                appletContext = method.invoke(javaAwtAccess);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                throw new InternalError(e);
+            }
+
             if (appletContext != null) {
                 synchronized (pmContexts) {
                     PresentationManager pm = pmContexts.get(appletContext);
