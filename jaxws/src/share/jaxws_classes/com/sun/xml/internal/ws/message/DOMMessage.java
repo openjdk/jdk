@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ public final class DOMMessage extends AbstractMessageImpl {
         super(that);
         this.headers = HeaderList.copy(that.headers);
         this.payload = that.payload;
+        this.copyFrom(that);
     }
 
     public boolean hasHeaders() {
@@ -150,7 +151,7 @@ public final class DOMMessage extends AbstractMessageImpl {
     }
 
     public Message copy() {
-        return new DOMMessage(this);
+        return new DOMMessage(this).copyFrom(this);
     }
 
 }

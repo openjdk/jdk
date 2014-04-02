@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public class Base64Data implements CharSequence, Cloneable {
 
     private DataHandler dataHandler;
     private byte[] data;
+    private String hrefCid;
 
     /**
      * Length of the valid data in {@link #data}.
@@ -530,5 +531,17 @@ public class Base64Data implements CharSequence, Cloneable {
 //        //System.out.println("SW: " + sw.toString());
 //
 //    }
+
+    public String getHrefCid() {
+        if (hrefCid == null && dataHandler != null && dataHandler instanceof StreamingDataHandler) {
+            hrefCid = ((StreamingDataHandler)dataHandler).getHrefCid();
+        }
+        return hrefCid;
+    }
+
+    public void setHrefCid(final String cid) {
+        this.hrefCid = cid;
+        if (dataHandler != null && dataHandler instanceof StreamingDataHandler) ((StreamingDataHandler)dataHandler).setHrefCid(cid);
+    }
 
 }

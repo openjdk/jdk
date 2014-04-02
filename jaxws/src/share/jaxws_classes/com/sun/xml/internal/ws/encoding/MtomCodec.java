@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,15 @@ public class MtomCodec extends MimeCodec {
     }
 
     public static ContentType getStaticContentTypeStatic(Packet packet, SOAPVersion version) {
-        ContentType ct = (ContentType) packet.getInternalContentType();
-        if ( ct != null ) return ct;
-
+        ContentTypeImpl ct = (ContentTypeImpl) packet.getInternalContentType();
+        if ( ct != null ) {
+                //Note - this case of boundary = null or root content ID = null should never happen
+                //after a recent bug fix in Packet.shouldUseMtom logic, but just in
+                //case we get here with a Packet that has a non-null content type with
+                //a null boundary, the content type of the Packet will be reset
+                if (ct.getBoundary() != null && ct.getRootId() != null)
+                        return ct;
+        }
         String uuid = UUID.randomUUID().toString();
         String boundary = "uuid:" + uuid;
         String rootId = "<rootpart*"+uuid+"@example.jaxws.sun.com>";
@@ -327,7 +333,7 @@ public class MtomCodec extends MimeCodec {
     }
 
     public static class MtomStreamWriterImpl extends XMLStreamWriterFilter implements XMLStreamWriterEx,
-            MtomStreamWriter, HasEncoding {
+    com.sun.xml.internal.org.jvnet.staxex.util.MtomStreamWriter, HasEncoding {
         private final List<ByteArrayBuffer> mtomAttachments;
         private final String boundary;
         private final MTOMFeature myMtomFeature;

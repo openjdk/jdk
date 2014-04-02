@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,9 @@ public class JDefinedClass
 
     /** Static initializer, if this class has one */
     private JBlock init = null;
+
+    /** Instance initializer, if this class has one */
+    private JBlock instanceInit = null;
 
     /** class javadoc */
     private JDocComment jdoc = null;
@@ -518,6 +521,18 @@ public class JDefinedClass
     }
 
     /**
+     * Creates, if necessary, and returns the instance initializer
+     * for this class.
+     *
+     * @return JBlock containing initialization statements for this class
+     */
+    public JBlock instanceInit() {
+        if (instanceInit == null)
+            instanceInit = new JBlock();
+        return instanceInit;
+    }
+
+    /**
      * Adds a constructor to this class.
      *
      * @param mods
@@ -793,6 +808,8 @@ public class JDefinedClass
             f.d(field);
         if (init != null)
             f.nl().p("static").s(init);
+        if (instanceInit != null)
+            f.nl().s(instanceInit);
         for (JMethod m : constructors) {
             f.nl().d(m);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import com.sun.xml.internal.ws.spi.db.BindingContextFactory;
 import com.sun.xml.internal.ws.spi.db.XMLBridge;
 import com.sun.xml.internal.ws.streaming.XMLStreamWriterUtil;
 import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil;
-import com.sun.xml.internal.ws.streaming.MtomStreamWriter;
+import com.sun.xml.internal.org.jvnet.staxex.util.MtomStreamWriter;
 import com.sun.xml.internal.ws.util.xml.XMLReaderComposite;
 import com.sun.xml.internal.ws.util.xml.XMLReaderComposite.ElemInfo;
 
@@ -240,6 +240,7 @@ public final class JAXBMessage extends AbstractMessageImpl implements StreamingS
         this.jaxbObject = that.jaxbObject;
         this.bridge = that.bridge;
         this.rawContext = that.rawContext;
+        this.copyFrom(that);
     }
 
     @Override
@@ -411,7 +412,7 @@ public final class JAXBMessage extends AbstractMessageImpl implements StreamingS
 
     @Override
     public Message copy() {
-        return new JAXBMessage(this);
+        return new JAXBMessage(this).copyFrom(this);
     }
 
     public XMLStreamReader readEnvelope() {
@@ -442,5 +443,36 @@ public final class JAXBMessage extends AbstractMessageImpl implements StreamingS
         } catch (XMLStreamException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public boolean isPayloadStreamReader() { return false; }
+
+    public QName getPayloadQName() {
+        return new QName(getPayloadNamespaceURI(), getPayloadLocalPart());
+    }
+
+    public XMLStreamReader readToBodyStarTag() {
+        int base = soapVersion.ordinal()*3;
+        this.envelopeTag = DEFAULT_TAGS.get(base);
+        this.bodyTag = DEFAULT_TAGS.get(base+2);
+        List<XMLStreamReader> hReaders = new java.util.ArrayList<XMLStreamReader>();
+        ElemInfo envElem =  new ElemInfo(envelopeTag, null);
+        ElemInfo bdyElem =  new ElemInfo(bodyTag, envElem);
+        for (Header h : getHeaders().asList()) {
+            try {
+                hReaders.add(h.readHeader());
+            } catch (XMLStreamException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        XMLStreamReader soapHeader = null;
+        if(hReaders.size()>0) {
+            headerTag = DEFAULT_TAGS.get(base+1);
+            ElemInfo hdrElem = new ElemInfo(headerTag, envElem);
+            soapHeader = new XMLReaderComposite(hdrElem, hReaders.toArray(new XMLStreamReader[hReaders.size()]));
+        }
+        XMLStreamReader soapBody = new XMLReaderComposite(bdyElem, new XMLStreamReader[]{});
+        XMLStreamReader[] soapContent = (soapHeader != null) ? new XMLStreamReader[]{soapHeader, soapBody} : new XMLStreamReader[]{soapBody};
+        return new XMLReaderComposite(envElem, soapContent);
     }
 }
