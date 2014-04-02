@@ -64,10 +64,12 @@
 
 #define J2PCSC_EXCEPTION_NAME "sun/security/smartcardio/PCSCException"
 
-extern void throwByName(JNIEnv *, const char *, const char *);
-
 void throwOutOfMemoryError(JNIEnv *env, const char *msg) {
-    throwByName(env, "java/lang/OutOfMemoryError", msg);
+    jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
+
+    if (cls != NULL) /* Otherwise an exception has already been thrown */
+        (*env)->ThrowNew(env, cls, msg);
+
 }
 
 void throwPCSCException(JNIEnv* env, LONG code) {
