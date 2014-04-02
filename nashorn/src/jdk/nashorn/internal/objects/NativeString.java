@@ -425,7 +425,7 @@ public final class NativeString extends ScriptObject {
      * @return string with arguments translated to charcodes
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1, where = Where.CONSTRUCTOR)
-    public static Object fromCharCode(final Object self, final Object... args) {
+    public static String fromCharCode(final Object self, final Object... args) {
         final char[] buf = new char[args.length];
         int index = 0;
         for (final Object arg : args) {
@@ -441,7 +441,7 @@ public final class NativeString extends ScriptObject {
      * @return string with one charcode
      */
     @SpecializedFunction
-    public static Object fromCharCode(final Object self, final Object value) {
+    public static String fromCharCode(final Object self, final Object value) {
         try {
             return "" + (char)JSType.toUint16(((Number)value).doubleValue());
         } catch (final ClassCastException e) {
@@ -456,7 +456,7 @@ public final class NativeString extends ScriptObject {
      * @return string with one charcode
      */
     @SpecializedFunction
-    public static Object fromCharCode(final Object self, final int value) {
+    public static String fromCharCode(final Object self, final int value) {
         return "" + (char)(value & 0xffff);
     }
 
@@ -467,7 +467,7 @@ public final class NativeString extends ScriptObject {
      * @return string with one charcode
      */
     @SpecializedFunction
-    public static Object fromCharCode(final Object self, final long value) {
+    public static String fromCharCode(final Object self, final long value) {
         return "" + (char)((int)value & 0xffff);
     }
 
@@ -478,7 +478,7 @@ public final class NativeString extends ScriptObject {
      * @return string with one charcode
      */
     @SpecializedFunction
-    public static Object fromCharCode(final Object self, final double value) {
+    public static String fromCharCode(final Object self, final double value) {
         return "" + (char)JSType.toUint16(value);
     }
 
@@ -488,7 +488,7 @@ public final class NativeString extends ScriptObject {
      * @return self as string
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toString(final Object self) {
+    public static String toString(final Object self) {
         return getString(self);
     }
 
@@ -498,7 +498,7 @@ public final class NativeString extends ScriptObject {
      * @return self as string
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object valueOf(final Object self) {
+    public static String valueOf(final Object self) {
         return getString(self);
     }
 
@@ -509,7 +509,7 @@ public final class NativeString extends ScriptObject {
      * @return string representing the char at the given position
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object charAt(final Object self, final Object pos) {
+    public static String charAt(final Object self, final Object pos) {
         return charAtImpl(checkObjectToString(self), JSType.toInteger(pos));
     }
 
@@ -546,7 +546,7 @@ public final class NativeString extends ScriptObject {
      * @return number representing charcode at position
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object charCodeAt(final Object self, final Object pos) {
+    public static double charCodeAt(final Object self, final Object pos) {
         return charCodeAtImpl(checkObjectToString(self), JSType.toInteger(pos));
     }
 
@@ -601,7 +601,7 @@ public final class NativeString extends ScriptObject {
      * @return position of first match or -1
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object indexOf(final Object self, final Object search, final Object pos) {
+    public static int indexOf(final Object self, final Object search, final Object pos) {
         final String str = checkObjectToString(self);
         return str.indexOf(JSType.toString(search), JSType.toInteger(pos));
     }
@@ -649,7 +649,7 @@ public final class NativeString extends ScriptObject {
      * @return last position of match or -1
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object lastIndexOf(final Object self, final Object search, final Object pos) {
+    public static int lastIndexOf(final Object self, final Object search, final Object pos) {
 
         final String str       = checkObjectToString(self);
         final String searchStr = JSType.toString(search);
@@ -680,7 +680,7 @@ public final class NativeString extends ScriptObject {
      * @return result of locale sensitive comparison operation between {@code self} and {@code that}
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object localeCompare(final Object self, final Object that) {
+    public static double localeCompare(final Object self, final Object that) {
 
         final String   str      = checkObjectToString(self);
         final Collator collator = Collator.getInstance(Global.getEnv()._locale);
@@ -698,7 +698,7 @@ public final class NativeString extends ScriptObject {
      * @return array of regexp matches
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object match(final Object self, final Object regexp) {
+    public static ScriptObject match(final Object self, final Object regexp) {
 
         final String str = checkObjectToString(self);
 
@@ -745,7 +745,7 @@ public final class NativeString extends ScriptObject {
      * @return string after replacement
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object replace(final Object self, final Object string, final Object replacement) {
+    public static String replace(final Object self, final Object string, final Object replacement) {
 
         final String str = checkObjectToString(self);
 
@@ -771,7 +771,7 @@ public final class NativeString extends ScriptObject {
      * @return offset where match occurred
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object search(final Object self, final Object string) {
+    public static int search(final Object self, final Object string) {
 
         final String       str          = checkObjectToString(self);
         final NativeRegExp nativeRegExp = Global.toRegExp(string == UNDEFINED ? "" : string);
@@ -788,7 +788,7 @@ public final class NativeString extends ScriptObject {
      * @return sliced out substring
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object slice(final Object self, final Object start, final Object end) {
+    public static String slice(final Object self, final Object start, final Object end) {
 
         final String str      = checkObjectToString(self);
         if (end == UNDEFINED) {
@@ -805,7 +805,7 @@ public final class NativeString extends ScriptObject {
      * @return sliced out substring
      */
     @SpecializedFunction
-    public static Object slice(final Object self, final int start) {
+    public static String slice(final Object self, final int start) {
         final String str = checkObjectToString(self);
         final int from = (start < 0) ? Math.max(str.length() + start, 0) : Math.min(start, str.length());
 
@@ -820,7 +820,7 @@ public final class NativeString extends ScriptObject {
      * @return sliced out substring
      */
     @SpecializedFunction
-    public static Object slice(final Object self, final double start) {
+    public static String slice(final Object self, final double start) {
         return slice(self, (int)start);
     }
 
@@ -833,7 +833,7 @@ public final class NativeString extends ScriptObject {
      * @return sliced out substring
      */
     @SpecializedFunction
-    public static Object slice(final Object self, final int start, final int end) {
+    public static String slice(final Object self, final int start, final int end) {
 
         final String str = checkObjectToString(self);
         final int len    = str.length();
@@ -853,7 +853,7 @@ public final class NativeString extends ScriptObject {
      * @return sliced out substring
      */
     @SpecializedFunction
-    public static Object slice(final Object self, final double start, final double end) {
+    public static String slice(final Object self, final double start, final double end) {
         return slice(self, (int)start, (int)end);
     }
 
@@ -866,7 +866,7 @@ public final class NativeString extends ScriptObject {
      * @return array object in which splits have been placed
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object split(final Object self, final Object separator, final Object limit) {
+    public static ScriptObject split(final Object self, final Object separator, final Object limit) {
         final String str = checkObjectToString(self);
         final long lim = (limit == UNDEFINED) ? JSType.MAX_UINT : JSType.toUint32(limit);
 
@@ -882,7 +882,7 @@ public final class NativeString extends ScriptObject {
         return splitString(str, JSType.toString(separator), lim);
     }
 
-    private static Object splitString(String str, String separator, long limit) {
+    private static ScriptObject splitString(String str, String separator, long limit) {
         if (separator.isEmpty()) {
             final int length = (int) Math.min(str.length(), limit);
             final Object[] array = new Object[length];
@@ -923,7 +923,7 @@ public final class NativeString extends ScriptObject {
      * @return substring given start and length of section
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object substr(final Object self, final Object start, final Object length) {
+    public static String substr(final Object self, final Object start, final Object length) {
         final String str       = JSType.toString(self);
         final int    strLength = str.length();
 
@@ -946,7 +946,7 @@ public final class NativeString extends ScriptObject {
      * @return substring given start and end indexes
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object substring(final Object self, final Object start, final Object end) {
+    public static String substring(final Object self, final Object start, final Object end) {
 
         final String str = checkObjectToString(self);
         if (end == UNDEFINED) {
@@ -1026,7 +1026,7 @@ public final class NativeString extends ScriptObject {
      * @return string to lower case
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toLowerCase(final Object self) {
+    public static String toLowerCase(final Object self) {
         return checkObjectToString(self).toLowerCase(Locale.ROOT);
     }
 
@@ -1036,7 +1036,7 @@ public final class NativeString extends ScriptObject {
      * @return string to locale sensitive lower case
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toLocaleLowerCase(final Object self) {
+    public static String toLocaleLowerCase(final Object self) {
         return checkObjectToString(self).toLowerCase(Global.getEnv()._locale);
     }
 
@@ -1046,7 +1046,7 @@ public final class NativeString extends ScriptObject {
      * @return string to upper case
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toUpperCase(final Object self) {
+    public static String toUpperCase(final Object self) {
         return checkObjectToString(self).toUpperCase(Locale.ROOT);
     }
 
@@ -1056,7 +1056,7 @@ public final class NativeString extends ScriptObject {
      * @return string to locale sensitive upper case
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toLocaleUpperCase(final Object self) {
+    public static String toLocaleUpperCase(final Object self) {
         return checkObjectToString(self).toUpperCase(Global.getEnv()._locale);
     }
 
@@ -1066,7 +1066,7 @@ public final class NativeString extends ScriptObject {
      * @return string trimmed from whitespace
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object trim(final Object self) {
+    public static String trim(final Object self) {
 
         final String str = checkObjectToString(self);
         int start = 0;
@@ -1088,7 +1088,7 @@ public final class NativeString extends ScriptObject {
      * @return string trimmed left from whitespace
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object trimLeft(final Object self) {
+    public static String trimLeft(final Object self) {
 
         final String str = checkObjectToString(self);
         int start = 0;
@@ -1107,7 +1107,7 @@ public final class NativeString extends ScriptObject {
      * @return string trimmed right from whitespace
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object trimRight(final Object self) {
+    public static String trimRight(final Object self) {
 
         final String str = checkObjectToString(self);
         int start = 0;
@@ -1120,7 +1120,7 @@ public final class NativeString extends ScriptObject {
         return str.substring(start, end + 1);
     }
 
-    private static Object newObj(final Object self, final CharSequence str) {
+    private static ScriptObject newObj(final Object self, final CharSequence str) {
         return new NativeString(str);
     }
 

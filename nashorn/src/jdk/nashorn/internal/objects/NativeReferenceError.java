@@ -98,7 +98,7 @@ public final class NativeReferenceError extends ScriptObject {
      * @return new ReferenceError
      */
     @Constructor(name = "ReferenceError")
-    public static Object constructor(final boolean newObj, final Object self, final Object msg) {
+    public static NativeReferenceError constructor(final boolean newObj, final Object self, final Object msg) {
         return new NativeReferenceError(msg);
     }
 }

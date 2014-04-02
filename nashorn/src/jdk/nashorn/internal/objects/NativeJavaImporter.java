@@ -86,7 +86,7 @@ public final class NativeJavaImporter extends ScriptObject {
      * @return NativeJavaImporter instance
      */
     @Constructor(arity = 1)
-    public static Object constructor(final boolean isNew, final Object self, final Object... args) {
+    public static NativeJavaImporter constructor(final boolean isNew, final Object self, final Object... args) {
         return new NativeJavaImporter(args);
     }
 
