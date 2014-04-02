@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,10 @@ import test.java.awt.regtesthelpers.Util;
 public class GrabTest {
     private static Frame f;
     private static Frame f1;
+    private static Frame frame;
     private static Window w;
+    private static Window window1;
+    private static Window window2;
     private static Button b;
 
     private static Robot robot;
@@ -95,6 +98,15 @@ public class GrabTest {
 
         f.setVisible(true);
         w.setVisible(true);
+
+        frame = new Frame();
+        window1 = new Window(frame);
+        window1.setBounds(0, 0, 100, 100);
+        window1.setBackground(Color.blue);
+
+        window2 = new Window(window1);
+        window2.setBounds(0, 0, 50, 50);
+        window2.setBackground(Color.green);
 
         tk = (sun.awt.SunToolkit)Toolkit.getDefaultToolkit();
 
@@ -193,6 +205,24 @@ public class GrabTest {
         if (!ungrabbed) {
             passed = false;
             System.err.println("Failure: [7] Window disposal didn't cause ungrab");
+        }
+        ungrabbed = false;
+
+
+        // 8. Check that mouse click on subwindow does not cause ungrab
+        frame.setVisible(true);
+        window1.setVisible(true);
+        window2.setVisible(true);
+        Util.waitForIdle(robot);
+
+        tk.grab(window1);
+
+        Util.clickOnComp(window2, robot);
+        Util.waitForIdle(robot);
+
+        if (ungrabbed) {
+            passed = false;
+            System.err.println("Failure: [8] Press on the subwindow caused ungrab");
         }
 
         if (passed) {

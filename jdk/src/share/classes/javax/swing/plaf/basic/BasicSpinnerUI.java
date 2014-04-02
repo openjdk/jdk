@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -601,6 +601,7 @@ public class BasicSpinnerUI extends SpinnerUI
      * so it doesn't have any state that persists beyond the limits
      * of a single button pressed/released gesture.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class ArrowButtonHandler extends AbstractAction
                                             implements FocusListener, MouseListener, UIResource {
         final javax.swing.Timer autoRepeatTimer;

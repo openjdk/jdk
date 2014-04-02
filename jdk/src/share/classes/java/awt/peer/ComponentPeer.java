@@ -27,11 +27,11 @@ package java.awt.peer;
 
 import java.awt.*;
 import java.awt.event.PaintEvent;
-import java.awt.image.ImageProducer;
-import java.awt.image.ImageObserver;
 import java.awt.image.ColorModel;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
 import java.awt.image.VolatileImage;
-import java.awt.GraphicsConfiguration;
+
 import sun.awt.CausedFocusEvent;
 import sun.java2d.pipe.Region;
 

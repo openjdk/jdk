@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,7 @@ public class Popup {
     /**
      * Component used to house window.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class HeavyWeightWindow extends JWindow implements ModalExclude {
         HeavyWeightWindow(Window parent) {
             super(parent);
@@ -267,6 +268,7 @@ public class Popup {
      * PopupFactory uses this as a way to know when the Popup shouldn't
      * be cached based on the Window.
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     static class DefaultFrame extends Frame {
     }
 }

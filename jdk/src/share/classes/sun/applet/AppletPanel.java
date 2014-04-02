@@ -28,23 +28,16 @@ package sun.applet;
 import java.applet.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.ColorModel;
-import java.awt.image.MemoryImageSource;
 import java.io.*;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
 import java.net.JarURLConnection;
-import java.net.MalformedURLException;
 import java.net.SocketPermission;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.security.*;
 import java.util.*;
-import java.util.Collections;
 import java.util.Locale;
-import java.util.WeakHashMap;
 import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.EmbeddedFrame;
@@ -62,6 +55,7 @@ import sun.security.util.SecurityConstants;
  *
  * @author      Arthur van Hoff
  */
+@SuppressWarnings("serial") // JDK implementation class
 public
 abstract class AppletPanel extends Panel implements AppletStub, Runnable {
 
@@ -148,7 +142,9 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     abstract protected String getJarFiles();
     abstract protected String getSerializedObject();
 
+    @Override
     abstract public int    getWidth();
+    @Override
     abstract public int    getHeight();
     abstract public boolean hasInitialFocus();
 
@@ -184,6 +180,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
         handler = new Thread(appletGroup, this, "thread " + nm);
         // set the context class loader for this thread
         AccessController.doPrivileged(new PrivilegedAction() {
+                @Override
                 public Object run() {
                     handler.setContextClassLoader(loader);
                     return null;
@@ -236,6 +233,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * Minimum size
      */
+    @Override
     public Dimension minimumSize() {
         return new Dimension(defaultAppletSize.width,
                              defaultAppletSize.height);
@@ -244,6 +242,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * Preferred size
      */
+    @Override
     public Dimension preferredSize() {
         return new Dimension(currentAppletSize.width,
                              currentAppletSize.height);
@@ -368,6 +367,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      *
      *
      */
+    @Override
     public void run() {
 
         Thread curThread = Thread.currentThread();
@@ -450,6 +450,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                       try {
                           final AppletPanel p = this;
                           Runnable r = new Runnable() {
+                              @Override
                               public void run() {
                                   p.validate();
                               }
@@ -480,6 +481,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                           final AppletPanel p = this;
                           final Applet a = applet;
                           Runnable r = new Runnable() {
+                              @Override
                               public void run() {
                                   p.validate();
                                   a.setVisible(true);
@@ -515,6 +517,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                     try {
                         final Applet a = applet;
                         Runnable r = new Runnable() {
+                            @Override
                             public void run() {
                                 a.setVisible(false);
                             }
@@ -574,6 +577,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                     try {
                         final Applet a = applet;
                         Runnable r = new Runnable() {
+                            @Override
                             public void run() {
                                 remove(a);
                             }
@@ -628,10 +632,13 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      */
     private Component getMostRecentFocusOwnerForWindow(Window w) {
         Method meth = (Method)AccessController.doPrivileged(new PrivilegedAction() {
+                @Override
                 public Object run() {
                     Method meth = null;
                     try {
-                        meth = KeyboardFocusManager.class.getDeclaredMethod("getMostRecentFocusOwner", new Class[] {Window.class});
+                        meth = KeyboardFocusManager.class.getDeclaredMethod(
+                                "getMostRecentFocusOwner",
+                                new Class[]{Window.class});
                         meth.setAccessible(true);
                     } catch (Exception e) {
                         // Must never happen
@@ -880,6 +887,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * Return true when the applet has been started.
      */
+    @Override
     public boolean isActive() {
         return status == APPLET_START;
     }
@@ -889,6 +897,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * Is called when the applet wants to be resized.
      */
+    @Override
     public void appletResize(int width, int height) {
         currentAppletSize.width = width;
         currentAppletSize.height = height;
@@ -904,17 +913,20 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
         final AppletPanel ap = this;
         if (appEvtQ != null){
             appEvtQ.postEvent(new InvocationEvent(Toolkit.getDefaultToolkit(),
-                                                  new Runnable(){
-                                                      public void run(){
-                                                          if(ap != null)
-                                                          {
-                                                              ap.dispatchAppletEvent(APPLET_RESIZE, currentSize);
+                                                  new Runnable() {
+                                                      @Override
+                                                      public void run() {
+                                                          if (ap != null) {
+                                                              ap.dispatchAppletEvent(
+                                                                      APPLET_RESIZE,
+                                                                      currentSize);
                                                           }
                                                       }
                                                   }));
         }
     }
 
+    @Override
     public void setBounds(int x, int y, int width, int height) {
         super.setBounds(x, y, width, height);
         currentAppletSize.width = width;
@@ -966,7 +978,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     public String getClassLoaderCacheKey()
     {
         /**
-         * Fixed #4501142: Classlaoder sharing policy doesn't
+         * Fixed #4501142: Classloader sharing policy doesn't
          * take "archive" into account. This will be overridden
          * by Java Plug-in.                     [stanleyh]
          */
@@ -1012,6 +1024,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                 getAccessControlContext(codebase);
             c = (AppletClassLoader)
                 AccessController.doPrivileged(new PrivilegedAction() {
+                        @Override
                         public Object run() {
                             AppletClassLoader ac = createClassLoader(codebase);
                             /* Should the creation of the classloader be
@@ -1055,6 +1068,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
 
         PermissionCollection perms = (PermissionCollection)
             AccessController.doPrivileged(new PrivilegedAction() {
+                    @Override
                     public Object run() {
                         Policy p = java.security.Policy.getPolicy();
                         if (p != null) {

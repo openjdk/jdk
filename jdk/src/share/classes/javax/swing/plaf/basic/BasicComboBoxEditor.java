@@ -32,6 +32,8 @@ import java.awt.event.*;
 
 import java.lang.reflect.Method;
 
+import sun.reflect.misc.MethodUtil;
+
 /**
  * The default editor for editable combo boxes. The editor is implemented as a JTextField.
  *
@@ -98,8 +100,8 @@ public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
                 // Must take the value from the editor and get the value and cast it to the new type.
                 Class<?> cls = oldValue.getClass();
                 try {
-                    Method method = cls.getMethod("valueOf", new Class[]{String.class});
-                    newValue = method.invoke(oldValue, new Object[] { editor.getText()});
+                    Method method = MethodUtil.getMethod(cls, "valueOf", new Class[]{String.class});
+                    newValue = MethodUtil.invoke(method, oldValue, new Object[] { editor.getText()});
                 } catch (Exception ex) {
                     // Fail silently and return the newValue (a String object)
                 }
@@ -129,6 +131,7 @@ public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
         editor.removeActionListener(l);
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class BorderlessTextField extends JTextField {
         public BorderlessTextField(String value,int n) {
             super(value,n);

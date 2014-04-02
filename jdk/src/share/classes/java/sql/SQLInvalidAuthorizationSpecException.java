@@ -45,7 +45,7 @@ public class SQLInvalidAuthorizationSpecException extends SQLNonTransientExcepti
          * The <code>cause</code> is not initialized, and may subsequently be
          * initialized by a call to the
          * {@link Throwable#initCause(java.lang.Throwable)} method.
-         * <p>
+         *
          * @since 1.6
          */
         public SQLInvalidAuthorizationSpecException() {
@@ -61,7 +61,7 @@ public class SQLInvalidAuthorizationSpecException extends SQLNonTransientExcepti
          * The <code>cause</code> is not initialized, and may subsequently be
          * initialized by a call to the
          * {@link Throwable#initCause(java.lang.Throwable)} method.
-         * <p>
+         *
          * @param reason a description of the exception
          * @since 1.6
          */
@@ -77,7 +77,7 @@ public class SQLInvalidAuthorizationSpecException extends SQLNonTransientExcepti
          * initialized by a call to the
          * {@link Throwable#initCause(java.lang.Throwable)} method. The vendor code
          * is initialized to 0.
-         * <p>
+         *
          * @param reason a description of the exception
          * @param SQLState an XOPEN or SQL:2003 code identifying the exception
          * @since 1.6
@@ -94,7 +94,7 @@ public class SQLInvalidAuthorizationSpecException extends SQLNonTransientExcepti
          * The <code>cause</code> is not initialized, and may subsequently be
          * initialized by a call to the
          * {@link Throwable#initCause(java.lang.Throwable)} method.
-         * <p>
+         *
          * @param reason a description of the exception
          * @param SQLState an XOPEN or SQL:2003 code identifying the exception
          * @param vendorCode a database vendor specific exception code
@@ -104,19 +104,19 @@ public class SQLInvalidAuthorizationSpecException extends SQLNonTransientExcepti
                   super(reason,SQLState,vendorCode);
         }
 
-        /**
+    /**
      * Constructs a <code>SQLInvalidAuthorizationSpecException</code> object
-         * with a given  <code>cause</code>.
+     * with a given  <code>cause</code>.
      * The <code>SQLState</code> is initialized
      * to <code>null</code> and the vendor code is initialized to 0.
      * The <code>reason</code>  is initialized to <code>null</code> if
      * <code>cause==null</code> or to <code>cause.toString()</code> if
      * <code>cause!=null</code>.
-         * <p>
+     *
      * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
      *     the cause is non-existent or unknown.
      * @since 1.6
-         */
+     */
     public SQLInvalidAuthorizationSpecException(Throwable cause) {
         super(cause);
     }
@@ -127,7 +127,7 @@ public class SQLInvalidAuthorizationSpecException extends SQLNonTransientExcepti
      * <code>reason</code> and  <code>cause</code>.
      * The <code>SQLState</code> is  initialized to <code>null</code>
      * and the vendor code is initialized to 0.
-     * <p>
+     *
      * @param reason a description of the exception.
      * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
      *     the cause is non-existent or unknown.
@@ -142,7 +142,7 @@ public class SQLInvalidAuthorizationSpecException extends SQLNonTransientExcepti
      *  with a given
      * <code>reason</code>, <code>SQLState</code> and  <code>cause</code>.
      * The vendor code is initialized to 0.
-     * <p>
+     *
      * @param reason a description of the exception.
      * @param SQLState an XOPEN or SQL:2003 code identifying the exception
      * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code>  method); may be null indicating
@@ -158,7 +158,7 @@ public class SQLInvalidAuthorizationSpecException extends SQLNonTransientExcepti
      * with a given
      * <code>reason</code>, <code>SQLState</code>, <code>vendorCode</code>
      * and  <code>cause</code>.
-     * <p>
+     *
      * @param reason a description of the exception
      * @param SQLState an XOPEN or SQL:2003 code identifying the exception
      * @param vendorCode a database vendor-specific exception code

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,7 @@ public class BasicHTML {
      * provided by HTMLEditorKit.
      * </ul>
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     static class BasicEditorKit extends HTMLEditorKit {
         /** Shared base style for all documents created by us use. */
         private static StyleSheet defaultStyles;
@@ -345,6 +346,7 @@ public class BasicHTML {
      * is overridden to return the foreground property from the Component this
      * was created for.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class BasicDocument extends HTMLDocument {
         /** The host, that is where we are rendering. */
         // private JComponent host;

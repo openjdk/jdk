@@ -261,6 +261,13 @@ tools/launcher/FXLauncherTest.java                              linux-all
 
 ############################################################################
 
+# jdk_instrument
+
+# 8037082
+java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
+
+############################################################################
+
 # svc_tools
 
 # 8031482

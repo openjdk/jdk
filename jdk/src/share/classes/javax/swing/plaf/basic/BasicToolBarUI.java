@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,11 +470,13 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      */
     protected JFrame createFloatingFrame(JToolBar toolbar) {
         Window window = SwingUtilities.getWindowAncestor(toolbar);
+        @SuppressWarnings("serial") // anonymous class
         JFrame frame = new JFrame(toolbar.getName(),
                                   (window != null) ? window.getGraphicsConfiguration() : null) {
             // Override createRootPane() to automatically resize
             // the frame when contents change
             protected JRootPane createRootPane() {
+                @SuppressWarnings("serial") // anonymous class
                 JRootPane rootPane = new JRootPane() {
                     private boolean packing = false;
 
@@ -505,6 +507,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * @since 1.4
      */
     protected RootPaneContainer createFloatingWindow(JToolBar toolbar) {
+        @SuppressWarnings("serial") // Superclass is not serializable across versions
         class ToolBarDialog extends JDialog {
             public ToolBarDialog(Frame owner, String title, boolean modal) {
                 super(owner, title, modal);
@@ -517,6 +520,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
             // Override createRootPane() to automatically resize
             // the frame when contents change
             protected JRootPane createRootPane() {
+                @SuppressWarnings("serial") // anonymous class
                 JRootPane rootPane = new JRootPane() {
                     private boolean packing = false;
 
@@ -1370,6 +1374,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         }
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class DragWindow extends Window
     {
         Color borderColor = Color.gray;

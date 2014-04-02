@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
  * questions.
  */
 
-#include "CClipboard.h"
-#include "CDataTransferer.h"
+#import "CClipboard.h"
+#import "CDataTransferer.h"
+#import "ThreadUtilities.h"
+#import "jni_util.h" 
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
-
-#include "ThreadUtilities.h"
-
 
 static CClipboard *sClipboard = nil;
 
@@ -73,7 +72,6 @@ static CClipboard *sClipboard = nil;
 
     [super dealloc];
 }
-//- (void)finalize { [super finalize]; }
 
 - (NSData *)data {
     return fData;
@@ -246,6 +244,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CClipboard_setData
 JNF_COCOA_ENTER(env);
     jint nBytes = (*env)->GetArrayLength(env, inBytes);
     jbyte *rawBytes = (*env)->GetPrimitiveArrayCritical(env, inBytes, NULL);
+    CHECK_NULL(rawBytes);
     NSData *bytesAsData = [NSData dataWithBytes:rawBytes length:nBytes];
     (*env)->ReleasePrimitiveArrayCritical(env, inBytes, rawBytes, JNI_ABORT);
     NSString *format = formatForIndex(inFormat);
