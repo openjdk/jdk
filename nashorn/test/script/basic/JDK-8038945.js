@@ -135,3 +135,106 @@ print("18: " + g3("17") + " === true");
 print("19: " + g4("17") + " === true");
 print("20: " + g5("17") + " === true");
 
+//h1 internals={} externals={undefined=0}
+function h1(x) {
+    return undefined === x;
+}
+
+//h2 internals={} externals=null
+function h2(x, undefined) {
+    return undefined === x;
+}
+
+//h3 internals={x=0} externals=null
+function h3(x) {
+    //h3$f3_2 internals={} externals={x=0}
+    function h3_2(undefined) {
+	return undefined === x;
+    }
+    return h3_2(17);
+}
+
+//h4 internals={x=0} externals=null
+function h4(x) {
+    //h4$h4_2 internals={} externals={x=0}
+    function h4_2() {
+	var undefined = 17;
+	return undefined === x;
+    }
+    return h4_2();
+}
+
+//h5 internals={x=0, undefined=0} externals=null
+function h5(x) {
+    var undefined = 17;
+    //h5$h5_2 internals={} externals={x=0, undefined=0}
+    function h5_2() {
+	return undefined === x;
+    }
+    return h5_2();
+}
+
+print("21: " + h1(17) + " === false");
+print("22: " + h2(17) + " === false");
+print("23: " + h3(17) + " === true");
+print("24: " + h4(17) + " === true");
+print("25: " + h5(17) + " === true");
+
+//recompile
+print("26: " + h1("17") + " === false");
+print("27: " + h2("17") + " === false");
+print("28: " + h3("17") + " === false");
+print("29: " + h4("17") + " === false");
+print("30: " + h5("17") + " === false");
+
+//i1 internals={} externals={undefined=0}
+function i1(x) {
+    return undefined !== x;
+}
+
+//i2 internals={} externals=null
+function i2(x, undefined) {
+    return undefined !== x;
+}
+
+//i3 internals={x=0} externals=null
+function i3(x) {
+    //i3$f3_2 internals={} externals={x=0}
+    function i3_2(undefined) {
+	return undefined !== x;
+    }
+    return i3_2(17);
+}
+
+//i4 internals={x=0} externals=null
+function i4(x) {
+    //i4$i4_2 internals={} externals={x=0}
+    function i4_2() {
+	var undefined = 17;
+	return undefined !== x;
+    }
+    return i4_2();
+}
+
+//h5 internals={x=0, undefined=0} externals=null
+function i5(x) {
+    var undefined = 17;
+    //i5$i5_2 internals={} externals={x=0, undefined=0}
+    function i5_2() {
+	return undefined !== x;
+    }
+    return i5_2();
+}
+
+print("31: " + i1(17) + " === true");
+print("32: " + i2(17) + " === true");
+print("33: " + i3(17) + " === false");
+print("34: " + i4(17) + " === false");
+print("35: " + i5(17) + " === false");
+
+//recompile
+print("36: " + i1("17") + " === true");
+print("37: " + i2("17") + " === true");
+print("38: " + i3("17") + " === true");
+print("39: " + i4("17") + " === true");
+print("40: " + i5("17") + " === true");

@@ -85,7 +85,7 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private static Node createIsUndefined(final Expression parent, final Expression lhs, final Expression rhs, final Request request) {
-        if ("undefined".equals(rhs.getSymbol().getName())) {
+        if ("undefined".equals(lhs.getSymbol().getName()) || "undefined".equals(rhs.getSymbol().getName())) {
             return new RuntimeNode(parent, request, lhs, rhs);
         }
         return parent;

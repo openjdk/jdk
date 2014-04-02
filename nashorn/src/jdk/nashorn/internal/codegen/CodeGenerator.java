@@ -74,6 +74,7 @@ import java.util.Map;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.TreeMap;
+
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.RuntimeCallSite.SpecializedRuntimeNode;
@@ -2002,8 +2003,23 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Expression lhs = args.get(0);
         final Expression rhs = args.get(1);
 
-        if (!rhs.getSymbol().isScope()) {
+        final Symbol lhsSymbol = lhs.getSymbol();
+        final Symbol rhsSymbol = rhs.getSymbol();
+
+        final Symbol undefinedSymbol = "undefined".equals(lhsSymbol.getName()) ? lhsSymbol : rhsSymbol;
+        final Expression expr = undefinedSymbol == lhsSymbol ? rhs : lhs;
+
+        if (!undefinedSymbol.isScope()) {
             return false; //disallow undefined as local var or parameter
+        }
+
+        if (lhsSymbol == undefinedSymbol && lhs.getType().isPrimitive()) {
+            //we load the undefined first. never mind, because this will deoptimize anyway
+            return false;
+        }
+
+        if (compiler.getCompilationEnvironment().isCompileRestOf()) {
+            return false;
         }
 
         //make sure that undefined has not been overridden or scoped as a local var
@@ -2012,6 +2028,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         RecompilableScriptFunctionData data = env.getScriptFunctionData(lc.getCurrentFunction().getId());
         final RecompilableScriptFunctionData program = compiler.getCompilationEnvironment().getProgram();
         assert data != null;
+
         while (data != program) {
             if (data.hasInternalSymbol("undefined")) {
                 return false;
@@ -2019,11 +2036,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             data = data.getParent();
         }
 
-        load(lhs);
-        if (lhs.getType().isPrimitive()) {
+        load(expr);
+
+        if (expr.getType().isPrimitive()) {
             method.pop(); //throw away lhs, but it still needs to be evaluated for side effects, even if not in scope, as it can be optimistic
             method.load(request == Request.IS_NOT_UNDEFINED);
-            method.store(runtimeNode.getSymbol());
         } else {
             final Label isUndefined  = new Label("ud_check_true");
             final Label notUndefined = new Label("ud_check_false");
@@ -2036,8 +2053,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             method.label(isUndefined);
             method.load(request == Request.IS_UNDEFINED);
             method.label(end);
-            method.store(runtimeNode.getSymbol());
         }
+
+        method.store(runtimeNode.getSymbol());
         return true;
     }
 
@@ -2138,7 +2156,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             void loadStack() {
                 load(args.get(0));
                 load(args.get(1));
-
 
                 //if the request is a comparison, i.e. one that can be reversed
                 //it keeps its semantic, but make sure that the object comes in
