@@ -187,6 +187,11 @@ public final class UserAccessorProperty extends Property {
     }
 
     @Override
+    void initMethodHandles(final Class<?> structure) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ScriptFunction getGetterFunction(final ScriptObject obj) {
         final Object value = obj.getSpill(getterSlot);
         return (value instanceof ScriptFunction) ? (ScriptFunction) value : null;
