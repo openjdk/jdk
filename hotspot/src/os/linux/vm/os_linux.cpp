@@ -3788,16 +3788,11 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN ;}
 
-void os::yield_all(int attempts) {
+void os::yield_all() {
   // Yields to all threads, including threads with lower priorities
   // Threads on Linux are all with same priority. The Solaris style
   // os::yield_all() with nanosleep(1ms) is not necessary.
   sched_yield();
-}
-
-// Called from the tight loops to possibly influence time-sharing heuristics
-void os::loop_breaker(int attempts) {
-  os::yield_all(attempts);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
