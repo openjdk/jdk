@@ -48,7 +48,6 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
-#include "opto/connode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"

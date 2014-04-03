@@ -394,6 +394,9 @@ class Method : public Metadata {
 #ifndef PRODUCT
   int  compiled_invocation_count() const         { return _compiled_invocation_count;  }
   void set_compiled_invocation_count(int count)  { _compiled_invocation_count = count; }
+#else
+  // for PrintMethodData in a product build
+  int  compiled_invocation_count() const         { return 0;  }
 #endif // not PRODUCT
 
   // Clear (non-shared space) pointers which could not be relevant
@@ -462,10 +465,8 @@ class Method : public Metadata {
   // Interpreter oopmap support
   void mask_for(int bci, InterpreterOopMap* mask);
 
-#ifndef PRODUCT
   // operations on invocation counter
   void print_invocation_count();
-#endif
 
   // byte codes
   void    set_code(address code)      { return constMethod()->set_code(code); }
@@ -474,8 +475,8 @@ class Method : public Metadata {
 
   // prints byte codes
   void print_codes() const            { print_codes_on(tty); }
-  void print_codes_on(outputStream* st) const                      PRODUCT_RETURN;
-  void print_codes_on(int from, int to, outputStream* st) const    PRODUCT_RETURN;
+  void print_codes_on(outputStream* st) const;
+  void print_codes_on(int from, int to, outputStream* st) const;
 
   // method parameters
   bool has_method_parameters() const
