@@ -25,12 +25,27 @@
 
 package java.awt.datatransfer;
 
-import java.io.*;
-import java.nio.*;
-import java.util.*;
-
 import sun.awt.datatransfer.DataTransferer;
 import sun.reflect.misc.ReflectUtil;
+
+import java.io.ByteArrayInputStream;
+import java.io.CharArrayReader;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.OptionalDataException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Objects;
 
 import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
 
@@ -501,7 +516,7 @@ public class DataFlavor implements Externalizable, Cloneable {
     * @throws ClassNotFoundException
     * @throws  NullPointerException if <code>mimeType</code> is null
     *
-    * @see tryToLoadClass
+    * @see #tryToLoadClass
     */
     private void initialize(String mimeType, String humanPresentableName, ClassLoader classLoader) throws MimeTypeParseException, ClassNotFoundException {
         if (mimeType == null) {
@@ -986,14 +1001,8 @@ public class DataFlavor implements Externalizable, Cloneable {
             return true;
         }
 
-        if (representationClass == null) {
-            if (that.getRepresentationClass() != null) {
-                return false;
-            }
-        } else {
-            if (!representationClass.equals(that.getRepresentationClass())) {
-                return false;
-            }
+        if (!Objects.equals(this.getRepresentationClass(), that.getRepresentationClass())) {
+            return false;
         }
 
         if (mimeType == null) {
@@ -1006,34 +1015,22 @@ public class DataFlavor implements Externalizable, Cloneable {
             }
 
             if ("text".equals(getPrimaryType())) {
-                if (DataTransferer.doesSubtypeSupportCharset(this) &&
-                    representationClass != null &&
-                    !(isRepresentationClassReader() ||
-                        String.class.equals(representationClass) ||
-                        isRepresentationClassCharBuffer() ||
-                        char[].class.equals(representationClass)))
-                {
+                if (DataTransferer.doesSubtypeSupportCharset(this)
+                        && representationClass != null
+                        && !isStandardTextRepresentationClass()) {
                     String thisCharset =
-                        DataTransferer.canonicalName(getParameter("charset"));
+                            DataTransferer.canonicalName(this.getParameter("charset"));
                     String thatCharset =
-                        DataTransferer.canonicalName(that.getParameter("charset"));
-                    if (thisCharset == null) {
-                        if (thatCharset != null) {
-                            return false;
-                        }
-                    } else {
-                        if (!thisCharset.equals(thatCharset)) {
-                            return false;
-                        }
+                            DataTransferer.canonicalName(that.getParameter("charset"));
+                    if (!Objects.equals(thisCharset, thatCharset)) {
+                        return false;
                     }
                 }
 
-                if ("html".equals(getSubType()) &&
-                        this.getParameter("document") != null )
-                {
-                   if (!this.getParameter("document").
-                            equals(that.getParameter("document")))
-                    {
+                if ("html".equals(getSubType())) {
+                    String thisDocument = this.getParameter("document");
+                    String thatDocument = that.getParameter("document");
+                    if (!Objects.equals(thisDocument, thatDocument)) {
                         return false;
                     }
                 }
@@ -1090,18 +1087,21 @@ public class DataFlavor implements Externalizable, Cloneable {
             // MimeType.match which reports a match if one or both of the
             // subTypes is '*', regardless of the other subType.
 
-            if ("text".equals(primaryType) &&
-                DataTransferer.doesSubtypeSupportCharset(this) &&
-                representationClass != null &&
-                !(isRepresentationClassReader() ||
-                  String.class.equals(representationClass) ||
-                  isRepresentationClassCharBuffer() ||
-                  char[].class.equals(representationClass)))
-            {
-                String charset =
-                    DataTransferer.canonicalName(getParameter("charset"));
-                if (charset != null) {
-                    total += charset.hashCode();
+            if ("text".equals(primaryType)) {
+                if (DataTransferer.doesSubtypeSupportCharset(this)
+                        && representationClass != null
+                        && !isStandardTextRepresentationClass()) {
+                    String charset = DataTransferer.canonicalName(getParameter("charset"));
+                    if (charset != null) {
+                        total += charset.hashCode();
+                    }
+                }
+
+                if ("html".equals(getSubType())) {
+                    String document = this.getParameter("document");
+                    if (document != null) {
+                        total += document.hashCode();
+                    }
                 }
             }
         }
@@ -1175,6 +1175,20 @@ public class DataFlavor implements Externalizable, Cloneable {
             return (mtype == null);
         }
         return mimeType.match(mtype);
+    }
+
+    /**
+     * Checks if the representation class is one of the standard text
+     * representation classes.
+     *
+     * @return true if the representation class is one of the standard text
+     *              representation classes, otherwise false
+     */
+    private boolean isStandardTextRepresentationClass() {
+        return isRepresentationClassReader()
+                || String.class.equals(representationClass)
+                || isRepresentationClassCharBuffer()
+                || char[].class.equals(representationClass);
     }
 
    /**
