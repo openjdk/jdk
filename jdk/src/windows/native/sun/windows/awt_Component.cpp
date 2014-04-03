@@ -1729,9 +1729,11 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       case WM_IME_SETCONTEXT:
           // lParam is passed as pointer and it can be modified.
           mr = WmImeSetContext(static_cast<BOOL>(wParam), &lParam);
+          CallProxyDefWindowProc(message, wParam, lParam, retValue, mr);
           break;
       case WM_IME_NOTIFY:
           mr = WmImeNotify(wParam, lParam);
+          CallProxyDefWindowProc(message, wParam, lParam, retValue, mr);
           break;
       case WM_IME_STARTCOMPOSITION:
           mr = WmImeStartComposition();
@@ -4085,7 +4087,7 @@ void AwtComponent::CallProxyDefWindowProc(UINT message, WPARAM wParam,
 {
     if (mr != mrConsume)  {
         HWND proxy = GetProxyFocusOwner();
-        if (proxy != NULL) {
+        if (proxy != NULL && ::IsWindowEnabled(proxy)) {
             retVal = ComCtl32Util::GetInstance().DefWindowProc(NULL, proxy, message, wParam, lParam);
             mr = mrConsume;
         }
