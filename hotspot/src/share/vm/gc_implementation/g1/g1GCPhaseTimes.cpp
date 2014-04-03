@@ -246,8 +246,8 @@ void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
   LineBuffer(level).append_and_print_cr("[%s: %.1lf ms]", str, value);
 }
 
-void G1GCPhaseTimes::print_stats(int level, const char* str, double value, int workers) {
-  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %d]", str, value, workers);
+void G1GCPhaseTimes::print_stats(int level, const char* str, double value, uint workers) {
+  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: " UINT32_FORMAT "]", str, value, workers);
 }
 
 double G1GCPhaseTimes::accounted_time_ms() {

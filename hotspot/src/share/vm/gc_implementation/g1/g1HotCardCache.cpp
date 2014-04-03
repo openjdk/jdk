@@ -44,9 +44,9 @@ void G1HotCardCache::initialize() {
     _hot_cache_idx = 0;
 
     // For refining the cards in the hot cache in parallel
-    int n_workers = (ParallelGCThreads > 0 ?
+    uint n_workers = (ParallelGCThreads > 0 ?
                         _g1h->workers()->total_workers() : 1);
-    _hot_cache_par_chunk_size = MAX2(1, _hot_cache_size / n_workers);
+    _hot_cache_par_chunk_size = MAX2(1, _hot_cache_size / (int)n_workers);
     _hot_cache_par_claimed_idx = 0;
 
     _card_counts.initialize();
@@ -89,7 +89,7 @@ jbyte* G1HotCardCache::insert(jbyte* card_ptr) {
   return res;
 }
 
-void G1HotCardCache::drain(int worker_i,
+void G1HotCardCache::drain(uint worker_i,
                            G1RemSet* g1rs,
                            DirtyCardQueue* into_cset_dcq) {
   if (!default_use_cache()) {
@@ -122,8 +122,8 @@ void G1HotCardCache::drain(int worker_i,
             // RSet updating while within an evacuation pause.
             // In this case worker_i should be the id of a GC worker thread
             assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
-            assert(worker_i < (int) (ParallelGCThreads == 0 ? 1 : ParallelGCThreads),
-                   err_msg("incorrect worker id: "INT32_FORMAT, worker_i));
+            assert(worker_i < (ParallelGCThreads == 0 ? 1 : ParallelGCThreads),
+                   err_msg("incorrect worker id: "UINT32_FORMAT, worker_i));
 
             into_cset_dcq->enqueue(card_ptr);
           }
