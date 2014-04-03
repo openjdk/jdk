@@ -3520,7 +3520,7 @@ os::YieldResult os::NakedYield() {
 
 void os::yield() {  os::NakedYield(); }
 
-void os::yield_all(int attempts) {
+void os::yield_all() {
   // Yields to all threads, including threads with lower priorities
   Sleep(1);
 }
@@ -3866,12 +3866,6 @@ void os::init(void) {
   win32::setmode_streams();
   init_page_sizes((size_t) win32::vm_page_size());
 
-  // For better scalability on MP systems (must be called after initialize_system_info)
-#ifndef PRODUCT
-  if (is_MP()) {
-    NoYieldsInMicrolock = true;
-  }
-#endif
   // This may be overridden later when argument processing is done.
   FLAG_SET_ERGO(bool, UseLargePagesIndividualAllocation,
     os::win32::is_windows_2003());

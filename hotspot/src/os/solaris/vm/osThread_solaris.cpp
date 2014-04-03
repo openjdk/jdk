@@ -49,16 +49,6 @@ void OSThread::pd_destroy() {
 
 // copied from synchronizer.cpp
 
-void OSThread::handle_spinlock_contention(int tries) {
-  if (NoYieldsInMicrolock) return;
-
-  if (tries > 10) {
-    os::yield_all(tries); // Yield to threads of any priority
-  } else if (tries > 5) {
-    os::yield();          // Yield to threads of same or higher priority
-  }
-}
-
 void OSThread::SR_handler(Thread* thread, ucontext_t* uc) {
   os::Solaris::SR_handler(thread, uc);
 }
