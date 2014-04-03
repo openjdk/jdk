@@ -70,16 +70,16 @@ final class CodeStore {
      * @throws IOException
      */
     public CodeStore(final String path, final int minSize) throws IOException {
-        this.dir = new File(path);
+        this.dir = checkDirectory(path);
         this.minSize = minSize;
-        checkDirectory(this.dir);
     }
 
-    private static void checkDirectory(final File dir) throws IOException {
+    private static File checkDirectory(final String path) throws IOException {
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<File>() {
                 @Override
-                public Void run() throws IOException {
+                public File run() throws IOException {
+                    final File dir = new File(path).getAbsoluteFile();
                     if (!dir.exists() && !dir.mkdirs()) {
                         throw new IOException("Could not create directory: " + dir);
                     } else if (!dir.isDirectory()) {
@@ -87,7 +87,7 @@ final class CodeStore {
                     } else if (!dir.canRead() || !dir.canWrite()) {
                         throw new IOException("Directory not readable or writable: " + dir);
                     }
-                    return null;
+                    return dir;
                 }
             });
         } catch (PrivilegedActionException e) {
