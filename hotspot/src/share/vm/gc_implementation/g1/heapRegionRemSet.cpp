@@ -853,7 +853,7 @@ OtherRegionsTable::do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task) {
 // This can be done by either mutator threads together with the
 // concurrent refinement threads or GC threads.
 uint HeapRegionRemSet::num_par_rem_sets() {
-  return (uint)MAX2(DirtyCardQueueSet::num_par_ids() + ConcurrentG1Refine::thread_num(), ParallelGCThreads);
+  return MAX2(DirtyCardQueueSet::num_par_ids() + ConcurrentG1Refine::thread_num(), (uint)ParallelGCThreads);
 }
 
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
