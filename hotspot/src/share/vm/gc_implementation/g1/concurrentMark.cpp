@@ -2143,7 +2143,7 @@ void ConcurrentMark::completeCleanup() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  _cleanup_list.verify_list();
+  _cleanup_list.verify_optional();
   FreeRegionList tmp_free_list("Tmp Free List");
 
   if (G1ConcRegionFreeingVerbose) {
