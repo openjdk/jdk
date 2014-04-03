@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,14 @@ public abstract class Profiles {
                     }
                 }
             }
+            /*
+             * A hack to force javax/crypto package into the compact1 profile,
+             * because this package exists in jce.jar, and therefore not in
+             * ct.sym. Note javax/crypto should exist in a profile along with
+             * javax/net/ssl package. Thus, this package is added to compact1,
+             * implying that it should exist in all three profiles.
+             */
+             includePackage(1, "javax/crypto");
         }
 
         @Override
