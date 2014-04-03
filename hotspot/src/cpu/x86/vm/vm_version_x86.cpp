@@ -59,9 +59,9 @@ static BufferBlob* stub_blob;
 static const int stub_size = 600;
 
 extern "C" {
-  typedef void (*getPsrInfo_stub_t)(void*);
+  typedef void (*get_cpu_info_stub_t)(void*);
 }
-static getPsrInfo_stub_t getPsrInfo_stub = NULL;
+static get_cpu_info_stub_t get_cpu_info_stub = NULL;
 
 
 class VM_Version_StubGenerator: public StubCodeGenerator {
@@ -69,7 +69,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
 
-  address generate_getPsrInfo() {
+  address generate_get_cpu_info() {
     // Flags to test CPU type.
     const uint32_t HS_EFL_AC           = 0x40000;
     const uint32_t HS_EFL_ID           = 0x200000;
@@ -81,13 +81,13 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4;
     Label sef_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7, done;
 
-    StubCodeMark mark(this, "VM_Version", "getPsrInfo_stub");
+    StubCodeMark mark(this, "VM_Version", "get_cpu_info_stub");
 #   define __ _masm->
 
     address start = __ pc();
 
     //
-    // void getPsrInfo(VM_Version::CpuidInfo* cpuid_info);
+    // void get_cpu_info(VM_Version::CpuidInfo* cpuid_info);
     //
     // LP64: rcx and rdx are first and second argument registers on windows
 
@@ -385,6 +385,14 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 };
 
 
+void VM_Version::get_cpu_info_wrapper() {
+  get_cpu_info_stub(&_cpuid_info);
+}
+
+#ifndef CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED
+  #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) f()
+#endif
+
 void VM_Version::get_processor_features() {
 
   _cpu = 4; // 486 by default
@@ -395,7 +403,11 @@ void VM_Version::get_processor_features() {
 
   if (!Use486InstrsOnly) {
     // Get raw processor info
-    getPsrInfo_stub(&_cpuid_info);
+
+    // Some platforms (like Win*) need a wrapper around here
+    // in order to properly handle SEGV for YMM registers test.
+    CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(get_cpu_info_wrapper);
+
     assert_is_initialized();
     _cpu = extended_cpu_family();
     _model = extended_cpu_model();
@@ -986,14 +998,14 @@ void VM_Version::initialize() {
   ResourceMark rm;
   // Making this stub must be FIRST use of assembler
 
-  stub_blob = BufferBlob::create("getPsrInfo_stub", stub_size);
+  stub_blob = BufferBlob::create("get_cpu_info_stub", stub_size);
   if (stub_blob == NULL) {
-    vm_exit_during_initialization("Unable to allocate getPsrInfo_stub");
+    vm_exit_during_initialization("Unable to allocate get_cpu_info_stub");
   }
   CodeBuffer c(stub_blob);
   VM_Version_StubGenerator g(&c);
-  getPsrInfo_stub = CAST_TO_FN_PTR(getPsrInfo_stub_t,
-                                   g.generate_getPsrInfo());
+  get_cpu_info_stub = CAST_TO_FN_PTR(get_cpu_info_stub_t,
+                                     g.generate_get_cpu_info());
 
   get_processor_features();
 }

@@ -66,8 +66,8 @@ ifndef CC_INTERP
     FORCE_TIERED=1
   endif
 endif
-# C1 is not ported on ppc64(le), so we cannot build a tiered VM:
-ifneq (,$(filter $(ARCH),ppc64 pp64le))
+# C1 is not ported on ppc64, so we cannot build a tiered VM:
+ifeq ($(ARCH),ppc64)
   FORCE_TIERED=0
 endif
 
