@@ -555,6 +555,19 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
                     fdata->xfont = fdata->flist[i].xfont;
                     fdata->flist[i].index_length = 1;
                 } else {
+                    /* Free any already allocated storage and fonts */
+                    int j = i;
+                    for (j = 0; j <= i; j++) {
+                        free((void *)fdata->flist[j].xlfd);
+                        JNU_ReleaseStringPlatformChars(env, NULL,
+                            fdata->flist[j].charset_name);
+                        if (fdata->flist[j].load) {
+                            XFreeFont(awt_display, fdata->flist[j].xfont);
+                        }
+                    }
+                    free((void *)fdata->flist);
+                    free((void *)fdata);
+
                     if (errmsg != NULL) {
                         *errmsg = "java/lang" "NullPointerException";
                     }
