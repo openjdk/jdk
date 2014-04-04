@@ -804,6 +804,10 @@ public class Attr extends JCTree.Visitor {
                    boolean classExpected,
                    boolean interfaceExpected,
                    boolean checkExtensible) {
+        if (t.tsym.isAnonymous()) {
+            log.error(tree.pos(), "cant.inherit.from.anon");
+            return types.createErrorType(t);
+        }
         if (t.isErroneous())
             return t;
         if (t.hasTag(TYPEVAR) && !classExpected && !interfaceExpected) {
