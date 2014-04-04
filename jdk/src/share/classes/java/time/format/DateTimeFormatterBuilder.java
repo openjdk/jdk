@@ -939,7 +939,7 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the offset is parsed using the format defined above.
      * If the offset cannot be parsed then an exception is thrown unless the
      * section of the formatter is optional.
-     * <p>
+     *
      * @param style  the format style to use, not null
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if style is neither {@link TextStyle#FULL
