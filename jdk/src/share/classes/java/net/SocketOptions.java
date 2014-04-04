@@ -38,7 +38,7 @@ import java.lang.annotation.Native;
  * DatagramSocketImpl, <B>you won't use these directly.</B> There are
  * type-safe methods to get/set each of these options in Socket, ServerSocket,
  * DatagramSocket and MulticastSocket.
- * <P>
+ *
  * @author David Brown
  */
 
