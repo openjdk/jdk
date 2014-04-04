@@ -1268,8 +1268,6 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
       }
 #endif
       if (is_virtual) {
-        nmethod* nm = callee_nm;
-        if (nm == NULL) CodeCache::find_blob(caller_frame.pc());
         CompiledIC* inline_cache = CompiledIC_before(caller_nm, caller_frame.pc());
         if (inline_cache->is_clean()) {
           inline_cache->set_to_monomorphic(virtual_call_info);
