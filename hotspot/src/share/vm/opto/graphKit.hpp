@@ -351,9 +351,11 @@ class GraphKit : public Phase {
   // Return the value cast to not-null.
   // Be clever about equivalent dominating null checks.
   Node* null_check_common(Node* value, BasicType type,
-                          bool assert_null = false, Node* *null_control = NULL);
+                          bool assert_null = false,
+                          Node* *null_control = NULL,
+                          bool speculative = false);
   Node* null_check(Node* value, BasicType type = T_OBJECT) {
-    return null_check_common(value, type);
+    return null_check_common(value, type, false, NULL, !_gvn.type(value)->speculative_maybe_null());
   }
   Node* null_check_receiver() {
     assert(argument(0)->bottom_type()->isa_ptr(), "must be");
@@ -382,10 +384,12 @@ class GraphKit : public Phase {
   // If safe_for_replace, then we can replace the value with the cast
   // in the parsing map (the cast is guaranteed to dominate the map)
   Node* null_check_oop(Node* value, Node* *null_control,
-                       bool never_see_null = false, bool safe_for_replace = false);
+                       bool never_see_null = false,
+                       bool safe_for_replace = false,
+                       bool speculative = false);
 
   // Check the null_seen bit.
-  bool seems_never_null(Node* obj, ciProfileData* data);
+  bool seems_never_null(Node* obj, ciProfileData* data, bool& speculating);
 
   // Check for unique class for receiver at call
   ciKlass* profile_has_unique_klass() {
@@ -399,10 +403,11 @@ class GraphKit : public Phase {
   }
 
   // record type from profiling with the type system
-  Node* record_profile_for_speculation(Node* n, ciKlass* exact_kls);
-  Node* record_profiled_receiver_for_speculation(Node* n);
+  Node* record_profile_for_speculation(Node* n, ciKlass* exact_kls, bool maybe_null);
   void record_profiled_arguments_for_speculation(ciMethod* dest_method, Bytecodes::Code bc);
   void record_profiled_parameters_for_speculation();
+  void record_profiled_return_for_speculation();
+  Node* record_profiled_receiver_for_speculation(Node* n);
 
   // Use the type profile to narrow an object type.
   Node* maybe_cast_profiled_receiver(Node* not_null_obj,

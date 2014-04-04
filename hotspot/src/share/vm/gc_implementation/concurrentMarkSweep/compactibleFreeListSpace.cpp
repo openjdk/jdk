@@ -851,42 +851,60 @@ void CompactibleFreeListSpace::object_iterate_mem(MemRegion mr,
                                                   UpwardsObjectClosure* cl) {
   assert_locked(freelistLock());
   NOT_PRODUCT(verify_objects_initialized());
-  Space::object_iterate_mem(mr, cl);
+  assert(!mr.is_empty(), "Should be non-empty");
+  // We use MemRegion(bottom(), end()) rather than used_region() below
+  // because the two are not necessarily equal for some kinds of
+  // spaces, in particular, certain kinds of free list spaces.
+  // We could use the more complicated but more precise:
+  // MemRegion(used_region().start(), round_to(used_region().end(), CardSize))
+  // but the slight imprecision seems acceptable in the assertion check.
+  assert(MemRegion(bottom(), end()).contains(mr),
+         "Should be within used space");
+  HeapWord* prev = cl->previous();   // max address from last time
+  if (prev >= mr.end()) { // nothing to do
+    return;
+  }
+  // This assert will not work when we go from cms space to perm
+  // space, and use same closure. Easy fix deferred for later. XXX YSR
+  // assert(prev == NULL || contains(prev), "Should be within space");
+
+  bool last_was_obj_array = false;
+  HeapWord *blk_start_addr, *region_start_addr;
+  if (prev > mr.start()) {
+    region_start_addr = prev;
+    blk_start_addr    = prev;
+    // The previous invocation may have pushed "prev" beyond the
+    // last allocated block yet there may be still be blocks
+    // in this region due to a particular coalescing policy.
+    // Relax the assertion so that the case where the unallocated
+    // block is maintained and "prev" is beyond the unallocated
+    // block does not cause the assertion to fire.
+    assert((BlockOffsetArrayUseUnallocatedBlock &&
+            (!is_in(prev))) ||
+           (blk_start_addr == block_start(region_start_addr)), "invariant");
+  } else {
+    region_start_addr = mr.start();
+    blk_start_addr    = block_start(region_start_addr);
+  }
+  HeapWord* region_end_addr = mr.end();
+  MemRegion derived_mr(region_start_addr, region_end_addr);
+  while (blk_start_addr < region_end_addr) {
+    const size_t size = block_size(blk_start_addr);
+    if (block_is_obj(blk_start_addr)) {
+      last_was_obj_array = cl->do_object_bm(oop(blk_start_addr), derived_mr);
+    } else {
+      last_was_obj_array = false;
+    }
+    blk_start_addr += size;
+  }
+  if (!last_was_obj_array) {
+    assert((bottom() <= blk_start_addr) && (blk_start_addr <= end()),
+           "Should be within (closed) used space");
+    assert(blk_start_addr > prev, "Invariant");
+    cl->set_previous(blk_start_addr); // min address for next time
+  }
 }
 
-// Callers of this iterator beware: The closure application should
-// be robust in the face of uninitialized objects and should (always)
-// return a correct size so that the next addr + size below gives us a
-// valid block boundary. [See for instance,
-// ScanMarkedObjectsAgainCarefullyClosure::do_object_careful()
-// in ConcurrentMarkSweepGeneration.cpp.]
-HeapWord*
-CompactibleFreeListSpace::object_iterate_careful(ObjectClosureCareful* cl) {
-  assert_lock_strong(freelistLock());
-  HeapWord *addr, *last;
-  size_t size;
-  for (addr = bottom(), last  = end();
-       addr < last; addr += size) {
-    FreeChunk* fc = (FreeChunk*)addr;
-    if (fc->is_free()) {
-      // Since we hold the free list lock, which protects direct
-      // allocation in this generation by mutators, a free object
-      // will remain free throughout this iteration code.
-      size = fc->size();
-    } else {
-      // Note that the object need not necessarily be initialized,
-      // because (for instance) the free list lock does NOT protect
-      // object initialization. The closure application below must
-      // therefore be correct in the face of uninitialized objects.
-      size = cl->do_object_careful(oop(addr));
-      if (size == 0) {
-        // An unparsable object found. Signal early termination.
-        return addr;
-      }
-    }
-  }
-  return NULL;
-}
 
 // Callers of this iterator beware: The closure application should
 // be robust in the face of uninitialized objects and should (always)

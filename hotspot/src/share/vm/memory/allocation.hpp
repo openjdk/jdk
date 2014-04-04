@@ -748,6 +748,12 @@ class ArrayAllocator VALUE_OBJ_CLASS_SPEC {
   bool _use_malloc;
   size_t _size;
   bool _free_in_destructor;
+
+  static bool should_use_malloc(size_t size) {
+    return size < ArrayAllocatorMallocLimit;
+  }
+
+  static char* allocate_inner(size_t& size, bool& use_malloc);
  public:
   ArrayAllocator(bool free_in_destructor = true) :
     _addr(NULL), _use_malloc(false), _size(0), _free_in_destructor(free_in_destructor) { }
@@ -759,6 +765,7 @@ class ArrayAllocator VALUE_OBJ_CLASS_SPEC {
   }
 
   E* allocate(size_t length);
+  E* reallocate(size_t new_length);
   void free();
 };
 

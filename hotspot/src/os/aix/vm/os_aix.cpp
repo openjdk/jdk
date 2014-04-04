@@ -60,8 +60,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
@@ -70,16 +70,6 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
-#ifdef TARGET_ARCH_ppc
-# include "assembler_ppc.inline.hpp"
-# include "nativeInst_ppc.hpp"
-#endif
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 // put OS-includes here (sorted alphabetically)
 #include <errno.h>
@@ -378,13 +368,14 @@ void os::Aix::query_multipage_support() {
   assert(_page_size == SIZE_4K, "surprise!");
 
 
-  // query default data page size (default page size for C-Heap, pthread stacks and .bss).
+  // Query default data page size (default page size for C-Heap, pthread stacks and .bss).
   // Default data page size is influenced either by linker options (-bdatapsize)
   // or by environment variable LDR_CNTRL (suboption DATAPSIZE). If none is given,
   // default should be 4K.
   size_t data_page_size = SIZE_4K;
   {
     void* p = ::malloc(SIZE_16M);
+    guarantee(p != NULL, "malloc failed");
     data_page_size = os::Aix::query_pagesize(p);
     ::free(p);
   }
@@ -511,85 +502,76 @@ query_multipage_support_end:
 
 } // end os::Aix::query_multipage_support()
 
-
-// The code for this method was initially derived from the version in os_linux.cpp
+// The code for this method was initially derived from the version in os_linux.cpp.
 void os::init_system_properties_values() {
-  // The next few definitions allow the code to be verbatim:
-#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n), mtInternal)
+
 #define DEFAULT_LIBPATH "/usr/lib:/lib"
 #define EXTENSIONS_DIR  "/lib/ext"
 #define ENDORSED_DIR    "/lib/endorsed"
 
+  // Buffer that fits several sprintfs.
+  // Note that the space for the trailing null is provided
+  // by the nulls included by the sizeof operator.
+  const size_t bufsize =
+    MAX3((size_t)MAXPATHLEN,  // For dll_dir & friends.
+         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR), // extensions dir
+         (size_t)MAXPATHLEN + sizeof(ENDORSED_DIR)); // endorsed dir
+  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+
   // sysclasspath, java_home, dll_dir
-  char *home_path;
-  char *dll_path;
-  char *pslash;
-  char buf[MAXPATHLEN];
-  os::jvm_path(buf, sizeof(buf));
+  {
+    char *pslash;
+    os::jvm_path(buf, bufsize);
 
-  // Found the full path to libjvm.so.
-  // Now cut the path to <java_home>/jre if we can.
-  *(strrchr(buf, '/')) = '\0'; // get rid of /libjvm.so
-  pslash = strrchr(buf, '/');
-  if (pslash != NULL) {
-    *pslash = '\0';            // get rid of /{client|server|hotspot}
-  }
-
-  dll_path = malloc(strlen(buf) + 1);
-  strcpy(dll_path, buf);
-  Arguments::set_dll_dir(dll_path);
-
-  if (pslash != NULL) {
+    // Found the full path to libjvm.so.
+    // Now cut the path to <java_home>/jre if we can.
+    *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
     pslash = strrchr(buf, '/');
     if (pslash != NULL) {
-      *pslash = '\0';          // get rid of /<arch>
+      *pslash = '\0';            // Get rid of /{client|server|hotspot}.
+    }
+    Arguments::set_dll_dir(buf);
+
+    if (pslash != NULL) {
       pslash = strrchr(buf, '/');
       if (pslash != NULL) {
-        *pslash = '\0';        // get rid of /lib
+        *pslash = '\0';          // Get rid of /<arch>.
+        pslash = strrchr(buf, '/');
+        if (pslash != NULL) {
+          *pslash = '\0';        // Get rid of /lib.
+        }
       }
     }
+    Arguments::set_java_home(buf);
+    set_boot_path('/', ':');
   }
 
-  home_path = malloc(strlen(buf) + 1);
-  strcpy(home_path, buf);
-  Arguments::set_java_home(home_path);
+  // Where to look for native libraries.
 
-  if (!set_boot_path('/', ':')) return;
-
-  // Where to look for native libraries
-
-  // On Aix we get the user setting of LIBPATH
+  // On Aix we get the user setting of LIBPATH.
   // Eventually, all the library path setting will be done here.
-  char *ld_library_path;
+  // Get the user setting of LIBPATH.
+  const char *v = ::getenv("LIBPATH");
+  const char *v_colon = ":";
+  if (v == NULL) { v = ""; v_colon = ""; }
 
-  // Construct the invariant part of ld_library_path.
-  ld_library_path = (char *) malloc(sizeof(DEFAULT_LIBPATH));
-  sprintf(ld_library_path, DEFAULT_LIBPATH);
-
-  // Get the user setting of LIBPATH, and prepended it.
-  char *v = ::getenv("LIBPATH");
-  if (v == NULL) {
-    v = "";
-  }
-
-  char *t = ld_library_path;
-  // That's +1 for the colon and +1 for the trailing '\0'
-  ld_library_path = (char *) malloc(strlen(v) + 1 + strlen(t) + 1);
-  sprintf(ld_library_path, "%s:%s", v, t);
-
+  // Concatenate user and invariant part of ld_library_path.
+  // That's +1 for the colon and +1 for the trailing '\0'.
+  char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char, strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1, mtInternal);
+  sprintf(ld_library_path, "%s%s" DEFAULT_LIBPATH, v, v_colon);
   Arguments::set_library_path(ld_library_path);
+  FREE_C_HEAP_ARRAY(char, ld_library_path, mtInternal);
 
-  // Extensions directories
-  char* cbuf = malloc(strlen(Arguments::get_java_home()) + sizeof(EXTENSIONS_DIR));
-  sprintf(cbuf, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
-  Arguments::set_ext_dirs(cbuf);
+  // Extensions directories.
+  sprintf(buf, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
+  Arguments::set_ext_dirs(buf);
 
   // Endorsed standards default directory.
-  cbuf = malloc(strlen(Arguments::get_java_home()) + sizeof(ENDORSED_DIR));
-  sprintf(cbuf, "%s" ENDORSED_DIR, Arguments::get_java_home());
-  Arguments::set_endorsed_dirs(cbuf);
+  sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
+  Arguments::set_endorsed_dirs(buf);
 
-#undef malloc
+  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+
 #undef DEFAULT_LIBPATH
 #undef EXTENSIONS_DIR
 #undef ENDORSED_DIR
