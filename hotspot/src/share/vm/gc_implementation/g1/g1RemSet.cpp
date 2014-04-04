@@ -162,7 +162,7 @@ public:
 
   void printCard(HeapRegion* card_region, size_t card_index,
                  HeapWord* card_start) {
-    gclog_or_tty->print_cr("T " UINT32_FORMAT " Region [" PTR_FORMAT ", " PTR_FORMAT ") "
+    gclog_or_tty->print_cr("T %u Region [" PTR_FORMAT ", " PTR_FORMAT ") "
                            "RS names card %p: "
                            "[" PTR_FORMAT ", " PTR_FORMAT ")",
                            _worker_i,
