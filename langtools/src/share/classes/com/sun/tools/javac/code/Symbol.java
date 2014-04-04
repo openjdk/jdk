@@ -34,7 +34,6 @@ import javax.lang.model.element.*;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -153,10 +152,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
     }
 
-    public void appendTypeAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.TypeCompound> ctx) {
-        initedMetadata().appendTypeAttributesWithCompletion(ctx);
-    }
-
     public void appendUniqueTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.nonEmpty()) {
             initedMetadata().appendUniqueTypes(l);
@@ -209,10 +204,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         if (metadata != null || a.nonEmpty()) {
             initedMetadata().setDeclarationAttributes(a);
         }
-    }
-
-    public void setDeclarationAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.Compound> ctx) {
-        initedMetadata().setDeclarationAttributesWithCompletion(ctx);
     }
 
     public void setTypeAttributes(List<Attribute.TypeCompound> a) {
