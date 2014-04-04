@@ -65,7 +65,7 @@ import javax.accessibility.*;
  * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/combobox.html">How to Use Combo Boxes</a>
  * in <a href="http://docs.oracle.com/javase/tutorial/"><em>The Java Tutorial</em></a>
  * for further information.
- * <p>
+ *
  * @see ComboBoxModel
  * @see DefaultComboBoxModel
  *
