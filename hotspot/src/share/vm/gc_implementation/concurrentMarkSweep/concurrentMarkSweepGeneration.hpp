@@ -1498,6 +1498,19 @@ class FalseBitMapClosure: public BitMapClosure {
   }
 };
 
+// A version of ObjectClosure with "memory" (see _previous_address below)
+class UpwardsObjectClosure: public BoolObjectClosure {
+  HeapWord* _previous_address;
+ public:
+  UpwardsObjectClosure() : _previous_address(NULL) { }
+  void set_previous(HeapWord* addr) { _previous_address = addr; }
+  HeapWord* previous()              { return _previous_address; }
+  // A return value of "true" can be used by the caller to decide
+  // if this object's end should *NOT* be recorded in
+  // _previous_address above.
+  virtual bool do_object_bm(oop obj, MemRegion mr) = 0;
+};
+
 // This closure is used during the second checkpointing phase
 // to rescan the marked objects on the dirty cards in the mod
 // union table and the card table proper. It's invoked via
