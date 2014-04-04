@@ -4243,7 +4243,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1396297437
+DATE_WHEN_GENERATED=1396624161
 
 ###############################################################################
 #
@@ -27449,6 +27449,9 @@ $as_echo "ok" >&6; }
       VCINSTALLDIR=`$ECHO "$VCINSTALLDIR" | $SED 's/\\\\* *$//'`
       WindowsSDKDir=`$ECHO "$WindowsSDKDir" | $SED 's/\\\\* *$//'`
       WINDOWSSDKDIR=`$ECHO "$WINDOWSSDKDIR" | $SED 's/\\\\* *$//'`
+      # Remove any paths containing # (typically F#) as that messes up make. This
+      # is needed if visual studio was installed with F# support.
+      VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[^:#]*#[^:]*://g'`
 
 
 
