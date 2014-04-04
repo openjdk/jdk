@@ -661,7 +661,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * with the following code:
      *
      * <pre>((Vector)rowData.elementAt(1)).elementAt(5);</pre>
-     * <p>
+     *
      * @param rowData           the data for the new table
      * @param columnNames       names of each column
      */
@@ -678,7 +678,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * <pre> rowData[1][5]; </pre>
      * <p>
      * All rows must be of the same length as <code>columnNames</code>.
-     * <p>
+     *
      * @param rowData           the data for the new table
      * @param columnNames       names of each column
      */

@@ -664,7 +664,7 @@ public class BasicMenuItemUI extends MenuItemUI
 
     /**
      * Renders the text of the current menu item.
-     * <p>
+     *
      * @param g graphics context
      * @param menuItem menu item to render
      * @param textRect bounding rectangle for rendering the text
