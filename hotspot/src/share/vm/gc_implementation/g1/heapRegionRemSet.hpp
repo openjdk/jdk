@@ -245,7 +245,7 @@ private:
 
   enum ParIterState { Unclaimed, Claimed, Complete };
   volatile ParIterState _iter_state;
-  volatile jlong _iter_claimed;
+  volatile size_t _iter_claimed;
 
   // Unused unless G1RecordHRRSOops is true.
 
@@ -319,16 +319,12 @@ public:
   bool iter_is_complete();
 
   // Support for claiming blocks of cards during iteration
-  size_t iter_claimed() const { return (size_t)_iter_claimed; }
+  size_t iter_claimed() const { return _iter_claimed; }
   // Claim the next block of cards
   size_t iter_claimed_next(size_t step) {
-    size_t current, next;
-    do {
-      current = iter_claimed();
-      next = current + step;
-    } while (Atomic::cmpxchg((jlong)next, &_iter_claimed, (jlong)current) != (jlong)current);
-    return current;
+    return Atomic::add(step, &_iter_claimed) - step;
   }
+
   void reset_for_par_iteration();
 
   bool verify_ready_for_par_iteration() {

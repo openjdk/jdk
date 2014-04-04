@@ -2423,9 +2423,9 @@ class CommandLineFlags {
           "Number of gclog files in rotation "                              \
           "(default: 0, no rotation)")                                      \
                                                                             \
-  product(uintx, GCLogFileSize, 0,                                          \
-          "GC log file size (default: 0 bytes, no rotation). "              \
-          "It requires UseGCLogFileRotation")                               \
+  product(uintx, GCLogFileSize, 8*K,                                        \
+          "GC log file size, requires UseGCLogFileRotation. "               \
+          "Set to 0 to only trigger rotation via jcmd")                     \
                                                                             \
   /* JVMTI heap profiling */                                                \
                                                                             \
@@ -2832,7 +2832,7 @@ class CommandLineFlags {
           "number of method invocations/branches (expressed as % of "       \
           "CompileThreshold) before using the method's profile")            \
                                                                             \
-  develop(bool, PrintMethodData, false,                                     \
+  diagnostic(bool, PrintMethodData, false,                                  \
           "Print the results of +ProfileInterpreter at end of run")         \
                                                                             \
   develop(bool, VerifyDataPointer, trueInDebug,                             \
