@@ -5207,10 +5207,10 @@ public:
 
   ~G1StringSymbolTableUnlinkTask() {
     guarantee(!_process_strings || !_do_in_parallel || StringTable::parallel_claimed_index() >= _initial_string_table_size,
-              err_msg("claim value "INT32_FORMAT" after unlink less than initial string table size "INT32_FORMAT,
+              err_msg("claim value %d after unlink less than initial string table size %d",
                       StringTable::parallel_claimed_index(), _initial_string_table_size));
     guarantee(!_process_symbols || !_do_in_parallel || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
-              err_msg("claim value "INT32_FORMAT" after unlink less than initial symbol table size "INT32_FORMAT,
+              err_msg("claim value %d after unlink less than initial symbol table size %d",
                       SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
   }
 

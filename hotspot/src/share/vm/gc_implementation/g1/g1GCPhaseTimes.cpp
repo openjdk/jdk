@@ -147,7 +147,7 @@ template <class T>
 void WorkerDataArray<T>::verify() {
   for (uint i = 0; i < _length; i++) {
     assert(_data[i] != _uninitialized,
-        err_msg("Invalid data for worker " UINT32_FORMAT ", data: %lf, uninitialized: %lf",
+        err_msg("Invalid data for worker %u, data: %lf, uninitialized: %lf",
             i, (double)_data[i], (double)_uninitialized));
   }
 }
@@ -247,7 +247,7 @@ void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
 }
 
 void G1GCPhaseTimes::print_stats(int level, const char* str, double value, uint workers) {
-  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: " UINT32_FORMAT "]", str, value, workers);
+  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %u]", str, value, workers);
 }
 
 double G1GCPhaseTimes::accounted_time_ms() {

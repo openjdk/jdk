@@ -567,8 +567,8 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
   _root_regions.init(_g1h, this);
 
   if (ConcGCThreads > ParallelGCThreads) {
-    warning("Can't have more ConcGCThreads (" UINT32_FORMAT ") "
-            "than ParallelGCThreads (" UINT32_FORMAT ").",
+    warning("Can't have more ConcGCThreads (" UINTX_FORMAT ") "
+            "than ParallelGCThreads (" UINTX_FORMAT ").",
             ConcGCThreads, ParallelGCThreads);
     return;
   }

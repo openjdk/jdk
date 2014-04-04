@@ -390,7 +390,7 @@ void FromCardCache::shrink(uint new_num_regions) {
 void FromCardCache::print(outputStream* out) {
   for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
     for (uint j = 0; j < _max_regions; j++) {
-      out->print_cr("_from_card_cache["UINT32_FORMAT"]["UINT32_FORMAT"] = "INT32_FORMAT".",
+      out->print_cr("_from_card_cache[%u][%u] = %d.",
                     i, j, at(i, j));
     }
   }
@@ -430,7 +430,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
   int from_card = (int)(uintptr_t(from) >> CardTableModRefBS::card_shift);
 
   if (G1TraceHeapRegionRememberedSet) {
-    gclog_or_tty->print_cr("Table for [" PTR_FORMAT "...): card %d (cache = "INT32_FORMAT")",
+    gclog_or_tty->print_cr("Table for [" PTR_FORMAT "...): card %d (cache = %d)",
                   hr()->bottom(), from_card,
                   FromCardCache::at((uint)tid, cur_hrs_ind));
   }
@@ -859,7 +859,7 @@ uint HeapRegionRemSet::num_par_rem_sets() {
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
                                    HeapRegion* hr)
   : _bosa(bosa),
-    _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #"UINT32_FORMAT, hr->hrs_index()), true),
+    _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrs_index()), true),
     _code_roots(), _other_regions(hr, &_m) {
   reset_for_par_iteration();
 }
