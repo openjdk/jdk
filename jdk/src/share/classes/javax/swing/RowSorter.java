@@ -42,10 +42,10 @@ import java.util.*;
  * <p>
  * The view invokes the following methods on the <code>RowSorter</code>:
  * <ul>
- * <li><code>toggleSortOrder</code> &#151; The view invokes this when the
+ * <li><code>toggleSortOrder</code> &#8212; The view invokes this when the
  *     appropriate user gesture has occurred to trigger a sort.  For example,
  *     the user clicked a column header in a table.
- * <li>One of the model change methods &#151; The view invokes a model
+ * <li>One of the model change methods &#8212; The view invokes a model
  *     change method when the underlying model
  *     has changed.  There may be order dependencies in how the events are
  *     delivered, so a <code>RowSorter</code> should not update its mapping
@@ -59,10 +59,10 @@ import java.util.*;
  * <code>RowSorter</code> provides notification of changes by way of
  * <code>RowSorterListener</code>.  Two types of notification are sent:
  * <ul>
- * <li><code>RowSorterEvent.Type.SORT_ORDER_CHANGED</code> &#151; notifies
+ * <li><code>RowSorterEvent.Type.SORT_ORDER_CHANGED</code> &#8212; notifies
  *     listeners that the sort order has changed.  This is typically followed
  *     by a notification that the sort has changed.
- * <li><code>RowSorterEvent.Type.SORTED</code> &#151; notifies listeners that
+ * <li><code>RowSorterEvent.Type.SORTED</code> &#8212; notifies listeners that
  *     the mapping maintained by the <code>RowSorter</code> has changed in
  *     some way.
  * </ul>

@@ -39,7 +39,6 @@ import javax.swing.plaf.basic.BasicSeparatorUI;
 /**
  * A Basic L&amp;F implementation of ToolBarSeparatorUI.  This implementation
  * is a "combined" view/controller.
- * <p>
  *
  * @author Jeff Shapiro
  */

@@ -116,7 +116,7 @@ import javax.swing.text.*;
  * concepts we do not currently
  * support are pseudo selectors, such as <code>A:link { color: red }</code>,
  * and the <code>important</code> modifier.
- * <p>
+ *
  * @implNote This implementation is currently
  * incomplete.  It can be replaced with alternative implementations
  * that are complete.  Future versions of this class will provide
