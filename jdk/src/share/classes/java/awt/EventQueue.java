@@ -680,7 +680,7 @@ public class EventQueue {
      *     <td>No action (ignored)</td>
      * </tr>
      * </table>
-     * <p>
+     *
      * @param event an instance of <code>java.awt.AWTEvent</code>,
      *          or a subclass of it
      * @throws NullPointerException if <code>event</code> is <code>null</code>
@@ -1015,7 +1015,6 @@ public class EventQueue {
      * methods to execute a task in
      * {@link Toolkit#getSystemEventQueue the current AWT EventQueue}'s
      * dispatch thread.
-     * <p>
      *
      * @return true if running in
      * {@link Toolkit#getSystemEventQueue the current AWT EventQueue}'s

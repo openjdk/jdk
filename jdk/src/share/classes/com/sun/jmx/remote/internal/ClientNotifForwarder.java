@@ -787,6 +787,14 @@ public abstract class ClientNotifForwarder {
             if (!reconnected) {
                 try {
                     NotificationResult nr = fetchNotifs(-1, 0, 0);
+
+                    if (state != STOPPED) { // JDK-8038940
+                                            // reconnection must happen during
+                                            // fetchNotifs(-1, 0, 0), and a new
+                                            // thread takes over the fetching job
+                        return;
+                    }
+
                     clientSequenceNumber = nr.getNextSequenceNumber();
                 } catch (ClassNotFoundException e) {
                     // can't happen

@@ -61,7 +61,7 @@ public interface ActivationSystem extends Remote {
      * receives an <code>activate</code> request for a specific identifier, it
      * looks up the activation descriptor (registered previously) for
      * the specified identifier and uses that information to activate
-     * the object. <p>
+     * the object.
      *
      * @param desc the object's activation descriptor
      * @return the activation id that can be used to activate the object
