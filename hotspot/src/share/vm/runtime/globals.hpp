@@ -2832,7 +2832,7 @@ class CommandLineFlags {
           "number of method invocations/branches (expressed as % of "       \
           "CompileThreshold) before using the method's profile")            \
                                                                             \
-  develop(bool, PrintMethodData, false,                                     \
+  diagnostic(bool, PrintMethodData, false,                                  \
           "Print the results of +ProfileInterpreter at end of run")         \
                                                                             \
   develop(bool, VerifyDataPointer, trueInDebug,                             \

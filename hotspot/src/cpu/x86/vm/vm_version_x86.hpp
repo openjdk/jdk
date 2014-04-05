@@ -507,6 +507,7 @@ public:
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }
 
+  static void get_cpu_info_wrapper();
   static void set_cpuinfo_segv_addr(address pc) { _cpuinfo_segv_addr = pc; }
   static bool  is_cpuinfo_segv_addr(address pc) { return _cpuinfo_segv_addr == pc; }
   static void set_cpuinfo_cont_addr(address pc) { _cpuinfo_cont_addr = pc; }
