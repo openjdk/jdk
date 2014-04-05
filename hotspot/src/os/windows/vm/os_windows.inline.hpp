@@ -108,9 +108,7 @@ inline bool os::supports_monotonic_clock() {
   return win32::_has_performance_count;
 }
 
-#ifndef PRODUCT
-  #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) \
-            os::win32::call_test_func_with_wrapper(f)
-#endif
+#define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) \
+        os::win32::call_test_func_with_wrapper(f)
 
 #endif // OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP

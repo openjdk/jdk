@@ -116,10 +116,6 @@ class MarkRefsIntoClosure: public CMSOopsInGenClosure {
   MarkRefsIntoClosure(MemRegion span, CMSBitMap* bitMap);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-
-  Prefetch::style prefetch_style() {
-    return Prefetch::do_read;
-  }
 };
 
 class Par_MarkRefsIntoClosure: public CMSOopsInGenClosure {
@@ -132,10 +128,6 @@ class Par_MarkRefsIntoClosure: public CMSOopsInGenClosure {
   Par_MarkRefsIntoClosure(MemRegion span, CMSBitMap* bitMap);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-
-  Prefetch::style prefetch_style() {
-    return Prefetch::do_read;
-  }
 };
 
 // A variant of the above used in certain kinds of CMS
@@ -152,10 +144,6 @@ class MarkRefsIntoVerifyClosure: public CMSOopsInGenClosure {
                             CMSBitMap* cms_bm);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-
-  Prefetch::style prefetch_style() {
-    return Prefetch::do_read;
-  }
 };
 
 // The non-parallel version (the parallel version appears further below).
@@ -181,10 +169,6 @@ class PushAndMarkClosure: public CMSOopClosure {
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { PushAndMarkClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { PushAndMarkClosure::do_oop_work(p); }
-
-  Prefetch::style prefetch_style() {
-    return Prefetch::do_read;
-  }
 };
 
 // In the parallel case, the bit map and the
@@ -211,10 +195,6 @@ class Par_PushAndMarkClosure: public CMSOopClosure {
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { Par_PushAndMarkClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { Par_PushAndMarkClosure::do_oop_work(p); }
-
-  Prefetch::style prefetch_style() {
-    return Prefetch::do_read;
-  }
 };
 
 // The non-parallel version (the parallel version appears further below).
@@ -245,9 +225,6 @@ class MarkRefsIntoAndScanClosure: public CMSOopsInGenClosure {
   inline void do_oop_nv(oop* p)       { MarkRefsIntoAndScanClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { MarkRefsIntoAndScanClosure::do_oop_work(p); }
 
-  Prefetch::style prefetch_style() {
-    return Prefetch::do_read;
-  }
   void set_freelistLock(Mutex* m) {
     _freelistLock = m;
   }
@@ -282,9 +259,6 @@ class Par_MarkRefsIntoAndScanClosure: public CMSOopsInGenClosure {
   inline void do_oop_nv(oop* p)       { Par_MarkRefsIntoAndScanClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { Par_MarkRefsIntoAndScanClosure::do_oop_work(p); }
 
-  Prefetch::style prefetch_style() {
-    return Prefetch::do_read;
-  }
   void trim_queue(uint size);
 };
 

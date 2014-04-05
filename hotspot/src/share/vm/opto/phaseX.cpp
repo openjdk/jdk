@@ -27,7 +27,6 @@
 #include "opto/block.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
-#include "opto/connode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -330,7 +329,7 @@ void NodeHash::check_no_speculative_types() {
   Node *sentinel_node = sentinel();
   for (uint i = 0; i < max; ++i) {
     Node *n = at(i);
-    if(n != NULL && n != sentinel_node && n->is_Type()) {
+    if(n != NULL && n != sentinel_node && n->is_Type() && n->outcnt() > 0) {
       TypeNode* tn = n->as_Type();
       const Type* t = tn->type();
       const Type* t_no_spec = t->remove_speculative();

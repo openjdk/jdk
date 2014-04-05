@@ -350,9 +350,9 @@ void Type::Initialize_shared(Compile* current) {
   floop[1] = TypeInt::INT;
   TypeTuple::LOOPBODY = TypeTuple::make( 2, floop );
 
-  TypePtr::NULL_PTR= TypePtr::make( AnyPtr, TypePtr::Null, 0 );
-  TypePtr::NOTNULL = TypePtr::make( AnyPtr, TypePtr::NotNull, OffsetBot );
-  TypePtr::BOTTOM  = TypePtr::make( AnyPtr, TypePtr::BotPTR, OffsetBot );
+  TypePtr::NULL_PTR= TypePtr::make(AnyPtr, TypePtr::Null, 0);
+  TypePtr::NOTNULL = TypePtr::make(AnyPtr, TypePtr::NotNull, OffsetBot);
+  TypePtr::BOTTOM  = TypePtr::make(AnyPtr, TypePtr::BotPTR, OffsetBot);
 
   TypeRawPtr::BOTTOM = TypeRawPtr::make( TypePtr::BotPTR );
   TypeRawPtr::NOTNULL= TypeRawPtr::make( TypePtr::NotNull );
@@ -372,7 +372,7 @@ void Type::Initialize_shared(Compile* current) {
                                            false, 0, oopDesc::mark_offset_in_bytes());
   TypeInstPtr::KLASS   = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass(),
                                            false, 0, oopDesc::klass_offset_in_bytes());
-  TypeOopPtr::BOTTOM  = TypeOopPtr::make(TypePtr::BotPTR, OffsetBot, TypeOopPtr::InstanceBot, NULL);
+  TypeOopPtr::BOTTOM  = TypeOopPtr::make(TypePtr::BotPTR, OffsetBot, TypeOopPtr::InstanceBot);
 
   TypeMetadataPtr::BOTTOM = TypeMetadataPtr::make(TypePtr::BotPTR, NULL, OffsetBot);
 
@@ -620,8 +620,8 @@ bool Type::interface_vs_oop(const Type *t) const {
     return true;
   }
   // Now check the speculative parts as well
-  const TypeOopPtr* this_spec = isa_oopptr() != NULL ? isa_oopptr()->speculative() : NULL;
-  const TypeOopPtr* t_spec = t->isa_oopptr() != NULL ? t->isa_oopptr()->speculative() : NULL;
+  const TypePtr* this_spec = isa_ptr() != NULL ? is_ptr()->speculative() : NULL;
+  const TypePtr* t_spec = t->isa_ptr() != NULL ? t->is_ptr()->speculative() : NULL;
   if (this_spec != NULL && t_spec != NULL) {
     if (this_spec->interface_vs_oop_helper(t_spec)) {
       return true;
@@ -1975,6 +1975,25 @@ const Type* TypeAry::remove_speculative() const {
   return make(_elem->remove_speculative(), _size, _stable);
 }
 
+/**
+ * Return same type with cleaned up speculative part of element
+ */
+const Type* TypeAry::cleanup_speculative() const {
+  return make(_elem->cleanup_speculative(), _size, _stable);
+}
+
+/**
+ * Return same type but with a different inline depth (used for speculation)
+ *
+ * @param depth  depth to meet with
+ */
+const TypePtr* TypePtr::with_inline_depth(int depth) const {
+  if (!UseInlineDepthForSpeculativeTypes) {
+    return this;
+  }
+  return make(AnyPtr, _ptr, _offset, _speculative, depth);
+}
+
 //----------------------interface_vs_oop---------------------------------------
 #ifdef ASSERT
 bool TypeAry::interface_vs_oop(const Type *t) const {
@@ -2179,15 +2198,15 @@ const TypePtr::PTR TypePtr::ptr_meet[TypePtr::lastPTR][TypePtr::lastPTR] = {
 };
 
 //------------------------------make-------------------------------------------
-const TypePtr *TypePtr::make( TYPES t, enum PTR ptr, int offset ) {
-  return (TypePtr*)(new TypePtr(t,ptr,offset))->hashcons();
+const TypePtr *TypePtr::make(TYPES t, enum PTR ptr, int offset, const TypePtr* speculative, int inline_depth) {
+  return (TypePtr*)(new TypePtr(t,ptr,offset, speculative, inline_depth))->hashcons();
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
 const Type *TypePtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == AnyPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
-  return make(_base, ptr, _offset);
+  return make(_base, ptr, _offset, _speculative, _inline_depth);
 }
 
 //------------------------------get_con----------------------------------------
@@ -2198,7 +2217,29 @@ intptr_t TypePtr::get_con() const {
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
-const Type *TypePtr::xmeet( const Type *t ) const {
+const Type *TypePtr::xmeet(const Type *t) const {
+  const Type* res = xmeet_helper(t);
+  if (res->isa_ptr() == NULL) {
+    return res;
+  }
+
+  const TypePtr* res_ptr = res->is_ptr();
+  if (res_ptr->speculative() != NULL) {
+    // type->speculative() == NULL means that speculation is no better
+    // than type, i.e. type->speculative() == type. So there are 2
+    // ways to represent the fact that we have no useful speculative
+    // data and we should use a single one to be able to test for
+    // equality between types. Check whether type->speculative() ==
+    // type and set speculative to NULL if it is the case.
+    if (res_ptr->remove_speculative() == res_ptr->speculative()) {
+      return res_ptr->remove_speculative();
+    }
+  }
+
+  return res;
+}
+
+const Type *TypePtr::xmeet_helper(const Type *t) const {
   // Perform a fast test for common case; meeting the same types together.
   if( this == t ) return this;  // Meeting same type-rep?
 
@@ -2221,7 +2262,9 @@ const Type *TypePtr::xmeet( const Type *t ) const {
 
   case AnyPtr: {                // Meeting to AnyPtrs
     const TypePtr *tp = t->is_ptr();
-    return make( AnyPtr, meet_ptr(tp->ptr()), meet_offset(tp->offset()) );
+    const TypePtr* speculative = xmeet_speculative(tp);
+    int depth = meet_inline_depth(tp->inline_depth());
+    return make(AnyPtr, meet_ptr(tp->ptr()), meet_offset(tp->offset()), speculative, depth);
   }
   case RawPtr:                  // For these, flip the call around to cut down
   case OopPtr:
@@ -2260,7 +2303,7 @@ const TypePtr::PTR TypePtr::ptr_dual[TypePtr::lastPTR] = {
   BotPTR, NotNull, Constant, Null, AnyNull, TopPTR
 };
 const Type *TypePtr::xdual() const {
-  return new TypePtr( AnyPtr, dual_ptr(), dual_offset() );
+  return new TypePtr(AnyPtr, dual_ptr(), dual_offset(), dual_speculative(), dual_inline_depth());
 }
 
 //------------------------------xadd_offset------------------------------------
@@ -2281,20 +2324,245 @@ int TypePtr::xadd_offset( intptr_t offset ) const {
 
 //------------------------------add_offset-------------------------------------
 const TypePtr *TypePtr::add_offset( intptr_t offset ) const {
-  return make( AnyPtr, _ptr, xadd_offset(offset) );
+  return make(AnyPtr, _ptr, xadd_offset(offset), _speculative, _inline_depth);
 }
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypePtr::eq( const Type *t ) const {
   const TypePtr *a = (const TypePtr*)t;
-  return _ptr == a->ptr() && _offset == a->offset();
+  return _ptr == a->ptr() && _offset == a->offset() && eq_speculative(a) && _inline_depth == a->_inline_depth;
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypePtr::hash(void) const {
-  return _ptr + _offset;
+  return _ptr + _offset + hash_speculative() + _inline_depth;
+;
+}
+
+/**
+ * Return same type without a speculative part
+ */
+const Type* TypePtr::remove_speculative() const {
+  if (_speculative == NULL) {
+    return this;
+  }
+  assert(_inline_depth == InlineDepthTop || _inline_depth == InlineDepthBottom, "non speculative type shouldn't have inline depth");
+  return make(AnyPtr, _ptr, _offset, NULL, _inline_depth);
+}
+
+/**
+ * Return same type but drop speculative part if we know we won't use
+ * it
+ */
+const Type* TypePtr::cleanup_speculative() const {
+  if (speculative() == NULL) {
+    return this;
+  }
+  const Type* no_spec = remove_speculative();
+  // If this is NULL_PTR then we don't need the speculative type
+  // (with_inline_depth in case the current type inline depth is
+  // InlineDepthTop)
+  if (no_spec == NULL_PTR->with_inline_depth(inline_depth())) {
+    return no_spec;
+  }
+  if (above_centerline(speculative()->ptr())) {
+    return no_spec;
+  }
+  const TypeOopPtr* spec_oopptr = speculative()->isa_oopptr();
+  // If the speculative may be null and is an inexact klass then it
+  // doesn't help
+  if (speculative()->maybe_null() && (spec_oopptr == NULL || !spec_oopptr->klass_is_exact())) {
+    return no_spec;
+  }
+  return this;
+}
+
+/**
+ * dual of the speculative part of the type
+ */
+const TypePtr* TypePtr::dual_speculative() const {
+  if (_speculative == NULL) {
+    return NULL;
+  }
+  return _speculative->dual()->is_ptr();
+}
+
+/**
+ * meet of the speculative parts of 2 types
+ *
+ * @param other  type to meet with
+ */
+const TypePtr* TypePtr::xmeet_speculative(const TypePtr* other) const {
+  bool this_has_spec = (_speculative != NULL);
+  bool other_has_spec = (other->speculative() != NULL);
+
+  if (!this_has_spec && !other_has_spec) {
+    return NULL;
+  }
+
+  // If we are at a point where control flow meets and one branch has
+  // a speculative type and the other has not, we meet the speculative
+  // type of one branch with the actual type of the other. If the
+  // actual type is exact and the speculative is as well, then the
+  // result is a speculative type which is exact and we can continue
+  // speculation further.
+  const TypePtr* this_spec = _speculative;
+  const TypePtr* other_spec = other->speculative();
+
+  if (!this_has_spec) {
+    this_spec = this;
+  }
+
+  if (!other_has_spec) {
+    other_spec = other;
+  }
+
+  return this_spec->meet(other_spec)->is_ptr();
+}
+
+/**
+ * dual of the inline depth for this type (used for speculation)
+ */
+int TypePtr::dual_inline_depth() const {
+  return -inline_depth();
+}
+
+/**
+ * meet of 2 inline depths (used for speculation)
+ *
+ * @param depth  depth to meet with
+ */
+int TypePtr::meet_inline_depth(int depth) const {
+  return MAX2(inline_depth(), depth);
+}
+
+/**
+ * Are the speculative parts of 2 types equal?
+ *
+ * @param other  type to compare this one to
+ */
+bool TypePtr::eq_speculative(const TypePtr* other) const {
+  if (_speculative == NULL || other->speculative() == NULL) {
+    return _speculative == other->speculative();
+  }
+
+  if (_speculative->base() != other->speculative()->base()) {
+    return false;
+  }
+
+  return _speculative->eq(other->speculative());
+}
+
+/**
+ * Hash of the speculative part of the type
+ */
+int TypePtr::hash_speculative() const {
+  if (_speculative == NULL) {
+    return 0;
+  }
+
+  return _speculative->hash();
+}
+
+/**
+ * add offset to the speculative part of the type
+ *
+ * @param offset  offset to add
+ */
+const TypePtr* TypePtr::add_offset_speculative(intptr_t offset) const {
+  if (_speculative == NULL) {
+    return NULL;
+  }
+  return _speculative->add_offset(offset)->is_ptr();
+}
+
+/**
+ * return exact klass from the speculative type if there's one
+ */
+ciKlass* TypePtr::speculative_type() const {
+  if (_speculative != NULL && _speculative->isa_oopptr()) {
+    const TypeOopPtr* speculative = _speculative->join(this)->is_oopptr();
+    if (speculative->klass_is_exact()) {
+      return speculative->klass();
+    }
+  }
+  return NULL;
+}
+
+/**
+ * return true if speculative type may be null
+ */
+bool TypePtr::speculative_maybe_null() const {
+  if (_speculative != NULL) {
+    const TypePtr* speculative = _speculative->join(this)->is_ptr();
+    return speculative->maybe_null();
+  }
+  return true;
+}
+
+/**
+ * Same as TypePtr::speculative_type() but return the klass only if
+ * the speculative tells us is not null
+ */
+ciKlass* TypePtr::speculative_type_not_null() const {
+  if (speculative_maybe_null()) {
+    return NULL;
+  }
+  return speculative_type();
+}
+
+/**
+ * Check whether new profiling would improve speculative type
+ *
+ * @param   exact_kls    class from profiling
+ * @param   inline_depth inlining depth of profile point
+ *
+ * @return  true if type profile is valuable
+ */
+bool TypePtr::would_improve_type(ciKlass* exact_kls, int inline_depth) const {
+  // no profiling?
+  if (exact_kls == NULL) {
+    return false;
+  }
+  // no speculative type or non exact speculative type?
+  if (speculative_type() == NULL) {
+    return true;
+  }
+  // If the node already has an exact speculative type keep it,
+  // unless it was provided by profiling that is at a deeper
+  // inlining level. Profiling at a higher inlining depth is
+  // expected to be less accurate.
+  if (_speculative->inline_depth() == InlineDepthBottom) {
+    return false;
+  }
+  assert(_speculative->inline_depth() != InlineDepthTop, "can't do the comparison");
+  return inline_depth < _speculative->inline_depth();
+}
+
+/**
+ * Check whether new profiling would improve ptr (= tells us it is non
+ * null)
+ *
+ * @param   maybe_null true if profiling tells the ptr may be null
+ *
+ * @return  true if ptr profile is valuable
+ */
+bool TypePtr::would_improve_ptr(bool maybe_null) const {
+  // profiling doesn't tell us anything useful
+  if (maybe_null) {
+    return false;
+  }
+  // We already know this is not be null
+  if (!this->maybe_null()) {
+    return false;
+  }
+  // We already know the speculative type cannot be null
+  if (!speculative_maybe_null()) {
+    return false;
+  }
+  return true;
 }
 
 //------------------------------dump2------------------------------------------
@@ -2309,6 +2577,32 @@ void TypePtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   if( _offset == OffsetTop ) st->print("+top");
   else if( _offset == OffsetBot ) st->print("+bot");
   else if( _offset ) st->print("+%d", _offset);
+  dump_inline_depth(st);
+  dump_speculative(st);
+}
+
+/**
+ *dump the speculative part of the type
+ */
+void TypePtr::dump_speculative(outputStream *st) const {
+  if (_speculative != NULL) {
+    st->print(" (speculative=");
+    _speculative->dump_on(st);
+    st->print(")");
+  }
+}
+
+/**
+ *dump the inline depth of the type
+ */
+void TypePtr::dump_inline_depth(outputStream *st) const {
+  if (_inline_depth != InlineDepthBottom) {
+    if (_inline_depth == InlineDepthTop) {
+      st->print(" (inline_depth=InlineDepthTop)");
+    } else {
+      st->print(" (inline_depth=%d)", _inline_depth);
+    }
+  }
 }
 #endif
 
@@ -2399,7 +2693,7 @@ const Type *TypeRawPtr::xmeet( const Type *t ) const {
   case TypePtr::Null:
     if( _ptr == TypePtr::TopPTR ) return t;
     return TypeRawPtr::BOTTOM;
-  case TypePtr::NotNull: return TypePtr::make( AnyPtr, meet_ptr(TypePtr::NotNull), tp->meet_offset(0) );
+  case TypePtr::NotNull: return TypePtr::make(AnyPtr, meet_ptr(TypePtr::NotNull), tp->meet_offset(0), tp->speculative(), tp->inline_depth());
   case TypePtr::AnyNull:
     if( _ptr == TypePtr::Constant) return this;
     return make( meet_ptr(TypePtr::AnyNull) );
@@ -2463,16 +2757,15 @@ void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 const TypeOopPtr *TypeOopPtr::BOTTOM;
 
 //------------------------------TypeOopPtr-------------------------------------
-TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth)
-  : TypePtr(t, ptr, offset),
+TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset,
+                       int instance_id, const TypePtr* speculative, int inline_depth)
+  : TypePtr(t, ptr, offset, speculative, inline_depth),
     _const_oop(o), _klass(k),
     _klass_is_exact(xk),
     _is_ptr_to_narrowoop(false),
     _is_ptr_to_narrowklass(false),
     _is_ptr_to_boxed_value(false),
-    _instance_id(instance_id),
-    _speculative(speculative),
-    _inline_depth(inline_depth){
+    _instance_id(instance_id) {
   if (Compile::current()->eliminate_boxing() && (t == InstPtr) &&
       (offset > 0) && xk && (k != 0) && k->is_instance_klass()) {
     _is_ptr_to_boxed_value = k->as_instance_klass()->is_boxed_value_offset(offset);
@@ -2538,8 +2831,8 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int o
 }
 
 //------------------------------make-------------------------------------------
-const TypeOopPtr *TypeOopPtr::make(PTR ptr,
-                                   int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth) {
+const TypeOopPtr *TypeOopPtr::make(PTR ptr, int offset, int instance_id,
+                                     const TypePtr* speculative, int inline_depth) {
   assert(ptr != Constant, "no constant generic pointers");
   ciKlass*  k = Compile::current()->env()->Object_klass();
   bool      xk = false;
@@ -2582,28 +2875,6 @@ const TypeKlassPtr* TypeOopPtr::as_klass_type() const {
     return TypeKlassPtr::make(xk? Constant: NotNull, k, 0);
 }
 
-const Type *TypeOopPtr::xmeet(const Type *t) const {
-  const Type* res = xmeet_helper(t);
-  if (res->isa_oopptr() == NULL) {
-    return res;
-  }
-
-  const TypeOopPtr* res_oopptr = res->is_oopptr();
-  if (res_oopptr->speculative() != NULL) {
-    // type->speculative() == NULL means that speculation is no better
-    // than type, i.e. type->speculative() == type. So there are 2
-    // ways to represent the fact that we have no useful speculative
-    // data and we should use a single one to be able to test for
-    // equality between types. Check whether type->speculative() ==
-    // type and set speculative to NULL if it is the case.
-    if (res_oopptr->remove_speculative() == res_oopptr->speculative()) {
-      return res_oopptr->remove_speculative();
-    }
-  }
-
-  return res;
-}
-
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
@@ -2641,19 +2912,20 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
     const TypePtr *tp = t->is_ptr();
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
+    const TypePtr* speculative = xmeet_speculative(tp);
+    int depth = meet_inline_depth(tp->inline_depth());
     switch (tp->ptr()) {
     case Null:
-      if (ptr == Null)  return TypePtr::make(AnyPtr, ptr, offset);
+      if (ptr == Null)  return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
       // else fall through:
     case TopPTR:
     case AnyNull: {
       int instance_id = meet_instance_id(InstanceTop);
-      const TypeOopPtr* speculative = _speculative;
-      return make(ptr, offset, instance_id, speculative, _inline_depth);
+      return make(ptr, offset, instance_id, speculative, depth);
     }
     case BotPTR:
     case NotNull:
-      return TypePtr::make(AnyPtr, ptr, offset);
+      return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
     default: typerr(t);
     }
   }
@@ -2661,7 +2933,7 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
   case OopPtr: {                 // Meeting to other OopPtrs
     const TypeOopPtr *tp = t->is_oopptr();
     int instance_id = meet_instance_id(tp->instance_id());
-    const TypeOopPtr* speculative = xmeet_speculative(tp);
+    const TypePtr* speculative = xmeet_speculative(tp);
     int depth = meet_inline_depth(tp->inline_depth());
     return make(meet_ptr(tp->ptr()), meet_offset(tp->offset()), instance_id, speculative, depth);
   }
@@ -2859,9 +3131,7 @@ const Type *TypeOopPtr::filter_helper(const Type *kills, bool include_speculativ
 bool TypeOopPtr::eq( const Type *t ) const {
   const TypeOopPtr *a = (const TypeOopPtr*)t;
   if (_klass_is_exact != a->_klass_is_exact ||
-      _instance_id != a->_instance_id ||
-      !eq_speculative(a) ||
-      _inline_depth != a->_inline_depth)  return false;
+      _instance_id != a->_instance_id)  return false;
   ciObject* one = const_oop();
   ciObject* two = a->const_oop();
   if (one == NULL || two == NULL) {
@@ -2878,8 +3148,6 @@ int TypeOopPtr::hash(void) const {
     (const_oop() ? const_oop()->hash() : 0) +
     _klass_is_exact +
     _instance_id +
-    hash_speculative() +
-    _inline_depth +
     TypePtr::hash();
 }
 
@@ -2902,27 +3170,6 @@ void TypeOopPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 
   dump_inline_depth(st);
   dump_speculative(st);
-}
-
-/**
- *dump the speculative part of the type
- */
-void TypeOopPtr::dump_speculative(outputStream *st) const {
-  if (_speculative != NULL) {
-    st->print(" (speculative=");
-    _speculative->dump_on(st);
-    st->print(")");
-  }
-}
-
-void TypeOopPtr::dump_inline_depth(outputStream *st) const {
-  if (_inline_depth != InlineDepthBottom) {
-    if (_inline_depth == InlineDepthTop) {
-      st->print(" (inline_depth=InlineDepthTop)");
-    } else {
-      st->print(" (inline_depth=%d)", _inline_depth);
-    }
-  }
 }
 #endif
 
@@ -2952,47 +3199,28 @@ const Type* TypeOopPtr::remove_speculative() const {
 }
 
 /**
+ * Return same type but drop speculative part if we know we won't use
+ * it
+ */
+const Type* TypeOopPtr::cleanup_speculative() const {
+  // If the klass is exact and the ptr is not null then there's
+  // nothing that the speculative type can help us with
+  if (klass_is_exact() && !maybe_null()) {
+    return remove_speculative();
+  }
+  return TypePtr::cleanup_speculative();
+}
+
+/**
  * Return same type but with a different inline depth (used for speculation)
  *
  * @param depth  depth to meet with
  */
-const TypeOopPtr* TypeOopPtr::with_inline_depth(int depth) const {
+const TypePtr* TypeOopPtr::with_inline_depth(int depth) const {
   if (!UseInlineDepthForSpeculativeTypes) {
     return this;
   }
   return make(_ptr, _offset, _instance_id, _speculative, depth);
-}
-
-/**
- * Check whether new profiling would improve speculative type
- *
- * @param   exact_kls    class from profiling
- * @param   inline_depth inlining depth of profile point
- *
- * @return  true if type profile is valuable
- */
-bool TypeOopPtr::would_improve_type(ciKlass* exact_kls, int inline_depth) const {
-  // no way to improve an already exact type
-  if (klass_is_exact()) {
-    return false;
-  }
-  // no profiling?
-  if (exact_kls == NULL) {
-    return false;
-  }
-  // no speculative type or non exact speculative type?
-  if (speculative_type() == NULL) {
-    return true;
-  }
-  // If the node already has an exact speculative type keep it,
-  // unless it was provided by profiling that is at a deeper
-  // inlining level. Profiling at a higher inlining depth is
-  // expected to be less accurate.
-  if (_speculative->inline_depth() == InlineDepthBottom) {
-    return false;
-  }
-  assert(_speculative->inline_depth() != InlineDepthTop, "can't do the comparison");
-  return inline_depth < _speculative->inline_depth();
 }
 
 //------------------------------meet_instance_id--------------------------------
@@ -3013,102 +3241,19 @@ int TypeOopPtr::dual_instance_id( ) const {
 }
 
 /**
- * meet of the speculative parts of 2 types
+ * Check whether new profiling would improve speculative type
  *
- * @param other  type to meet with
- */
-const TypeOopPtr* TypeOopPtr::xmeet_speculative(const TypeOopPtr* other) const {
-  bool this_has_spec = (_speculative != NULL);
-  bool other_has_spec = (other->speculative() != NULL);
-
-  if (!this_has_spec && !other_has_spec) {
-    return NULL;
-  }
-
-  // If we are at a point where control flow meets and one branch has
-  // a speculative type and the other has not, we meet the speculative
-  // type of one branch with the actual type of the other. If the
-  // actual type is exact and the speculative is as well, then the
-  // result is a speculative type which is exact and we can continue
-  // speculation further.
-  const TypeOopPtr* this_spec = _speculative;
-  const TypeOopPtr* other_spec = other->speculative();
-
-  if (!this_has_spec) {
-    this_spec = this;
-  }
-
-  if (!other_has_spec) {
-    other_spec = other;
-  }
-
-  return this_spec->meet_speculative(other_spec)->is_oopptr();
-}
-
-/**
- * dual of the speculative part of the type
- */
-const TypeOopPtr* TypeOopPtr::dual_speculative() const {
-  if (_speculative == NULL) {
-    return NULL;
-  }
-  return _speculative->dual()->is_oopptr();
-}
-
-/**
- * add offset to the speculative part of the type
+ * @param   exact_kls    class from profiling
+ * @param   inline_depth inlining depth of profile point
  *
- * @param offset  offset to add
+ * @return  true if type profile is valuable
  */
-const TypeOopPtr* TypeOopPtr::add_offset_speculative(intptr_t offset) const {
-  if (_speculative == NULL) {
-    return NULL;
-  }
-  return _speculative->add_offset(offset)->is_oopptr();
-}
-
-/**
- * Are the speculative parts of 2 types equal?
- *
- * @param other  type to compare this one to
- */
-bool TypeOopPtr::eq_speculative(const TypeOopPtr* other) const {
-  if (_speculative == NULL || other->speculative() == NULL) {
-    return _speculative == other->speculative();
-  }
-
-  if (_speculative->base() != other->speculative()->base()) {
+bool TypeOopPtr::would_improve_type(ciKlass* exact_kls, int inline_depth) const {
+  // no way to improve an already exact type
+  if (klass_is_exact()) {
     return false;
   }
-
-  return _speculative->eq(other->speculative());
-}
-
-/**
- * Hash of the speculative part of the type
- */
-int TypeOopPtr::hash_speculative() const {
-  if (_speculative == NULL) {
-    return 0;
-  }
-
-  return _speculative->hash();
-}
-
-/**
- * dual of the inline depth for this type (used for speculation)
- */
-int TypeOopPtr::dual_inline_depth() const {
-  return -inline_depth();
-}
-
-/**
- * meet of 2 inline depth (used for speculation)
- *
- * @param depth  depth to meet with
- */
-int TypeOopPtr::meet_inline_depth(int depth) const {
-  return MAX2(inline_depth(), depth);
+  return TypePtr::would_improve_type(exact_kls, inline_depth);
 }
 
 //=============================================================================
@@ -3120,8 +3265,10 @@ const TypeInstPtr *TypeInstPtr::MARK;
 const TypeInstPtr *TypeInstPtr::KLASS;
 
 //------------------------------TypeInstPtr-------------------------------------
-TypeInstPtr::TypeInstPtr(PTR ptr, ciKlass* k, bool xk, ciObject* o, int off, int instance_id, const TypeOopPtr* speculative, int inline_depth)
-  : TypeOopPtr(InstPtr, ptr, k, xk, o, off, instance_id, speculative, inline_depth), _name(k->name()) {
+TypeInstPtr::TypeInstPtr(PTR ptr, ciKlass* k, bool xk, ciObject* o, int off,
+                         int instance_id, const TypePtr* speculative, int inline_depth)
+  : TypeOopPtr(InstPtr, ptr, k, xk, o, off, instance_id, speculative, inline_depth),
+    _name(k->name()) {
    assert(k != NULL &&
           (k->is_loaded() || o == NULL),
           "cannot have constants with non-loaded klass");
@@ -3134,7 +3281,7 @@ const TypeInstPtr *TypeInstPtr::make(PTR ptr,
                                      ciObject* o,
                                      int offset,
                                      int instance_id,
-                                     const TypeOopPtr* speculative,
+                                     const TypePtr* speculative,
                                      int inline_depth) {
   assert( !k->is_loaded() || k->is_instance_klass(), "Must be for instance");
   // Either const_oop() is NULL or else ptr is Constant
@@ -3217,7 +3364,7 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst) const {
     int off = meet_offset(tinst->offset());
     PTR ptr = meet_ptr(tinst->ptr());
     int instance_id = meet_instance_id(tinst->instance_id());
-    const TypeOopPtr* speculative = xmeet_speculative(tinst);
+    const TypePtr* speculative = xmeet_speculative(tinst);
     int depth = meet_inline_depth(tinst->inline_depth());
 
     const TypeInstPtr *loaded    = is_loaded() ? this  : tinst;
@@ -3295,7 +3442,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
     int instance_id = meet_instance_id(tp->instance_id());
-    const TypeOopPtr* speculative = xmeet_speculative(tp);
+    const TypePtr* speculative = xmeet_speculative(tp);
     int depth = meet_inline_depth(tp->inline_depth());
     switch (ptr) {
     case TopPTR:
@@ -3346,7 +3493,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     case TopPTR:
     case AnyNull: {
       int instance_id = meet_instance_id(InstanceTop);
-      const TypeOopPtr* speculative = xmeet_speculative(tp);
+      const TypePtr* speculative = xmeet_speculative(tp);
       int depth = meet_inline_depth(tp->inline_depth());
       return make(ptr, klass(), klass_is_exact(),
                   (ptr == Constant ? const_oop() : NULL), offset, instance_id, speculative, depth);
@@ -3354,7 +3501,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     case NotNull:
     case BotPTR: {
       int instance_id = meet_instance_id(tp->instance_id());
-      const TypeOopPtr* speculative = xmeet_speculative(tp);
+      const TypePtr* speculative = xmeet_speculative(tp);
       int depth = meet_inline_depth(tp->inline_depth());
       return TypeOopPtr::make(ptr, offset, instance_id, speculative, depth);
     }
@@ -3367,20 +3514,21 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     const TypePtr *tp = t->is_ptr();
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
+    int instance_id = meet_instance_id(InstanceTop);
+    const TypePtr* speculative = xmeet_speculative(tp);
+    int depth = meet_inline_depth(tp->inline_depth());
     switch (tp->ptr()) {
     case Null:
-      if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset);
+      if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
       // else fall through to AnyNull
     case TopPTR:
     case AnyNull: {
-      int instance_id = meet_instance_id(InstanceTop);
-      const TypeOopPtr* speculative = _speculative;
       return make(ptr, klass(), klass_is_exact(),
-                  (ptr == Constant ? const_oop() : NULL), offset, instance_id, speculative, _inline_depth);
+                  (ptr == Constant ? const_oop() : NULL), offset, instance_id, speculative, depth);
     }
     case NotNull:
     case BotPTR:
-      return TypePtr::make(AnyPtr, ptr, offset);
+      return TypePtr::make(AnyPtr, ptr, offset, speculative,depth);
     default: typerr(t);
     }
   }
@@ -3407,7 +3555,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     int off = meet_offset( tinst->offset() );
     PTR ptr = meet_ptr( tinst->ptr() );
     int instance_id = meet_instance_id(tinst->instance_id());
-    const TypeOopPtr* speculative = xmeet_speculative(tinst);
+    const TypePtr* speculative = xmeet_speculative(tinst);
     int depth = meet_inline_depth(tinst->inline_depth());
 
     // Check for easy case; klasses are equal (and perhaps not loaded!)
@@ -3563,6 +3711,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     // class hierarchy - which means we have to fall to at least NotNull.
     if( ptr == TopPTR || ptr == AnyNull || ptr == Constant )
       ptr = NotNull;
+
     instance_id = InstanceBot;
 
     // Now we find the LCA of Java classes
@@ -3655,7 +3804,8 @@ void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 
 //------------------------------add_offset-------------------------------------
 const TypePtr *TypeInstPtr::add_offset(intptr_t offset) const {
-  return make(_ptr, klass(), klass_is_exact(), const_oop(), xadd_offset(offset), _instance_id, add_offset_speculative(offset));
+  return make(_ptr, klass(), klass_is_exact(), const_oop(), xadd_offset(offset),
+              _instance_id, add_offset_speculative(offset), _inline_depth);
 }
 
 const Type *TypeInstPtr::remove_speculative() const {
@@ -3663,10 +3813,11 @@ const Type *TypeInstPtr::remove_speculative() const {
     return this;
   }
   assert(_inline_depth == InlineDepthTop || _inline_depth == InlineDepthBottom, "non speculative type shouldn't have inline depth");
-  return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset, _instance_id, NULL, _inline_depth);
+  return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset,
+              _instance_id, NULL, _inline_depth);
 }
 
-const TypeOopPtr *TypeInstPtr::with_inline_depth(int depth) const {
+const TypePtr *TypeInstPtr::with_inline_depth(int depth) const {
   if (!UseInlineDepthForSpeculativeTypes) {
     return this;
   }
@@ -3687,7 +3838,8 @@ const TypeAryPtr *TypeAryPtr::FLOATS;
 const TypeAryPtr *TypeAryPtr::DOUBLES;
 
 //------------------------------make-------------------------------------------
-const TypeAryPtr *TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth) {
+const TypeAryPtr *TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset,
+                                   int instance_id, const TypePtr* speculative, int inline_depth) {
   assert(!(k == NULL && ary->_elem->isa_int()),
          "integral arrays must be pre-equipped with a class");
   if (!xk)  xk = ary->ary_must_be_exact();
@@ -3697,7 +3849,9 @@ const TypeAryPtr *TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool
 }
 
 //------------------------------make-------------------------------------------
-const TypeAryPtr *TypeAryPtr::make(PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth, bool is_autobox_cache) {
+const TypeAryPtr *TypeAryPtr::make(PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset,
+                                   int instance_id, const TypePtr* speculative, int inline_depth,
+                                   bool is_autobox_cache) {
   assert(!(k == NULL && ary->_elem->isa_int()),
          "integral arrays must be pre-equipped with a class");
   assert( (ptr==Constant && o) || (ptr!=Constant && !o), "" );
@@ -3807,7 +3961,7 @@ const TypeAryPtr* TypeAryPtr::cast_to_stable(bool stable, int stable_dimension) 
 
   const TypeAry* new_ary = TypeAry::make(elem, size(), stable);
 
-  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id);
+  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
 //-----------------------------stable_dimension--------------------------------
@@ -3868,18 +4022,17 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
     int depth = meet_inline_depth(tp->inline_depth());
+    const TypePtr* speculative = xmeet_speculative(tp);
     switch (tp->ptr()) {
     case TopPTR:
     case AnyNull: {
       int instance_id = meet_instance_id(InstanceTop);
-      const TypeOopPtr* speculative = xmeet_speculative(tp);
       return make(ptr, (ptr == Constant ? const_oop() : NULL),
                   _ary, _klass, _klass_is_exact, offset, instance_id, speculative, depth);
     }
     case BotPTR:
     case NotNull: {
       int instance_id = meet_instance_id(tp->instance_id());
-      const TypeOopPtr* speculative = xmeet_speculative(tp);
       return TypeOopPtr::make(ptr, offset, instance_id, speculative, depth);
     }
     default: ShouldNotReachHere();
@@ -3891,20 +4044,21 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     const TypePtr *tp = t->is_ptr();
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
+    const TypePtr* speculative = xmeet_speculative(tp);
+    int depth = meet_inline_depth(tp->inline_depth());
     switch (tp->ptr()) {
     case TopPTR:
       return this;
     case BotPTR:
     case NotNull:
-      return TypePtr::make(AnyPtr, ptr, offset);
+      return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
     case Null:
-      if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset);
+      if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
       // else fall through to AnyNull
     case AnyNull: {
       int instance_id = meet_instance_id(InstanceTop);
-      const TypeOopPtr* speculative = _speculative;
       return make(ptr, (ptr == Constant ? const_oop() : NULL),
-                  _ary, _klass, _klass_is_exact, offset, instance_id, speculative, _inline_depth);
+                  _ary, _klass, _klass_is_exact, offset, instance_id, speculative, depth);
     }
     default: ShouldNotReachHere();
     }
@@ -3920,7 +4074,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     const TypeAry *tary = _ary->meet_speculative(tap->_ary)->is_ary();
     PTR ptr = meet_ptr(tap->ptr());
     int instance_id = meet_instance_id(tap->instance_id());
-    const TypeOopPtr* speculative = xmeet_speculative(tap);
+    const TypePtr* speculative = xmeet_speculative(tap);
     int depth = meet_inline_depth(tap->inline_depth());
     ciKlass* lazy_klass = NULL;
     if (tary->_elem->isa_int()) {
@@ -3949,7 +4103,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
            // 'this' is exact and super or unrelated:
            (this->_klass_is_exact && !klass()->is_subtype_of(tap->klass())))) {
       tary = TypeAry::make(Type::BOTTOM, tary->_size, tary->_stable);
-      return make(NotNull, NULL, tary, lazy_klass, false, off, InstanceBot);
+      return make(NotNull, NULL, tary, lazy_klass, false, off, InstanceBot, speculative, depth);
     }
 
     bool xk = false;
@@ -4001,7 +4155,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
     int instance_id = meet_instance_id(tp->instance_id());
-    const TypeOopPtr* speculative = xmeet_speculative(tp);
+    const TypePtr* speculative = xmeet_speculative(tp);
     int depth = meet_inline_depth(tp->inline_depth());
     switch (ptr) {
     case TopPTR:
@@ -4125,7 +4279,7 @@ const Type *TypeAryPtr::remove_speculative() const {
   return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, _instance_id, NULL, _inline_depth);
 }
 
-const TypeOopPtr *TypeAryPtr::with_inline_depth(int depth) const {
+const TypePtr *TypeAryPtr::with_inline_depth(int depth) const {
   if (!UseInlineDepthForSpeculativeTypes) {
     return this;
   }
@@ -4250,6 +4404,13 @@ const TypeNarrowOop* TypeNarrowOop::make(const TypePtr* type) {
   return (const TypeNarrowOop*)(new TypeNarrowOop(type))->hashcons();
 }
 
+const Type* TypeNarrowOop::remove_speculative() const {
+  return make(_ptrtype->remove_speculative()->is_ptr());
+}
+
+const Type* TypeNarrowOop::cleanup_speculative() const {
+  return make(_ptrtype->cleanup_speculative()->is_ptr());
+}
 
 #ifndef PRODUCT
 void TypeNarrowOop::dump2( Dict & d, uint depth, outputStream *st ) const {
@@ -4376,7 +4537,7 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
     PTR ptr = meet_ptr(tp->ptr());
     switch (tp->ptr()) {
     case Null:
-      if (ptr == Null)  return TypePtr::make(AnyPtr, ptr, offset);
+      if (ptr == Null)  return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
       // else fall through:
     case TopPTR:
     case AnyNull: {
@@ -4384,7 +4545,7 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
     }
     case BotPTR:
     case NotNull:
-      return TypePtr::make(AnyPtr, ptr, offset);
+      return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
     default: typerr(t);
     }
   }
@@ -4698,12 +4859,12 @@ const Type    *TypeKlassPtr::xmeet( const Type *t ) const {
     case TopPTR:
       return this;
     case Null:
-      if( ptr == Null ) return TypePtr::make( AnyPtr, ptr, offset );
+      if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
     case AnyNull:
       return make( ptr, klass(), offset );
     case BotPTR:
     case NotNull:
-      return TypePtr::make(AnyPtr, ptr, offset);
+      return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
     default: typerr(t);
     }
   }
