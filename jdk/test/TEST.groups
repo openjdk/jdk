@@ -102,7 +102,6 @@ jdk_nio = \
 jdk_net = \
     java/net \
     com/sun/net/httpserver \
-    com/oracle/net \
     sun/net
 
 jdk_time = \
