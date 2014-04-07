@@ -62,7 +62,7 @@ static Atom decor_list[9];
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-void
+jboolean
 awtJNI_ThreadYield(JNIEnv *env) {
 
     static jclass threadClass = NULL;
@@ -76,7 +76,7 @@ awtJNI_ThreadYield(JNIEnv *env) {
         Boolean err = FALSE;
         if (threadClass == NULL) {
             jclass tc = (*env)->FindClass(env, "java/lang/Thread");
-            CHECK_NULL(tc);
+            CHECK_NULL_RETURN(tc, JNI_FALSE);
             threadClass = (*env)->NewGlobalRef(env, tc);
             (*env)->DeleteLocalRef(env, tc);
             if (threadClass != NULL) {
@@ -92,10 +92,11 @@ awtJNI_ThreadYield(JNIEnv *env) {
             err = TRUE;
         }
         if (err) {
-            return;
+            return JNI_FALSE;
         }
     } /* threadClass == NULL*/
 
     (*env)->CallStaticVoidMethod(env, threadClass, yieldMethodID);
     DASSERT(!((*env)->ExceptionOccurred(env)));
+    return JNI_TRUE;
 } /* awtJNI_ThreadYield() */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1242,9 +1242,13 @@ Java_sun_awt_X11_XWindow_initIDs
 {
    char *ptr = NULL;
    windowID = (*env)->GetFieldID(env, clazz, "window", "J");
+   CHECK_NULL(windowID);
    targetID = (*env)->GetFieldID(env, clazz, "target", "Ljava/awt/Component;");
+   CHECK_NULL(targetID);
    graphicsConfigID = (*env)->GetFieldID(env, clazz, "graphicsConfig", "Lsun/awt/X11GraphicsConfig;");
+   CHECK_NULL(graphicsConfigID);
    drawStateID = (*env)->GetFieldID(env, clazz, "drawState", "I");
+   CHECK_NULL(drawStateID);
    ptr = getenv("_AWT_USE_TYPE4_PATCH");
    if( ptr != NULL && ptr[0] != 0 ) {
        if( strncmp("true", ptr, 4) == 0 ) {

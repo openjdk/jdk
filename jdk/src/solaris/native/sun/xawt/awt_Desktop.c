@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include "jni_util.h"
 #include "gtk2_interface.h"
 #include "gnome_interface.h"
 
@@ -65,6 +66,12 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XDesktopPeer_gnome_1url_1show
     const gchar* url_c;
 
     url_c = (char*)(*env)->GetByteArrayElements(env, url_j, NULL);
+    if (url_c == NULL) {
+        if (!(*env)->ExceptionCheck(env)) {
+            JNU_ThrowOutOfMemoryError(env, 0);
+        }
+        return JNI_FALSE;
+    }
 
     if (gtk_has_been_loaded) {
         fp_gdk_threads_enter();
