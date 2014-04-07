@@ -1236,10 +1236,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_awt_X11_XlibWrapper_getStringBytes
     long length = strlen((char*)str);
     jbyteArray res = (*env)->NewByteArray(env, length);
     CHECK_NULL_RETURN(res, NULL);
-    void * storage = malloc(length+1);
-    memcpy(storage, str, length+1);
     (*env)->SetByteArrayRegion(env, res, 0, length,
-                   (const signed char*) storage);
+                   (const signed char*) str);
     return res;
 }
 
