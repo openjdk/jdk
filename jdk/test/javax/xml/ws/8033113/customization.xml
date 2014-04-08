@@ -1,0 +1,23 @@
+<jaxws:bindings wsdlLocation="./Organization_List.wsdl"  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:jaxws="http://java.sun.com/xml/ns/jaxws">
+   <jaxws:enableWrapperStyle>false</jaxws:enableWrapperStyle>
+   <jaxws:bindings node="wsdl:definitions/wsdl:binding[@name='Organization_ListSoapBinding']/wsdl:operation[@name='OpGetList']">
+     <jaxws:parameter part="wsdl:definitions/wsdl:message[@name='ARAuthenticate']/wsdl:part[@name='param']"  name="authParam"/>
+     <jaxws:parameter part="wsdl:definitions/wsdl:message[@name='OpGetListSoapIn']/wsdl:part[@name='param']"  name="inParam"/>
+     <jaxws:parameter part="wsdl:definitions/wsdl:message[@name='OpGetListSoapOut']/wsdl:part[@name='param']"  name="outParam"/>
+   </jaxws:bindings>
+</jaxws:bindings>
+
+<!--wsdl:message definitions from WSDL whose part names we are trying to override...
+ 
+   <wsdl:message name="ARAuthenticate">
+      <wsdl:part element="s0:AuthenticationInfo" name="param"/>
+   </wsdl:message>
+
+   <wsdl:message name="OpGetListSoapIn">
+      <wsdl:part element="s0:OpGetList" name="param"/>
+   </wsdl:message>
+
+   <wsdl:message name="OpGetListSoapOut">
+      <wsdl:part element="s0:OpGetListResponse" name="param"/>
+   </wsdl:message>
+-->
