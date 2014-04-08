@@ -464,21 +464,22 @@ bool java_lang_String::equals(oop str1, oop str2) {
 void java_lang_String::print(oop java_string, outputStream* st) {
   assert(java_string->klass() == SystemDictionary::String_klass(), "must be java_string");
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
-  int          length = java_lang_String::length(java_string);
 
-  int end = MIN2(length, 100);
   if (value == NULL) {
     // This can happen if, e.g., printing a String
     // object before its initializer has been called
-    st->print_cr("NULL");
-  } else {
-    st->print("\"");
-    for (int index = 0; index < length; index++) {
-      st->print("%c", value->char_at(index + offset));
-    }
-    st->print("\"");
+    st->print("NULL");
+    return;
   }
+
+  int offset = java_lang_String::offset(java_string);
+  int length = java_lang_String::length(java_string);
+
+  st->print("\"");
+  for (int index = 0; index < length; index++) {
+    st->print("%c", value->char_at(index + offset));
+  }
+  st->print("\"");
 }
 
 static void initialize_static_field(fieldDescriptor* fd, TRAPS) {
