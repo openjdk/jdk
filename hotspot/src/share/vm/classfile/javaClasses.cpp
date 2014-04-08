@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -482,8 +482,8 @@ void java_lang_String::print(oop java_string, outputStream* st) {
   st->print("\"");
 }
 
-static void initialize_static_field(fieldDescriptor* fd, TRAPS) {
-  Handle mirror (THREAD, fd->field_holder()->java_mirror());
+
+static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
   assert(mirror.not_null() && fd->is_static(), "just checking");
   if (fd->has_initial_value()) {
     BasicType t = fd->field_type();
@@ -550,21 +550,45 @@ void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
   create_mirror(k, Handle(NULL), CHECK);
 }
 
-oop java_lang_Class::create_mirror(KlassHandle k, Handle protection_domain, TRAPS) {
+void java_lang_Class::initialize_mirror_fields(KlassHandle k,
+                                               Handle mirror,
+                                               Handle protection_domain,
+                                               TRAPS) {
+  // Allocate a simple java object for a lock.
+  // This needs to be a java object because during class initialization
+  // it can be held across a java call.
+  typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK);
+  set_init_lock(mirror(), r);
+
+  // Set protection domain also
+  set_protection_domain(mirror(), protection_domain());
+
+  // Initialize static fields
+  InstanceKlass::cast(k())->do_local_static_fields(&initialize_static_field, mirror, CHECK);
+}
+
+void java_lang_Class::create_mirror(KlassHandle k, Handle protection_domain, TRAPS) {
   assert(k->java_mirror() == NULL, "should only assign mirror once");
   // Use this moment of initialization to cache modifier_flags also,
   // to support Class.getModifiers().  Instance classes recalculate
   // the cached flags after the class file is parsed, but before the
   // class is put into the system dictionary.
-  int computed_modifiers = k->compute_modifier_flags(CHECK_0);
+  int computed_modifiers = k->compute_modifier_flags(CHECK);
   k->set_modifier_flags(computed_modifiers);
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
   if (SystemDictionary::Class_klass_loaded()) {
     // Allocate mirror (java.lang.Class instance)
-    Handle mirror = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(k, CHECK_0);
+    Handle mirror = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(k, CHECK);
+
+    // Setup indirection from mirror->klass
+    if (!k.is_null()) {
+      java_lang_Class::set_klass(mirror(), k());
+    }
 
     InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
+    assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
+
     java_lang_Class::set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
 
     // It might also have a component mirror.  This mirror must already exist.
@@ -577,29 +601,32 @@ oop java_lang_Class::create_mirror(KlassHandle k, Handle protection_domain, TRAP
         assert(k->oop_is_objArray(), "Must be");
         Klass* element_klass = ObjArrayKlass::cast(k())->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
-          comp_mirror = element_klass->java_mirror();
+        comp_mirror = element_klass->java_mirror();
       }
       assert(comp_mirror.not_null(), "must have a mirror");
 
-        // Two-way link between the array klass and its component mirror:
+      // Two-way link between the array klass and its component mirror:
       ArrayKlass::cast(k())->set_component_mirror(comp_mirror());
       set_array_klass(comp_mirror(), k());
     } else {
       assert(k->oop_is_instance(), "Must be");
 
-      // Allocate a simple java object for a lock.
-      // This needs to be a java object because during class initialization
-      // it can be held across a java call.
-      typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_NULL);
-      set_init_lock(mirror(), r);
-
-      // Set protection domain also
-      set_protection_domain(mirror(), protection_domain());
-
-      // Initialize static fields
-      InstanceKlass::cast(k())->do_local_static_fields(&initialize_static_field, CHECK_NULL);
+      initialize_mirror_fields(k, mirror, protection_domain, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        // If any of the fields throws an exception like OOM remove the klass field
+        // from the mirror so GC doesn't follow it after the klass has been deallocated.
+        // This mirror looks like a primitive type, which logically it is because it
+        // it represents no class.
+        java_lang_Class::set_klass(mirror(), NULL);
+        return;
+      }
     }
-    return mirror();
+
+    // Setup indirection from klass->mirror last
+    // after any exceptions can happen during allocations.
+    if (!k.is_null()) {
+      k->set_java_mirror(mirror());
+    }
   } else {
     if (fixup_mirror_list() == NULL) {
       GrowableArray<Klass*>* list =
@@ -607,10 +634,8 @@ oop java_lang_Class::create_mirror(KlassHandle k, Handle protection_domain, TRAP
       set_fixup_mirror_list(list);
     }
     fixup_mirror_list()->push(k());
-    return NULL;
   }
 }
-
 
 
 int  java_lang_Class::oop_size(oop java_class) {
