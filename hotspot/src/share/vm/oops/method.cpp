@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,14 +329,12 @@ bool Method::was_executed_more_than(int n) {
   }
 }
 
-#ifndef PRODUCT
 void Method::print_invocation_count() {
   if (is_static()) tty->print("static ");
   if (is_final()) tty->print("final ");
   if (is_synchronized()) tty->print("synchronized ");
   if (is_native()) tty->print("native ");
-  method_holder()->name()->print_symbol_on(tty);
-  tty->print(".");
+  tty->print("%s::", method_holder()->external_name());
   name()->print_symbol_on(tty);
   signature()->print_symbol_on(tty);
 
@@ -349,12 +347,12 @@ void Method::print_invocation_count() {
   tty->print_cr ("  interpreter_invocation_count: %8d ", interpreter_invocation_count());
   tty->print_cr ("  invocation_counter:           %8d ", invocation_count());
   tty->print_cr ("  backedge_counter:             %8d ", backedge_count());
+#ifndef PRODUCT
   if (CountCompiledCalls) {
     tty->print_cr ("  compiled_invocation_count: %8d ", compiled_invocation_count());
   }
-
-}
 #endif
+}
 
 // Build a MethodData* object to hold information about this method
 // collected in the interpreter.
@@ -577,12 +575,12 @@ bool Method::is_static_initializer() const {
 }
 
 
-objArrayHandle Method::resolved_checked_exceptions_impl(Method* this_oop, TRAPS) {
-  int length = this_oop->checked_exceptions_length();
+objArrayHandle Method::resolved_checked_exceptions_impl(Method* method, TRAPS) {
+  int length = method->checked_exceptions_length();
   if (length == 0) {  // common case
     return objArrayHandle(THREAD, Universe::the_empty_class_klass_array());
   } else {
-    methodHandle h_this(THREAD, this_oop);
+    methodHandle h_this(THREAD, method);
     objArrayOop m_oop = oopFactory::new_objArray(SystemDictionary::Class_klass(), length, CHECK_(objArrayHandle()));
     objArrayHandle mirrors (THREAD, m_oop);
     for (int i = 0; i < length; i++) {
@@ -1443,10 +1441,6 @@ void Method::print_name(outputStream* st) {
 #endif // !PRODUCT || INCLUDE_JVMTI
 
 
-//-----------------------------------------------------------------------------------
-// Non-product code
-
-#ifndef PRODUCT
 void Method::print_codes_on(outputStream* st) const {
   print_codes_on(0, code_size(), st);
 }
@@ -1460,7 +1454,6 @@ void Method::print_codes_on(int from, int to, outputStream* st) const {
   BytecodeTracer::set_closure(BytecodeTracer::std_closure());
   while (s.next() >= 0) BytecodeTracer::trace(mh, s.bcp(), st);
 }
-#endif // not PRODUCT
 
 
 // Simple compression of line number tables. We use a regular compressed stream, except that we compress deltas

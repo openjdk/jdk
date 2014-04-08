@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/callnode.hpp"
-#include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/movenode.hpp"
 
 
 //------------------------------split_thru_region------------------------------

@@ -1672,7 +1672,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   //__ flush_bundle();
   address entry = __ pc();
 
-  char *bname = NULL;
+  const char *bname = NULL;
   uint tsize = 0;
   switch(state) {
   case ftos:

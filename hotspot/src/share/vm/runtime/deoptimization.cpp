@@ -1839,6 +1839,7 @@ const char* Deoptimization::_trap_reason_name[Reason_LIMIT] = {
   "predicate",
   "loop_limit_check",
   "speculate_class_check",
+  "speculate_null_check",
   "rtm_state_change"
 };
 const char* Deoptimization::_trap_action_name[Action_LIMIT] = {

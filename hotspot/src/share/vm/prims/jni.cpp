@@ -4005,7 +4005,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
     }
 
 #ifndef PRODUCT
-  #ifndef TARGET_OS_FAMILY_windows
+  #ifndef CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED
     #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) f()
   #endif
 

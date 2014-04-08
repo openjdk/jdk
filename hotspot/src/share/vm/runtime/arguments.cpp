@@ -1903,24 +1903,22 @@ static bool verify_serial_gc_flags() {
 // check if do gclog rotation
 // +UseGCLogFileRotation is a must,
 // no gc log rotation when log file not supplied or
-// NumberOfGCLogFiles is 0, or GCLogFileSize is 0
+// NumberOfGCLogFiles is 0
 void check_gclog_consistency() {
   if (UseGCLogFileRotation) {
-    if ((Arguments::gc_log_filename() == NULL) ||
-        (NumberOfGCLogFiles == 0)  ||
-        (GCLogFileSize == 0)) {
+    if ((Arguments::gc_log_filename() == NULL) || (NumberOfGCLogFiles == 0)) {
       jio_fprintf(defaultStream::output_stream(),
-                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=<num_of_files> -XX:GCLogFileSize=<num_of_size>[k|K|m|M|g|G]\n"
-                  "where num_of_file > 0 and num_of_size > 0\n"
+                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=<num_of_files>\n"
+                  "where num_of_file > 0\n"
                   "GC log rotation is turned off\n");
       UseGCLogFileRotation = false;
     }
   }
 
-  if (UseGCLogFileRotation && GCLogFileSize < 8*K) {
-        FLAG_SET_CMDLINE(uintx, GCLogFileSize, 8*K);
-        jio_fprintf(defaultStream::output_stream(),
-                    "GCLogFileSize changed to minimum 8K\n");
+  if (UseGCLogFileRotation && (GCLogFileSize != 0) && (GCLogFileSize < 8*K)) {
+    FLAG_SET_CMDLINE(uintx, GCLogFileSize, 8*K);
+    jio_fprintf(defaultStream::output_stream(),
+                "GCLogFileSize changed to minimum 8K\n");
   }
 }
 
@@ -3801,10 +3799,6 @@ jint Arguments::apply_ergo() {
     AlwaysIncrementalInline = false;
   }
 #endif
-  if (IncrementalInline && FLAG_IS_DEFAULT(MaxNodeLimit)) {
-    // incremental inlining: bump MaxNodeLimit
-    FLAG_SET_DEFAULT(MaxNodeLimit, (intx)75000);
-  }
   if (!UseTypeSpeculation && FLAG_IS_DEFAULT(TypeProfileLevel)) {
     // nothing to use the profiling, turn if off
     FLAG_SET_DEFAULT(TypeProfileLevel, 0);
