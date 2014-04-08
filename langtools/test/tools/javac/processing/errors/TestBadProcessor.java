@@ -75,7 +75,8 @@ public class TestBadProcessor {
                 "javax.annotation.processing.Processor: " +
                 "Provider AnnoProc could not be instantiated: java.lang.Error\n" +
                 "1 error";
-        if (!out.trim().equals(expect)) {
+        String lineSeparator = System.getProperty("line.separator");
+        if (!out.trim().replace(lineSeparator, "\n").equals(expect)) {
             System.err.println("expected: " + expect);
             error("output not as expected");
         }
