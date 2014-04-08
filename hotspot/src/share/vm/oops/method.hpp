@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,50 +40,15 @@
 
 // A Method represents a Java method.
 //
-// Memory layout (each line represents a word). Note that most applications load thousands of methods,
-// so keeping the size of this structure small has a big impact on footprint.
+// Note that most applications load thousands of methods, so keeping the size of this
+// class small has a big impact on footprint.
 //
-// The actual bytecodes are inlined after the end of the Method struct.
+// Note that native_function and signature_handler have to be at fixed offsets
+// (required by the interpreter)
 //
-// There are bits in the access_flags telling whether inlined tables are present.
-// Note that accessing the line number and local variable tables is not performance critical at all.
-// Accessing the checked exceptions table is used by reflection, so we put that last to make access
-// to it fast.
-//
-// The line number table is compressed and inlined following the byte codes. It is found as the first
-// byte following the byte codes. The checked exceptions table and the local variable table are inlined
-// after the line number table, and indexed from the end of the method. We do not compress the checked
-// exceptions table since the average length is less than 2, and do not bother to compress the local
-// variable table either since it is mostly absent.
-//
-// Note that native_function and signature_handler has to be at fixed offsets (required by the interpreter)
-//
-// |------------------------------------------------------|
-// | header                                               |
-// | klass                                                |
-// |------------------------------------------------------|
-// | ConstMethod*                   (metadata)            |
-// |------------------------------------------------------|
-// | MethodData*                    (metadata)            |
-// | MethodCounters                                       |
-// |------------------------------------------------------|
-// | access_flags                                         |
-// | vtable_index                                         |
-// |------------------------------------------------------|
-// | result_index (C++ interpreter only)                  |
-// |------------------------------------------------------|
-// | method_size             | intrinsic_id  |   flags    |
-// |------------------------------------------------------|
-// | code                           (pointer)             |
-// | i2i                            (pointer)             |
-// | adapter                        (pointer)             |
-// | from_compiled_entry            (pointer)             |
-// | from_interpreted_entry         (pointer)             |
-// |------------------------------------------------------|
-// | native_function       (present only if native)       |
-// | signature_handler     (present only if native)       |
-// |------------------------------------------------------|
-
+//  Method embedded field layout (after declared fields):
+//   [EMBEDDED native_function       (present only if native) ]
+//   [EMBEDDED signature_handler     (present only if native) ]
 
 class CheckedExceptionElement;
 class LocalVariableTableElement;
@@ -429,6 +394,9 @@ class Method : public Metadata {
 #ifndef PRODUCT
   int  compiled_invocation_count() const         { return _compiled_invocation_count;  }
   void set_compiled_invocation_count(int count)  { _compiled_invocation_count = count; }
+#else
+  // for PrintMethodData in a product build
+  int  compiled_invocation_count() const         { return 0;  }
 #endif // not PRODUCT
 
   // Clear (non-shared space) pointers which could not be relevant
@@ -497,10 +465,8 @@ class Method : public Metadata {
   // Interpreter oopmap support
   void mask_for(int bci, InterpreterOopMap* mask);
 
-#ifndef PRODUCT
   // operations on invocation counter
   void print_invocation_count();
-#endif
 
   // byte codes
   void    set_code(address code)      { return constMethod()->set_code(code); }
@@ -509,8 +475,8 @@ class Method : public Metadata {
 
   // prints byte codes
   void print_codes() const            { print_codes_on(tty); }
-  void print_codes_on(outputStream* st) const                      PRODUCT_RETURN;
-  void print_codes_on(int from, int to, outputStream* st) const    PRODUCT_RETURN;
+  void print_codes_on(outputStream* st) const;
+  void print_codes_on(int from, int to, outputStream* st) const;
 
   // method parameters
   bool has_method_parameters() const
@@ -661,7 +627,7 @@ class Method : public Metadata {
 
   // Static methods that are used to implement member methods where an exposed this pointer
   // is needed due to possible GCs
-  static objArrayHandle resolved_checked_exceptions_impl(Method* this_oop, TRAPS);
+  static objArrayHandle resolved_checked_exceptions_impl(Method* method, TRAPS);
 
   // Returns the byte code index from the byte code pointer
   int     bci_from(address bcp) const;

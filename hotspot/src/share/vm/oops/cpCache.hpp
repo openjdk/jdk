@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,8 +102,9 @@ class PSPromotionManager;
 // _f1      = Method* for non-virtual calls, unused by virtual calls.
 //            for interface calls, which are essentially virtual but need a klass,
 //            contains Klass* for the corresponding interface.
-//            for invokedynamic, f1 contains a site-specific CallSite object (as an appendix)
-//            for invokehandle, f1 contains a site-specific MethodType object (as an appendix)
+//            for invokedynamic and invokehandle, f1 contains the adapter method which
+//            manages the actual call. The appendix is stored in the ConstantPool
+//            resolved_references array.
 //            (upcoming metadata changes will move the appendix to a separate array)
 // _f2      = vtable/itable index (or final Method*) for virtual calls only,
 //            unused by non-virtual.  The is_vfinal flag indicates this is a
