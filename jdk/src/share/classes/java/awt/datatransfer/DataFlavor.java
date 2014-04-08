@@ -107,7 +107,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * As such, asking a {@code Transferable} for either {@code DataFlavor} returns
  * the same results.
  * <p>
- * For more information on the using data transfer with Swing see
+ * For more information on using data transfer with Swing see
  * the <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
  * How to Use Drag and Drop and Data Transfer</a>,
  * section in <em>Java Tutorial</em>.
@@ -405,7 +405,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      * If the <code>mimeType</code> is
      * "application/x-java-serialized-object; class=&lt;representation class&gt;",
      * the result is the same as calling
-     * <code>new DataFlavor(Class:forName(&lt;representation class&gt;)</code>.
+     * <code>new DataFlavor(Class.forName(&lt;representation class&gt;)</code>.
      * <p>
      * Otherwise:
      * <pre>
@@ -413,7 +413,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      *     mimeType            = mimeType
      * </pre>
      * @param mimeType the string used to identify the MIME type for this flavor;
-     *                 if the the <code>mimeType</code> does not specify a
+     *                 if the <code>mimeType</code> does not specify a
      *                 "class=" parameter, or if the class is not successfully
      *                 loaded, then an <code>IllegalArgumentException</code>
      *                 is thrown
@@ -448,7 +448,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      * If the mimeType is
      * "application/x-java-serialized-object; class=&lt;representation class&gt;",
      * the result is the same as calling
-     * <code>new DataFlavor(Class:forName(&lt;representation class&gt;)</code>.
+     * <code>new DataFlavor(Class.forName(&lt;representation class&gt;)</code>.
      * <p>
      * Otherwise:
      * <pre>
