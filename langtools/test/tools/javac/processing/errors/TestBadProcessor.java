@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ public class TestBadProcessor {
         String expect = "error: Bad service configuration file, " +
                 "or exception thrown while constructing Processor object: " +
                 "javax.annotation.processing.Processor: " +
-                "Provider AnnoProc could not be instantiated: java.lang.Error";
+                "Provider AnnoProc could not be instantiated: java.lang.Error\n" +
+                "1 error";
         if (!out.trim().equals(expect)) {
             System.err.println("expected: " + expect);
             error("output not as expected");
