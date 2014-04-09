@@ -114,7 +114,7 @@ diff_text() {
     fi
     if test "x$SUFFIX" = "xproperties"; then
         # Run through nawk to add possibly missing newline at end of file.
-        $CAT $OTHER_FILE | $NAWK '{ print }' > $OTHER_FILE.cleaned
+        $CAT $OTHER_FILE | $NAWK '{ print }' | LC_ALL=C $SORT > $OTHER_FILE.cleaned
 # Disable this exception since we aren't changing the properties cleaning method yet.
 #        $CAT $OTHER_FILE | $SED -e 's/\([^\\]\):/\1\\:/g' -e  's/\([^\\]\)=/\1\\=/g' -e 's/#.*/#/g' \
 #            | $SED -f "$SRC_ROOT/common/makefiles/support/unicode2x.sed" \
