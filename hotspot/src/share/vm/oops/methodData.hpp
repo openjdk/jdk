@@ -2052,7 +2052,7 @@ public:
 
   // Whole-method sticky bits and flags
   enum {
-    _trap_hist_limit    = 18,   // decoupled from Deoptimization::Reason_LIMIT
+    _trap_hist_limit    = 19,   // decoupled from Deoptimization::Reason_LIMIT
     _trap_hist_mask     = max_jubyte,
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
@@ -2083,6 +2083,12 @@ private:
   // Counter values at the time profiling started.
   int               _invocation_counter_start;
   int               _backedge_counter_start;
+
+#if INCLUDE_RTM_OPT
+  // State of RTM code generation during compilation of the method
+  int               _rtm_state;
+#endif
+
   // Number of loops and blocks is computed when compiling the first
   // time with C1. It is used to determine if method is trivial.
   short             _num_loops;
@@ -2245,6 +2251,22 @@ public:
 
   InvocationCounter* invocation_counter()     { return &_invocation_counter; }
   InvocationCounter* backedge_counter()       { return &_backedge_counter;   }
+
+#if INCLUDE_RTM_OPT
+  int rtm_state() const {
+    return _rtm_state;
+  }
+  void set_rtm_state(RTMState rstate) {
+    _rtm_state = (int)rstate;
+  }
+  void atomic_set_rtm_state(RTMState rstate) {
+    Atomic::store((int)rstate, &_rtm_state);
+  }
+
+  static int rtm_state_offset_in_bytes() {
+    return offset_of(MethodData, _rtm_state);
+  }
+#endif
 
   void set_would_profile(bool p)              { _would_profile = p;    }
   bool would_profile() const                  { return _would_profile; }
