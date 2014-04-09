@@ -137,14 +137,14 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         public Set<Element> visitType(TypeElement e, TypeElement p) {
             // Type parameters are not considered to be enclosed by a type
             scan(e.getTypeParameters(), p);
-            return scan(e.getEnclosedElements(), p);
+            return super.visitType(e, p);
         }
 
         @Override
         public Set<Element> visitExecutable(ExecutableElement e, TypeElement p) {
             // Type parameters are not considered to be enclosed by an executable
             scan(e.getTypeParameters(), p);
-            return scan(e.getEnclosedElements(), p);
+            return super.visitExecutable(e, p);
         }
 
         @Override

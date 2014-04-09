@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,40 @@
  * questions.
  */
 
-package pkg;
+/*
+ * @test
+ * @bug 8034044
+ * @summary An anonymous class should not be static
+ */
 
-@FunctionalInterface
-public interface A {
+import static java.lang.reflect.Modifier.*;
 
-    public void method1();
+public class T8034044 {
+    enum En {
+        V() {}
+    }
 
-    public default void defaultMethod() { }
+    static class InnStat {
+        static Object o = new Object() {};
+    }
+
+    public static void main(String[] args)
+            throws Throwable {
+        Object o = new Object() {};
+        test(o.getClass());
+        test(En.V.getClass());
+        test(InnStat.o.getClass());
+        new T8034044().f();
+    }
+
+    public void f() {
+        Object o = new Object() {};
+        test(o.getClass());
+    }
+
+    static void test(Class clazz) {
+        if ((clazz.getModifiers() & STATIC) != 0)
+            throw new AssertionError(clazz.toString() +
+                    " should not be static");
+    }
 }
