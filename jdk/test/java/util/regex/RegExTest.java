@@ -32,7 +32,7 @@
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
- * 8027645 8035076
+ * 8027645 8035076 8039124
  */
 
 import java.util.regex.*;
@@ -75,7 +75,10 @@ public class RegExTest {
         // Substitition tests on randomly generated sequences
         globalSubstitute();
         stringbufferSubstitute();
+        stringbuilderSubstitute();
+
         substitutionBasher();
+        substitutionBasher2();
 
         // Canonical Equivalence
         ceTest();
@@ -296,10 +299,12 @@ public class RegExTest {
 
         final Matcher m = Pattern.compile("xyz").matcher("xyz");
         m.matches();
-        check(new Runnable() { public void run() { m.appendTail(null);}});
+        check(new Runnable() { public void run() { m.appendTail((StringBuffer)null);}});
+        check(new Runnable() { public void run() { m.appendTail((StringBuilder)null);}});
         check(new Runnable() { public void run() { m.replaceAll(null);}});
         check(new Runnable() { public void run() { m.replaceFirst(null);}});
-        check(new Runnable() { public void run() { m.appendReplacement(null, null);}});
+        check(new Runnable() { public void run() { m.appendReplacement((StringBuffer)null, null);}});
+        check(new Runnable() { public void run() { m.appendReplacement((StringBuilder)null, null);}});
         check(new Runnable() { public void run() { m.reset(null);}});
         check(new Runnable() { public void run() { Matcher.quoteReplacement(null);}});
         //check(new Runnable() { public void run() { m.usePattern(null);}});
@@ -2973,6 +2978,286 @@ public class RegExTest {
         report("SB Substitution");
     }
 
+    /**
+     * Tests the usage of Matcher.appendReplacement() with literal
+     * and group substitutions.
+     */
+    private static void stringbuilderSubstitute() throws Exception {
+        // SB substitution with literal
+        String blah = "zzzblahzzz";
+        Pattern p = Pattern.compile("blah");
+        Matcher m = p.matcher(blah);
+        StringBuilder result = new StringBuilder();
+        try {
+            m.appendReplacement(result, "blech");
+            failCount++;
+        } catch (IllegalStateException e) {
+        }
+        m.find();
+        m.appendReplacement(result, "blech");
+        if (!result.toString().equals("zzzblech"))
+            failCount++;
+
+        m.appendTail(result);
+        if (!result.toString().equals("zzzblechzzz"))
+            failCount++;
+
+        // SB substitution with groups
+        blah = "zzzabcdzzz";
+        p = Pattern.compile("(ab)(cd)*");
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        try {
+            m.appendReplacement(result, "$1");
+            failCount++;
+        } catch (IllegalStateException e) {
+        }
+        m.find();
+        m.appendReplacement(result, "$1");
+        if (!result.toString().equals("zzzab"))
+            failCount++;
+
+        m.appendTail(result);
+        if (!result.toString().equals("zzzabzzz"))
+            failCount++;
+
+        // SB substitution with 3 groups
+        blah = "zzzabcdcdefzzz";
+        p = Pattern.compile("(ab)(cd)*(ef)");
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        try {
+            m.appendReplacement(result, "$1w$2w$3");
+            failCount++;
+        } catch (IllegalStateException e) {
+        }
+        m.find();
+        m.appendReplacement(result, "$1w$2w$3");
+        if (!result.toString().equals("zzzabwcdwef"))
+            failCount++;
+
+        m.appendTail(result);
+        if (!result.toString().equals("zzzabwcdwefzzz"))
+            failCount++;
+
+        // SB substitution with groups and three matches
+        // skipping middle match
+        blah = "zzzabcdzzzabcddzzzabcdzzz";
+        p = Pattern.compile("(ab)(cd*)");
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        try {
+            m.appendReplacement(result, "$1");
+            failCount++;
+        } catch (IllegalStateException e) {
+        }
+        m.find();
+        m.appendReplacement(result, "$1");
+        if (!result.toString().equals("zzzab"))
+            failCount++;
+
+        m.find();
+        m.find();
+        m.appendReplacement(result, "$2");
+        if (!result.toString().equals("zzzabzzzabcddzzzcd"))
+            failCount++;
+
+        m.appendTail(result);
+        if (!result.toString().equals("zzzabzzzabcddzzzcdzzz"))
+            failCount++;
+
+        // Check to make sure escaped $ is ignored
+        blah = "zzzabcdcdefzzz";
+        p = Pattern.compile("(ab)(cd)*(ef)");
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        m.find();
+        m.appendReplacement(result, "$1w\\$2w$3");
+        if (!result.toString().equals("zzzabw$2wef"))
+            failCount++;
+
+        m.appendTail(result);
+        if (!result.toString().equals("zzzabw$2wefzzz"))
+            failCount++;
+
+        // Check to make sure a reference to nonexistent group causes error
+        blah = "zzzabcdcdefzzz";
+        p = Pattern.compile("(ab)(cd)*(ef)");
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        m.find();
+        try {
+            m.appendReplacement(result, "$1w$5w$3");
+            failCount++;
+        } catch (IndexOutOfBoundsException ioobe) {
+            // Correct result
+        }
+
+        // Check double digit group references
+        blah = "zzz123456789101112zzz";
+        p = Pattern.compile("(1)(2)(3)(4)(5)(6)(7)(8)(9)(10)(11)");
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        m.find();
+        m.appendReplacement(result, "$1w$11w$3");
+        if (!result.toString().equals("zzz1w11w3"))
+            failCount++;
+
+        // Check to make sure it backs off $15 to $1 if only three groups
+        blah = "zzzabcdcdefzzz";
+        p = Pattern.compile("(ab)(cd)*(ef)");
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        m.find();
+        m.appendReplacement(result, "$1w$15w$3");
+        if (!result.toString().equals("zzzabwab5wef"))
+            failCount++;
+
+
+        // Supplementary character test
+        // SB substitution with literal
+        blah = toSupplementaries("zzzblahzzz");
+        p = Pattern.compile(toSupplementaries("blah"));
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        try {
+            m.appendReplacement(result, toSupplementaries("blech"));
+            failCount++;
+        } catch (IllegalStateException e) {
+        }
+        m.find();
+        m.appendReplacement(result, toSupplementaries("blech"));
+        if (!result.toString().equals(toSupplementaries("zzzblech")))
+            failCount++;
+        m.appendTail(result);
+        if (!result.toString().equals(toSupplementaries("zzzblechzzz")))
+            failCount++;
+
+        // SB substitution with groups
+        blah = toSupplementaries("zzzabcdzzz");
+        p = Pattern.compile(toSupplementaries("(ab)(cd)*"));
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        try {
+            m.appendReplacement(result, "$1");
+            failCount++;
+        } catch (IllegalStateException e) {
+        }
+        m.find();
+        m.appendReplacement(result, "$1");
+        if (!result.toString().equals(toSupplementaries("zzzab")))
+            failCount++;
+
+        m.appendTail(result);
+        if (!result.toString().equals(toSupplementaries("zzzabzzz")))
+            failCount++;
+
+        // SB substitution with 3 groups
+        blah = toSupplementaries("zzzabcdcdefzzz");
+        p = Pattern.compile(toSupplementaries("(ab)(cd)*(ef)"));
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        try {
+            m.appendReplacement(result, toSupplementaries("$1w$2w$3"));
+            failCount++;
+        } catch (IllegalStateException e) {
+        }
+        m.find();
+        m.appendReplacement(result, toSupplementaries("$1w$2w$3"));
+        if (!result.toString().equals(toSupplementaries("zzzabwcdwef")))
+            failCount++;
+
+        m.appendTail(result);
+        if (!result.toString().equals(toSupplementaries("zzzabwcdwefzzz")))
+            failCount++;
+
+        // SB substitution with groups and three matches
+        // skipping middle match
+        blah = toSupplementaries("zzzabcdzzzabcddzzzabcdzzz");
+        p = Pattern.compile(toSupplementaries("(ab)(cd*)"));
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        try {
+            m.appendReplacement(result, "$1");
+            failCount++;
+        } catch (IllegalStateException e) {
+        }
+        m.find();
+        m.appendReplacement(result, "$1");
+        if (!result.toString().equals(toSupplementaries("zzzab")))
+            failCount++;
+
+        m.find();
+        m.find();
+        m.appendReplacement(result, "$2");
+        if (!result.toString().equals(toSupplementaries("zzzabzzzabcddzzzcd")))
+            failCount++;
+
+        m.appendTail(result);
+        if (!result.toString().equals(toSupplementaries("zzzabzzzabcddzzzcdzzz")))
+            failCount++;
+
+        // Check to make sure escaped $ is ignored
+        blah = toSupplementaries("zzzabcdcdefzzz");
+        p = Pattern.compile(toSupplementaries("(ab)(cd)*(ef)"));
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        m.find();
+        m.appendReplacement(result, toSupplementaries("$1w\\$2w$3"));
+        if (!result.toString().equals(toSupplementaries("zzzabw$2wef")))
+            failCount++;
+
+        m.appendTail(result);
+        if (!result.toString().equals(toSupplementaries("zzzabw$2wefzzz")))
+            failCount++;
+
+        // Check to make sure a reference to nonexistent group causes error
+        blah = toSupplementaries("zzzabcdcdefzzz");
+        p = Pattern.compile(toSupplementaries("(ab)(cd)*(ef)"));
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        m.find();
+        try {
+            m.appendReplacement(result, toSupplementaries("$1w$5w$3"));
+            failCount++;
+        } catch (IndexOutOfBoundsException ioobe) {
+            // Correct result
+        }
+        // Check double digit group references
+        blah = toSupplementaries("zzz123456789101112zzz");
+        p = Pattern.compile("(1)(2)(3)(4)(5)(6)(7)(8)(9)(10)(11)");
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        m.find();
+        m.appendReplacement(result, toSupplementaries("$1w$11w$3"));
+        if (!result.toString().equals(toSupplementaries("zzz1w11w3")))
+            failCount++;
+
+        // Check to make sure it backs off $15 to $1 if only three groups
+        blah = toSupplementaries("zzzabcdcdefzzz");
+        p = Pattern.compile(toSupplementaries("(ab)(cd)*(ef)"));
+        m = p.matcher(blah);
+        result = new StringBuilder();
+        m.find();
+        m.appendReplacement(result, toSupplementaries("$1w$15w$3"));
+        if (!result.toString().equals(toSupplementaries("zzzabwab5wef")))
+            failCount++;
+        // Check nothing has been appended into the output buffer if
+        // the replacement string triggers IllegalArgumentException.
+        p = Pattern.compile("(abc)");
+        m = p.matcher("abcd");
+        result = new StringBuilder();
+        m.find();
+        try {
+            m.appendReplacement(result, ("xyz$g"));
+            failCount++;
+        } catch (IllegalArgumentException iae) {
+            if (result.length() != 0)
+                failCount++;
+        }
+        report("SB Substitution 2");
+    }
+
     /*
      * 5 groups of characters are created to make a substitution string.
      * A base string will be created including random lead chars, the
@@ -3057,6 +3342,93 @@ public class RegExTest {
         }
 
         report("Substitution Basher");
+    }
+
+    /*
+     * 5 groups of characters are created to make a substitution string.
+     * A base string will be created including random lead chars, the
+     * substitution string, and random trailing chars.
+     * A pattern containing the 5 groups is searched for and replaced with:
+     * random group + random string + random group.
+     * The results are checked for correctness.
+     */
+    private static void substitutionBasher2() {
+        for (int runs = 0; runs<1000; runs++) {
+            // Create a base string to work in
+            int leadingChars = generator.nextInt(10);
+            StringBuilder baseBuffer = new StringBuilder(100);
+            String leadingString = getRandomAlphaString(leadingChars);
+            baseBuffer.append(leadingString);
+
+            // Create 5 groups of random number of random chars
+            // Create the string to substitute
+            // Create the pattern string to search for
+            StringBuilder bufferToSub = new StringBuilder(25);
+            StringBuilder bufferToPat = new StringBuilder(50);
+            String[] groups = new String[5];
+            for(int i=0; i<5; i++) {
+                int aGroupSize = generator.nextInt(5)+1;
+                groups[i] = getRandomAlphaString(aGroupSize);
+                bufferToSub.append(groups[i]);
+                bufferToPat.append('(');
+                bufferToPat.append(groups[i]);
+                bufferToPat.append(')');
+            }
+            String stringToSub = bufferToSub.toString();
+            String pattern = bufferToPat.toString();
+
+            // Place sub string into working string at random index
+            baseBuffer.append(stringToSub);
+
+            // Append random chars to end
+            int trailingChars = generator.nextInt(10);
+            String trailingString = getRandomAlphaString(trailingChars);
+            baseBuffer.append(trailingString);
+            String baseString = baseBuffer.toString();
+
+            // Create test pattern and matcher
+            Pattern p = Pattern.compile(pattern);
+            Matcher m = p.matcher(baseString);
+
+            // Reject candidate if pattern happens to start early
+            m.find();
+            if (m.start() < leadingChars)
+                continue;
+
+            // Reject candidate if more than one match
+            if (m.find())
+                continue;
+
+            // Construct a replacement string with :
+            // random group + random string + random group
+            StringBuilder bufferToRep = new StringBuilder();
+            int groupIndex1 = generator.nextInt(5);
+            bufferToRep.append("$" + (groupIndex1 + 1));
+            String randomMidString = getRandomAlphaString(5);
+            bufferToRep.append(randomMidString);
+            int groupIndex2 = generator.nextInt(5);
+            bufferToRep.append("$" + (groupIndex2 + 1));
+            String replacement = bufferToRep.toString();
+
+            // Do the replacement
+            String result = m.replaceAll(replacement);
+
+            // Construct expected result
+            StringBuilder bufferToRes = new StringBuilder();
+            bufferToRes.append(leadingString);
+            bufferToRes.append(groups[groupIndex1]);
+            bufferToRes.append(randomMidString);
+            bufferToRes.append(groups[groupIndex2]);
+            bufferToRes.append(trailingString);
+            String expectedResult = bufferToRes.toString();
+
+            // Check results
+            if (!result.equals(expectedResult)) {
+                failCount++;
+            }
+        }
+
+        report("Substitution Basher 2");
     }
 
     /**
