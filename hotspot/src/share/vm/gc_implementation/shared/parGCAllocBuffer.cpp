@@ -112,7 +112,7 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   }
   _used = _allocated - _wasted - _unused;
   size_t plab_sz = _used/(target_refills*no_of_gc_workers);
-  if (PrintPLAB) gclog_or_tty->print(" (plab_sz = %d ", plab_sz);
+  if (PrintPLAB) gclog_or_tty->print(" (plab_sz = " SIZE_FORMAT " ", plab_sz);
   // Take historical weighted average
   _filter.sample(plab_sz);
   // Clip from above and below, and align to object boundary
@@ -120,7 +120,7 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   plab_sz = MIN2(max_size(), plab_sz);
   plab_sz = align_object_size(plab_sz);
   // Latch the result
-  if (PrintPLAB) gclog_or_tty->print(" desired_plab_sz = %d) ", plab_sz);
+  if (PrintPLAB) gclog_or_tty->print(" desired_plab_sz = " SIZE_FORMAT ") ", plab_sz);
   _desired_plab_sz = plab_sz;
   // Now clear the accumulators for next round:
   // note this needs to be fixed in the case where we

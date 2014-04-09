@@ -270,7 +270,8 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
         gclog_or_tty->print_cr(" collection: %d ",
                        heap->total_collections());
         if (Verbose) {
-          gclog_or_tty->print("old_gen_capacity: %d young_gen_capacity: %d",
+          gclog_or_tty->print("old_gen_capacity: " SIZE_FORMAT
+            " young_gen_capacity: " SIZE_FORMAT,
             old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
         }
       }

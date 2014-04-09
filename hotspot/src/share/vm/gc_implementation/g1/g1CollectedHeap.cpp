@@ -3296,7 +3296,7 @@ public:
       int *val;
       for (cur = start; cur < end; cur++) {
         val = (int *) cur;
-        gclog_or_tty->print("\t "PTR_FORMAT":"PTR_FORMAT"\n", val, *val);
+        gclog_or_tty->print("\t "PTR_FORMAT":%d\n", val, *val);
       }
     }
   }
