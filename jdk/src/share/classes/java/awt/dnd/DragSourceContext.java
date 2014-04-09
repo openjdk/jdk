@@ -576,9 +576,9 @@ public class DragSourceContext
             throw new InvalidObjectException("Null trigger component");
         }
 
-        int DGRActions = newTrigger.getSourceAsDragGestureRecognizer().getSourceActions()
+        int newSourceActions = f.get("sourceActions", 0)
                 & (DnDConstants.ACTION_COPY_OR_MOVE | DnDConstants.ACTION_LINK);
-        if (DGRActions == DnDConstants.ACTION_NONE) {
+        if (newSourceActions == DnDConstants.ACTION_NONE) {
             throw new InvalidObjectException("Invalid source actions");
         }
         int triggerActions = newTrigger.getDragAction();
@@ -591,8 +591,7 @@ public class DragSourceContext
 
         cursor = (Cursor)f.get("cursor", null);
         useCustomCursor = f.get("useCustomCursor", false);
-        sourceActions = f.get("sourceActions", 0)
-                & (DnDConstants.ACTION_COPY_OR_MOVE | DnDConstants.ACTION_LINK);
+        sourceActions = newSourceActions;
 
         transferable = (Transferable)s.readObject();
         listener = (DragSourceListener)s.readObject();
