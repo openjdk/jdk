@@ -3754,7 +3754,7 @@ void CMTask::drain_local_queue(bool partially) {
 
   if (_task_queue->size() > target_size) {
     if (_cm->verbose_high()) {
-      gclog_or_tty->print_cr("[%u] draining local queue, target size = %d",
+      gclog_or_tty->print_cr("[%u] draining local queue, target size = " SIZE_FORMAT,
                              _worker_id, target_size);
     }
 
@@ -3782,7 +3782,7 @@ void CMTask::drain_local_queue(bool partially) {
     }
 
     if (_cm->verbose_high()) {
-      gclog_or_tty->print_cr("[%u] drained local queue, size = %d",
+      gclog_or_tty->print_cr("[%u] drained local queue, size = %u",
                              _worker_id, _task_queue->size());
     }
   }
@@ -3810,7 +3810,7 @@ void CMTask::drain_global_stack(bool partially) {
 
   if (_cm->mark_stack_size() > target_size) {
     if (_cm->verbose_low()) {
-      gclog_or_tty->print_cr("[%u] draining global_stack, target size %d",
+      gclog_or_tty->print_cr("[%u] draining global_stack, target size " SIZE_FORMAT,
                              _worker_id, target_size);
     }
 
@@ -3820,7 +3820,7 @@ void CMTask::drain_global_stack(bool partially) {
     }
 
     if (_cm->verbose_low()) {
-      gclog_or_tty->print_cr("[%u] drained global stack, size = %d",
+      gclog_or_tty->print_cr("[%u] drained global stack, size = " SIZE_FORMAT,
                              _worker_id, _cm->mark_stack_size());
     }
   }

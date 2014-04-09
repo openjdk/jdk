@@ -491,7 +491,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
       } else {
         if (G1TraceHeapRegionRememberedSet) {
           gclog_or_tty->print_cr("   [tid %d] sparse table entry "
-                        "overflow(f: %d, t: %d)",
+                        "overflow(f: %d, t: %u)",
                         tid, from_hrs_ind, cur_hrs_ind);
         }
       }
@@ -610,7 +610,7 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
     _n_coarse_entries++;
     if (G1TraceHeapRegionRememberedSet) {
       gclog_or_tty->print("Coarsened entry in region [" PTR_FORMAT "...] "
-                 "for region [" PTR_FORMAT "...] (%d coarse entries).\n",
+                 "for region [" PTR_FORMAT "...] (" SIZE_FORMAT " coarse entries).\n",
                  hr()->bottom(),
                  max->hr()->bottom(),
                  _n_coarse_entries);
@@ -903,10 +903,12 @@ void HeapRegionRemSet::print() {
   }
   if (iter.n_yielded() != occupied()) {
     gclog_or_tty->print_cr("Yielded disagrees with occupied:");
-    gclog_or_tty->print_cr("  %6d yielded (%6d coarse, %6d fine).",
+    gclog_or_tty->print_cr("  " SIZE_FORMAT_W(6) " yielded (" SIZE_FORMAT_W(6)
+                  " coarse, " SIZE_FORMAT_W(6) " fine).",
                   iter.n_yielded(),
                   iter.n_yielded_coarse(), iter.n_yielded_fine());
-    gclog_or_tty->print_cr("  %6d occ     (%6d coarse, %6d fine).",
+    gclog_or_tty->print_cr("  " SIZE_FORMAT_W(6) " occ     (" SIZE_FORMAT_W(6)
+                           " coarse, " SIZE_FORMAT_W(6) " fine).",
                   occupied(), occ_coarse(), occ_fine());
   }
   guarantee(iter.n_yielded() == occupied(),
