@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3449,6 +3449,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class ScrollableTabViewport extends JViewport implements UIResource {
         public ScrollableTabViewport() {
             super();
@@ -3463,6 +3464,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class ScrollableTabPanel extends JPanel implements UIResource {
         public ScrollableTabPanel() {
             super(null);
@@ -3493,6 +3495,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class ScrollableTabButton extends BasicArrowButton implements UIResource,
                                                                             SwingConstants {
         public ScrollableTabButton(int direction) {
@@ -3818,6 +3821,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         return htmlViews;
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class TabContainer extends JPanel implements UIResource {
         private boolean notifyTabbedPane = true;
 
@@ -3862,6 +3866,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class CroppedEdge extends JPanel implements UIResource {
         private Shape shape;
         private int tabIndex;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.beans.PropertyChangeListener;
  *
  * @author Jasper Potts
  */
+@SuppressWarnings("serial") // Same-version serialization only
 class DerivedColor extends Color {
     private final String uiDefaultParentName;
     private final float hOffset, sOffset, bOffset;
@@ -173,6 +174,7 @@ class DerivedColor extends Color {
         return src == null ? s : s + " pColor=" + src.getRed() + "," + src.getGreen() + "," + src.getBlue();
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     static class UIResource extends DerivedColor implements javax.swing.plaf.UIResource {
         UIResource(String uiDefaultParentName, float hOffset, float sOffset,
                    float bOffset, int aOffset) {

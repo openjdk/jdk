@@ -52,7 +52,6 @@ AWT_ASSERT_APPKIT_THREAD;
     fMenu = nil;
     [super dealloc];
 }
-//- (void)finalize { [super finalize]; }
 
 - (void)addJavaSubmenu:(CMenu *)submenu {
     [ThreadUtilities performOnMainThread:@selector(addNativeItem_OnAppKitThread:) on:self withObject:submenu waitUntilDone:YES];
@@ -169,10 +168,6 @@ JNF_COCOA_ENTER(env);
 
     // Add it to the parent menu
     [((CMenu *)jlong_to_ptr(parentMenu)) addJavaSubmenu: aCMenu];
-    if (aCMenu) {
-        CFRetain(aCMenu); // GC
-        [aCMenu release];
-    }
 
 JNF_COCOA_EXIT(env);
 
@@ -209,10 +204,6 @@ JNF_COCOA_ENTER(env);
         [parent javaSetHelpMenu: aCMenu];
     }
 
-    if (aCMenu) {
-        CFRetain(aCMenu); // GC
-        [aCMenu release];
-    }
 JNF_COCOA_EXIT(env);
     return ptr_to_jlong(aCMenu);
 }
@@ -275,13 +266,9 @@ Java_sun_lwawt_macosx_CMenu_nativeGetNSMenu
     NSMenu* nsMenu = NULL;
 
 JNF_COCOA_ENTER(env);
-    nsMenu = [((CMenu *)jlong_to_ptr(menuObject)) menu];
-JNF_COCOA_EXIT(env);
-
     // Strong retain this menu; it'll get released in Java_apple_laf_ScreenMenu_addMenuListeners
-    if (nsMenu) {
-        CFRetain(nsMenu); // GC
-    }
+    nsMenu = [[((CMenu *)jlong_to_ptr(menuObject)) menu] retain];
+JNF_COCOA_EXIT(env);
 
     return ptr_to_jlong(nsMenu);
 }

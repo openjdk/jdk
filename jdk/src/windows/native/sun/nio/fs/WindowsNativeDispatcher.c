@@ -1123,11 +1123,13 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFullPathName0(JNIEnv *env,
                     JNU_ThrowInternalError(env, "GetFullPathNameW failed");
                 }
                 free(lpBuf);
+            } else {
+                JNU_ThrowOutOfMemoryError(env, "native memory allocation failure");
             }
         }
-    }
-    if (len == 0)
+    } else {
         throwWindowsException(env, GetLastError());
+    }
 
     return rv;
 }
@@ -1162,13 +1164,13 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFinalPathNameByHandle(JNIEnv* env,
                     JNU_ThrowInternalError(env, "GetFinalPathNameByHandleW failed");
                 }
                 free(lpBuf);
+            } else {
+                JNU_ThrowOutOfMemoryError(env, "native memory allocation failure");
             }
         }
-    }
-
-    if (len == 0)
+    } else {
         throwWindowsException(env, GetLastError());
-
+    }
     return rv;
 }
 

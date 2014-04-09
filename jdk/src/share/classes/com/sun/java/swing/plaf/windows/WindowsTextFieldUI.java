@@ -100,6 +100,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
      * WindowsFieldCaret has different scrolling behavior than
      * DefaultCaret.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class WindowsFieldCaret extends DefaultCaret implements UIResource {
 
         public WindowsFieldCaret() {

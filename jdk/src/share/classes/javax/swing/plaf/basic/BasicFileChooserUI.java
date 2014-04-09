@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -752,6 +752,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     /**
      * Creates a new folder.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class NewFolderAction extends AbstractAction {
         protected NewFolderAction() {
             super(FilePane.ACTION_NEW_FOLDER);
@@ -794,6 +795,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     /**
      * Acts on the "home" key event or equivalent event.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class GoHomeAction extends AbstractAction {
         protected GoHomeAction() {
             super("Go Home");
@@ -804,6 +806,7 @@ public class BasicFileChooserUI extends FileChooserUI {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class ChangeToParentDirectoryAction extends AbstractAction {
         protected ChangeToParentDirectoryAction() {
             super("Go Up");
@@ -817,6 +820,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     /**
      * Responds to an Open or Save request
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class ApproveSelectionAction extends AbstractAction {
         protected ApproveSelectionAction() {
             super(FilePane.ACTION_APPROVE_SELECTION);
@@ -1125,6 +1129,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     /**
      * Responds to a cancel request.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class CancelSelectionAction extends AbstractAction {
         public void actionPerformed(ActionEvent e) {
             getFileChooser().cancelSelection();
@@ -1134,6 +1139,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     /**
      * Rescans the files in the current directory
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class UpdateAction extends AbstractAction {
         public void actionPerformed(ActionEvent e) {
             JFileChooser fc = getFileChooser();
@@ -1286,6 +1292,7 @@ public class BasicFileChooserUI extends FileChooserUI {
      * Data transfer support for the file chooser.  Since files are currently presented
      * as a list, the list support is reused with the added flavor of DataFlavor.javaFileListFlavor
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     static class FileTransferHandler extends TransferHandler implements UIResource {
 
         /**

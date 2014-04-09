@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import sun.swing.plaf.synth.*;
  * @since 1.5
  * @author Scott Violet
  */
+@SuppressWarnings("serial") // Per above comment, not actually serializable
 public class SynthLookAndFeel extends BasicLookAndFeel {
     /**
      * Used in a handful of places where we need an empty Insets.
