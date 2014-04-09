@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,7 +284,7 @@ public class Fault1_2Impl extends FaultImpl {
     }
 
     public String getFaultNode() {
-        SOAPElement faultNode = findChild(getFaultNodeName());
+        SOAPElement faultNode = findAndConvertChildElement(getFaultNodeName());
         if (faultNode == null) {
             return null;
         }
@@ -292,7 +292,7 @@ public class Fault1_2Impl extends FaultImpl {
     }
 
     public void setFaultNode(String uri) throws SOAPException {
-        SOAPElement faultNode = findChild(getFaultNodeName());
+        SOAPElement faultNode = findAndConvertChildElement(getFaultNodeName());
         if (faultNode != null) {
             faultNode.detachNode();
         }

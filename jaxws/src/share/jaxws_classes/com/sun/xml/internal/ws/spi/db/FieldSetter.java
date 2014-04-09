@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
 package com.sun.xml.internal.ws.spi.db;
 
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-
+import javax.xml.ws.WebServiceException;
+import static com.sun.xml.internal.ws.spi.db.PropertyGetterBase.verifyWrapperType;
 
 /**
  * FieldSetter
@@ -41,6 +39,7 @@ public class FieldSetter extends PropertySetterBase {
     protected Field field;
 
     public FieldSetter(Field f) {
+        verifyWrapperType(f.getDeclaringClass());
         field = f;
         type = f.getType();
     }
@@ -49,29 +48,12 @@ public class FieldSetter extends PropertySetterBase {
         return field;
     }
 
-    public void set(final Object instance, final Object resource) {
-        if (field.isAccessible()) {
-            try {
-                field.set(instance, resource);
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                    public Object run() throws IllegalAccessException {
-                        if (!field.isAccessible()) {
-                            field.setAccessible(true);
-                        }
-                        field.set(instance, resource);
-                        return null;
-                    }
-                });
-            } catch (PrivilegedActionException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+    public void set(final Object instance, final Object val) {
+        final Object resource = (type.isPrimitive() && val == null)? uninitializedValue(type): val;
+        try {
+            field.set(instance, resource);
+        } catch (Exception e) {
+            throw new WebServiceException(e);
         }
     }
 
