@@ -1072,9 +1072,6 @@ public class Check {
             if (sym.isLocal()) {
                 mask = LocalClassFlags;
                 if (sym.name.isEmpty()) { // Anonymous class
-                    // Anonymous classes in static methods are themselves static;
-                    // that's why we admit STATIC here.
-                    mask |= STATIC;
                     // JLS: Anonymous classes are final.
                     implicit |= FINAL;
                 }
@@ -1625,7 +1622,7 @@ public class Check {
                  protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.weaker.access",
                       cannotOverride(m, other),
-                      other.flags() == 0 ?
+                      (other.flags() & AccessFlags) == 0 ?
                           "package" :
                           asFlagSet(other.flags() & AccessFlags));
             m.flags_field |= BAD_OVERRIDE;
