@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,18 @@
 #include "utilities/stack.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #endif // INCLUDE_ALL_GCS
 
 inline void MarkSweep::mark_object(oop obj) {
+#if INCLUDE_ALL_GCS
+  if (G1StringDedup::is_enabled()) {
+    // We must enqueue the object before it is marked
+    // as we otherwise can't read the object's age.
+    G1StringDedup::enqueue_from_mark(obj);
+  }
+#endif
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of markSweep.
   markOop mark = obj->mark();

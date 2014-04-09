@@ -1285,7 +1285,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void save_sweep_limit();
 
   // More iteration support
-  virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
   virtual void oop_iterate(ExtendedOopClosure* cl);
   virtual void safe_object_iterate(ObjectClosure* cl);
   virtual void object_iterate(ObjectClosure* cl);

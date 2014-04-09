@@ -60,6 +60,7 @@ class Deoptimization : AllStatic {
     Reason_predicate,             // compiler generated predicate failed
     Reason_loop_limit_check,      // compiler generated loop limits check failed
     Reason_speculate_class_check, // saw unexpected object class from type speculation
+    Reason_rtm_state_change,      // rtm state change detected
     Reason_LIMIT,
     // Note:  Keep this enum in sync. with _trap_reason_name.
     Reason_RECORDED_LIMIT = Reason_bimorphic  // some are not recorded per bc

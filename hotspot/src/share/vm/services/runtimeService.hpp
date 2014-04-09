@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@ private:
   static PerfCounter* _total_safepoints;
   static PerfCounter* _safepoint_time_ticks;   // Accumulated time at safepoints
   static PerfCounter* _application_time_ticks; // Accumulated time not at safepoints
-  static PerfCounter* _thread_interrupt_signaled_count;// os:interrupt thr_kill
-  static PerfCounter* _interrupted_before_count;  // _INTERRUPTIBLE OS_INTRPT
-  static PerfCounter* _interrupted_during_count;  // _INTERRUPTIBLE OS_INTRPT
 
   static TimeStamp _safepoint_timer;
   static TimeStamp _app_timer;
@@ -58,10 +55,6 @@ public:
   static void record_safepoint_end() NOT_MANAGEMENT_RETURN;
   static void record_application_start() NOT_MANAGEMENT_RETURN;
 
-  // interruption events
-  static void record_interrupted_before_count() NOT_MANAGEMENT_RETURN;
-  static void record_interrupted_during_count() NOT_MANAGEMENT_RETURN;
-  static void record_thread_interrupt_signaled_count() NOT_MANAGEMENT_RETURN;
 };
 
 #endif // SHARE_VM_SERVICES_RUNTIMESERVICE_HPP

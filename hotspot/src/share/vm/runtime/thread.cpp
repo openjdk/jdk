@@ -107,6 +107,9 @@
 #include "opto/c2compiler.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #endif
+#if INCLUDE_RTM_OPT
+#include "runtime/rtmLocking.hpp"
+#endif
 
 #ifdef DTRACE_ENABLED
 
@@ -3621,6 +3624,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
   BiasedLocking::init();
+
+#if INCLUDE_RTM_OPT
+  RTMLockingCounters::init();
+#endif
 
   if (JDK_Version::current().post_vm_init_hook_enabled()) {
     call_postVMInitHook(THREAD);

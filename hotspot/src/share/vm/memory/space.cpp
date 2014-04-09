@@ -42,9 +42,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-void SpaceMemRegionOopsIterClosure::do_oop(oop* p)       { SpaceMemRegionOopsIterClosure::do_oop_work(p); }
-void SpaceMemRegionOopsIterClosure::do_oop(narrowOop* p) { SpaceMemRegionOopsIterClosure::do_oop_work(p); }
-
 HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
   if (top_obj != NULL) {
@@ -684,43 +681,6 @@ void ContiguousSpace::oop_iterate(ExtendedOopClosure* blk) {
   while (obj_addr < t) {
     obj_addr += oop(obj_addr)->oop_iterate(blk);
   }
-}
-
-void ContiguousSpace::oop_iterate(MemRegion mr, ExtendedOopClosure* blk) {
-  if (is_empty()) {
-    return;
-  }
-  MemRegion cur = MemRegion(bottom(), top());
-  mr = mr.intersection(cur);
-  if (mr.is_empty()) {
-    return;
-  }
-  if (mr.equals(cur)) {
-    oop_iterate(blk);
-    return;
-  }
-  assert(mr.end() <= top(), "just took an intersection above");
-  HeapWord* obj_addr = block_start(mr.start());
-  HeapWord* t = mr.end();
-
-  // Handle first object specially.
-  oop obj = oop(obj_addr);
-  SpaceMemRegionOopsIterClosure smr_blk(blk, mr);
-  obj_addr += obj->oop_iterate(&smr_blk);
-  while (obj_addr < t) {
-    oop obj = oop(obj_addr);
-    assert(obj->is_oop(), "expected an oop");
-    obj_addr += obj->size();
-    // If "obj_addr" is not greater than top, then the
-    // entire object "obj" is within the region.
-    if (obj_addr <= t) {
-      obj->oop_iterate(blk);
-    } else {
-      // "obj" extends beyond end of region
-      obj->oop_iterate(&smr_blk);
-      break;
-    }
-  };
 }
 
 void ContiguousSpace::object_iterate(ObjectClosure* blk) {

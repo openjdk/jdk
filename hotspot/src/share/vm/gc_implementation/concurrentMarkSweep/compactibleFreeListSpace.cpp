@@ -793,53 +793,6 @@ void CompactibleFreeListSpace::oop_iterate(ExtendedOopClosure* cl) {
   }
 }
 
-// Apply the given closure to each oop in the space \intersect memory region.
-void CompactibleFreeListSpace::oop_iterate(MemRegion mr, ExtendedOopClosure* cl) {
-  assert_lock_strong(freelistLock());
-  if (is_empty()) {
-    return;
-  }
-  MemRegion cur = MemRegion(bottom(), end());
-  mr = mr.intersection(cur);
-  if (mr.is_empty()) {
-    return;
-  }
-  if (mr.equals(cur)) {
-    oop_iterate(cl);
-    return;
-  }
-  assert(mr.end() <= end(), "just took an intersection above");
-  HeapWord* obj_addr = block_start(mr.start());
-  HeapWord* t = mr.end();
-
-  SpaceMemRegionOopsIterClosure smr_blk(cl, mr);
-  if (block_is_obj(obj_addr)) {
-    // Handle first object specially.
-    oop obj = oop(obj_addr);
-    obj_addr += adjustObjectSize(obj->oop_iterate(&smr_blk));
-  } else {
-    FreeChunk* fc = (FreeChunk*)obj_addr;
-    obj_addr += fc->size();
-  }
-  while (obj_addr < t) {
-    HeapWord* obj = obj_addr;
-    obj_addr += block_size(obj_addr);
-    // If "obj_addr" is not greater than top, then the
-    // entire object "obj" is within the region.
-    if (obj_addr <= t) {
-      if (block_is_obj(obj)) {
-        oop(obj)->oop_iterate(cl);
-      }
-    } else {
-      // "obj" extends beyond end of region
-      if (block_is_obj(obj)) {
-        oop(obj)->oop_iterate(&smr_blk);
-      }
-      break;
-    }
-  }
-}
-
 // NOTE: In the following methods, in order to safely be able to
 // apply the closure to an object, we need to be sure that the
 // object has been initialized. We are guaranteed that an object

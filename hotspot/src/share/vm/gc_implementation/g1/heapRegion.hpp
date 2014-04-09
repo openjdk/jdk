@@ -271,6 +271,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Fields used by the HeapRegionSetBase class and subclasses.
   HeapRegion* _next;
+  HeapRegion* _prev;
 #ifdef ASSERT
   HeapRegionSetBase* _containing_set;
 #endif // ASSERT
@@ -531,11 +532,13 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Methods used by the HeapRegionSetBase class and subclasses.
 
-  // Getter and setter for the next field used to link regions into
+  // Getter and setter for the next and prev fields used to link regions into
   // linked lists.
   HeapRegion* next()              { return _next; }
+  HeapRegion* prev()              { return _prev; }
 
   void set_next(HeapRegion* next) { _next = next; }
+  void set_prev(HeapRegion* prev) { _prev = prev; }
 
   // Every region added to a set is tagged with a reference to that
   // set. This is used for doing consistency checking to make sure that
@@ -596,7 +599,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void save_marks();
 
   // Reset HR stuff to default values.
-  void hr_clear(bool par, bool clear_space);
+  void hr_clear(bool par, bool clear_space, bool locked = false);
   void par_clear();
 
   // Get the start of the unmarked area in this region.

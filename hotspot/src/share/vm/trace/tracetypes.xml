@@ -130,8 +130,23 @@ Now we can use the content + data type in declaring event fields.
       <value type="UTF8" field="type" label="type" />
     </content_type>
 
+    <content_type id="GCThresholdUpdater" hr_name="GC Treshold Updater"
+                  type="U1" jvm_type="GCTHRESHOLDUPDATER">
+      <value type="UTF8" field="updater" label="updater" />
+    </content_type>
+
     <content_type id="ReferenceType" hr_name="Reference Type"
                   type="U1" jvm_type="REFERENCETYPE">
+      <value type="UTF8" field="type" label="type" />
+    </content_type>
+
+    <content_type id="MetadataType" hr_name="Metadata Type"
+                  type="U1" jvm_type="METADATATYPE">
+      <value type="UTF8" field="type" label="type" />
+    </content_type>
+
+    <content_type id="MetaspaceObjectType" hr_name="Metaspace Object Type"
+                  type="U1" jvm_type="METASPACEOBJTYPE">
       <value type="UTF8" field="type" label="type" />
     </content_type>
 
@@ -324,9 +339,21 @@ Now we can use the content + data type in declaring event fields.
     <primary_type symbol="G1YCTYPE" datatype="U1" contenttype="G1YCTYPE"
                   type="u1" sizeop="sizeof(u1)" />
 
+    <!-- GCTHRESHOLDUPDATER -->
+    <primary_type symbol="GCTHRESHOLDUPDATER" datatype="U1" contenttype="GCTHRESHOLDUPDATER"
+                  type="u1" sizeop="sizeof(u1)" />
+
     <!-- REFERENCETYPE -->
     <primary_type symbol="REFERENCETYPE" datatype="U1"
                   contenttype="REFERENCETYPE" type="u1" sizeop="sizeof(u1)" />
+
+    <!-- METADATATYPE -->
+    <primary_type symbol="METADATATYPE" datatype="U1"
+                  contenttype="METADATATYPE" type="u1" sizeop="sizeof(u1)" />
+
+    <!-- METADATAOBJTYPE -->
+    <primary_type symbol="METASPACEOBJTYPE" datatype="U1"
+                  contenttype="METASPACEOBJTYPE" type="u1" sizeop="sizeof(u1)" />
 
     <!-- NARROWOOPMODE -->
     <primary_type symbol="NARROWOOPMODE" datatype="U1"
