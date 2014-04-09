@@ -222,9 +222,15 @@ void FontInstanceAdapter::getKerningAdjustment(LEPoint &adjustment) const
     jobject pt = env->NewObject(sunFontIDs.pt2DFloatClass,
                                 sunFontIDs.pt2DFloatCtr,
                                 adjustment.fX, adjustment.fY);
-    env->CallObjectMethod(fontStrike, sunFontIDs.adjustPointMID, pt);
-    adjustment.fX = env->GetFloatField(pt, sunFontIDs.xFID);
-    adjustment.fY = env->GetFloatField(pt, sunFontIDs.yFID);
+    if (pt == NULL) {
+        env->ExceptionClear();
+        adjustment.fX = 0.0f;
+        adjustment.fY = 0.0f;
+    } else {
+        env->CallObjectMethod(fontStrike, sunFontIDs.adjustPointMID, pt);
+        adjustment.fX = env->GetFloatField(pt, sunFontIDs.xFID);
+        adjustment.fY = env->GetFloatField(pt, sunFontIDs.yFID);
+    }
 }
 
 void FontInstanceAdapter::getWideGlyphAdvance(le_uint32 glyph, LEPoint &advance) const

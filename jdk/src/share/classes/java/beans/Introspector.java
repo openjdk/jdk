@@ -47,6 +47,8 @@ import java.util.EventObject;
 import java.util.List;
 import java.util.TreeMap;
 
+import sun.misc.JavaBeansIntrospectorAccess;
+import sun.misc.SharedSecrets;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -139,6 +141,20 @@ public class Introspector {
     static final String GET_PREFIX = "get";
     static final String SET_PREFIX = "set";
     static final String IS_PREFIX = "is";
+
+    // register with SharedSecrets for JMX usage
+    static {
+        SharedSecrets.setJavaBeansIntrospectorAccess((clazz, property) -> {
+            BeanInfo bi = Introspector.getBeanInfo(clazz);
+            PropertyDescriptor[] pds = bi.getPropertyDescriptors();
+            for (PropertyDescriptor pd: pds) {
+                if (pd.getName().equals(property)) {
+                    return pd.getReadMethod();
+                }
+            }
+            return null;
+        });
+    }
 
     //======================================================================
     //                          Public methods

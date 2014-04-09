@@ -606,6 +606,7 @@ public class JColorChooser extends JComponent implements Accessible {
  *
  * Note: This needs to be fixed to deal with localization!
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 class ColorChooserDialog extends JDialog {
     private Color initialColor;
     private JColorChooser chooserPane;
@@ -665,6 +666,7 @@ class ColorChooserDialog extends JDialog {
         cancelButton.getAccessibleContext().setAccessibleDescription(cancelString);
 
         // The following few lines are used to register esc to close the dialog
+        @SuppressWarnings("serial") // anonymous class
         Action cancelKeyAction = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 ((AbstractButton)e.getSource()).fireActionPerformed(e);
@@ -729,6 +731,7 @@ class ColorChooserDialog extends JDialog {
         chooserPane.setColor(initialColor);
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     class Closer extends WindowAdapter implements Serializable{
         public void windowClosing(WindowEvent e) {
             cancelButton.doClick(0);
@@ -737,6 +740,7 @@ class ColorChooserDialog extends JDialog {
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     static class DisposeOnClose extends ComponentAdapter implements Serializable{
         public void componentHidden(ComponentEvent e) {
             Window w = (Window)e.getComponent();
@@ -746,6 +750,7 @@ class ColorChooserDialog extends JDialog {
 
 }
 
+@SuppressWarnings("serial") // JDK-implementation class
 class ColorTracker implements ActionListener, Serializable {
     JColorChooser chooser;
     Color color;

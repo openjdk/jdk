@@ -58,7 +58,6 @@ import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 import static sun.swing.SwingUtilities2.Section.*;
 import sun.swing.PrintingStatus;
-import sun.swing.SwingLazyValue;
 
 /**
  * The <code>JTable</code> is used to display and edit regular two-dimensional tables

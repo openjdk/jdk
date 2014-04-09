@@ -71,7 +71,6 @@ AWT_ASSERT_APPKIT_THREAD;
 
     [super dealloc];
 }
-//- (void)finalize { [super finalize]; }
 
 - (void)finishLaunching
 {

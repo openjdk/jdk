@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ static unichar AWTKeyToMacShortcut(jint awtKey, BOOL doShift) {
         case java_awt_event_KeyEvent_VK_QUOTE           : macKey = '\''; break;
 
         case java_awt_event_KeyEvent_VK_ESCAPE          : macKey = 0x1B; break;
-//        case java_awt_event_KeyEvent_VK_SPACE           : macKey = kMenuSpaceGlyph; break;
+        case java_awt_event_KeyEvent_VK_SPACE           : macKey = ' '; break;
         case java_awt_event_KeyEvent_VK_PAGE_UP         : macKey = NSPageUpFunctionKey; break;
         case java_awt_event_KeyEvent_VK_PAGE_DOWN       : macKey = NSPageDownFunctionKey; break;
         case java_awt_event_KeyEvent_VK_END             : macKey = NSEndFunctionKey; break;
@@ -419,11 +419,6 @@ JNF_COCOA_ENTER(env);
     [parentCMenu addJavaMenuItem: aCMenuItem];
 
     // setLabel will be called after creation completes.
-
-    if (aCMenuItem) {
-        CFRetain(aCMenuItem); // GC
-        [aCMenuItem release];
-    }
 
 JNF_COCOA_EXIT(env);
     return ptr_to_jlong(aCMenuItem);

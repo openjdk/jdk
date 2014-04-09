@@ -35,7 +35,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.MalformedInputException;
 import sun.nio.cs.HistoricallyNamedCharset;
 import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
+import java.security.PrivilegedAction;
 import static java.lang.Character.UnicodeBlock;
 
 
@@ -117,6 +117,8 @@ public class JISAutoDetect
     }
 
     private static class Decoder extends CharsetDecoder {
+        private final static String osName = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> System.getProperty("os.name"));
 
         private final static String SJISName = getSJISName();
         private final static String EUCJPName = getEUCJPName();
@@ -239,12 +241,11 @@ public class JISAutoDetect
             return ((CharsetDecoder) detectedDecoder).charset();
         }
 
+
         /**
          * Returned Shift_JIS Charset name is OS dependent
          */
         private static String getSJISName() {
-            String osName = AccessController.doPrivileged(
-                new GetPropertyAction("os.name"));
             if (osName.equals("Solaris") || osName.equals("SunOS"))
                 return("PCK");
             else if (osName.startsWith("Windows"))
@@ -258,8 +259,6 @@ public class JISAutoDetect
          */
 
         private static String getEUCJPName() {
-            String osName = AccessController.doPrivileged(
-                new GetPropertyAction("os.name"));
             if (osName.equals("Solaris") || osName.equals("SunOS"))
                 return("x-eucjp-open");
             else

@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * An utility window class. This is a base class for Tooltip and Balloon.
  */
+@SuppressWarnings("serial") // JDK-implementation class
 public abstract class InfoWindow extends Window {
     private Container container;
     private Closer closer;
@@ -146,6 +147,7 @@ public abstract class InfoWindow extends Window {
         Rectangle getBounds();
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     public static class Tooltip extends InfoWindow {
 
         public interface LiveArguments extends InfoWindow.LiveArguments {
@@ -239,6 +241,7 @@ public abstract class InfoWindow extends Window {
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     public static class Balloon extends InfoWindow {
 
         public interface LiveArguments extends InfoWindow.LiveArguments {

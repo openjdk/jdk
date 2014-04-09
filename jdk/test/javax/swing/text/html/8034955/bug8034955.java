@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,29 @@
  * questions.
  */
 
-/*
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
+
+/**
  * @test
- * @bug 6795356
- * @summary Checks that SwingLazyValue class correclty works
- * @author Alexander Potochkin
- * @run main SwingLazyValueTest
+ * @bug 8034955
+ * @author Alexander Scherbatiy
+ * @summary JLabel/JToolTip throw ClassCastException for "<html>a<title>"
+ * @run main bug8034955
  */
-
-import sun.swing.SwingLazyValue;
-
-import javax.swing.*;
-
-public class SwingLazyValueTest {
+public class bug8034955 {
 
     public static void main(String[] args) throws Exception {
-        if(new SwingLazyValue("javax.swing.JTable$DoubleRenderer").
-                createValue(null) == null) {
-            throw new RuntimeException("SwingLazyValue doesn't work");
-        }
+        SwingUtilities.invokeAndWait(new Runnable() {
+
+            @Override
+            public void run() {
+                JFrame frame = new JFrame();
+                frame.getContentPane().add(new JLabel("<html>a<title>"));
+                frame.pack();
+                frame.setVisible(true);
+            }
+        });
     }
 }

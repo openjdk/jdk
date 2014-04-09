@@ -112,9 +112,9 @@ AWT_ASSERT_APPKIT_THREAD;
             remoteLayer.parentLayer = parentLayer;
             remoteLayer.remoteLayer = NULL;
             remoteLayer.jrsRemoteLayer = [remoteLayer createRemoteLayerBoundTo:JRSRemotePort];
-            CFRetain(remoteLayer);  // REMIND
+            [remoteLayer retain];  // REMIND
             remoteLayer.frame = CGRectMake(0, 0, 720, 500); // REMIND
-            CFRetain(remoteLayer.jrsRemoteLayer); // REMIND
+            [remoteLayer.jrsRemoteLayer retain]; // REMIND
             int layerID = [remoteLayer.jrsRemoteLayer layerID];
             NSLog(@"layer id to send = %d", layerID);
             sendLayerID(layerID);
@@ -1081,21 +1081,22 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     jarray array;
     jboolean isCopy;
     jint *_array;
-    NSRange range;
+    NSRange range = NSMakeRange(NSNotFound, 0);
 
     array = JNFCallObjectMethod(env, fInputMethodLOCKABLE, jm_markedRange); // AWT_THREADING Safe (AWTRunLoopMode)
 
     if (array) {
         _array = (*env)->GetIntArrayElements(env, array, &isCopy);
-        range = NSMakeRange(_array[0], _array[1]);
-
+        if (_array != NULL) {
+            range.location = _array[0];
+            range.length = _array[1];
 #ifdef IM_DEBUG
-        fprintf(stderr, "markedRange returning (%lu, %lu)\n", (unsigned long)range.location, (unsigned long)range.length);
+            fprintf(stderr, "markedRange returning (%lu, %lu)\n",
+                    (unsigned long)range.location, (unsigned long)range.length);
 #endif // IM_DEBUG
-        (*env)->ReleaseIntArrayElements(env, array, _array, 0);
+            (*env)->ReleaseIntArrayElements(env, array, _array, 0);
+        }
         (*env)->DeleteLocalRef(env, array);
-    } else {
-        range = NSMakeRange(NSNotFound, 0);
     }
 
     return range;
@@ -1115,7 +1116,7 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     jarray array;
     jboolean isCopy;
     jint *_array;
-    NSRange range;
+    NSRange range = NSMakeRange(NSNotFound, 0);
 
 #ifdef IM_DEBUG
     fprintf(stderr, "AWTView InputMethod Selector Called : [selectedRange]\n");
@@ -1124,15 +1125,15 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     array = JNFCallObjectMethod(env, fInputMethodLOCKABLE, jm_selectedRange); // AWT_THREADING Safe (AWTRunLoopMode)
     if (array) {
         _array = (*env)->GetIntArrayElements(env, array, &isCopy);
-        range = NSMakeRange(_array[0], _array[1]);
-        (*env)->ReleaseIntArrayElements(env, array, _array, 0);
+        if (_array != NULL) {
+            range.location = _array[0];
+            range.length = _array[1];
+            (*env)->ReleaseIntArrayElements(env, array, _array, 0);
+        }
         (*env)->DeleteLocalRef(env, array);
-    } else {
-        range = NSMakeRange(NSNotFound, 0);
     }
 
     return range;
-
 }
 
 /* This method returns the first frame of rects for theRange in screen coordindate system.
@@ -1140,7 +1141,7 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
 - (NSRect) firstRectForCharacterRange:(NSRange)theRange actualRange:(NSRangePointer)actualRange
 {
     if (!fInputMethodLOCKABLE) {
-        return NSMakeRect(0, 0, 0, 0);
+        return NSZeroRect;
     }
 
     static JNF_MEMBER_CACHE(jm_firstRectForCharacterRange, jc_CInputMethod,
@@ -1152,18 +1153,27 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     NSRect rect;
 
 #ifdef IM_DEBUG
-    fprintf(stderr, "AWTView InputMethod Selector Called : [firstRectForCharacterRange:] location=%lu, length=%lu\n", (unsigned long)theRange.location, (unsigned long)theRange.length);
+    fprintf(stderr,
+            "AWTView InputMethod Selector Called : [firstRectForCharacterRange:] location=%lu, length=%lu\n",
+            (unsigned long)theRange.location, (unsigned long)theRange.length);
 #endif // IM_DEBUG
 
-    array = JNFCallObjectMethod(env, fInputMethodLOCKABLE, jm_firstRectForCharacterRange, theRange.location); // AWT_THREADING Safe (AWTRunLoopMode)
+    array = JNFCallObjectMethod(env, fInputMethodLOCKABLE, jm_firstRectForCharacterRange,
+                                theRange.location); // AWT_THREADING Safe (AWTRunLoopMode)
 
     _array = (*env)->GetIntArrayElements(env, array, &isCopy);
-    rect = ConvertNSScreenRect(env, NSMakeRect(_array[0], _array[1], _array[2], _array[3]));
-    (*env)->ReleaseIntArrayElements(env, array, _array, 0);
+    if (_array) {
+        rect = ConvertNSScreenRect(env, NSMakeRect(_array[0], _array[1], _array[2], _array[3]));
+        (*env)->ReleaseIntArrayElements(env, array, _array, 0);
+    } else {
+        rect = NSZeroRect;
+    }
     (*env)->DeleteLocalRef(env, array);
 
 #ifdef IM_DEBUG
-    fprintf(stderr, "firstRectForCharacterRange returning x=%f, y=%f, width=%f, height=%f\n", rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
+    fprintf(stderr,
+            "firstRectForCharacterRange returning x=%f, y=%f, width=%f, height=%f\n",
+            rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
 #endif // IM_DEBUG
     return rect;
 }
@@ -1265,12 +1275,9 @@ JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
 
         CALayer *windowLayer = jlong_to_ptr(windowLayerPtr);
-        AWTView *view = [[AWTView alloc] initWithRect:rect
-                                         platformView:cPlatformView
-                                         windowLayer:windowLayer];
-        CFRetain(view);
-        [view release]; // GC
-        newView = view;
+        newView = [[AWTView alloc] initWithRect:rect
+                                   platformView:cPlatformView
+                                    windowLayer:windowLayer];
     }];
 
 JNF_COCOA_EXIT(env);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,16 @@ Java_java_awt_event_MouseEvent_initIDs(JNIEnv *env, jclass cls) {
     TRY;
 
     AwtMouseEvent::xID = env->GetFieldID(cls, "x", "I");
-    AwtMouseEvent::yID = env->GetFieldID(cls, "y", "I");
-    AwtMouseEvent::buttonID = env->GetFieldID(cls, "button", "I");
-
     DASSERT(AwtMouseEvent::xID != NULL);
+    CHECK_NULL(AwtMouseEvent::xID);
+
+    AwtMouseEvent::yID = env->GetFieldID(cls, "y", "I");
     DASSERT(AwtMouseEvent::yID != NULL);
+    CHECK_NULL(AwtMouseEvent::yID);
+
+    AwtMouseEvent::buttonID = env->GetFieldID(cls, "button", "I");
     DASSERT(AwtMouseEvent::buttonID != NULL);
+    CHECK_NULL(AwtMouseEvent::buttonID);
 
     CATCH_BAD_ALLOC;
 }

@@ -88,11 +88,10 @@ import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Duration;
@@ -120,6 +119,7 @@ import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
+import java.time.temporal.ValueRange;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -760,7 +760,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    // with()
+    // with(TemporalAdjuster)
     //-----------------------------------------------------------------------
     @Test
     public void test_with_adjustment() {
@@ -777,6 +777,331 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     @Test(expectedExceptions=NullPointerException.class)
     public void test_with_adjustment_null() {
         TEST_12_30_40_987654321.with((TemporalAdjuster) null);
+    }
+
+    //-----------------------------------------------------------------------
+    // with(TemporalField, long)
+    //-----------------------------------------------------------------------
+    private long[] testPoints(long max) {
+        long[] points = new long[9];
+        points[0] = 0;
+        points[1] = 1;
+        points[2] = 2;
+        points[3] = max / 7;
+        points[4] = (max / 7) * 2;
+        points[5] = (max / 2);
+        points[6] = (max / 7) * 6;;
+        points[7] = max - 2;
+        points[8] = max - 1;
+        return points;
+    }
+
+    // Returns a {@code LocalTime} with the specified nano-of-second.
+    // The hour, minute and second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_nanoOfSecond() {
+        for (long i : testPoints(1_000_000_000L)) {
+            LocalTime test = TEST_12_30_40_987654321.with(NANO_OF_SECOND, i);
+            assertEquals(test.get(NANO_OF_SECOND),  i);
+            assertEquals(test.get(HOUR_OF_DAY), TEST_12_30_40_987654321.get(HOUR_OF_DAY));
+            assertEquals(test.get(MINUTE_OF_HOUR), TEST_12_30_40_987654321.get(MINUTE_OF_HOUR));
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified nano-of-day.
+    // This completely replaces the time and is equivalent to {@link #ofNanoOfDay(long)}.
+    @Test
+    public void test_with_longTemporalField_nanoOfDay() {
+        for (long i : testPoints(86_400_000_000_000L)) {
+            LocalTime test = TEST_12_30_40_987654321.with(NANO_OF_DAY, i);
+            assertEquals(test, LocalTime.ofNanoOfDay(i));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the nano-of-second replaced by the specified
+    // micro-of-second multiplied by 1,000.
+    // The hour, minute and second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_microOfSecond() {
+        for (long i : testPoints(1_000_000L)) {
+            LocalTime test = TEST_12_30_40_987654321.with(MICRO_OF_SECOND, i);
+            assertEquals(test.get(NANO_OF_SECOND),  i * 1_000);
+            assertEquals(test.get(HOUR_OF_DAY), TEST_12_30_40_987654321.get(HOUR_OF_DAY));
+            assertEquals(test.get(MINUTE_OF_HOUR), TEST_12_30_40_987654321.get(MINUTE_OF_HOUR));
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified micro-of-day.
+    // This completely replaces the time and is equivalent to using {@link #ofNanoOfDay(long)}
+    // with the micro-of-day multiplied by 1,000.
+    @Test
+    public void test_with_longTemporalField_microOfDay() {
+        for (long i : testPoints(86_400_000_000L)) {
+            LocalTime test = TEST_12_30_40_987654321.with(MICRO_OF_DAY, i);
+            assertEquals(test, LocalTime.ofNanoOfDay(i * 1000));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the nano-of-second replaced by the specified
+    // milli-of-second multiplied by 1,000,000.
+    // The hour, minute and second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_milliOfSecond() {
+        for (long i : testPoints(1_000L)) {
+            LocalTime test = TEST_12_30_40_987654321.with(MILLI_OF_SECOND, i);
+            assertEquals(test.get(NANO_OF_SECOND),  i * 1_000_000);
+            assertEquals(test.get(HOUR_OF_DAY), TEST_12_30_40_987654321.get(HOUR_OF_DAY));
+            assertEquals(test.get(MINUTE_OF_HOUR), TEST_12_30_40_987654321.get(MINUTE_OF_HOUR));
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified milli-of-day.
+    // This completely replaces the time and is equivalent to using {@link #ofNanoOfDay(long)}
+    // with the milli-of-day multiplied by 1,000,000.
+    @Test
+    public void test_with_longTemporalField_milliOfDay() {
+        for (long i : testPoints(86_400_000L)) {
+            LocalTime test = TEST_12_30_40_987654321.with(MILLI_OF_DAY, i);
+            assertEquals(test, LocalTime.ofNanoOfDay(i * 1_000_000));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified second-of-minute.
+    // The hour, minute and nano-of-second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_secondOfMinute() {
+        for (long i : testPoints(60L)) {
+            LocalTime test = TEST_12_30_40_987654321.with(SECOND_OF_MINUTE, i);
+            assertEquals(test.get(SECOND_OF_MINUTE), i);
+            assertEquals(test.get(HOUR_OF_DAY), TEST_12_30_40_987654321.get(HOUR_OF_DAY));
+            assertEquals(test.get(MINUTE_OF_HOUR), TEST_12_30_40_987654321.get(MINUTE_OF_HOUR));
+            assertEquals(test.get(NANO_OF_SECOND), TEST_12_30_40_987654321.get(NANO_OF_SECOND));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified second-of-day.
+    // The nano-of-second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_secondOfDay() {
+        for (long i : testPoints(24 * 60 * 60)) {
+            LocalTime test = TEST_12_30_40_987654321.with(SECOND_OF_DAY, i);
+            assertEquals(test.get(SECOND_OF_DAY), i);
+            assertEquals(test.get(NANO_OF_SECOND), TEST_12_30_40_987654321.get(NANO_OF_SECOND));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified minute-of-hour.
+    // The hour, second-of-minute and nano-of-second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_minuteOfHour() {
+        for (long i : testPoints(60)) {
+            LocalTime test = TEST_12_30_40_987654321.with(MINUTE_OF_HOUR, i);
+            assertEquals(test.get(MINUTE_OF_HOUR), i);
+            assertEquals(test.get(HOUR_OF_DAY), TEST_12_30_40_987654321.get(HOUR_OF_DAY));
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+            assertEquals(test.get(NANO_OF_SECOND), TEST_12_30_40_987654321.get(NANO_OF_SECOND));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified minute-of-day.
+    // The second-of-minute and nano-of-second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_minuteOfDay() {
+        for (long i : testPoints(24 * 60)) {
+            LocalTime test = TEST_12_30_40_987654321.with(MINUTE_OF_DAY, i);
+            assertEquals(test.get(MINUTE_OF_DAY), i);
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+            assertEquals(test.get(NANO_OF_SECOND), TEST_12_30_40_987654321.get(NANO_OF_SECOND));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified hour-of-am-pm.
+    // The AM/PM, minute-of-hour, second-of-minute and nano-of-second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_hourOfAmPm() {
+        for (int i = 0; i < 12; i++) {
+            LocalTime test = TEST_12_30_40_987654321.with(HOUR_OF_AMPM, i);
+            assertEquals(test.get(HOUR_OF_AMPM), i);
+            assertEquals(test.get(AMPM_OF_DAY), TEST_12_30_40_987654321.get(AMPM_OF_DAY));
+            assertEquals(test.get(MINUTE_OF_HOUR), TEST_12_30_40_987654321.get(MINUTE_OF_HOUR));
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+            assertEquals(test.get(NANO_OF_SECOND), TEST_12_30_40_987654321.get(NANO_OF_SECOND));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified clock-hour-of-am-pm.
+    // The AM/PM, minute-of-hour, second-of-minute and nano-of-second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_clockHourOfAmPm() {
+        for (int i = 1; i <= 12; i++) {
+            LocalTime test = TEST_12_30_40_987654321.with(CLOCK_HOUR_OF_AMPM, i);
+            assertEquals(test.get(CLOCK_HOUR_OF_AMPM), i);
+            assertEquals(test.get(AMPM_OF_DAY), TEST_12_30_40_987654321.get(AMPM_OF_DAY));
+            assertEquals(test.get(MINUTE_OF_HOUR), TEST_12_30_40_987654321.get(MINUTE_OF_HOUR));
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+            assertEquals(test.get(NANO_OF_SECOND), TEST_12_30_40_987654321.get(NANO_OF_SECOND));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified hour-of-day.
+    // The minute-of-hour, second-of-minute and nano-of-second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_hourOfDay() {
+        for (int i = 0; i < 24; i++) {
+            LocalTime test = TEST_12_30_40_987654321.with(HOUR_OF_DAY, i);
+            assertEquals(test.get(HOUR_OF_DAY), i);
+            assertEquals(test.get(MINUTE_OF_HOUR), TEST_12_30_40_987654321.get(MINUTE_OF_HOUR));
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+            assertEquals(test.get(NANO_OF_SECOND), TEST_12_30_40_987654321.get(NANO_OF_SECOND));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified clock-hour-of-day.
+    // The minute-of-hour, second-of-minute and nano-of-second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_clockHourOfDay() {
+        for (int i = 1; i <= 24; i++) {
+            LocalTime test = TEST_12_30_40_987654321.with(CLOCK_HOUR_OF_DAY, i);
+            assertEquals(test.get(CLOCK_HOUR_OF_DAY), i);
+            assertEquals(test.get(MINUTE_OF_HOUR), TEST_12_30_40_987654321.get(MINUTE_OF_HOUR));
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+            assertEquals(test.get(NANO_OF_SECOND), TEST_12_30_40_987654321.get(NANO_OF_SECOND));
+        }
+    }
+
+    // Returns a {@code LocalTime} with the specified AM/PM.
+    // The hour-of-am-pm, minute-of-hour, second-of-minute and nano-of-second will be unchanged.
+    @Test
+    public void test_with_longTemporalField_amPmOfDay() {
+        for (int i = 0; i <= 1; i++) {
+            LocalTime test = TEST_12_30_40_987654321.with(AMPM_OF_DAY, i);
+            assertEquals(test.get(AMPM_OF_DAY), i);
+            assertEquals(test.get(HOUR_OF_AMPM), TEST_12_30_40_987654321.get(HOUR_OF_AMPM));
+            assertEquals(test.get(MINUTE_OF_HOUR), TEST_12_30_40_987654321.get(MINUTE_OF_HOUR));
+            assertEquals(test.get(SECOND_OF_MINUTE), TEST_12_30_40_987654321.get(SECOND_OF_MINUTE));
+            assertEquals(test.get(NANO_OF_SECOND), TEST_12_30_40_987654321.get(NANO_OF_SECOND));
+        }
+    }
+
+    // The supported fields behave as follows...
+    // In all cases, if the new value is outside the valid range of values for the field
+    // then a {@code DateTimeException} will be thrown.
+    @DataProvider(name = "withTemporalField_outOfRange")
+    Object[][] data_withTemporalField_outOfRange() {
+        return new Object[][] {
+                {NANO_OF_SECOND, time(0, 0, 0, 0), NANO_OF_SECOND.range().getMinimum() - 1},
+                {NANO_OF_SECOND, time(0, 0, 0, 0), NANO_OF_SECOND.range().getMaximum() + 1},
+
+                {NANO_OF_DAY, time(0, 0, 0, 0), NANO_OF_DAY.range().getMinimum() - 1},
+                {NANO_OF_DAY, time(0, 0, 0, 0), NANO_OF_DAY.range().getMaximum() + 1},
+
+                {MICRO_OF_SECOND, time(0, 0, 0, 0), MICRO_OF_SECOND.range().getMinimum() - 1},
+                {MICRO_OF_SECOND, time(0, 0, 0, 0), MICRO_OF_SECOND.range().getMaximum() + 1},
+
+                {MICRO_OF_DAY, time(0, 0, 0, 0), MICRO_OF_DAY.range().getMinimum() - 1},
+                {MICRO_OF_DAY, time(0, 0, 0, 0), MICRO_OF_DAY.range().getMaximum() + 1},
+
+                {MILLI_OF_SECOND, time(0, 0, 0, 0), MILLI_OF_SECOND.range().getMinimum() - 1},
+                {MILLI_OF_SECOND, time(0, 0, 0, 0), MILLI_OF_SECOND.range().getMaximum() + 1},
+
+                {MILLI_OF_DAY, time(0, 0, 0, 0), MILLI_OF_DAY.range().getMinimum() - 1},
+                {MILLI_OF_DAY, time(0, 0, 0, 0), MILLI_OF_DAY.range().getMaximum() + 1},
+
+                {SECOND_OF_MINUTE, time(0, 0, 0, 0), SECOND_OF_MINUTE.range().getMinimum() - 1},
+                {SECOND_OF_MINUTE, time(0, 0, 0, 0), SECOND_OF_MINUTE.range().getMaximum() + 1},
+
+                {SECOND_OF_DAY, time(0, 0, 0, 0), SECOND_OF_DAY.range().getMinimum() - 1},
+                {SECOND_OF_DAY, time(0, 0, 0, 0), SECOND_OF_DAY.range().getMaximum() + 1},
+
+                {MINUTE_OF_HOUR, time(0, 0, 0, 0), MINUTE_OF_HOUR.range().getMinimum() - 1},
+                {MINUTE_OF_HOUR, time(0, 0, 0, 0), MINUTE_OF_HOUR.range().getMaximum() + 1},
+
+                {MINUTE_OF_DAY, time(0, 0, 0, 0), MINUTE_OF_DAY.range().getMinimum() - 1},
+                {MINUTE_OF_DAY, time(0, 0, 0, 0), MINUTE_OF_DAY.range().getMaximum() + 1},
+
+                {HOUR_OF_AMPM, time(0, 0, 0, 0), HOUR_OF_AMPM.range().getMinimum() - 1},
+                {HOUR_OF_AMPM, time(0, 0, 0, 0), HOUR_OF_AMPM.range().getMaximum() + 1},
+
+                {CLOCK_HOUR_OF_AMPM, time(0, 0, 0, 0), CLOCK_HOUR_OF_AMPM.range().getMinimum() - 1},
+                {CLOCK_HOUR_OF_AMPM, time(0, 0, 0, 0), CLOCK_HOUR_OF_AMPM.range().getMaximum() + 1},
+
+                {HOUR_OF_DAY, time(0, 0, 0, 0), HOUR_OF_DAY.range().getMinimum() - 1},
+                {HOUR_OF_DAY, time(0, 0, 0, 0), HOUR_OF_DAY.range().getMaximum() + 1},
+
+                {CLOCK_HOUR_OF_DAY, time(0, 0, 0, 0), CLOCK_HOUR_OF_DAY.range().getMinimum() - 1},
+                {CLOCK_HOUR_OF_DAY, time(0, 0, 0, 0), CLOCK_HOUR_OF_DAY.range().getMaximum() + 1},
+
+                {AMPM_OF_DAY, time(0, 0, 0, 0), AMPM_OF_DAY.range().getMinimum() - 1},
+                {AMPM_OF_DAY, time(0, 0, 0, 0), AMPM_OF_DAY.range().getMaximum() + 1},
+        };
+    }
+
+    @Test(dataProvider = "withTemporalField_outOfRange")
+    public void test_with_longTemporalField_invalid(TemporalField field, LocalTime base, long newValue) {
+        try {
+            base.with(field, newValue);
+            fail("Field should not be allowed " + field);
+        } catch (DateTimeException ex) {
+            // expected
+        }
+    }
+
+    // All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
+    @Test(expectedExceptions=UnsupportedTemporalTypeException.class)
+    public void test_with_longTemporalField_otherChronoField() {
+        TEST_12_30_40_987654321.with(ChronoField.DAY_OF_MONTH, 1);
+    }
+
+    // If the field is not a {@code ChronoField}, then the result of this method
+    // is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
+    // passing {@code this} as the argument.
+    @Test
+    public void test_with_longTemporalField_notChronoField() {
+        final LocalTime result = LocalTime.of(12, 30);
+        final LocalTime base = LocalTime.of(15, 45);
+        TemporalField field = new TemporalField() {
+            public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            public ValueRange range() {
+                return null;
+            }
+            public boolean isTimeBased() {
+                throw new UnsupportedOperationException();
+            }
+            public boolean isSupportedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            public boolean isDateBased() {
+                throw new UnsupportedOperationException();
+            }
+            public TemporalUnit getRangeUnit() {
+                throw new UnsupportedOperationException();
+            }
+            public long getFrom(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            public TemporalUnit getBaseUnit() {
+                throw new UnsupportedOperationException();
+            }
+            public <R extends Temporal> R adjustInto(R temporal, long newValue) {
+                assertEquals(temporal, base);
+                assertEquals(newValue, 12L);
+                @SuppressWarnings("unchecked")
+                R r = (R) result;
+                return r;
+            }
+        };
+        LocalTime test = base.with(field, 12L);
+        assertSame(test, result);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_with_longTemporalField_null() {
+        TEST_12_30_40_987654321.with((TemporalField) null, 1);
     }
 
     //-----------------------------------------------------------------------
