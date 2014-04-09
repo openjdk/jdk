@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,10 +141,13 @@ public class ASCIIUtility {
      *      Use {@link ByteOutputStream} and {@link ByteOutputStream#write(InputStream)}.
      */
     public static byte[] getBytes(InputStream is) throws IOException {
-        ByteOutputStream bos = new ByteOutputStream();
+        ByteOutputStream bos = null;
         try {
+            bos = new ByteOutputStream();
             bos.write(is);
         } finally {
+            if (bos != null)
+                bos.close();
             is.close();
         }
         return bos.toByteArray();

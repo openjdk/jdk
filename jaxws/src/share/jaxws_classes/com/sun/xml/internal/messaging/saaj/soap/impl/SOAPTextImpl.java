@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,23 @@
 
 package com.sun.xml.internal.messaging.saaj.soap.impl;
 
-import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
 
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Text;
-
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
 
-public class CommentImpl
-    extends com.sun.org.apache.xerces.internal.dom.CommentImpl
-    implements javax.xml.soap.Text, org.w3c.dom.Comment {
+public class SOAPTextImpl
+    extends com.sun.org.apache.xerces.internal.dom.TextImpl
+    implements javax.xml.soap.Text, org.w3c.dom.Text {
 
     protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_IMPL_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.impl.LocalStrings");
-    protected static ResourceBundle rb =
-        log.getResourceBundle();
 
-    public CommentImpl(SOAPDocumentImpl ownerDoc, String text) {
+    public SOAPTextImpl(SOAPDocumentImpl ownerDoc, String text) {
         super(ownerDoc, text);
     }
 
@@ -60,18 +54,18 @@ public class CommentImpl
         setNodeValue(text);
     }
 
-
-    public void setParentElement(SOAPElement element) throws SOAPException {
-        if (element == null) {
-            log.severe("SAAJ0112.impl.no.null.to.parent.elem");
+    public void setParentElement(SOAPElement parent) throws SOAPException {
+        if (parent == null) {
+            log.severe("SAAJ0126.impl.cannot.locate.ns");
             throw new SOAPException("Cannot pass NULL to setParentElement");
         }
-        ((ElementImpl) element).addNode(this);
+        ((ElementImpl) parent).addNode(this);
     }
 
     public SOAPElement getParentElement() {
         return (SOAPElement) getParentNode();
     }
+
 
     public void detachNode() {
         org.w3c.dom.Node parent = getParentNode();
@@ -88,27 +82,10 @@ public class CommentImpl
     }
 
     public boolean isComment() {
-        return true;
+        String txt = getNodeValue();
+        if (txt == null) {
+            return false;
+        }
+        return txt.startsWith("<!--") && txt.endsWith("-->");
     }
-
-    public Text splitText(int offset) throws DOMException {
-        log.severe("SAAJ0113.impl.cannot.split.text.from.comment");
-        throw new UnsupportedOperationException("Cannot split text from a Comment Node.");
-    }
-
-    public Text replaceWholeText(String content) throws DOMException {
-        log.severe("SAAJ0114.impl.cannot.replace.wholetext.from.comment");
-        throw new UnsupportedOperationException("Cannot replace Whole Text from a Comment Node.");
-    }
-
-    public String getWholeText() {
-        //TODO: maybe we have to implement this in future.
-        throw new UnsupportedOperationException("Not Supported");
-    }
-
-    public boolean isElementContentWhitespace() {
-        //TODO: maybe we have to implement this in future.
-        throw new UnsupportedOperationException("Not Supported");
-    }
-
 }

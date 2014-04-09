@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ import java.util.logging.Logger;
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.xml.soap.*;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
+import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 
 import com.sun.xml.internal.messaging.saaj.packaging.mime.Header;
@@ -109,6 +111,8 @@ public abstract class MessageImpl
     private boolean optimizeAttachmentProcessing = true;
 
     private InputStream inputStreamAfterSaveChanges = null;
+
+    public static final String LAZY_SOAP_BODY_PARSING = "saaj.lazy.soap.body";
 
     // switch back to old MimeMultipart incase of problem
     private static boolean switchOffBM = false;
@@ -341,7 +345,12 @@ public abstract class MessageImpl
 
     }
 
-    private void init(MimeHeaders headers, int stat, final ContentType contentType, final InputStream in) throws SOAPExceptionImpl {
+    public MessageImpl(MimeHeaders headers, ContentType ct, int stat,
+            XMLStreamReader reader) throws SOAPExceptionImpl {
+        init(headers, stat, ct, reader);
+    }
+
+    private void init(MimeHeaders headers, int stat, final ContentType contentType, final Object input) throws SOAPExceptionImpl {
         this.headers = headers;
 
         try {
@@ -382,20 +391,42 @@ public abstract class MessageImpl
                         + " Expected: "
                         + getExpectedContentType());
             }
-
+            InputStream in = null;
+            XMLStreamReader rdr = null;
+            if (input instanceof InputStream) {
+               in = (InputStream) input;
+            } else {
+              //is a StAX reader
+                rdr = (XMLStreamReader) input;
+            }
             if ((stat & PLAIN_XML_FLAG) != 0) {
-                if (isFastInfoset) {
-                    getSOAPPart().setContent(
-                        FastInfosetReflection.FastInfosetSource_new(in));
+                if (in != null) {
+                    if (isFastInfoset) {
+                        getSOAPPart().setContent(
+                                FastInfosetReflection.FastInfosetSource_new(in));
+                    } else {
+                        initCharsetProperty(contentType);
+                        getSOAPPart().setContent(new StreamSource(in));
+                    }
                 } else {
-                    initCharsetProperty(contentType);
-                    getSOAPPart().setContent(new StreamSource(in));
+                    //is a StAX reader
+                    if (isFastInfoset) {
+                        //need to get FI stax reader
+                    } else {
+                        initCharsetProperty(contentType);
+                        getSOAPPart().setContent(new StAXSource(rdr));
+                    }
                 }
             }
-            else if ((stat & MIME_MULTIPART_FLAG) != 0) {
+            else if ((stat & MIME_MULTIPART_FLAG) != 0 && in == null) {
+                //only parse multipart in the inputstream case
+                //in stax reader case, we would be given the attachments separately
+                getSOAPPart().setContent(new StAXSource(rdr));
+            } else if ((stat & MIME_MULTIPART_FLAG) != 0) {
+                final InputStream finalIn = in;
                 DataSource ds = new DataSource() {
                     public InputStream getInputStream() {
-                        return in;
+                        return finalIn;
                     }
 
                     public OutputStream getOutputStream() {
@@ -487,7 +518,17 @@ public abstract class MessageImpl
                     }
                 }
 
-                if (soapPartInputStream == null && soapMessagePart != null) {
+                // findbugs correctly points out that we'd NPE instantiating
+                // the ContentType (just below here) if soapMessagePart were
+                // null.  Hence are better off throwing a controlled exception
+                // at this point if it is null.
+                if (soapMessagePart == null) {
+                    log.severe("SAAJ0510.soap.cannot.create.envelope");
+                    throw new SOAPExceptionImpl(
+                        "Unable to create envelope from given source: SOAP part not found");
+                }
+
+                if (soapPartInputStream == null) {
                     soapPartInputStream = soapMessagePart.getInputStream();
                 }
 
@@ -541,6 +582,15 @@ public abstract class MessageImpl
         }
     }
 
+    public boolean isLazySoapBodyParsing() {
+        Object lazyParsingProp = getProperty(LAZY_SOAP_BODY_PARSING);
+        if (lazyParsingProp == null) return false;
+        if (lazyParsingProp instanceof Boolean) {
+            return ((Boolean) lazyParsingProp).booleanValue();
+        } else {
+            return Boolean.valueOf(lazyParsingProp.toString());
+        }
+    }
     public Object getProperty(String property) {
         return (String) properties.get(property);
     }
