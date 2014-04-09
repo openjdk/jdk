@@ -67,7 +67,7 @@ public class Clipboard {
      *
      * @since 1.5
      */
-    private final Set<FlavorListener> flavorListeners = new HashSet<>();
+    private Set<FlavorListener> flavorListeners;
 
     /**
      * A set of <code>DataFlavor</code>s that is available on
@@ -85,7 +85,6 @@ public class Clipboard {
      */
     public Clipboard(String name) {
         this.name = name;
-        currentDataFlavors = getAvailableDataFlavorSet();
     }
 
     /**
@@ -257,6 +256,12 @@ public class Clipboard {
         if (listener == null) {
             return;
         }
+
+        if (flavorListeners == null) {
+            flavorListeners = new HashSet<>();
+            currentDataFlavors = getAvailableDataFlavorSet();
+        }
+
         flavorListeners.add(listener);
     }
 
@@ -278,7 +283,7 @@ public class Clipboard {
      * @since 1.5
      */
     public synchronized void removeFlavorListener(FlavorListener listener) {
-        if (listener == null) {
+        if (listener == null || flavorListeners == null) {
             return;
         }
         flavorListeners.remove(listener);
@@ -297,7 +302,8 @@ public class Clipboard {
      * @since 1.5
      */
     public synchronized FlavorListener[] getFlavorListeners() {
-        return flavorListeners.toArray(new FlavorListener[flavorListeners.size()]);
+        return flavorListeners == null ? new FlavorListener[0] :
+            flavorListeners.toArray(new FlavorListener[flavorListeners.size()]);
     }
 
     /**
@@ -308,6 +314,10 @@ public class Clipboard {
      * @since 1.5
      */
     private void fireFlavorsChanged() {
+        if (flavorListeners == null) {
+            return;
+        }
+
         Set<DataFlavor> prevDataFlavors = currentDataFlavors;
         currentDataFlavors = getAvailableDataFlavorSet();
         if (Objects.equals(prevDataFlavors, currentDataFlavors)) {
