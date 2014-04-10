@@ -4048,8 +4048,8 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     worklist.push(root());
     for (uint next = 0; next < worklist.size(); ++next) {
       Node *n  = worklist.at(next);
-      const Type* t = igvn.type(n);
-      assert(t == t->remove_speculative(), "no more speculative types");
+      const Type* t = igvn.type_or_null(n);
+      assert((t == NULL) || (t == t->remove_speculative()), "no more speculative types");
       if (n->is_Type()) {
         t = n->as_Type()->type();
         assert(t == t->remove_speculative(), "no more speculative types");
