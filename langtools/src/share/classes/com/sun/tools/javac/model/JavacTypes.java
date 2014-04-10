@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ import com.sun.tools.javac.util.*;
  */
 public class JavacTypes implements javax.lang.model.util.Types {
 
-    private Symtab syms;
-    private Types types;
+    private final Symtab syms;
+    private final Types types;
 
     public static JavacTypes instance(Context context) {
         JavacTypes instance = context.get(JavacTypes.class);
@@ -58,18 +58,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         return instance;
     }
 
-    /**
-     * Public for use only by JavacProcessingEnvironment
-     */
     protected JavacTypes(Context context) {
-        setContext(context);
-    }
-
-    /**
-     * Use a new context.  May be called from outside to update
-     * internal state for a new annotation-processing round.
-     */
-    public void setContext(Context context) {
         context.put(JavacTypes.class, this);
         syms = Symtab.instance(context);
         types = Types.instance(context);

@@ -905,6 +905,12 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitPackageSymbol(this, p);
         }
+
+        /**Resets the Symbol into the state good for next round of annotation processing.*/
+        public void reset() {
+            metadata = null;
+        }
+
     }
 
     /** A class for class symbols
@@ -1154,6 +1160,26 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitClassSymbol(this, p);
         }
+
+        /**Resets the Symbol into the state good for next round of annotation processing.*/
+        public void reset() {
+            kind = TYP;
+            erasure_field = null;
+            members_field = null;
+            flags_field = 0;
+            if (type instanceof ClassType) {
+                ClassType t = (ClassType)type;
+                t.setEnclosingType(Type.noType);
+                t.rank_field = -1;
+                t.typarams_field = null;
+                t.allparams_field = null;
+                t.supertype_field = null;
+                t.interfaces_field = null;
+                t.all_interfaces_field = null;
+            }
+            metadata = null;
+        }
+
     }
 
 
