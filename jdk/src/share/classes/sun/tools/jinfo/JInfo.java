@@ -41,6 +41,7 @@ import sun.tools.attach.HotSpotVirtualMachine;
  */
 public class JInfo {
 
+    @SuppressWarnings("fallthrough")
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             usage(1); // no arguments
@@ -118,6 +119,7 @@ public class JInfo {
             case "-help":
             case "-h":
                 usage(0);
+                // Fall through
             default:
                if (args.length == 1) {
                    // no flags specified, we do -sysprops and -flags
