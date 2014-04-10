@@ -294,4 +294,23 @@ public final class Utils {
         return output;
     }
 
+    private static final char[] hexArray = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    /**
+     * Returns hex view of byte array
+     *
+     * @param bytes byte array to process
+     * @return Space separated hexadecimal string representation of bytes
+     */
+
+    public static String toHexString(byte[] bytes) {
+        char[] hexView = new char[bytes.length * 3];
+        int i = 0;
+        for (byte b : bytes) {
+            hexView[i++] = hexArray[(b >> 4) & 0x0F];
+            hexView[i++] = hexArray[b & 0x0F];
+            hexView[i++] = ' ';
+        }
+        return new String(hexView);
+    }
 }
