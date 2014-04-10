@@ -211,6 +211,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       VCINSTALLDIR=`$ECHO "$VCINSTALLDIR" | $SED 's/\\\\* *$//'`
       WindowsSDKDir=`$ECHO "$WindowsSDKDir" | $SED 's/\\\\* *$//'`
       WINDOWSSDKDIR=`$ECHO "$WINDOWSSDKDIR" | $SED 's/\\\\* *$//'`
+      # Remove any paths containing # (typically F#) as that messes up make. This
+      # is needed if visual studio was installed with F# support.
+      VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[[^:#]]*#[^:]*://g'`
 
       AC_SUBST(VS_PATH)
       AC_SUBST(VS_INCLUDE)
