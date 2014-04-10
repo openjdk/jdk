@@ -56,7 +56,6 @@ import javax.swing.plaf.basic.BasicScrollBarUI;
 
 /**
  * Implementation of ScrollBarUI for the Metal Look and Feel
- * <p>
  *
  * @author Tom Santos
  * @author Steve Wilson

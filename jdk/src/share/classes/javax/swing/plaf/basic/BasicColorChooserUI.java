@@ -39,7 +39,7 @@ import sun.swing.DefaultLookup;
 
 /**
  * Provides the basic look and feel for a JColorChooser.
- * <p>
+ *
  * @author Tom Santos
  * @author Steve Wilson
  */

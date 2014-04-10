@@ -54,6 +54,8 @@ public class MemoryUtil {
             pool.getUsage());
         System.out.println(INDENT + "Threshold: " +
             (pool.isUsageThresholdSupported() ? pool.getUsageThreshold() : -1));
+        System.out.println(INDENT + "ThresholdCount: " +
+            (pool.isUsageThresholdSupported() ? pool.getUsageThresholdCount() : -1));
         System.out.print(INDENT + "Manager = [");
         String[] mgrs = pool.getMemoryManagerNames();
         for (int i = 0; i < mgrs.length; i++) {

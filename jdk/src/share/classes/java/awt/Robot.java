@@ -76,7 +76,6 @@ public class Robot {
 
     /**
      * Constructs a Robot object in the coordinate system of the primary screen.
-     * <p>
      *
      * @throws  AWTException if the platform configuration does not allow
      * low-level input control.  This exception is always thrown when

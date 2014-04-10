@@ -1644,12 +1644,13 @@ public final class DateTimeFormatter {
      * @return a formatter based on this formatter with the requested resolver style, not null
      */
     public DateTimeFormatter withResolverFields(TemporalField... resolverFields) {
-        Objects.requireNonNull(resolverFields, "resolverFields");
-        Set<TemporalField> fields = new HashSet<>(Arrays.asList(resolverFields));
+        Set<TemporalField> fields = null;
+        if (resolverFields != null) {
+            fields = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(resolverFields)));
+        }
         if (Objects.equals(this.resolverFields, fields)) {
             return this;
         }
-        fields = Collections.unmodifiableSet(fields);
         return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, fields, chrono, zone);
     }
 
@@ -1693,11 +1694,12 @@ public final class DateTimeFormatter {
      * @return a formatter based on this formatter with the requested resolver style, not null
      */
     public DateTimeFormatter withResolverFields(Set<TemporalField> resolverFields) {
-        Objects.requireNonNull(resolverFields, "resolverFields");
         if (Objects.equals(this.resolverFields, resolverFields)) {
             return this;
         }
-        resolverFields = Collections.unmodifiableSet(new HashSet<>(resolverFields));
+        if (resolverFields != null) {
+            resolverFields = Collections.unmodifiableSet(new HashSet<>(resolverFields));
+        }
         return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
     }
 

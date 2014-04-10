@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6313675 6323647
+ * @bug 6313675 6323647 8028192
  * @summary Verify that all ciphersuites work in FIPS mode
  * @library ..
  * @author Andreas Sterbenz
@@ -47,9 +47,13 @@ public class ClientJSSEServerJSSE extends SecmodTest {
             return;
         }
 
-        if ("sparc".equals(System.getProperty("os.arch")) == false) {
-            // we have not updated other platforms with the proper NSS libraries yet
-            System.out.println("Test currently works only on solaris-sparc, skipping");
+        String arch = System.getProperty("os.arch");
+        if (!("sparc".equals(arch) || "sparcv9".equals(arch))) {
+            // we have not updated other platforms with the proper NSS
+            // libraries yet
+            System.out.println(
+                    "Test currently works only on solaris-sparc " +
+                    "and solaris-sparcv9. Skipping on " + arch);
             return;
         }
 
