@@ -786,14 +786,29 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 
 # Johnston
 #
-# From Paul Eggert (2013-09-03):
+# From Paul Eggert (2014-03-11):
+# Sometimes Johnston kept Hawaii time, and sometimes it was an hour behind.
+# Details are uncertain.  We have no data for Johnston after 1970, so
+# treat it like Hawaii for now.
+#
 # In his memoirs of June 6th to October 4, 1945
 # <http://www.315bw.org/Herb_Bach.htm> (2005), Herbert C. Bach writes,
 # "We started our letdown to Kwajalein Atoll and landed there at 5:00 AM
 # Johnston time, 1:30 AM Kwajalein time."  This was in June 1945, and
 # confirms that Johnston kept the same time as Honolulu in summer 1945.
-# We have no better information, so for now, assume this has been true
-# indefinitely into the past.
+#
+# From Lyle McElhaney (2014-03-11):
+# [W]hen JI was being used for that [atomic bomb] testing, the time being used
+# was not Hawaiian time but rather the same time being used on the ships,
+# which had a GMT offset of -11 hours.  This apparently applied to at least the
+# time from Operation Newsreel (Hardtack I/Teak shot, 1958-08-01) to the last
+# Operation Fishbowl shot (Tightrope, 1962-11-04).... [See] Herman Hoerlin,
+# "The United States High-Altitude Test Experience: A Review Emphasizing the
+# Impact on the Environment", Los Alamos LA-6405, Oct 1976
+# <http://www.fas.org/sgp/othergov/doe/lanl/docs1/00322994.pdf>.
+# See the table on page 4 where he lists GMT and local times for the tests; a
+# footnote for the JI tests reads that local time is "JI time = Hawaii Time
+# Minus One Hour".
 #
 # See 'northamerica' for Pacific/Johnston.
 

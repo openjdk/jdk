@@ -50,7 +50,6 @@ import javax.swing.plaf.basic.*;
 /**
  * A Metal Look and Feel implementation of ToolBarUI.  This implementation
  * is a "combined" view/controller.
- * <p>
  *
  * @author Jeff Shapiro
  */

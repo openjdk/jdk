@@ -153,7 +153,7 @@ class Socket implements java.io.Closeable {
     /**
      * Creates an unconnected Socket with a user-specified
      * SocketImpl.
-     * <P>
+     *
      * @param impl an instance of a <B>SocketImpl</B>
      * the subclass wishes to use on the Socket.
      *
@@ -1245,7 +1245,7 @@ class Socket implements java.io.Closeable {
      * <ol>
      * <li>For sockets accepted from a ServerSocket, this must be done by calling
      * {@link ServerSocket#setReceiveBufferSize(int)} before the ServerSocket
-     * is bound to a local address.<p></li>
+     * is bound to a local address.</li>
      * <li>For client sockets, setReceiveBufferSize() must be called before
      * connecting the socket to its remote peer.</li></ol>
      * @param size the size to which to set the receive buffer
