@@ -1,4 +1,5 @@
 /*
+
  * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -588,8 +589,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         final int optimisticFlag = lc.hasOptimisticAssumptions() ? FunctionNode.IS_OPTIMISTIC : 0;
 
         newFunctionNode = newFunctionNode.setState(lc, CompilationState.ATTR).setFlag(lc, optimisticFlag);
-
-        popLocals();
+        popLocalsFunction();
 
         if (!env.isOnDemandCompilation() && newFunctionNode.isProgram()) {
             newFunctionNode = newFunctionNode.setBody(lc, newFunctionNode.getBody().setFlag(lc, Block.IS_GLOBAL_SCOPE));
@@ -2145,6 +2145,10 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     private void popLocals() {
         localDefs.pop();
         localUses.pop();
+    }
+
+    private void popLocalsFunction() {
+        popLocals();
     }
 
     private boolean isLocalDef(final String name) {

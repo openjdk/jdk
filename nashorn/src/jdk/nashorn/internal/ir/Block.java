@@ -243,6 +243,11 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     }
 
     @Override
+    public int getFlags() {
+        return flags;
+    }
+
+    @Override
     public boolean isTerminal() {
         return getFlag(IS_TERMINAL);
     }

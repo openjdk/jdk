@@ -47,10 +47,13 @@ public final class CallNode extends LexicalContextExpression implements Optimist
     private final List<Expression> args;
 
     /** Is this a "new" operation */
-    public static final int IS_NEW =     1 << 0;
+    private static final int IS_NEW =     1 << 0;
 
     /** Is the callsite type for this call optimistic rather than based on statically known coercion semantics */
-    public static final int OPTIMISTIC = 1 << 1;
+    private static final int IS_OPTIMISTIC = 1 << 1;
+
+    /** Can this be a Function.call? */
+    private static final int IS_APPLY_TO_CALL = 1 << 2;
 
     private final int flags;
 
@@ -188,7 +191,7 @@ public final class CallNode extends LexicalContextExpression implements Optimist
     }
 
     @Override
-    public Optimistic setType(TemporarySymbols ts, Type optimisticType) {
+    public Optimistic setType(final TemporarySymbols ts, final Type optimisticType) {
         if (this.optimisticType == optimisticType) {
             return this;
         }
@@ -214,7 +217,7 @@ public final class CallNode extends LexicalContextExpression implements Optimist
                                 setThis((IdentNode)evalArgs.getThis().accept(visitor))));
             // Theoretically, we'd need to instead pass lc to every setter and do a replacement on each. In practice,
             // setType from TypeOverride can't accept a lc, and we don't necessarily want to go there now.
-            if(this != newCallNode) {
+            if (this != newCallNode) {
                 return Node.replaceInLexicalContext(lc, this, newCallNode);
             }
         }
@@ -225,7 +228,12 @@ public final class CallNode extends LexicalContextExpression implements Optimist
     @Override
     public void toString(final StringBuilder sb) {
         Node.optimisticType(this, sb);
-        function.toString(sb);
+
+        final StringBuilder fsb = new StringBuilder();
+        function.toString(fsb);
+        if (isApplyToCall()) {
+            sb.append(fsb.toString().replace("apply", "[apply => call]"));
+        }
 
         sb.append('(');
 
@@ -255,8 +263,9 @@ public final class CallNode extends LexicalContextExpression implements Optimist
     /**
      * Reset the arguments for the call
      * @param args new arguments list
+     * @return new callnode, or same if unchanged
      */
-    private CallNode setArgs(final List<Expression> args) {
+    public CallNode setArgs(final List<Expression> args) {
         if (this.args == args) {
             return this;
         }
@@ -294,6 +303,23 @@ public final class CallNode extends LexicalContextExpression implements Optimist
     }
 
     /**
+     * Is this an apply call that we optimistically should try to turn into
+     * a call instead
+     * @return true if apply to call
+     */
+    public boolean isApplyToCall() {
+        return (flags & IS_APPLY_TO_CALL) != 0;
+    }
+
+    /**
+     * Flag this call node as one that tries to call call instead of apply
+     * @return new call node with changed flags, if not already flagged as apply to call, then the same node
+     */
+    public CallNode setIsApplyToCall() {
+        return setFlags(flags | IS_APPLY_TO_CALL);
+    }
+
+    /**
      * Return the function expression that this call invokes
      * @return the function
      */
@@ -318,7 +344,7 @@ public final class CallNode extends LexicalContextExpression implements Optimist
      * @return true if this a new operation
      */
     public boolean isNew() {
-        return (flags & IS_NEW) == IS_NEW;
+        return (flags & IS_NEW) != 0;
     }
 
     /**
@@ -326,7 +352,7 @@ public final class CallNode extends LexicalContextExpression implements Optimist
      * @return same node or new one on state change
      */
     public CallNode setIsNew() {
-        return setFlags(IS_NEW);
+        return setFlags(flags | IS_NEW);
     }
 
     private CallNode setFlags(final int flags) {
@@ -366,7 +392,7 @@ public final class CallNode extends LexicalContextExpression implements Optimist
 
     @Override
     public boolean isOptimistic() {
-        return (flags & OPTIMISTIC) == OPTIMISTIC;
+        return (flags & IS_OPTIMISTIC) != 0;
     }
 
     @Override
@@ -374,6 +400,6 @@ public final class CallNode extends LexicalContextExpression implements Optimist
         if (isOptimistic() == isOptimistic) {
             return this;
         }
-        return new CallNode(this, function, args, isOptimistic ? (flags | OPTIMISTIC) : (flags & ~OPTIMISTIC), optimisticType, evalArgs, programPoint);
+        return new CallNode(this, function, args, isOptimistic ? (flags | IS_OPTIMISTIC) : (flags & ~IS_OPTIMISTIC), optimisticType, evalArgs, programPoint);
     }
 }

@@ -765,7 +765,7 @@ public final class NativeObject {
         } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
-        assert inv.getSwitchPoint() == null; // Linkers in Dynalink's beans package don't use switchpoints.
+        assert inv.getSwitchPoints() == null; // Linkers in Dynalink's beans package don't use switchpoints.
         // We discard the guard, as all method handles will be bound to a specific object.
         return inv.getInvocation();
     }

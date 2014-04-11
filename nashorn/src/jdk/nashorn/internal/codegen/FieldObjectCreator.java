@@ -36,6 +36,7 @@ import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 
 import java.util.Iterator;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.Context;
@@ -143,6 +144,9 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
                 } else {
                     putSlot(method, ArrayIndex.toLongIndex(index), tuple);
                 }
+
+                //this is a nop of tuple.key isn't e.g. "apply" or another special name
+                method.invalidateSpecialName(tuple.key);
             }
         }
     }

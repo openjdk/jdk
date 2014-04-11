@@ -97,7 +97,7 @@ public final class NativeFunction {
     public static Object apply(final Object self, final Object thiz, final Object array) {
         checkCallable(self);
 
-        Object[] args = toApplyArgs(array);
+        final Object[] args = toApplyArgs(array);
 
         if (self instanceof ScriptFunction) {
             return ScriptRuntime.apply((ScriptFunction)self, thiz, args);
@@ -177,7 +177,7 @@ public final class NativeFunction {
     public static Object call(final Object self, final Object... args) {
         checkCallable(self);
 
-        Object thiz = (args.length == 0) ? UNDEFINED : args[0];
+        final Object thiz = (args.length == 0) ? UNDEFINED : args[0];
         Object[] arguments;
 
         if (args.length > 1) {

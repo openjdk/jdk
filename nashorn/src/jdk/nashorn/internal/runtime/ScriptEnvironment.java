@@ -294,9 +294,6 @@ public final class ScriptEnvironment {
             if (kv.hasValue("objects")) {
                 callSiteFlags |= NashornCallSiteDescriptor.CALLSITE_TRACE_VALUES;
             }
-            if (kv.hasValue("scope")) {
-                callSiteFlags |= NashornCallSiteDescriptor.CALLSITE_TRACE_SCOPE;
-            }
         }
         this._callsite_flags = callSiteFlags;
 

@@ -30,6 +30,8 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.SwitchPoint;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
@@ -111,7 +113,7 @@ final class SetMethodCreator {
             // getGuard returns a map guard that casts its argument to ScriptObject, and if that fails, we need to
             // relink on ClassCastException.
             return new GuardedInvocation(methodHandle, NashornGuards.getGuard(sobj, property, desc, explicitInstanceOfCheck),
-                    null, explicitInstanceOfCheck ? null : ClassCastException.class);
+                    (SwitchPoint)null, explicitInstanceOfCheck ? null : ClassCastException.class);
         }
     }
 

@@ -63,7 +63,7 @@ import jdk.nashorn.internal.runtime.Undefined;
 final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
     private static final ClassValue<MethodHandle> ARRAY_CONVERTERS = new ClassValue<MethodHandle>() {
         @Override
-        protected MethodHandle computeValue(Class<?> type) {
+        protected MethodHandle computeValue(final Class<?> type) {
             return createArrayConverter(type);
         }
     };
@@ -212,7 +212,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         return MH.asType(converter, converter.type().changeReturnType(type));
     }
 
-    private static GuardedInvocation getMirrorConverter(Class<?> sourceType, Class<?> targetType) {
+    private static GuardedInvocation getMirrorConverter(final Class<?> sourceType, final Class<?> targetType) {
         // Could've also used (targetType.isAssignableFrom(ScriptObjectMirror.class) && targetType != Object.class) but
         // it's probably better to explicitly spell out the supported target types
         if (targetType == Map.class || targetType == Bindings.class || targetType == JSObject.class || targetType == ScriptObjectMirror.class) {
@@ -274,7 +274,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         return Comparison.INDETERMINATE;
     }
 
-    private static boolean isList(Class<?> clazz) {
+    private static boolean isList(final Class<?> clazz) {
         return clazz == List.class || clazz == Deque.class;
     }
 

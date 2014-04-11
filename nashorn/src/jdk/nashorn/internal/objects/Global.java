@@ -25,22 +25,30 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.nashorn.internal.codegen.ApplySpecialization;
+import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Property;
@@ -74,6 +82,33 @@ public final class Global extends ScriptObject implements Scope {
     private static final Object LOCATION_PROPERTY_PLACEHOLDER = new Object();
     private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
     private final InvokeByName VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
+
+    /**
+     * Optimistic builtin names that require switchpoint invalidation
+     * upon assignment. Overly conservative, but works for now, to avoid
+     * any complicated scope checks and especially heavy weight guards
+     * like
+     *
+     * <pre>
+     * {@code
+     *     public boolean setterGuard(final Object receiver) {
+     *         final Global          global = Global.instance();
+     *         final ScriptObject    sobj   = global.getFunctionPrototype();
+     *         final Object          apply  = sobj.get("apply");
+     *         return apply == receiver;
+     *     }
+     *
+     * }
+     * </pre>
+     *
+     * Naturally, checking for builting classes like NativeFunction is cheaper,
+     * it's when you start adding property checks for said builtins you have
+     * problems with guard speed.
+     */
+    public final Map<String, SwitchPoint> optimisticFunctionMap;
+
+    /** Name invalidator for things like call/apply */
+    public static final Call BOOTSTRAP = staticCall(MethodHandles.lookup(), Global.class, "invalidateNameBootstrap", CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
 
     /** ECMA 15.1.2.2 parseInt (string , radix) */
     @Property(attributes = Attribute.NOT_ENUMERABLE)
@@ -379,12 +414,15 @@ public final class Global extends ScriptObject implements Scope {
     // Used to store the last RegExp result to support deprecated RegExp constructor properties
     private RegExpResult lastRegExpResult;
 
-    private static final MethodHandle EVAL              = findOwnMH("eval",              Object.class, Object.class, Object.class);
-    private static final MethodHandle PRINT             = findOwnMH("print",             Object.class, Object.class, Object[].class);
-    private static final MethodHandle PRINTLN           = findOwnMH("println",           Object.class, Object.class, Object[].class);
-    private static final MethodHandle LOAD              = findOwnMH("load",              Object.class, Object.class, Object.class);
-    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH("loadWithNewGlobal", Object.class, Object.class, Object[].class);
-    private static final MethodHandle EXIT              = findOwnMH("exit",              Object.class, Object.class, Object.class);
+    private static final MethodHandle EVAL              = findOwnMH_S("eval",              Object.class, Object.class, Object.class);
+    private static final MethodHandle PRINT             = findOwnMH_S("print",             Object.class, Object.class, Object[].class);
+    private static final MethodHandle PRINTLN           = findOwnMH_S("println",           Object.class, Object.class, Object[].class);
+    private static final MethodHandle LOAD              = findOwnMH_S("load",              Object.class, Object.class, Object.class);
+    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH_S("loadWithNewGlobal", Object.class, Object.class, Object[].class);
+    private static final MethodHandle EXIT              = findOwnMH_S("exit",              Object.class, Object.class, Object.class);
+
+    /** Invalidate a reserved name, such as "apply" or "call" if assigned */
+    public MethodHandle INVALIDATE_RESERVED_NAME = MH.bindTo(findOwnMH_V("invalidateReservedName", void.class, String.class), this);
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
@@ -426,6 +464,7 @@ public final class Global extends ScriptObject implements Scope {
         super(checkAndGetMap(context));
         this.context = context;
         this.setIsScope();
+        this.optimisticFunctionMap = new HashMap<>();
         GlobalConstants.instance().invalidateAll();
     }
 
@@ -1886,7 +1925,7 @@ public final class Global extends ScriptObject implements Scope {
     // to play with object references carefully!!
     private void initFunctionAndObject() {
         // First-n-foremost is Function
-        this.builtinFunction = (ScriptFunction)initConstructor("Function");
+        this.builtinFunction      = (ScriptFunction)initConstructor("Function");
 
         // create global anonymous function
         final ScriptFunction anon = ScriptFunctionImpl.newAnonymousFunction(this);
@@ -1946,7 +1985,15 @@ public final class Global extends ScriptObject implements Scope {
             }
         }
 
+        //make sure apply and call have the same invalidation switchpoint
+        final SwitchPoint sp = new SwitchPoint();
+        optimisticFunctionMap.put("apply", sp);
+        optimisticFunctionMap.put("call", sp);
+        getFunctionPrototype().getProperty("apply").setChangeCallback(sp);
+        getFunctionPrototype().getProperty("call").setChangeCallback(sp);
+
         properties = getObjectPrototype().getMap().getProperties();
+
         for (final jdk.nashorn.internal.runtime.Property property : properties) {
             final Object key   = property.getKey();
             final Object value = ObjectPrototype.get(key);
@@ -1965,7 +2012,11 @@ public final class Global extends ScriptObject implements Scope {
         }
     }
 
-    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
+    private static MethodHandle findOwnMH_V(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findVirtual(MethodHandles.lookup(), Global.class, name, MH.type(rtype, types));
+    }
+
+    private static MethodHandle findOwnMH_S(final String name, final Class<?> rtype, final Class<?>... types) {
         return MH.findStatic(MethodHandles.lookup(), Global.class, name, MH.type(rtype, types));
     }
 
@@ -1982,4 +2033,59 @@ public final class Global extends ScriptObject implements Scope {
         return true;
     }
 
+    /**
+     * Check if there is a switchpoint for a reserved name. If there
+     * is, it must be invalidated upon properties with this name
+     * @param name property name
+     * @return switchpoint for invalidating this property, or null if not registered
+     */
+    public SwitchPoint getChangeCallback(final String name) {
+        return optimisticFunctionMap.get(name);
+    }
+
+    /**
+     * Is this a special name, that might be subject to invalidation
+     * on write, such as "apply" or "call"
+     * @param name name to check
+     * @return true if special name
+     */
+    public boolean isSpecialName(final String name) {
+        return getChangeCallback(name) != null;
+    }
+
+    /**
+     * Check if a reserved property name is invalidated
+     * @param name property name
+     * @return true if someone has written to it since Global was instantiated
+     */
+    public boolean isSpecialNameValid(final String name) {
+        final SwitchPoint sp = getChangeCallback(name);
+        return sp != null && !sp.hasBeenInvalidated();
+    }
+
+    /**
+     * Tag a reserved name as invalidated - used when someone writes
+     * to a property with this name - overly conservative, but link time
+     * is too late to apply e.g. apply->call specialization
+     * @param name property name
+     */
+    public void invalidateReservedName(final String name) {
+        final SwitchPoint sp = getChangeCallback(name);
+        if (sp != null) {
+            ApplySpecialization.getLogger().info("Overwrote special name '" + name +"' - invalidating switchpoint");
+            SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
+        }
+    }
+
+    /**
+     * Bootstrapper for invalidating a builtin name
+     * @param lookup lookup
+     * @param name   name to invalidate
+     * @param type   methodhandle type
+     * @return callsite for invalidator
+     */
+    public static CallSite invalidateNameBootstrap(final MethodHandles.Lookup lookup, final String name, final MethodType type) {
+        final MethodHandle target = MH.insertArguments(Global.instance().INVALIDATE_RESERVED_NAME, 0, name);
+        return new ConstantCallSite(target);
+    }
 }

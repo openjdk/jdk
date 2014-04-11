@@ -32,6 +32,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.SwitchPoint;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -333,7 +334,7 @@ public final class GlobalConstants {
         final MethodHandle invalidator  = MH.asType(INVALIDATE_SP, INVALIDATE_SP.type().changeParameterType(0, receiverType).changeReturnType(receiverType));
         final MethodHandle mh           = MH.filterArguments(inv.getInvocation(), 0, MH.insertArguments(invalidator, 1, acc));
 
-        assert inv.getSwitchPoint() == null : inv.getSwitchPoint();
+        assert inv.getSwitchPoints() == null : Arrays.asList(inv.getSwitchPoints());
         LOG.info("Linked setter " + quote(name) + " " + acc.getSwitchPoint());
         return new GuardedInvocation(mh, inv.getGuard(), acc.getSwitchPoint(), inv.getException());
     }

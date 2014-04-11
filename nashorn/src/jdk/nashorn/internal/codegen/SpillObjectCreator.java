@@ -28,9 +28,11 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
+
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.runtime.JSType;
@@ -74,6 +76,9 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
         for (final MapTuple<Expression> tuple : tuples) {
             final String     key   = tuple.key;
             final Expression value = tuple.value;
+
+            //this is a nop of tuple.key isn't e.g. "apply" or another special name
+            method.invalidateSpecialName(tuple.key);
 
             if (value != null) {
                 final Object constantValue = LiteralNode.objectAsConstant(value);

@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
+
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
@@ -226,7 +227,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @return a function with the specified self and parameters bound.
      */
     @Override
-    protected ScriptFunction makeBoundFunction(Object self, Object[] args) {
+    protected ScriptFunction makeBoundFunction(final Object self, final Object[] args) {
         return super.makeBoundFunction(self, args);
     }
 

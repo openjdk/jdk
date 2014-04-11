@@ -34,11 +34,14 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.Guards;
+import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeFunction;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
@@ -324,17 +327,6 @@ public abstract class ScriptFunction extends ScriptObject {
    public abstract ScriptFunction makeSynchronizedFunction(Object sync);
 
     /**
-     * Return the most appropriate invocation for the specified call site type. If specializations are possible, it will
-     * strive to return an efficient specialization.
-     * @param callSiteType the call site type; can be as specific as needed.
-     * @return a guarded invocation with invoke method handle and potentially a switch point guarding optimistic
-     * assumptions.
-     */
-    private GuardedInvocation getBestInvoker(final MethodType callSiteType, final int callerProgramPoint) {
-        return data.getBestInvoker(callSiteType, callerProgramPoint, scope);
-    }
-
-    /**
      * Return the invoke handle bound to a given ScriptObject self reference.
      * If callee parameter is required result is rebound to this.
      *
@@ -468,12 +460,13 @@ public abstract class ScriptFunction extends ScriptObject {
     }
 
     @Override
-    protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc) {
+    protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final MethodType type = desc.getMethodType();
         assert desc.getMethodType().returnType() == Object.class && !NashornCallSiteDescriptor.isOptimistic(desc);
-        final GuardedInvocation bestCtorInv = data.getBestConstructor(type, scope);
+        final CompiledFunction cf = data.getBestConstructor(type, scope);
+        final GuardedInvocation bestCtorInv = new GuardedInvocation(cf.getConstructor(), cf.getOptimisticAssumptionsSwitchPoint());
         //TODO - ClassCastException
-        return new GuardedInvocation(pairArguments(bestCtorInv.getInvocation(), type), getFunctionGuard(this), bestCtorInv.getSwitchPoint());
+        return new GuardedInvocation(pairArguments(bestCtorInv.getInvocation(), type), getFunctionGuard(this, cf.getFlags()), bestCtorInv.getSwitchPoints(), null);
     }
 
     @SuppressWarnings("unused")
@@ -512,6 +505,7 @@ public abstract class ScriptFunction extends ScriptObject {
         final String  name       = getName();
         final boolean isUnstable = request.isCallSiteUnstable();
         final boolean scopeCall  = NashornCallSiteDescriptor.isScope(desc);
+
         final boolean isCall     = !scopeCall && data.isBuiltin() && "call".equals(name);
         final boolean isApply    = !scopeCall && data.isBuiltin() && "apply".equals(name);
 
@@ -519,7 +513,7 @@ public abstract class ScriptFunction extends ScriptObject {
             //megamorphic - replace call with apply
             final MethodHandle handle;
             //ensure that the callsite is vararg so apply can consume it
-            if(type.parameterCount() == 3 && type.parameterType(2) == Object[].class) {
+            if (type.parameterCount() == 3 && type.parameterType(2) == Object[].class) {
                 // Vararg call site
                 handle = ScriptRuntime.APPLY.methodHandle();
             } else {
@@ -532,7 +526,7 @@ public abstract class ScriptFunction extends ScriptObject {
             return new GuardedInvocation(
                     handle,
                     null,
-                    null,
+                    (SwitchPoint)null,
                     ClassCastException.class);
         }
 
@@ -548,7 +542,12 @@ public abstract class ScriptFunction extends ScriptObject {
         } //else just fall through and link as ordinary function or unstable apply
 
         final int programPoint = NashornCallSiteDescriptor.isOptimistic(desc) ? NashornCallSiteDescriptor.getProgramPoint(desc) : INVALID_PROGRAM_POINT;
-        final GuardedInvocation bestInvoker = getBestInvoker(type, programPoint);
+        final CompiledFunction cf = data.getBestInvoker(type, programPoint, scope);
+        final GuardedInvocation bestInvoker =
+                new GuardedInvocation(
+                        cf.createInvoker(type.returnType(), programPoint),
+                        cf.getOptimisticAssumptionsSwitchPoint());
+
         final MethodHandle callHandle = bestInvoker.getInvocation();
 
         if (data.needsCallee()) {
@@ -587,65 +586,90 @@ public abstract class ScriptFunction extends ScriptObject {
 
         boundHandle = pairArguments(boundHandle, type);
 
-        return new GuardedInvocation(boundHandle, guard == null ? getFunctionGuard(this) : guard, bestInvoker.getSwitchPoint());
+        return new GuardedInvocation(boundHandle, guard == null ? getFunctionGuard(this, cf.getFlags()) : guard, bestInvoker.getSwitchPoints(), null);
     }
 
     private GuardedInvocation createApplyOrCallCall(final boolean isApply, final CallSiteDescriptor desc, final LinkRequest request, final Object[] args) {
         final MethodType descType = desc.getMethodType();
         final int paramCount = descType.parameterCount();
+
         final boolean passesThis = paramCount > 2;
         final boolean passesArgs = paramCount > 3;
+        final int realArgCount = passesArgs ? paramCount - 3 : 0;
 
         final Object appliedFn = args[1];
         final boolean appliedFnNeedsWrappedThis = needsWrappedThis(appliedFn);
 
+        //box call back to apply
+        CallSiteDescriptor appliedDesc = desc;
+        final SwitchPoint applyToCallSwitchPoint = Global.instance().getChangeCallback("apply");
+        //enough to change the proto switchPoint here
+
+        final boolean isApplyToCall = NashornCallSiteDescriptor.isApplyToCall(desc);
+        final boolean isFailedApplyToCall = isApplyToCall && applyToCallSwitchPoint.hasBeenInvalidated();
+
         // R(apply|call, ...) => R(...)
         MethodType appliedType = descType.dropParameterTypes(0, 1);
-        if(!passesThis) {
+        if (!passesThis) {
             // R() => R(this)
             appliedType = appliedType.insertParameterTypes(1, Object.class);
-        } else if(appliedFnNeedsWrappedThis) {
+        } else if (appliedFnNeedsWrappedThis) {
             appliedType = appliedType.changeParameterType(1, Object.class);
         }
-        if(isApply) {
-            if(passesArgs) {
+
+        if (isApply || isFailedApplyToCall) {
+            if (passesArgs) {
                 // R(this, args) => R(this, Object[])
                 appliedType = appliedType.changeParameterType(2, Object[].class);
+                // drop any extraneous arguments for the apply fail case
+                if (isFailedApplyToCall) {
+                    appliedType = appliedType.dropParameterTypes(3, paramCount - 1);
+                }
             } else {
                 // R(this) => R(this, Object[])
                 appliedType = appliedType.insertParameterTypes(2, Object[].class);
             }
         }
-        final CallSiteDescriptor appliedDesc = desc.changeMethodType(appliedType);
+
+        appliedDesc = appliedDesc.changeMethodType(appliedType);
 
         // Create the same arguments for the delegate linking request that would be passed in an actual apply'd invocation
         final Object[] appliedArgs = new Object[isApply ? 3 : appliedType.parameterCount()];
         appliedArgs[0] = appliedFn;
         appliedArgs[1] = passesThis ? appliedFnNeedsWrappedThis ? ScriptFunctionData.wrapThis(args[2]) : args[2] : ScriptRuntime.UNDEFINED;
-        if(isApply) {
+        if (isApply && !isFailedApplyToCall) {
             appliedArgs[2] = passesArgs ? NativeFunction.toApplyArgs(args[3]) : ScriptRuntime.EMPTY_ARRAY;
         } else {
-            if(passesArgs) {
-                System.arraycopy(args, 3, appliedArgs, 2, args.length - 3);
+            if (passesArgs) {
+                if (isFailedApplyToCall) {
+                    final Object[] tmp = new Object[args.length - 3];
+                    System.arraycopy(args, 3, tmp, 0, tmp.length);
+                    appliedArgs[2] = NativeFunction.toApplyArgs(tmp);
+                } else {
+                    System.arraycopy(args, 3, appliedArgs, 2, args.length - 3);
+                }
+            } else if (isFailedApplyToCall) {
+                appliedArgs[2] = ScriptRuntime.EMPTY_ARRAY;
             }
         }
 
         // Ask the linker machinery for an invocation of the target function
         final LinkRequest appliedRequest = request.replaceArguments(appliedDesc, appliedArgs);
-        final GuardedInvocation appliedInvocation;
+        GuardedInvocation appliedInvocation;
         try {
             appliedInvocation = Bootstrap.getLinkerServices().getGuardedInvocation(appliedRequest);
-        } catch(final RuntimeException | Error e) {
+        } catch (final RuntimeException | Error e) {
             throw e;
-        } catch(final Exception e) {
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
         assert appliedRequest != null; // Bootstrap.isCallable() returned true for args[1], so it must produce a linkage.
 
         final Class<?> applyFnType = descType.parameterType(0);
         MethodHandle inv = appliedInvocation.getInvocation(); //method handle from apply invocation. the applied function invocation
-        if(isApply) {
-            if(passesArgs) {
+
+        if (isApply && !isFailedApplyToCall) {
+            if (passesArgs) {
                 // Make sure that the passed argArray is converted to Object[] the same way NativeFunction.apply() would do it.
                 inv = MH.filterArguments(inv, 2, NativeFunction.TO_APPLY_ARGS);
             } else {
@@ -653,17 +677,29 @@ public abstract class ScriptFunction extends ScriptObject {
                 inv = MH.insertArguments(inv, 2, (Object)ScriptRuntime.EMPTY_ARRAY);
             }
         }
-        if(!passesThis) {
+
+        if (isApplyToCall) {
+            if (isFailedApplyToCall) {
+                //take the real arguments that were passed to a call and force them into the apply instead
+                ApplySpecialization.getLogger().info("Collection arguments to revert call to apply in " + appliedFn);
+                inv = MH.asCollector(inv, Object[].class, realArgCount);
+            } else {
+                appliedInvocation = appliedInvocation.addSwitchPoint(applyToCallSwitchPoint);
+            }
+        }
+
+        if (!passesThis) {
             // If the original call site doesn't pass in a thisArg, pass in Global/undefined as needed
             inv = bindImplicitThis(appliedFn, inv);
-        } else if(appliedFnNeedsWrappedThis) {
+        } else if (appliedFnNeedsWrappedThis) {
             // target function needs a wrapped this, so make sure we filter for that
             inv = MH.filterArguments(inv, 1, WRAP_THIS);
         }
         inv = MH.dropArguments(inv, 0, applyFnType);
+
         MethodHandle guard = appliedInvocation.getGuard();
         // If the guard checks the value of "this" but we aren't passing thisArg, insert the default one
-        if(!passesThis && guard.type().parameterCount() > 1) {
+        if (!passesThis && guard.type().parameterCount() > 1) {
             guard = bindImplicitThis(appliedFn, guard);
         }
         final MethodType guardType = guard.type();
@@ -725,11 +761,14 @@ public abstract class ScriptFunction extends ScriptObject {
      *
      * @return method handle for guard
      */
-    private static MethodHandle getFunctionGuard(final ScriptFunction function) {
+    private static MethodHandle getFunctionGuard(final ScriptFunction function, final int flags) {
         assert function.data != null;
         // Built-in functions have a 1-1 correspondence to their ScriptFunctionData, so we can use a cheaper identity
         // comparison for them.
-        return function.data.isBuiltin() ? Guards.getIdentityGuard(function) : MH.insertArguments(IS_FUNCTION_MH, 1, function.data);
+        if (function.data.isBuiltin()) {
+            return Guards.getIdentityGuard(function);
+        }
+        return MH.insertArguments(IS_FUNCTION_MH, 1, function.data);
     }
 
     /**

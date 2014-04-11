@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompilationEnvironment;
 import jdk.nashorn.internal.codegen.CompilationEnvironment.CompilationPhases;
+import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -238,7 +239,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     public String toStringVerbose() {
         final StringBuilder sb = new StringBuilder();
 
-        sb.append("fid=").append(functionNodeId).append(' ');
+        sb.append("fnId=").append(functionNodeId).append(' ');
 
         if (source != null) {
             sb.append(source.getName())
@@ -248,6 +249,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         }
 
         return sb.toString() + super.toString();
+    }
+
+    @Override
+    public String getFunctionName() {
+        return functionName;
     }
 
     private static String functionName(final FunctionNode fn) {
@@ -323,7 +329,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
             functionNodeId - (isProgram ? 0 : 1),
             lineNumber - 1); // source starts at line 0, so even though lineNumber is the correct declaration line, back off one to make it exclusive
 
-        if(isAnonymous) {
+        if (isAnonymous) {
             parser.setFunctionName(functionName);
         }
         final FunctionNode program = parser.parse(scriptName, descPosition, Token.descLength(token), true);
@@ -367,13 +373,19 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         final String scriptName = RECOMPILATION_PREFIX + RECOMPILE_ID.incrementAndGet() + "$restOf";
         FunctionNode fn = reparse(scriptName);
 
+        final ApplyToCallTransform tr = new ApplyToCallTransform(fn, fnCallSiteType, true);
+        fn = tr.transform();
+        final int newArity = tr.arity;
+
         final Compiler compiler = new Compiler(
                 new CompilationEnvironment(
                     CompilationPhases.EAGER.makeOptimistic(),
                     isStrict(),
                     this,
                     runtimeScope,
-                    isVariableArity() ? null : new ParamTypeMap(functionNodeId, explicitParams(fnCallSiteType)),
+                    isVariableArity() && !tr.transformed ?
+                            null :
+                            new ParamTypeMap(functionNodeId, explicitParams(fnCallSiteType, newArity)),
                     invalidatedProgramPoints,
                     continuationEntryPoints,
                     true
@@ -381,11 +393,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
                 installer);
 
         fn = compiler.compile(scriptName, fn);
-
         compiler.install(fn);
 
         // look up the rest of method
-        return lookupWithExplicitType(fn, MethodType.methodType(fn.getReturnType().getTypeClass(), RewriteException.class));
+        final MethodHandle mh = lookupWithExplicitType(fn, MethodType.methodType(fn.getReturnType().getTypeClass(), RewriteException.class));
+        return mh;
     }
 
     private FunctionNode compileTypeSpecialization(final MethodType actualCallSiteType, final ScriptObject runtimeScope) {
@@ -399,7 +411,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         if (LOG.isEnabled()) {
             LOG.info(reason, " of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
         }
+
         FunctionNode fn = reparse(scriptName);
+
+        final ApplyToCallTransform tr = new ApplyToCallTransform(fn, actualCallSiteType, false);
+        fn = tr.transform();
+        final int newArity = tr.arity;
 
         final CompilationPhases phases = CompilationPhases.EAGER;
         final Compiler compiler = new Compiler(
@@ -408,11 +425,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
                 isStrict(),
                 this,
                 runtimeScope,
-                fnCallSiteType == null || isVariableArity() ?
+                fnCallSiteType == null || isVariableArity() && !tr.transformed ?
                     null :
                     new ParamTypeMap(
                         functionNodeId,
-                        explicitParams(fnCallSiteType)),
+                        explicitParams(fnCallSiteType, newArity)),
                 invalidatedProgramPoints,
                 true),
             installer);
@@ -424,10 +441,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return fn;
     }
 
-    private MethodType explicitParams(final MethodType callSiteType) {
-        assert !isVariableArity(); // Should not be invoked for varargs
-        final int arity = getArity();
-
+    private static MethodType explicitParams(final MethodType callSiteType, final int arity) {
         final MethodType noCalleeThisType = callSiteType.dropParameterTypes(0, 2); // (callee, this) is always in call site type
         final int callSiteParamCount = noCalleeThisType.parameterCount();
 
@@ -436,9 +450,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         final int minParams = Math.min(callSiteParamCount, arity);
         final Class<?>[] paramTypes = noCalleeThisType.parameterArray();
         boolean changed = false;
-        for(int i = 0; i < minParams; ++i) {
+        for (int i = 0; i < minParams; ++i) {
             final Class<?> paramType = paramTypes[i];
-            if(!(paramType.isPrimitive() || paramType == Object.class)) {
+            if (!(paramType.isPrimitive() || paramType == Object.class)) {
                 paramTypes[i] = Object.class;
                 changed = true;
             }
@@ -446,9 +460,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         final MethodType generalized = changed ? MethodType.methodType(noCalleeThisType.returnType(), paramTypes) : noCalleeThisType;
 
         // Match arity
-        if(callSiteParamCount < arity) {
+        if (callSiteParamCount < arity) {
             return generalized.appendParameterTypes(Collections.<Class<?>>nCopies(arity - callSiteParamCount, Object.class));
-        } else if(callSiteParamCount > arity) {
+        } else if (callSiteParamCount > arity) {
             return generalized.dropParameterTypes(arity, callSiteParamCount);
         } else {
             return generalized;
@@ -467,7 +481,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         assert fns.size() == 1 : "got back more than one method in recompilation";
         final FunctionNode f = fns.iterator().next();
         assert f.getId() == functionNodeId;
-        if(!isDeclared && f.isDeclared()) {
+        if (!isDeclared && f.isDeclared()) {
             return f.clearFlag(null, FunctionNode.IS_DECLARED);
         }
         return f;
@@ -499,14 +513,14 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         addCode(functionNode);
     }
 
-    private CompiledFunction addCode(final MethodHandle target, final boolean isOptimistic) {
-        final CompiledFunction cfn = new CompiledFunction(target, this, isOptimistic);
+    private CompiledFunction addCode(final MethodHandle target, final int fnFlags) {
+        final CompiledFunction cfn = new CompiledFunction(target, this, fnFlags);
         code.add(cfn);
         return cfn;
     }
 
     private CompiledFunction addCode(final FunctionNode fn) {
-        return addCode(lookup(fn), fn.isOptimistic());
+        return addCode(lookup(fn), fn.getFlags());
     }
 
     /**
@@ -520,7 +534,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
      * @return the compiled function object, with its type matching that of the call site type.
      */
     private CompiledFunction addCode(final FunctionNode fn, final MethodType callSiteType) {
-        if(fn.isVarArg()) {
+        if (fn.isVarArg()) {
             return addCode(fn);
         }
 
@@ -549,15 +563,31 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
             toType = toType.dropParameterTypes(fromCount, toCount);
         }
 
-        return addCode(lookup(fn).asType(toType), fn.isOptimistic());
+        return addCode(lookup(fn).asType(toType), fn.getFlags());
     }
 
     @Override
     CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope) {
         synchronized (code) {
             final CompiledFunction existingBest = super.getBest(callSiteType, runtimeScope);
-            // TODO: what if callSiteType is vararg?
-            return existingBest != null ? existingBest : addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
+            if (existingBest != null) {
+                /*
+                 * If callsite type isn't vararg and our best is vararg, generate a specialization
+                 * we DO have a generic version, which means that we know which ones of the applies
+                 * were actual applies
+                 */
+                if (existingBest.isVarArg() && !CompiledFunction.isVarArgsType(callSiteType)) {
+                    //System.err.println("Looking in code for best " + callSiteType + " " + existingBest + " code=" + code);
+                    final FunctionNode fn = compileTypeSpecialization(callSiteType, runtimeScope);
+                    if (fn.hasOptimisticApplyToCall()) { //did the specialization work
+                        final CompiledFunction cf = addCode(fn, callSiteType);
+                        assert !cf.isVarArg();
+                        return cf;
+                    }
+                }
+                return existingBest;
+            }
+            return addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
         }
     }
 
@@ -567,7 +597,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    boolean needsCallee() {
+    public boolean needsCallee() {
         return needsCallee;
     }
 
@@ -605,5 +635,74 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
             }
         }
         return null;
+    }
+
+    /**
+     * Get the uppermost parent, the program, for this data
+     * @return program
+     */
+    public RecompilableScriptFunctionData getProgram() {
+        RecompilableScriptFunctionData program = this;
+        while (true) {
+            final RecompilableScriptFunctionData p = program.getParent();
+            if (p == null) {
+                return program;
+            }
+            program = p;
+        }
+    }
+
+    /**
+     * Check whether a certain name is a global symbol, i.e. only exists as defined
+     * in outermost scope and not shadowed by being parameter or assignment in inner
+     * scopes
+     *
+     * @param functionNode function node to check
+     * @param symbolName symbol name
+     * @return true if global symbol
+     */
+    public boolean isGlobalSymbol(final FunctionNode functionNode, final String symbolName) {
+        RecompilableScriptFunctionData data = getScriptFunctionData(functionNode.getId());
+        assert data != null;
+        final RecompilableScriptFunctionData program = getProgram();
+
+        while (data != program) {
+            if (data.hasInternalSymbol(symbolName)) {
+                return false;
+            }
+            data = data.getParent();
+        }
+
+        return true;
+    }
+
+    /**
+     * Helper class for transforming apply calls to calls
+     */
+    private class ApplyToCallTransform {
+        private final MethodType actualCallSiteType;
+        private final boolean isRestOf;
+        private int arity;
+        private FunctionNode functionNode;
+        private boolean transformed;
+
+        ApplyToCallTransform(final FunctionNode functionNode, final MethodType actualCallSiteType, final boolean isRestOf) {
+            this.functionNode = functionNode;
+            this.actualCallSiteType = actualCallSiteType;
+            this.arity = getArity();
+            this.isRestOf = isRestOf;
+        }
+
+        FunctionNode transform() {
+            if (isVariableArity()) {
+                final ApplySpecialization spec = new ApplySpecialization(RecompilableScriptFunctionData.this, functionNode, actualCallSiteType, isRestOf);
+                if (spec.transform()) {
+                    functionNode = spec.getFunctionNode();
+                    arity = functionNode.getParameters().size();
+                    transformed = true;
+                }
+            }
+            return functionNode;
+        }
     }
 }

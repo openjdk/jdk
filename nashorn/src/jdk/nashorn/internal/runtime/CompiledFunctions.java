@@ -40,11 +40,11 @@ final class CompiledFunctions {
         this.name = name;
     }
 
-    void add(CompiledFunction f) {
+    void add(final CompiledFunction f) {
         functions.add(f);
     }
 
-    void addAll(CompiledFunctions fs) {
+    void addAll(final CompiledFunctions fs) {
         functions.addAll(fs.functions);
     }
 
@@ -61,6 +61,15 @@ final class CompiledFunctions {
         return '\'' + name + "' code=" + functions;
     }
 
+    private CompiledFunction pick(final MethodType callSiteType, final boolean canPickVarArg) {
+        for (final CompiledFunction candidate : functions) {
+            if (candidate.matchesCallSite(callSiteType, false)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns the compiled function best matching the requested call site method type
      * @param callSiteType
@@ -73,12 +82,11 @@ final class CompiledFunctions {
         assert callSiteType.parameterType(0).isAssignableFrom(ScriptFunction.class) : callSiteType; // Callee must be assignable from script function
 
         if (recompilable) {
-            for (final CompiledFunction candidate: functions) {
-                if(candidate.matchesCallSite(callSiteType)) {
-                    return candidate;
-                }
+            final CompiledFunction candidate = pick(callSiteType, false);
+            if (candidate != null) {
+                return candidate;
             }
-            return null;
+            return pick(callSiteType, true); //try vararg last
         }
 
         CompiledFunction best = null;
@@ -98,7 +106,7 @@ final class CompiledFunctions {
      * @return true if the functions need a callee, false otherwise.
      */
     boolean needsCallee() {
-        boolean needsCallee = functions.getFirst().needsCallee();
+        final boolean needsCallee = functions.getFirst().needsCallee();
         assert allNeedCallee(needsCallee);
         return needsCallee;
     }

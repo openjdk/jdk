@@ -126,7 +126,7 @@ public final class PrimitiveLookup {
                 assert receiverType.isAssignableFrom(wrapType.returnType());
                 method = MH.filterArguments(method, 0, MH.asType(wrapFilter, wrapType.changeReturnType(receiverType)));
             }
-            return new GuardedInvocation(method, guard, link.getSwitchPoint());
+            return new GuardedInvocation(method, guard, link.getSwitchPoints(), null);
         }
         return null;
     }

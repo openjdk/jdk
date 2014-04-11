@@ -44,37 +44,37 @@ import jdk.nashorn.internal.ir.debug.NashornTextifier;
 public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
     /** Flags that the call site references a scope variable (it's an identifier reference or a var declaration, not a
      * property access expression. */
-    public static final int CALLSITE_SCOPE      = 1 << 0;
+    public static final int CALLSITE_SCOPE         = 1 << 0;
     /** Flags that the call site is in code that uses ECMAScript strict mode. */
-    public static final int CALLSITE_STRICT     = 1 << 1;
+    public static final int CALLSITE_STRICT        = 1 << 1;
     /** Flags that a property getter or setter call site references a scope variable that is located at a known distance
      * in the scope chain. Such getters and setters can often be linked more optimally using these assumptions. */
-    public static final int CALLSITE_FAST_SCOPE = 1 << 2;
+    public static final int CALLSITE_FAST_SCOPE    = 1 << 2;
     /** Flags that a callsite type is optimistic, i.e. we might get back a wider return value than encoded in the
      * descriptor, and in that case we have to throw an UnwarrantedOptimismException */
-    public static final int CALLSITE_OPTIMISTIC = 1 << 3;
+    public static final int CALLSITE_OPTIMISTIC    = 1 << 3;
+    /** Is this really an apply that we try to call as a call? */
+    public static final int CALLSITE_APPLY_TO_CALL = 1 << 4;
 
     /** Flags that the call site is profiled; Contexts that have {@code "profile.callsites"} boolean property set emit
      * code where call sites have this flag set. */
-    public static final int CALLSITE_PROFILE        = 1 << 4;
+    public static final int CALLSITE_PROFILE        = 1 << 5;
     /** Flags that the call site is traced; Contexts that have {@code "trace.callsites"} property set emit code where
      * call sites have this flag set. */
-    public static final int CALLSITE_TRACE          = 1 << 5;
+    public static final int CALLSITE_TRACE          = 1 << 6;
     /** Flags that the call site linkage miss (and thus, relinking) is traced; Contexts that have the keyword
      * {@code "miss"} in their {@code "trace.callsites"} property emit code where call sites have this flag set. */
-    public static final int CALLSITE_TRACE_MISSES   = 1 << 6;
+    public static final int CALLSITE_TRACE_MISSES   = 1 << 7;
     /** Flags that entry/exit to/from the method linked at call site are traced; Contexts that have the keyword
      * {@code "enterexit"} in their {@code "trace.callsites"} property emit code where call sites have this flag set. */
-    public static final int CALLSITE_TRACE_ENTEREXIT = 1 << 7;
+    public static final int CALLSITE_TRACE_ENTEREXIT = 1 << 8;
     /** Flags that values passed as arguments to and returned from the method linked at call site are traced; Contexts
      * that have the keyword {@code "values"} in their {@code "trace.callsites"} property emit code where call sites
      * have this flag set. */
-    public static final int CALLSITE_TRACE_VALUES   = 1 << 8;
-    /** Ordinarily, when {@link #CALLSITE_TRACE_VALUES} is set, scope objects are not printed in the trace but instead
-     * the word {@code "SCOPE"} is printed instead With this flag, scope objects are also printed. Contexts that have
-     * the keyword {@code "scope"} in their {@code "trace.callsites"} property emit code where call sites have this flag
-     * set. */
-    public static final int CALLSITE_TRACE_SCOPE      = 1 << 9;
+    public static final int CALLSITE_TRACE_VALUES   = 1 << 9;
+
+    //we could have more tracing flags here, for example CALLSITE_TRACE_SCOPE, but bits are a bit precious
+    //right now given the program points
 
     /**
      * Number of bits the program point is shifted to the left in the flags (lowest bit containing a program point).
@@ -124,6 +124,9 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
                 assert (flags & CALLSITE_FAST_SCOPE) == 0 : "can't be fastscope without scope";
                 sb.append("scope ");
             }
+        }
+        if ((flags & CALLSITE_APPLY_TO_CALL) != 0) {
+            sb.append("apply2call ");
         }
         if ((flags & CALLSITE_STRICT) != 0) {
             sb.append("strict ");
@@ -308,6 +311,16 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
     }
 
     /**
+     * Returns true if this is an apply call that we try to call as
+     * a "call"
+     * @param desc descriptor
+     * @return true if apply to call
+     */
+    public static boolean isApplyToCall(final CallSiteDescriptor desc) {
+        return isFlag(desc, CALLSITE_APPLY_TO_CALL);
+    }
+
+    /**
      * Is this an optimistic call site
      * @param desc descriptor
      * @return true if optimistic
@@ -346,10 +359,6 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
         return isFlag(CALLSITE_TRACE_VALUES);
     }
 
-    boolean isTraceScope() {
-        return isFlag(CALLSITE_TRACE_SCOPE);
-    }
-
     boolean isOptimistic() {
         return isFlag(CALLSITE_OPTIMISTIC);
     }
@@ -358,4 +367,5 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
     public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
         return get(getLookup(), operator, operand, newMethodType, flags);
     }
+
 }

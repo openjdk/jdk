@@ -37,7 +37,7 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
-import jdk.internal.dynalink.linker.GuardedInvocation;
+
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
@@ -144,6 +144,15 @@ public abstract class ScriptFunctionData {
         return (flags & IS_STRICT) != 0;
     }
 
+    /**
+     * Return the complete internal function name for this
+     * data, not anonymous or similar. May be identical
+     * @return internal function name
+     */
+    protected String getFunctionName() {
+        return getName();
+    }
+
     boolean isBuiltin() {
         return (flags & IS_BUILTIN) != 0;
     }
@@ -210,19 +219,19 @@ public abstract class ScriptFunctionData {
      * @return guarded invocation with method handle to best invoker and potentially a switch point guarding optimistic
      * assumptions.
      */
-     final GuardedInvocation getBestInvoker(final MethodType callSiteType, final int callerProgramPoint, final ScriptObject runtimeScope) {
+     final CompiledFunction getBestInvoker(final MethodType callSiteType, final int callerProgramPoint, final ScriptObject runtimeScope) {
         final CompiledFunction cf = getBest(callSiteType, runtimeScope);
         assert cf != null;
-        return new GuardedInvocation(cf.createInvoker(callSiteType.returnType(), callerProgramPoint), cf.getOptimisticAssumptionsSwitchPoint());
+        return cf;
     }
 
-    final GuardedInvocation getBestConstructor(final MethodType callSiteType, final ScriptObject runtimeScope) {
+    final CompiledFunction getBestConstructor(final MethodType callSiteType, final ScriptObject runtimeScope) {
         if (!isConstructor()) {
             throw typeError("not.a.constructor", toSource());
         }
         // Constructor call sites don't have a "this", but getBest is meant to operate on "callee, this, ..." style
         final CompiledFunction cf = getBest(callSiteType.insertParameterTypes(1, Object.class), runtimeScope);
-        return new GuardedInvocation(cf.getConstructor(), cf.getOptimisticAssumptionsSwitchPoint());
+        return cf;
     }
 
     /**

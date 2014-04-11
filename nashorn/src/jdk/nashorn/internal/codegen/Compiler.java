@@ -244,7 +244,7 @@ public final class Compiler {
     public FunctionNode compile(final String className, final FunctionNode functionNode) throws CompilationException {
         try {
             return compileInternal(className, functionNode);
-        } catch(final AssertionError e) {
+        } catch (final AssertionError e) {
             throw new AssertionError("Assertion failure compiling " + functionNode.getSource(), e);
         }
     }
