@@ -946,14 +946,13 @@ jlong SharedRuntime::get_java_tid(Thread* thread) {
  * it gets turned into a tail-call on sparc, which runs into dtrace bug
  * 6254741.  Once that is fixed we can remove the dummy return value.
  */
-int SharedRuntime::dtrace_object_alloc(oopDesc* o) {
-  return dtrace_object_alloc_base(Thread::current(), o);
+int SharedRuntime::dtrace_object_alloc(oopDesc* o, int size) {
+  return dtrace_object_alloc_base(Thread::current(), o, size);
 }
 
-int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
+int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->klass();
-  int size = o->size();
   Symbol* name = klass->name();
   HOTSPOT_OBJECT_ALLOC(
                    get_java_tid(thread),
