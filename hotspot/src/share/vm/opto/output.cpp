@@ -411,7 +411,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
             blk_size += nop_size;
           }
         }
-        if (mach->avoid_back_to_back()) {
+        if (mach->avoid_back_to_back(MachNode::AVOID_BEFORE)) {
           // Nop is inserted between "avoid back to back" instructions.
           // ScheduleAndBundle() can rearrange nodes in a block,
           // check for all offsets inside this block.
@@ -439,7 +439,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         last_call_adr = blk_starts[i]+blk_size;
       }
       // Remember end of avoid_back_to_back offset
-      if (nj->is_Mach() && nj->as_Mach()->avoid_back_to_back()) {
+      if (nj->is_Mach() && nj->as_Mach()->avoid_back_to_back(MachNode::AVOID_AFTER)) {
         last_avoid_back_to_back_adr = blk_starts[i]+blk_size;
       }
     }
@@ -525,11 +525,11 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
           int new_size = replacement->size(_regalloc);
           int diff     = br_size - new_size;
           assert(diff >= (int)nop_size, "short_branch size should be smaller");
-          // Conservatively take into accound padding between
+          // Conservatively take into account padding between
           // avoid_back_to_back branches. Previous branch could be
           // converted into avoid_back_to_back branch during next
           // rounds.
-          if (needs_padding && replacement->avoid_back_to_back()) {
+          if (needs_padding && replacement->avoid_back_to_back(MachNode::AVOID_BEFORE)) {
             jmp_offset[i] += nop_size;
             diff -= nop_size;
           }
@@ -548,7 +548,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         }
       } // (mach->may_be_short_branch())
       if (mach != NULL && (mach->may_be_short_branch() ||
-                           mach->avoid_back_to_back())) {
+                           mach->avoid_back_to_back(MachNode::AVOID_AFTER))) {
         last_may_be_short_branch_adr = blk_starts[i] + jmp_offset[i] + jmp_size[i];
       }
       blk_starts[i+1] -= adjust_block_start;
@@ -1313,7 +1313,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
         if (is_sfn && !is_mcall && padding == 0 && current_offset == last_call_offset) {
           padding = nop_size;
         }
-        if (padding == 0 && mach->avoid_back_to_back() &&
+        if (padding == 0 && mach->avoid_back_to_back(MachNode::AVOID_BEFORE) &&
             current_offset == last_avoid_back_to_back_offset) {
           // Avoid back to back some instructions.
           padding = nop_size;
@@ -1407,7 +1407,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
               int new_size = replacement->size(_regalloc);
               assert((br_size - new_size) >= (int)nop_size, "short_branch size should be smaller");
               // Insert padding between avoid_back_to_back branches.
-              if (needs_padding && replacement->avoid_back_to_back()) {
+              if (needs_padding && replacement->avoid_back_to_back(MachNode::AVOID_BEFORE)) {
                 MachNode *nop = new (this) MachNopNode();
                 block->insert_node(nop, j++);
                 _cfg->map_node_to_block(nop, block);
@@ -1515,7 +1515,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
         last_call_offset = current_offset;
       }
 
-      if (n->is_Mach() && n->as_Mach()->avoid_back_to_back()) {
+      if (n->is_Mach() && n->as_Mach()->avoid_back_to_back(MachNode::AVOID_AFTER)) {
         // Avoid back to back some instructions.
         last_avoid_back_to_back_offset = current_offset;
       }
