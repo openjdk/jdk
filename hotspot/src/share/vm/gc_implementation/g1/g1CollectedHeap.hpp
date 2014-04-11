@@ -706,19 +706,7 @@ public:
   // This is a fast test on whether a reference points into the
   // collection set or not. Assume that the reference
   // points into the heap.
-  bool in_cset_fast_test(oop obj) {
-    assert(_in_cset_fast_test != NULL, "sanity");
-    assert(_g1_committed.contains((HeapWord*) obj), err_msg("Given reference outside of heap, is "PTR_FORMAT, (HeapWord*)obj));
-    // no need to subtract the bottom of the heap from obj,
-    // _in_cset_fast_test is biased
-    uintx index = cast_from_oop<uintx>(obj) >> HeapRegion::LogOfHRGrainBytes;
-    bool ret = _in_cset_fast_test[index];
-    // let's make sure the result is consistent with what the slower
-    // test returns
-    assert( ret || !obj_in_cs(obj), "sanity");
-    assert(!ret ||  obj_in_cs(obj), "sanity");
-    return ret;
-  }
+  inline bool in_cset_fast_test(oop obj);
 
   void clear_cset_fast_test() {
     assert(_in_cset_fast_test_base != NULL, "sanity");
@@ -1250,9 +1238,7 @@ public:
     }
   }
 
-  void old_set_remove(HeapRegion* hr) {
-    _old_set.remove(hr);
-  }
+  inline void old_set_remove(HeapRegion* hr);
 
   size_t non_young_capacity_bytes() {
     return _old_set.total_capacity_bytes() + _humongous_set.total_capacity_bytes();
@@ -1343,7 +1329,7 @@ public:
   void heap_region_iterate(HeapRegionClosure* blk) const;
 
   // Return the region with the given index. It assumes the index is valid.
-  HeapRegion* region_at(uint index) const { return _hrs.at(index); }
+  inline HeapRegion* region_at(uint index) const;
 
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some
@@ -1472,10 +1458,7 @@ public:
     return true;
   }
 
-  bool is_in_young(const oop obj) {
-    HeapRegion* hr = heap_region_containing(obj);
-    return hr != NULL && hr->is_young();
-  }
+  inline bool is_in_young(const oop obj);
 
 #ifdef ASSERT
   virtual bool is_in_partial_collection(const void* p);
@@ -1488,9 +1471,7 @@ public:
   // pre-value that needs to be remembered; for the remembered-set
   // update logging post-barrier, we don't maintain remembered set
   // information for young gen objects.
-  virtual bool can_elide_initializing_store_barrier(oop new_obj) {
-    return is_in_young(new_obj);
-  }
+  virtual inline bool can_elide_initializing_store_barrier(oop new_obj);
 
   // Returns "true" iff the given word_size is "very large".
   static bool isHumongous(size_t word_size) {
@@ -1584,23 +1565,9 @@ public:
 
   // Added if it is NULL it isn't dead.
 
-  bool is_obj_dead(const oop obj) const {
-    const HeapRegion* hr = heap_region_containing(obj);
-    if (hr == NULL) {
-      if (obj == NULL) return false;
-      else return true;
-    }
-    else return is_obj_dead(obj, hr);
-  }
+  inline bool is_obj_dead(const oop obj) const;
 
-  bool is_obj_ill(const oop obj) const {
-    const HeapRegion* hr = heap_region_containing(obj);
-    if (hr == NULL) {
-      if (obj == NULL) return false;
-      else return true;
-    }
-    else return is_obj_ill(obj, hr);
-  }
+  inline bool is_obj_ill(const oop obj) const;
 
   bool allocated_since_marking(oop obj, HeapRegion* hr, VerifyOption vo);
   HeapWord* top_at_mark_start(HeapRegion* hr, VerifyOption vo);
@@ -1694,26 +1661,10 @@ public:
 
   bool is_obj_dead_cond(const oop obj,
                         const HeapRegion* hr,
-                        const VerifyOption vo) const {
-    switch (vo) {
-    case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
-    case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
-    case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
-    default:                            ShouldNotReachHere();
-    }
-    return false; // keep some compilers happy
-  }
+                        const VerifyOption vo) const;
 
   bool is_obj_dead_cond(const oop obj,
-                        const VerifyOption vo) const {
-    switch (vo) {
-    case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
-    case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
-    case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
-    default:                            ShouldNotReachHere();
-    }
-    return false; // keep some compilers happy
-  }
+                        const VerifyOption vo) const;
 
   // Printing
 
@@ -1807,11 +1758,7 @@ protected:
   DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
   G1SATBCardTableModRefBS* ctbs()                { return _ct_bs; }
 
-  template <class T> void immediate_rs_update(HeapRegion* from, T* p, int tid) {
-    if (!from->is_survivor()) {
-      _g1_rem->par_write_ref(from, p, tid);
-    }
-  }
+  template <class T> inline void immediate_rs_update(HeapRegion* from, T* p, int tid);
 
   template <class T> void deferred_rs_update(HeapRegion* from, T* p, int tid) {
     // If the new value of the field points to the same region or
@@ -1853,13 +1800,7 @@ public:
     refs()->push(ref);
   }
 
-  template <class T> void update_rs(HeapRegion* from, T* p, int tid) {
-    if (G1DeferredRSUpdate) {
-      deferred_rs_update(from, p, tid);
-    } else {
-      immediate_rs_update(from, p, tid);
-    }
-  }
+  template <class T> inline void update_rs(HeapRegion* from, T* p, int tid);
 
   HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
     HeapWord* obj = NULL;
@@ -1983,54 +1924,7 @@ private:
     return cast_to_oop((intptr_t)ref & ~G1_PARTIAL_ARRAY_MASK);
   }
 
-  void do_oop_partial_array(oop* p) {
-    assert(has_partial_array_mask(p), "invariant");
-    oop from_obj = clear_partial_array_mask(p);
-
-    assert(Universe::heap()->is_in_reserved(from_obj), "must be in heap.");
-    assert(from_obj->is_objArray(), "must be obj array");
-    objArrayOop from_obj_array = objArrayOop(from_obj);
-    // The from-space object contains the real length.
-    int length                 = from_obj_array->length();
-
-    assert(from_obj->is_forwarded(), "must be forwarded");
-    oop to_obj                 = from_obj->forwardee();
-    assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
-    objArrayOop to_obj_array   = objArrayOop(to_obj);
-    // We keep track of the next start index in the length field of the
-    // to-space object.
-    int next_index             = to_obj_array->length();
-    assert(0 <= next_index && next_index < length,
-           err_msg("invariant, next index: %d, length: %d", next_index, length));
-
-    int start                  = next_index;
-    int end                    = length;
-    int remainder              = end - start;
-    // We'll try not to push a range that's smaller than ParGCArrayScanChunk.
-    if (remainder > 2 * ParGCArrayScanChunk) {
-      end = start + ParGCArrayScanChunk;
-      to_obj_array->set_length(end);
-      // Push the remainder before we process the range in case another
-      // worker has run out of things to do and can steal it.
-      oop* from_obj_p = set_partial_array_mask(from_obj);
-      push_on_queue(from_obj_p);
-    } else {
-      assert(length == end, "sanity");
-      // We'll process the final range for this object. Restore the length
-      // so that the heap remains parsable in case of evacuation failure.
-      to_obj_array->set_length(end);
-    }
-    _scanner.set_region(_g1h->heap_region_containing_raw(to_obj));
-    // Process indexes [start,end). It will also process the header
-    // along with the first chunk (i.e., the chunk with start == 0).
-    // Note that at this point the length field of to_obj_array is not
-    // correct given that we are using it to keep track of the next
-    // start index. oop_iterate_range() (thankfully!) ignores the length
-    // field and only relies on the start / end parameters.  It does
-    // however return the size of the object which will be incorrect. So
-    // we have to ignore it even if we wanted to use it.
-    to_obj_array->oop_iterate_range(&_scanner, start, end);
-  }
+  inline void do_oop_partial_array(oop* p);
 
   // This method is applied to the fields of the objects that have just been copied.
   template <class T> void do_oop_evac(T* p, HeapRegion* from) {
@@ -2060,26 +1954,9 @@ public:
 
   oop copy_to_survivor_space(oop const obj);
 
-  template <class T> void deal_with_reference(T* ref_to_scan) {
-    if (!has_partial_array_mask(ref_to_scan)) {
-      // Note: we can use "raw" versions of "region_containing" because
-      // "obj_to_scan" is definitely in the heap, and is not in a
-      // humongous region.
-      HeapRegion* r = _g1h->heap_region_containing_raw(ref_to_scan);
-      do_oop_evac(ref_to_scan, r);
-    } else {
-      do_oop_partial_array((oop*)ref_to_scan);
-    }
-  }
+  template <class T> inline void deal_with_reference(T* ref_to_scan);
 
-  void deal_with_reference(StarTask ref) {
-    assert(verify_task(ref), "sanity");
-    if (ref.is_narrow()) {
-      deal_with_reference((narrowOop*)ref);
-    } else {
-      deal_with_reference((oop*)ref);
-    }
-  }
+  inline void deal_with_reference(StarTask ref);
 
 public:
   void trim_queue();

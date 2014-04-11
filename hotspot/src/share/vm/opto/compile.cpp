@@ -51,6 +51,7 @@
 #include "opto/mathexactnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/output.hpp"
