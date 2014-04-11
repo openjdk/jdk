@@ -123,22 +123,22 @@ final class BranchOptimizer {
 
         case GE:
             codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
-            method.conditionalJump(state ? GE : LT, !state, label);
+            method.conditionalJump(state ? GE : LT, false, label);
             return;
 
         case GT:
             codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
-            method.conditionalJump(state ? GT : LE, !state, label);
+            method.conditionalJump(state ? GT : LE, false, label);
             return;
 
         case LE:
             codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
-            method.conditionalJump(state ? LE : GT, state, label);
+            method.conditionalJump(state ? LE : GT, true, label);
             return;
 
         case LT:
             codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
-            method.conditionalJump(state ? LT : GE, state, label);
+            method.conditionalJump(state ? LT : GE, true, label);
             return;
 
         default:
