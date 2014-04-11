@@ -64,9 +64,6 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   void activate();
   void deactivate();
 
-  // For use by G1CollectedHeap, which is a friend.
-  static SuspendibleThreadSet* sts() { return &_sts; }
-
 public:
   virtual void run();
   // Constructor
@@ -84,8 +81,6 @@ public:
 
   ConcurrentG1Refine* cg1r() { return _cg1r;     }
 
-  // Yield for GC
-  void yield();
   // shutdown
   void stop();
 };

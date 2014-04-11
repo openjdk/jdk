@@ -194,9 +194,8 @@ void ConcurrentMarkThread::run() {
       } else {
         // We don't want to update the marking status if a GC pause
         // is already underway.
-        _sts.join();
+        SuspendibleThreadSetJoiner sts;
         g1h->set_marking_complete();
-        _sts.leave();
       }
 
       // Check if cleanup set the free_regions_coming flag. If it
@@ -266,11 +265,12 @@ void ConcurrentMarkThread::run() {
       // record_concurrent_mark_cleanup_completed() (and, in fact, it's
       // not needed any more as the concurrent mark state has been
       // already reset).
-      _sts.join();
-      if (!cm()->has_aborted()) {
-        g1_policy->record_concurrent_mark_cleanup_completed();
+      {
+        SuspendibleThreadSetJoiner sts;
+        if (!cm()->has_aborted()) {
+          g1_policy->record_concurrent_mark_cleanup_completed();
+        }
       }
-      _sts.leave();
 
       if (cm()->has_aborted()) {
         if (G1Log::fine()) {
@@ -282,28 +282,25 @@ void ConcurrentMarkThread::run() {
 
       // We now want to allow clearing of the marking bitmap to be
       // suspended by a collection pause.
-      _sts.join();
-      _cm->clearNextBitmap();
-      _sts.leave();
+      {
+        SuspendibleThreadSetJoiner sts;
+        _cm->clearNextBitmap();
+      }
     }
 
     // Update the number of full collections that have been
     // completed. This will also notify the FullGCCount_lock in case a
     // Java thread is waiting for a full GC to happen (e.g., it
     // called System.gc() with +ExplicitGCInvokesConcurrent).
-    _sts.join();
-    g1h->increment_old_marking_cycles_completed(true /* concurrent */);
-    g1h->register_concurrent_cycle_end();
-    _sts.leave();
+    {
+      SuspendibleThreadSetJoiner sts;
+      g1h->increment_old_marking_cycles_completed(true /* concurrent */);
+      g1h->register_concurrent_cycle_end();
+    }
   }
   assert(_should_terminate, "just checking");
 
   terminate();
-}
-
-
-void ConcurrentMarkThread::yield() {
-  _sts.yield("Concurrent Mark");
 }
 
 void ConcurrentMarkThread::stop() {

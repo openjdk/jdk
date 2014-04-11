@@ -814,7 +814,6 @@ public:
   }
 
   inline bool do_yield_check(uint worker_i = 0);
-  inline bool should_yield();
 
   // Called to abort the marking cycle after a Full GC takes place.
   void abort();

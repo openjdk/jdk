@@ -77,38 +77,37 @@ void G1StringDedupThread::run() {
       break;
     }
 
-    // Include this thread in safepoints
-    stsJoin();
+    {
+      // Include thread in safepoints
+      SuspendibleThreadSetJoiner sts;
 
-    stat.mark_exec();
+      stat.mark_exec();
 
-    // Process the queue
-    for (;;) {
-      oop java_string = G1StringDedupQueue::pop();
-      if (java_string == NULL) {
-        break;
+      // Process the queue
+      for (;;) {
+        oop java_string = G1StringDedupQueue::pop();
+        if (java_string == NULL) {
+          break;
+        }
+
+        G1StringDedupTable::deduplicate(java_string, stat);
+
+        // Safepoint this thread if needed
+        if (sts.should_yield()) {
+          stat.mark_block();
+          sts.yield();
+          stat.mark_unblock();
+        }
       }
 
-      G1StringDedupTable::deduplicate(java_string, stat);
+      G1StringDedupTable::trim_entry_cache();
 
-      // Safepoint this thread if needed
-      if (stsShouldYield()) {
-        stat.mark_block();
-        stsYield(NULL);
-        stat.mark_unblock();
-      }
+      stat.mark_done();
+
+      // Print statistics
+      total_stat.add(stat);
+      print(gclog_or_tty, stat, total_stat);
     }
-
-    G1StringDedupTable::trim_entry_cache();
-
-    stat.mark_done();
-
-    // Print statistics
-    total_stat.add(stat);
-    print(gclog_or_tty, stat, total_stat);
-
-    // Exclude this thread from safepoints
-    stsLeave();
   }
 
   terminate();
