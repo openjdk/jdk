@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,36 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+import java.io.PrintWriter;
+import com.oracle.java.testlibrary.*;
 
-// no precompiled headers
-#include "runtime/atomic.hpp"
-#include "runtime/handles.inline.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/os.hpp"
-#include "runtime/osThread.hpp"
-#include "runtime/safepoint.hpp"
-#include "runtime/vmThread.hpp"
+/*
+ * @test
+ * @bug 8038636
+ * @library /testlibrary
+ * @build Agent
+ * @run main ClassFileInstaller Agent
+ * @run main Launcher
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -Xmx1M -XX:ReservedCodeCacheSize=3M Agent
+ */
+public class Launcher {
+    public static void main(String[] args) throws Exception  {
 
-#include <signal.h>
+      PrintWriter pw = new PrintWriter("MANIFEST.MF");
+      pw.println("Agent-Class: Agent");
+      pw.println("Can-Retransform-Classes: true");
+      pw.close();
 
- // ***************************************************************
- // Platform dependent initialization and cleanup
- // ***************************************************************
-
-void OSThread::pd_initialize() {
-  _thread_id                         = 0;
-  sigemptyset(&_caller_sigmask);
-
-  _vm_created_thread                 = false;
-}
-
-void OSThread::pd_destroy() {
-}
-
-// copied from synchronizer.cpp
-
-void OSThread::SR_handler(Thread* thread, ucontext_t* uc) {
-  os::Solaris::SR_handler(thread, uc);
+      ProcessBuilder pb = new ProcessBuilder();
+      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", System.getProperty("test.classes",".") + "/agent.jar", "Agent.class"});
+      pb.start().waitFor();
+    }
 }

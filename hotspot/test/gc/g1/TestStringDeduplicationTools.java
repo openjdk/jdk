@@ -310,7 +310,9 @@ class TestStringDeduplicationTools {
             }
 
             System.gc();
+
             System.out.println("Heap Memory Usage: " + ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
+            System.out.println("Array Header Size: " + unsafe.ARRAY_CHAR_BASE_OFFSET);
 
             System.out.println("End: MemoryUsageTest");
         }
@@ -482,31 +484,40 @@ class TestStringDeduplicationTools {
     public static void testMemoryUsage() throws Exception {
         // Test that memory usage is reduced after deduplication
         OutputAnalyzer output;
-        final String usagePattern = "Heap Memory Usage: (\\d+)";
+        final String heapMemoryUsagePattern = "Heap Memory Usage: (\\d+)";
+        final String arrayHeaderSizePattern = "Array Header Size: (\\d+)";
 
         // Run without deduplication
         output = MemoryUsageTest.run(false);
         output.shouldHaveExitValue(0);
-        final long memoryUsageWithoutDedup = Long.parseLong(output.firstMatch(usagePattern, 1));
+        final long heapMemoryUsageWithoutDedup = Long.parseLong(output.firstMatch(heapMemoryUsagePattern, 1));
+        final long arrayHeaderSizeWithoutDedup = Long.parseLong(output.firstMatch(arrayHeaderSizePattern, 1));
 
         // Run with deduplication
         output = MemoryUsageTest.run(true);
         output.shouldHaveExitValue(0);
-        final long memoryUsageWithDedup = Long.parseLong(output.firstMatch(usagePattern, 1));
+        final long heapMemoryUsageWithDedup = Long.parseLong(output.firstMatch(heapMemoryUsagePattern, 1));
+        final long arrayHeaderSizeWithDedup = Long.parseLong(output.firstMatch(arrayHeaderSizePattern, 1));
+
+        // Sanity check to make sure one instance isn't using compressed class pointers and the other not
+        if (arrayHeaderSizeWithoutDedup != arrayHeaderSizeWithDedup) {
+            throw new Exception("Unexpected difference between array header sizes");
+        }
 
         // Calculate expected memory usage with deduplication enabled. This calculation does
         // not take alignment and padding into account, so it's a conservative estimate.
-        final long sizeOfChar = 2; // bytes
-        final long bytesSaved = (LargeNumberOfStrings - 1) * (StringLength * sizeOfChar + unsafe.ARRAY_CHAR_BASE_OFFSET);
-        final long memoryUsageWithDedupExpected = memoryUsageWithoutDedup - bytesSaved;
+        final long sizeOfChar = unsafe.ARRAY_CHAR_INDEX_SCALE;
+        final long sizeOfCharArray = StringLength * sizeOfChar + arrayHeaderSizeWithoutDedup;
+        final long bytesSaved = (LargeNumberOfStrings - 1) * sizeOfCharArray;
+        final long heapMemoryUsageWithDedupExpected = heapMemoryUsageWithoutDedup - bytesSaved;
 
         System.out.println("Memory usage summary:");
-        System.out.println("   memoryUsageWithoutDedup:      " + memoryUsageWithoutDedup);
-        System.out.println("   memoryUsageWithDedup:         " + memoryUsageWithDedup);
-        System.out.println("   memoryUsageWithDedupExpected: " + memoryUsageWithDedupExpected);
+        System.out.println("   heapMemoryUsageWithoutDedup:      " + heapMemoryUsageWithoutDedup);
+        System.out.println("   heapMemoryUsageWithDedup:         " + heapMemoryUsageWithDedup);
+        System.out.println("   heapMemoryUsageWithDedupExpected: " + heapMemoryUsageWithDedupExpected);
 
-        if (memoryUsageWithDedup > memoryUsageWithDedupExpected) {
-            throw new Exception("Unexpected memory usage, memoryUsageWithDedup should less or equal to memoryUsageWithDedupExpected");
+        if (heapMemoryUsageWithDedup > heapMemoryUsageWithDedupExpected) {
+            throw new Exception("Unexpected memory usage, heapMemoryUsageWithDedup should be less or equal to heapMemoryUsageWithDedupExpected");
         }
     }
 }
