@@ -28,6 +28,7 @@
 #include "utilities/xmlstream.hpp"
 
 class ciBaseObject;
+class ciKlass;
 class ciObject;
 class ciMetadata;
 class ciSymbol;
@@ -72,6 +73,7 @@ class CompileLog : public xmlStream {
 
   void          name(ciSymbol* s);               // name='s'
   void          name(Symbol* s)                  { xmlStream::name(s); }
+  void          name(ciKlass* k);
 
   // Output an object description, return obj->ident().
   int           identify(ciBaseObject* obj);

@@ -1514,6 +1514,21 @@ void PhaseCCP::do_transform() {
   C->set_root( transform(C->root())->as_Root() );
   assert( C->top(),  "missing TOP node" );
   assert( C->root(), "missing root" );
+
+  // Eagerly remove castPP nodes here. CastPP nodes might not be
+  // removed in the subsequent IGVN phase if a node that changes
+  // in(1) of a castPP is processed prior to the castPP node.
+  for (uint i = 0; i < _worklist.size(); i++) {
+    Node* n = _worklist.at(i);
+
+    if (n->is_ConstraintCast()) {
+      Node* nn = n->Identity(this);
+      if (nn != n) {
+        replace_node(n, nn);
+        --i;
+      }
+    }
+  }
 }
 
 //------------------------------transform--------------------------------------

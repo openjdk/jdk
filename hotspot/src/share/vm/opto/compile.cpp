@@ -3851,7 +3851,7 @@ void Compile::print_inlining_assert_ready() {
 
 void Compile::dump_inlining() {
   bool do_print_inlining = print_inlining() || print_intrinsics();
-  if (do_print_inlining) {
+  if (do_print_inlining || log() != NULL) {
     // Print inlining message for candidates that we couldn't inline
     // for lack of space
     for (int i = 0; i < _late_inlines.length(); i++) {
@@ -3861,6 +3861,7 @@ void Compile::dump_inlining() {
         if (do_print_inlining) {
           cg->print_inlining_late(msg);
         }
+        log_late_inline_failure(cg, msg);
       }
     }
   }
@@ -3870,6 +3871,48 @@ void Compile::dump_inlining() {
     }
   }
 }
+
+void Compile::log_late_inline(CallGenerator* cg) {
+  if (log() != NULL) {
+    log()->head("late_inline method='%d'  inline_id='" JLONG_FORMAT "'", log()->identify(cg->method()),
+                cg->unique_id());
+    JVMState* p = cg->call_node()->jvms();
+    while (p != NULL) {
+      log()->elem("jvms bci='%d' method='%d'", p->bci(), log()->identify(p->method()));
+      p = p->caller();
+    }
+    log()->tail("late_inline");
+  }
+}
+
+void Compile::log_late_inline_failure(CallGenerator* cg, const char* msg) {
+  log_late_inline(cg);
+  if (log() != NULL) {
+    log()->inline_fail(msg);
+  }
+}
+
+void Compile::log_inline_id(CallGenerator* cg) {
+  if (log() != NULL) {
+    // The LogCompilation tool needs a unique way to identify late
+    // inline call sites. This id must be unique for this call site in
+    // this compilation. Try to have it unique across compilations as
+    // well because it can be convenient when grepping through the log
+    // file.
+    // Distinguish OSR compilations from others in case CICountOSR is
+    // on.
+    jlong id = ((jlong)unique()) + (((jlong)compile_id()) << 33) + (CICountOSR && is_osr_compilation() ? ((jlong)1) << 32 : 0);
+    cg->set_unique_id(id);
+    log()->elem("inline_id id='" JLONG_FORMAT "'", id);
+  }
+}
+
+void Compile::log_inline_failure(const char* msg) {
+  if (C->log() != NULL) {
+    C->log()->inline_fail(msg);
+  }
+}
+
 
 // Dump inlining replay data to the stream.
 // Don't change thread state and acquire any locks.
@@ -4048,8 +4091,8 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     worklist.push(root());
     for (uint next = 0; next < worklist.size(); ++next) {
       Node *n  = worklist.at(next);
-      const Type* t = igvn.type(n);
-      assert(t == t->remove_speculative(), "no more speculative types");
+      const Type* t = igvn.type_or_null(n);
+      assert((t == NULL) || (t == t->remove_speculative()), "no more speculative types");
       if (n->is_Type()) {
         t = n->as_Type()->type();
         assert(t == t->remove_speculative(), "no more speculative types");
