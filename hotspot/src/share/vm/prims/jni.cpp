@@ -3877,6 +3877,7 @@ void TestMetaspaceAux_test();
 void TestMetachunk_test();
 void TestVirtualSpaceNode_test();
 void TestNewSize_test();
+void TestOldSize_test();
 void TestKlass_test();
 void TestBitMap_test();
 #if INCLUDE_ALL_GCS
@@ -3903,6 +3904,7 @@ void execute_internal_vm_tests() {
     run_unit_test(AltHashing::test_alt_hash());
     run_unit_test(test_loggc_filename());
     run_unit_test(TestNewSize_test());
+    run_unit_test(TestOldSize_test());
     run_unit_test(TestKlass_test());
     run_unit_test(TestBitMap_test());
 #if INCLUDE_VM_STRUCTS

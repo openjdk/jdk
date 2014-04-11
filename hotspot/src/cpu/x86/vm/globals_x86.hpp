@@ -162,7 +162,7 @@ define_pd_global(uintx, TypeProfileLevel, 111);
           "Number of milliseconds to wait before start calculating aborts " \
           "for RTM locking")                                                \
                                                                             \
-  experimental(bool, UseRTMXendForLockBusy, false,                          \
+  experimental(bool, UseRTMXendForLockBusy, true,                           \
           "Use RTM Xend instead of Xabort when lock busy")                  \
                                                                             \
   /* assembler */                                                           \
