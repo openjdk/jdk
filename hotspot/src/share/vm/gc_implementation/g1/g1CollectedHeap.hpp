@@ -1077,6 +1077,8 @@ public:
   // specified by the policy object.
   jint initialize();
 
+  virtual void stop();
+
   // Return the (conservative) maximum heap alignment for any G1 heap
   static size_t conservative_max_heap_alignment();
 

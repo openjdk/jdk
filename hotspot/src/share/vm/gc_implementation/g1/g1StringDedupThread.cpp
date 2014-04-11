@@ -73,6 +73,9 @@ void G1StringDedupThread::run() {
 
     // Wait for the queue to become non-empty
     G1StringDedupQueue::wait();
+    if (_should_terminate) {
+      break;
+    }
 
     // Include this thread in safepoints
     stsJoin();
@@ -108,7 +111,23 @@ void G1StringDedupThread::run() {
     stsLeave();
   }
 
-  ShouldNotReachHere();
+  terminate();
+}
+
+void G1StringDedupThread::stop() {
+  {
+    MonitorLockerEx ml(Terminator_lock);
+    _thread->_should_terminate = true;
+  }
+
+  G1StringDedupQueue::cancel_wait();
+
+  {
+    MonitorLockerEx ml(Terminator_lock);
+    while (!_thread->_has_terminated) {
+      ml.wait();
+    }
+  }
 }
 
 void G1StringDedupThread::print(outputStream* st, const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat) {
