@@ -958,7 +958,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ ld_ptr(G2_thread, in_bytes(JavaThread::active_handles_offset()), G3_scratch);
-  __ st_ptr(G0, G3_scratch, JNIHandleBlock::top_offset_in_bytes());
+  __ st(G0, G3_scratch, JNIHandleBlock::top_offset_in_bytes());
 
 
   // handle exceptions (exception handling will handle unlocking!)
