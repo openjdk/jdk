@@ -266,14 +266,17 @@ CallGenerator* CallGenerator::for_virtual_call(ciMethod* m, int vtable_index) {
 
 // Allow inlining decisions to be delayed
 class LateInlineCallGenerator : public DirectCallGenerator {
+ private:
+  // unique id for log compilation
+  jlong _unique_id;
+
  protected:
   CallGenerator* _inline_cg;
-
   virtual bool do_late_inline_check(JVMState* jvms) { return true; }
 
  public:
   LateInlineCallGenerator(ciMethod* method, CallGenerator* inline_cg) :
-    DirectCallGenerator(method, true), _inline_cg(inline_cg) {}
+    DirectCallGenerator(method, true), _inline_cg(inline_cg), _unique_id(0) {}
 
   virtual bool is_late_inline() const { return true; }
 
@@ -282,6 +285,8 @@ class LateInlineCallGenerator : public DirectCallGenerator {
 
   virtual JVMState* generate(JVMState* jvms, Parse* parent_parser) {
     Compile *C = Compile::current();
+
+    C->log_inline_id(this);
 
     // Record that this call site should be revisited once the main
     // parse is finished.
@@ -303,6 +308,14 @@ class LateInlineCallGenerator : public DirectCallGenerator {
     C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), msg);
     C->print_inlining_move_to(this);
     C->print_inlining_update_delayed(this);
+  }
+
+  virtual void set_unique_id(jlong id) {
+    _unique_id = id;
+  }
+
+  virtual jlong unique_id() const {
+    return _unique_id;
   }
 };
 
@@ -368,22 +381,13 @@ void LateInlineCallGenerator::do_late_inline() {
 
   C->print_inlining_move_to(this);
 
+  C->log_late_inline(this);
+
   // This check is done here because for_method_handle_inline() method
   // needs jvms for inlined state.
   if (!do_late_inline_check(jvms)) {
     map->disconnect_inputs(NULL, C);
     return;
-  }
-
-  CompileLog* log = C->log();
-  if (log != NULL) {
-    log->head("late_inline method='%d'", log->identify(method()));
-    JVMState* p = jvms;
-    while (p != NULL) {
-      log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
-      p = p->caller();
-    }
-    log->tail("late_inline");
   }
 
   // Setup default node notes to be picked up by the inlining
@@ -438,11 +442,12 @@ class LateInlineMHCallGenerator : public LateInlineCallGenerator {
   virtual JVMState* generate(JVMState* jvms, Parse* parent_parser) {
     JVMState* new_jvms = LateInlineCallGenerator::generate(jvms, parent_parser);
 
+    Compile* C = Compile::current();
     if (_input_not_const) {
       // inlining won't be possible so no need to enqueue right now.
       call_node()->set_generator(this);
     } else {
-      Compile::current()->add_late_inline(this);
+      C->add_late_inline(this);
     }
     return new_jvms;
   }
@@ -483,6 +488,9 @@ class LateInlineStringCallGenerator : public LateInlineCallGenerator {
 
   virtual JVMState* generate(JVMState* jvms, Parse* parent_parser) {
     Compile *C = Compile::current();
+
+    C->log_inline_id(this);
+
     C->add_string_late_inline(this);
 
     JVMState* new_jvms =  DirectCallGenerator::generate(jvms, parent_parser);
@@ -504,6 +512,8 @@ class LateInlineBoxingCallGenerator : public LateInlineCallGenerator {
 
   virtual JVMState* generate(JVMState* jvms, Parse* parent_parser) {
     Compile *C = Compile::current();
+
+    C->log_inline_id(this);
 
     C->add_boxing_late_inline(this);
 
@@ -786,6 +796,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
       } else {
         const char* msg = "receiver not constant";
         if (PrintInlining)  C->print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+        C->log_inline_failure(msg);
       }
     }
     break;
@@ -858,6 +869,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
       } else {
         const char* msg = "member_name not constant";
         if (PrintInlining)  C->print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+        C->log_inline_failure(msg);
       }
     }
     break;

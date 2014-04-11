@@ -440,6 +440,8 @@ class Compile : public Phase {
   void print_inlining_push();
   PrintInliningBuffer& print_inlining_current();
 
+  void log_late_inline_failure(CallGenerator* cg, const char* msg);
+
  public:
 
   outputStream* print_inlining_stream() const {
@@ -458,6 +460,10 @@ class Compile : public Phase {
     CompileTask::print_inlining(&ss, method, inline_level, bci, msg);
     print_inlining_stream()->print(ss.as_string());
   }
+
+  void log_late_inline(CallGenerator* cg);
+  void log_inline_id(CallGenerator* cg);
+  void log_inline_failure(const char* msg);
 
   void* replay_inline_data() const { return _replay_inline_data; }
 
