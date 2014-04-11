@@ -3529,6 +3529,29 @@ public:
   }
 };
 
+bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
+                                       const HeapRegion* hr,
+                                       const VerifyOption vo) const {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
+  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
+  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+  default:                            ShouldNotReachHere();
+  }
+  return false; // keep some compilers happy
+}
+
+bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
+                                       const VerifyOption vo) const {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
+  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
+  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+  default:                            ShouldNotReachHere();
+  }
+  return false; // keep some compilers happy
+}
+
 void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" %-20s", "garbage-first heap");
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
@@ -6598,13 +6621,13 @@ public:
     if (hr->is_young()) {
       // TODO
     } else if (hr->startsHumongous()) {
-      assert(hr->containing_set() == _humongous_set, err_msg("Heap region %u is starts humongous but not in humongous set.", hr->region_num()));
+      assert(hr->containing_set() == _humongous_set, err_msg("Heap region %u is starts humongous but not in humongous set.", hr->hrs_index()));
       _humongous_count.increment(1u, hr->capacity());
     } else if (hr->is_empty()) {
-      assert(hr->containing_set() == _free_list, err_msg("Heap region %u is empty but not on the free list.", hr->region_num()));
+      assert(hr->containing_set() == _free_list, err_msg("Heap region %u is empty but not on the free list.", hr->hrs_index()));
       _free_count.increment(1u, hr->capacity());
     } else {
-      assert(hr->containing_set() == _old_set, err_msg("Heap region %u is old but not in the old set.", hr->region_num()));
+      assert(hr->containing_set() == _old_set, err_msg("Heap region %u is old but not in the old set.", hr->hrs_index()));
       _old_count.increment(1u, hr->capacity());
     }
     return false;

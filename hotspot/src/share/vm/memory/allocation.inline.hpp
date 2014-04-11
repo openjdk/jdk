@@ -122,33 +122,55 @@ template <MEMFLAGS F> void CHeapObj<F>::operator delete [](void* p){
 }
 
 template <class E, MEMFLAGS F>
-E* ArrayAllocator<E, F>::allocate(size_t length) {
-  assert(_addr == NULL, "Already in use");
+char* ArrayAllocator<E, F>::allocate_inner(size_t &size, bool &use_malloc) {
+  char* addr = NULL;
 
-  _size = sizeof(E) * length;
-  _use_malloc = _size < ArrayAllocatorMallocLimit;
-
-  if (_use_malloc) {
-    _addr = AllocateHeap(_size, F);
-    if (_addr == NULL && _size >=  (size_t)os::vm_allocation_granularity()) {
+  if (use_malloc) {
+    addr = AllocateHeap(size, F);
+    if (addr == NULL && size >= (size_t)os::vm_allocation_granularity()) {
       // malloc failed let's try with mmap instead
-      _use_malloc = false;
+      use_malloc = false;
     } else {
-      return (E*)_addr;
+      return addr;
     }
   }
 
   int alignment = os::vm_allocation_granularity();
-  _size = align_size_up(_size, alignment);
+  size = align_size_up(size, alignment);
 
-  _addr = os::reserve_memory(_size, NULL, alignment, F);
-  if (_addr == NULL) {
-    vm_exit_out_of_memory(_size, OOM_MMAP_ERROR, "Allocator (reserve)");
+  addr = os::reserve_memory(size, NULL, alignment, F);
+  if (addr == NULL) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }
 
-  os::commit_memory_or_exit(_addr, _size, !ExecMem, "Allocator (commit)");
+  os::commit_memory_or_exit(addr, size, !ExecMem, "Allocator (commit)");
+  return addr;
+}
+
+template <class E, MEMFLAGS F>
+E* ArrayAllocator<E, F>::allocate(size_t length) {
+  assert(_addr == NULL, "Already in use");
+
+  _size = sizeof(E) * length;
+  _use_malloc = should_use_malloc(_size);
+  _addr = allocate_inner(_size, _use_malloc);
 
   return (E*)_addr;
+}
+
+template <class E, MEMFLAGS F>
+E* ArrayAllocator<E, F>::reallocate(size_t new_length) {
+  size_t new_size = sizeof(E) * new_length;
+  bool use_malloc = should_use_malloc(new_size);
+  char* new_addr = allocate_inner(new_size, use_malloc);
+
+  memcpy(new_addr, _addr, MIN2(new_size, _size));
+
+  free();
+  _size = new_size;
+  _use_malloc = use_malloc;
+  _addr = new_addr;
+  return (E*)new_addr;
 }
 
 template<class E, MEMFLAGS F>
