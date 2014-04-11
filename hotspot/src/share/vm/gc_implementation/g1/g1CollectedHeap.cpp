@@ -92,15 +92,13 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // Local to this file.
 
 class RefineCardTableEntryClosure: public CardTableEntryClosure {
-  SuspendibleThreadSet* _sts;
   G1RemSet* _g1rs;
   ConcurrentG1Refine* _cg1r;
   bool _concurrent;
 public:
-  RefineCardTableEntryClosure(SuspendibleThreadSet* sts,
-                              G1RemSet* g1rs,
+  RefineCardTableEntryClosure(G1RemSet* g1rs,
                               ConcurrentG1Refine* cg1r) :
-    _sts(sts), _g1rs(g1rs), _cg1r(cg1r), _concurrent(true)
+    _g1rs(g1rs), _cg1r(cg1r), _concurrent(true)
   {}
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     bool oops_into_cset = _g1rs->refine_card(card_ptr, worker_i, false);
@@ -109,7 +107,7 @@ public:
     // that point into the collection set.
     assert(!oops_into_cset, "should be");
 
-    if (_concurrent && _sts->should_yield()) {
+    if (_concurrent && SuspendibleThreadSet::should_yield()) {
       // Caller will actually yield.
       return false;
     }
@@ -2117,8 +2115,7 @@ jint G1CollectedHeap::initialize() {
   g1_policy()->init();
 
   _refine_cte_cl =
-    new RefineCardTableEntryClosure(ConcurrentG1RefineThread::sts(),
-                                    g1_rem_set(),
+    new RefineCardTableEntryClosure(g1_rem_set(),
                                     concurrent_g1_refine());
   JavaThread::dirty_card_queue_set().set_closure(_refine_cte_cl);
 
@@ -4317,7 +4314,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     // this point does not assume that we are the only GC thread
     // running. Note: of course, the actual marking work will
     // not start until the safepoint itself is released in
-    // ConcurrentGCThread::safepoint_desynchronize().
+    // SuspendibleThreadSet::desynchronize().
     doConcurrentMark();
   }
 
