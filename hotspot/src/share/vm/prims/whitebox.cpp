@@ -438,6 +438,30 @@ WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobjec
   return (mh->queued_for_compilation() || nm != NULL);
 WB_END
 
+class VM_WhiteBoxOperation : public VM_Operation {
+ public:
+  VM_WhiteBoxOperation()                         { }
+  VMOp_Type type()                  const        { return VMOp_WhiteBoxOperation; }
+  bool allow_nested_vm_operations() const        { return true; }
+};
+
+class AlwaysFalseClosure : public BoolObjectClosure {
+ public:
+  bool do_object_b(oop p) { return false; }
+};
+
+static AlwaysFalseClosure always_false;
+
+class VM_WhiteBoxCleanMethodData : public VM_WhiteBoxOperation {
+ public:
+  VM_WhiteBoxCleanMethodData(MethodData* mdo) : _mdo(mdo) { }
+  void doit() {
+    _mdo->clean_method_data(&always_false);
+  }
+ private:
+  MethodData* _mdo;
+};
+
 WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
@@ -453,6 +477,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, 0);
     }
+    VM_WhiteBoxCleanMethodData op(mdo);
+    VMThread::execute(&op);
   }
 
   mh->clear_not_c1_compilable();
