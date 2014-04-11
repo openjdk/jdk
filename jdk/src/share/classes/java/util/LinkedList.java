@@ -869,7 +869,7 @@ public class LinkedList<E>
     }
 
     private class ListItr implements ListIterator<E> {
-        private Node<E> lastReturned = null;
+        private Node<E> lastReturned;
         private Node<E> next;
         private int nextIndex;
         private int expectedModCount = modCount;
