@@ -29,6 +29,7 @@ global_opts=""
 status_output="/dev/stdout"
 qflag="false"
 vflag="false"
+sflag="false"
 while [ $# -gt 0 ]
 do
   case $1 in
@@ -41,6 +42,10 @@ do
     -v | --verbose )
       vflag="true"
       global_opts="${global_opts} -v"
+      ;;
+
+    -s | --sequential )
+      sflag="true"
       ;;
 
     '--' ) # no more options
@@ -63,7 +68,7 @@ command="$1"; shift
 command_args="$@"
 
 usage() {
-      echo "usage: $0 [-q|--quiet] [-v|--verbose] [--] <command> [commands...]" > ${status_output}
+      echo "usage: $0 [-q|--quiet] [-v|--verbose] [-s|--sequential] [--] <command> [commands...]" > ${status_output}
       exit 1
 }
 
@@ -243,10 +248,14 @@ else
       ) 2>&1 | sed -e "s@^@${reponame}:   @" > ${status_output}
     ) &
 
-    if [ `expr ${n} '%' ${at_a_time}` -eq 0 ] ; then
+    if [ `expr ${n} '%' ${at_a_time}` -eq 0 -a "${sflag}" = "false" ] ; then
       sleep 2
       echo "Waiting 5 secs before spawning next background command." > ${status_output}
       sleep 3
+    fi
+
+    if [ "${sflag}" = "true" ] ; then
+        wait
     fi
   done
 fi
