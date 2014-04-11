@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,6 +384,7 @@ Java_sun_java2d_loops_TransformHelper_Transform
         return;
     }
     Region_IntersectBounds(&clipInfo, &dstInfo.bounds);
+    Transform_GetInfo(env, itxform, &itxInfo);
 
     numedges = (((jlong) dstInfo.bounds.y2) - ((jlong) dstInfo.bounds.y1));
     if (numedges <= 0) {
@@ -423,7 +424,6 @@ Java_sun_java2d_loops_TransformHelper_Transform
         return;
     }
 
-    Transform_GetInfo(env, itxform, &itxInfo);
 
     if (!Region_IsEmpty(&clipInfo)) {
         srcOps->GetRasInfo(env, srcOps, &srcInfo);
