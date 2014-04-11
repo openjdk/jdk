@@ -1766,7 +1766,7 @@ public abstract class ScriptObject implements PropertyAccess {
         case "call":
             return findCallMethod(desc, request);
         case "new":
-            return findNewMethod(desc);
+            return findNewMethod(desc, request);
         case "callMethod":
             return findCallMethodMethod(desc, request);
         default:
@@ -1778,10 +1778,11 @@ public abstract class ScriptObject implements PropertyAccess {
      * Find the appropriate New method for an invoke dynamic call.
      *
      * @param desc The invoke dynamic call site descriptor.
+     * @param request The link request
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc) {
+    protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         return notAFunction();
     }
 
@@ -1866,6 +1867,17 @@ public abstract class ScriptObject implements PropertyAccess {
         return MH.filterArguments(methodHandle, 0, filter.asType(filter.type().changeReturnType(methodHandle.type().parameterType(0))));
     }
 
+    //this will only return true if apply is still builtin
+    private static SwitchPoint checkReservedName(final CallSiteDescriptor desc, final LinkRequest request) {
+        final boolean isApplyToCall = NashornCallSiteDescriptor.isApplyToCall(desc);
+        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        if ("apply".equals(name) && isApplyToCall && Global.instance().isSpecialNameValid(name)) {
+            assert Global.instance().getChangeCallback("apply") == Global.instance().getChangeCallback("call");
+            return Global.instance().getChangeCallback("apply");
+        }
+        return null;
+    }
+
     /**
      * Find the appropriate GET method for an invoke dynamic call.
      *
@@ -1877,7 +1889,15 @@ public abstract class ScriptObject implements PropertyAccess {
      */
     protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
         final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
-        final String  name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final String name;
+        final SwitchPoint reservedNameSwitchPoint;
+
+        reservedNameSwitchPoint = checkReservedName(desc, request);
+        if (reservedNameSwitchPoint != null) {
+            name = "call"; //turn apply into call, it is the builtin apply and has been modified to explode args
+        } else {
+            name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        }
 
         if (request.isCallSiteUnstable() || hasWithScope()) {
             return findMegaMorphicGetMethod(desc, name, "getMethod".equals(operator), isScope() && NashornCallSiteDescriptor.isScope(desc));
@@ -1893,7 +1913,7 @@ public abstract class ScriptObject implements PropertyAccess {
                         explicitInstanceOfCheck ?
                                 getScriptObjectGuard(desc.getMethodType(), explicitInstanceOfCheck) :
                                 null,
-                        null,
+                        (SwitchPoint)null,
                         explicitInstanceOfCheck ?
                                 null : ClassCastException.class);
             }
@@ -1910,9 +1930,9 @@ public abstract class ScriptObject implements PropertyAccess {
             }
         }
 
-        final GuardedInvocation inv = GlobalConstants.instance().findGetMethod(find, this, desc, request, operator);
-        if (inv != null) {
-            return inv;
+        final GuardedInvocation cinv = GlobalConstants.instance().findGetMethod(find, this, desc, request, operator);
+        if (cinv != null) {
+            return cinv;
         }
 
         final Class<?> returnType = desc.getMethodType().returnType();
@@ -1928,25 +1948,26 @@ public abstract class ScriptObject implements PropertyAccess {
         final ScriptObject owner = find.getOwner();
         final Class<ClassCastException> exception = explicitInstanceOfCheck ? null : ClassCastException.class;
 
+        final SwitchPoint protoSwitchPoint;
+
         if (mh == null) {
             mh = Lookup.emptyGetter(returnType);
-        } else if (find.isSelf()) {
-            return new GuardedInvocation(mh, guard, null, exception);
-         } else {
+            protoSwitchPoint = getProtoSwitchPoint(name, owner);
+        } else if (!find.isSelf()) {
             assert mh.type().returnType().equals(returnType) : "returntype mismatch for getter " + mh.type().returnType() + " != " + returnType;
             if (!property.hasGetterFunction(owner)) {
                 // Add a filter that replaces the self object with the prototype owning the property.
                 mh = addProtoFilter(mh, find.getProtoChainLength());
             }
+            protoSwitchPoint = getProtoSwitchPoint(name, owner);
+        } else {
+            protoSwitchPoint = null;
         }
 
         assert OBJECT_FIELDS_ONLY || guard != null : "we always need a map guard here";
 
-        return new GuardedInvocation(
-                mh,
-                guard,
-                getProtoSwitchPoint(name, owner),
-                exception);
+        final GuardedInvocation inv = new GuardedInvocation(mh, guard, protoSwitchPoint, exception);
+        return inv.addSwitchPoint(reservedNameSwitchPoint);
     }
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod, final boolean isScope) {
@@ -1994,7 +2015,7 @@ public abstract class ScriptObject implements PropertyAccess {
         }
 
         final MethodHandle mh = findGetIndexMethodHandle(returnClass, name, keyClass, desc);
-        return new GuardedInvocation(mh, getScriptObjectGuard(callType, explicitInstanceOfCheck), null, explicitInstanceOfCheck ? null : ClassCastException.class);
+        return new GuardedInvocation(mh, getScriptObjectGuard(callType, explicitInstanceOfCheck), (SwitchPoint)null, explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 
     private static MethodHandle getScriptObjectGuard(final MethodType type, final boolean explicitInstanceOfCheck) {
@@ -2091,7 +2112,7 @@ public abstract class ScriptObject implements PropertyAccess {
                 return new GuardedInvocation(
                         SETPROTOCHECK,
                         getScriptObjectGuard(desc.getMethodType(), explicitInstanceOfCheck),
-                        null,
+                        (SwitchPoint)null,
                         explicitInstanceOfCheck ? null : ClassCastException.class);
             } else if (!isExtensible()) {
                 return createEmptySetMethod(desc, explicitInstanceOfCheck, "object.non.extensible", false);
@@ -2179,7 +2200,7 @@ public abstract class ScriptObject implements PropertyAccess {
         MethodHandle methodHandle = findOwnMH_V(clazz, "set", void.class, keyClass, valueClass, boolean.class);
         methodHandle = MH.insertArguments(methodHandle, 3, isStrict);
 
-        return new GuardedInvocation(methodHandle, getScriptObjectGuard(callType, explicitInstanceOfCheck), null, explicitInstanceOfCheck ? null : ClassCastException.class);
+        return new GuardedInvocation(methodHandle, getScriptObjectGuard(callType, explicitInstanceOfCheck), (SwitchPoint)null, explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 
     /**
@@ -2215,7 +2236,7 @@ public abstract class ScriptObject implements PropertyAccess {
                         0,
                         Object.class),
                 NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck),
-                null,
+                (SwitchPoint)null,
                 explicitInstanceOfCheck ? null : ClassCastException.class);
     }
 

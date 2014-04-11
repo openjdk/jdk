@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardedTypeConversion;
@@ -71,7 +72,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
         final GuardedInvocation inv;
         if (self instanceof JSObject) {
-            inv = lookup(desc);
+            inv = lookup(desc, request);
         } else {
             throw new AssertionError(); // Should never reach here.
         }
@@ -95,9 +96,10 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     }
 
 
-    private static GuardedInvocation lookup(final CallSiteDescriptor desc) {
+    private static GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request) {
         final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
         final int c = desc.getNameTokenCount();
+
         switch (operator) {
             case "getProp":
             case "getElem":
@@ -116,7 +118,8 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     }
 
     private static GuardedInvocation findGetMethod(final CallSiteDescriptor desc) {
-        final MethodHandle getter = MH.insertArguments(JSOBJECT_GETMEMBER, 1, desc.getNameToken(2));
+        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final MethodHandle getter = MH.insertArguments(JSOBJECT_GETMEMBER, 1, name);
         return new GuardedInvocation(getter, IS_JSOBJECT_GUARD);
     }
 
@@ -135,8 +138,11 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
     private static GuardedInvocation findCallMethod(final CallSiteDescriptor desc) {
         // TODO: if call site is already a vararg, don't do asCollector
-        final MethodHandle func = MH.asCollector(JSOBJECT_CALL, Object[].class, desc.getMethodType().parameterCount() - 2);
-        return new GuardedInvocation(func, IS_JSOBJECT_GUARD);
+        MethodHandle mh = JSOBJECT_CALL;
+        if (NashornCallSiteDescriptor.isApplyToCall(desc)) {
+            mh = MH.insertArguments(JSOBJECT_CALL_TO_APPLY, 0, JSOBJECT_CALL);
+        }
+        return new GuardedInvocation(MH.asCollector(mh, Object[].class, desc.getMethodType().parameterCount() - 2), IS_JSOBJECT_GUARD);
     }
 
     private static GuardedInvocation findNewMethod(final CallSiteDescriptor desc) {
@@ -199,6 +205,21 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
         return JSType.isRepresentableAsInt(value) ? (int)value : -1;
     }
 
+    @SuppressWarnings("unused")
+    private static Object callToApply(final MethodHandle mh, final JSObject obj, final Object thiz, final Object... args) {
+        assert args.length >= 2;
+        final Object   receiver  = args[0];
+        final Object[] arguments = new Object[args.length - 1];
+        System.arraycopy(args, 1, arguments, 0, arguments.length);
+        try {
+            return mh.invokeExact(obj, thiz, new Object[] { receiver, arguments });
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static final MethodHandleFunctionality MH = MethodHandleFactory.getFunctionality();
 
     // method handles of the current class
@@ -207,10 +228,11 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     private static final MethodHandle JSOBJECTLINKER_PUT = findOwnMH_S("put", Void.TYPE, Object.class, Object.class, Object.class);
 
     // method handles of JSObject class
-    private static final MethodHandle JSOBJECT_GETMEMBER  = findJSObjectMH_V("getMember", Object.class, String.class);
-    private static final MethodHandle JSOBJECT_SETMEMBER  = findJSObjectMH_V("setMember", Void.TYPE, String.class, Object.class);
-    private static final MethodHandle JSOBJECT_CALL       = findJSObjectMH_V("call", Object.class, Object.class, Object[].class);
-    private static final MethodHandle JSOBJECT_NEW        = findJSObjectMH_V("newObject", Object.class, Object[].class);
+    private static final MethodHandle JSOBJECT_GETMEMBER     = findJSObjectMH_V("getMember", Object.class, String.class);
+    private static final MethodHandle JSOBJECT_SETMEMBER     = findJSObjectMH_V("setMember", Void.TYPE, String.class, Object.class);
+    private static final MethodHandle JSOBJECT_CALL          = findJSObjectMH_V("call", Object.class, Object.class, Object[].class);
+    private static final MethodHandle JSOBJECT_CALL_TO_APPLY = findOwnMH_S("callToApply", Object.class, MethodHandle.class, JSObject.class, Object.class, Object[].class);
+    private static final MethodHandle JSOBJECT_NEW           = findJSObjectMH_V("newObject", Object.class, Object[].class);
 
     private static final Map<Class<?>, MethodHandle> CONVERTERS = new HashMap<>();
     static {

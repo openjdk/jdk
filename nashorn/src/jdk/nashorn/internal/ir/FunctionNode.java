@@ -192,21 +192,24 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /** Does this function have optimistic expressions? */
     public static final int IS_OPTIMISTIC               = 1 << 12;
 
+    /** Are we vararg, but do we just pass the arguments along to apply or call */
+    public static final int HAS_APPLY_TO_CALL_SPECIALIZATION = 1 << 13;
+
     /** Does this function explicitly use the {@link CompilerConstants#RETURN} symbol? Some functions are known to
      * always use the return symbol, namely a function that is a program (as it must track its last executed expression
      * statement's value) as well as functions that are split (to communicate return values from inner to outer
      * partitions). Other functions normally don't use the return symbol (so we optimize away its slot), except in some
      * very special cases, e.g. when containing a return statement in a finally block. These special cases set this
      * flag. */
-    public static final int USES_RETURN_SYMBOL = 1 << 13;
+    public static final int USES_RETURN_SYMBOL = 1 << 14;
 
     /**
      * Is this function the top-level program?
      */
-    public static final int IS_PROGRAM = 1 << 14;
+    public static final int IS_PROGRAM = 1 << 15;
 
     /** Does this function use the "this" keyword? */
-    public static final int USES_THIS                   = 1 << 15;
+    public static final int USES_THIS                   = 1 << 16;
 
     /** Does this function or any nested functions contain an eval? */
     private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
@@ -477,6 +480,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     @Override
+    public int getFlags() {
+        return flags;
+    }
+
+    @Override
     public boolean getFlag(final int flag) {
         return (flags & flag) != 0;
     }
@@ -509,7 +517,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
 
     /**
      * Returns true if the function is optimistic
-     * @return True if this function is optimistic
+     * @return true if this function is optimistic
      */
     public boolean isOptimistic() {
         return getFlag(IS_OPTIMISTIC);
@@ -567,6 +575,15 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      */
     public boolean usesThis() {
         return getFlag(USES_THIS);
+    }
+
+
+    /**
+     * Return true if function contains an apply to call transform
+     * @return true if this function has transformed apply to call
+     */
+    public boolean hasOptimisticApplyToCall() {
+        return getFlag(HAS_APPLY_TO_CALL_SPECIALIZATION);
     }
 
     /**

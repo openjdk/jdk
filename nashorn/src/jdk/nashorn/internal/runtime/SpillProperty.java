@@ -64,13 +64,13 @@ public class SpillProperty extends AccessorProperty {
             this.ensureSpillSize = MH.asType(MH.insertArguments(ScriptObject.ENSURE_SPILL_SIZE, 1, slot), MH.type(Object.class, Object.class));
         }
 
-        private static void ensure(int slot) {
+        private static void ensure(final int slot) {
             int len = ACCESSOR_CACHE.length;
             if (slot >= len) {
                 do {
                     len *= 2;
                 } while (slot >= len);
-                Accessors newCache[] = new Accessors[len];
+                final Accessors newCache[] = new Accessors[len];
                 System.arraycopy(ACCESSOR_CACHE, 0, newCache, 0, ACCESSOR_CACHE.length);
                 ACCESSOR_CACHE = newCache;
             }
@@ -157,7 +157,6 @@ public class SpillProperty extends AccessorProperty {
      * @param flags  the property flags
      * @param slot   spill slot
      */
-    @SuppressWarnings("unused")
     public SpillProperty(final String key, final int flags, final int slot) {
         super(key, flags, slot, primitiveGetter(slot), primitiveSetter(slot), objectGetter(slot), objectSetter(slot));
         assert !OBJECT_FIELDS_ONLY || getCurrentType() == Object.class;

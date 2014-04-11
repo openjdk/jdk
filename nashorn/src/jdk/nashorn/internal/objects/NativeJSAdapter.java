@@ -578,7 +578,7 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     @Override
-    protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc) {
+    protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         return findHook(desc, __new__, false);
     }
 

@@ -78,6 +78,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -94,6 +95,7 @@ import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ArgumentSetter;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.DebugLogger;
@@ -167,6 +169,9 @@ public class MethodEmitter implements Emitter {
 
     /** Bootstrap for array populators */
     private static final Handle POPULATE_ARRAY_BOOTSTRAP = new Handle(H_INVOKESTATIC, RewriteException.BOOTSTRAP.className(), RewriteException.BOOTSTRAP.name(), RewriteException.BOOTSTRAP.descriptor());
+
+    /** Bootstrap for global name invalidation */
+    private static final Handle INVALIDATE_NAME_BOOTSTRAP = new Handle(H_INVOKESTATIC, Global.BOOTSTRAP.className(), Global.BOOTSTRAP.name(), Global.BOOTSTRAP.descriptor());
 
     /**
      * Constructor - internal use from ClassEmitter only
@@ -509,7 +514,6 @@ public class MethodEmitter implements Emitter {
         stack.markLocalLoad(l0);
         pushType(p1);
         stack.markLocalLoad(l1);
-        debug("after ", p0, p1);
         return this;
     }
 
@@ -1886,6 +1890,15 @@ public class MethodEmitter implements Emitter {
         return descriptor;
     }
 
+    MethodEmitter invalidateSpecialName(final String name) {
+        //this is a nop if the global hasn't registered this as a special name - we can just ignore it
+        if (Global.instance().isSpecialName(name)) {
+            debug("dynamic_invalidate_name", "name=", name);
+            method.visitInvokeDynamicInsn(name, "()V", INVALIDATE_NAME_BOOTSTRAP);
+        }
+        return this;
+    }
+
     /**
      * Generate a dynamic new
      *
@@ -1923,6 +1936,7 @@ public class MethodEmitter implements Emitter {
     }
 
     MethodEmitter dynamicArrayPopulatorCall(final int argCount, final int startIndex) {
+        debug("populate_array", "args=", argCount, "startIndex=", startIndex);
         final String signature = getDynamicSignature(Type.OBJECT_ARRAY, argCount);
         method.visitInvokeDynamicInsn("populateArray", signature, POPULATE_ARRAY_BOOTSTRAP, startIndex);
         pushType(Type.OBJECT_ARRAY);

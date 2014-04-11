@@ -72,6 +72,7 @@ final class CompiledFunction {
     private MethodHandle invoker;
     private MethodHandle constructor;
     private OptimismInfo optimismInfo;
+    private int flags; // from FunctionNode
 
     CompiledFunction(final MethodHandle invoker) {
         this.invoker = invoker;
@@ -87,13 +88,22 @@ final class CompiledFunction {
         this.constructor = constructor;
     }
 
-    CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData, final boolean isOptimistic) {
+    CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData, final int flags) {
         this(invoker);
-        if(isOptimistic) {
+        this.flags = flags;
+        if ((flags & FunctionNode.IS_OPTIMISTIC) != 0) {
             optimismInfo = new OptimismInfo(functionData);
         } else {
             optimismInfo = null;
         }
+    }
+
+    int getFlags() {
+        return flags;
+    }
+
+    boolean isVarArg() {
+        return isVarArgsType(invoker.type());
     }
 
     @Override
@@ -127,11 +137,15 @@ final class CompiledFunction {
      * @return a direct constructor method handle for this function.
      */
     MethodHandle getConstructor() {
-        if(constructor == null) {
+        if (constructor == null) {
             constructor = createConstructorFromInvoker(createInvokerForPessimisticCaller());
         }
 
         return constructor;
+    }
+
+    MethodHandle getInvoker() {
+        return invoker;
     }
 
     /**
@@ -248,7 +262,7 @@ final class CompiledFunction {
         return weight;
     }
 
-    private static boolean isVarArgsType(final MethodType type) {
+    static boolean isVarArgsType(final MethodType type) {
         assert type.parameterCount() >= 1 : type;
         return type.parameterType(type.parameterCount() - 1) == Object[].class;
     }
@@ -405,20 +419,20 @@ final class CompiledFunction {
             return paramTypes[i];
         }
         assert isVarArg;
-        return ((ArrayType)(paramTypes[paramTypes.length - 1])).getElementType();
+        return ((ArrayType)paramTypes[paramTypes.length - 1]).getElementType();
     }
 
-    boolean matchesCallSite(final MethodType callSiteType) {
-        if(!ScriptEnvironment.globalOptimistic()) {
+    boolean matchesCallSite(final MethodType callSiteType, final boolean pickVarArg) {
+        if (!ScriptEnvironment.globalOptimistic()) {
             // Without optimistic recompilation, always choose the first eagerly compiled version.
             return true;
         }
 
-        final MethodType type = type();
+        final MethodType type  = type();
         final int fnParamCount = getParamCount(type);
         final boolean isVarArg = fnParamCount == Integer.MAX_VALUE;
-        if(isVarArg) {
-            return true;
+        if (isVarArg) {
+            return pickVarArg;
         }
 
         final int csParamCount = getParamCount(callSiteType);
@@ -618,7 +632,7 @@ final class CompiledFunction {
             final Type previousFailedType = invalidatedProgramPoints.put(e.getProgramPoint(), retType);
             if (previousFailedType != null && !previousFailedType.narrowerThan(retType)) {
                 final StackTraceElement[] stack = e.getStackTrace();
-                final String functionId = stack.length == 0 ? data.getName() : (stack[0].getClassName() + "." + stack[0].getMethodName());
+                final String functionId = stack.length == 0 ? data.getName() : stack[0].getClassName() + "." + stack[0].getMethodName();
                 LOG.info("RewriteException for an already invalidated program point ", e.getProgramPoint(), " in ", functionId, ". This is okay for a recursive function invocation, but a bug otherwise.");
                 return null;
             }

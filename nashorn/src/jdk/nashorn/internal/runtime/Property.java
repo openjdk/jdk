@@ -30,7 +30,9 @@ import static jdk.nashorn.internal.runtime.PropertyDescriptor.ENUMERABLE;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.SwitchPoint;
 import java.util.Objects;
+
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
@@ -98,6 +100,8 @@ public abstract class Property {
     /** Property field number or spill slot. */
     private final int slot;
 
+    protected SwitchPoint changeCallback;
+
     /**
      * Constructor
      *
@@ -118,9 +122,10 @@ public abstract class Property {
      * @param property source property
      */
     Property(final Property property, final int flags) {
-        this.key   = property.key;
-        this.slot  = property.slot;
-        this.flags = flags;
+        this.key            = property.key;
+        this.slot           = property.slot;
+        this.changeCallback = property.changeCallback;
+        this.flags          = flags;
     }
 
     /**
@@ -166,6 +171,10 @@ public abstract class Property {
         }
 
         return propFlags;
+    }
+
+    public final void setChangeCallback(final SwitchPoint sp) {
+        this.changeCallback = sp;
     }
 
     /**

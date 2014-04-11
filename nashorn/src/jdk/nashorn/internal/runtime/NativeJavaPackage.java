@@ -137,12 +137,12 @@ public final class NativeJavaPackage extends ScriptObject {
     }
 
     @Override
-    protected GuardedInvocation findNewMethod(CallSiteDescriptor desc) {
+    protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         return createClassNotFoundInvocation(desc);
     }
 
     @Override
-    protected GuardedInvocation findCallMethod(CallSiteDescriptor desc, LinkRequest request) {
+    protected GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         return createClassNotFoundInvocation(desc);
     }
 

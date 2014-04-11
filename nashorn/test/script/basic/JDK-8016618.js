@@ -61,10 +61,22 @@ global.load({
 
 function f() {
     // mirror function called with local arguments
+    //    global.func.apply(obj, arguments);
     global.func.apply(obj, arguments);
 }
 
 f(23, "hello");
+
+f(24, "hello2");
+
+var oldCall = Function.prototype.call;
+Function.prototype.call = function() {
+    throw "this should never happen! go back to apply!";
+};
+
+f(25, "hello3");
+
+Function.prototype.call = oldCall;
 
 var fObject = global.eval("Object");
 

@@ -481,18 +481,15 @@ public final class CompilationEnvironment {
         if (compiledFunction == null) {
             return null;
         }
-        RecompilableScriptFunctionData program = compiledFunction;
-        while (true) {
-            final RecompilableScriptFunctionData parent = program.getParent();
-            if (parent == null) {
-                return program;
-            }
-            program = parent;
-        }
+        return compiledFunction.getProgram();
     }
 
     RecompilableScriptFunctionData getScriptFunctionData(final int functionId) {
         return compiledFunction == null ? null : compiledFunction.getScriptFunctionData(functionId);
     }
 
+    boolean isGlobalSymbol(final FunctionNode functionNode, final String name) {
+        final RecompilableScriptFunctionData data = getScriptFunctionData(functionNode.getId());
+        return data.isGlobalSymbol(functionNode, name);
+    }
 }

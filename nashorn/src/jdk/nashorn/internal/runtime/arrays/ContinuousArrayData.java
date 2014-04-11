@@ -229,7 +229,7 @@ public abstract class ContinuousArrayData extends ArrayData {
                 if (getElement != null) {
                     getElement = MH.filterArguments(getElement, 0, MH.asType(getArray, getArray.type().changeReturnType(clazz)));
                     final MethodHandle guard = MH.insertArguments(FAST_ACCESS_GUARD, 0, clazz);
-                    return new GuardedInvocation(getElement, guard, null, ClassCastException.class);
+                    return new GuardedInvocation(getElement, guard, (SwitchPoint)null, ClassCastException.class);
                 }
             }
         }

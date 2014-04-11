@@ -111,6 +111,9 @@ public enum CompilerConstants {
     /** the internal arguments object, when necessary (not visible to scripts, can't be reassigned). */
     ARGUMENTS(":arguments", ScriptObject.class),
 
+    /** prefix for apply-to-call exploded arguments */
+    EXPLODED_ARGUMENT_PREFIX(":xarg"),
+
     /** prefix for iterators for for (x in ...) */
     ITERATOR_PREFIX(":i", Iterator.class),
 

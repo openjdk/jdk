@@ -41,12 +41,14 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.SwitchPoint;
 import java.util.logging.Level;
 
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.objects.Global;
 
 /**
  * An AccessorProperty is the most generic property type. An AccessorProperty is
@@ -59,6 +61,8 @@ public class AccessorProperty extends Property {
     private static final int NOOF_TYPES = getNumberOfAccessorTypes();
 
     private static final DebugLogger LOG = ObjectClassGenerator.getLogger();
+
+    private static final MethodHandle INVALIDATE_SP  = findOwnMH("invalidateSwitchPoint", Object.class, Object.class, SwitchPoint.class, String.class);
 
     /**
      * Properties in different maps for the same structure class will share their field getters and setters. This could
@@ -168,7 +172,6 @@ public class AccessorProperty extends Property {
         this.primitiveSetter = bindTo(property.primitiveSetter, delegate);
         this.objectGetter    = bindTo(property.objectGetter, delegate);
         this.objectSetter    = bindTo(property.objectSetter, delegate);
-
         property.GETTER_CACHE = new MethodHandle[NOOF_TYPES];
         // Properties created this way are bound to a delegate
         setCurrentType(property.getCurrentType());
@@ -601,6 +604,13 @@ public class AccessorProperty extends Property {
         return sobj;
     }
 
+    @SuppressWarnings("unused")
+    private static Object invalidateSwitchPoint(final Object obj, final SwitchPoint sp, final String key) {
+        LOG.info("Field change callback for " + key + " triggered: " + sp);
+        SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
+        return obj;
+    }
+
     private MethodHandle generateSetter(final Class<?> forType, final Class<?> type) {
         MethodHandle mh = createSetter(forType, type, primitiveSetter, objectSetter);
         mh = debug(mh, getCurrentType(), type, "set");
@@ -637,9 +647,38 @@ public class AccessorProperty extends Property {
             mh = generateSetter(forType, type);
         }
 
+        /**
+         * Check if this is a special global name that requires switchpoint invalidation
+         */
+        final SwitchPoint ccb = getChangeCallback();
+        if (ccb != null && ccb != NO_CHANGE_CALLBACK) {
+            mh = MH.filterArguments(mh, 0, MH.insertArguments(INVALIDATE_SP, 1, changeCallback, getKey()));
+        }
+
         assert mh.type().returnType() == void.class;
 
         return mh;
+    }
+
+    private static final SwitchPoint NO_CHANGE_CALLBACK = new SwitchPoint();
+
+    /**
+     * Get the change callback for this property
+     * @return switchpoint that is invalidated when property changes
+     */
+    protected SwitchPoint getChangeCallback() {
+        if (changeCallback == null) {
+            try {
+                changeCallback = Global.instance().getChangeCallback(getKey());
+            } catch (final NullPointerException e) {
+                assert !"apply".equals(getKey()) && !"call".equals(getKey());
+                //empty
+            }
+            if (changeCallback == null) {
+                changeCallback = NO_CHANGE_CALLBACK;
+            }
+        }
+        return changeCallback;
     }
 
     @Override

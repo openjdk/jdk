@@ -37,6 +37,12 @@ package jdk.nashorn.internal.ir;
 public interface Flags<T extends LexicalContextNode> {
 
     /**
+     * Get all flags of a LexicalContextNode
+     * @return flags
+     */
+    public int getFlags();
+
+    /**
      * Check if a flag is set in a lexical context node
      * @param flag flag to check
      * @return flags

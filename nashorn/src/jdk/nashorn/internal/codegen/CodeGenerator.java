@@ -51,6 +51,7 @@ import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
 import static jdk.nashorn.internal.ir.Symbol.IS_TEMP;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_APPLY_TO_CALL;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_FAST_SCOPE;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_OPTIMISTIC;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROGRAM_POINT_SHIFT;
@@ -809,7 +810,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private int loadArgs(final List<Expression> args) {
-        return loadArgs(args, null, false, args.size());
+        return loadArgs(args, args.size());
+    }
+
+    private int loadArgs(final List<Expression> args, final int argCount) {
+        return loadArgs(args, null, false, argCount);
     }
 
     private int loadArgs(final List<Expression> args, final String signature, final boolean isVarArg, final int argCount) {
@@ -990,6 +995,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             public boolean enterAccessNode(final AccessNode node) {
+                //check if this is an apply to call node. only real applies, that haven't been
+                //shadowed from their way to the global scope counts
+
+                //call nodes have program points.
+
                 new OptimisticOperation() {
                     int argCount;
                     @Override
@@ -999,14 +1009,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         // NOTE: not using a nested OptimisticOperation on this dynamicGet, as we expect to get back
                         // a callable object. Nobody in their right mind would optimistically type this call site.
                         assert !node.isOptimistic();
-                        method.dynamicGet(node.getType(), node.getProperty().getName(), getCallSiteFlags(), true);
+                        final int flags = getCallSiteFlags() | (callNode.isApplyToCall() ? CALLSITE_APPLY_TO_CALL : 0);
+                        method.dynamicGet(node.getType(), node.getProperty().getName(), flags, true);
                         method.swap();
                         argCount = loadArgs(args);
                     }
                     @Override
                     void consumeStack() {
-                        final int flags = getCallSiteFlagsOptimistic(callNode);
-                        dynamicCall(method, callNode, callNodeType, 2 + argCount, flags);
+                        dynamicCall(method, callNode, callNodeType, 2 + argCount, getCallSiteFlagsOptimistic(callNode) | (callNode.isApplyToCall() ? CALLSITE_APPLY_TO_CALL : 0));
                     }
                 }.emit(callNode);
 
@@ -1034,7 +1044,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         final int flags = getCallSiteFlagsOptimistic(callNode);
                         //assert callNodeType.equals(callee.getReturnType()) : callNodeType + " != " + callee.getReturnType();
                         dynamicCall(method, callNode, callNodeType, 2 + argsCount, flags);
-                        //assert method.peekType().equals(callee.getReturnType()) : method.peekType() + " != " + callee.getReturnType();
                     }
                 }.emit(callNode);
                 method.convert(callNodeType);
@@ -1149,7 +1158,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private static MethodEmitter dynamicCall(final MethodEmitter method, final Expression expr, final Type desiredType, final int argCount, final int flags) {
         final int finalFlags = maybeRemoveOptimisticFlags(desiredType, flags);
-        if(isOptimistic(finalFlags)) {
+        if (isOptimistic(finalFlags)) {
             return method.dynamicCall(getOptimisticCoercedType(desiredType, expr), argCount, finalFlags).convert(desiredType);
         }
         return method.dynamicCall(desiredType, argCount, finalFlags);
@@ -2024,16 +2033,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         //make sure that undefined has not been overridden or scoped as a local var
         //between us and global
-        final CompilationEnvironment  env = compiler.getCompilationEnvironment();
-        RecompilableScriptFunctionData data = env.getScriptFunctionData(lc.getCurrentFunction().getId());
-        final RecompilableScriptFunctionData program = compiler.getCompilationEnvironment().getProgram();
-        assert data != null;
-
-        while (data != program) {
-            if (data.hasInternalSymbol("undefined")) {
-                return false;
-            }
-            data = data.getParent();
+        final CompilationEnvironment env = compiler.getCompilationEnvironment();
+        if (!env.isGlobalSymbol(lc.getCurrentFunction(), "undefined")) {
+            return false;
         }
 
         load(expr);

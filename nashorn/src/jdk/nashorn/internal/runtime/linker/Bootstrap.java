@@ -94,7 +94,7 @@ public final class Bootstrap {
         factory.setSyncOnRelink(true);
         factory.setPrelinkFilter(new GuardedInvocationFilter() {
             @Override
-            public GuardedInvocation filter(GuardedInvocation inv, LinkRequest request, LinkerServices linkerServices) {
+            public GuardedInvocation filter(final GuardedInvocation inv, final LinkRequest request, final LinkerServices linkerServices) {
                 final CallSiteDescriptor desc = request.getCallSiteDescriptor();
                 return OptimisticReturnFilters.filterOptimisticReturnValue(inv, desc).asType(linkerServices, desc.getMethodType());
             }
@@ -341,7 +341,7 @@ public final class Bootstrap {
      * @param boundThis the bound "this" value.
      * @return a bound dynamic method.
      */
-    public static Object bindDynamicMethod(Object dynamicMethod, Object boundThis) {
+    public static Object bindDynamicMethod(final Object dynamicMethod, final Object boundThis) {
         return new BoundDynamicMethod(dynamicMethod, boundThis);
     }
 
@@ -362,7 +362,7 @@ public final class Bootstrap {
      * @param clazz the class being tested
      * @param isStatic is access checked for static members (or instance members)
      */
-    public static void checkReflectionAccess(Class<?> clazz, boolean isStatic) {
+    public static void checkReflectionAccess(final Class<?> clazz, final boolean isStatic) {
         ReflectionCheckLinker.checkReflectionAccess(clazz, isStatic);
     }
 

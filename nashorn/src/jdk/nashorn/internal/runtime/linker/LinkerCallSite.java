@@ -297,7 +297,6 @@ public class LinkerCallSite extends ChainedCallSite {
         }
 
         static class ProfileDumper implements Runnable {
-            @SuppressWarnings("resource")
             @Override
             public void run() {
                 PrintWriter out    = null;
@@ -442,7 +441,7 @@ public class LinkerCallSite extends ChainedCallSite {
                     final Object arg = args[i];
                     out.print(", ");
 
-                    if (getNashornDescriptor().isTraceScope() || !(arg instanceof ScriptObject && ((ScriptObject)arg).isScope())) {
+                    if (!(arg instanceof ScriptObject && ((ScriptObject)arg).isScope())) {
                         printObject(out, arg);
                     } else {
                         out.print("SCOPE");
@@ -470,7 +469,7 @@ public class LinkerCallSite extends ChainedCallSite {
          *
          * @throws Throwable if invocation fails or throws exception/error
          */
-        @SuppressWarnings({"unused", "resource"})
+        @SuppressWarnings("unused")
         public Object traceObject(final MethodHandle mh, final Object... args) throws Throwable {
             final PrintWriter out = Context.getCurrentErr();
             tracePrint(out, "ENTER ", args, null);
@@ -488,7 +487,7 @@ public class LinkerCallSite extends ChainedCallSite {
          *
          * @throws Throwable if invocation fails or throws exception/error
          */
-        @SuppressWarnings({"unused", "resource"})
+        @SuppressWarnings("unused")
         public void traceVoid(final MethodHandle mh, final Object... args) throws Throwable {
             final PrintWriter out = Context.getCurrentErr();
             tracePrint(out, "ENTER ", args, null);
