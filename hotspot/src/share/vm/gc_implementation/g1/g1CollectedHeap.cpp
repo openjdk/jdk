@@ -431,6 +431,9 @@ HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
 void G1CollectedHeap::stop_conc_gc_threads() {
   _cg1r->stop();
   _cmThread->stop();
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::stop();
+  }
 }
 
 #ifdef ASSERT
@@ -2176,6 +2179,16 @@ jint G1CollectedHeap::initialize() {
   G1StringDedup::initialize();
 
   return JNI_OK;
+}
+
+void G1CollectedHeap::stop() {
+  // Abort any ongoing concurrent root region scanning and stop all
+  // concurrent threads. We do this to make sure these threads do
+  // not continue to execute and access resources (e.g. gclog_or_tty)
+  // that are destroyed during shutdown.
+  _cm->root_regions()->abort();
+  _cm->root_regions()->wait_until_scan_finished();
+  stop_conc_gc_threads();
 }
 
 size_t G1CollectedHeap::conservative_max_heap_alignment() {

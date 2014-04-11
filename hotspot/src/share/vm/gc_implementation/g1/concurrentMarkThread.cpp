@@ -89,6 +89,10 @@ void ConcurrentMarkThread::run() {
   while (!_should_terminate) {
     // wait until started is set.
     sleepBeforeNextCycle();
+    if (_should_terminate) {
+      break;
+    }
+
     {
       ResourceMark rm;
       HandleMark   hm;
@@ -303,11 +307,21 @@ void ConcurrentMarkThread::yield() {
 }
 
 void ConcurrentMarkThread::stop() {
-  // it is ok to take late safepoints here, if needed
-  MutexLockerEx mu(Terminator_lock);
-  _should_terminate = true;
-  while (!_has_terminated) {
-    Terminator_lock->wait();
+  {
+    MutexLockerEx ml(Terminator_lock);
+    _should_terminate = true;
+  }
+
+  {
+    MutexLockerEx ml(CGC_lock, Mutex::_no_safepoint_check_flag);
+    CGC_lock->notify_all();
+  }
+
+  {
+    MutexLockerEx ml(Terminator_lock);
+    while (!_has_terminated) {
+      Terminator_lock->wait();
+    }
   }
 }
 
@@ -327,11 +341,14 @@ void ConcurrentMarkThread::sleepBeforeNextCycle() {
   assert(!in_progress(), "should have been cleared");
 
   MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
-  while (!started()) {
+  while (!started() && !_should_terminate) {
     CGC_lock->wait(Mutex::_no_safepoint_check_flag);
   }
-  set_in_progress();
-  clear_started();
+
+  if (started()) {
+    set_in_progress();
+    clear_started();
+  }
 }
 
 // Note: As is the case with CMS - this method, although exported
