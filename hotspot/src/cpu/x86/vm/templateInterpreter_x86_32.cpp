@@ -1287,7 +1287,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
-  __ movptr(Address(t, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
+  __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
 
   // If result was an oop then unbox and save it in the frame
   { Label L;
