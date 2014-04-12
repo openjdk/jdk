@@ -28,6 +28,8 @@ package java.net;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Abstract datagram and multicast socket implementation base class.
@@ -46,6 +48,20 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      * The file descriptor object.
      */
     protected FileDescriptor fd;
+
+    /**
+     * The DatagramSocket or MulticastSocket
+     * that owns this impl
+     */
+    DatagramSocket socket;
+
+    void setDatagramSocket(DatagramSocket socket) {
+        this.socket = socket;
+    }
+
+    DatagramSocket getDatagramSocket() {
+        return socket;
+    }
 
     /**
      * Creates a datagram socket.
@@ -240,5 +256,117 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      */
     protected FileDescriptor getFileDescriptor() {
         return fd;
+    }
+
+    /**
+     * Called to set a socket option.
+     *
+     * @param name The socket option
+     *
+     * @param value The value of the socket option. A value of {@code null}
+     *              may be valid for some options.
+     *
+     * @throws UnsupportedOperationException if the DatagramSocketImpl does not
+     *         support the option
+     *
+     * @throws NullPointerException if name is {@code null}
+     *
+     * @since 1.9
+     */
+    protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
+        if (name == StandardSocketOptions.SO_SNDBUF) {
+            setOption(SocketOptions.SO_SNDBUF, value);
+        } else if (name == StandardSocketOptions.SO_RCVBUF) {
+            setOption(SocketOptions.SO_RCVBUF, value);
+        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
+            setOption(SocketOptions.SO_REUSEADDR, value);
+        } else if (name == StandardSocketOptions.IP_TOS) {
+            setOption(SocketOptions.IP_TOS, value);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_IF &&
+            (getDatagramSocket() instanceof MulticastSocket)) {
+            setOption(SocketOptions.IP_MULTICAST_IF2, value);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_TTL &&
+            (getDatagramSocket() instanceof MulticastSocket)) {
+            if (! (value instanceof Integer)) {
+                throw new IllegalArgumentException("not an integer");
+            }
+            setTimeToLive((Integer)value);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_LOOP &&
+            (getDatagramSocket() instanceof MulticastSocket)) {
+            setOption(SocketOptions.IP_MULTICAST_LOOP, value);
+        } else {
+            throw new UnsupportedOperationException("unsupported option");
+        }
+    }
+
+    /**
+     * Called to get a socket option.
+     *
+     * @param name The socket option
+     *
+     * @throws UnsupportedOperationException if the DatagramSocketImpl does not
+     *         support the option
+     *
+     * @throws NullPointerException if name is {@code null}
+     *
+     * @since 1.9
+     */
+    protected <T> T getOption(SocketOption<T> name) throws IOException {
+        if (name == StandardSocketOptions.SO_SNDBUF) {
+            return (T) getOption(SocketOptions.SO_SNDBUF);
+        } else if (name == StandardSocketOptions.SO_RCVBUF) {
+            return (T) getOption(SocketOptions.SO_RCVBUF);
+        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
+            return (T) getOption(SocketOptions.SO_REUSEADDR);
+        } else if (name == StandardSocketOptions.IP_TOS) {
+            return (T) getOption(SocketOptions.IP_TOS);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_IF &&
+            (getDatagramSocket() instanceof MulticastSocket)) {
+            return (T) getOption(SocketOptions.IP_MULTICAST_IF2);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_TTL &&
+            (getDatagramSocket() instanceof MulticastSocket)) {
+            Integer ttl = getTimeToLive();
+            return (T)ttl;
+        } else if (name == StandardSocketOptions.IP_MULTICAST_LOOP &&
+            (getDatagramSocket() instanceof MulticastSocket)) {
+            return (T) getOption(SocketOptions.IP_MULTICAST_LOOP);
+        } else {
+            throw new UnsupportedOperationException("unsupported option");
+        }
+    }
+
+    private static final  Set<SocketOption<?>> dgSocketOptions =
+        new HashSet<>();
+
+    private static final  Set<SocketOption<?>> mcSocketOptions =
+        new HashSet<>();
+
+    static {
+        dgSocketOptions.add(StandardSocketOptions.SO_SNDBUF);
+        dgSocketOptions.add(StandardSocketOptions.SO_RCVBUF);
+        dgSocketOptions.add(StandardSocketOptions.SO_REUSEADDR);
+        dgSocketOptions.add(StandardSocketOptions.IP_TOS);
+
+        mcSocketOptions.add(StandardSocketOptions.SO_SNDBUF);
+        mcSocketOptions.add(StandardSocketOptions.SO_RCVBUF);
+        mcSocketOptions.add(StandardSocketOptions.SO_REUSEADDR);
+        mcSocketOptions.add(StandardSocketOptions.IP_TOS);
+        mcSocketOptions.add(StandardSocketOptions.IP_MULTICAST_IF);
+        mcSocketOptions.add(StandardSocketOptions.IP_MULTICAST_TTL);
+        mcSocketOptions.add(StandardSocketOptions.IP_MULTICAST_LOOP);
+    };
+
+    /**
+     * Returns a set of SocketOptions supported by this impl
+     * and by this impl's socket (DatagramSocket or MulticastSocket)
+     *
+     * @return a Set of SocketOptions
+     */
+    protected Set<SocketOption<?>> supportedOptions() {
+        if (getDatagramSocket() instanceof MulticastSocket) {
+            return mcSocketOptions;
+        } else {
+            return dgSocketOptions;
+        }
     }
 }
