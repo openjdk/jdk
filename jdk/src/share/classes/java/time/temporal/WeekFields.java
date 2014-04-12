@@ -700,7 +700,7 @@ public final class WeekFields implements Serializable {
          * @see WeekFields#weekOfWeekBasedYear()
          */
         static ComputedDayOfField ofWeekOfWeekBasedYearField(WeekFields weekDef) {
-            return new ComputedDayOfField("WeekOfWeekBasedYear", weekDef, WEEKS, IsoFields.WEEK_BASED_YEARS, WEEK_OF_YEAR_RANGE);
+            return new ComputedDayOfField("WeekOfWeekBasedYear", weekDef, WEEKS, IsoFields.WEEK_BASED_YEARS, WEEK_OF_WEEK_BASED_YEAR_RANGE);
         }
 
         /**
@@ -753,6 +753,7 @@ public final class WeekFields implements Serializable {
         private static final ValueRange DAY_OF_WEEK_RANGE = ValueRange.of(1, 7);
         private static final ValueRange WEEK_OF_MONTH_RANGE = ValueRange.of(0, 1, 4, 6);
         private static final ValueRange WEEK_OF_YEAR_RANGE = ValueRange.of(0, 1, 52, 54);
+        private static final ValueRange WEEK_OF_WEEK_BASED_YEAR_RANGE = ValueRange.of(1, 52, 53);
 
         @Override
         public long getFrom(TemporalAccessor temporal) {
