@@ -2154,6 +2154,9 @@ public class Code {
                 // A TA position is shared for all type annotations in the
                 // same location; updating one is enough.
                 // Use -666 as a marker that the exception_index was already updated.
+                Assert.check(p.type_index != Integer.MIN_VALUE,
+                             "type_index of exception parameter type annotation " +
+                             ta + " was not set correctly");
                 if (p.type_index != -666) {
                     p.exception_index = findExceptionIndex(p.type_index);
                     p.type_index = -666;
@@ -2163,12 +2166,6 @@ public class Code {
     }
 
     private int findExceptionIndex(int catchType) {
-        if (catchType == Integer.MIN_VALUE) {
-            // We didn't set the catch type index correctly.
-            // This shouldn't happen.
-            // TODO: issue error?
-            return -1;
-        }
         List<char[]> iter = catchInfo.toList();
         int len = catchInfo.length();
         for (int i = 0; i < len; ++i) {
