@@ -107,9 +107,10 @@ public class CipherInputStream extends FilterInputStream {
             done = true;
             try {
                 obuffer = cipher.doFinal();
+            } catch (IllegalBlockSizeException | BadPaddingException e) {
+                obuffer = null;
+                throw new IOException(e);
             }
-            catch (IllegalBlockSizeException e) {obuffer = null;}
-            catch (BadPaddingException e) {obuffer = null;}
             if (obuffer == null)
                 return -1;
             else {
@@ -120,7 +121,10 @@ public class CipherInputStream extends FilterInputStream {
         }
         try {
             obuffer = cipher.update(ibuffer, 0, readin);
-        } catch (IllegalStateException e) {obuffer = null;};
+        } catch (IllegalStateException e) {
+            obuffer = null;
+            throw e;
+        }
         ostart = 0;
         if (obuffer == null)
             ofinish = 0;
@@ -302,6 +306,7 @@ public class CipherInputStream extends FilterInputStream {
             }
         }
         catch (BadPaddingException | IllegalBlockSizeException ex) {
+            throw new IOException(ex);
         }
         ostart = 0;
         ofinish = 0;
