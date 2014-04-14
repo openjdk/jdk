@@ -1032,9 +1032,20 @@ void os::free_thread(OSThread* osthread) {
 //////////////////////////////////////////////////////////////////////////////
 // thread local storage
 
+// Restore the thread pointer if the destructor is called. This is in case
+// someone from JNI code sets up a destructor with pthread_key_create to run
+// detachCurrentThread on thread death. Unless we restore the thread pointer we
+// will hang or crash. When detachCurrentThread is called the key will be set
+// to null and we will not be called again. If detachCurrentThread is never
+// called we could loop forever depending on the pthread implementation.
+static void restore_thread_pointer(void* p) {
+  Thread* thread = (Thread*) p;
+  os::thread_local_storage_at_put(ThreadLocalStorage::thread_index(), thread);
+}
+
 int os::allocate_thread_local_storage() {
   pthread_key_t key;
-  int rslt = pthread_key_create(&key, NULL);
+  int rslt = pthread_key_create(&key, restore_thread_pointer);
   assert(rslt == 0, "cannot allocate thread local storage");
   return (int)key;
 }
@@ -3781,16 +3792,11 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN ;}
 
-void os::yield_all(int attempts) {
+void os::yield_all() {
   // Yields to all threads, including threads with lower priorities
   // Threads on Linux are all with same priority. The Solaris style
   // os::yield_all() with nanosleep(1ms) is not necessary.
   sched_yield();
-}
-
-// Called from the tight loops to possibly influence time-sharing heuristics
-void os::loop_breaker(int attempts) {
-  os::yield_all(attempts);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

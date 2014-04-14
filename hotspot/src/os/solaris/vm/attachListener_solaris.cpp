@@ -29,6 +29,7 @@
 #include "services/dtraceAttacher.hpp"
 
 #include <door.h>
+#include <limits.h>
 #include <string.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -668,11 +669,13 @@ static jint enable_dprobes(AttachOperation* op, outputStream* out) {
     out->print_cr("No probe specified");
     return JNI_ERR;
   } else {
-    int probe_typess = atoi(probe);
-    if (errno) {
+    char *end;
+    long val = strtol(probe, &end, 10);
+    if (end == probe || val < 0 || val > INT_MAX) {
       out->print_cr("invalid probe type");
       return JNI_ERR;
     } else {
+      int probe_typess = (int) val;
       DTrace::enable_dprobes(probe_typess);
       return JNI_OK;
     }
@@ -703,8 +706,9 @@ jint AttachListener::pd_set_flag(AttachOperation* op, outputStream* out) {
   bool flag = true;
   const char* arg1;
   if ((arg1 = op->arg(1)) != NULL) {
-    flag = (atoi(arg1) != 0);
-    if (errno) {
+    char *end;
+    flag = (strtol(arg1, &end, 10) != 0);
+    if (arg1 == end) {
       out->print_cr("flag value has to be an integer");
       return JNI_ERR;
     }
