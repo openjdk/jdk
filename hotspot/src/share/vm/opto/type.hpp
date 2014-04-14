@@ -224,7 +224,7 @@ public:
   }
   // Variant that keeps the speculative part of the types
   const Type *meet_speculative(const Type *t) const {
-    return meet_helper(t, true);
+    return meet_helper(t, true)->cleanup_speculative();
   }
   // WIDEN: 'widens' for Ints and other range types
   virtual const Type *widen( const Type *old, const Type* limit ) const { return this; }
@@ -247,7 +247,7 @@ public:
   }
   // Variant that keeps the speculative part of the types
   const Type *join_speculative(const Type *t) const {
-    return join_helper(t, true);
+    return join_helper(t, true)->cleanup_speculative();
   }
 
   // Modified version of JOIN adapted to the needs Node::Value.
@@ -259,7 +259,7 @@ public:
   }
   // Variant that keeps the speculative part of the types
   const Type *filter_speculative(const Type *kills) const {
-    return filter_helper(kills, true);
+    return filter_helper(kills, true)->cleanup_speculative();
   }
 
 #ifdef ASSERT
@@ -414,15 +414,18 @@ public:
                                         bool require_constant = false,
                                         bool is_autobox_cache = false);
 
-  // Speculative type. See TypeInstPtr
-  virtual const TypeOopPtr* speculative() const { return NULL; }
-  virtual ciKlass* speculative_type() const { return NULL; }
+  // Speculative type helper methods. See TypePtr.
+  virtual const TypePtr* speculative() const                                  { return NULL; }
+  virtual ciKlass* speculative_type() const                                   { return NULL; }
+  virtual ciKlass* speculative_type_not_null() const                          { return NULL; }
+  virtual bool speculative_maybe_null() const                                 { return true; }
+  virtual const Type* remove_speculative() const                              { return this; }
+  virtual const Type* cleanup_speculative() const                             { return this; }
+  virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const { return exact_kls != NULL; }
+  virtual bool would_improve_ptr(bool maybe_null) const                       { return !maybe_null; }
   const Type* maybe_remove_speculative(bool include_speculative) const;
-  virtual const Type* remove_speculative() const { return this; }
 
-  virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const {
-    return exact_kls != NULL;
-  }
+  virtual bool maybe_null() const { return true; }
 
 private:
   // support arrays
@@ -679,6 +682,7 @@ public:
   virtual const Type *xdual() const;    // Compute dual right now.
   bool ary_must_be_exact() const;  // true if arrays of such are never generic
   virtual const Type* remove_speculative() const;
+  virtual const Type* cleanup_speculative() const;
 #ifdef ASSERT
   // One type is interface, the other is oop
   virtual bool interface_vs_oop(const Type *t) const;
@@ -761,12 +765,47 @@ class TypePtr : public Type {
 public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
 protected:
-  TypePtr( TYPES t, PTR ptr, int offset ) : Type(t), _ptr(ptr), _offset(offset) {}
-  virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  TypePtr(TYPES t, PTR ptr, int offset,
+          const TypePtr* speculative = NULL,
+          int inline_depth = InlineDepthBottom) :
+    Type(t), _ptr(ptr), _offset(offset), _speculative(speculative),
+    _inline_depth(inline_depth) {}
   static const PTR ptr_meet[lastPTR][lastPTR];
   static const PTR ptr_dual[lastPTR];
   static const char * const ptr_msg[lastPTR];
+
+  enum {
+    InlineDepthBottom = INT_MAX,
+    InlineDepthTop = -InlineDepthBottom
+  };
+
+  // Extra type information profiling gave us. We propagate it the
+  // same way the rest of the type info is propagated. If we want to
+  // use it, then we have to emit a guard: this part of the type is
+  // not something we know but something we speculate about the type.
+  const TypePtr*   _speculative;
+  // For speculative types, we record at what inlining depth the
+  // profiling point that provided the data is. We want to favor
+  // profile data coming from outer scopes which are likely better for
+  // the current compilation.
+  int _inline_depth;
+
+  // utility methods to work on the speculative part of the type
+  const TypePtr* dual_speculative() const;
+  const TypePtr* xmeet_speculative(const TypePtr* other) const;
+  bool eq_speculative(const TypePtr* other) const;
+  int hash_speculative() const;
+  const TypePtr* add_offset_speculative(intptr_t offset) const;
+#ifndef PRODUCT
+  void dump_speculative(outputStream *st) const;
+#endif
+
+  // utility methods to work on the inline depth of the type
+  int dual_inline_depth() const;
+  int meet_inline_depth(int depth) const;
+#ifndef PRODUCT
+  void dump_inline_depth(outputStream *st) const;
+#endif
 
 public:
   const int _offset;            // Offset into oop, with TOP & BOT
@@ -775,7 +814,9 @@ public:
   const int offset() const { return _offset; }
   const PTR ptr()    const { return _ptr; }
 
-  static const TypePtr *make( TYPES t, PTR ptr, int offset );
+  static const TypePtr *make(TYPES t, PTR ptr, int offset,
+                             const TypePtr* speculative = NULL,
+                             int inline_depth = InlineDepthBottom);
 
   // Return a 'ptr' version of this type
   virtual const Type *cast_to_ptr_type(PTR ptr) const;
@@ -784,10 +825,13 @@ public:
 
   int xadd_offset( intptr_t offset ) const;
   virtual const TypePtr *add_offset( intptr_t offset ) const;
+  virtual bool eq(const Type *t) const;
+  virtual int  hash() const;             // Type specific hashing
 
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
   virtual const Type *xmeet( const Type *t ) const;
+  virtual const Type *xmeet_helper( const Type *t ) const;
   int meet_offset( int offset ) const;
   int dual_offset( ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
@@ -801,6 +845,20 @@ public:
   PTR join_ptr( const PTR in_ptr ) const {
     return ptr_dual[ ptr_meet[ ptr_dual[in_ptr] ] [ dual_ptr() ] ];
   }
+
+  // Speculative type helper methods.
+  virtual const TypePtr* speculative() const { return _speculative; }
+  int inline_depth() const                   { return _inline_depth; }
+  virtual ciKlass* speculative_type() const;
+  virtual ciKlass* speculative_type_not_null() const;
+  virtual bool speculative_maybe_null() const;
+  virtual const Type* remove_speculative() const;
+  virtual const Type* cleanup_speculative() const;
+  virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const;
+  virtual bool would_improve_ptr(bool maybe_null) const;
+  virtual const TypePtr* with_inline_depth(int depth) const;
+
+  virtual bool maybe_null() const { return meet_ptr(Null) == ptr(); }
 
   // Tests for relation to centerline of type lattice:
   static bool above_centerline(PTR ptr) { return (ptr <= AnyNull); }
@@ -850,7 +908,8 @@ public:
 // Some kind of oop (Java pointer), either klass or instance or array.
 class TypeOopPtr : public TypePtr {
 protected:
-  TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth);
+  TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id,
+             const TypePtr* speculative, int inline_depth);
 public:
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
@@ -861,10 +920,6 @@ public:
   };
 protected:
 
-  enum {
-    InlineDepthBottom = INT_MAX,
-    InlineDepthTop = -InlineDepthBottom
-  };
   // Oop is NULL, unless this is a constant oop.
   ciObject*     _const_oop;   // Constant oop
   // If _klass is NULL, then so is _sig.  This is an unloaded klass.
@@ -880,37 +935,10 @@ protected:
   // This is the the node index of the allocation node creating this instance.
   int           _instance_id;
 
-  // Extra type information profiling gave us. We propagate it the
-  // same way the rest of the type info is propagated. If we want to
-  // use it, then we have to emit a guard: this part of the type is
-  // not something we know but something we speculate about the type.
-  const TypeOopPtr*   _speculative;
-  // For speculative types, we record at what inlining depth the
-  // profiling point that provided the data is. We want to favor
-  // profile data coming from outer scopes which are likely better for
-  // the current compilation.
-  int _inline_depth;
-
   static const TypeOopPtr* make_from_klass_common(ciKlass* klass, bool klass_change, bool try_for_exact);
 
   int dual_instance_id() const;
   int meet_instance_id(int uid) const;
-
-  // utility methods to work on the speculative part of the type
-  const TypeOopPtr* dual_speculative() const;
-  const TypeOopPtr* xmeet_speculative(const TypeOopPtr* other) const;
-  bool eq_speculative(const TypeOopPtr* other) const;
-  int hash_speculative() const;
-  const TypeOopPtr* add_offset_speculative(intptr_t offset) const;
-#ifndef PRODUCT
-  void dump_speculative(outputStream *st) const;
-#endif
-  // utility methods to work on the inline depth of the type
-  int dual_inline_depth() const;
-  int meet_inline_depth(int depth) const;
-#ifndef PRODUCT
-  void dump_inline_depth(outputStream *st) const;
-#endif
 
   // Do not allow interface-vs.-noninterface joins to collapse to top.
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
@@ -941,7 +969,9 @@ public:
                                               bool not_null_elements = false);
 
   // Make a generic (unclassed) pointer to an oop.
-  static const TypeOopPtr* make(PTR ptr, int offset, int instance_id, const TypeOopPtr* speculative = NULL, int inline_depth = InlineDepthBottom);
+  static const TypeOopPtr* make(PTR ptr, int offset, int instance_id,
+                                const TypePtr* speculative = NULL,
+                                int inline_depth = InlineDepthBottom);
 
   ciObject* const_oop()    const { return _const_oop; }
   virtual ciKlass* klass() const { return _klass;     }
@@ -955,7 +985,6 @@ public:
   bool is_known_instance()       const { return _instance_id > 0; }
   int  instance_id()             const { return _instance_id; }
   bool is_known_instance_field() const { return is_known_instance() && _offset >= 0; }
-  virtual const TypeOopPtr* speculative() const { return _speculative; }
 
   virtual intptr_t get_con() const;
 
@@ -969,10 +998,13 @@ public:
   const TypeKlassPtr* as_klass_type() const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
-  // Return same type without a speculative part
-  virtual const Type* remove_speculative() const;
 
-  virtual const Type *xmeet(const Type *t) const;
+  // Speculative type helper methods.
+  virtual const Type* remove_speculative() const;
+  virtual const Type* cleanup_speculative() const;
+  virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const;
+  virtual const TypePtr* with_inline_depth(int depth) const;
+
   virtual const Type *xdual() const;    // Compute dual right now.
   // the core of the computation of the meet for TypeOopPtr and for its subclasses
   virtual const Type *xmeet_helper(const Type *t) const;
@@ -982,29 +1014,14 @@ public:
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
-
-  // Return the speculative type if any
-  ciKlass* speculative_type() const {
-    if (_speculative != NULL) {
-      const TypeOopPtr* speculative = _speculative->join(this)->is_oopptr();
-      if (speculative->klass_is_exact()) {
-        return speculative->klass();
-      }
-    }
-    return NULL;
-  }
-  int inline_depth() const {
-    return _inline_depth;
-  }
-  virtual const TypeOopPtr* with_inline_depth(int depth) const;
-  virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const;
 };
 
 //------------------------------TypeInstPtr------------------------------------
 // Class of Java object pointers, pointing either to non-array Java instances
 // or to a Klass* (including array klasses).
 class TypeInstPtr : public TypeOopPtr {
-  TypeInstPtr(PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id, const TypeOopPtr* speculative, int inline_depth);
+  TypeInstPtr(PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id,
+              const TypePtr* speculative, int inline_depth);
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
 
@@ -1040,7 +1057,10 @@ class TypeInstPtr : public TypeOopPtr {
   }
 
   // Make a pointer to an oop.
-  static const TypeInstPtr *make(PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id = InstanceBot, const TypeOopPtr* speculative = NULL, int inline_depth = InlineDepthBottom);
+  static const TypeInstPtr *make(PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset,
+                                 int instance_id = InstanceBot,
+                                 const TypePtr* speculative = NULL,
+                                 int inline_depth = InlineDepthBottom);
 
   /** Create constant type for a constant boxed value */
   const Type* get_const_boxed_value() const;
@@ -1057,9 +1077,10 @@ class TypeInstPtr : public TypeOopPtr {
   virtual const TypeOopPtr *cast_to_instance_id(int instance_id) const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
-  // Return same type without a speculative part
+
+  // Speculative type helper methods.
   virtual const Type* remove_speculative() const;
-  virtual const TypeOopPtr* with_inline_depth(int depth) const;
+  virtual const TypePtr* with_inline_depth(int depth) const;
 
   // the core of the computation of the meet of 2 types
   virtual const Type *xmeet_helper(const Type *t) const;
@@ -1081,7 +1102,8 @@ class TypeInstPtr : public TypeOopPtr {
 // Class of Java array pointers
 class TypeAryPtr : public TypeOopPtr {
   TypeAryPtr( PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk,
-              int offset, int instance_id, bool is_autobox_cache, const TypeOopPtr* speculative, int inline_depth)
+              int offset, int instance_id, bool is_autobox_cache,
+              const TypePtr* speculative, int inline_depth)
     : TypeOopPtr(AryPtr,ptr,k,xk,o,offset, instance_id, speculative, inline_depth),
     _ary(ary),
     _is_autobox_cache(is_autobox_cache)
@@ -1120,9 +1142,15 @@ public:
 
   bool is_autobox_cache() const { return _is_autobox_cache; }
 
-  static const TypeAryPtr *make( PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id = InstanceBot, const TypeOopPtr* speculative = NULL, int inline_depth = InlineDepthBottom);
+  static const TypeAryPtr *make(PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset,
+                                int instance_id = InstanceBot,
+                                const TypePtr* speculative = NULL,
+                                int inline_depth = InlineDepthBottom);
   // Constant pointer to array
-  static const TypeAryPtr *make( PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id = InstanceBot, const TypeOopPtr* speculative = NULL, int inline_depth = InlineDepthBottom, bool is_autobox_cache= false);
+  static const TypeAryPtr *make(PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset,
+                                int instance_id = InstanceBot,
+                                const TypePtr* speculative = NULL,
+                                int inline_depth = InlineDepthBottom, bool is_autobox_cache = false);
 
   // Return a 'ptr' version of this type
   virtual const Type *cast_to_ptr_type(PTR ptr) const;
@@ -1136,9 +1164,10 @@ public:
 
   virtual bool empty(void) const;        // TRUE if type is vacuous
   virtual const TypePtr *add_offset( intptr_t offset ) const;
-  // Return same type without a speculative part
+
+  // Speculative type helper methods.
   virtual const Type* remove_speculative() const;
-  virtual const TypeOopPtr* with_inline_depth(int depth) const;
+  virtual const TypePtr* with_inline_depth(int depth) const;
 
   // the core of the computation of the meet of 2 types
   virtual const Type *xmeet_helper(const Type *t) const;
@@ -1367,9 +1396,8 @@ public:
   static const TypeNarrowOop *BOTTOM;
   static const TypeNarrowOop *NULL_PTR;
 
-  virtual const Type* remove_speculative() const {
-    return make(_ptrtype->remove_speculative()->is_ptr());
-  }
+  virtual const Type* remove_speculative() const;
+  virtual const Type* cleanup_speculative() const;
 
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
@@ -1716,6 +1744,7 @@ inline bool Type::is_ptr_to_boxing_obj() const {
 #define ConvL2X(x)   (x)
 #define ConvX2I(x)   ConvL2I(x)
 #define ConvX2L(x)   (x)
+#define ConvX2UL(x)  (x)
 
 #else
 
@@ -1760,6 +1789,7 @@ inline bool Type::is_ptr_to_boxing_obj() const {
 #define ConvL2X(x)   ConvL2I(x)
 #define ConvX2I(x)   (x)
 #define ConvX2L(x)   ConvI2L(x)
+#define ConvX2UL(x)  ConvI2UL(x)
 
 #endif
 

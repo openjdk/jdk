@@ -34,6 +34,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
 #include "vmreg_ppc.inline.hpp"
+#include "adfiles/ad_ppc_64.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -50,10 +51,6 @@
 #endif
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
-
-
-// Used by generate_deopt_blob.  Defined in .ad file.
-extern uint size_deopt_handler();
 
 
 class RegisterSaver {
@@ -2782,7 +2779,7 @@ void SharedRuntime::generate_deopt_blob() {
   // We can't grab a free register here, because all registers may
   // contain live values, so let the RegisterSaver do the adjustment
   // of the return pc.
-  const int return_pc_adjustment_no_exception = -size_deopt_handler();
+  const int return_pc_adjustment_no_exception = -HandlerImpl::size_deopt_handler();
 
   // Push the "unpack frame"
   // Save everything in sight.

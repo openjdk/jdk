@@ -25,7 +25,6 @@
  * @test
  * @bug 4641821
  * @summary hashCode() and equals() for KerberosKey and KerberosTicket
- * @run main/manual KerberosHashEqualsTest
  */
 
 /*
@@ -60,8 +59,8 @@ public class KerberosHashEqualsTest {
 
     void check() throws Exception {
         KerberosKey k1, k2;
-        k1 = new KerberosKey(new KerberosPrincipal("A"), "pass".getBytes(), 1, 1);
-        k2 = new KerberosKey(new KerberosPrincipal("A"), "pass".getBytes(), 1, 1);
+        k1 = new KerberosKey(newKP("A"), "pass".getBytes(), 1, 1);
+        k2 = new KerberosKey(newKP("A"), "pass".getBytes(), 1, 1);
         checkSame(k1, k1);  // me to me
         checkSame(k1, k2);  // same
 
@@ -73,13 +72,13 @@ public class KerberosHashEqualsTest {
         checkSame(k2, k2);
 
         // a little different
-        k2 = new KerberosKey(new KerberosPrincipal("B"), "pass".getBytes(), 1, 1);
+        k2 = new KerberosKey(newKP("B"), "pass".getBytes(), 1, 1);
         checkNotSame(k1, k2);
-        k2 = new KerberosKey(new KerberosPrincipal("A"), "ssap".getBytes(), 1, 1);
+        k2 = new KerberosKey(newKP("A"), "ssap".getBytes(), 1, 1);
         checkNotSame(k1, k2);
-        k2 = new KerberosKey(new KerberosPrincipal("A"), "pass".getBytes(), 2, 1);
+        k2 = new KerberosKey(newKP("A"), "pass".getBytes(), 2, 1);
         checkNotSame(k1, k2);
-        k2 = new KerberosKey(new KerberosPrincipal("A"), "pass".getBytes(), 1, 2);
+        k2 = new KerberosKey(newKP("A"), "pass".getBytes(), 1, 2);
         checkNotSame(k1, k2);
 
         k1 = new KerberosKey(null, "pass".getBytes(), 1, 2);
@@ -90,33 +89,33 @@ public class KerberosHashEqualsTest {
         checkNotSame(k1, "Another Object");
 
         KerberosTicket t1, t2;
-        t1 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
+        t1 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
         checkSame(t1, t1);
         checkSame(t1, t2);
-        t2 = new KerberosTicket("asn11".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
+        t2 = new KerberosTicket("asn11".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
         checkNotSame(t1, t2);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client1"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client1"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
         checkNotSame(t1, t2);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server1"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server1"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
         checkNotSame(t1, t2);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass1".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass1".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
         checkNotSame(t1, t2);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 2, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 2, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
         checkNotSame(t1, t2);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {false, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {false, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
         checkNotSame(t1, t2);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(1), new Date(0), new Date(0), new Date(0), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(1), new Date(0), new Date(0), new Date(0), null);
         checkNotSame(t1, t2);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(1), new Date(0), new Date(0), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(1), new Date(0), new Date(0), null);
         checkNotSame(t1, t2);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(1), new Date(0), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(1), new Date(0), null);
         checkNotSame(t1, t2);
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), new InetAddress[2]);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), new InetAddress[2]);
         checkNotSame(t1, t2);
 
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(1), null);
-        t1 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(2), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(1), null);
+        t1 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(2), null);
         checkSame(t1, t2);  // renewtill is useless
 
         t2.destroy();
@@ -126,11 +125,15 @@ public class KerberosHashEqualsTest {
         checkNotSame(t2, t1);
         checkSame(t2, t2);
 
-        t2 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true, true, true, true, true, true, true, true, true}, new Date(0), new Date(0), new Date(0), new Date(1), null);
-        t1 = new KerberosTicket("asn1".getBytes(), new KerberosPrincipal("client"), new KerberosPrincipal("server"), "pass".getBytes(), 1, new boolean[] {true, true, true, true, true, true, true, true, true, true}, new Date(0), new Date(0), new Date(0), new Date(2), null);
+        t2 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true, true, true, true, true, true, true, true, true}, new Date(0), new Date(0), new Date(0), new Date(1), null);
+        t1 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true, true, true, true, true, true, true, true, true}, new Date(0), new Date(0), new Date(0), new Date(2), null);
         checkNotSame(t1, t2);  // renewtill is useful
 
         checkNotSame(t1, "Another Object");
         System.out.println("Good!");
+    }
+
+    KerberosPrincipal newKP(String s) {
+        return new KerberosPrincipal(s + "@JLABS.SFBAY.SUN.COM");
     }
 }

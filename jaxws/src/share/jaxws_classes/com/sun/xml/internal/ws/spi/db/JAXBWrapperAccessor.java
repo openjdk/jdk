@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.namespace.QName;
+import javax.xml.ws.WebServiceException;
+import static com.sun.xml.internal.ws.spi.db.PropertyGetterBase.verifyWrapperType;
 
 /**
  * JAXBWrapperAccessor
@@ -58,6 +60,7 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
     protected HashMap<Object, Class> elementDeclaredTypes;
 
     public JAXBWrapperAccessor(Class<?> wrapperBean) {
+        verifyWrapperType(wrapperBean);
         contentClass = (Class<?>) wrapperBean;
 
         HashMap<Object, PropertySetter> setByQName = new HashMap<Object, PropertySetter>();
@@ -142,18 +145,16 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
                 }
 
             }
-            // _return
-            if (fieldName.startsWith("_") && !localName.startsWith("_")) {
-                fieldName = fieldName.substring(1);
+            Method setMethod = accessor(publicSetters, fieldName, localName);
+            Method getMethod = accessor(publicGetters, fieldName, localName);
+            if ( isProperty(field, getMethod, setMethod) ) {
+                PropertySetter setter = createPropertySetter(field, setMethod);
+                PropertyGetter getter = createPropertyGetter(field, getMethod);
+                setByQName.put(qname, setter);
+                setByLocalpart.put(localName, setter);
+                getByQName.put(qname, getter);
+                getByLocalpart.put(localName, getter);
             }
-            Method setMethod = publicSetters.get(fieldName);
-            Method getMethod = publicGetters.get(fieldName);
-            PropertySetter setter = createPropertySetter(field, setMethod);
-            PropertyGetter getter = createPropertyGetter(field, getMethod);
-            setByQName.put(qname, setter);
-            setByLocalpart.put(localName, setter);
-            getByQName.put(qname, getter);
-            getByLocalpart.put(localName, getter);
         }
         if (this.elementLocalNameCollision) {
             this.propertySetters = setByQName;
@@ -166,7 +167,25 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
         }
     }
 
-    static protected List<Field> getAllFields(Class<?> clz) {
+    static private Method accessor(HashMap<String, Method> map, String fieldName, String localName) {
+        Method a = map.get(fieldName);
+        if (a == null) a = map.get(localName);
+        if (a == null && fieldName.startsWith("_")) a = map.get(fieldName.substring(1));
+        return a;
+    }
+
+    static private boolean isProperty(Field field, Method getter, Method setter) {
+        if (java.lang.reflect.Modifier.isPublic(field.getModifiers())) return true;
+        if (getter == null) return false;
+        if (setter == null) {
+            return java.util.Collection.class.isAssignableFrom(field.getType()) ||
+                   java.util.Map.class.isAssignableFrom(field.getType()) ;
+        } else {
+            return true;
+        }
+    }
+
+    static private List<Field> getAllFields(Class<?> clz) {
         List<Field> list = new ArrayList<Field>();
         while (!Object.class.equals(clz)) {
             list.addAll(Arrays.asList(getDeclaredFields(clz)));
@@ -175,23 +194,20 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
         return list;
     }
 
-    static protected Field[] getDeclaredFields(final Class<?> clz) {
+    static private Field[] getDeclaredFields(final Class<?> clz) {
         try {
-            return (System.getSecurityManager() == null) ? clz .getDeclaredFields() :
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Field[]>() {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<Field[]>() {
                         @Override
                         public Field[] run() throws IllegalAccessException {
                             return clz.getDeclaredFields();
                         }
                     });
         } catch (PrivilegedActionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return null;
+            throw new WebServiceException(e);
         }
     }
 
-    static protected PropertyGetter createPropertyGetter(Field field, Method getMethod) {
+    static private PropertyGetter createPropertyGetter(Field field, Method getMethod) {
         if (!field.isAccessible()) {
             if (getMethod != null) {
                 MethodGetter methodGetter = new MethodGetter(getMethod);
@@ -200,10 +216,10 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
                 }
             }
         }
-        return new FieldGetter(field);
+        return new PrivFieldGetter(field);
     }
 
-    static protected PropertySetter createPropertySetter(Field field,
+    static private PropertySetter createPropertySetter(Field field,
             Method setter) {
         if (!field.isAccessible()) {
             if (setter != null) {
@@ -213,7 +229,7 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
                 }
             }
         }
-        return new FieldSetter(field);
+        return new PrivFieldSetter(field);
     }
 
     private Class getElementDeclaredType(QName name) {
@@ -238,10 +254,10 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
             public Object get(Object bean) throws DatabindingException {
                 Object val;
                 if (isJAXBElement) {
-                    JAXBElement<Object> jaxbElement = (JAXBElement<Object>) getter.get(bean);
+                    JAXBElement<Object> jaxbElement = (JAXBElement<Object>) JAXBWrapperAccessor.get(getter, bean);
                     val = (jaxbElement == null) ? null : jaxbElement.getValue();
                 } else {
-                    val = getter.get(bean);
+                    val = JAXBWrapperAccessor.get(getter, bean);
                 }
                 if (val == null && isListType) {
                     val = new java.util.ArrayList();
@@ -255,11 +271,95 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
                 if (isJAXBElement) {
                     JAXBElement<Object> jaxbElement = new JAXBElement<Object>(
                             n, elementDeclaredType, contentClass, value);
-                    setter.set(bean, jaxbElement);
+                    JAXBWrapperAccessor.set(setter, bean, jaxbElement);
                 } else {
-                    setter.set(bean, value);
+                    JAXBWrapperAccessor.set(setter, bean, value);
                 }
             }
         };
+    }
+
+    static  private Object get(PropertyGetter getter, Object wrapperInstance) {
+        return (getter instanceof PrivFieldGetter)?
+            ((PrivFieldGetter)getter).getPriv(wrapperInstance):
+            getter.get(wrapperInstance);
+    }
+
+    static private void set(PropertySetter setter, Object wrapperInstance, Object value) {
+        if (setter instanceof PrivFieldSetter)
+            ((PrivFieldSetter)setter).setPriv(wrapperInstance, value);
+        else
+            setter.set(wrapperInstance, value);
+    }
+
+
+    static private class PrivFieldSetter extends FieldSetter {
+        private PrivFieldSetter(Field f) {
+            super(f);
+        }
+        private void setPriv(final Object instance, final Object val) {
+            final Object resource = (type.isPrimitive() && val == null)? uninitializedValue(type): val;
+            if (field.isAccessible()) {
+                try {
+                    field.set(instance, resource);
+                } catch (Exception e) {
+                    throw new WebServiceException(e);
+                }
+            } else {
+                try {
+                    AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
+                        public Object run() throws IllegalAccessException {
+                            if (!field.isAccessible()) {
+                                field.setAccessible(true);
+                            }
+                            field.set(instance, resource);
+                            return null;
+                        }
+                    });
+                } catch (PrivilegedActionException e) {
+                    throw new WebServiceException(e);
+                }
+            }
+        }
+    }
+
+    static private class PrivFieldGetter extends FieldGetter {
+        private PrivFieldGetter(Field f) {
+            super(f);
+        }
+        static private class PrivilegedGetter implements PrivilegedExceptionAction {
+            private Object value;
+            private Field  field;
+            private Object instance;
+            public PrivilegedGetter(Field field, Object instance) {
+                super();
+                this.field = field;
+                this.instance = instance;
+            }
+            public Object run() throws IllegalAccessException {
+                if (!field.isAccessible()) {
+                    field.setAccessible(true);
+                }
+                value = field.get(instance);
+                return null;
+            }
+        }
+        private Object getPriv(final Object instance) {
+            if (field.isAccessible()) {
+                try {
+                    return field.get(instance);
+                } catch (Exception e) {
+                    throw new WebServiceException(e);
+                }
+            } else {
+                PrivilegedGetter privilegedGetter = new PrivilegedGetter(field, instance);
+                try {
+                    AccessController.doPrivileged(privilegedGetter);
+                } catch (PrivilegedActionException e) {
+                    throw new WebServiceException(e);
+                }
+                return privilegedGetter.value;
+            }
+        }
     }
 }

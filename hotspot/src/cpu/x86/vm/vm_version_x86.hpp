@@ -207,7 +207,9 @@ public:
                         : 2,
                    bmi2 : 1,
                    erms : 1,
-                        : 22;
+                        : 1,
+                   rtm  : 1,
+                        : 20;
     } bits;
   };
 
@@ -228,6 +230,9 @@ protected:
   static int _cpuFeatures;     // features returned by the "cpuid" instruction
                                // 0 if this instruction is not available
   static const char* _features_str;
+
+  static address   _cpuinfo_segv_addr; // address of instruction which causes SEGV
+  static address   _cpuinfo_cont_addr; // address of instruction after the one which causes SEGV
 
   enum {
     CPU_CX8    = (1 << 0), // next bits are from cpuid 1 (EDX)
@@ -254,7 +259,8 @@ protected:
     CPU_ERMS   = (1 << 20), // enhanced 'rep movsb/stosb' instructions
     CPU_CLMUL  = (1 << 21), // carryless multiply for CRC
     CPU_BMI1   = (1 << 22),
-    CPU_BMI2   = (1 << 23)
+    CPU_BMI2   = (1 << 23),
+    CPU_RTM    = (1 << 24)  // Restricted Transactional Memory instructions
   } cpuFeatureFlags;
 
   enum {
@@ -361,6 +367,9 @@ protected:
     // extended control register XCR0 (the XFEATURE_ENABLED_MASK register)
     XemXcr0Eax   xem_xcr0_eax;
     uint32_t     xem_xcr0_edx; // reserved
+
+    // Space to save ymm registers after signal handle
+    int          ymm_save[8*4]; // Save ymm0, ymm7, ymm8, ymm15
   };
 
   // The actual cpuid info block
@@ -438,6 +447,8 @@ protected:
       result |= CPU_ERMS;
     if (_cpuid_info.std_cpuid1_ecx.bits.clmul != 0)
       result |= CPU_CLMUL;
+    if (_cpuid_info.sef_cpuid7_ebx.bits.rtm != 0)
+      result |= CPU_RTM;
 
     // AMD features.
     if (is_amd()) {
@@ -460,6 +471,21 @@ protected:
     return result;
   }
 
+  static bool os_supports_avx_vectors() {
+    if (!supports_avx()) {
+      return false;
+    }
+    // Verify that OS save/restore all bits of AVX registers
+    // during signal processing.
+    int nreg = 2 LP64_ONLY(+2);
+    for (int i = 0; i < 8 * nreg; i++) { // 32 bytes per ymm register
+      if (_cpuid_info.ymm_save[i] != ymm_test_value()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   static void get_processor_features();
 
 public:
@@ -476,9 +502,26 @@ public:
   static ByteSize tpl_cpuidB1_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB1_eax); }
   static ByteSize tpl_cpuidB2_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB2_eax); }
   static ByteSize xem_xcr0_offset() { return byte_offset_of(CpuidInfo, xem_xcr0_eax); }
+  static ByteSize ymm_save_offset() { return byte_offset_of(CpuidInfo, ymm_save); }
+
+  // The value used to check ymm register after signal handle
+  static int ymm_test_value()    { return 0xCAFEBABE; }
+
+  static void get_cpu_info_wrapper();
+  static void set_cpuinfo_segv_addr(address pc) { _cpuinfo_segv_addr = pc; }
+  static bool  is_cpuinfo_segv_addr(address pc) { return _cpuinfo_segv_addr == pc; }
+  static void set_cpuinfo_cont_addr(address pc) { _cpuinfo_cont_addr = pc; }
+  static address  cpuinfo_cont_addr()           { return _cpuinfo_cont_addr; }
+
+  static void clean_cpuFeatures()   { _cpuFeatures = 0; }
+  static void set_avx_cpuFeatures() { _cpuFeatures = (CPU_SSE | CPU_SSE2 | CPU_AVX); }
+
 
   // Initialization
   static void initialize();
+
+  // Override Abstract_VM_Version implementation
+  static bool use_biased_locking();
 
   // Asserts
   static void assert_is_initialized() {
@@ -572,6 +615,7 @@ public:
   static bool supports_aes()      { return (_cpuFeatures & CPU_AES) != 0; }
   static bool supports_erms()     { return (_cpuFeatures & CPU_ERMS) != 0; }
   static bool supports_clmul()    { return (_cpuFeatures & CPU_CLMUL) != 0; }
+  static bool supports_rtm()      { return (_cpuFeatures & CPU_RTM) != 0; }
   static bool supports_bmi1()     { return (_cpuFeatures & CPU_BMI1) != 0; }
   static bool supports_bmi2()     { return (_cpuFeatures & CPU_BMI2) != 0; }
   // Intel features

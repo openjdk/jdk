@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 
 package com.sun.xml.internal.ws.spi.db;
 
+import static com.sun.xml.internal.ws.spi.db.PropertyGetterBase.verifyWrapperType;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import javax.xml.ws.WebServiceException;
 
 
 /**
@@ -41,6 +40,7 @@ public class MethodSetter extends PropertySetterBase {
     private Method method;
 
     public MethodSetter(Method m) {
+        verifyWrapperType(m.getDeclaringClass());
         method = m;
         type = m.getParameterTypes()[0];
     }
@@ -54,34 +54,13 @@ public class MethodSetter extends PropertySetterBase {
         return (A) method.getAnnotation(c);
     }
 
-    public void set(final Object instance, Object resource) {
+    public void set(final Object instance, Object val) {
+        final Object resource = (type.isPrimitive() && val == null)? uninitializedValue(type): val;
         final Object[] args = {resource};
-        if (method.isAccessible()) {
-            try {
-                method.invoke(instance, args);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                    public Object run() throws IllegalAccessException {
-                        if (!method.isAccessible()) {
-                            method.setAccessible(true);
-                        }
-                        try {
-                            method.invoke(instance, args);
-                        } catch (Exception e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                        return null;
-                    }
-                });
-            } catch (PrivilegedActionException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+        try {
+            method.invoke(instance, args);
+        } catch (Exception e) {
+            throw new WebServiceException(e);
         }
     }
 }

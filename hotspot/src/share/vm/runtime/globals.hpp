@@ -2423,9 +2423,9 @@ class CommandLineFlags {
           "Number of gclog files in rotation "                              \
           "(default: 0, no rotation)")                                      \
                                                                             \
-  product(uintx, GCLogFileSize, 0,                                          \
-          "GC log file size (default: 0 bytes, no rotation). "              \
-          "It requires UseGCLogFileRotation")                               \
+  product(uintx, GCLogFileSize, 8*K,                                        \
+          "GC log file size, requires UseGCLogFileRotation. "               \
+          "Set to 0 to only trigger rotation via jcmd")                     \
                                                                             \
   /* JVMTI heap profiling */                                                \
                                                                             \
@@ -2832,7 +2832,7 @@ class CommandLineFlags {
           "number of method invocations/branches (expressed as % of "       \
           "CompileThreshold) before using the method's profile")            \
                                                                             \
-  develop(bool, PrintMethodData, false,                                     \
+  diagnostic(bool, PrintMethodData, false,                                  \
           "Print the results of +ProfileInterpreter at end of run")         \
                                                                             \
   develop(bool, VerifyDataPointer, trueInDebug,                             \
@@ -3840,16 +3840,27 @@ class CommandLineFlags {
   experimental(uintx, SymbolTableSize, defaultSymbolTableSize,              \
           "Number of buckets in the JVM internal Symbol table")             \
                                                                             \
+  product(bool, UseStringDeduplication, false,                              \
+          "Use string deduplication")                                       \
+                                                                            \
+  product(bool, PrintStringDeduplicationStatistics, false,                  \
+          "Print string deduplication statistics")                          \
+                                                                            \
+  product(uintx, StringDeduplicationAgeThreshold, 3,                        \
+          "A string must reach this age (or be promoted to an old region) " \
+          "to be considered for deduplication")                             \
+                                                                            \
+  diagnostic(bool, StringDeduplicationResizeALot, false,                    \
+          "Force table resize every time the table is scanned")             \
+                                                                            \
+  diagnostic(bool, StringDeduplicationRehashALot, false,                    \
+          "Force table rehash every time the table is scanned")             \
+                                                                            \
   develop(bool, TraceDefaultMethods, false,                                 \
           "Trace the default method processing steps")                      \
                                                                             \
   develop(bool, VerifyGenericSignatures, false,                             \
           "Abort VM on erroneous or inconsistent generic signatures")       \
-                                                                            \
-  product(bool, UseVMInterruptibleIO, false,                                \
-          "(Unstable, Solaris-specific) Thread interrupt before or with "   \
-          "EINTR for I/O operations results in OS_INTRPT. The default "     \
-          "value of this flag is true for JDK 6 and earlier")               \
                                                                             \
   diagnostic(bool, WhiteBoxAPI, false,                                      \
           "Enable internal testing APIs")                                   \

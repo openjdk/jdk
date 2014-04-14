@@ -273,4 +273,7 @@ java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
 # 8031482
 sun/tools/jcmd/TestJcmdSanity.java				windows-all
 
+# 8033104
+sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
+
 ############################################################################

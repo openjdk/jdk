@@ -27,11 +27,13 @@ package sun.nio.ch;
 
 import java.io.*;
 import java.net.*;
+import jdk.net.*;
 import java.nio.channels.*;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
+import sun.net.ExtendedOptionsImpl;
 
 
 public class Net {
@@ -297,6 +299,16 @@ public class Net {
 
         // only simple values supported by this method
         Class<?> type = name.type();
+
+        if (type == SocketFlow.class) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(new NetworkPermission("setOption.SO_FLOW_SLA"));
+            }
+            ExtendedOptionsImpl.setFlowOption(fd, (SocketFlow)value);
+            return;
+        }
+
         if (type != Integer.class && type != Boolean.class)
             throw new AssertionError("Should not reach here");
 
@@ -348,6 +360,16 @@ public class Net {
         throws IOException
     {
         Class<?> type = name.type();
+
+        if (type == SocketFlow.class) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(new NetworkPermission("getOption.SO_FLOW_SLA"));
+            }
+            SocketFlow flow = SocketFlow.create();
+            ExtendedOptionsImpl.getFlowOption(fd, flow);
+            return flow;
+        }
 
         // only simple values supported by this method
         if (type != Integer.class && type != Boolean.class)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,17 @@
 
 package pkg1;
 
+/**
+ * Test link tag.
+ * Link: {@link pkg1.Outer.Inner#Inner()}, {@link pkg1.Outer#Outer(int)}, {@link pkg1.Outer.Inner.NestedInner#NestedInner(int)}
+ *
+ * @see Outer.Inner#Inner()
+ * @see Outer.Inner#Inner(int)
+ * @see Outer.Inner.NestedInner#NestedInner()
+ * @see Outer.Inner.NestedInner#NestedInner(int)
+ * @see Outer#Outer()
+ * @see Outer#Outer(int)
+ */
 public class Outer {
 
     /**
