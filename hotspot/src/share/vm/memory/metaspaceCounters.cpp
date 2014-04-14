@@ -66,7 +66,7 @@ class MetaspacePerfCounters: public CHeapObj<mtInternal> {
 MetaspacePerfCounters* MetaspaceCounters::_perf_counters = NULL;
 
 size_t MetaspaceCounters::used() {
-  return MetaspaceAux::allocated_used_bytes();
+  return MetaspaceAux::used_bytes();
 }
 
 size_t MetaspaceCounters::capacity() {
@@ -98,7 +98,7 @@ void MetaspaceCounters::update_performance_counters() {
 MetaspacePerfCounters* CompressedClassSpaceCounters::_perf_counters = NULL;
 
 size_t CompressedClassSpaceCounters::used() {
-  return MetaspaceAux::allocated_used_bytes(Metaspace::ClassType);
+  return MetaspaceAux::used_bytes(Metaspace::ClassType);
 }
 
 size_t CompressedClassSpaceCounters::capacity() {

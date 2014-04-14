@@ -62,16 +62,16 @@ public:
 };
 
 class MetaspaceSizes : public StackObj {
-  size_t _capacity;
+  size_t _committed;
   size_t _used;
   size_t _reserved;
 
  public:
-  MetaspaceSizes() : _capacity(0), _used(0), _reserved(0) {}
-  MetaspaceSizes(size_t capacity, size_t used, size_t reserved) :
-    _capacity(capacity), _used(used), _reserved(reserved) {}
+  MetaspaceSizes() : _committed(0), _used(0), _reserved(0) {}
+  MetaspaceSizes(size_t committed, size_t used, size_t reserved) :
+    _committed(committed), _used(used), _reserved(reserved) {}
 
-  size_t capacity() const { return _capacity; }
+  size_t committed() const { return _committed; }
   size_t used() const { return _used; }
   size_t reserved() const { return _reserved; }
 };

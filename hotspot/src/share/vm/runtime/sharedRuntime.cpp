@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -923,12 +923,6 @@ JRT_ENTRY(intptr_t, SharedRuntime::trace_bytecode(JavaThread* thread, intptr_t p
   return preserve_this_value;
 JRT_END
 #endif // !PRODUCT
-
-
-JRT_ENTRY(void, SharedRuntime::yield_all(JavaThread* thread, int attempts))
-  os::yield_all(attempts);
-JRT_END
-
 
 JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* thread, oopDesc* obj))
   assert(obj->is_oop(), "must be a valid oop");
