@@ -75,15 +75,6 @@ public interface ClassDoc extends ProgramElementDoc, Type {
     boolean isExternalizable();
 
     /**
-     * Return true if this class can be used as a target type of a lambda expression
-     * or method reference.
-     *
-     * @return true if this class can be used as a target type of a lambda expression
-     *         or method reference.
-     */
-    boolean isFunctionalInterface();
-
-    /**
      * Return the serialization methods for this class or
      * interface.
      *

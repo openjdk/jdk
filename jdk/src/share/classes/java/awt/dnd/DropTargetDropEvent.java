@@ -85,7 +85,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
      * assumes that the target is not in the same virtual machine as
      * the source; that is, {@link #isLocalTransfer()} will
      * return <code>false</code>.
-     * <P>
+     *
      * @param dtc        The <code>DropTargetContext</code> for this operation
      * @param cursorLocn The location of the "Drag" Cursor's
      * hotspot in <code>Component</code> coordinates
@@ -128,7 +128,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
      * the current set of actions supported by the source,
      * and a <code>boolean</code> indicating if the source is in the same JVM
      * as the target.
-     * <P>
+     *
      * @param dtc        The DropTargetContext for this operation
      * @param cursorLocn The location of the "Drag" Cursor's
      * hotspot in Component's coordinates
@@ -154,7 +154,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
      * This method returns a <code>Point</code>
      * indicating the <code>Cursor</code>'s current
      * location in the <code>Component</code>'s coordinates.
-     * <P>
+     *
      * @return the current <code>Cursor</code> location in Component's coords.
      */
 
@@ -165,7 +165,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
 
     /**
      * This method returns the current DataFlavors.
-     * <P>
+     *
      * @return current DataFlavors
      */
 
@@ -176,7 +176,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
     /**
      * This method returns the currently available
      * <code>DataFlavor</code>s as a <code>java.util.List</code>.
-     * <P>
+     *
      * @return the currently available DataFlavors as a java.util.List
      */
 
@@ -188,9 +188,9 @@ public class DropTargetDropEvent extends DropTargetEvent {
      * This method returns a <code>boolean</code> indicating if the
      * specified <code>DataFlavor</code> is available
      * from the source.
-     * <P>
+     *
      * @param df the <code>DataFlavor</code> to test
-     * <P>
+     *
      * @return if the DataFlavor specified is available from the source
      */
 
@@ -215,7 +215,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
     /**
      * This method returns the <code>Transferable</code> object
      * associated with the drop.
-     * <P>
+     *
      * @return the <code>Transferable</code> associated with the drop
      */
 
@@ -225,7 +225,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
 
     /**
      * accept the drop, using the specified action.
-     * <P>
+     *
      * @param dropAction the specified action
      */
 
@@ -244,7 +244,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
     /**
      * This method notifies the <code>DragSource</code>
      * that the drop transfer(s) are completed.
-     * <P>
+     *
      * @param success a <code>boolean</code> indicating that the drop transfer(s) are completed.
      */
 
@@ -255,7 +255,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
     /**
      * This method returns an <code>int</code> indicating if
      * the source is in the same JVM as the target.
-     * <P>
+     *
      * @return if the Source is in the same JVM
      */
 

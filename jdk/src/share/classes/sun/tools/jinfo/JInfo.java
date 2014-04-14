@@ -41,6 +41,7 @@ import sun.tools.attach.HotSpotVirtualMachine;
  */
 public class JInfo {
 
+    @SuppressWarnings("fallthrough")
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             usage(1); // no arguments
@@ -78,8 +79,16 @@ public class JInfo {
         }
 
         if (useSA) {
+            // SA only supports -flags or -sysprops
+            if (args[0].startsWith("-")) {
+                if (!(args[0].equals("-flags") || args[0].equals("-sysprops"))) {
+                    usage(1);
+                }
+            }
+
             // invoke SA which does it's own argument parsing
             runTool(args);
+
         } else {
             // Now we can parse arguments for the non-SA case
             String pid = null;
@@ -110,6 +119,7 @@ public class JInfo {
             case "-help":
             case "-h":
                 usage(0);
+                // Fall through
             default:
                if (args.length == 1) {
                    // no flags specified, we do -sysprops and -flags

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -987,7 +987,8 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             if (component == null) {
                 menuItem = new JMenuItem(tabPane.getTitleAt(i), tabPane.getIconAt(i));
             } else {
-                menuItem = new JMenuItem() {
+                @SuppressWarnings("serial") // anonymous class
+                JMenuItem tmp = new JMenuItem() {
                     public void paintComponent(final Graphics g) {
                         super.paintComponent(g);
                         final Dimension size = component.getSize();
@@ -1001,6 +1002,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
                         return component.getPreferredSize();
                     }
                 };
+                menuItem = tmp;
             }
 
             final Color background = tabPane.getBackgroundAt(i);

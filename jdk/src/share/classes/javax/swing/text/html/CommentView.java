@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,7 @@ class CommentView extends HiddenTagView {
     static final int commentPadding = 3;
     static final int commentPaddingD = commentPadding * 3;
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class CommentBorder extends LineBorder {
         CommentBorder() {
             super(Color.black, 1);

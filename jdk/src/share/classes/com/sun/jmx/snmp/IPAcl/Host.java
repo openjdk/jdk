@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import static com.sun.jmx.defaults.JmxProperties.SNMP_LOGGER;
  * The class defines an abstract representation of a host.
  *
  */
+@SuppressWarnings("serial") // JDK implementation class
 abstract class Host extends SimpleNode implements Serializable {
 
     public Host(int id) {

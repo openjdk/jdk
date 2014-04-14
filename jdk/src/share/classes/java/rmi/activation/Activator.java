@@ -53,7 +53,7 @@ import java.rmi.activation.UnknownObjectException;
  *
  * The activator is responsible for monitoring and detecting when
  * activation groups fail so that it can remove stale remote references
- * to groups and active object's within those groups.<p>
+ * to groups and active object's within those groups.
  *
  * @author      Ann Wollrath
  * @see         ActivationInstantiator
@@ -95,7 +95,7 @@ public interface Activator extends Remote {
      * collection for that object. If the activator kept a strong
      * reference to the remote object, the activator would then
      * prevent the object from being garbage collected under the
-     * normal distributed garbage collection mechanism. <p>
+     * normal distributed garbage collection mechanism.
      *
      * @param id the activation identifier for the object being activated
      * @param force if true, the activator contacts the group to obtain

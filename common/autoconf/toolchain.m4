@@ -189,6 +189,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # it for DLL resolution in runtime.
   if test "x$OPENJDK_BUILD_OS" = "xwindows" && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
     TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
+    # Reset path to VS_PATH. It will include everything that was on PATH at the time we
+    # ran TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV.
+    PATH="$VS_PATH"
+    # The microsoft toolchain also requires INCLUDE and LIB to be set.
+    export INCLUDE="$VS_INCLUDE"
+    export LIB="$VS_LIB"
   fi
 
   # autoconf magic only relies on PATH, so update it if tools dir is specified
@@ -202,29 +208,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     PATH="/usr/ccs/bin:$PATH"
   fi
 
-  # Finally add TOOLS_DIR at the beginning, to allow --with-tools-dir to 
+  # Finally add TOOLCHAIN_PATH at the beginning, to allow --with-tools-dir to 
   # override all other locations.
-  if test "x$TOOLS_DIR" != x; then
-    PATH=$TOOLS_DIR:$PATH
+  if test "x$TOOLCHAIN_PATH" != x; then
+    PATH=$TOOLCHAIN_PATH:$PATH
   fi
-
-  # If a devkit is found on the builddeps server, then prepend its path to the
-  # PATH variable. If there are cross compilers available in the devkit, these
-  # will be found by AC_PROG_CC et al.
-  DEVKIT=
-  BDEPS_CHECK_MODULE(DEVKIT, devkit, xxx,
-      [
-        # Found devkit
-        PATH="$DEVKIT/bin:$PATH"
-        SYS_ROOT="$DEVKIT/${rewritten_target}/sys-root"
-        if test "x$x_includes" = "xNONE"; then
-          x_includes="$SYS_ROOT/usr/include/X11"
-        fi
-        if test "x$x_libraries" = "xNONE"; then
-          x_libraries="$SYS_ROOT/usr/lib"
-        fi
-      ],
-      [])
 ])
 
 # Restore path, etc
@@ -396,15 +384,15 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     # used.
 
     $1=
-    # If TOOLS_DIR is set, check for all compiler names in there first
+    # If TOOLCHAIN_PATH is set, check for all compiler names in there first
     # before checking the rest of the PATH.
     # FIXME: Now that we prefix the TOOLS_DIR to the PATH in the PRE_DETECTION
     # step, this should not be necessary.
-    if test -n "$TOOLS_DIR"; then
+    if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
-      PATH="$TOOLS_DIR"
-      AC_PATH_PROGS(TOOLS_DIR_$1, $SEARCH_LIST)
-      $1=$TOOLS_DIR_$1
+      PATH="$TOOLCHAIN_PATH"
+      AC_PATH_PROGS(TOOLCHAIN_PATH_$1, $SEARCH_LIST)
+      $1=$TOOLCHAIN_PATH_$1
       PATH="$PATH_save"
     fi
 

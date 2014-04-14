@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,6 +304,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     /**
      * The default DesktopManager installed by the UI.
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     private class BasicDesktopManager extends DefaultDesktopManager
             implements UIResource {
     }
@@ -632,6 +633,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
      * Handles restoring a minimized or maximized internal frame.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class OpenAction extends AbstractAction {
         public void actionPerformed(ActionEvent evt) {
             JDesktopPane dp = (JDesktopPane)evt.getSource();
@@ -646,6 +648,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     /**
      * Handles closing an internal frame.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class CloseAction extends AbstractAction {
         public void actionPerformed(ActionEvent evt) {
             JDesktopPane dp = (JDesktopPane)evt.getSource();
@@ -664,6 +667,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     /**
      * Handles minimizing an internal frame.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MinimizeAction extends AbstractAction {
         public void actionPerformed(ActionEvent evt) {
             JDesktopPane dp = (JDesktopPane)evt.getSource();
@@ -682,6 +686,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     /**
      * Handles maximizing an internal frame.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MaximizeAction extends AbstractAction {
         public void actionPerformed(ActionEvent evt) {
             JDesktopPane dp = (JDesktopPane)evt.getSource();
@@ -700,6 +705,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     /**
      * Handles navigating to the next internal frame.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class NavigateAction extends AbstractAction {
         public void actionPerformed(ActionEvent evt) {
             JDesktopPane dp = (JDesktopPane)evt.getSource();

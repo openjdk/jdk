@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,6 +147,8 @@ public abstract class Profiles {
         final int maxProfile = 4;  // Three compact profiles plus full JRE
 
         MakefileProfiles(Properties p) {
+            // consider crypto, only if java/lang package exists
+            boolean foundJavaLang = false;
             for (int profile = 1; profile <= maxProfile; profile++) {
                 String prefix = (profile < maxProfile ? "PROFILE_" + profile : "FULL_JRE");
                 String inclPackages = p.getProperty(prefix + "_RTJAR_INCLUDE_PACKAGES");
@@ -155,6 +157,8 @@ public abstract class Profiles {
                 for (String pkg: inclPackages.substring(1).trim().split("\\s+")) {
                     if (pkg.endsWith("/"))
                         pkg = pkg.substring(0, pkg.length() - 1);
+                    if (foundJavaLang == false && pkg.equals("java/lang"))
+                        foundJavaLang = true;
                     includePackage(profile, pkg);
                 }
                 String inclTypes =  p.getProperty(prefix + "_RTJAR_INCLUDE_TYPES");
@@ -172,6 +176,15 @@ public abstract class Profiles {
                     }
                 }
             }
+            /*
+             * A hack to force javax/crypto package into the compact1 profile,
+             * because this package exists in jce.jar, and therefore not in
+             * ct.sym. Note javax/crypto should exist in a profile along with
+             * javax/net/ssl package. Thus, this package is added to compact1,
+             * implying that it should exist in all three profiles.
+             */
+            if (foundJavaLang)
+                includePackage(1, "javax/crypto");
         }
 
         @Override

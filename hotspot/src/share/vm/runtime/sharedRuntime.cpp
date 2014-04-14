@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -924,12 +924,6 @@ JRT_ENTRY(intptr_t, SharedRuntime::trace_bytecode(JavaThread* thread, intptr_t p
 JRT_END
 #endif // !PRODUCT
 
-
-JRT_ENTRY(void, SharedRuntime::yield_all(JavaThread* thread, int attempts))
-  os::yield_all(attempts);
-JRT_END
-
-
 JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* thread, oopDesc* obj))
   assert(obj->is_oop(), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
@@ -1268,8 +1262,6 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
       }
 #endif
       if (is_virtual) {
-        nmethod* nm = callee_nm;
-        if (nm == NULL) CodeCache::find_blob(caller_frame.pc());
         CompiledIC* inline_cache = CompiledIC_before(caller_nm, caller_frame.pc());
         if (inline_cache->is_clean()) {
           inline_cache->set_to_monomorphic(virtual_call_info);

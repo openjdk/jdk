@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,10 +92,10 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_AixVirtualMachine_connect
         struct sockaddr_un addr;
         int err = 0;
 
-        /* added missing structure initialization */
-        memset(&addr,0, sizeof(addr));
+        memset(&addr, 0, sizeof(addr));
         addr.sun_family = AF_UNIX;
-        strcpy(addr.sun_path, p);
+        /* strncpy is safe because addr.sun_path was zero-initialized before. */
+        strncpy(addr.sun_path, p, sizeof(addr.sun_path) - 1);
         /* We must call bind with the actual socketaddr length. This is obligatory for AS400. */
         if (connect(fd, (struct sockaddr*)&addr, SUN_LEN(&addr)) == -1) {
             err = errno;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ public class WindowsInternalFrameUI extends BasicInternalFrameUI
         return titlePane;
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class XPBorder extends AbstractBorder {
         private Skin leftSkin   = xp.getSkin(frame, Part.WP_FRAMELEFT);
         private Skin rightSkin  = xp.getSkin(frame, Part.WP_FRAMERIGHT);

@@ -127,6 +127,9 @@ GetTxFromDoubles(JNIEnv *env, jdoubleArray txArray)
     }
 
     jdouble *txPtr = (*env)->GetPrimitiveArrayCritical(env, txArray, NULL);
+    if (txPtr == NULL) {
+        return CGAffineTransformIdentity;
+    }
 
     CGAffineTransform tx =
         CGAffineTransformMake(txPtr[0], txPtr[1], txPtr[2],
@@ -311,18 +314,22 @@ JNF_COCOA_ENTER(env);
 
     jlong *glyphInfos =
         (*env)->GetPrimitiveArrayCritical(env, glyphInfoLongArray, NULL);
-    jint *rawGlyphCodes =
-        (*env)->GetPrimitiveArrayCritical(env, glyphCodes, NULL);
+    if (glyphInfos != NULL) {
+        jint *rawGlyphCodes =
+            (*env)->GetPrimitiveArrayCritical(env, glyphCodes, NULL);
 
-    CGGlyphImages_GetGlyphImagePtrs(glyphInfos, awtStrike,
-                                    rawGlyphCodes, len);
+        if (rawGlyphCodes != NULL) {
+            CGGlyphImages_GetGlyphImagePtrs(glyphInfos, awtStrike,
+                                            rawGlyphCodes, len);
 
-    (*env)->ReleasePrimitiveArrayCritical(env, glyphCodes,
-                                          rawGlyphCodes, JNI_ABORT);
-    // Do not use JNI_COMMIT, as that will not free the buffer copy
-    // when +ProtectJavaHeap is on.
-    (*env)->ReleasePrimitiveArrayCritical(env, glyphInfoLongArray,
-                                          glyphInfos, 0);
+            (*env)->ReleasePrimitiveArrayCritical(env, glyphCodes,
+                                              rawGlyphCodes, JNI_ABORT);
+        }
+        // Do not use JNI_COMMIT, as that will not free the buffer copy
+        // when +ProtectJavaHeap is on.
+        (*env)->ReleasePrimitiveArrayCritical(env, glyphInfoLongArray,
+                                              glyphInfos, 0);
+    }
 
 JNF_COCOA_EXIT(env);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.ArrayList;
  * Windows media trays or bins not covered by MediaTray's standard values.
  * It also implements driver-defined trays.
  **/
-
+@SuppressWarnings("serial") // JDK implementation class
 public class Win32MediaTray extends MediaTray {
 
     static final Win32MediaTray ENVELOPE_MANUAL = new Win32MediaTray(0,

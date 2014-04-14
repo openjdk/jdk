@@ -86,6 +86,10 @@ public final class Krb5MechFactory implements MechanismFactory {
         return result;
     }
 
+    public Krb5MechFactory() {
+        this(GSSCaller.CALLER_UNKNOWN);
+    }
+
     public Krb5MechFactory(GSSCaller caller) {
         this.caller = caller;
     }

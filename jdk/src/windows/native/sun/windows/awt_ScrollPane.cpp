@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -600,12 +600,16 @@ Java_java_awt_ScrollPane_initIDs(JNIEnv *env, jclass cls)
 
     AwtScrollPane::scrollbarDisplayPolicyID =
         env->GetFieldID(cls, "scrollbarDisplayPolicy", "I");
+    DASSERT(AwtScrollPane::scrollbarDisplayPolicyID != NULL);
+    CHECK_NULL(AwtScrollPane::scrollbarDisplayPolicyID);
+
     AwtScrollPane::hAdjustableID =
         env->GetFieldID(cls, "hAdjustable", "Ljava/awt/ScrollPaneAdjustable;");
+    DASSERT(AwtScrollPane::hAdjustableID != NULL);
+    CHECK_NULL(AwtScrollPane::hAdjustableID);
+
     AwtScrollPane::vAdjustableID =
         env->GetFieldID(cls, "vAdjustable", "Ljava/awt/ScrollPaneAdjustable;");
-    DASSERT(AwtScrollPane::scrollbarDisplayPolicyID != NULL);
-    DASSERT(AwtScrollPane::hAdjustableID != NULL);
     DASSERT(AwtScrollPane::vAdjustableID != NULL);
 
     CATCH_BAD_ALLOC;
@@ -631,10 +635,11 @@ Java_java_awt_ScrollPaneAdjustable_initIDs(JNIEnv *env, jclass cls)
     TRY;
 
     AwtScrollPane::unitIncrementID = env->GetFieldID(cls,"unitIncrement", "I");
+    DASSERT(AwtScrollPane::unitIncrementID != NULL);
+    CHECK_NULL(AwtScrollPane::unitIncrementID);
+
     AwtScrollPane::blockIncrementID =
         env->GetFieldID(cls,"blockIncrement", "I");
-
-    DASSERT(AwtScrollPane::unitIncrementID != NULL);
     DASSERT(AwtScrollPane::blockIncrementID != NULL);
 
     CATCH_BAD_ALLOC;

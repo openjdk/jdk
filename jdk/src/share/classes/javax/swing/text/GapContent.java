@@ -58,6 +58,7 @@ import java.lang.ref.ReferenceQueue;
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class GapContent extends GapVector implements AbstractDocument.Content, Serializable {
 
     /**
@@ -577,7 +578,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         unusedMarks = 0;
     }
 
-
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class MarkVector extends GapVector {
 
         MarkVector() {
@@ -855,6 +856,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     /**
      * UnoableEdit created for inserts.
      */
+    @SuppressWarnings("serial") // Superclass is a JDK-implementation class
     class InsertUndo extends AbstractUndoableEdit {
         protected InsertUndo(int offset, int length) {
             super();
@@ -905,6 +907,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     /**
      * UndoableEdit created for removes.
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     class RemoveUndo extends AbstractUndoableEdit {
         protected RemoveUndo(int offset, String string) {
             super();

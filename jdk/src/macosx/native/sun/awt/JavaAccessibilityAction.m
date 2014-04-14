@@ -55,20 +55,6 @@
     [super dealloc];
 }
 
-- (void)finalize
-{
-    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-
-    JNFDeleteGlobalRef(env, fAccessibleAction);
-    fAccessibleAction = NULL;
-
-    JNFDeleteGlobalRef(env, fComponent);
-    fComponent = NULL;
-
-    [super finalize];
-}
-
-
 - (NSString *)getDescription
 {
     static JNF_STATIC_MEMBER_CACHE(jm_getAccessibleActionDescription, sjc_CAccessibility, "getAccessibleActionDescription", "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)Ljava/lang/String;");
@@ -114,19 +100,6 @@
     fComponent = NULL;
 
     [super dealloc];
-}
-
-- (void)finalize
-{
-    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-
-    JNFDeleteGlobalRef(env, fTabGroup);
-    fTabGroup = NULL;
-
-    JNFDeleteGlobalRef(env, fComponent);
-    fComponent = NULL;
-
-    [super finalize];
 }
 
 - (NSString *)getDescription

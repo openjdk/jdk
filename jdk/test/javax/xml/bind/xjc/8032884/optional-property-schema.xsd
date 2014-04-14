@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" xmlns="anamespace"
+           targetNamespace="anamespace" jaxb:version="2.0">
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:globalBindings optionalProperty="primitive"/>
+        </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType name="foo">
+        <xs:sequence>
+            <xs:element name="foo" type="xs:int" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

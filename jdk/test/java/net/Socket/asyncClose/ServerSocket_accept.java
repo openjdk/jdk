@@ -25,17 +25,23 @@
  * Tests that a thread blocked in ServerSocket.accept
  * throws a SocketException if the socket is asynchronously closed.
  */
+import java.io.IOException;
 import java.net.*;
+import java.util.concurrent.CountDownLatch;
 
 public class ServerSocket_accept extends AsyncCloseTest implements Runnable {
-    ServerSocket ss;
-    int timeout = 0;
+    private final ServerSocket ss;
+    private final int timeout;
+    private final CountDownLatch latch;
 
-    public ServerSocket_accept() {
+    public ServerSocket_accept() throws IOException {
+       this(0);
     }
 
-    public ServerSocket_accept(int timeout) {
+    public ServerSocket_accept(int timeout) throws IOException {
         this.timeout = timeout;
+        latch = new CountDownLatch(1);
+        ss = new ServerSocket(0);
     }
 
     public String description() {
@@ -48,7 +54,9 @@ public class ServerSocket_accept extends AsyncCloseTest implements Runnable {
 
     public void run() {
         try {
+            latch.countDown();
             Socket s = ss.accept();
+            failed("ServerSocket.accept() returned unexpectly!!");
         } catch (SocketException se) {
             closed();
         } catch (Exception e) {
@@ -56,23 +64,23 @@ public class ServerSocket_accept extends AsyncCloseTest implements Runnable {
         }
     }
 
-    public boolean go() throws Exception {
-        ss = new ServerSocket(0);
+    public AsyncCloseTest go(){
+        try {
+            Thread thr = new Thread(this);
+            thr.start();
+            latch.await();
+            Thread.sleep(5000); //sleep, so ServerSocket.accept() can block
+            ss.close();
+            thr.join();
 
-        Thread thr = new Thread(this);
-        thr.start();
-
-        Thread.currentThread().sleep(1000);
-
-        ss.close();
-
-        Thread.currentThread().sleep(1000);
-
-        if (isClosed()) {
-            return true;
-        } else {
-            failed("ServerSocket.accept() wasn't preempted");
-            return false;
+            if (isClosed()) {
+                return passed();
+            } else {
+                return failed("ServerSocket.accept() wasn't preempted");
+            }
+        } catch (Exception x) {
+            failed(x.getMessage());
+            throw new RuntimeException(x);
         }
     }
 }

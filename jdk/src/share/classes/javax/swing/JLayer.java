@@ -148,6 +148,7 @@ import java.security.PrivilegedAction;
  *
  * @author Alexander Potochkin
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public final class JLayer<V extends Component>
         extends JComponent
         implements Scrollable, PropertyChangeListener, Accessible {
@@ -687,6 +688,7 @@ public final class JLayer<V extends Component>
      *
      * @return the AccessibleContext associated with this {@code JLayer}.
      */
+    @SuppressWarnings("serial") // anonymous class
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJComponent() {
@@ -825,6 +827,7 @@ public final class JLayer<V extends Component>
      * The default glassPane for the {@link javax.swing.JLayer}.
      * It is a subclass of {@code JPanel} which is non opaque by default.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class DefaultLayerGlassPane extends JPanel {
         /**
          * Creates a new {@link DefaultLayerGlassPane}

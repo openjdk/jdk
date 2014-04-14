@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,16 +125,14 @@ public class AquaImageFactory {
     private static final int kAlertIconSize = 64;
     static IconUIResource getAppIconCompositedOn(final Image background) {
 
-        final BufferedImage iconImage = getAppIconImageCompositedOn(background, 1);
-
-        if (background instanceof MultiResolutionIconImage) {
-            BufferedImage background2x
-                    = ((MultiResolutionIconImage) background).resolutionVariant;
-            BufferedImage icon2xImage = getAppIconImageCompositedOn(background2x, 2);
-
-            return new IconUIResource(new ImageIcon(
-                    new MultiResolutionIconImage(iconImage, icon2xImage)));
+        if (background instanceof MultiResolutionBufferedImage) {
+            int width = background.getWidth(null);
+            Image mrIconImage = ((MultiResolutionBufferedImage) background).map(
+                    rv -> getAppIconImageCompositedOn(rv, rv.getWidth(null) / width));
+            return new IconUIResource(new ImageIcon(mrIconImage));
         }
+
+        BufferedImage iconImage = getAppIconImageCompositedOn(background, 1);
         return new IconUIResource(new ImageIcon(iconImage));
     }
 
@@ -248,6 +246,7 @@ public class AquaImageFactory {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
         Icon invertedImage;
         public InvertableImageIcon(final Image image) {
@@ -312,10 +311,16 @@ public class AquaImageFactory {
             return icon;
         }
 
-        Image icon2x = AquaUtils.getCImageCreator().createImageFromName(
-                imageName, 2 * icon.getWidth(null), 2 * icon.getHeight(null));
-        return new MultiResolutionBufferedImage(
-                BufferedImage.TYPE_INT_ARGB_PRE, 0, icon, icon2x);
+        int w = icon.getWidth(null);
+        int h = icon.getHeight(null);
+
+        Dimension[] sizes = new Dimension[]{
+            new Dimension(w, h), new Dimension(2 * w, 2 * h)
+        };
+
+        return new MultiResolutionBufferedImage(icon, sizes, (width, height) ->
+                AquaUtils.getCImageCreator().createImageFromName(
+                        imageName, width, height));
     }
 
     public static class NineSliceMetrics {
@@ -480,6 +485,7 @@ public class AquaImageFactory {
 
     // when we use SystemColors, we need to proxy the color with something that implements UIResource,
     // so that it will be uninstalled when the look and feel is changed.
+    @SuppressWarnings("serial") // JDK implementation class
     private static class SystemColorProxy extends Color implements UIResource {
         final Color color;
         public SystemColorProxy(final Color color) {
@@ -523,30 +529,5 @@ public class AquaImageFactory {
 
     public static Color getSelectionInactiveForegroundColorUIResource() {
         return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.INACTIVE_SELECTION_FOREGROUND_COLOR));
-    }
-
-    static class MultiResolutionIconImage extends BufferedImage
-            implements MultiResolutionImage {
-
-        BufferedImage resolutionVariant;
-
-        public MultiResolutionIconImage(BufferedImage image, BufferedImage resolutionVariant) {
-            super(image.getWidth(), image.getHeight(), image.getType());
-            this.resolutionVariant = resolutionVariant;
-            Graphics g = getGraphics();
-            g.drawImage(image, 0, 0, null);
-            g.dispose();
-        }
-
-        @Override
-        public Image getResolutionVariant(int width, int height) {
-            return ((width <= getWidth() && height <= getHeight()))
-                    ? this : resolutionVariant;
-        }
-
-        @Override
-        public List<Image> getResolutionVariants() {
-            return Arrays.asList(this, resolutionVariant);
-        }
     }
 }

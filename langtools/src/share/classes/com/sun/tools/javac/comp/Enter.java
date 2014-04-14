@@ -154,6 +154,10 @@ public class Enter extends JCTree.Visitor {
         return typeEnvs.get(sym);
     }
 
+    public Iterable<Env<AttrContext>> getEnvs() {
+        return typeEnvs.values();
+    }
+
     public Env<AttrContext> getClassEnv(TypeSymbol sym) {
         Env<AttrContext> localEnv = getEnv(sym);
         Env<AttrContext> lintEnv = localEnv;
@@ -513,5 +517,9 @@ public class Enter extends JCTree.Visitor {
             uncompleted = prevUncompleted;
             annotate.enterDone();
         }
+    }
+
+    public void newRound() {
+        typeEnvs.clear();
     }
 }

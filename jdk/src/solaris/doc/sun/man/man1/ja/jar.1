@@ -1,601 +1,517 @@
-." Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jar 1 "07 May 2011"
-
-.LP
-.SH "名前"
-jar \- Java ARchive ツール
-.LP
-\f3jar\fP は複数のファイルを 1 つの JAR アーカイブファイルに結合します。 
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-コマンド行引数ファイル 
-.TP 2
-o
-例 
-.TP 2
-o
-関連項目 
+'\" t
+.\" Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jar
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jar" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jar \- Java Archive (JAR)ファイルを操作します。
+.SH "概要"
+JARファイルの作成
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjar c\fR[\fIefmMnv0\fR] [\fIentrypoint\fR] [\fIjarfile\fR] [\fImanifest\fR] [\fI\-C\fR \fIdir\fR] \fIfile\fR \&.\&.\&. [\-J\fIoption\fR \&.\&.\&.] [@\fIarg\-file\fR \&.\&.\&.]
+.fi
+.if n \{\
 .RE
-
-.LP
-.SH "形式"
-.LP
-.RS 3
-.TP 3
-JAR ファイルの作成 
-\f4jar c\fP\f2[v0Mmfe] [\fP\f2manifest\fP\f2] [\fP\f2jarfile\fP\f2] [\fP\f2entrypoint\fP\f2] [\-C\fP \f2dir\fP\f2]\fP \f2inputfiles\fP \f2[\-J\fP\f2option\fP\f2]\fP 
-.TP 3
-JAR ファイルの更新 
-\f4jar u\fP\f2[v0Mmfe] [\fP\f2manifest\fP\f2] [\fP\f2jarfile\fP\f2] [\fP\f2entrypoint\fP\f2] [\-C\fP \f2dir\fP\f2]\fP \f2inputfiles\fP \f2[\-J\fP\f2option\fP\f2]\fP 
-.TP 3
-JAR ファイルの抽出 
-\f4jar x\fP\f2[vf] [\fP\f2jarfile\fP\f2] [\fP\f2inputfiles\fP\f2] [\-J\fP\f2option\fP\f2]\fP 
-.TP 3
-JAR ファイルの内容の表形式による一覧表示 
-\f4jar t\fP\f2[vf] [\fP\f2jarfile\fP\f2] [\fP\f2inputfiles\fP\f2] [\-J\fP\f2option\fP\f2]\fP 
-.TP 3
-JAR ファイルへのインデックスの追加 
-\f4jar i\fP \f2jarfile\fP \f2[\-J\fP\f2option\fP\f2]\fP 
+.\}
+JARファイルの更新
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjar u\fR[\fIefmMnv0\fR] [\fIentrypoint\fR] [\fIjarfile\fR] [\fImanifest\fR] [\fI\-C\fR \fIdir\fR] \fIfile\fR \&.\&.\&. [\-J\fIoption\fR \&.\&.\&.] [@\fIarg\-file\fR \&.\&.\&.]
+.fi
+.if n \{\
 .RE
-
-.LP
-.LP
-説明
-.LP
-.RS 3
-.TP 3
-cuxtiv0Mmfe 
-\f2jar\fP コマンドを制御するオプション 
-.TP 3
-jarfile 
-作成 (\f2c\fP)、更新 (\f2u\fP)、抽出 (\f2x\fP)、または目次表示 (\f2t\fP) の対象となる JAR ファイル。\f2f\fP オプションとファイル名 \f2jarfile\fP とがペアになります。 つまり、片方を記述すれば、もう一方も記述する必要があります。 \f2f\fP と \f2jarfile\fP を省略すると、標準入力から「JAR ファイル」が取得されるか (x および t の場合)、標準出力へ「JAR ファイル」が送信されます(c および u の場合)。 
-.TP 3
-inputfiles 
-\f2jarfile\fP に結合されるか (c および u の場合)、\f2jarfile\fP から抽出 (x の場合) または一覧表示 (t の場合) される、空白で区切られたファイルまたはディレクトリ。すべてのディレクトリは再帰的に処理されます。このファイルは、オプション \f20\fP (ゼロ) を使用しないかぎり圧縮されます。 
-.TP 3
-manifest 
-JAR ファイルの MANIFEST.MF 内に含めるべき \f2name\fP\f2:\fP \f2value\fP ペアが含まれている既存のマニフェストファイル。\f2m\fP オプションとファイル名 \f2manifest\fP とがペアになります。つまり、片方を記述すれば、もう一方も記述する必要があります。\f3m\fP、\f3f\fP、および \f3e\fP の出現順序は、\f2manifest\fP、\f2jarfile\fP、\f2entrypoint\fP の出現順序と一致する必要があります。 
-.TP 3
-entrypoint 
-実行可能 JAR ファイル内にバンドルされたスタンドアロンアプリケーションのアプリケーションエントリポイントとして設定するクラスの名前。\f2\-e\fP オプションと entrypoint は対になっています。どちらかを指定する場合は両方とも指定する必要があります。\f3m\fP、\f3f\fP、および \f3e\fP の出現順序は、\f2manifest\fP、\f2jarfile\fP、\f2entrypoint\fP の出現順序と一致する必要があります。 
-.TP 3
-\-C\ dir 
-これに続く \f2inputfiles\fP 引数を処理する間、ディレクトリを \f2dir\fP へ一時的に変更します。 \f2\-C\ \fP\f2\-\ dir\fP \f2inputfiles\fP のセットは複数使用できます。 
-.TP 3
-\-Joption 
-Java 実行環境へ渡されるオプション。\f2\-J\fP と \f2option\fP の間には空白を入れないでください。 
+.\}
+JARファイルの抽出
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjar\fR \fIx\fR[\fIvf\fR] [\fIjarfile\fR] \fIfile\fR \&.\&.\&. [\-J\fIoption\fR \&.\&.\&.] [@\fIarg\-file\fR \&.\&.\&.]
+.fi
+.if n \{\
 .RE
-
-.LP
+.\}
+JARファイルのコンテンツのリスト
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjar\fR \fIt\fR[\fIvf\fR] [\fIjarfile\fR] \fIfile\fR \&.\&.\&. [\-J\fIoption\fR \&.\&.\&.] [@\fIarg\-file\fR \&.\&.\&.]
+.fi
+.if n \{\
+.RE
+.\}
+JARファイルへの索引の追加
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjar\fR \fIi\fR \fIjarfile\fR [\-J\fIoption\fR \&.\&.\&.] [@\fIarg\-file\fR \&.\&.\&.]
+.fi
+.if n \{\
+.RE
+.\}
 .SH "説明"
-.LP
-\f3jar\fP ツールは複数のファイルを 1 つの JAR アーカイブファイルに結合します。\f3jar\fP は、ZIP および 
-.na
-\f2ZLIB\fP @
-.fi
-http://www.gzip.org/zlib/ 圧縮形式に基づく汎用のアーカイブおよび圧縮ツールです。ただし \f3jar\fP ツールの主な目的は、いくつかの Java アプレットやアプリケーションを 1 個のアーカイブに統合することです。アプレットやアプリケーションのコンポーネント (ファイル、イメージ、およびサウンド) が 1 つのアーカイブに結合されていると、Java エージェント (ブラウザなど) は、それらのコンポーネントを 1 回の HTTP トランザクションでダウンロードすることができ、コンポーネントごとに新しい接続を必要とすることがありません。これにより、ダウンロード時間が大幅に短縮されます。また、\f3jar\fP はファイルの圧縮も行うので、ダウンロード時間がさらに短縮されます。また、ファイル内の個々のエントリにアプレット作成者による署名を書き込めるので、配布元の認証が可能になります。jar ツールの構文は、\f2tar\fP コマンドの構文とほぼ同じです。\f3JAR\fP アーカイブは、圧縮されているかどうかにかかわらず、クラスパスのエントリとして使用できます。 
-.LP
-複数のファイルを JAR ファイルへ結合する一般的な使用法は次のとおりです。
-.LP
-.nf
-\f3
-.fl
-% jar cf myFile.jar *.class
-.fl
-\fP
-.fi
-
-.LP
-この例では、現在のディレクトリにあるクラス (.class) ファイルがすべて、\f2myFile.jar\fP という名前のファイルに格納されます。jar ツールは自動的に、 \f2META\-INF/MANIFEST.MF\fP という名前のマニフェストファイルエントリを生成します。これは常に、JAR ファイルの最初のエントリになります。マニフェストファイルは、アーカイブに関するメタ情報を宣言し、そのデータを \f2name\ :\ value\fP ペアとして格納します。jar ツールがマニフェストファイル内にメタ情報を格納する方法の詳細については、「
-.na
-\f2JAR file specification\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Manifest」を参照してください。 
-.LP
-既存のマニフェストファイル内に格納された \f2name\ :\ value\fP ペアを JAR ファイルに含める必要がある場合には、そのファイルを次のように \f2\-m\fP オプションを使って指定します。
-.LP
-.nf
-\f3
-.fl
-% jar cmf myManifestFile myFile.jar *.class
-.fl
-\fP
-.fi
-
-.LP
-既存のマニフェストファイルは改行文字で終わっている必要があります。マニフェストファイルが改行文字で終わっていないと、\f3jar\fP はその最終行を解析しません。
-.br
-
-.LP
-.br
-
-.LP
-\f3注:\ \fPコマンド行に \f2cmf\fP ではなく \f2cfm\fP が指定された jar コマンド (m と \-f オプションの順番を逆にする) の場合、\f3jar\fP コマンド行にまず JAR アーカイブの名前を指定し、続いてマニフェストファイルの名前を指定する必要があります。 次に例を示します。 
-.nf
-\f3
-.fl
-% jar cfm myFile.jar myManifestFile *.class
-.fl
-\fP
-.fi
-
-.LP
-マニフェストは、RFC822 ASCII 形式で規定されたテキスト形式であるため、マニフェストファイルの内容を簡単に表示および編集できます。 
-.LP
-JAR ファイルからファイルを抽出する場合は、 \f2x\fP を使用します。
-.LP
-.nf
-\f3
-.fl
-% jar xf myFile.jar
-.fl
-\fP
-.fi
-
-.LP
-.LP
-jar ファイルから個別のファイルを抽出する場合は、そのファイル名を指定します。
-.LP
-.nf
-\f3
-.fl
-% jar xf myFile.jar foo bar
-.fl
-\fP
-.fi
-
-.LP
-.LP
-JDK のバージョン 1.3 以降から、\f2jar\fP ユーティリティーで 
-.na
-\f2JarIndex\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR_Index がサポートされています。 JarIndex を使用すると、アプリケーションのクラスローダーで JAR ファイルからクラスがロードされるときの効率が向上します。アプリケーションまたはアプレットが複数の JAR ファイルにバンドルされている場合は、クラスがロードされるときに、必要な JAR ファイル以外のダウンロードおよびオープンは行われません。このパフォーマンスの最適化は、新しい \f2\-i\fP オプションを指定して \f2jar\fP を実行すると有効になります。このオプションを使うと、指定した JAR メインファイルと、そのメインファイルが依存しているすべての JAR ファイルについて、パッケージ位置情報が生成されます。メインファイルが依存している JAR ファイルは、JAR メインファイルのマニフェストの \f2Class\-Path\fP 属性に指定しておく必要があります。
-.LP
-.nf
-\f3
-.fl
-% jar i main.jar
-.fl
-\fP
-.fi
-
-.LP
-.LP
-この例では、 \f2INDEX.LIST\fP ファイルが \f2main.jar\fP の \f2META\-INF\fP ディレクトリ内に挿入されます。
-.br
-.br
-このファイルに格納されている情報を使用して、アプリケーションのクラスローダーは、効率的にクラスをロードします。インデックスファイルに位置情報を格納する方法の詳細は、「JarIndex 仕様」を参照してください。
-.br
-.br
-ディレクトリをコピーするには、まず \f2dir1\fP 内のファイルを圧縮して \f2stdout\fP に出力し、続いて \f2stdin\fP から抽出して \f2dir2\fP に出力します (\f2\-f\fP オプションはどちらの \f2jar\fP コマンドでも省略)。
-.LP
-.nf
-\f3
-.fl
-% (cd dir1; jar c .)| (cd dir2; jar x)
-.fl
-\fP
-.fi
-
-.LP
-.LP
-\f2jar\fP を使用して JAR ファイルや JAR マニフェストファイルを操作するサンプルコマンドを確認したい場合は、後述の「例」を参照してください。また、「
-.na
-\f2Java Tutorial\fP @
-.fi
-http://download.oracle.com/javase/tutorial/deployment/jar」の JAR コースも参照してください。
-.LP
-.SH "オプション"
-.LP
-.RS 3
-.TP 3
-c 
-f が指定された場合は \f2jarfile\fP という名前の \f2新しい\fP アーカイブファイルを \f2作成し、\fP f と \f2jarfile\fP が省略された場合は標準出力に情報を出力します。\f2inputfiles\fP で指定されたファイルとディレクトリを、このアーカイブに追加します。 
-.TP 3
-u 
-f が指定されている場合に、既存ファイル \f2jarfile\fP を \f2更新する目的で、\fP \f2inputfiles\fP に指定されたファイルやディレクトリを追加します。次に例を示します。 
-.nf
-\f3
-.fl
-jar uf foo.jar foo.class
-.fl
-\fP
-.fi
-上のコマンドは、ファイル \f2foo.class\fP を既存の JAR ファイル \f2foo.jar\fP に追加します。次の例に示すように、\f2\-u\fP オプションは、マニフェストエントリも更新できます。 
-.nf
-\f3
-.fl
-jar umf manifest foo.jar
-.fl
-\fP
-.fi
-\f2foo.jar\fP マニフェストをマニフェスト内の \f2name:value\fP ペアで更新します。 
-.TP 3
-x 
-f が指定された場合は \f2jarfile\fP \f2から\fP 、 \f2f\fP と \f2jarfile\fP が省略された場合は標準入力から、ファイルやディレクトリを抽出します。\f2inputfiles\fP が指定されている場合は、その指定したファイルとディレクトリだけが抽出されます。指定されていなければ、すべてのファイルとディレクトリが抽出されます。抽出されたファイルの日時は、アーカイブ内で設定されたものです。 
-.TP 3
-t 
-f が指定された場合は \f2jarfile\fP \f2から\fP 、 \f2f\fP と \f2jarfile\fP が省略された場合は標準入力から、目次を表示します。\f2inputfiles\fP が指定されている場合は、その指定したファイルとディレクトリだけが一覧表示されます。指定されていなければ、すべてのファイルとディレクトリが一覧表示されます。 
-.TP 3
-i 
-指定された \f2jarfile\fP と、それに依存する JAR ファイルについて、インデックス情報を生成します。たとえば、 
-.nf
-\f3
-.fl
-jar i foo.jar
-.fl
-\fP
-.fi
-.LP
-上のコマンドは、\f2foo.jar\fP 内に \f2INDEX.LIST\fP ファイルを生成します。 このファイルには、\f2foo.jar\fP と、\f2foo.jar\fP の \f2Class\-Path\fP 属性に指定されたすべての JAR ファイルに入っている各パッケージの位置情報が書き込まれています。インデックスの例を参照してください。  
-.TP 3
-f 
-次の各処理の対象となるファイル \f2jarfile\fP を指定します。作成 (\f2c\fP)、更新 (\f2u\fP)、抽出 (\f2x\fP)、インデックス追加 (\f2i\fP)、または表示 (\f2t\fP)。\f2f\fP オプションとファイル名 \f2jarfile\fP とがペアになります。 つまり、片方を記述すれば、もう一方も記述する必要があります。Omitting \f2f\fP と \f2jarfile\fP を省略すると、x や t の場合は \f2標準入力\fPから JAR ファイル名が取得され、c や u の場合は \f2標準出力\fP に JAR ファイルが送信されます。 
-.TP 3
-v 
-詳細な出力を標準出力に生成します。あとで例を示します。 
-.TP 3
-0 
-(ゼロ) ZIP による圧縮を使用せずに、保存します。 
-.TP 3
-M 
-マニフェストファイルエントリを作成しません (c および u の場合)。または、マニフェストファイルエントリが存在する場合にそれを削除します (u の場合)。 
-.TP 3
-m 
-\f2META\-INF/MANIFEST.MF\fP のファイルで指定したマニフェストファイル \f2manifest\fP の \f2name : value\fP の属性ペアを組み込みます。 \f2jar\fP は、すでに同じ名前で存在しないかぎり、その \f2name:value\fP ペアを追加します。同じ名前で存在する場合、 \f2jar\fP はその値を更新します。 
-.LP
-コマンド行で、\f3m\fP と \f3f\fP の文字は、\f2manifest\fP と \f2jarfile\fP の入力順序と同じ順序で記述する必要があります。たとえば、次のようにして使います。 
-.nf
-\f3
-.fl
-jar cmf myManifestFile myFile.jar *.class
-.fl
-\fP
-.fi
-デフォルトのマニフェストには含まれないマニフェストに、特別な目的の \f2name\ :\ value\fP の属性ペアを追加できます。たとえば、ベンダー情報、バージョン情報、パッケージシーリング、または JAR にバンドルされたアプリケーションを実行するための属性を追加できます。「Java Tutorial」の「
-.na
-\f2JAR Files\fP @
-.fi
-http://download.oracle.com/javase/tutorial/deployment/jar/」コースを参照し、  \f4\-m\fP オプションの使用例を確認してください。 
-.TP 3
-e 
-実行可能 JAR ファイル内にバンドルされたスタンドアロンアプリケーションのアプリケーションエントリポイントとして、\f2entrypoint\fP を設定します。このオプションを使用すると、マニフェストファイル内の \f2Main\-Class\fP 属性値が作成または上書きされます。このオプションは、JAR ファイルの作成中または更新中に使用できます。このオプションを使えば、マニフェストファイルを編集または作成することなしに、アプリケーションのエントリポイントを指定できます。
-.br
-.br
-たとえば、次のコマンドでは \f2Main.jar\fP が作成されますが、その際、マニフェスト内の \f2Main\-Class\fP 属性値は \f2Main\fP に設定されます。 
-.nf
-\f3
-.fl
-jar cfe Main.jar Main Main.class
-.fl
-\fP
-.fi
-.LP
-次のコマンドを実行すると java ランタイムから直接このアプリケーションを起動できます。 
-.nf
-\f3
-.fl
-java \-jar Main.jar
-.fl
-\fP
-.fi
-あるパッケージ内にエントリポイントのクラス名が含まれている場合、ドット (「.」) 、スラッシュ (「/」) のいずれかの文字をその区切り文字として使用できます。たとえば、 \f2Main.class\fP が \f2foo\fP という名前のパッケージに含まれている場合、エントリポイントは次のようにして指定できます。 
-.nf
-\f3
-.fl
-jar \-cfe Main.jar foo/Main foo/Main.class
-.fl
-\fP
-.fi
-または 
-.nf
-\f3
-.fl
-jar \-cfe Main.jar foo.Main foo/Main.class
-.fl
-\fP
-.fi
-\f3注:\ \fP \f2\-m\fP オプションと \f2\-e\fP オプションの両方を同時に指定した場合、指定したマニフェストにも \f2Main\-Class\fP 属性が含まれていれば、 \f2Main.class\fP の指定があいまいになってエラーや発生し、JAR の作成処理や更新処理が異常終了します。 
-.LP
-.TP 3
-\-C \ dir 
-\f2jar\fP コマンドの実行中に後続の \f2inputfiles\fP 引数を処理するときに、一時的にディレクトリを変更します (cd \f2dir\fP)。この処理は、UNIX の \f2tar\fP ユーティリティーの \f2\-C\fP オプションの機能に類似しています。
-.br
-.br
-たとえば、次のコマンドは、\f2classes\fP ディレクトリに移動し、そのディレクトリから \f2bar.class\fP を \f2foo.jar\fP に追加します。 
-.nf
-\f3
-.fl
-jar uf foo.jar \-C classes bar.class
-.fl
-\fP
-.fi
-次のコマンドでは、\f2classes\fP ディレクトリに移動し、\f2classes\fP ディレクトリ内のすべてのファイルを \f2foo.jar\fP に追加します (jar ファイルには classes ディレクトリを作成しません)。次に元のディレクトリに戻ってから、\f2bin\fP ディレクトリに移動し、\f2xyz.class\fP を \f2foo.jar\fP に追加します。 
-.nf
-\f3
-.fl
-jar uf foo.jar \-C classes .\-C bin xyz.class
-.fl
-\fP
-.fi
-\f2classes\fP にファイル \f2bar1\fP と \f2bar2\fP が格納されている場合に、 \f2jar tf foo.jar\fP 使用したときの JAR ファイルの中身を、次に示します。 
-.nf
-\f3
-.fl
-META\-INF/
-.fl
-META\-INF/MANIFEST.MF
-.fl
-bar1
-.fl
-bar2
-.fl
-xyz.class
-.fl
-\fP
-.fi
-.LP
-.TP 3
-\-Joption 
-Java 実行環境に \f2option\fP を渡します。 \f2option\fP には、「Java アプリケーション起動ツール」のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、 \f4\-J\-Xmx48M\fP と指定すると、最大メモリーが 48M バイトに設定されます。\f2\-J\fP を使って背後の実行環境にオプションを渡すことはよく行われています。 
+.PP
+\fIjar\fRコマンドは、ZIPおよびZLIB圧縮形式に基づく汎用のアーカイブおよび圧縮ツールです。ただし、\fIjar\fRコマンドは、主にいくつかのJavaアプレットやアプリケーションを単一のアーカイブにパッケージ化するように設計されました。アプレットやアプリケーションのコンポーネント(ファイル、イメージ、およびサウンド)が1つのアーカイブに結合されていると、Javaエージェント(ブラウザなど)は、それらのコンポーネントを1回のHTTPトランザクションでダウンロードすることができ、コンポーネントごとに新しい接続が不要になります。これにより、ダウンロード時間が大幅に短縮されます。また、\fIjar\fRコマンドはファイルの圧縮も行うため、ダウンロード時間がさらに短縮されます。また、\fIjar\fRコマンドによって、ファイル内の個々のエントリにアプレット作成者による署名を書き込めるため、配布元の認証が可能になります。JARファイルは、圧縮されているかどうかにかかわらず、クラス・パスのエントリとして使用できます。
+.PP
+\fIjar\fRコマンドの構文は、\fItar\fRコマンドの構文に似ています。必須の\fI操作の引数\fRの1つで定義された複数の操作モードがあります。他の引数は、操作の動作を変更する\fIオプション\fR、または操作を実行するために必要な\fIオペランド\fRを使用します。
+.SH "操作の引数"
+.PP
+\fIjar\fRコマンドを使用する場合は、次の操作の引数のいずれかを指定して実行される操作を選択する必要があります。コマンドラインで他の1文字のオプションと混在させることができますが、通常、操作の引数は指定される最初の引数です。
+.PP
+c
+.RS 4
+新しいJARアーカイブを作成します。
 .RE
-
-.LP
-.SH "コマンド行引数ファイル"
-.LP
-jar のコマンド行を短くしたり簡潔にしたりするために、jar コマンドに対する引数 (\-J オプションを除く) を含む 1 つ以上の \f2ファイルを\fP 指定することが \f2できます\fP 。これにより、任意の長さの jar コマンドを作成でき、オペレーティングシステムによるコマンド行の制限から解放されます。 
-.LP
-引数ファイルにはオプションとファイル名を含めることができます。ファイル内の各引数は、スペースまたは改行で区切ります。引数ファイル内のファイル名は、現在のディレクトリから見た相対パスになります。引数ファイルの位置から見た相対パスではありません。ワイルドカード (*) は、通常ならばオペレーティングシステムシェルによってあらゆる文字に解釈されますが、この場合はそのようには解釈されません。引数ファイル内の引数で \f2@\fP 文字を使用して、複数のファイルを再帰的に解釈することはサポートされていません。また、\f2\-J\fP オプションもサポートされていません。このオプションは起動ツールに渡されますが、起動ツールでは引数ファイルをサポートしていないからです。
-.LP
-.LP
-\f2jar\fP を実行するときに、各引数ファイルのパスとファイル名の先頭に \f2@\fP 文字を付けて渡します。 \f2jar\fP は、\f2@\fP 文字で始まる引数を見つけると、そのファイルの内容を展開して引数リストに挿入します。
+.PP
+i
+.RS 4
+JARアーカイブの索引情報を生成します。
+.RE
+.PP
+t
+.RS 4
+JARアーカイブのコンテンツをリストします。
+.RE
+.PP
+u
+.RS 4
+JARアーカイブを更新します。
+.RE
+.PP
+x
+.RS 4
+JARアーカイブからファイルを抽出します。
+.RE
+.SH "オプション"
+.PP
+次のオプションを使用して、JARファイルを作成、更新、抽出または表示する方法をカスタマイズします。
+.PP
+e
+.RS 4
+\fIentrypoint\fRオペランドで指定されるクラスを、実行可能JARファイルにバンドルされるスタンドアロンJavaアプリケーションのエントリ・ポイントに設定します。このオプションを使用すると、マニフェスト・ファイル内の\fIMain\-Class\fR属性値が作成またはオーバーライドされます。\fIe\fRオプションは、JARファイルの作成時(\fIc\fR)または更新時(\fIu\fR)に使用できます。
+.sp
+たとえば、次のコマンドでは、\fIMain\&.jar\fRアーカイブが\fIMain\&.class\fRファイルとともに作成されますが、その際、マニフェスト内の\fIMain\-Class\fR属性値は\fIMain\fRに設定されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jar cfe Main\&.jar Main Main\&.class
+.fi
+.if n \{\
+.RE
+.\}
+Java Runtime Environment (JRE)は、次のコマンドを実行して、このアプリケーションを直接呼び出すことができます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+java \-jar Main\&.jar
+.fi
+.if n \{\
+.RE
+.\}
+あるパッケージ内にエントリ・ポイントのクラス名が含まれている場合、ドット(\&.)またはスラッシュ(/)のいずれかを区切り文字として使用できます。たとえば、\fIMain\&.class\fRが\fImydir\fRという名前のパッケージに含まれている場合、エントリ・ポイントは次のいずれかの方法で指定できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jar \-cfe Main\&.jar mydir/Main mydir/Main\&.class
+jar \-cfe Main\&.jar mydir\&.Main mydir/Main\&.class
+.fi
+.if n \{\
+.RE
+.\}
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
 .br
+.ps +1
+\fBNote\fR
+.ps -1
 .br
-次の例で、 \f2classes.list\fP には、 \f2find\fP コマンドによって出力されたファイルの名前が格納されます。 
-.LP
+.TS
+allbox tab(:);
+l.
+T{
+注意
+特定のマニフェストにも\fIMain\-Class\fR属性が含まれている場合に\fIm\fRオプションと\fIe\fRオプションの両方を同時に指定すると、\fIMain\-Class\fRの指定があいまいになります。このあいまいさによってエラーが発生し、\fIjar\fRコマンドの作成や更新の操作が終了します。
+T}
+.TE
+.sp 1
+.sp .5v
+.RE
+.RE
+.PP
+f
+.RS 4
+\fIjarfile\fRオペランドで指定されたファイルを、作成(\fIc\fR)、更新(\fIu\fR)、抽出(\fIx\fR)または表示(\fIt\fR)されるJARファイルの名前に設定します。\fIf\fRオプションおよび\fIjarfile\fRオペランドを省略すると、\fIjar\fRコマンドに、\fIstdin\fRからのJARファイル名を受け入れるか(\fIx\fRおよび\fIt\fRの場合)、JARファイルを\fIstdout\fRに送信すること(\fIc\fRおよび\fIu\fRの場合)が指示されます。
+.RE
+.PP
+m
+.RS 4
+(\fIMETA\-INF/MANIFEST\&.MF\fRのアーカイブにある)
+\fIjar\fRコマンドのマニフェスト・ファイルの\fImanifest\fRオペランドで指定されたファイルから、属性の名前と値のペアを含めます。\fIjar\fRコマンドは、同じ名前のエントリがすでに存在する場合を除き、属性の名前と値をJARファイルに追加します。同じ名前のエントリがすでに存在する場合、\fIjar\fRコマンドは属性の値を更新します。\fIm\fRオプションは、JARファイルの作成時(\fIc\fR)または更新時(\fIu\fR)に使用できます。
+.sp
+デフォルトのマニフェスト・ファイルには含まれないマニフェストに、特別な目的の名前\-値の属性ペアを追加できます。たとえば、ベンダー情報、リリース情報、パッケージ・シーリングを指定する属性、またはJARにバンドルされたアプリケーションを実行可能にするための属性を追加できます。\fIm\fRオプションの使用例は、http://docs\&.oracle\&.com/javase/tutorial/deployment/jar/index\&.htmlにある
+プログラムのパッケージ化に関する項を参照してください。
+.RE
+.PP
+M
+.RS 4
+マニフェスト・ファイル・エントリを作成しない(\fIc\fRおよび\fIu\fRの場合)か、またはマニフェスト・ファイル・エントリが存在する場合は削除します(\fIu\fRの場合)。\fIM\fRオプションは、JARファイルの作成時(\fIc\fR)または更新時(\fIu\fR)に使用できます。
+.RE
+.PP
+n
+.RS 4
+JARファイルの作成(\fIc\fR)時に、このオプションは、コンテンツがpack200(1)コマンドのパックおよびアンパック操作の影響を受けないようにアーカイブを正規化します。この正規化を使用しない場合、署名付きJARの署名は無効になります。
+.RE
+.PP
+v
+.RS 4
+詳細な出力を標準出力に生成します。例を参照してください。
+.RE
+.PP
+0
+.RS 4
+(ゼロ) ZIP圧縮を使用しないでJARファイルを作成(\fIc\fR)または更新(\fIu\fR)します。
+.RE
+.PP
+\-C \fIdir\fR
+.RS 4
+JARファイルの作成(\fIc\fR)または更新(\fIu\fR)時に、このオプションは\fIfile\fRオペランドで指定されたファイルの処理中にディレクトリを一時的に変更します。この操作は、UNIX
+\fItar\fRユーティリティの\fI\-C\fRオプションと同様になることを目的としています。たとえば、次のコマンドによって、\fIclasses\fRディレクトリに変更され、そのディレクトリから\fImy\&.jar\fRに\fIBar\&.class\fRファイルが追加されます。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-% find \fP\f3.\fP \-name '*.class' \-print > classes.list
-.fl
+jar uf my\&.jar \-C classes Bar\&.class
 .fi
-
-.LP
-.LP
-次に、引数ファイル構文を使用して \f2classes.list\fP を jar に渡すことで、 \f2そのリスト\fP に対して \f2jar\fP コマンドを実行できます。
-.LP
+.if n \{\
+.RE
+.\}
+次のコマンドでは、\fIclasses\fRディレクトリに移動し、classesディレクトリ内のすべてのファイルを\fImy\&.jar\fRに追加します(JARファイルには\fIclasses\fRディレクトリを作成しません)。次に元のディレクトリに戻ってから、\fIbin\fRディレクトリに移動し、\fIXyz\&.class\fRを\fImy\&.jar\fRに追加します。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-% jar cf my.jar @classes.list
-.fl
-\fP
+jar uf my\&.jar \-C classes \&. \-C bin Xyz\&.class
 .fi
-
-.LP
-引数ファイルはパスを指定できますが、相対パスが記述された引数ファイル内のすべてのファイル名は、渡されたパスに対して相対的ではなく、現在の作業ディレクトリに相対的となります。次はその例です。 
+.if n \{\
+.RE
+.\}
+\fIclasses\fRに\fIbar1\fRファイルと\fIbar2\fRファイルが含まれている場合、前述のコマンドを実行した後、JARファイルには次のものが含まれます。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-% jar @path1/classes.list
-.fl
-\fP
-.fi
-
-.LP
-.LP
-
-.LP
-.SH "例"
-.LP
-特定のディレクトリ内のすべてのファイルをアーカイブに追加する (そのアーカイブがすでに存在する場合は、その内容を上書きする) には、次のようにします。\f2\-v\fP オプションを使用して情報を詳細に列挙するように指定すると、サイズや最新の更新日など、アーカイブ内のファイルについての詳細情報が表示されます。 
-.nf
-\f3
-.fl
-% ls
-.fl
-1.au          Animator.class    monkey.jpg
-.fl
-2.au          Wave.class        spacemusic.au
-.fl
-3.au          at_work.gif
-.fl
-
-.fl
-% jar cvf bundle.jar *
-.fl
-added manifest
-.fl
-adding: 1.au(in = 2324) (out= 67)(deflated 97%)
-.fl
-adding: 2.au(in = 6970) (out= 90)(deflated 98%)
-.fl
-adding: 3.au(in = 11616) (out= 108)(deflated 99%)
-.fl
-adding: Animator.class(in = 2266) (out= 66)(deflated 97%)
-.fl
-adding: Wave.class(in = 3778) (out= 81)(deflated 97%)
-.fl
-adding: at_work.gif(in = 6621) (out= 89)(deflated 98%)
-.fl
-adding: monkey.jpg(in = 7667) (out= 91)(deflated 98%)
-.fl
-adding: spacemusic.au(in = 3079) (out= 73)(deflated 97%)
-.fl
-\fP
-.fi
-
-.LP
-すでに画像、オーディオファイル、およびクラス用のサブディレクトリに分けている場合は、これらを単一の JAR ファイルに結合できます。 
-.nf
-\f3
-.fl
-% ls \-F
-.fl
-audio/ classes/ images/
-.fl
-
-.fl
-% jar cvf bundle.jar audio classes images
-.fl
-added manifest
-.fl
-adding: audio/(in = 0) (out= 0)(stored 0%)
-.fl
-adding: audio/1.au(in = 2324) (out= 67)(deflated 97%)
-.fl
-adding: audio/2.au(in = 6970) (out= 90)(deflated 98%)
-.fl
-adding: audio/3.au(in = 11616) (out= 108)(deflated 99%)
-.fl
-adding: audio/spacemusic.au(in = 3079) (out= 73)(deflated 97%)
-.fl
-adding: classes/(in = 0) (out= 0)(stored 0%)
-.fl
-adding: classes/Animator.class(in = 2266) (out= 66)(deflated 97%)
-.fl
-adding: classes/Wave.class(in = 3778) (out= 81)(deflated 97%)
-.fl
-adding: images/(in = 0) (out= 0)(stored 0%)
-.fl
-adding: images/monkey.jpg(in = 7667) (out= 91)(deflated 98%)
-.fl
-adding: images/at_work.gif(in = 6621) (out= 89)(deflated 98%)
-.fl
-
-.fl
-% ls \-F
-.fl
-audio/ bundle.jar classes/ images/
-.fl
-\fP
-.fi
-
-.LP
-JAR ファイルのエントリ名を表示するには、「\f2t\fP」オプションを使用します。 
-.nf
-\f3
-.fl
-% jar tf bundle.jar
-.fl
+% \fIjar tf my\&.jar\fR
 META\-INF/
-.fl
-META\-INF/MANIFEST.MF
-.fl
-audio/1.au
-.fl
-audio/2.au
-.fl
-audio/3.au
-.fl
-audio/spacemusic.au
-.fl
-classes/Animator.class
-.fl
-classes/Wave.class
-.fl
-images/monkey.jpg
-.fl
-images/at_work.gif
-.fl
-\fP
+META\-INF/MANIFEST\&.MF
+bar1
+bar2
+Xyz\&.class
 .fi
-
-.LP
-.LP
-クラスロードを高速にするためにインデックスファイルを JAR ファイルに追加するには、「\f2i\fP」オプションを使用します。
-.br
-.br
-例:
-.br
-
-.LP
-たとえば、株取引アプリケーションの内部依存しているクラスを、\f2main.jar\fP、\f2buy.jar\fP、および \f2sell.jar\fP という 3 つの JAR ファイルに分割したとします。
-.br
-
-.LP
-.br
-
-.LP
-\f2main.jar\fP のマニフェストの \f2Class\-path\fP 属性に次のように指定した場合、 
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+指定したJVMオプションを、JREがJARファイルを実行する際に使用するように設定します。JVMオプションは、java(1)コマンドのリファレンス・ページで説明されています。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。
+.RE
+.SH "オペランド"
+.PP
+次のオペランドは、\fIjar\fRコマンドで認識されます。
+.PP
+\fIfile\fR
+.RS 4
+JARファイルの作成(\fIc\fR)または更新(\fIu\fR)時に、\fIfile\fRオペランドは、アーカイブに追加する必要のあるファイルまたはディレクトリのパスと名前を定義します。JARファイルの抽出(\fIx\fR)またはコンテンツのリスト(\fIt\fR)時に、\fIfile\fRオペランドは抽出またはリストするファイルのパスと名前を定義します。少なくとも1つの有効なファイルまたはディレクトリを指定する必要があります。複数の\fIfile\fRオペランドを空白で区切ります。\fIentrypoint\fR、\fIjarfile\fRまたは\fImanifest\fRオペランドが使用される場合は、その後に\fIfile\fRオペランドを指定する必要があります。
+.RE
+.PP
+\fIentrypoint\fR
+.RS 4
+JARファイルの作成(\fIc\fR)または更新(\fIu\fR)時に、\fIentrypoint\fRオペランドは、実行可能JARファイルにバンドルされているスタンドアロンJavaアプリケーションのエントリ・ポイントとなるクラスの名前を定義します。\fIe\fRオプションが存在する場合は\fIentrypoint\fRオペランドを指定する必要があります。
+.RE
+.PP
+\fIjarfile\fR
+.RS 4
+作成(\fIc\fR)、更新(\fIu\fR)、抽出(\fIx\fR)または表示(\fIt\fR)するファイルの名前を定義します。\fIf\fRオプションが存在する場合は\fIjarfile\fRオペランドを指定する必要があります。\fIf\fRオプションおよび\fIjarfile\fRオペランドを省略すると、\fIjar\fRコマンドに、\fIstdin\fRからのJARファイル名を受け入れるか(\fIx\fRおよび\fIt\fRの場合)、JARファイルを\fIstdout\fRに送信すること(\fIc\fRおよび\fIu\fRの場合)が指示されます。
+.sp
+JARファイルを索引付け(\fIi\fR)する場合は、\fIf\fRオプションを指定しないで\fIjarfile\fRオペランドを指定します。
+.RE
+.PP
+\fImanifest\fR
+.RS 4
+JARファイルの作成(\fIc\fR)または更新(\fIu\fR)時に、\fImanifest\fRオペランドはJARファイルの\fIMANIFEST\&.MF\fRに含める属性の名前と値を持つ既存のマニフェスト・ファイルを定義します。\fIf\fRオプションが存在する場合は\fImanifest\fRオペランドを指定する必要があります。
+.RE
+.PP
+\fI@arg\-file\fR
+.RS 4
+\fIjar\fRコマンドを短縮または簡素化するには、別のテキスト・ファイル内の引数を指定し、接頭辞としてアットマーク(@)を付けて\fIjar\fRコマンドに渡すことができます。\fIjar\fRコマンドは、アットマーク文字で始まる引数を見つけると、そのファイルの内容を展開して引数リストに挿入します。
+.sp
+引数ファイルには、\fIjar\fRコマンドのオプションと引数(引数ファイルをサポートしない起動ツールに渡される\fI\-J\fRオプションを除く)を含めることができます。ファイル内の引数は、空白または改行文字で区切ることができます。引数ファイル内のファイル名は、\fIjar\fRコマンドを実行できる現在のディレクトリに対して相対的であり、引数ファイルの場所に対しては相対的ではありません。通常はオペレーティング・システム・シェルによって展開されるアスタリスク(*)などのワイルドカードは展開されません。
+.sp
+次の例は、\fIfind\fRコマンドによる現在のディレクトリ出力からのファイル名で\fIclasses\&.list\fRファイルを作成する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-Class\-Path: buy.jar sell.jar
-.fl
-\fP
+find \&. \-name \*(Aq*\&.class\*(Aq \-print > classes\&.list
 .fi
-
-.LP
-\f2\-i\fP オプションを使用すれば、アプリケーションのクラスの 読み込みを高速化できます。 
+.if n \{\
+.RE
+.\}
+\fIjar\fRコマンドを実行し、\fI@arg\-file\fR構文を使用して\fIclasses\&.list\fRファイルを渡すことができます。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-% jar i main.jar
-.fl
-\fP
+jar cf my\&.jar @classes\&.list
 .fi
+.if n \{\
+.RE
+.\}
+引数ファイルはパスを指定できますが、相対パスが記述された引数ファイル内のすべてのファイル名は、渡されたパスに対して相対的ではなく、\fIjar\fRコマンドの現在の作業ディレクトリに相対的となります。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jar @dir/classes\&.list
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.SH "注意"
+.PP
+\fIe\fR、\fIf\fRおよび\fIm\fRオプションは、\fIentrypoint\fR、\fIjarfile\fRおよび\fImanifest\fRオペランドと同じ順序でコマンドラインに出現する必要があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jar cmef myManifestFile MyMainClass myFile\&.jar *\&.class
+.fi
+.if n \{\
+.RE
+.\}
+.SH "例"
+.PP
+\fBExample 1\fR, 冗長な出力による現在のディレクトリからのすべてのファイルの追加
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+% ls
+1\&.au          Animator\&.class    monkey\&.jpg
+2\&.au          Wave\&.class        spacemusic\&.au
+3\&.au          at_work\&.gif
 
-.LP
-\f2INDEX.LIST\fP ファイルが \f2META\-INF\fP ディレクトリに挿入されます。この結果、アプリケーションのクラスローダーによってクラスまたはリソースの検索が行われるときに、適切な jar ファイルがダウンロードされます。 
+% jar cvf bundle\&.jar *
+added manifest
+adding: 1\&.au(in = 2324) (out= 67)(deflated 97%)
+adding: 2\&.au(in = 6970) (out= 90)(deflated 98%)
+adding: 3\&.au(in = 11616) (out= 108)(deflated 99%)
+adding: Animator\&.class(in = 2266) (out= 66)(deflated 97%)
+adding: Wave\&.class(in = 3778) (out= 81)(deflated 97%)
+adding: at_work\&.gif(in = 6621) (out= 89)(deflated 98%)
+adding: monkey\&.jpg(in = 7667) (out= 91)(deflated 98%)
+adding: spacemusic\&.au(in = 3079) (out= 73)(deflated 97%)
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBExample 2\fR, サブディレクトリからのファイルの追加
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+% ls \-F
+audio/ classes/ images/
+% jar cvf bundle\&.jar audio classes images
+added manifest
+adding: audio/(in = 0) (out= 0)(stored 0%)
+adding: audio/1\&.au(in = 2324) (out= 67)(deflated 97%)
+adding: audio/2\&.au(in = 6970) (out= 90)(deflated 98%)
+adding: audio/3\&.au(in = 11616) (out= 108)(deflated 99%)
+adding: audio/spacemusic\&.au(in = 3079) (out= 73)(deflated 97%)
+adding: classes/(in = 0) (out= 0)(stored 0%)
+adding: classes/Animator\&.class(in = 2266) (out= 66)(deflated 97%)
+adding: classes/Wave\&.class(in = 3778) (out= 81)(deflated 97%)
+adding: images/(in = 0) (out= 0)(stored 0%)
+adding: images/monkey\&.jpg(in = 7667) (out= 91)(deflated 98%)
+adding: images/at_work\&.gif(in = 6621) (out= 89)(deflated 98%)
+
+% ls \-F
+audio/ bundle\&.jar classes/ images/
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBExample 3\fR, JARのコンテンツのリスト
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+% jar tf bundle\&.jar
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+META\-INF/
+META\-INF/MANIFEST\&.MF
+audio/1\&.au
+audio/2\&.au
+audio/3\&.au
+audio/spacemusic\&.au
+classes/Animator\&.class
+classes/Wave\&.class
+images/monkey\&.jpg
+images/at_work\&.gif
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBExample 4\fR, 索引の追加
+.RS 4
+株式取引のアプリケーションの相互依存クラスを、\fImain\&.jar\fR、\fIbuy\&.jar\fRおよび\fIsell\&.jar\fRの3つのJARファイルに分割する場合、\fIi\fRオプションを使用します。\fImain\&.jar\fRマニフェスト内の\fIClass\-Path\fR属性を指定する場合、\fIi\fRオプションを使用して、アプリケーションのクラス・ロードの速度を向上できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Class\-Path: buy\&.jar sell\&.jar
+jar i main\&.jar
+.fi
+.if n \{\
+.RE
+.\}
+\fIINDEX\&.LIST\fRファイルが\fIMETA\-INF\fRディレクトリに挿入されます。これにより、アプリケーションのクラス・ローダーによってクラスまたはリソースの検索が行われるときに、指定したJARファイルがダウンロードされるようになります。
+.sp
+アプリケーションのクラス・ローダーは、このファイルに格納されている情報を使用して、効率的にクラスをロードします。ディレクトリをコピーするには、最初に\fIdir1\fR内のファイルを\fIstdout\fRに圧縮してから、\fIstdin\fRから\fIdir2\fRにパイプラインを作成して抽出します(\fI\-f\fRオプションは両方の\fIjar\fRコマンドで省略します)。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+(cd dir1; jar c \&.) | (cd dir2; jar x)
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "関連項目"
-.LP
-.LP
-.na
-\f2JAR ファイルの概要\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jarGuide.html
-.LP
-.LP
-.na
-\f2JAR ファイルの仕様\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html
-.LP
-.LP
-.na
-\f2JarIndex の仕様\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#JAR_Index
-.LP
-.LP
-.na
-\f2JAR チュートリアル\fP @
-.fi
-http://download.oracle.com/javase/tutorial/deployment/jar/index.html
-.LP
-.LP
-pack200(1)
-.LP
- 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+pack200(1)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://docs\&.oracle\&.com/javase/tutorial/deployment/jar/index\&.htmlにある
+JavaチュートリアルのJARに関する項
+.RE
+.br
+'pl 8.5i
+'bp

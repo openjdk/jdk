@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,12 +104,12 @@ static jfieldID outCodeID;
 JNIEXPORT void JNICALL
 Java_sun_awt_image_GifImageDecoder_initIDs(JNIEnv *env, jclass this)
 {
-    readID = (*env)->GetMethodID(env, this, "readBytes", "([BII)I");
-    sendID = (*env)->GetMethodID(env, this, "sendPixels",
-                                 "(IIII[BLjava/awt/image/ColorModel;)I");
-    prefixID = (*env)->GetFieldID(env, this, "prefix", "[S");
-    suffixID = (*env)->GetFieldID(env, this, "suffix", "[B");
-    outCodeID = (*env)->GetFieldID(env, this, "outCode", "[B");
+    CHECK_NULL(readID = (*env)->GetMethodID(env, this, "readBytes", "([BII)I"));
+    CHECK_NULL(sendID = (*env)->GetMethodID(env, this, "sendPixels",
+                                 "(IIII[BLjava/awt/image/ColorModel;)I"));
+    CHECK_NULL(prefixID = (*env)->GetFieldID(env, this, "prefix", "[S"));
+    CHECK_NULL(suffixID = (*env)->GetFieldID(env, this, "suffix", "[B"));
+    CHECK_NULL(outCodeID = (*env)->GetFieldID(env, this, "outCode", "[B"));
 }
 
 JNIEXPORT jboolean JNICALL
@@ -291,8 +291,10 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
              * reads the immediately subsequent code as uncompressed data.
              */
             if (verbose) {
+                RELEASE_ARRAYS();
                 fprintf(stdout, ".");
                 fflush(stdout);
+                GET_ARRAYS();
             }
 
             /* Note that freeCode is one less than it is supposed to be,
@@ -318,10 +320,10 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
             /* make sure we read the whole block of pixels. */
         flushit:
             while (!blockEnd) {
+                RELEASE_ARRAYS();
                 if (verbose) {
                     fprintf(stdout, "flushing %d bytes\n", blockLength);
                 }
-                RELEASE_ARRAYS();
                 if ((*env)->CallIntMethod(env, this, readID,
                                           blockh, 0, blockLength + 1) != 0
                     || (*env)->ExceptionOccurred(env))

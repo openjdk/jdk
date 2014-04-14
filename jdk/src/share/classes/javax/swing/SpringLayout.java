@@ -991,7 +991,7 @@ public class SpringLayout implements LayoutManager2 {
      * If <code>constraints</code> is an instance of
      * <code>SpringLayout.Constraints</code>,
      * associates the constraints with the specified component.
-     * <p>
+     *
      * @param   component the component being added
      * @param   constraints the component's constraints
      *
@@ -1029,7 +1029,7 @@ public class SpringLayout implements LayoutManager2 {
      * <pre>
      *     value(e1, c1) = value(e2, c2) + pad</pre>
      * to take place during all subsequent layout operations.
-     * <p>
+     *
      * @param   e1 the edge of the dependent
      * @param   c1 the component of the dependent
      * @param   pad the fixed distance between dependent and anchor
@@ -1056,7 +1056,7 @@ public class SpringLayout implements LayoutManager2 {
      * <code>SpringLayout.VERTICAL_CENTER</code>,
      * <code>SpringLayout.HORIZONTAL_CENTER</code> or
      * <code>SpringLayout.BASELINE</code>.
-     * <p>
+     *
      * @param   e1 the edge of the dependent
      * @param   c1 the component of the dependent
      * @param   s the spring linking dependent and anchor

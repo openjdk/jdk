@@ -45,7 +45,7 @@ final class NativeArrayBuffer extends ScriptObject {
     private static PropertyMap $nasgenmap$;
 
     @Constructor(arity = 1)
-    public static Object constructor(final boolean newObj, final Object self, final Object... args) {
+    public static NativeArrayBuffer constructor(final boolean newObj, final Object self, final Object... args) {
         if (args.length == 0) {
             throw new RuntimeException("missing length argument");
         }
@@ -81,7 +81,7 @@ final class NativeArrayBuffer extends ScriptObject {
     }
 
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object slice(final Object self, final Object begin0, final Object end0) {
+    public static NativeArrayBuffer slice(final Object self, final Object begin0, final Object end0) {
         final NativeArrayBuffer arrayBuffer = (NativeArrayBuffer)self;
         int begin = JSType.toInt32(begin0);
         int end = end0 != ScriptRuntime.UNDEFINED ? JSType.toInt32(end0) : arrayBuffer.getByteLength();

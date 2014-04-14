@@ -27,16 +27,21 @@
  */
 import java.net.*;
 import java.io.*;
+import java.util.concurrent.CountDownLatch;
 
 public class Socket_getInputStream_read extends AsyncCloseTest implements Runnable {
-    Socket s;
-    int timeout = 0;
+    private final Socket s;
+    private final int timeout;
+    private final CountDownLatch latch;
 
     public Socket_getInputStream_read() {
+        this(0);
     }
 
     public Socket_getInputStream_read(int timeout) {
         this.timeout = timeout;
+        latch = new CountDownLatch(1);
+        s = new Socket();
     }
 
     public String description() {
@@ -48,53 +53,48 @@ public class Socket_getInputStream_read extends AsyncCloseTest implements Runnab
     }
 
     public void run() {
-        InputStream in;
-
         try {
-            in = s.getInputStream();
+            InputStream in = s.getInputStream();
             if (timeout > 0) {
                 s.setSoTimeout(timeout);
             }
-        } catch (Exception e) {
-            failed(e.getMessage());
-            return;
-        }
-
-        try {
+            latch.countDown();
             int n = in.read();
-            failed("getInptuStream().read() returned unexpectly!!");
+            failed("Socket.getInputStream().read() returned unexpectly!!");
         } catch (SocketException se) {
-            closed();
+            if (latch.getCount() != 1) {
+                closed();
+            }
         } catch (Exception e) {
             failed(e.getMessage());
+        } finally {
+            if (latch.getCount() == 1) {
+                latch.countDown();
+            }
         }
     }
 
-    public boolean go() throws Exception {
+    public AsyncCloseTest go() {
+        try {
+            ServerSocket ss = new ServerSocket(0);
+            InetAddress lh = InetAddress.getLocalHost();
+            s.connect( new InetSocketAddress(lh, ss.getLocalPort()) );
+            Socket s2 = ss.accept();
+            Thread thr = new Thread(this);
+            thr.start();
+            latch.await();
+            Thread.sleep(5000); //sleep, so Socket.getInputStream().read() can block
+            s.close();
+            thr.join();
 
-        ServerSocket ss = new ServerSocket(0);
-
-        InetAddress lh = InetAddress.getLocalHost();
-        s = new Socket();
-        s.connect( new InetSocketAddress(lh, ss.getLocalPort()) );
-
-        Socket s2 = ss.accept();
-
-        Thread thr = new Thread(this);
-        thr.start();
-
-        Thread.currentThread().sleep(1000);
-
-        s.close();
-
-        Thread.currentThread().sleep(1000);
-
-        if (isClosed()) {
-            return true;
-        } else {
-            failed("getInputStream().read() wasn't preempted");
-            return false;
+            if (isClosed()) {
+                return passed();
+            } else {
+                return failed("Socket.getInputStream().read() wasn't preempted");
+            }
+        } catch (Exception x) {
+            failed(x.getMessage());
+            throw new RuntimeException(x);
         }
-
     }
 }

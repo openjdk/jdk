@@ -30,21 +30,19 @@
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.File;
-import java.io.IOException;
 
 public class ConcurrentRead {
 
     static volatile Exception savedException;
-    static final String TEE = "/usr/bin/tee";
 
     public static void main(String[] args) throws Exception {
-
-        if (File.separatorChar == '\\' ||                // Windows
-                                !new File(TEE).exists()) // no tee
+        if (! UnixCommands.isUnix) {
+            System.out.println("For UNIX only");
             return;
+        }
+        UnixCommands.ensureCommandsAvailable("tee");
 
-        Process p = Runtime.getRuntime().exec(TEE);
+        Process p = Runtime.getRuntime().exec(UnixCommands.tee());
         OutputStream out = p.getOutputStream();
         InputStream in = p.getInputStream();
         Thread t1 = new WriterThread(out, in);
