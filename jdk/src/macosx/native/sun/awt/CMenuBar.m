@@ -405,10 +405,6 @@ Java_sun_lwawt_macosx_CMenuBar_nativeCreateMenuBar
 
 
     JNF_COCOA_EXIT(env);
-    if (aCMenuBar) {
-        CFRetain(aCMenuBar); // GC
-        [aCMenuBar release];
-    }
     return ptr_to_jlong(aCMenuBar);
 }
 

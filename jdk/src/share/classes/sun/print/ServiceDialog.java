@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ import java.lang.reflect.Field;
  *
  * @author  Chris Campbell
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class ServiceDialog extends JDialog implements ActionListener {
 
     /**
@@ -307,6 +308,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * Performs Cancel when Esc key is pressed.
      */
     private void handleEscKey(JButton btnCancel) {
+        @SuppressWarnings("serial") // anonymous class
         Action cancelKeyAction = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 dispose(CANCEL);
@@ -656,6 +658,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * The "General" tab.  Includes the controls for PrintService,
      * PageRange, and Copies/Collate.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class GeneralPanel extends JPanel {
 
         private PrintServicePanel pnlPrintService;
@@ -699,6 +702,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class PrintServicePanel extends JPanel
         implements ActionListener, ItemListener, PopupMenuListener
     {
@@ -956,6 +960,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class PrintRangePanel extends JPanel
         implements ActionListener, FocusListener
     {
@@ -1168,6 +1173,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class CopiesPanel extends JPanel
         implements ActionListener, ChangeListener
     {
@@ -1301,6 +1307,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * The "Page Setup" tab.  Includes the controls for MediaSource/MediaTray,
      * OrientationRequested, and Sides.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class PageSetupPanel extends JPanel {
 
         private MediaPanel pnlMedia;
@@ -1342,6 +1349,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class MarginsPanel extends JPanel
                                implements ActionListener, FocusListener {
 
@@ -1872,6 +1880,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class MediaPanel extends JPanel implements ItemListener {
 
         private final String strTitle = getMsg("border.media");
@@ -2106,6 +2115,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class OrientationPanel extends JPanel
         implements ActionListener
     {
@@ -2264,6 +2274,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * The "Appearance" tab.  Includes the controls for Chromaticity,
      * PrintQuality, JobPriority, JobName, and other related job attributes.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class AppearancePanel extends JPanel {
 
         private ChromaticityPanel pnlChromaticity;
@@ -2310,6 +2321,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class ChromaticityPanel extends JPanel
         implements ActionListener
     {
@@ -2400,6 +2412,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class QualityPanel extends JPanel
         implements ActionListener
     {
@@ -2501,6 +2514,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
 
 
     }
+
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class SidesPanel extends JPanel
         implements ActionListener
     {
@@ -2603,7 +2618,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
     }
 
 
-
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class JobAttributesPanel extends JPanel
         implements ActionListener, ChangeListener, FocusListener
     {
@@ -2791,6 +2806,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * A special widget that groups a JRadioButton with an associated icon,
      * placed to the left of the radio button.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class IconRadioButton extends JPanel {
 
         private JRadioButton rb;
@@ -2843,6 +2859,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * chooser will pop up a "Do you want to overwrite..." dialog if the
      * user selects a file that already exists.
      */
+    @SuppressWarnings("serial") // JDK implementation class
     private class ValidatingFileChooser extends JFileChooser {
         public void approveSelection() {
             File selected = getSelectedFile();

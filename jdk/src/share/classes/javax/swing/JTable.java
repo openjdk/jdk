@@ -58,7 +58,6 @@ import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 import static sun.swing.SwingUtilities2.Section.*;
 import sun.swing.PrintingStatus;
-import sun.swing.SwingLazyValue;
 
 /**
  * The <code>JTable</code> is used to display and edit regular two-dimensional tables
@@ -662,7 +661,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * with the following code:
      *
      * <pre>((Vector)rowData.elementAt(1)).elementAt(5);</pre>
-     * <p>
+     *
      * @param rowData           the data for the new table
      * @param columnNames       names of each column
      */
@@ -679,7 +678,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * <pre> rowData[1][5]; </pre>
      * <p>
      * All rows must be of the same length as <code>columnNames</code>.
-     * <p>
+     *
      * @param rowData           the data for the new table
      * @param columnNames       names of each column
      */

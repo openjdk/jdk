@@ -132,12 +132,15 @@ public interface Types {
     boolean isSubsignature(ExecutableType m1, ExecutableType m2);
 
     /**
-     * Returns the direct supertypes of a type.  The interface types, if any,
-     * will appear last in the list.
+     * Returns the direct supertypes of a type. The interface types, if any,
+     * will appear last in the list. For an interface type with no direct
+     * super-interfaces, a type mirror representing {@code java.lang.Object}
+     * is returned.
      *
      * @param t  the type being examined
      * @return the direct supertypes, or an empty list if none
      * @throws IllegalArgumentException if given an executable or package type
+     * @jls 4.10 Subtyping
      */
     List<? extends TypeMirror> directSupertypes(TypeMirror t);
 

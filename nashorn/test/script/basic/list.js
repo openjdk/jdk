@@ -33,7 +33,7 @@ print("l.class.name=" + Java.typeName(l.class)) // Has "class" property like any
 l.add("foo")
 l.add("bar")
 
-print("l.length=" + l.length) // doesn't work, returns undefined
+print("l.length=" + l.length) // works, maps to l.size()
 print("l.size()=" + l.size()) // this will work
 
 print("l[0]=" + l[0])

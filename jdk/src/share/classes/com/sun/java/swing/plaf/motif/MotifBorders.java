@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import java.awt.Rectangle;
  */
 public class MotifBorders {
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class BevelBorder extends AbstractBorder implements UIResource {
         private Color darkShadow = UIManager.getColor("controlShadow");
         private Color lightShadow = UIManager.getColor("controlLtHighlight");
@@ -87,6 +88,7 @@ public class MotifBorders {
     }
 
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class FocusBorder extends AbstractBorder implements UIResource {
         private Color focus;
         private Color control;
@@ -113,6 +115,7 @@ public class MotifBorders {
     }
 
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ButtonBorder extends AbstractBorder implements UIResource {
         protected Color focus = UIManager.getColor("activeCaptionBorder");
         protected Color shadow = UIManager.getColor("Button.shadow");
@@ -191,6 +194,7 @@ public class MotifBorders {
 
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ToggleButtonBorder extends ButtonBorder {
 
         public ToggleButtonBorder(Color shadow, Color highlight, Color darkShadow, Color focus) {
@@ -224,6 +228,7 @@ public class MotifBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MenuBarBorder extends ButtonBorder {
 
         public MenuBarBorder(Color shadow, Color highlight, Color darkShadow, Color focus) {
@@ -249,6 +254,7 @@ public class MotifBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class FrameBorder extends AbstractBorder implements UIResource {
 
         JComponent jcomp;
@@ -434,6 +440,7 @@ public class MotifBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InternalFrameBorder extends FrameBorder {
 
         JInternalFrame frame;
@@ -618,6 +625,7 @@ public class MotifBorders {
         g.setColor(oldColor);
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MotifPopupMenuBorder extends AbstractBorder implements UIResource {
         protected Font   font;
         protected Color  background;

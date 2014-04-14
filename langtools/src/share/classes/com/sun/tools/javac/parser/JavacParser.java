@@ -161,6 +161,7 @@ public class JavacParser implements Parser {
         this.allowStaticInterfaceMethods = source.allowStaticInterfaceMethods();
         this.allowIntersectionTypesInCast = source.allowIntersectionTypesInCast();
         this.allowTypeAnnotations = source.allowTypeAnnotations();
+        this.allowAnnotationsAfterTypeParams = source.allowAnnotationsAfterTypeParams();
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
@@ -253,6 +254,10 @@ public class JavacParser implements Parser {
     /** Switch: should we recognize type annotations?
      */
     boolean allowTypeAnnotations;
+
+    /** Switch: should we allow annotations after the method type parameters?
+     */
+    boolean allowAnnotationsAfterTypeParams;
 
     /** Switch: is "this" allowed as an identifier?
      * This is needed to parse receiver types.
@@ -2026,7 +2031,7 @@ public class JavacParser implements Parser {
     /** Creator = [Annotations] Qualident [TypeArguments] ( ArrayCreatorRest | ClassCreatorRest )
      */
     JCExpression creator(int newpos, List<JCExpression> typeArgs) {
-        List<JCAnnotation> newAnnotations = annotationsOpt(Tag.ANNOTATION);
+        List<JCAnnotation> newAnnotations = typeAnnotationsOpt();
 
         switch (token.kind) {
         case BYTE: case SHORT: case CHAR: case INT: case LONG: case FLOAT:
@@ -3355,7 +3360,7 @@ public class JavacParser implements Parser {
             ? arguments() : List.<JCExpression>nil();
         JCClassDecl body = null;
         if (token.kind == LBRACE) {
-            JCModifiers mods1 = F.at(Position.NOPOS).Modifiers(Flags.ENUM | Flags.STATIC);
+            JCModifiers mods1 = F.at(Position.NOPOS).Modifiers(Flags.ENUM);
             List<JCTree> defs = classOrInterfaceBody(names.empty, false);
             body = toP(F.at(identPos).AnonymousClassDef(mods1, defs));
         }
@@ -3464,6 +3469,7 @@ public class JavacParser implements Parser {
                     nextToken();
                 } else {
                     if (annosAfterParams.nonEmpty()) {
+                        checkAnnotationsAfterTypeParams(annosAfterParams.head.pos);
                         mods.annotations = mods.annotations.appendList(annosAfterParams);
                         if (mods.pos == Position.NOPOS)
                             mods.pos = mods.annotations.head.pos;
@@ -4061,6 +4067,12 @@ public class JavacParser implements Parser {
         if (!allowTypeAnnotations) {
             log.error(token.pos, "type.annotations.not.supported.in.source", source.name);
             allowTypeAnnotations = true;
+        }
+    }
+    void checkAnnotationsAfterTypeParams(int pos) {
+        if (!allowAnnotationsAfterTypeParams) {
+            log.error(pos, "annotations.after.type.params.not.supported.in.source", source.name);
+            allowAnnotationsAfterTypeParams = true;
         }
     }
 

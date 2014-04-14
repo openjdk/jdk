@@ -305,8 +305,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * appropriate view the first time this view is requested.  The views are
      * stateless, so there's no reason to create more than one of each.
      */
-    transient volatile Set<K>        keySet = null;
-    transient volatile Collection<V> values = null;
+    transient volatile Set<K>        keySet;
+    transient volatile Collection<V> values;
 
     /**
      * {@inheritDoc}

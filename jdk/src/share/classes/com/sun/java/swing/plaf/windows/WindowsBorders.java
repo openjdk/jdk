@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ public class WindowsBorders {
         return internalFrameBorder;
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ProgressBarBorder extends AbstractBorder implements UIResource {
         protected Color shadow;
         protected Color highlight;
@@ -144,6 +145,7 @@ public class WindowsBorders {
      * <p>
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ToolBarBorder extends AbstractBorder implements UIResource, SwingConstants {
         protected Color shadow;
         protected Color highlight;
@@ -247,6 +249,7 @@ public class WindowsBorders {
      * This class is an implementation of a dashed border.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class DashedBorder extends LineBorder implements UIResource {
         public DashedBorder(Color color) {
             super(color);
@@ -272,6 +275,7 @@ public class WindowsBorders {
      * A dashed border that paints itself in the complementary color
      * of the component's background color.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class ComplementDashedBorder extends LineBorder implements UIResource {
         private Color origColor;
         private Color paintColor;
@@ -297,6 +301,7 @@ public class WindowsBorders {
      * This class is an implementation of the InternalFrameLine border.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InternalFrameLineBorder extends LineBorder implements
             UIResource {
         protected Color activeColor;

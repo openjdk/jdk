@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import sun.awt.image.ImageRepresentation;
  * @see Component#setCursor
  * @author      Thomas Ball
  */
+@SuppressWarnings("serial") // JDK-implementation class
 public abstract class X11CustomCursor extends CustomCursor {
 
     public X11CustomCursor(Image cursor, Point hotSpot, String name)

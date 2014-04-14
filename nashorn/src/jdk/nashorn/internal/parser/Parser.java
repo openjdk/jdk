@@ -1700,9 +1700,11 @@ loop:
                 // ECMA 12.4.1 strict mode restrictions
                 verifyStrictIdent(exception, "catch argument");
 
-                // Check for conditional catch.
+                // Nashorn extension: catch clause can have optional
+                // condition. So, a single try can have more than one
+                // catch clause each with it's own condition.
                 final Expression ifExpression;
-                if (type == IF) {
+                if (!env._no_syntax_extensions && type == IF) {
                     next();
                     // Get the exception condition.
                     ifExpression = expression();

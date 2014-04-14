@@ -299,12 +299,6 @@ public class JavaCompiler {
     protected MultiTaskListener taskListener;
 
     /**
-     * Annotation processing may require and provide a new instance
-     * of the compiler to be used for the analyze and generate phases.
-     */
-    protected JavaCompiler delegateCompiler;
-
-    /**
      * SourceCompleter that delegates to the complete-method of this class.
      */
     protected final ClassReader.SourceCompleter thisCompleter =
@@ -567,12 +561,8 @@ public class JavaCompiler {
     /** The number of errors reported so far.
      */
     public int errorCount() {
-        if (delegateCompiler != null && delegateCompiler != this)
-            return delegateCompiler.errorCount();
-        else {
-            if (werror && log.nerrors == 0 && log.nwarnings > 0) {
-                log.error("warnings.and.werror");
-            }
+        if (werror && log.nerrors == 0 && log.nwarnings > 0) {
+            log.error("warnings.and.werror");
         }
         return log.nerrors;
     }
@@ -588,10 +578,7 @@ public class JavaCompiler {
     /** The number of warnings reported so far.
      */
     public int warningCount() {
-        if (delegateCompiler != null && delegateCompiler != this)
-            return delegateCompiler.warningCount();
-        else
-            return log.nwarnings;
+        return log.nwarnings;
     }
 
     /** Try to open input stream with given name.
@@ -759,21 +746,32 @@ public class JavaCompiler {
      *  @param c          The class the source file of which needs to be compiled.
      */
     public void complete(ClassSymbol c) throws CompletionFailure {
+        complete(null, c);
+    }
+
+    /** Complete a ClassSymbol from source, optionally using the given compilation unit as
+     *  the source tree.
+     *  @param tree the compilation unit int which the given ClassSymbol resides,
+     *              or null if should be parsed from source
+     *  @param c    the ClassSymbol to complete
+     */
+    public void complete(JCCompilationUnit tree, ClassSymbol c) throws CompletionFailure {
 //      System.err.println("completing " + c);//DEBUG
         if (completionFailureName == c.fullname) {
             throw new CompletionFailure(c, "user-selected completion failure by class name");
         }
-        JCCompilationUnit tree;
         JavaFileObject filename = c.classfile;
         JavaFileObject prev = log.useSource(filename);
 
-        try {
-            tree = parse(filename, filename.getCharContent(false));
-        } catch (IOException e) {
-            log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
-            tree = make.TopLevel(List.<JCTree.JCAnnotation>nil(), null, List.<JCTree>nil());
-        } finally {
-            log.useSource(prev);
+        if (tree == null) {
+            try {
+                tree = parse(filename, filename.getCharContent(false));
+            } catch (IOException e) {
+                log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
+                tree = make.TopLevel(List.<JCTree.JCAnnotation>nil(), null, List.<JCTree>nil());
+            } finally {
+                log.useSource(prev);
+            }
         }
 
         if (!taskListener.isEmpty()) {
@@ -851,35 +849,16 @@ public class JavaCompiler {
             initProcessAnnotations(processors);
 
             // These method calls must be chained to avoid memory leaks
-            delegateCompiler =
-                processAnnotations(
-                    enterTrees(stopIfError(CompileState.PARSE, parseFiles(sourceFileObjects))),
-                    classnames);
+            processAnnotations(
+                enterTrees(stopIfError(CompileState.PARSE, parseFiles(sourceFileObjects))),
+                classnames);
 
             // If it's safe to do so, skip attr / flow / gen for implicit classes
             if (taskListener.isEmpty() &&
                     implicitSourcePolicy == ImplicitSourcePolicy.NONE) {
-                delegateCompiler.todo.retainFiles(delegateCompiler.inputFiles);
+                todo.retainFiles(inputFiles);
             }
 
-            delegateCompiler.compile2();
-            delegateCompiler.close();
-            elapsed_msec = delegateCompiler.elapsed_msec;
-        } catch (Abort ex) {
-            if (devVerbose)
-                ex.printStackTrace(System.err);
-        } finally {
-            if (procEnvImpl != null)
-                procEnvImpl.close();
-        }
-    }
-
-    /**
-     * The phases following annotation processing: attribution,
-     * desugar, and finally code generation.
-     */
-    private void compile2() {
-        try {
             switch (compilePolicy) {
             case ATTR_ONLY:
                 attribute(todo);
@@ -912,18 +891,21 @@ public class JavaCompiler {
         } catch (Abort ex) {
             if (devVerbose)
                 ex.printStackTrace(System.err);
-        }
+        } finally {
+            if (verbose) {
+                elapsed_msec = elapsed(start_msec);
+                log.printVerbose("total", Long.toString(elapsed_msec));
+            }
 
-        if (verbose) {
-            elapsed_msec = elapsed(start_msec);
-            log.printVerbose("total", Long.toString(elapsed_msec));
-        }
+            reportDeferredDiagnostics();
 
-        reportDeferredDiagnostics();
-
-        if (!log.hasDiagnosticListener()) {
-            printCount("error", errorCount());
-            printCount("warn", warningCount());
+            if (!log.hasDiagnosticListener()) {
+                printCount("error", errorCount());
+                printCount("warn", warningCount());
+            }
+            close();
+            if (procEnvImpl != null)
+                procEnvImpl.close();
         }
     }
 
@@ -1069,8 +1051,8 @@ public class JavaCompiler {
     }
 
     // TODO: called by JavacTaskImpl
-    public JavaCompiler processAnnotations(List<JCCompilationUnit> roots) {
-        return processAnnotations(roots, List.<String>nil());
+    public void processAnnotations(List<JCCompilationUnit> roots) {
+        processAnnotations(roots, List.<String>nil());
     }
 
     /**
@@ -1084,8 +1066,8 @@ public class JavaCompiler {
     // By the time this method exits, log.deferDiagnostics must be set back to false,
     // and all deferredDiagnostics must have been handled: i.e. either reported
     // or determined to be transient, and therefore suppressed.
-    public JavaCompiler processAnnotations(List<JCCompilationUnit> roots,
-                                           List<String> classnames) {
+    public void processAnnotations(List<JCCompilationUnit> roots,
+                                   List<String> classnames) {
         if (shouldStop(CompileState.PROCESS)) {
             // Errors were encountered.
             // Unless all the errors are resolve errors, the errors were parse errors
@@ -1094,7 +1076,7 @@ public class JavaCompiler {
             if (unrecoverableError()) {
                 deferredDiagnosticHandler.reportDeferredDiagnostics();
                 log.popDiagnosticHandler(deferredDiagnosticHandler);
-                return this;
+                return ;
             }
         }
 
@@ -1117,7 +1099,7 @@ public class JavaCompiler {
                           classnames);
             }
             Assert.checkNull(deferredDiagnosticHandler);
-            return this; // continue regular compilation
+            return ; // continue regular compilation
         }
 
         Assert.checkNonNull(deferredDiagnosticHandler);
@@ -1133,7 +1115,7 @@ public class JavaCompiler {
                               classnames);
                     deferredDiagnosticHandler.reportDeferredDiagnostics();
                     log.popDiagnosticHandler(deferredDiagnosticHandler);
-                    return this; // TODO: Will this halt compilation?
+                    return ; // TODO: Will this halt compilation?
                 } else {
                     boolean errors = false;
                     for (String nameStr : classnames) {
@@ -1167,25 +1149,26 @@ public class JavaCompiler {
                     if (errors) {
                         deferredDiagnosticHandler.reportDeferredDiagnostics();
                         log.popDiagnosticHandler(deferredDiagnosticHandler);
-                        return this;
+                        return ;
                     }
                 }
             }
             try {
-                JavaCompiler c = procEnvImpl.doProcessing(context, roots, classSymbols, pckSymbols,
-                        deferredDiagnosticHandler);
-                if (c != this)
-                    annotationProcessingOccurred = c.annotationProcessingOccurred = true;
+                annotationProcessingOccurred =
+                        procEnvImpl.doProcessing(roots,
+                                                 classSymbols,
+                                                 pckSymbols,
+                                                 deferredDiagnosticHandler);
                 // doProcessing will have handled deferred diagnostics
-                return c;
             } finally {
                 procEnvImpl.close();
             }
         } catch (CompletionFailure ex) {
             log.error("cant.access", ex.sym, ex.getDetailValue());
-            deferredDiagnosticHandler.reportDeferredDiagnostics();
-            log.popDiagnosticHandler(deferredDiagnosticHandler);
-            return this;
+            if (deferredDiagnosticHandler != null) {
+                deferredDiagnosticHandler.reportDeferredDiagnostics();
+                log.popDiagnosticHandler(deferredDiagnosticHandler);
+            }
         }
     }
 
@@ -1211,6 +1194,10 @@ public class JavaCompiler {
             options.isSet(PROCESSORPATH) ||
             options.isSet(PROC, "only") ||
             options.isSet(XPRINT);
+    }
+
+    public void setDeferredDiagnosticHandler(Log.DeferredDiagnosticHandler deferredDiagnosticHandler) {
+        this.deferredDiagnosticHandler = deferredDiagnosticHandler;
     }
 
     /**
@@ -1674,10 +1661,6 @@ public class JavaCompiler {
     /** Close the compiler, flushing the logs
      */
     public void close() {
-        close(true);
-    }
-
-    public void close(boolean disposeNames) {
         rootClasses = null;
         reader = null;
         make = null;
@@ -1704,7 +1687,7 @@ public class JavaCompiler {
         } catch (IOException e) {
             throw new Abort(e);
         } finally {
-            if (names != null && disposeNames)
+            if (names != null)
                 names.dispose();
             names = null;
 
@@ -1750,14 +1733,8 @@ public class JavaCompiler {
         return now() - then;
     }
 
-    public void initRound(JavaCompiler prev) {
-        genEndPos = prev.genEndPos;
-        keepComments = prev.keepComments;
-        start_msec = prev.start_msec;
-        hasBeenUsed = true;
-        closeables = prev.closeables;
-        prev.closeables = List.nil();
-        shouldStopPolicyIfError = prev.shouldStopPolicyIfError;
-        shouldStopPolicyIfNoError = prev.shouldStopPolicyIfNoError;
+    public void newRound() {
+        inputFiles.clear();
+        todo.clear();
     }
 }

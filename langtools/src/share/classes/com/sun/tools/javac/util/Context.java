@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class Context {
      * or
      * {@literal Key<T> -> Factory<T> }
      */
-    private Map<Key<?>,Object> ht = new HashMap<>();
+    private final Map<Key<?>,Object> ht = new HashMap<>();
 
     /** Set the factory for the key in this context. */
     public <T> void put(Key<T> key, Factory<T> fac) {
@@ -166,18 +166,12 @@ public class Context {
     /**
      * The table of preregistered factories.
      */
-    private Map<Key<?>,Factory<?>> ft = new HashMap<>();
-
-    public Context(Context prev) {
-        kt.putAll(prev.kt);     // retain all implicit keys
-        ft.putAll(prev.ft);     // retain all factory objects
-        ht.putAll(prev.ft);     // init main table with factories
-    }
+    private final Map<Key<?>,Factory<?>> ft = new HashMap<>();
 
     /*
      * The key table, providing a unique Key<T> for each Class<T>.
      */
-    private Map<Class<?>, Key<?>> kt = new HashMap<>();
+    private final Map<Class<?>, Key<?>> kt = new HashMap<>();
 
     private <T> Key<T> key(Class<T> clss) {
         checkState(kt);
@@ -212,12 +206,6 @@ public class Context {
     public void dump() {
         for (Object value : ht.values())
             System.err.println(value == null ? null : value.getClass());
-    }
-
-    public void clear() {
-        ht = null;
-        kt = null;
-        ft = null;
     }
 
     private static void checkState(Map<?,?> t) {

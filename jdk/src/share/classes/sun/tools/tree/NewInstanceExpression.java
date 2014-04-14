@@ -487,6 +487,7 @@ class NewInstanceExpression extends NaryExpression {
     public void codeValue(Environment env, Context ctx, Assembler asm) {
         codeCommon(env, ctx, asm, true);
     }
+    @SuppressWarnings("fallthrough")
     private void codeCommon(Environment env, Context ctx, Assembler asm,
                             boolean forValue) {
         asm.add(where, opc_new, field.getClassDeclaration());

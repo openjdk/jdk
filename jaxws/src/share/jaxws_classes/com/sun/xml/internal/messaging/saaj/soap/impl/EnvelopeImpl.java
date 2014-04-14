@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,30 +29,36 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
-import java.util.Iterator;
 import java.util.logging.Level;
-import org.w3c.dom.Document;
 
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.sax.*;
 
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
-import com.sun.xml.internal.messaging.saaj.soap.Envelope;
+import com.sun.xml.internal.messaging.saaj.soap.LazyEnvelope;
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
+import com.sun.xml.internal.messaging.saaj.soap.StaxBridge;
+import com.sun.xml.internal.messaging.saaj.soap.StaxLazySourceBridge;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
 import com.sun.xml.internal.messaging.saaj.util.FastInfosetReflection;
+import com.sun.xml.internal.messaging.saaj.util.stax.LazyEnvelopeStaxReader;
 import com.sun.xml.internal.messaging.saaj.util.transform.EfficientStreamingTransformer;
+
+import com.sun.xml.internal.org.jvnet.staxex.util.DOMStreamReader;
+import com.sun.xml.internal.org.jvnet.staxex.util.XMLStreamReaderToXMLStreamWriter;
 
 /**
  * Our implementation of the SOAP envelope.
  *
  * @author Anil Vijendran (anil@sun.com)
  */
-public abstract class EnvelopeImpl extends ElementImpl implements Envelope {
+public abstract class EnvelopeImpl extends ElementImpl implements LazyEnvelope {
     protected HeaderImpl header;
     protected BodyImpl body;
     String omitXmlDecl = "yes";
@@ -103,11 +109,9 @@ public abstract class EnvelopeImpl extends ElementImpl implements Envelope {
         NameImpl bodyName = getBodyName(prefix);
 
         HeaderImpl header = null;
-        SOAPElement firstChild = null;
+        SOAPElement firstChild = (SOAPElement) getFirstChildElement();
 
-        Iterator eachChild = getChildElementNodes();
-        if (eachChild.hasNext()) {
-            firstChild = (SOAPElement) eachChild.next();
+        if (firstChild != null) {
             if (firstChild.getElementName().equals(headerName)) {
                 log.severe("SAAJ0120.impl.header.already.exists");
                 throw new SOAPExceptionImpl("Can't add a header when one is already present.");
@@ -254,6 +258,7 @@ public abstract class EnvelopeImpl extends ElementImpl implements Envelope {
 
     public void output(OutputStream out) throws IOException {
         try {
+//            materializeBody();
             Transformer transformer =
                 EfficientStreamingTransformer.newTransformer();
 
@@ -357,4 +362,77 @@ public abstract class EnvelopeImpl extends ElementImpl implements Envelope {
                                 + elementQName.getLocalPart() + " to "
                                 + newName.getLocalPart());
      }
+
+    @Override
+    public void setStaxBridge(StaxBridge bridge) throws SOAPException {
+        //set it on the body
+        ((BodyImpl) getBody()).setStaxBridge(bridge);
+    }
+
+    @Override
+    public StaxBridge getStaxBridge() throws SOAPException {
+        return ((BodyImpl) getBody()).getStaxBridge();
+    }
+
+    @Override
+    public XMLStreamReader getPayloadReader() throws SOAPException {
+        return ((BodyImpl) getBody()).getPayloadReader();
+    }
+
+    @Override
+    public void writeTo(final XMLStreamWriter writer) throws XMLStreamException, SOAPException {
+        StaxBridge readBridge = this.getStaxBridge();
+        if (readBridge != null && readBridge instanceof StaxLazySourceBridge) {
+//              StaxSoapWriteBridge writingBridge =  new StaxSoapWriteBridge(this);
+//              writingBridge.write(writer);
+                final String soapEnvNS = this.getNamespaceURI();
+                final DOMStreamReader reader = new DOMStreamReader(this);
+                XMLStreamReaderToXMLStreamWriter writingBridge =  new XMLStreamReaderToXMLStreamWriter();
+                writingBridge.bridge( new XMLStreamReaderToXMLStreamWriter.Breakpoint(reader, writer) {
+                        public boolean proceedAfterStartElement()  {
+                                if ("Body".equals(reader.getLocalName()) && soapEnvNS.equals(reader.getNamespaceURI()) ){
+                                        return false;
+                                } else
+                                        return true;
+                        }
+            });//bridgeToBodyStartTag
+            ((StaxLazySourceBridge)readBridge).writePayloadTo(writer);
+            writer.writeEndElement();//body
+            writer.writeEndElement();//env
+            writer.writeEndDocument();
+            writer.flush();
+        } else {
+                LazyEnvelopeStaxReader lazyEnvReader = new LazyEnvelopeStaxReader(this);
+                XMLStreamReaderToXMLStreamWriter writingBridge = new XMLStreamReaderToXMLStreamWriter();
+                writingBridge.bridge(lazyEnvReader, writer);
+//            writingBridge.bridge(new XMLStreamReaderToXMLStreamWriter.Breakpoint(lazyEnvReader, writer));
+        }
+        //Assume the staxBridge is exhausted now since we would have read the body reader
+        ((BodyImpl) getBody()).setPayloadStreamRead();
+    }
+
+    @Override
+    public QName getPayloadQName() throws SOAPException {
+        return ((BodyImpl) getBody()).getPayloadQName();
+    }
+
+    @Override
+    public String getPayloadAttributeValue(String localName) throws SOAPException {
+        return ((BodyImpl) getBody()).getPayloadAttributeValue(localName);
+    }
+
+    @Override
+    public String getPayloadAttributeValue(QName qName) throws SOAPException {
+        return ((BodyImpl) getBody()).getPayloadAttributeValue(qName);
+    }
+
+    @Override
+    public boolean isLazy() {
+        try {
+            return ((BodyImpl) getBody()).isLazy();
+        } catch (SOAPException e) {
+            return false;
+        }
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import sun.swing.UIAction;
 
 /**
  * The basic L&amp;F for a hierarchical data structure.
- * <p>
  *
  * @author Scott Violet
  * @author Shannon Hickey (drag and drop)
@@ -2916,6 +2915,7 @@ public class BasicTreeUI extends TreeUI
      * Will toggle the expandedness of a node, as well as potentially
      * incrementing the selection.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class TreeTraverseAction extends AbstractAction {
         /** Determines direction to traverse, 1 means expand, -1 means
           * collapse. */
@@ -2948,6 +2948,7 @@ public class BasicTreeUI extends TreeUI
 
     /** TreePageAction handles page up and page down events.
       */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class TreePageAction extends AbstractAction {
         /** Specifies the direction to adjust the selection by. */
         protected int         direction;
@@ -2983,6 +2984,7 @@ public class BasicTreeUI extends TreeUI
     /** TreeIncrementAction is used to handle up/down actions.  Selection
       * is moved up or down based on direction.
       */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class TreeIncrementAction extends AbstractAction  {
         /** Specifies the direction to adjust the selection by. */
         protected int         direction;
@@ -3020,6 +3022,7 @@ public class BasicTreeUI extends TreeUI
       * Scrolls either the first or last cell to be visible based on
       * direction.
       */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class TreeHomeAction extends AbstractAction {
         protected int            direction;
         /** Set to true if append to selection. */
@@ -3054,6 +3057,7 @@ public class BasicTreeUI extends TreeUI
     /**
       * For the first selected row expandedness will be toggled.
       */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class TreeToggleAction extends AbstractAction {
         public TreeToggleAction(String name) {
         }
@@ -3073,6 +3077,7 @@ public class BasicTreeUI extends TreeUI
     /**
      * ActionListener that invokes cancelEditing when action performed.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class TreeCancelEditingAction extends AbstractAction {
         public TreeCancelEditingAction(String name) {
         }
@@ -3185,6 +3190,7 @@ public class BasicTreeUI extends TreeUI
 
     private static final TransferHandler defaultTransferHandler = new TreeTransferHandler();
 
+    @SuppressWarnings("serial") // JDK-implementation class
     static class TreeTransferHandler extends TransferHandler implements UIResource, Comparator<TreePath> {
 
         private JTree tree;

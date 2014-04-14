@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +167,7 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
         fFrame.putClientProperty(CACHED_FRAME_ICON_KEY, null);
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class ScaledImageLabel extends JLabel {
         ScaledImageLabel() {
             super(null, null, CENTER);
@@ -226,6 +227,7 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class DockLabel extends JLabel {
         final static int NUB_HEIGHT = 7;
         final static int ROUND_ADDITIONAL_HEIGHT = 8;

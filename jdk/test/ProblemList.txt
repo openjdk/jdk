@@ -261,9 +261,19 @@ tools/launcher/FXLauncherTest.java                              linux-all
 
 ############################################################################
 
+# jdk_instrument
+
+# 8037082
+java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
+
+############################################################################
+
 # svc_tools
 
 # 8031482
 sun/tools/jcmd/TestJcmdSanity.java				windows-all
+
+# 8033104
+sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 
 ############################################################################

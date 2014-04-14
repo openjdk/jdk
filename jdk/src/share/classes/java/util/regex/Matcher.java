@@ -65,9 +65,10 @@ import java.util.Objects;
  * new strings whose contents can, if desired, be computed from the match
  * result.  The {@link #appendReplacement appendReplacement} and {@link
  * #appendTail appendTail} methods can be used in tandem in order to collect
- * the result into an existing string buffer, or the more convenient {@link
- * #replaceAll replaceAll} method can be used to create a string in which every
- * matching subsequence in the input sequence is replaced.
+ * the result into an existing string buffer or string builder. Alternatively,
+ * the more convenient {@link #replaceAll replaceAll} method can be used to
+ * create a string in which every matching subsequence in the input sequence
+ * is replaced.
  *
  * <p> The explicit state of a matcher includes the start and end indices of
  * the most recent successful match.  It also includes the start and end
@@ -792,15 +793,115 @@ public final class Matcher implements MatchResult {
      *          that does not exist in the pattern
      */
     public Matcher appendReplacement(StringBuffer sb, String replacement) {
-
         // If no match, return error
         if (first < 0)
             throw new IllegalStateException("No match available");
-
-        // Process substitution string to replace group references with groups
-        int cursor = 0;
         StringBuilder result = new StringBuilder();
+        appendExpandedReplacement(replacement, result);
+        // Append the intervening text
+        sb.append(text, lastAppendPosition, first);
+        // Append the match substitution
+        sb.append(result);
+        lastAppendPosition = last;
+        return this;
+    }
 
+    /**
+     * Implements a non-terminal append-and-replace step.
+     *
+     * <p> This method performs the following actions: </p>
+     *
+     * <ol>
+     *
+     *   <li><p> It reads characters from the input sequence, starting at the
+     *   append position, and appends them to the given string builder.  It
+     *   stops after reading the last character preceding the previous match,
+     *   that is, the character at index {@link
+     *   #start()}&nbsp;<tt>-</tt>&nbsp;<tt>1</tt>.  </p></li>
+     *
+     *   <li><p> It appends the given replacement string to the string builder.
+     *   </p></li>
+     *
+     *   <li><p> It sets the append position of this matcher to the index of
+     *   the last character matched, plus one, that is, to {@link #end()}.
+     *   </p></li>
+     *
+     * </ol>
+     *
+     * <p> The replacement string may contain references to subsequences
+     * captured during the previous match: Each occurrence of
+     * <tt>$</tt><i>g</i><tt></tt> will be replaced by the result of
+     * evaluating {@link #group(int) group}<tt>(</tt><i>g</i><tt>)</tt>.
+     * The first number after the <tt>$</tt> is always treated as part of
+     * the group reference. Subsequent numbers are incorporated into g if
+     * they would form a legal group reference. Only the numerals '0'
+     * through '9' are considered as potential components of the group
+     * reference. If the second group matched the string <tt>"foo"</tt>, for
+     * example, then passing the replacement string <tt>"$2bar"</tt> would
+     * cause <tt>"foobar"</tt> to be appended to the string builder. A dollar
+     * sign (<tt>$</tt>) may be included as a literal in the replacement
+     * string by preceding it with a backslash (<tt>\$</tt>).
+     *
+     * <p> Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in
+     * the replacement string may cause the results to be different than if it
+     * were being treated as a literal replacement string. Dollar signs may be
+     * treated as references to captured subsequences as described above, and
+     * backslashes are used to escape literal characters in the replacement
+     * string.
+     *
+     * <p> This method is intended to be used in a loop together with the
+     * {@link #appendTail appendTail} and {@link #find find} methods.  The
+     * following code, for example, writes <tt>one dog two dogs in the
+     * yard</tt> to the standard-output stream: </p>
+     *
+     * <blockquote><pre>
+     * Pattern p = Pattern.compile("cat");
+     * Matcher m = p.matcher("one cat two cats in the yard");
+     * StringBuilder sb = new StringBuilder();
+     * while (m.find()) {
+     *     m.appendReplacement(sb, "dog");
+     * }
+     * m.appendTail(sb);
+     * System.out.println(sb.toString());</pre></blockquote>
+     *
+     * @param  sb
+     *         The target string builder
+     * @param  replacement
+     *         The replacement string
+     * @return  This matcher
+     *
+     * @throws  IllegalStateException
+     *          If no match has yet been attempted,
+     *          or if the previous match operation failed
+     * @throws  IllegalArgumentException
+     *          If the replacement string refers to a named-capturing
+     *          group that does not exist in the pattern
+     * @throws  IndexOutOfBoundsException
+     *          If the replacement string refers to a capturing group
+     *          that does not exist in the pattern
+     * @since 1.9
+     */
+    public Matcher appendReplacement(StringBuilder sb, String replacement) {
+        // If no match, return error
+        if (first < 0)
+            throw new IllegalStateException("No match available");
+        StringBuilder result = new StringBuilder();
+        appendExpandedReplacement(replacement, result);
+        // Append the intervening text
+        sb.append(text, lastAppendPosition, first);
+        // Append the match substitution
+        sb.append(result);
+        lastAppendPosition = last;
+        return this;
+    }
+
+    /**
+     * Processes replacement string to replace group references with
+     * groups.
+     */
+    private StringBuilder appendExpandedReplacement(
+        String replacement, StringBuilder result) {
+        int cursor = 0;
         while (cursor < replacement.length()) {
             char nextChar = replacement.charAt(cursor);
             if (nextChar == '\\') {
@@ -852,8 +953,8 @@ public final class Matcher implements MatchResult {
                     cursor++;
                 } else {
                     // The first number is always a group
-                    refNum = (int)nextChar - '0';
-                    if ((refNum < 0)||(refNum > 9))
+                    refNum = nextChar - '0';
+                    if ((refNum < 0) || (refNum > 9))
                         throw new IllegalArgumentException(
                             "Illegal group reference");
                     cursor++;
@@ -864,7 +965,7 @@ public final class Matcher implements MatchResult {
                             break;
                         }
                         int nextDigit = replacement.charAt(cursor) - '0';
-                        if ((nextDigit < 0)||(nextDigit > 9)) { // not a number
+                        if ((nextDigit < 0) || (nextDigit > 9)) { // not a number
                             break;
                         }
                         int newRefNum = (refNum * 10) + nextDigit;
@@ -884,13 +985,7 @@ public final class Matcher implements MatchResult {
                 cursor++;
             }
         }
-        // Append the intervening text
-        sb.append(text, lastAppendPosition, first);
-        // Append the match substitution
-        sb.append(result);
-
-        lastAppendPosition = last;
-        return this;
+        return result;
     }
 
     /**
@@ -908,6 +1003,27 @@ public final class Matcher implements MatchResult {
      * @return  The target string buffer
      */
     public StringBuffer appendTail(StringBuffer sb) {
+        sb.append(text, lastAppendPosition, getTextLength());
+        return sb;
+    }
+
+    /**
+     * Implements a terminal append-and-replace step.
+     *
+     * <p> This method reads characters from the input sequence, starting at
+     * the append position, and appends them to the given string builder.  It is
+     * intended to be invoked after one or more invocations of the {@link
+     * #appendReplacement appendReplacement} method in order to copy the
+     * remainder of the input sequence.  </p>
+     *
+     * @param  sb
+     *         The target string builder
+     *
+     * @return  The target string builder
+     *
+     * @since 1.9
+     */
+    public StringBuilder appendTail(StringBuilder sb) {
         sb.append(text, lastAppendPosition, getTextLength());
         return sb;
     }
@@ -950,7 +1066,7 @@ public final class Matcher implements MatchResult {
         reset();
         boolean result = find();
         if (result) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             do {
                 appendReplacement(sb, replacement);
                 result = find();
@@ -1000,7 +1116,7 @@ public final class Matcher implements MatchResult {
         reset();
         if (!find())
             return text.toString();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         appendReplacement(sb, replacement);
         appendTail(sb);
         return sb.toString();

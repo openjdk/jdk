@@ -61,6 +61,8 @@ public interface StringConstants {
     static final String METHODHANDLE_TYPE = TYPE_METHODHANDLE.getInternalName();
     static final String OBJECT_TYPE = TYPE_OBJECT.getInternalName();
     static final String OBJECT_DESC = TYPE_OBJECT.getDescriptor();
+    static final String STRING_TYPE = TYPE_STRING.getInternalName();
+    static final String STRING_DESC = TYPE_STRING.getDescriptor();
     static final String OBJECT_ARRAY_DESC = Type.getDescriptor(Object[].class);
     static final String ARRAYLIST_TYPE = TYPE_ARRAYLIST.getInternalName();
     static final String COLLECTION_TYPE = TYPE_COLLECTION.getInternalName();
@@ -129,6 +131,7 @@ public interface StringConstants {
 
     // ScriptObject
     static final String SCRIPTOBJECT_TYPE = TYPE_SCRIPTOBJECT.getInternalName();
+    static final String SCRIPTOBJECT_DESC = TYPE_SCRIPTOBJECT.getDescriptor();
     static final String SCRIPTOBJECT_INIT_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_PROPERTYMAP);
 
     static final String GETTER_PREFIX = "G$";

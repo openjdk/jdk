@@ -114,7 +114,7 @@ public abstract class ControlFactory {
       * <p>
       * Note that a control factory
       * must be public and must have a public constructor that accepts no arguments.
-      * <p>
+      *
       * @param ctl The non-null control object containing the OID and BER data.
       * @param ctx The possibly null context in which the control is being created.
       * If null, no such information is available.

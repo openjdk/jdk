@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include <string.h>
 #include <malloc.h>
 
-void report_error()
+void report_error(char const * msg)
 {
   LPVOID lpMsgBuf;
   DWORD dw = GetLastError();
@@ -46,8 +46,8 @@ void report_error()
       NULL);
 
   fprintf(stderr,
-          "Could not start process!  Failed with error %d: %s\n",
-          dw, lpMsgBuf);
+          "%s  Failed with error %d: %s\n",
+          msg, dw, lpMsgBuf);
 
   LocalFree(lpMsgBuf);
 }
@@ -56,7 +56,7 @@ void report_error()
  * Test if pos points to /cygdrive/_/ where _ can
  * be any character.
  */
-int is_cygdrive_here(int pos, char *in, int len)
+int is_cygdrive_here(int pos, char const *in, int len)
 {
   // Length of /cygdrive/c/ is 12
   if (pos+12 > len) return 0;
@@ -81,16 +81,17 @@ int is_cygdrive_here(int pos, char *in, int len)
  * Works in place since drive letter is always
  * shorter than /cygdrive/
  */
-char *replace_cygdrive_cygwin(char *in)
+char *replace_cygdrive_cygwin(char const *in)
 {
-  int len = strlen(in);
-  char *out = malloc(len+1);
+  size_t len = strlen(in);
+  char *out = (char*) malloc(len+1);
   int i,j;
 
   if (len < 12) {
-    strcpy(out, in);
+    memmove(out, in, len + 1);
     return out;
   }
+
   for (i = 0, j = 0; i<len;) {
     if (is_cygdrive_here(i, in, len)) {
       out[j++] = in[i+10];
@@ -102,7 +103,7 @@ char *replace_cygdrive_cygwin(char *in)
       j++;
     }
   }
-  out[j] = 0;
+  out[j] = '\0';
   return out;
 }
 
@@ -110,7 +111,7 @@ void append(char **b, size_t *bl, size_t *u, char *add, size_t addlen)
 {
   while ( (addlen+*u+1) > *bl) {
     *bl *= 2;
-    *b = realloc(*b, *bl);
+    *b = (char*) realloc(*b, *bl);
   }
   memcpy(*b+*u, add, addlen);
   *u += addlen;
@@ -125,7 +126,7 @@ char *replace_substring(char *in, char *sub, char *rep)
   int in_len = strlen(in);
   int sub_len = strlen(sub);
   int rep_len = strlen(rep);
-  char *out = malloc(in_len - sub_len + rep_len + 1);
+  char *out = (char *) malloc(in_len - sub_len + rep_len + 1);
   char *p;
 
   if (!(p = strstr(in, sub))) {
@@ -145,7 +146,7 @@ char *replace_substring(char *in, char *sub, char *rep)
 char* msys_path_list; // @-separated list of paths prefix to look for
 char* msys_path_list_end; // Points to last \0 in msys_path_list.
 
-void setup_msys_path_list(char* argument)
+void setup_msys_path_list(char const * argument)
 {
   char* p;
   char* drive_letter_pos;
@@ -173,7 +174,7 @@ void setup_msys_path_list(char* argument)
   } while (p != NULL);
 }
 
-char *replace_cygdrive_msys(char *in)
+char *replace_cygdrive_msys(char const *in)
 {
   char* str;
   char* prefix;
@@ -195,12 +196,12 @@ char *replace_cygdrive_msys(char *in)
   return str;
 }
 
-char*(*replace_cygdrive)(char *in) = NULL;
+char*(*replace_cygdrive)(char const *in) = NULL;
 
 char *files_to_delete[1024];
 int num_files_to_delete = 0;
 
-char *fix_at_file(char *in)
+char *fix_at_file(char const *in)
 {
   char *tmpdir;
   char name[2048];
@@ -222,9 +223,13 @@ char *fix_at_file(char *in)
     exit(-1);
   }
 
-  tmpdir = getenv("TMP");
+  tmpdir = getenv("TEMP");
   if (tmpdir == NULL) {
+#if _WIN64
+    tmpdir = "c:/cygwin64/tmp";
+#else
     tmpdir = "c:/cygwin/tmp";
+#endif
   }
   _snprintf(name, sizeof(name), "%s\\atfile_XXXXXX", tmpdir);
 
@@ -240,7 +245,7 @@ char *fix_at_file(char *in)
     exit(-1);
   }
 
-  buffer = malloc(buflen);
+  buffer = (char*) malloc(buflen);
   while((blocklen = fread(block,1,sizeof(block),atin)) > 0) {
     append(&buffer, &buflen, &used, block, blocklen);
   }
@@ -257,69 +262,214 @@ char *fix_at_file(char *in)
   fclose(atout);
   free(fixed);
   free(buffer);
-  files_to_delete[num_files_to_delete] = malloc(strlen(name)+1);
+  files_to_delete[num_files_to_delete] = (char*) malloc(strlen(name)+1);
   strcpy(files_to_delete[num_files_to_delete], name);
   num_files_to_delete++;
-  atname = malloc(strlen(name)+2);
+  atname = (char*) malloc(strlen(name)+2);
   atname[0] = '@';
   strcpy(atname+1, name);
   return atname;
 }
 
-int main(int argc, char **argv)
+// given an argument, convert it to the windows command line safe quoted version
+// using rules from:
+// http://blogs.msdn.com/b/twistylittlepassagesallalike/archive/2011/04/23/everyone-quotes-arguments-the-wrong-way.aspx
+// caller is responsible for freeing both input and output.
+char * quote_arg(char const * in_arg) {
+  char *quoted = NULL;
+  char *current = quoted;
+  int pass;
+
+  if(strpbrk(in_arg, " \t\n\v\r\\\"") == NULL) {
+     return _strdup(in_arg);
+  }
+
+  // process the arg twice. Once to calculate the size and then to copy it.
+  for(pass=1; pass<=2; pass++) {
+    char const *arg = in_arg;
+
+    // initial "
+    if(pass == 2) {
+      *current = '\"';
+    }
+    current++;
+
+    // process string to be quoted until NUL
+    do {
+      int escapes = 0;
+
+      while (*arg == '\\') {
+        // count escapes.
+        escapes++;
+        arg++;
+      }
+
+      if (*arg == '\0') {
+         // escape the escapes before final "
+         escapes *= 2;
+      } else if (*arg == '"') {
+        // escape the escapes and the "
+        escapes = escapes * 2 + 1;
+      } else {
+         // escapes aren't special, just echo them.
+      }
+
+      // emit some escapes
+      while (escapes > 0) {
+        if (pass == 2) {
+          *current = '\\';
+        }
+        current++;
+        escapes--;
+      }
+
+      // and the current char
+      if (pass == 2) {
+        *current = *arg;
+      }
+      current++;
+    } while( *arg++ != '\0');
+
+    // allocate the buffer
+    if (pass == 1) {
+      size_t alloc = (size_t) (current - quoted + (ptrdiff_t) 2);
+      current = quoted = (char*) calloc(alloc, sizeof(char));
+    }
+  }
+
+  // final " and \0
+  *(current - 1) = '"';
+  *current = '\0';
+
+  return quoted;
+}
+
+int main(int argc, char const ** argv)
 {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
     unsigned short rc;
 
-    char *new_at_file;
-    char *old_at_file;
     char *line;
-    int i;
+    char *current;
+    int i, cmd;
     DWORD exitCode;
 
-    if (argc<3 || argv[1][0] != '-' || (argv[1][1] != 'c' && argv[1][1] != 'm')) {
-        fprintf(stderr, "Usage: fixpath -c|m<path@path@...> /cygdrive/c/WINDOWS/notepad.exe /cygdrive/c/x/test.txt\n");
+    if (argc<2 || argv[1][0] != '-' || (argv[1][1] != 'c' && argv[1][1] != 'm')) {
+        fprintf(stderr, "Usage: fixpath -c|m<path@path@...> /cygdrive/c/WINDOWS/notepad.exe [/cygdrive/c/x/test.txt|@/cygdrive/c/x/atfile]\n");
         exit(0);
     }
 
     if (getenv("DEBUG_FIXPATH") != NULL) {
-      fprintf(stderr, "fixpath input line >%s<\n", strstr(GetCommandLine(), argv[1]));
+      char const * cmdline = GetCommandLine();
+      fprintf(stderr, "fixpath input line >%s<\n", strstr( cmdline , argv[1]));
     }
 
     if (argv[1][1] == 'c' && argv[1][2] == '\0') {
       if (getenv("DEBUG_FIXPATH") != NULL) {
-        fprintf(stderr, "using cygwin mode\n");
+        fprintf(stderr, "fixpath using cygwin mode\n");
       }
       replace_cygdrive = replace_cygdrive_cygwin;
     } else if (argv[1][1] == 'm') {
       if (getenv("DEBUG_FIXPATH") != NULL) {
-        fprintf(stderr, "using msys mode, with path list: %s\n", &argv[1][2]);
+        fprintf(stderr, "fixpath using msys mode, with path list: %s\n", &argv[1][2]);
       }
       setup_msys_path_list(argv[1]);
       replace_cygdrive = replace_cygdrive_msys;
     } else {
-      fprintf(stderr, "Unknown mode: %s\n", argv[1]);
+      fprintf(stderr, "fixpath Unknown mode: %s\n", argv[1]);
       exit(-1);
     }
-    line = replace_cygdrive(strstr(GetCommandLine(), argv[2]));
 
-    for (i=1; i<argc; ++i) {
-       if (argv[i][0] == '@') {
-          // Found at-file! Fix it!
-          old_at_file = replace_cygdrive(argv[i]);
-          new_at_file = fix_at_file(old_at_file);
-          line = replace_substring(line, old_at_file, new_at_file);
-       }
+    i = 2;
+
+    // handle assignments
+    while (i < argc) {
+      char const * assignment = strchr(argv[i], '=');
+      if (assignment != NULL && assignment != argv[i]) {
+        size_t var_len = (size_t) (assignment - argv[i] + (ptrdiff_t) 1);
+        char *var = (char *) calloc(var_len, sizeof(char));
+        char *val = replace_cygdrive(assignment + 1);
+        memmove(var, argv[i], var_len);
+        var[var_len - 1] = '\0';
+        strupr(var);
+
+        if (getenv("DEBUG_FIXPATH") != NULL) {
+          fprintf(stderr, "fixpath setting var >%s< to >%s<\n", var, val);
+        }
+
+        rc = SetEnvironmentVariable(var, val);
+        if(!rc) {
+          // Could not set var for some reason.  Try to report why.
+          const int msg_len = 80 + var_len + strlen(val);
+          char * msg = (char *) alloca(msg_len);
+          _snprintf_s(msg, msg_len, _TRUNCATE, "Could not set environment variable [%s=%s]", var, val);
+          report_error(msg);
+          exit(1);
+        }
+        free(var);
+        free(val);
+      } else {
+        // no more assignments;
+        break;
+      }
+      i++;
     }
+
+    // remember index of the command
+    cmd = i;
+
+    // handle command and it's args.
+    while (i < argc) {
+      char const *replaced = replace_cygdrive(argv[i]);
+      if(replaced[0] == '@') {
+        // Found at-file! Fix it!
+        replaced = fix_at_file(replaced);
+      }
+      argv[i] = quote_arg(replaced);
+      i++;
+    }
+
+    // determine the length of the line
+    line = NULL;
+    // args
+    for(i = cmd; i < argc; i++) {
+      line += (ptrdiff_t) strlen(argv[i]);
+    }
+    // spaces and null
+    line += (ptrdiff_t) (argc - cmd + 1);
+    // allocate
+    line = (char*) calloc(line - (char*) NULL, sizeof(char));
+
+    // copy in args.
+    current = line;
+    for(i = cmd; i < argc; i++) {
+      ptrdiff_t len = strlen(argv[i]);
+      if (i != cmd) {
+        *current++ = ' ';
+      }
+      memmove(current, argv[i], len);
+      current += len;
+    }
+    *current = '\0';
 
     if (getenv("DEBUG_FIXPATH") != NULL) {
       fprintf(stderr, "fixpath converted line >%s<\n", line);
     }
 
+    if(cmd == argc) {
+       if (getenv("DEBUG_FIXPATH") != NULL) {
+         fprintf(stderr, "fixpath no command provided!\n");
+       }
+       exit(0);
+    }
+
     ZeroMemory(&si,sizeof(si));
     si.cb=sizeof(si);
     ZeroMemory(&pi,sizeof(pi));
+
+    fflush(stderr);
+    fflush(stdout);
 
     rc = CreateProcess(NULL,
                        line,
@@ -327,14 +477,14 @@ int main(int argc, char **argv)
                        0,
                        TRUE,
                        0,
-                       0,
-                       0,
+                       NULL,
+                       NULL,
                        &si,
                        &pi);
     if(!rc) {
       // Could not start process for some reason.  Try to report why:
-      report_error();
-      exit(rc);
+      report_error("Could not start process!");
+      exit(126);
     }
 
     WaitForSingleObject(pi.hProcess,INFINITE);
@@ -342,13 +492,19 @@ int main(int argc, char **argv)
 
     if (getenv("DEBUG_FIXPATH") != NULL) {
       for (i=0; i<num_files_to_delete; ++i) {
-        fprintf(stderr, "Not deleting temporary fixpath file %s\n",
+        fprintf(stderr, "fixpath Not deleting temporary file %s\n",
                 files_to_delete[i]);
       }
-    }
-    else {
+    } else {
       for (i=0; i<num_files_to_delete; ++i) {
         remove(files_to_delete[i]);
+      }
+    }
+
+    if (exitCode != 0) {
+      if (getenv("DEBUG_FIXPATH") != NULL) {
+        fprintf(stderr, "fixpath exit code %d\n",
+                exitCode);
       }
     }
 
