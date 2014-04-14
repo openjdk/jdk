@@ -76,10 +76,6 @@ JNF_COCOA_ENTER(env);
     }];
 JNF_COCOA_EXIT(env);
 
-    if (dragSource) {
-        CFRetain(dragSource); // GC
-        [dragSource release];
-    }
     return ptr_to_jlong(dragSource);
 }
 

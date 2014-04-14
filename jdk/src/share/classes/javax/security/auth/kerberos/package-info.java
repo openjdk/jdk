@@ -48,6 +48,12 @@
  * {@code <java-home>/lib/security} and failing that, in an OS-specific
  * location.<p>
  *
+ * The {@code krb5.conf} file is formatted in the Windows INI file style,
+ * which contains a series of relations grouped into different sections.
+ * Each relation contains a key and a value, the value can be an arbitrary
+ * string or a boolean value. A boolean value can be one of "true", "false",
+ * "yes", or "no", case-insensitive.<p>
+ *
  * @since JDK1.4
  */
 package javax.security.auth.kerberos;

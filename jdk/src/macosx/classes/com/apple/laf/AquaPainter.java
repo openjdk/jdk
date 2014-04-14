@@ -38,6 +38,7 @@ import sun.java2d.*;
 import sun.print.*;
 import apple.laf.*;
 import apple.laf.JRSUIUtils.NineSliceMetricsProvider;
+import sun.awt.image.ImageCache;
 
 abstract class AquaPainter <T extends JRSUIState> {
     static <T extends JRSUIState> AquaPainter<T> create(final T state) {
@@ -155,10 +156,15 @@ abstract class AquaPainter <T extends JRSUIState> {
             final ImageCache cache = ImageCache.getInstance();
             final int imgW = bounds.width * scale;
             final int imgH = bounds.height * scale;
-            BufferedImage img = (BufferedImage) cache.getImage(config, imgW, imgH, scale, controlState);
+            AquaPixelsKey key = new AquaPixelsKey(config,
+                    imgW, imgH, scale, controlState);
+            BufferedImage img = (BufferedImage) cache.getImage(key);
             if (img == null) {
                 img = new BufferedImage(imgW, imgH, BufferedImage.TYPE_INT_ARGB_PRE);
-                cache.setImage(img, config, imgW, imgH, scale, controlState);
+                if (!controlState.is(JRSUIConstants.Animating.YES)) {
+                    cache.setImage(key, img);
+                }
+
                 final WritableRaster raster = img.getRaster();
                 final DataBufferInt buffer = (DataBufferInt) raster.getDataBuffer();
 
@@ -169,6 +175,59 @@ abstract class AquaPainter <T extends JRSUIState> {
             }
 
             g.drawImage(img, bounds.x, bounds.y, bounds.width, bounds.height, null);
+        }
+    }
+
+    private static class AquaPixelsKey implements ImageCache.PixelsKey {
+
+        private final int pixelCount;
+        private final int hash;
+
+        // key parts
+        private final GraphicsConfiguration config;
+        private final int w;
+        private final int h;
+        private final int scale;
+        private final JRSUIState state;
+
+        AquaPixelsKey(final GraphicsConfiguration config,
+                final int w, final int h, final int scale,
+                final JRSUIState state) {
+            this.pixelCount = w * h;
+            this.config = config;
+            this.w = w;
+            this.h = h;
+            this.scale = scale;
+            this.state = state;
+            this.hash = hash();
+        }
+
+        public int getPixelCount() {
+            return pixelCount;
+        }
+
+        private int hash() {
+            int hash = config != null ? config.hashCode() : 0;
+            hash = 31 * hash + w;
+            hash = 31 * hash + h;
+            hash = 31 * hash + scale;
+            hash = 31 * hash + state.hashCode();
+            return hash;
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof AquaPixelsKey) {
+                AquaPixelsKey key = (AquaPixelsKey) obj;
+                return config == key.config && w == key.w && h == key.h
+                        && scale == key.scale && state.equals(key.state);
+            }
+            return false;
         }
     }
 

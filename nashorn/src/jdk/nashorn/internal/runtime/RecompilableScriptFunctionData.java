@@ -27,14 +27,15 @@ package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Map;
 import jdk.internal.dynalink.support.NameCodec;
-
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.FunctionSignature;
@@ -43,6 +44,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
+import jdk.nashorn.internal.scripts.JS;
 
 /**
  * This is a subclass that represents a script function that may be regenerated,
@@ -50,13 +52,19 @@ import jdk.nashorn.internal.parser.TokenType;
  * The common denominator is that it can get new invokers during its lifespan,
  * unlike {@code FinalScriptFunctionData}
  */
-public final class RecompilableScriptFunctionData extends ScriptFunctionData {
+public final class RecompilableScriptFunctionData extends ScriptFunctionData implements Serializable {
 
     /** FunctionNode with the code for this ScriptFunction */
-    private FunctionNode functionNode;
+    private transient FunctionNode functionNode;
 
     /** Source from which FunctionNode was parsed. */
-    private final Source source;
+    private transient Source source;
+
+    /** The line number where this function begins. */
+    private final int lineNumber;
+
+    /** Allows us to retrieve the method handle for this function once the code is compiled */
+    private MethodLocator methodLocator;
 
     /** Token of this function within the source. */
     private final long token;
@@ -65,13 +73,13 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     private final PropertyMap allocatorMap;
 
     /** Code installer used for all further recompilation/specialization of this ScriptFunction */
-    private CodeInstaller<ScriptEnvironment> installer;
+    private transient CodeInstaller<ScriptEnvironment> installer;
 
     /** Name of class where allocator function resides */
     private final String allocatorClassName;
 
     /** lazily generated allocator */
-    private MethodHandle allocator;
+    private transient MethodHandle allocator;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
@@ -79,7 +87,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
      * Used for specialization based on runtime arguments. Whenever we specialize on
      * callsite parameter types at runtime, we need to use a parameter type guard to
      * ensure that the specialized version of the script function continues to be
-     * applicable for a particular callsite *
+     * applicable for a particular callsite.
      */
     private static final MethodHandle PARAM_TYPE_GUARD = findOwnMH("paramTypeGuard", boolean.class, Type[].class,  Object[].class);
 
@@ -88,9 +96,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
      * (or java.lang.Number instance) to specialize the parameter to an integer, if the
      * parameter in question can be represented as one. The double typically only exists
      * because the compiler doesn't know any better than "a number type" and conservatively
-     * picks doubles when it can't prove that an integer addition wouldn't overflow
+     * picks doubles when it can't prove that an integer addition wouldn't overflow.
      */
     private static final MethodHandle ENSURE_INT = findOwnMH("ensureInt", int.class, Object.class);
+
+    private static final long serialVersionUID = 4914839316174633726L;
 
     /**
      * Constructor - public as scripts use it
@@ -104,13 +114,16 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         super(functionName(functionNode),
               functionNode.getParameters().size(),
               getFlags(functionNode));
-
         this.functionNode       = functionNode;
         this.source             = functionNode.getSource();
+        this.lineNumber         = functionNode.getLineNumber();
         this.token              = tokenFor(functionNode);
         this.installer          = installer;
         this.allocatorClassName = allocatorClassName;
         this.allocatorMap       = allocatorMap;
+        if (!functionNode.isLazy()) {
+            methodLocator = new MethodLocator(functionNode);
+        }
     }
 
     @Override
@@ -122,16 +135,19 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return "function " + (name == null ? "" : name) + "() { [native code] }";
     }
 
+    public void setCodeAndSource(final Map<String, Class<?>> code, final Source source) {
+        this.source = source;
+        if (methodLocator != null) {
+            methodLocator.setClass(code.get(methodLocator.getClassName()));
+        }
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
 
         if (source != null) {
-            sb.append(source.getName());
-            if (functionNode != null) {
-                sb.append(':').append(functionNode.getLineNumber());
-            }
-            sb.append(' ');
+            sb.append(source.getName()).append(':').append(lineNumber).append(' ');
         }
 
         return sb.toString() + super.toString();
@@ -204,7 +220,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
             functionNode = compiler.compile(functionNode);
             assert !functionNode.isLazy();
             compiler.install(functionNode);
+            methodLocator = new MethodLocator(functionNode);
             flags = getFlags(functionNode);
+        }
+
+        if (functionNode != null) {
+            methodLocator.setClass(functionNode.getCompileUnit().getCode());
         }
     }
 
@@ -221,12 +242,13 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
          * eager compilation or from running a lazy compile on the lines above
          */
 
-        assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " " + functionNode.getState() + " " + Debug.id(functionNode);
+        assert functionNode == null || functionNode.hasState(CompilationState.EMITTED) :
+                    functionNode.getName() + " " + functionNode.getState() + " " + Debug.id(functionNode);
 
         // code exists - look it up and add it into the automatically sorted invoker list
         addCode(functionNode);
 
-        if (! functionNode.canSpecialize()) {
+        if (functionNode != null && !functionNode.canSpecialize()) {
             // allow GC to claim IR stuff that is not needed anymore
             functionNode = null;
             installer = null;
@@ -238,13 +260,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     private MethodHandle addCode(final FunctionNode fn, final MethodType runtimeType, final MethodHandle guard, final MethodHandle fallback) {
-        final MethodType targetType = new FunctionSignature(fn).getMethodType();
-        MethodHandle target =
-            MH.findStatic(
-                    LOOKUP,
-                    fn.getCompileUnit().getCode(),
-                    fn.getName(),
-                    targetType);
+        assert methodLocator != null;
+        MethodHandle target = methodLocator.getMethodHandle();
+        final MethodType targetType = methodLocator.getMethodType();
 
         /*
          * For any integer argument. a double that is representable as an integer is OK.
@@ -424,7 +442,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
         Compiler.LOG.info("Callsite specialized ", name, " runtimeType=", runtimeType, " parameters=", snapshot.getParameters(), " args=", Arrays.asList(args));
 
-        assert snapshot != null;
         assert snapshot != functionNode;
 
         final Compiler compiler = new Compiler(installer);
@@ -448,6 +465,46 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
         return MH.findStatic(MethodHandles.lookup(), RecompilableScriptFunctionData.class, name, MH.type(rtype, types));
+    }
+
+    /**
+     * Helper class that allows us to retrieve the method handle for this function once it has been generated.
+     */
+    private static class MethodLocator implements Serializable {
+        private transient Class<?> clazz;
+        private final String className;
+        private final String methodName;
+        private final MethodType methodType;
+
+        private static final long serialVersionUID = -5420835725902966692L;
+
+        MethodLocator(final FunctionNode functionNode) {
+            this.className  = functionNode.getCompileUnit().getUnitClassName();
+            this.methodName = functionNode.getName();
+            this.methodType = new FunctionSignature(functionNode).getMethodType();
+
+            assert className != null;
+            assert methodName != null;
+        }
+
+        void setClass(final Class<?> clazz) {
+            if (!JS.class.isAssignableFrom(clazz)) {
+                throw new IllegalArgumentException();
+            }
+            this.clazz = clazz;
+        }
+
+        String getClassName() {
+            return className;
+        }
+
+        MethodType getMethodType() {
+            return methodType;
+        }
+
+        MethodHandle getMethodHandle() {
+            return MH.findStatic(LOOKUP, clazz, methodName, methodType);
+        }
     }
 
 }

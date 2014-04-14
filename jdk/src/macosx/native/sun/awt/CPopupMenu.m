@@ -66,8 +66,6 @@ JNF_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         aCPopupMenu = [[CPopupMenu alloc] initWithPeer:cPeerObjGlobal];
-        CFRetain(aCPopupMenu);
-        [aCPopupMenu release];
     }];
 
 JNF_COCOA_EXIT(env);

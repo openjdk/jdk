@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.xml.internal.ws.client.sei;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.SOAPVersion;
-import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
 import com.sun.xml.internal.ws.api.client.WSPortInfo;
 import com.sun.xml.internal.ws.api.databinding.Databinding;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
@@ -167,8 +166,7 @@ public final class SEIStub extends Stub implements InvocationHandler {
         if (proxy == null || !Proxy.isProxyClass(proxy.getClass())) {
             throw new IllegalStateException("Passed object is not proxy!");
         }
-        Class<?> declaringClass = method.getDeclaringClass();
-        if (method == null || declaringClass == null
+        if (method == null || method.getDeclaringClass() == null
                 || Modifier.isStatic(method.getModifiers())) {
             throw new IllegalStateException("Invoking static method is not allowed!");
         }

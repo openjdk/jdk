@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -684,7 +684,7 @@ public class SynthTreeUI extends BasicTreeUI
         return super.getRowX(row, depth) + padding;
     }
 
-
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class SynthTreeCellRenderer extends DefaultTreeCellRenderer
                                implements UIResource {
         SynthTreeCellRenderer() {
@@ -762,6 +762,7 @@ public class SynthTreeUI extends BasicTreeUI
 
         @Override
         protected TreeCellEditor createTreeCellEditor() {
+            @SuppressWarnings("serial") // anonymous class
             JTextField tf = new JTextField() {
                 @Override
                 public String getName() {

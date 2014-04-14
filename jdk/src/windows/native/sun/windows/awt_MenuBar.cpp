@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,9 +268,11 @@ Java_java_awt_MenuBar_initIDs(JNIEnv *env, jclass cls)
     TRY;
 
     AwtMenuBar::getMenuCountMID = env->GetMethodID(cls, "getMenuCountImpl", "()I");
+    DASSERT(AwtMenuBar::getMenuCountMID != NULL);
+    CHECK_NULL(AwtMenuBar::getMenuCountMID);
+
     AwtMenuBar::getMenuMID = env->GetMethodID(cls, "getMenuImpl",
                                               "(I)Ljava/awt/Menu;");
-    DASSERT(AwtMenuBar::getMenuCountMID != NULL);
     DASSERT(AwtMenuBar::getMenuMID != NULL);
 
     CATCH_BAD_ALLOC;

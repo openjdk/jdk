@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,6 +528,7 @@ public class AquaKeyBindings {
     }
 
     // extracted and adapted from DefaultEditorKit in 1.6
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static abstract class DeleteWordAction extends TextAction {
         public DeleteWordAction(final String name) { super(name); }
 
@@ -565,6 +566,7 @@ public class AquaKeyBindings {
     final TextAction pageUpMultilineAction = new AquaMultilineAction(pageUpMultiline, DefaultEditorKit.pageUpAction, DefaultEditorKit.beginAction);
     final TextAction pageDownMultilineAction = new AquaMultilineAction(pageDownMultiline, DefaultEditorKit.pageDownAction, DefaultEditorKit.endAction);
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class AquaMultilineAction extends TextAction {
         final String targetActionName;
         final String proxyActionName;

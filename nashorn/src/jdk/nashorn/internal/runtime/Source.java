@@ -39,6 +39,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Objects;
 import jdk.nashorn.internal.parser.Token;
@@ -70,6 +72,9 @@ public final class Source {
 
     /** Cached hash code */
     private int hash;
+
+    /** Message digest */
+    private byte[] digest;
 
     /** Source URL if available */
     private final URL url;
@@ -414,6 +419,40 @@ public final class Source {
      */
     public static char[] readFully(final URL url, final Charset cs) throws IOException {
         return readFully(url.openStream(), cs);
+    }
+
+    /**
+     * Get a message digest for this source.
+     *
+     * @return a message digest for this source
+     */
+    public synchronized byte[] getDigest() {
+        if (digest == null) {
+
+            final byte[] bytes = new byte[content.length * 2];
+
+            for (int i = 0; i < content.length; i++) {
+                bytes[i * 2]     = (byte)  (content[i] & 0x00ff);
+                bytes[i * 2 + 1] = (byte) ((content[i] & 0xff00) >> 8);
+            }
+
+            try {
+                final MessageDigest md = MessageDigest.getInstance("SHA-1");
+                if (name != null) {
+                    md.update(name.getBytes(StandardCharsets.UTF_8));
+                }
+                if (base != null) {
+                    md.update(base.getBytes(StandardCharsets.UTF_8));
+                }
+                if (url != null) {
+                    md.update(url.toString().getBytes(StandardCharsets.UTF_8));
+                }
+                digest = md.digest(bytes);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return digest;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -501,6 +501,7 @@ public class XTrayIconPeer implements TrayIconPeer,
     // Special embedded frame for tray icon
     // ***************************************
 
+    @SuppressWarnings("serial") // JDK-implementation class
     private static class XTrayIconEmbeddedFrame extends XEmbeddedFrame {
         public XTrayIconEmbeddedFrame(){
             super(XToolkit.getDefaultRootWindow(), true, true);
@@ -527,6 +528,7 @@ public class XTrayIconPeer implements TrayIconPeer,
     // Classes for painting an image on canvas
     // ***************************************
 
+    @SuppressWarnings("serial") // JDK-implementation class
     static class TrayIconCanvas extends IconCanvas {
         TrayIcon target;
         boolean autosize;
@@ -548,6 +550,7 @@ public class XTrayIconPeer implements TrayIconPeer,
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     public static class IconCanvas extends Canvas {
         volatile Image image;
         IconObserver observer;

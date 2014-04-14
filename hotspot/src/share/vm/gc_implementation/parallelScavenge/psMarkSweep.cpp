@@ -184,7 +184,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     size_t prev_used = heap->used();
 
     // Capture metadata size before collection for sizing.
-    size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
+    size_t metadata_prev_used = MetaspaceAux::used_bytes();
 
     // For PrintGCDetails
     size_t old_gen_prev_used = old_gen->used_in_bytes();

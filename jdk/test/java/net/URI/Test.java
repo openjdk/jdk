@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1367,6 +1367,17 @@ public class Test {
         cmp0(u, v, true);
     }
 
+    static void eq(String expected, String actual) {
+        if (expected == null && actual == null) {
+            return;
+        }
+        if (expected != null && expected.equals(actual)) {
+            return;
+        }
+        throw new AssertionError(String.format(
+                "Strings are not equal: '%s', '%s'", expected, actual));
+    }
+
     static void eqeq(URI u, URI v) {
         testCount++;
         if (u != v)
@@ -1588,7 +1599,12 @@ public class Test {
     // miscellaneous bugs/rfes that don't fit in with the test framework
 
     static void bugs() {
-        // 6339649 - include detail message from nested exception
+        b6339649();
+        b8037396();
+    }
+
+    // 6339649 - include detail message from nested exception
+    private static void b6339649() {
         try {
             URI uri = URI.create("http://nowhere.net/should not be permitted");
         } catch (IllegalArgumentException e) {
@@ -1596,6 +1612,39 @@ public class Test {
                 throw new RuntimeException ("No detail message");
             }
         }
+    }
+
+    private static void b8037396() {
+
+        // primary checks:
+
+        URI u;
+        try {
+            u = new URI("http", "example.org", "/[a b]", "[a b]", "[a b]");
+        } catch (URISyntaxException e) {
+            throw new AssertionError("shouldn't ever happen", e);
+        }
+        eq("/[a b]", u.getPath());
+        eq("[a b]", u.getQuery());
+        eq("[a b]", u.getFragment());
+
+        // additional checks:
+        //  *   '%' symbols are still decoded outside square brackets
+        //  *   the getRawXXX() functionality left intact
+
+        try {
+            u = new URI("http", "example.org", "/a b[c d]", "a b[c d]", "a b[c d]");
+        } catch (URISyntaxException e) {
+            throw new AssertionError("shouldn't ever happen", e);
+        }
+
+        eq("/a b[c d]", u.getPath());
+        eq("a b[c d]", u.getQuery());
+        eq("a b[c d]", u.getFragment());
+
+        eq("/a%20b%5Bc%20d%5D", u.getRawPath());
+        eq("a%20b[c%20d]", u.getRawQuery());
+        eq("a%20b[c%20d]", u.getRawFragment());
     }
 
     public static void main(String[] args) throws Exception {

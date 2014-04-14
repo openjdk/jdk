@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,6 +643,7 @@ HRESULT __stdcall  AwtDragSource::QueryContinueDrag(BOOL fEscapeKeyPressed, DWOR
          m_lastmods == modifiers) {//cannot move before cursor change
         call_dSCmouseMoved(env, m_peer,
                            m_actions, modifiers, dragPoint.x, dragPoint.y);
+        JNU_CHECK_EXCEPTION_RETURN(env, E_UNEXPECTED);
         m_dragPoint = dragPoint;
     }
 
@@ -977,6 +978,10 @@ HRESULT __stdcall AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
     if ((matchedFormatEtc.tymed & TYMED_ISTREAM) != 0) {
         jboolean isCopy;
         jbyte *bBytes = env->GetByteArrayElements(bytes, &isCopy);
+        if (bBytes == NULL) {
+            env->PopLocalFrame(NULL);
+            return E_UNEXPECTED;
+        }
 
         ULONG act;
         HRESULT res = pmedium->pstm->Write((const void *)bBytes, (ULONG)nBytes,

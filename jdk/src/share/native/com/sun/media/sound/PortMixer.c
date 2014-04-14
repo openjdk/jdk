@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 
 #include <jni.h>
+#include <jni_util.h>
 #include "SoundDefs.h"
 #include "Ports.h"
 #include "Utilities.h"
@@ -170,6 +171,7 @@ typedef struct tag_ControlCreatorJNI {
 void* PORT_NewBooleanControl(void* creatorV, void* controlID, char* type) {
     ControlCreatorJNI* creator = (ControlCreatorJNI*) creatorV;
     jobject ctrl = NULL;
+    jstring typeString;
 
 #ifdef USE_TRACE
     if (((UINT_PTR) type) <= CONTROL_TYPE_MAX) {
@@ -199,8 +201,11 @@ void* PORT_NewBooleanControl(void* creatorV, void* controlID, char* type) {
         type = "Select";
     }
 
-    ctrl = (*creator->env)->NewObject(creator->env, creator->boolCtrlClass, creator->boolCtrlConstructor,
-        (jlong) (UINT_PTR) controlID, (*creator->env)->NewStringUTF(creator->env, type));
+    typeString = (*creator->env)->NewStringUTF(creator->env, type);
+    CHECK_NULL_RETURN(typeString, (void*) ctrl);
+    ctrl = (*creator->env)->NewObject(creator->env, creator->boolCtrlClass,
+                                      creator->boolCtrlConstructor,
+                                      (jlong) (UINT_PTR) controlID, typeString);
     if (!ctrl) {
         ERROR0("PORT_NewBooleanControl: ctrl is NULL\n");
     }
@@ -216,6 +221,7 @@ void* PORT_NewCompoundControl(void* creatorV, char* type, void** controls, int c
     jobject ctrl = NULL;
     jobjectArray controlArray;
     int i;
+    jstring typeString;
 
     TRACE2("PORT_NewCompoundControl: creating '%s' with %d controls\n", type, controlCount);
     if (!creator->compCtrlClass) {
@@ -250,8 +256,11 @@ void* PORT_NewCompoundControl(void* creatorV, char* type, void** controls, int c
         (*creator->env)->SetObjectArrayElement(creator->env, controlArray, i, (jobject) controls[i]);
     }
     TRACE0("PORT_NewCompoundControl: creating compound control\n");
-    ctrl = (*creator->env)->NewObject(creator->env, creator->compCtrlClass, creator->compCtrlConstructor,
-              (*creator->env)->NewStringUTF(creator->env, type), controlArray);
+    typeString = (*creator->env)->NewStringUTF(creator->env, type);
+    CHECK_NULL_RETURN(typeString, (void*) ctrl);
+    ctrl = (*creator->env)->NewObject(creator->env, creator->compCtrlClass,
+                                      creator->compCtrlConstructor,
+                                      typeString, controlArray);
     if (!ctrl) {
         ERROR0("PORT_NewCompoundControl: ctrl is NULL\n");
     }
@@ -266,6 +275,8 @@ void* PORT_NewFloatControl(void* creatorV, void* controlID, char* type,
                            float min, float max, float precision, char* units) {
     ControlCreatorJNI* creator = (ControlCreatorJNI*) creatorV;
     jobject ctrl = NULL;
+    jstring unitsString;
+    jstring typeString;
 
 #ifdef USE_TRACE
     if (((UINT_PTR) type) <= CONTROL_TYPE_MAX) {
@@ -294,18 +305,24 @@ void* PORT_NewFloatControl(void* creatorV, void* controlID, char* type,
             return NULL;
         }
     }
+    unitsString = (*creator->env)->NewStringUTF(creator->env, units);
+    CHECK_NULL_RETURN(unitsString, (void*) ctrl);
     if (((UINT_PTR) type) <= CONTROL_TYPE_MAX) {
         // constructor with int parameter
         TRACE1("PORT_NewFloatControl: calling constructor2 with type %d\n", (int) (UINT_PTR) type);
-        ctrl = (*creator->env)->NewObject(creator->env, creator->floatCtrlClass, creator->floatCtrlConstructor2,
-                  (jlong) (UINT_PTR) controlID, (jint) (UINT_PTR) type,
-                  min, max, precision, (*creator->env)->NewStringUTF(creator->env, units));
+        ctrl = (*creator->env)->NewObject(creator->env, creator->floatCtrlClass,
+                                          creator->floatCtrlConstructor2,
+                                          (jlong) (UINT_PTR) controlID, (jint) (UINT_PTR) type,
+                                          min, max, precision, unitsString);
     } else {
         TRACE0("PORT_NewFloatControl: calling constructor1\n");
         // constructor with string parameter
-        ctrl = (*creator->env)->NewObject(creator->env, creator->floatCtrlClass, creator->floatCtrlConstructor1,
-                  (jlong) (UINT_PTR) controlID, (*creator->env)->NewStringUTF(creator->env, type),
-                  min, max, precision, (*creator->env)->NewStringUTF(creator->env, units));
+        typeString = (*creator->env)->NewStringUTF(creator->env, type);
+        CHECK_NULL_RETURN(typeString, (void*) ctrl);
+        ctrl = (*creator->env)->NewObject(creator->env, creator->floatCtrlClass,
+                                          creator->floatCtrlConstructor1,
+                                          (jlong) (UINT_PTR) controlID, typeString,
+                                          min, max, precision, unitsString);
     }
     if (!ctrl) {
         ERROR0("PORT_NewFloatControl: ctrl is NULL!\n");

@@ -1,139 +1,220 @@
-." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH javah 1 "07 May 2011"
-
-.LP
-.SH "名前"
-javah \- C ヘッダーとスタブファイルジェネレータ
-.LP
-.LP
-\f3javah\fP は、Java クラスから C ヘッダーファイルと C ソースファイルを作成します。これらのファイルは、Java プログラミング言語で書かれたコードと、C などのその他の言語で書かれたコードを接続し、コードが相互に作用するようにします。
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: javah
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "javah" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+javah \- JavaクラスからCヘッダーとソース・ファイルを生成します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-javah [ \fP\f3options\fP\f3 ] fully\-qualified\-classname. . .
-.fl
-\fP
+\fIjavah\fR [ \fIoptions\fR ] f\fIully\-qualified\-class\-name \&.\&.\&.\fR
 .fi
-
-.LP
+.if n \{\
+.RE
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIfully\-qualified\-class\-name\fR
+.RS 4
+Cヘッダーとソース・ファイルに変換されるクラスの完全修飾された場所。
+.RE
 .SH "説明"
-.LP
-.LP
-\f3javah\fP は、ネイティブメソッドを実装するために必要な C ヘッダーとソースファイルを生成します。作成されたヘッダーとソースファイルは、ネイティブソースコードからオブジェクトのインスタンス変数を参照するために C プログラムによって使用されます。.h ファイルは、対応するクラスと一致する配置を持つ構造体定義を含みます。構造体のフィールドは、クラスのインスタンス変数に対応します。
-.LP
-.LP
-ヘッダーファイルとその中で宣言される構造体の名前はクラスの名前から派生します。\f3javah\fP に渡されるクラスがパッケージの中にある場合、パッケージ名はヘッダーファイル名と構造体名の両方に付加されます。下線 (_) が名前の区切り文字として使用されます。
-.LP
-.LP
-デフォルトでは \f3javah\fP は、コマンド行にリストされる各クラスのヘッダーファイルを作成し、現在のディレクトリにファイルを置きます。ソースファイルを作成するには、\f2\-stubs\fP オプションを使用してください。1 つのファイルの中に、リストされたすべてのクラスの結果を連結するには、\f2\-o\fP オプションを使用してください。
-.LP
-.LP
-新しいネイティブメソッドインタフェースである Java Native Interface (JNI) は、ヘッダー情報またはスタブファイルを必要としません。現在では、\f3javah\fP は、JNI 形式のネイティブメソッドに必要なネイティブメソッド機能プロトタイプを生成します。デフォルトでは、\f3javah\fP は JNI 形式で出力され、その結果は .h ファイルに格納されます。
-.LP
+.PP
+\fIjavah\fRコマンドは、ネイティブ・メソッドを実装するために必要なCヘッダーとソース・ファイルを生成します。作成されたヘッダーとソース・ファイルは、ネイティブ・ソース・コードからオブジェクトのインスタンス変数を参照するためにCプログラムによって使用されます。\fI\&.h\fRファイルは、対応するクラスと一致する配置を持つ\fIstruct\fR定義を含みます。\fIstruct\fRのフィールドは、クラスのインスタンス変数に対応します。
+.PP
+ヘッダー・ファイルとその中で宣言される構造体の名前はクラスの名前から派生します。\fIjavah\fRコマンドに渡されるクラスがパッケージの中にある場合、パッケージ名はヘッダー・ファイル名と構造体名の両方の先頭に付加されます。下線(_)が名前の区切り文字として使用されます。
+.PP
+デフォルトでは\fIjavah\fRコマンドは、コマンドラインにリストされる各クラスのヘッダー・ファイルを作成し、現在のディレクトリにファイルを置きます。ソース・ファイルを作成するには、\fI\-stubs\fRオプションを使用してください。1つのファイルの中に、リストされたすべてのクラスの結果を連結するには、\fI\-o\fRオプションを使用してください。
+.PP
+Java Native Interface (JNI)はヘッダー情報またはスタブ・ファイルを必要としません。\fIjavah\fRコマンドは引き続きJNI形式のネイティブ・メソッドに必要なネイティブ・メソッド関数プロトタイプの生成に使用できます。\fIjavah\fRコマンドはデフォルトでJNI形式の出力を生成し、その結果を\fI\&.h\fRファイルに格納します。
 .SH "オプション"
-.LP
-.RS 3
-.TP 3
-\-o outputfile 
-コマンド行にリストされたすべてのクラスに対して、結果のヘッダーまたはソースファイルを連結して \f2outputfile\fP に格納します。\f3\-o\fP または \f3\-d\fP のどちらか一方だけが使われます。 
-.TP 3
-\-d directory 
-\f3javah\fP がヘッダーファイルまたはスタブファイルを保存する、ディレクトリを設定します。\f3\-d\fP または \f3\-o\fP のどちらか一方だけが使われます。 
-.TP 3
-\-stubs 
-\f3javah\fP が、Java オブジェクトファイルから C 宣言を生成します。 
-.TP 3
-\-verbose 
-詳細出力を指定し、作成ファイルの状態に関するメッセージを、\f3javah\fP が標準出力に出力します。 
-.TP 3
-\-help 
-\f3javah\fP の使用法についてのヘルプメッセージを出力します。 
-.TP 3
-\-version 
-\f3javah\fP のバージョン情報を出力します。 
-.TP 3
-\-jni 
-JNI 形式のネイティブファイル機能プロトタイプを含む出力ファイルを、\f3javah\fP が作成します。これは標準出力であるため、\f3\-jni\fP の使用はオプションです。 
-.TP 3
-\-classpath path 
-クラスを探すために \f3javah\fP が使用するパスを指定します。デフォルトまたは CLASSPATH 環境変数設定を上書きします。ディレクトリはコロンで分割します。したがって、\f2path\fP の一般形式は次のようになります。 
-.nf
-\f3
-.fl
-   .:<your_path>
-.fl
-\fP
-.fi
-次に例を示します。 
-.nf
-\f3
-.fl
-   .:/home/avh/classes:/usr/local/java/classes
-.fl
-\fP
-.fi
-.LP
-便宜上、 \f2*\fP のベース名を含むクラスパス要素は、ディレクトリ内の拡張子 \f2.jar\fP または \f2.JAR\fP を持つすべてのファイルのリストを指定するのと同じとみなされます (Java プログラムはこの 2 つの呼び出しを区別できない)。
-.br
-.br
-たとえば、ディレクトリ \f2foo\fP に \f2a.jar\fP と \f2b.JAR\fP が含まれている場合、クラスパス要素 \f2foo/*\fP は \f2A.jar:b.JAR\fP に展開されます。ただし、JAR ファイルの順番は指定されません。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべての JAR ファイルが含まれます。 \f2*\fP だけから成るクラスパスエントリは、現在のディレクトリ内のすべての JAR ファイルのリストに展開されます。 \f2CLASSPATH\fP 環境変数も、定義時には同様に展開されます。クラスパスのワイルドカード展開は必ず、Java 仮想マシンの起動前に実行されます。したがって、\f2System.getenv("CLASSPATH")\fP 呼び出しのように環境に問い合わせを行わない限り、Java プログラムが展開されていないワイルドカードを認識することはありません。   
-.TP 3
-\-bootclasspath path 
-ブートストラップクラスをロードするパスを指定します。ブートストラップクラスは、デフォルトでは \f2jre/lib/rt.jar\fP および他のいくつかの JAR ファイル にある、コア Java 2 プラットフォームを実装するクラスです。 
-.TP 3
-\-old 
-古い JDK1.0 形式のヘッダーファイルを生成するように指定します。 
-.TP 3
-\-force 
-出力ファイルが常に書き込まれるように指定します。 
-.TP 3
-\-Joption 
-Java 仮想マシンに \f2option\fP を渡します。\f2option\fP には、java(1)のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。 
+.PP
+\-o \fIoutputfile\fR
+.RS 4
+コマンドラインにリストされたすべてのクラスに対して、結果のヘッダーまたはソース・ファイルを連結して出力ファイルに格納します。\fI\-o\fRまたは\fI\-d\fRのどちらかのみ使用できます。
 .RE
-
-.LP
-.SH "環境変数"
-.LP
-.RS 3
-.TP 3
-CLASSPATH 
-ユーザー定義クラスへのパスをシステムに指定します。ディレクトリはコロンで分割されています。 
-.nf
-\f3
-.fl
-.:/home/avh/classes:/usr/local/java/classes
-.fl
-\fP
-.fi
+.PP
+\-d \fIdirectory\fR
+.RS 4
+\fIjavah\fRがヘッダー・ファイルまたはスタブ・ファイルを保存する、ディレクトリを設定します。\fI\-d\fRまたは\fI\-o\fRのどちらかのみ使用できます。
 .RE
-
-.LP
+.PP
+\-stubs
+.RS 4
+\fIjavah\fRコマンドが、Javaオブジェクト・ファイルからC宣言を生成します。
+.RE
+.PP
+\-verbose
+.RS 4
+詳細出力を指定し、作成ファイルの状態に関するメッセージを、\fIjavah\fRコマンドが\fI標準出力\fRに出力します。
+.RE
+.PP
+\-help
+.RS 4
+\fIjavah\fRの使用方法についてのヘルプ・メッセージを出力します。
+.RE
+.PP
+\-version
+.RS 4
+\fIjavah\fRコマンドのリリース情報を出力します。
+.RE
+.PP
+\-jni
+.RS 4
+JNI形式のネイティブ・メソッド機能プロトタイプを含む出力ファイルを、\fIjavah\fRコマンドが作成します。これは標準出力であるため、\fI\-jni\fRの使用はオプションです。
+.RE
+.PP
+\-classpath \fIpath\fR
+.RS 4
+クラスを探すために\fIjavah\fRコマンドが使用するパスを指定します。デフォルトまたは\fICLASSPATH\fR環境変数の設定をオーバーライドします。ディレクトリはOracle Solarisの場合はコロンで、Windowsの場合はセミコロンで区切られます。パスの一般的な形式は次のようになります。
+.sp
+\fBOracle Solaris\fRの場合:
+.sp
+\&.:\fIyour\-path\fR
+.sp
+例:
+\fI\&.:/home/avh/classes:/usr/local/java/classes\fR
+.sp
+\fBWindows\fRの場合:
+.sp
+\&.;\fIyour\-path\fR
+.sp
+例:
+\fI\&.;C:\eusers\edac\eclasses;C:\etools\ejava\eclasses\fR
+.sp
+便宜上、*のベース名を含むクラス・パス要素は、\fI\&.jar\fRまたは\fI\&.JAR\fRを拡張子に持つディレクトリ内のすべてのファイルのリストを指定するのと同等とみなされます。
+.sp
+たとえば、ディレクトリ\fImydir\fRに\fIa\&.jar\fRと\fIb\&.JAR\fRが含まれている場合、クラス・パス要素\fImydir/*\fRは\fIA\fR\fI\&.jar:b\&.JAR\fRに展開されますが、JARファイルの順番は未指定となります。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべてのJARファイルが含まれます。*からなるクラス・パス・エントリは、現在のディレクトリ内のすべてのJARファイルのリストに展開されます。\fICLASSPATH\fR環境変数も、定義時には同様に展開されます。クラス・パスのワイルドカードの展開は、Java仮想マシン(JVM)の開始前に行われます。Javaプログラムは、環境を問い合せる場合を除き、展開されていないワイルドカードを参照しません。たとえば、\fISystem\&.getenv("CLASSPATH")\fRをコールして問い合せる場合です。
+.RE
+.PP
+\-bootclasspath \fIpath\fR
+.RS 4
+ブートストラップ・クラスをロードするパスを指定します。ブートストラップ・クラスは、デフォルトでは\fIjre\elib\ert\&.jar\fRおよび他のいくつかのJARファイルにある、コアJavaプラットフォームを実装するクラスです。
+.RE
+.PP
+\-old
+.RS 4
+古いJDK 1\&.0形式のヘッダー・ファイルを生成するように指定します。
+.RE
+.PP
+\-force
+.RS 4
+出力ファイルが常に書き込まれるように指定します。
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+Java仮想マシンに\fIoption\fRを渡します。\fIoption\fRには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+.RE
 .SH "関連項目"
-.LP
-.LP
-javac(1)、java(1)、jdb(1)、javap(1)、javadoc(1)
-.LP
- 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javah(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+java(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jdb(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javap(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javadoc(1)
+.RE
+.br
+'pl 8.5i
+'bp

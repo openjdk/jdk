@@ -617,9 +617,9 @@ public class Hashtable<K,V>
      * appropriate view the first time this view is requested.  The views are
      * stateless, so there's no reason to create more than one of each.
      */
-    private transient volatile Set<K> keySet = null;
-    private transient volatile Set<Map.Entry<K,V>> entrySet = null;
-    private transient volatile Collection<V> values = null;
+    private transient volatile Set<K> keySet;
+    private transient volatile Set<Map.Entry<K,V>> entrySet;
+    private transient volatile Collection<V> values;
 
     /**
      * Returns a {@link Set} view of the keys contained in this map.
@@ -1300,8 +1300,8 @@ public class Hashtable<K,V>
     private class Enumerator<T> implements Enumeration<T>, Iterator<T> {
         Entry<?,?>[] table = Hashtable.this.table;
         int index = table.length;
-        Entry<?,?> entry = null;
-        Entry<?,?> lastReturned = null;
+        Entry<?,?> entry;
+        Entry<?,?> lastReturned;
         int type;
 
         /**

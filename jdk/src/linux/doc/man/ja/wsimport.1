@@ -1,1066 +1,332 @@
-." Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH wsimport 1 "07 May 2011"
-.SH "名前"
-wsimport \- XML Web Services (JAX\-WS) 2.0 のための Java(TM) API
-.LP
-\f3仕様バージョン:\fP 2.1
-.br
-\f3実装バージョン:\fP 2.1.1
-.br
+'\" t
+.\" Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: wsimport
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: Java Webサービス・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "wsimport" "1" "2013年11月21日" "JDK 8" "Java Webサービス・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+wsimport \- Webアプリケーション・アーカイブ(WAR)ファイルにパッケージできるJAX\-WSポータブル・アーティファクトを生成して、Antタスクを指定します。
 .SH "概要"
-.LP
-\f2wsimport\fP ツールは、次のような JAX\-WS ポータブルアーティファクトを生成します。
-.RS 3
-.TP 2
-o
-サービスエンドポイントインタフェース (SEI) 
-.TP 2
-o
-サービス 
-.TP 2
-o
-wsdl:fault からマップされる例外クラス (存在する場合) 
-.TP 2
-o
-応答 wsdl:message から派生する非同期応答 Bean (存在する場合) 
-.TP 2
-o
-JAX\-B が生成する値タイプ (スキーマの型からマップされた Java クラス) 
-.RE
-.LP
-これらのアーティファクトは、WSDL ドキュメント、スキーマドキュメント、およびエンドポイント実装とともに WAR ファイル内にパッケージ化して配備することができます。また、wsimport Ant タスクも用意されています。
-.na
-\f2wsimport Ant タスク\fP @
-.fi
-https://jax\-ws.dev.java.net/nonav/2.1.1/docs/wsimportant.htmlを参照してください。
-.br
-
-.LP
-.SH "wsimport の起動"
-.RS 3
-.TP 2
-o
-\f3Solaris/Linux\fP 
-.RS 3
-.TP 2
-*
-\f2/bin/wsimport.sh \-help\fP 
-.RE
-.TP 2
-o
-\f3Windows\fP 
-.RS 3
-.TP 2
-*
-\f2\\bin\\wsimport.bat \-help\fP 
-.RE
-.RE
-
-.LP
-.SH "構文"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-wsimport [options] <wsdl>
-.fl
-\fP
+\fIwsimport\fR [ \fIoptions\fR ] \fIwsdl\fR
 .fi
-.LP
-次の表に、 \f2wsimport\fP のオプションを示します。
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
+.if n \{\
+.RE
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIwsdl\fR
+.RS 4
+Webサービスを呼び出す方法、パラメータに必要な値、返されるデータ構造についてのコンピュータで読取り可能な記述が含まれまるファイルです。
+.RE
+.SH "説明"
+.PP
+\fIwsimport\fRコマンドは、次のJAX\-WSポータブル・アーティファクトを生成します。これらのアーティファクトは、デプロイするWSDLおよびスキーマ・ドキュメントおよびエンドポイント実装とともに、WARファイルにパッケージできます。\fIwsimport\fRコマンドでは\fIwsimport\fR
+Antタスクも提供されます。
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlのWsimport Ant TaskページのToolsタブを参照してください。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サービス・エンドポイント・インタフェース(SEI)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+サービス
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+例外クラスは\fIwsdl:fault\fRからマップされます(存在する場合)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+非同期レスポンスBeanはレスポンス\fIwsdl:message\fRから派生します(存在する場合)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+JAXBが生成する値タイプ(スキーマのタイプからマップされたJavaクラス)
+.RE
+.PP
+\fIwsgen\fRコマンドを起動するには、次を行います。
+.PP
+\fBOracle Solaris/Linux\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-生成される出力ファイルを格納する場所を指定します
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-外部の JAX\-WS または JAXB バインディングファイルを指定します ( \f2<file>\fP ごとに \f2\-b\fP が必要となる)
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-このオプションを JAXB スキーマコンパイラに渡します
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-外部エンティティー参照を解決するためのカタログファイルを指定します。TR9401、XCatalog、OASIS XML Catalog の各形式がサポートされています。
-.na
-\f2カタログ\fP @
+/bin/wsimport\&.sh \-help
 .fi
-https://jax\-ws.dev.java.net/nonav/2.1.1/docs/catalog\-support.htmlのドキュメントをお読みになり、\f3カタログ\fPのサンプルを参照してください。
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ベンダー拡張 (仕様で規定されていない機能) を許可します。拡張を使用すると、アプリケーションの移植性が失われたり、ほかの実装との相互運用が行えなくなる可能性があります
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ヘルプを表示します
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f3\-httpproxy:<host>:<port> \fP
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di h+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-HTTP プロキシサーバーを指定します (デフォルトのポートは 8080)
-.br
-.di
-.nr h| \n(dn
-.nr h- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di i+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
+.if n \{\
+.RE
+.\}
+.PP
+\fBWindows\fRの場合:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\ebin\ewsimport\&.bat \-help
+.fi
+.if n \{\
+.RE
+.\}
+.SH "オプション"
+.PP
+\-d \fIdirectory\fR
+.RS 4
+生成される出力ファイルを格納する場所を指定します。
+.RE
+.PP
+\-b \fIpath\fR
+.RS 4
+外部JAX\-WSまたはJAXBバインディング・ファイルを指定します。\fI\-b\fRオプションで複数のJAX\-WSおよびJAXBバインディング・ファイルを指定できます。これらのファイルを使用して、パッケージ名、Bean名などをカスタマイズできます。JAX\-WSおよびJAXBバインディング・ファイルの詳細は、
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlのWSDL CustomizationのUsers Guideタブを参照してください
+.RE
+.PP
+\-B \fIjaxbOption\fR
+.RS 4
+JAXBスキーマ・コンパイラに\fIjaxbOption\fRオプションを渡します。
+.RE
+.PP
+\-catalog
+.RS 4
+外部エンティティ参照を解決するカタログ・ファイルを指定します。\fI\-catalog\fRオプションは、TR9401、XCatalog、OASIS XML Catalogの各形式をサポートしています。http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/catalog\-support\&.htmlの
+Catalog SupportページのUsers Guideタブを参照してください。
+.RE
+.PP
+\-extension
+.RS 4
+ベンダー拡張を使用可能にします。拡張を使用すると、アプリケーションの移植性が失われたり、他の実装と連携できなくなる可能性があります。
+.RE
+.PP
+\-help
+.RS 4
+\fIwsimport\fRコマンドに関するヘルプ・メッセージを表示します。
+.RE
+.PP
+\-httpproxy: \fIhost\fR:\fIport\fR
+.RS 4
+HTTPプロキシ・サーバーを指定します。デフォルトは8080です。
+.RE
+.PP
+\-keep
+.RS 4
 生成されたファイルを保持します
-.br
-.di
-.nr i| \n(dn
-.nr i- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di j+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-このコマンド行オプション経由でターゲットパッケージを指定した場合、その指定内容は、パッケージ名に対するすべての WSDL/スキーマバインディングカスタマイズや、 仕様で規定されているデフォルトのパッケージ名アルゴリズムよりも優先されます
-.br
-.di
-.nr j| \n(dn
-.nr j- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di k+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-生成されるソースファイルを格納する場所を指定する
-.br
-.di
-.nr k| \n(dn
-.nr k- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di l+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-コンパイラが実行している処理に関するメッセージを出力します
-.br
-.di
-.nr l| \n(dn
-.nr l- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di m+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-バージョン情報を出力します
-.br
-.di
-.nr m| \n(dn
-.nr m- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di n+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f3\-wsdllocation <location>\fP
-.br
-.di
-.nr n| \n(dn
-.nr n- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di o+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-\f2@WebServiceClient.wsdlLocation\fP 値
-.br
-.di
-.nr o| \n(dn
-.nr o- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di p+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-指定された JAX\-WS 仕様バージョンに従ってコードを生成します。バージョン 2.0 では、JAX\-WS 2.0 仕様に準拠したコードを生成します。
-.br
-.di
-.nr p| \n(dn
-.nr p- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di q+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-wsimport 出力を抑制します
-.br
-.di
-.nr q| \n(dn
-.nr q- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \w\f3オプション\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-d <directory> \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-b <path> \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-B <jaxbOption>\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-catalog\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-extension \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-help \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-keep \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-p \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-s <directory> \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-verbose \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-version \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-target \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-quiet \fP
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 38 \n(g-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \n(n-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(h-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(i-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(j-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(k-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(l-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(m-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(o-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(p-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(q-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 163 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3オプション\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-d <directory> \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-b <path> \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-B <jaxbOption>\fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-catalog\fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-extension \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-help \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.ne \n(h|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.h+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(i|u+\n(.Vu
-.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-keep \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.i+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(j|u+\n(.Vu
-.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-p \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.j+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(k|u+\n(.Vu
-.if (\n(k|+\n(#^-1v)>\n(#- .nr #- +(\n(k|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-s <directory> \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.k+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(l|u+\n(.Vu
-.if (\n(l|+\n(#^-1v)>\n(#- .nr #- +(\n(l|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-verbose \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.l+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(m|u+\n(.Vu
-.if (\n(m|+\n(#^-1v)>\n(#- .nr #- +(\n(m|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-version \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.m+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(n|u+\n(.Vu
-.ne \n(o|u+\n(.Vu
-.if (\n(n|+\n(#^-1v)>\n(#- .nr #- +(\n(n|+\n(#^-\n(#--1v)
-.if (\n(o|+\n(#^-1v)>\n(#- .nr #- +(\n(o|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.n+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.o+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(p|u+\n(.Vu
-.if (\n(p|+\n(#^-1v)>\n(#- .nr #- +(\n(p|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-target \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.p+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(q|u+\n(.Vu
-.if (\n(q|+\n(#^-1v)>\n(#- .nr #- +(\n(q|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-quiet \fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.q+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.rm h+
-.rm i+
-.rm j+
-.rm k+
-.rm l+
-.rm m+
-.rm n+
-.rm o+
-.rm p+
-.rm q+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-72
-.LP
-\-b オプションを使って、複数の JAX\-WS および JAXB バインディングファイル \f2を指定できます。\fP これらのファイルを使って、パッケージ名や Bean 名など、さまざまなカスタマイズが可能です。JAX\-WS および JAXB バインディングファイルの詳細は、 
-.na
-\f2カスタマイズマニュアル\fP @
-.fi
-https://jax\-ws.dev.java.net/nonav/2.1.1/docs/customizations.htmlを参照してください。
-.LP
-次の表に、 \f2wsimport\fP の非標準オプションを示します。
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-要求または応答メッセージにバインドされないヘッダーを Java メソッドのパラメータにマップします
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-認証情報を含むファイルを指定する WSDL URI です。この URI の形式は次のとおりです http://\f2<ユーザー名>\fP:\f2<パスワード>\fP@\f2<ホスト名>\fP/\f2<Web サービス名>\fP?wsdl
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
+.RE
+.PP
+\-p \fIname\fR
+.RS 4
+ターゲット・パッケージ\fIname\fRを指定して、WSDLおよびスキーマ・バインディングのカスタマイズ、および仕様部で定義されたデフォルトのアルゴリズムをオーバーライドします。
+.RE
+.PP
+\-s \fIdirectory\fR
+.RS 4
+生成されるソース・ファイルを格納する場所を指定します
+.RE
+.PP
+\-verbose
+.RS 4
+コンパイラ・メッセージを表示します。
+.RE
+.PP
+\-version
+.RS 4
+リリース情報を出力します。
+.RE
+.PP
+\-wsdllocation \fIlocation\fR
+.RS 4
+\fI@WebServiceClient\&.wsdlLocation\fRの値を指定します。
+.RE
+.PP
+\-target
+.RS 4
+指定されたJAX\-WS仕様バージョンに従って、コードを生成します。バージョン2\&.0では、JAX\-WS 2\&.0仕様に準拠したコードを生成します。
+.RE
+.PP
+\-quiet
+.RS 4
+\fIwsimport\fRコマンド出力を抑制します。
+.RE
+.PP
+\fI\-b\fRオプションを使用して、複数の\fIJAX\-WS\fRおよび\fIJAXB\fRバインディング・ファイルを指定できます。これらのファイルを使用して、パッケージ名やBean名など、様々なものをカスタマイズできます。\fIJAX\-WS\fRおよび\fIJAXB\fRバインディング・ファイルの詳細は、
+https://jax\-ws\&.dev\&.java\&.net/nonav/2\&.1\&.1/docs/customizations\&.htmlのJAXBタブを参照してください
+.SH "非標準オプション"
+.PP
+\-XadditionalHeaders
+.RS 4
+リクエストまたはレスポンス・メッセージにバインドされないヘッダーをJavaメソッドのパラメータにマップします
+.RE
+.PP
+\-Xauthfile \fIfile\fR
+.RS 4
+認証情報を含むファイルを指定するWSDL URIです。このURIの形式は次のとおりです。
+.sp
+http://\fIuser\-name\fR:\fIpassword\fR@\fIhost\-name\fR/\fIweb\-service\-name\fR>?wsdl
+.RE
+.PP
+\-Xdebug
+.RS 4
 デバッグ情報を出力します
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-\f3\-Xno\-addressing\-databinding\fP
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-W3C \f2EndpointReferenceType\fP と Java のバインディングを有効にします
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-生成された Java ファイルをコンパイルしません
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \w\f3オプション\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-XadditionalHeaders\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-Xauthfile <file>\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-Xdebug\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3\-Xnocompile\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 38 \n(d-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 199 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3オプション\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-XadditionalHeaders\fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-Xauthfile <file>\fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-Xdebug\fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.ne \n(e|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3\-Xnocompile\fP\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-26
-
-.LP
+.RE
+.PP
+\-Xno\-addressing\-databinding
+.RS 4
+W3C EndpointReferenceTypeとJavaのバインディングを有効にします。
+.RE
+.PP
+\-Xnocompile
+.RS 4
+生成されたJavaファイルをコンパイルしません
+.RE
 .SH "例"
+.PP
+次の例では、Javaアーティファクトを生成し、\fIhttp://stockquote\&.example\&.com/quote?wsdl\fRをインポートしてアーティファクトをコンパイルします。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3wsimport \-p stockquote http://stockquote.example.com/quote?wsdl\fP
-.fl
+wsimport \-p stockquote http://stockquote\&.example\&.com/quote?wsdl
 .fi
-.LP
-Java アーティファクトを生成し、 \f2http://stockquote.example.com/quote?wsdl\fP をインポートしてその Java アーティファクトをコンパイルします
+.if n \{\
+.RE
+.\}
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+wsgen(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlの
+Wsimport Ant TaskページのToolsタブ
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/catalog\-support\&.htmlの
+Catalog SupportページのUsers Guideタブ
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://jax\-ws\&.java\&.net/nonav/2\&.1\&.1/docs/wsimportant\&.htmlの
+WSDL CustomizationページのUsers Guideタブ
+.RE
 .br
- 
+'pl 8.5i
+'bp

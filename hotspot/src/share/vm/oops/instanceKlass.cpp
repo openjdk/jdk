@@ -3408,6 +3408,10 @@ static void purge_previous_versions_internal(InstanceKlass* ik, int emcp_method_
               ("purge: %s(%s): prev method @%d in version @%d is alive",
               method->name()->as_C_string(),
               method->signature()->as_C_string(), j, i));
+            if (method->method_data() != NULL) {
+              // Clean out any weak method links
+              method->method_data()->clean_weak_method_links();
+            }
           }
         }
       }
@@ -3416,6 +3420,14 @@ static void purge_previous_versions_internal(InstanceKlass* ik, int emcp_method_
     RC_TRACE(0x00000200,
       ("purge: previous version stats: live=%d, deleted=%d", live_count,
       deleted_count));
+  }
+
+  Array<Method*>* methods = ik->methods();
+  int num_methods = methods->length();
+  for (int index2 = 0; index2 < num_methods; ++index2) {
+    if (methods->at(index2)->method_data() != NULL) {
+      methods->at(index2)->method_data()->clean_weak_method_links();
+    }
   }
 }
 

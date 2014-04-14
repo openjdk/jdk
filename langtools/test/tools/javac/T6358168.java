@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,10 +99,9 @@ public class T6358168 extends AbstractProcessor {
                                      "-d", "."});
 
         JavaCompiler compiler = JavaCompiler.instance(context);
-        compiler.initProcessAnnotations(null);
-        JavaCompiler compiler2 = compiler.processAnnotations(compiler.enterTrees(compiler.parseFiles(List.of(f))));
+        compiler.compile(List.of(f));
         try {
-            compiler2.compile(List.of(f));
+            compiler.compile(List.of(f));
             throw new Error("Error: AssertionError not thrown after second call of compile");
         } catch (AssertionError e) {
             System.err.println("Exception from compiler (expected): " + e);
