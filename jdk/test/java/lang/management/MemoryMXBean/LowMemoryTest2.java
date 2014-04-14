@@ -64,6 +64,11 @@ public class LowMemoryTest2 {
     // low memory notification
 
     static class BoundlessLoaderThread extends ClassLoader implements Runnable {
+        private final List<MemoryPoolMXBean> pools;
+
+        public BoundlessLoaderThread(List<MemoryPoolMXBean> pools) {
+            this.pools = pools;
+        }
 
         static int count = 100000;
 
@@ -139,26 +144,29 @@ public class LowMemoryTest2 {
          * Then wait for the memory threshold notification to be received.
          */
         public void run() {
-            List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
-            boolean thresholdExceeded = false;
-
             // Load classes until MemoryPoolMXBean.getUsageThresholdCount() > 0
-            while (!thresholdExceeded) {
-                // the classes are small so we load 10 at a time
-                for (int i=0; i<10; i++) {
-                    loadNext();
-                }
-
-                // check if the threshold has been exceeded
-                for (MemoryPoolMXBean p : pools) {
-                    if (p.getType() == MemoryType.NON_HEAP &&
-                        p.isUsageThresholdSupported() &&
-                        p.getUsageThresholdCount() > 0)
-                    {
-                        thresholdExceeded = true;
-                        break;
+            boolean isThresholdCountSet = false;
+            try {
+                while (!isThresholdCountSet) {
+                    // the classes are small so we load 10 at a time
+                    for (int i=0; i<10; i++) {
+                        loadNext();
                     }
+
+                    if (isAnyUsageAboveThreshold(pools)) {
+                        // UsageThresholdCount is only updated during GC.
+                        // Force GC to update counters.
+                        // If we don't force a GC we may get an
+                        // OutOfMemoryException before the counters are updated.
+                        System.out.println("Force GC");
+                        System.gc();
+                    }
+                    isThresholdCountSet = isAnyThresholdCountSet(pools);
                 }
+            } catch (OutOfMemoryError e) {
+                e.printStackTrace();
+                MemoryUtil.printMemoryPools(pools);
+                throw e;
             }
 
             System.out.println("thresholdExceeded. Waiting for notification");
@@ -168,16 +176,39 @@ public class LowMemoryTest2 {
                 } catch (InterruptedException x) {}
             }
         }
+
+        private boolean isAnyUsageAboveThreshold(List<MemoryPoolMXBean> pools) {
+            for (MemoryPoolMXBean p : pools) {
+                if (p.isUsageThresholdExceeded()) {
+                    System.out.println("isAnyUsageAboveThreshold is true for " + p.getName());
+                    MemoryUtil.printMemoryPool(p);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean isAnyThresholdCountSet(List<MemoryPoolMXBean> pools) {
+            for (MemoryPoolMXBean p : pools) {
+                if (p.getUsageThresholdCount() > 0) {
+                    System.out.println("isAnyThresholdCountSet is true for " + p.getName());
+                    MemoryUtil.printMemoryPool(p);
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     public static void main(String args[]) {
-        List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
+        // The pools list will only contain the pools that we are interested in.
+        List<MemoryPoolMXBean> pools = new ArrayList<MemoryPoolMXBean>();
 
         // Set threshold of 80% of all NON_HEAP memory pools
         // In the Hotspot implementation this means we should get a notification
         // if the CodeCache or metaspace fills up.
 
-        for (MemoryPoolMXBean p : pools) {
+        for (MemoryPoolMXBean p : ManagementFactory.getMemoryPoolMXBeans()) {
             if (p.getType() == MemoryType.NON_HEAP && p.isUsageThresholdSupported()) {
 
                 // set threshold
@@ -190,6 +221,7 @@ public class LowMemoryTest2 {
                 long threshold = (max * 80) / 100;
 
                 p.setUsageThreshold(threshold);
+                pools.add(p);
 
                 System.out.println("Selected memory pool for low memory " +
                         "detection.");
@@ -209,7 +241,7 @@ public class LowMemoryTest2 {
 
         // Start the thread loading classes
 
-        Thread thr = new Thread(new BoundlessLoaderThread());
+        Thread thr = new Thread(new BoundlessLoaderThread(pools));
         thr.start();
 
         // Wait for the thread to terminate

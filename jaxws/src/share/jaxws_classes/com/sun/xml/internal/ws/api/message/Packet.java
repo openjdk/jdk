@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,6 +246,26 @@ public final class Packet
     public void setMessage(Message message) {
         this.message = message;
         if (message != null) this.message.setMessageMedadata(this);
+    }
+
+    // ALL NEW PACKETS SHOULD HAVE THIS AS false.
+    // SETTING TO true MUST BE DONE EXPLICITLY,
+    // NOT VIA COPYING/RELATING PACKETS.
+    public  boolean isProtocolMessage() {
+        return message != null && message.isProtocolMessage();
+    }
+    public void  setIsProtocolMessage() {
+        assert message != null;
+        message.setIsProtocolMessage();
+    }
+
+    private String    userStateId;
+    public  String getUserStateId() {
+        return userStateId;
+    }
+    public  void   setUserStateId(final String x) {
+        assert x != null && x.length() <= 256;
+        userStateId = x;
     }
 
     private WSDLOperationMapping wsdlOperationMapping = null;
@@ -894,6 +914,7 @@ public final class Packet
         response.component = request.component;
         response.mtomAcceptable = request.mtomAcceptable;
         response.mtomRequest = request.mtomRequest;
+        response.userStateId = request.userStateId;
         // copy other properties that need to be copied. is there any?
     }
 
@@ -1255,6 +1276,12 @@ public final class Packet
         return getCodec().encode(this, buffer);
     }
 
+    /**
+     * This content type may be set by one of the following ways:
+     * (1) By the codec as a result of decoding an incoming message
+     * (2) Cached by a codec after encoding the message
+     * (3) By a caller of Codec.decode(InputStream, String contentType, Packet)
+     */
     private ContentType contentType;
 
     /**
@@ -1410,6 +1437,13 @@ public final class Packet
         //Use the getter to make sure all the logic is executed correctly
         MTOMFeature myMtomFeature = getMtomFeature();
         if(myMtomFeature != null && myMtomFeature.isEnabled()) {
+                //If the content type is set already on this outbound Packet,
+                //(e.g.) through Codec.decode(InputStream, String contentType, Packet)
+                //and it is a non-mtom content type, then don't use mtom to encode it
+                ContentType curContentType = getInternalContentType();
+                if (curContentType != null && !isMtomContentType(curContentType)) {
+                        return false;
+                }
             //On client, always use XOP encoding if MTOM is enabled
             //On Server, mtomAcceptable and mtomRequest will be set - use XOP encoding
             //if either request is XOP encoded (mtomRequest) or
@@ -1432,11 +1466,14 @@ public final class Packet
     }
 
     private boolean isMtomContentType() {
-        return (getInternalContentType() != null) &&
-        (getInternalContentType().getContentType().contains("application/xop+xml"));
+        return (getInternalContentType() != null && isMtomContentType(getInternalContentType()));
     }
 
-    /**
+    private boolean isMtomContentType(ContentType cType) {
+                return cType.getContentType().contains("application/xop+xml");
+        }
+
+        /**
      * @deprecated
      */
     public void addSatellite(@NotNull com.sun.xml.internal.ws.api.PropertySet satellite) {

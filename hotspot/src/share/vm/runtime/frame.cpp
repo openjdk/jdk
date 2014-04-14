@@ -531,13 +531,16 @@ jint frame::interpreter_frame_expression_stack_size() const {
   // Number of elements on the interpreter expression stack
   // Callers should span by stackElementWords
   int element_size = Interpreter::stackElementWords;
+  size_t stack_size = 0;
   if (frame::interpreter_frame_expression_stack_direction() < 0) {
-    return (interpreter_frame_expression_stack() -
-            interpreter_frame_tos_address() + 1)/element_size;
+    stack_size = (interpreter_frame_expression_stack() -
+                  interpreter_frame_tos_address() + 1)/element_size;
   } else {
-    return (interpreter_frame_tos_address() -
-            interpreter_frame_expression_stack() + 1)/element_size;
+    stack_size = (interpreter_frame_tos_address() -
+                  interpreter_frame_expression_stack() + 1)/element_size;
   }
+  assert( stack_size <= (size_t)max_jint, "stack size too big");
+  return ((jint)stack_size);
 }
 
 

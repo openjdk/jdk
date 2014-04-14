@@ -243,7 +243,6 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "vmreg_arm.inline.hpp");
 #endif
 #ifdef TARGET_ARCH_ppc
-  AD.addInclude(AD._CPP_file, "assembler_ppc.inline.hpp");
   AD.addInclude(AD._CPP_file, "nativeInst_ppc.hpp");
   AD.addInclude(AD._CPP_file, "vmreg_ppc.inline.hpp");
 #endif
@@ -274,6 +273,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._DFA_file, "opto/cfgnode.hpp");  // Use PROB_MAX in predicate.
   AD.addInclude(AD._DFA_file, "opto/matcher.hpp");
   AD.addInclude(AD._DFA_file, "opto/opcodes.hpp");
+  AD.addInclude(AD._DFA_file, "opto/convertnode.hpp");
   // Make sure each .cpp file starts with include lines:
   // files declaring and defining generators for Mach* Objects (hpp,cpp)
   // Generate the result files:

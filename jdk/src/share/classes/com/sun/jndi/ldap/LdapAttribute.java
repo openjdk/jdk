@@ -188,7 +188,7 @@ final class LdapAttribute extends BasicAttribute {
 
         if(syntaxAttr == null || syntaxAttr.size() == 0) {
             throw new NameNotFoundException(
-                getID() + "does not have a syntax associated with it");
+                getID() + " does not have a syntax associated with it");
         }
 
         String syntaxName = (String)syntaxAttr.get();

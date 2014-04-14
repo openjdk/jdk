@@ -29,6 +29,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FileDescriptor;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
 
 /**
  * The abstract class {@code SocketImpl} is a common superclass
@@ -354,5 +357,107 @@ public abstract class SocketImpl implements SocketOptions {
                                           int bandwidth)
     {
         /* Not implemented yet */
+    }
+
+    /**
+     * Called to set a socket option.
+     *
+     * @param name The socket option
+     *
+     * @param value The value of the socket option. A value of {@code null}
+     *              may be valid for some options.
+     *
+     * @throws UnsupportedOperationException if the SocketImpl does not
+     *         support the option
+     *
+     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     *
+     * @since 1.9
+     */
+    protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
+        if (name == StandardSocketOptions.SO_KEEPALIVE) {
+            setOption(SocketOptions.SO_KEEPALIVE, value);
+        } else if (name == StandardSocketOptions.SO_SNDBUF) {
+            setOption(SocketOptions.SO_SNDBUF, value);
+        } else if (name == StandardSocketOptions.SO_RCVBUF) {
+            setOption(SocketOptions.SO_RCVBUF, value);
+        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
+            setOption(SocketOptions.SO_REUSEADDR, value);
+        } else if (name == StandardSocketOptions.SO_LINGER) {
+            setOption(SocketOptions.SO_LINGER, value);
+        } else if (name == StandardSocketOptions.IP_TOS) {
+            setOption(SocketOptions.IP_TOS, value);
+        } else if (name == StandardSocketOptions.TCP_NODELAY) {
+            setOption(SocketOptions.TCP_NODELAY, value);
+        } else {
+            throw new UnsupportedOperationException("unsupported option");
+        }
+    }
+
+    /**
+     * Called to get a socket option.
+     *
+     * @param name The socket option
+     *
+     * @return the value of the named option
+     *
+     * @throws UnsupportedOperationException if the SocketImpl does not
+     *         support the option.
+     *
+     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     *
+     * @since 1.9
+     */
+    protected <T> T getOption(SocketOption<T> name) throws IOException {
+        if (name == StandardSocketOptions.SO_KEEPALIVE) {
+            return (T)getOption(SocketOptions.SO_KEEPALIVE);
+        } else if (name == StandardSocketOptions.SO_SNDBUF) {
+            return (T)getOption(SocketOptions.SO_SNDBUF);
+        } else if (name == StandardSocketOptions.SO_RCVBUF) {
+            return (T)getOption(SocketOptions.SO_RCVBUF);
+        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
+            return (T)getOption(SocketOptions.SO_REUSEADDR);
+        } else if (name == StandardSocketOptions.SO_LINGER) {
+            return (T)getOption(SocketOptions.SO_LINGER);
+        } else if (name == StandardSocketOptions.IP_TOS) {
+            return (T)getOption(SocketOptions.IP_TOS);
+        } else if (name == StandardSocketOptions.TCP_NODELAY) {
+            return (T)getOption(SocketOptions.TCP_NODELAY);
+        } else {
+            throw new UnsupportedOperationException("unsupported option");
+        }
+    }
+
+    private static final  Set<SocketOption<?>> socketOptions =
+        new HashSet<>();
+
+    private static final  Set<SocketOption<?>> serverSocketOptions =
+        new HashSet<>();
+
+    static {
+        socketOptions.add(StandardSocketOptions.SO_KEEPALIVE);
+        socketOptions.add(StandardSocketOptions.SO_SNDBUF);
+        socketOptions.add(StandardSocketOptions.SO_RCVBUF);
+        socketOptions.add(StandardSocketOptions.SO_REUSEADDR);
+        socketOptions.add(StandardSocketOptions.SO_LINGER);
+        socketOptions.add(StandardSocketOptions.IP_TOS);
+        socketOptions.add(StandardSocketOptions.TCP_NODELAY);
+
+        serverSocketOptions.add(StandardSocketOptions.SO_RCVBUF);
+        serverSocketOptions.add(StandardSocketOptions.SO_REUSEADDR);
+    };
+
+    /**
+     * Returns a set of SocketOptions supported by this impl
+     * and by this impl's socket (Socket or ServerSocket)
+     *
+     * @return a Set of SocketOptions
+     */
+    protected Set<SocketOption<?>> supportedOptions() {
+        if (getSocket() != null) {
+            return socketOptions;
+        } else {
+            return serverSocketOptions;
+        }
     }
 }

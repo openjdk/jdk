@@ -98,20 +98,13 @@
 #endif
 
 
-#ifndef PRODUCT
-
-// Statistics printing (method invocation histogram)
-
-GrowableArray<Method*>* collected_invoked_methods;
-
-void collect_invoked_methods(Method* m) {
-  if (m->invocation_count() + m->compiled_invocation_count() >= 1 ) {
-    collected_invoked_methods->push(m);
-  }
-}
-
-
 GrowableArray<Method*>* collected_profiled_methods;
+
+int compare_methods(Method** a, Method** b) {
+  // %%% there can be 32-bit overflow here
+  return ((*b)->invocation_count() + (*b)->compiled_invocation_count())
+       - ((*a)->invocation_count() + (*a)->compiled_invocation_count());
+}
 
 void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
@@ -125,12 +118,52 @@ void collect_profiled_methods(Method* m) {
   }
 }
 
+void print_method_profiling_data() {
+  if (ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData)) {
+    ResourceMark rm;
+    HandleMark hm;
+    collected_profiled_methods = new GrowableArray<Method*>(1024);
+    ClassLoaderDataGraph::methods_do(collect_profiled_methods);
+    collected_profiled_methods->sort(&compare_methods);
 
-int compare_methods(Method** a, Method** b) {
-  // %%% there can be 32-bit overflow here
-  return ((*b)->invocation_count() + (*b)->compiled_invocation_count())
-       - ((*a)->invocation_count() + (*a)->compiled_invocation_count());
+    int count = collected_profiled_methods->length();
+    int total_size = 0;
+    if (count > 0) {
+      for (int index = 0; index < count; index++) {
+        Method* m = collected_profiled_methods->at(index);
+        ttyLocker ttyl;
+        tty->print_cr("------------------------------------------------------------------------");
+        m->print_invocation_count();
+        tty->print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
+        tty->cr();
+        // Dump data on parameters if any
+        if (m->method_data() != NULL && m->method_data()->parameters_type_data() != NULL) {
+          tty->fill_to(2);
+          m->method_data()->parameters_type_data()->print_data_on(tty);
+        }
+        m->print_codes();
+        total_size += m->method_data()->size_in_bytes();
+      }
+      tty->print_cr("------------------------------------------------------------------------");
+      tty->print_cr("Total MDO size: %d bytes", total_size);
+    }
+  }
 }
+
+
+#ifndef PRODUCT
+
+// Statistics printing (method invocation histogram)
+
+GrowableArray<Method*>* collected_invoked_methods;
+
+void collect_invoked_methods(Method* m) {
+  if (m->invocation_count() + m->compiled_invocation_count() >= 1 ) {
+    collected_invoked_methods->push(m);
+  }
+}
+
+
 
 
 void print_method_invocation_histogram() {
@@ -171,37 +204,6 @@ void print_method_invocation_histogram() {
   tty->print_cr("\t%9d (%4.1f%%) accessor",     acces_total,  100.0 * acces_total  / total);
   tty->cr();
   SharedRuntime::print_call_statistics(comp_total);
-}
-
-void print_method_profiling_data() {
-  ResourceMark rm;
-  HandleMark hm;
-  collected_profiled_methods = new GrowableArray<Method*>(1024);
-  SystemDictionary::methods_do(collect_profiled_methods);
-  collected_profiled_methods->sort(&compare_methods);
-
-  int count = collected_profiled_methods->length();
-  int total_size = 0;
-  if (count > 0) {
-    for (int index = 0; index < count; index++) {
-      Method* m = collected_profiled_methods->at(index);
-      ttyLocker ttyl;
-      tty->print_cr("------------------------------------------------------------------------");
-      //m->print_name(tty);
-      m->print_invocation_count();
-      tty->print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
-      tty->cr();
-      // Dump data on parameters if any
-      if (m->method_data() != NULL && m->method_data()->parameters_type_data() != NULL) {
-        tty->fill_to(2);
-        m->method_data()->parameters_type_data()->print_data_on(tty);
-      }
-      m->print_codes();
-      total_size += m->method_data()->size_in_bytes();
-    }
-    tty->print_cr("------------------------------------------------------------------------");
-    tty->print_cr("Total MDO size: %d bytes", total_size);
-  }
 }
 
 void print_bytecode_count() {
@@ -265,7 +267,7 @@ void print_statistics() {
     os::print_statistics();
   }
 
-  if (PrintLockStatistics || PrintPreciseBiasedLockingStatistics) {
+  if (PrintLockStatistics || PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
 
@@ -281,9 +283,9 @@ void print_statistics() {
   if (CountCompiledCalls) {
     print_method_invocation_histogram();
   }
-  if (ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData)) {
-    print_method_profiling_data();
-  }
+
+  print_method_profiling_data();
+
   if (TimeCompiler) {
     COMPILER2_PRESENT(Compile::print_timers();)
   }
@@ -373,6 +375,10 @@ void print_statistics() {
 
 void print_statistics() {
 
+  if (PrintMethodData) {
+    print_method_profiling_data();
+  }
+
   if (CITime) {
     CompileBroker::print_times();
   }
@@ -387,7 +393,7 @@ void print_statistics() {
   }
 
 #ifdef COMPILER2
-  if (PrintPreciseBiasedLockingStatistics) {
+  if (PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
 #endif

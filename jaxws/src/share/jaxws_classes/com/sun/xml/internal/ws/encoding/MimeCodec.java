@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,12 +118,14 @@ abstract class MimeCodec implements Codec {
         }
         ContentTypeImpl ctImpl = (ContentTypeImpl)getStaticContentType(packet);
         String boundary = ctImpl.getBoundary();
+        String rootId = ctImpl.getRootId();
         boolean hasAttachments = (boundary != null);
         Codec rootCodec = getMimeRootCodec(packet);
         if (hasAttachments) {
             writeln("--"+boundary, out);
             ContentType ct = rootCodec.getStaticContentType(packet);
             String ctStr = (ct != null) ? ct.getContentType() : rootCodec.getMimeType();
+            if (rootId != null) writeln("Content-ID: " + rootId, out);
             writeln("Content-Type: " + ctStr, out);
             writeln(out);
         }

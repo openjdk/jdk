@@ -129,6 +129,8 @@ needs_compact3 = \
   gc/g1/TestHumongousAllocInitialMark.java \
   gc/arguments/TestG1HeapRegionSize.java \
   gc/metaspace/TestMetaspaceMemoryPool.java \
+  gc/arguments/TestDynMinHeapFreeRatio.java \
+  gc/arguments/TestDynMaxHeapFreeRatio.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   serviceability/threads/TestFalseDeadLock.java \
   compiler/tiered/NonTieredLevelsTest.java \

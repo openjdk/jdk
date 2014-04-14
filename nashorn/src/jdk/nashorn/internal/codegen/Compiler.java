@@ -405,32 +405,8 @@ public final class Compiler {
         return newFunctionNode;
     }
 
-    private Class<?> install(final String className, final byte[] code) {
-        LOG.fine("Installing class ", className);
-
-        final Class<?> clazz = installer.install(Compiler.binaryName(className), code);
-
-        try {
-            final Object[] constants = getConstantData().toArray();
-            // Need doPrivileged because these fields are private
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                @Override
-                public Void run() throws Exception {
-                    //use reflection to write source and constants table to installed classes
-                    final Field sourceField    = clazz.getDeclaredField(SOURCE.symbolName());
-                    final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
-                    sourceField.setAccessible(true);
-                    constantsField.setAccessible(true);
-                    sourceField.set(null, source);
-                    constantsField.set(null, constants);
-                    return null;
-                }
-            });
-        } catch (final PrivilegedActionException e) {
-            throw new RuntimeException(e);
-        }
-
-        return clazz;
+    private Class<?> install(final String className, final byte[] code, final Object[] constants) {
+        return installer.install(className, code, source, constants);
     }
 
     /**
@@ -444,10 +420,15 @@ public final class Compiler {
         assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " has no bytecode and cannot be installed";
 
         final Map<String, Class<?>> installedClasses = new HashMap<>();
+        final Object[] constants = getConstantData().toArray();
 
         final String   rootClassName = firstCompileUnitName();
         final byte[]   rootByteCode  = bytecode.get(rootClassName);
-        final Class<?> rootClass     = install(rootClassName, rootByteCode);
+        final Class<?> rootClass     = install(rootClassName, rootByteCode, constants);
+
+        if (!isLazy()) {
+            installer.storeCompiledScript(source, rootClassName, bytecode, constants);
+        }
 
         int length = rootByteCode.length;
 
@@ -461,7 +442,7 @@ public final class Compiler {
             final byte[] code = entry.getValue();
             length += code.length;
 
-            installedClasses.put(className, install(className, code));
+            installedClasses.put(className, install(className, code, constants));
         }
 
         for (final CompileUnit unit : compileUnits) {

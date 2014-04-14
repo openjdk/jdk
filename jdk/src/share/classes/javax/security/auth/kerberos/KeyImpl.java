@@ -36,7 +36,6 @@ import sun.security.krb5.PrincipalName;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.EncryptedData;
 import sun.security.krb5.KrbException;
-import sun.security.krb5.KrbCryptoException;
 import sun.security.util.DerValue;
 
 /**
@@ -86,8 +85,12 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
 
         try {
             PrincipalName princ = new PrincipalName(principal.getName());
-            EncryptionKey key =
-                new EncryptionKey(password, princ.getSalt(), algorithm);
+            EncryptionKey key;
+            if ("none".equalsIgnoreCase(algorithm)) {
+                key = EncryptionKey.NULL_KEY;
+            } else {
+                key = new EncryptionKey(password, princ.getSalt(), algorithm);
+            }
             this.keyBytes = key.getBytes();
             this.keyType = key.getEType();
         } catch (KrbException e) {
@@ -118,27 +121,28 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
 
         switch (eType) {
         case EncryptedData.ETYPE_DES_CBC_CRC:
+            return "des-cbc-crc";
+
         case EncryptedData.ETYPE_DES_CBC_MD5:
-            return "DES";
+            return "des-cbc-md5";
 
         case EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD:
-            return "DESede";
+            return "des3-cbc-sha1-kd";
 
         case EncryptedData.ETYPE_ARCFOUR_HMAC:
-            return "ArcFourHmac";
+            return "rc4-hmac";
 
         case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96:
-            return "AES128";
+            return "aes128-cts-hmac-sha1-96";
 
         case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
-            return "AES256";
+            return "aes256-cts-hmac-sha1-96";
 
         case EncryptedData.ETYPE_NULL:
-            return "NULL";
+            return "none";
 
         default:
-            throw new IllegalArgumentException(
-                "Unsupported encryption type: " + eType);
+            return eType > 0 ? "unknown" : "private";
         }
     }
 

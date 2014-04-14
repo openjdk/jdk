@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,12 @@ import java.util.UUID;
  * @author Kohsuke Kawaguchi
  */
 public abstract class Message {
+
+    // See Packet for doc.
+    private boolean isProtocolMessage = false;
+    // next two are package protected - should only be used from Packet
+    boolean  isProtocolMessage() { return isProtocolMessage; }
+    void  setIsProtocolMessage() { isProtocolMessage = true; }
 
     /**
      * Returns true if headers are present in the message.
@@ -724,10 +730,32 @@ public abstract class Message {
      * <p>
      * The restrictions placed on the use of copied {@link Message} can be
      * relaxed if necessary, but it will make the copy method more expensive.
+     *
+     * <h3>IMPORTANT</h3>
+     * <p> WHEN YOU IMPLEMENT OR CHANGE A {@link .copy()} METHOD, YOU MUST
+     * USE THE {@link copyFrom(Message)} METHOD IN THE IMPLEMENTATION.
      */
     // TODO: update the class javadoc with 'lifescope'
     // and move the discussion about life scope there.
     public abstract Message copy();
+
+    /**
+     * The {@link Message#copy()} method is used as a shorthand
+     * throughout the codecase in place of calling a copy constructor.
+     * However, that shorthand make it difficult to have a concrete
+     * method here in the base to do common work.
+     *
+     * <p> Rather than have each {@code copy} method duplicate code, the
+     * following method is used in each {@code copy} implementation.
+     * It MUST be called.
+     *
+     * @return The Message that calls {@code copyFrom} inside the
+     * {@code copy} method after the copy constructor
+     */
+    public final Message copyFrom(Message m) {
+        isProtocolMessage = m.isProtocolMessage;
+        return this;
+    }
 
     /**
      * Retuns a unique id for the message. The id can be used for various things,

@@ -30,10 +30,14 @@
 #include "memory/barrierSet.hpp"
 #include "memory/cardTableModRefBS.hpp"
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -612,10 +616,10 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   // Usual case:  Bail to interpreter.
   // Reserve the right to recompile if we haven't seen anything yet.
 
-  assert(!Deoptimization::reason_is_speculate(reason), "unsupported");
+  ciMethod* m = Deoptimization::reason_is_speculate(reason) ? C->method() : NULL;
   Deoptimization::DeoptAction action = Deoptimization::Action_maybe_recompile;
   if (treat_throw_as_hot
-      && (method()->method_data()->trap_recompiled_at(bci(), NULL)
+      && (method()->method_data()->trap_recompiled_at(bci(), m)
           || C->too_many_traps(reason))) {
     // We cannot afford to take more traps here.  Suffer in the interpreter.
     if (C->log() != NULL)
@@ -1125,6 +1129,17 @@ Node* GraphKit::ConvI2L(Node* offset) {
   }
   return _gvn.transform( new (C) ConvI2LNode(offset));
 }
+
+Node* GraphKit::ConvI2UL(Node* offset) {
+  juint offset_con = (juint) find_int_con(offset, Type::OffsetBot);
+  if (offset_con != (juint) Type::OffsetBot) {
+    return longcon((julong) offset_con);
+  }
+  Node* conv = _gvn.transform( new (C) ConvI2LNode(offset));
+  Node* mask = _gvn.transform( ConLNode::make(C, (julong) max_juint) );
+  return _gvn.transform( new (C) AndLNode(conv, mask) );
+}
+
 Node* GraphKit::ConvL2I(Node* offset) {
   // short-circuit a common case
   jlong offset_con = find_long_con(offset, (jlong)Type::OffsetBot);
@@ -1170,7 +1185,8 @@ extern int explicit_null_checks_inserted,
 Node* GraphKit::null_check_common(Node* value, BasicType type,
                                   // optional arguments for variations:
                                   bool assert_null,
-                                  Node* *null_control) {
+                                  Node* *null_control,
+                                  bool speculative) {
   assert(!assert_null || null_control == NULL, "not both at once");
   if (stopped())  return top();
   if (!GenerateCompilerNullChecks && !assert_null && null_control == NULL) {
@@ -1280,13 +1296,13 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
   // Branch to failure if null
   float ok_prob = PROB_MAX;  // a priori estimate:  nulls never happen
   Deoptimization::DeoptReason reason;
-  if (assert_null)
+  if (assert_null) {
     reason = Deoptimization::Reason_null_assert;
-  else if (type == T_OBJECT)
-    reason = Deoptimization::Reason_null_check;
-  else
+  } else if (type == T_OBJECT) {
+    reason = Deoptimization::reason_null_check(speculative);
+  } else {
     reason = Deoptimization::Reason_div0_check;
-
+  }
   // %%% Since Reason_unhandled is not recorded on a per-bytecode basis,
   // ciMethodData::has_trap_at will return a conservative -1 if any
   // must-be-null assertion has failed.  This could cause performance
@@ -2109,21 +2125,36 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
  *
  * @param n          node that the type applies to
  * @param exact_kls  type from profiling
+ * @param maybe_null did profiling see null?
  *
  * @return           node with improved type
  */
-Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls) {
+Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, bool maybe_null) {
   const Type* current_type = _gvn.type(n);
   assert(UseTypeSpeculation, "type speculation must be on");
 
-  const TypeOopPtr* speculative = current_type->speculative();
+  const TypePtr* speculative = current_type->speculative();
 
+  // Should the klass from the profile be recorded in the speculative type?
   if (current_type->would_improve_type(exact_kls, jvms()->depth())) {
     const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls);
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
+    // Any reason to believe n is not null (from this profiling or a previous one)?
+    const TypePtr* ptr = (maybe_null && current_type->speculative_maybe_null()) ? TypePtr::BOTTOM : TypePtr::NOTNULL;
     // record the new speculative type's depth
-    speculative = xtype->with_inline_depth(jvms()->depth());
+    speculative = xtype->cast_to_ptr_type(ptr->ptr())->is_ptr();
+    speculative = speculative->with_inline_depth(jvms()->depth());
+  } else if (current_type->would_improve_ptr(maybe_null)) {
+    // Profiling report that null was never seen so we can change the
+    // speculative type to non null ptr.
+    assert(!maybe_null, "nothing to improve");
+    if (speculative == NULL) {
+      speculative = TypePtr::NOTNULL;
+    } else {
+      const TypePtr* ptr = TypePtr::NOTNULL;
+      speculative = speculative->cast_to_ptr_type(ptr->ptr())->is_ptr();
+    }
   }
 
   if (speculative != current_type->speculative()) {
@@ -2156,7 +2187,15 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
     return n;
   }
   ciKlass* exact_kls = profile_has_unique_klass();
-  return record_profile_for_speculation(n, exact_kls);
+  bool maybe_null = true;
+  if (java_bc() == Bytecodes::_checkcast ||
+      java_bc() == Bytecodes::_instanceof ||
+      java_bc() == Bytecodes::_aastore) {
+    ciProfileData* data = method()->method_data()->bci_to_data(bci());
+    bool maybe_null = data == NULL ? true : data->as_BitData()->null_seen();
+  }
+  return record_profile_for_speculation(n, exact_kls, maybe_null);
+  return n;
 }
 
 /**
@@ -2176,9 +2215,10 @@ void GraphKit::record_profiled_arguments_for_speculation(ciMethod* dest_method, 
   for (int j = skip, i = 0; j < nargs && i < TypeProfileArgsLimit; j++) {
     const Type *targ = tf->_domain->field_at(j + TypeFunc::Parms);
     if (targ->basic_type() == T_OBJECT || targ->basic_type() == T_ARRAY) {
-      ciKlass* better_type = method()->argument_profiled_type(bci(), i);
-      if (better_type != NULL) {
-        record_profile_for_speculation(argument(j), better_type);
+      bool maybe_null = true;
+      ciKlass* better_type = NULL;
+      if (method()->argument_profiled_type(bci(), i, better_type, maybe_null)) {
+        record_profile_for_speculation(argument(j), better_type, maybe_null);
       }
       i++;
     }
@@ -2195,12 +2235,31 @@ void GraphKit::record_profiled_parameters_for_speculation() {
   }
   for (int i = 0, j = 0; i < method()->arg_size() ; i++) {
     if (_gvn.type(local(i))->isa_oopptr()) {
-      ciKlass* better_type = method()->parameter_profiled_type(j);
-      if (better_type != NULL) {
-        record_profile_for_speculation(local(i), better_type);
+      bool maybe_null = true;
+      ciKlass* better_type = NULL;
+      if (method()->parameter_profiled_type(j, better_type, maybe_null)) {
+        record_profile_for_speculation(local(i), better_type, maybe_null);
       }
       j++;
     }
+  }
+}
+
+/**
+ * Record profiling data from return value profiling at an invoke with
+ * the type system so that it can propagate it (speculation)
+ */
+void GraphKit::record_profiled_return_for_speculation() {
+  if (!UseTypeSpeculation) {
+    return;
+  }
+  bool maybe_null = true;
+  ciKlass* better_type = NULL;
+  if (method()->return_profiled_type(bci(), better_type, maybe_null)) {
+    // If profiling reports a single type for the return value,
+    // feed it to the type system so it can propagate it as a
+    // speculative type
+    record_profile_for_speculation(stack(sp()-1), better_type, maybe_null);
   }
 }
 
@@ -2283,10 +2342,12 @@ Node* GraphKit::dstore_rounding(Node* n) {
 // Null check oop.  Set null-path control into Region in slot 3.
 // Make a cast-not-nullness use the other not-null control.  Return cast.
 Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
-                               bool never_see_null, bool safe_for_replace) {
+                               bool never_see_null,
+                               bool safe_for_replace,
+                               bool speculative) {
   // Initial NULL check taken path
   (*null_control) = top();
-  Node* cast = null_check_common(value, T_OBJECT, false, null_control);
+  Node* cast = null_check_common(value, T_OBJECT, false, null_control, speculative);
 
   // Generate uncommon_trap:
   if (never_see_null && (*null_control) != top()) {
@@ -2297,7 +2358,8 @@ Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
     PreserveJVMState pjvms(this);
     set_control(*null_control);
     replace_in_map(value, null());
-    uncommon_trap(Deoptimization::Reason_null_check,
+    Deoptimization::DeoptReason reason = Deoptimization::reason_null_check(speculative);
+    uncommon_trap(reason,
                   Deoptimization::Action_make_not_entrant);
     (*null_control) = top();    // NULL path is dead
   }
@@ -2721,11 +2783,16 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
 // recompile; the offending check will be recompiled to handle NULLs.
 // If we see several offending BCIs, then all checks in the
 // method will be recompiled.
-bool GraphKit::seems_never_null(Node* obj, ciProfileData* data) {
+bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculating) {
+  speculating = !_gvn.type(obj)->speculative_maybe_null();
+  Deoptimization::DeoptReason reason = Deoptimization::reason_null_check(speculating);
   if (UncommonNullCast               // Cutout for this technique
       && obj != null()               // And not the -Xcomp stupid case?
-      && !too_many_traps(Deoptimization::Reason_null_check)
+      && !too_many_traps(reason)
       ) {
+    if (speculating) {
+      return true;
+    }
     if (data == NULL)
       // Edge case:  no mature data.  Be optimistic here.
       return true;
@@ -2735,6 +2802,7 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data) {
            java_bc() == Bytecodes::_aastore, "MDO must collect null_seen bit here");
     return !data->as_BitData()->null_seen();
   }
+  speculating = false;
   return false;
 }
 
@@ -2747,7 +2815,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
                                              bool safe_for_replace) {
   if (!UseTypeProfile || !TypeProfileCasts) return NULL;
 
-  Deoptimization::DeoptReason reason = spec_klass == NULL ? Deoptimization::Reason_class_check : Deoptimization::Reason_speculate_class_check;
+  Deoptimization::DeoptReason reason = Deoptimization::reason_class_check(spec_klass != NULL);
 
   // Make sure we haven't already deoptimized from this tactic.
   if (too_many_traps(reason))
@@ -2800,7 +2868,7 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
   // type == NULL if profiling tells us this object is always null
   if (type != NULL) {
     Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
-    Deoptimization::DeoptReason null_reason = Deoptimization::Reason_null_check;
+    Deoptimization::DeoptReason null_reason = Deoptimization::Reason_speculate_null_check;
     if (!too_many_traps(null_reason) &&
         !too_many_traps(class_reason)) {
       Node* not_null_obj = NULL;
@@ -2808,7 +2876,7 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
       // there's no need for a null check
       if (!not_null) {
         Node* null_ctl = top();
-        not_null_obj = null_check_oop(obj, &null_ctl, true, true);
+        not_null_obj = null_check_oop(obj, &null_ctl, true, true, true);
         assert(null_ctl->is_top(), "no null control here");
       } else {
         not_null_obj = obj;
@@ -2856,12 +2924,13 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   if (java_bc() == Bytecodes::_instanceof) {  // Only for the bytecode
     data = method()->method_data()->bci_to_data(bci());
   }
+  bool speculative_not_null = false;
   bool never_see_null = (ProfileDynamicTypes  // aggressive use of profile
-                         && seems_never_null(obj, data));
+                         && seems_never_null(obj, data, speculative_not_null));
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
-  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace);
+  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace, speculative_not_null);
 
   // If not_null_obj is dead, only null-path is taken
   if (stopped()) {              // Doing instance-of on a NULL?
@@ -2984,12 +3053,13 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   C->set_has_split_ifs(true); // Has chance for split-if optimization
 
   // Use null-cast information if it is available
+  bool speculative_not_null = false;
   bool never_see_null = ((failure_control == NULL)  // regular case only
-                         && seems_never_null(obj, data));
+                         && seems_never_null(obj, data, speculative_not_null));
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
-  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace);
+  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace, speculative_not_null);
 
   // If not_null_obj is dead, only null-path is taken
   if (stopped()) {              // Doing instance-of on a NULL?
@@ -3151,10 +3221,14 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   Node* mem = reset_memory();
 
   FastLockNode * flock = _gvn.transform(new (C) FastLockNode(0, obj, box) )->as_FastLock();
-  if (PrintPreciseBiasedLockingStatistics) {
+  if (UseBiasedLocking && PrintPreciseBiasedLockingStatistics) {
     // Create the counters for this fast lock.
     flock->create_lock_counter(sync_jvms()); // sync_jvms used to get current bci
   }
+
+  // Create the rtm counters for this fast lock if needed.
+  flock->create_rtm_lock_counter(sync_jvms()); // sync_jvms used to get current bci
+
   // Add monitor to debug info for the slow path.  If we block inside the
   // slow path and de-opt, we need the monitor hanging around
   map()->push_monitor( flock );

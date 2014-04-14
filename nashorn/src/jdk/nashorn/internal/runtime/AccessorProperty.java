@@ -39,6 +39,9 @@ import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getNumberOfAcces
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.lookup.MethodHandleFactory.stripName;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -51,11 +54,12 @@ import jdk.nashorn.internal.lookup.MethodHandleFactory;
  * An AccessorProperty is the most generic property type. An AccessorProperty is
  * represented as fields in a ScriptObject class.
  */
-public final class AccessorProperty extends Property {
+public final class AccessorProperty extends Property implements Serializable {
     private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private static final MethodHandle REPLACE_MAP = findOwnMH("replaceMap", Object.class, Object.class, PropertyMap.class, String.class, Class.class, Class.class);
 
     private static final int NOOF_TYPES = getNumberOfAccessorTypes();
+    private static final long serialVersionUID = 3371720170182154920L;
 
     /**
      * Properties in different maps for the same structure class will share their field getters and setters. This could
@@ -71,7 +75,7 @@ public final class AccessorProperty extends Property {
     };
 
     /** Property getter cache */
-    private MethodHandle[] getters = new MethodHandle[NOOF_TYPES];
+    private transient MethodHandle[] getters = new MethodHandle[NOOF_TYPES];
 
     private static final MethodType[] ACCESSOR_GETTER_TYPES = new MethodType[NOOF_TYPES];
     private static final MethodType[] ACCESSOR_SETTER_TYPES = new MethodType[NOOF_TYPES];
@@ -122,16 +126,16 @@ public final class AccessorProperty extends Property {
     }
 
     /** Seed getter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
-    private MethodHandle primitiveGetter;
+    private transient MethodHandle primitiveGetter;
 
     /** Seed setter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
-    private MethodHandle primitiveSetter;
+    private transient MethodHandle primitiveSetter;
 
     /** Seed getter for the Object version of this field */
-    private MethodHandle objectGetter;
+    private transient MethodHandle objectGetter;
 
     /** Seed setter for the Object version of this field */
-    private MethodHandle objectSetter;
+    private transient MethodHandle objectSetter;
 
     /**
      * Current type of this object, in object only mode, this is an Object.class. In dual-fields mode
@@ -243,6 +247,12 @@ public final class AccessorProperty extends Property {
     public AccessorProperty(final String key, final int flags, final Class<?> structure, final int slot) {
         super(key, flags, slot);
 
+        initGetterSetter(structure);
+    }
+
+    private void initGetterSetter(final Class<?> structure) {
+        final int slot = getSlot();
+        final String key = getKey();
         /*
          * primitiveGetter and primitiveSetter are only used in dual fields mode. Setting them to null also
          * works in dual field mode, it only means that the property never has a primitive
@@ -305,6 +315,12 @@ public final class AccessorProperty extends Property {
         setCurrentType(property.getCurrentType());
     }
 
+    private void readObject(final ObjectInputStream s) throws IOException, ClassNotFoundException {
+        s.defaultReadObject();
+        // Restore getters array
+        getters = new MethodHandle[NOOF_TYPES];
+    }
+
     private static MethodHandle bindTo(final MethodHandle mh, final Object receiver) {
         if (mh == null) {
             return null;
@@ -361,6 +377,16 @@ public final class AccessorProperty extends Property {
             objectSetter = getSpillSetter();
         }
         return objectSetter;
+    }
+
+    @Override
+    void initMethodHandles(final Class<?> structure) {
+        if (!ScriptObject.class.isAssignableFrom(structure) || !StructureLoader.isStructureClass(structure.getName())) {
+            throw new IllegalArgumentException();
+        }
+        if (!isSpill()) {
+            initGetterSetter(structure);
+        }
     }
 
     @Override

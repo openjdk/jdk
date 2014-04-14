@@ -382,7 +382,7 @@ abstract class ArrayBufferView extends ScriptObject {
         return (int) (length & Integer.MAX_VALUE);
     }
 
-    protected static Object subarrayImpl(final Object self, final Object begin0, final Object end0) {
+    protected static ScriptObject subarrayImpl(final Object self, final Object begin0, final Object end0) {
         final ArrayBufferView arrayView = ((ArrayBufferView)self);
         final int elementLength = arrayView.elementLength();
         final int begin = NativeArrayBuffer.adjustIndex(JSType.toInt32(begin0), elementLength);

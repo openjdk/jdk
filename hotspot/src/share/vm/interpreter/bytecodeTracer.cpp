@@ -35,8 +35,6 @@
 #include "runtime/timer.hpp"
 
 
-#ifndef PRODUCT
-
 // Standard closure for BytecodeTracer: prints the current bytecode
 // and its attributes using bytecode-specific information.
 
@@ -600,4 +598,3 @@ void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
     }
   }
 }
-#endif // PRODUCT
