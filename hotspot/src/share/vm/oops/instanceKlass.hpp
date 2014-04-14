@@ -802,7 +802,7 @@ class InstanceKlass: public Klass {
   // Iterators
   void do_local_static_fields(FieldClosure* cl);
   void do_nonstatic_fields(FieldClosure* cl); // including inherited fields
-  void do_local_static_fields(void f(fieldDescriptor*, TRAPS), TRAPS);
+  void do_local_static_fields(void f(fieldDescriptor*, Handle, TRAPS), Handle, TRAPS);
 
   void methods_do(void f(Method* method));
   void array_klasses_do(void f(Klass* k));
@@ -1010,7 +1010,7 @@ private:
   static void set_initialization_state_and_notify_impl  (instanceKlassHandle this_k, ClassState state, TRAPS);
   static void call_class_initializer_impl               (instanceKlassHandle this_k, TRAPS);
   static Klass* array_klass_impl                        (instanceKlassHandle this_k, bool or_null, int n, TRAPS);
-  static void do_local_static_fields_impl               (instanceKlassHandle this_k, void f(fieldDescriptor* fd, TRAPS), TRAPS);
+  static void do_local_static_fields_impl               (instanceKlassHandle this_k, void f(fieldDescriptor* fd, Handle, TRAPS), Handle, TRAPS);
   /* jni_id_for_impl for jfieldID only */
   static JNIid* jni_id_for_impl                         (instanceKlassHandle this_k, int offset);
 

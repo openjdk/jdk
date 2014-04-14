@@ -662,6 +662,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _print_inlining_list(NULL),
+                  _print_inlining_stream(NULL),
                   _print_inlining_idx(0),
                   _preserve_jvm_state(0) {
   C = this;
@@ -723,9 +724,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   PhaseGVN gvn(node_arena(), estimated_size);
   set_initial_gvn(&gvn);
 
-  if (print_inlining() || print_intrinsics()) {
-    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
-  }
+  print_inlining_init();
   { // Scope for timing the parser
     TracePhase t3("parse", &_t_parser, true);
 
@@ -967,6 +966,7 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_progress(false),
     _inlining_incrementally(false),
     _print_inlining_list(NULL),
+    _print_inlining_stream(NULL),
     _print_inlining_idx(0),
     _preserve_jvm_state(0),
     _allowed_reasons(0) {
@@ -2022,6 +2022,8 @@ void Compile::Optimize() {
 
   ResourceMark rm;
   int          loop_opts_cnt;
+
+  print_inlining_reinit();
 
   NOT_PRODUCT( verify_graph_edges(); )
 
@@ -3755,35 +3757,162 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
   }
 }
 
-void Compile::dump_inlining() {
+// The message about the current inlining is accumulated in
+// _print_inlining_stream and transfered into the _print_inlining_list
+// once we know whether inlining succeeds or not. For regular
+// inlining, messages are appended to the buffer pointed by
+// _print_inlining_idx in the _print_inlining_list. For late inlining,
+// a new buffer is added after _print_inlining_idx in the list. This
+// way we can update the inlining message for late inlining call site
+// when the inlining is attempted again.
+void Compile::print_inlining_init() {
   if (print_inlining() || print_intrinsics()) {
+    _print_inlining_stream = new stringStream();
+    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
+  }
+}
+
+void Compile::print_inlining_reinit() {
+  if (print_inlining() || print_intrinsics()) {
+    // Re allocate buffer when we change ResourceMark
+    _print_inlining_stream = new stringStream();
+  }
+}
+
+void Compile::print_inlining_reset() {
+  _print_inlining_stream->reset();
+}
+
+void Compile::print_inlining_commit() {
+  assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
+  // Transfer the message from _print_inlining_stream to the current
+  // _print_inlining_list buffer and clear _print_inlining_stream.
+  _print_inlining_list->at(_print_inlining_idx).ss()->write(_print_inlining_stream->as_string(), _print_inlining_stream->size());
+  print_inlining_reset();
+}
+
+void Compile::print_inlining_push() {
+  // Add new buffer to the _print_inlining_list at current position
+  _print_inlining_idx++;
+  _print_inlining_list->insert_before(_print_inlining_idx, PrintInliningBuffer());
+}
+
+Compile::PrintInliningBuffer& Compile::print_inlining_current() {
+  return _print_inlining_list->at(_print_inlining_idx);
+}
+
+void Compile::print_inlining_update(CallGenerator* cg) {
+  if (print_inlining() || print_intrinsics()) {
+    if (!cg->is_late_inline()) {
+      if (print_inlining_current().cg() != NULL) {
+        print_inlining_push();
+      }
+      print_inlining_commit();
+    } else {
+      if (print_inlining_current().cg() != cg &&
+          (print_inlining_current().cg() != NULL ||
+           print_inlining_current().ss()->size() != 0)) {
+        print_inlining_push();
+      }
+      print_inlining_commit();
+      print_inlining_current().set_cg(cg);
+    }
+  }
+}
+
+void Compile::print_inlining_move_to(CallGenerator* cg) {
+  // We resume inlining at a late inlining call site. Locate the
+  // corresponding inlining buffer so that we can update it.
+  if (print_inlining()) {
+    for (int i = 0; i < _print_inlining_list->length(); i++) {
+      if (_print_inlining_list->adr_at(i)->cg() == cg) {
+        _print_inlining_idx = i;
+        return;
+      }
+    }
+    ShouldNotReachHere();
+  }
+}
+
+void Compile::print_inlining_update_delayed(CallGenerator* cg) {
+  if (print_inlining()) {
+    assert(_print_inlining_stream->size() > 0, "missing inlining msg");
+    assert(print_inlining_current().cg() == cg, "wrong entry");
+    // replace message with new message
+    _print_inlining_list->at_put(_print_inlining_idx, PrintInliningBuffer());
+    print_inlining_commit();
+    print_inlining_current().set_cg(cg);
+  }
+}
+
+void Compile::print_inlining_assert_ready() {
+  assert(!_print_inlining || _print_inlining_stream->size() == 0, "loosing data");
+}
+
+void Compile::dump_inlining() {
+  bool do_print_inlining = print_inlining() || print_intrinsics();
+  if (do_print_inlining || log() != NULL) {
     // Print inlining message for candidates that we couldn't inline
-    // for lack of space or non constant receiver
+    // for lack of space
     for (int i = 0; i < _late_inlines.length(); i++) {
       CallGenerator* cg = _late_inlines.at(i);
-      cg->print_inlining_late("live nodes > LiveNodeCountInliningCutoff");
-    }
-    Unique_Node_List useful;
-    useful.push(root());
-    for (uint next = 0; next < useful.size(); ++next) {
-      Node* n  = useful.at(next);
-      if (n->is_Call() && n->as_Call()->generator() != NULL && n->as_Call()->generator()->call_node() == n) {
-        CallNode* call = n->as_Call();
-        CallGenerator* cg = call->generator();
-        cg->print_inlining_late("receiver not constant");
-      }
-      uint max = n->len();
-      for ( uint i = 0; i < max; ++i ) {
-        Node *m = n->in(i);
-        if ( m == NULL ) continue;
-        useful.push(m);
+      if (!cg->is_mh_late_inline()) {
+        const char* msg = "live nodes > LiveNodeCountInliningCutoff";
+        if (do_print_inlining) {
+          cg->print_inlining_late(msg);
+        }
+        log_late_inline_failure(cg, msg);
       }
     }
+  }
+  if (do_print_inlining) {
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       tty->print(_print_inlining_list->adr_at(i)->ss()->as_string());
     }
   }
 }
+
+void Compile::log_late_inline(CallGenerator* cg) {
+  if (log() != NULL) {
+    log()->head("late_inline method='%d'  inline_id='" JLONG_FORMAT "'", log()->identify(cg->method()),
+                cg->unique_id());
+    JVMState* p = cg->call_node()->jvms();
+    while (p != NULL) {
+      log()->elem("jvms bci='%d' method='%d'", p->bci(), log()->identify(p->method()));
+      p = p->caller();
+    }
+    log()->tail("late_inline");
+  }
+}
+
+void Compile::log_late_inline_failure(CallGenerator* cg, const char* msg) {
+  log_late_inline(cg);
+  if (log() != NULL) {
+    log()->inline_fail(msg);
+  }
+}
+
+void Compile::log_inline_id(CallGenerator* cg) {
+  if (log() != NULL) {
+    // The LogCompilation tool needs a unique way to identify late
+    // inline call sites. This id must be unique for this call site in
+    // this compilation. Try to have it unique across compilations as
+    // well because it can be convenient when grepping through the log
+    // file.
+    // Distinguish OSR compilations from others in case CICountOSR is
+    // on.
+    jlong id = ((jlong)unique()) + (((jlong)compile_id()) << 33) + (CICountOSR && is_osr_compilation() ? ((jlong)1) << 32 : 0);
+    cg->set_unique_id(id);
+    log()->elem("inline_id id='" JLONG_FORMAT "'", id);
+  }
+}
+
+void Compile::log_inline_failure(const char* msg) {
+  if (C->log() != NULL) {
+    C->log()->inline_fail(msg);
+  }
+}
+
 
 // Dump inlining replay data to the stream.
 // Don't change thread state and acquire any locks.
@@ -3962,8 +4091,8 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     worklist.push(root());
     for (uint next = 0; next < worklist.size(); ++next) {
       Node *n  = worklist.at(next);
-      const Type* t = igvn.type(n);
-      assert(t == t->remove_speculative(), "no more speculative types");
+      const Type* t = igvn.type_or_null(n);
+      assert((t == NULL) || (t == t->remove_speculative()), "no more speculative types");
       if (n->is_Type()) {
         t = n->as_Type()->type();
         assert(t == t->remove_speculative(), "no more speculative types");
