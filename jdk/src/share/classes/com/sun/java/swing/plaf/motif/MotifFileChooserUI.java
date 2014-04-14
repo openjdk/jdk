@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,6 +281,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         fc.setLayout(new BorderLayout(10, 10));
         fc.setAlignmentX(JComponent.CENTER_ALIGNMENT);
 
+        @SuppressWarnings("serial") // anonymous class
         JPanel interior = new JPanel() {
             public Insets getInsets() {
                 return insets;
@@ -303,13 +304,16 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         if(currentDirectory != null) {
             curDirName = currentDirectory.getPath();
         }
-        pathField = new JTextField(curDirName) {
+
+        @SuppressWarnings("serial") // anonymous class
+        JTextField tmp1 = new JTextField(curDirName) {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;
                 return d;
             }
         };
+        pathField = tmp1;
         pathField.setInheritsPopupMenu(true);
         l.setLabelFor(pathField);
         align(pathField);
@@ -337,13 +341,15 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         align(l);
         leftPanel.add(l);
 
-        filterComboBox = new JComboBox<FileFilter>() {
+        @SuppressWarnings("serial") // anonymous class
+        JComboBox tmp2 = new JComboBox<FileFilter>() {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;
                 return d;
             }
         };
+        filterComboBox = tmp2;
         filterComboBox.setInheritsPopupMenu(true);
         l.setLabelFor(filterComboBox);
         filterComboBoxModel = createFilterComboBoxModel();
@@ -413,13 +419,15 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         align(fileNameLabel);
         interior.add(fileNameLabel);
 
-        filenameTextField = new JTextField() {
+        @SuppressWarnings("serial") // anonymous class
+        JTextField tmp3 = new JTextField() {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;
                 return d;
             }
         };
+        filenameTextField = tmp3;
         filenameTextField.setInheritsPopupMenu(true);
         fileNameLabel.setLabelFor(filenameTextField);
         filenameTextField.addActionListener(getApproveSelectionAction());
@@ -436,11 +444,13 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
         buttonPanel.add(Box.createGlue());
 
-        approveButton = new JButton(getApproveButtonText(fc)) {
+        @SuppressWarnings("serial") // anonymous class
+        JButton tmp4 = new JButton(getApproveButtonText(fc)) {
             public Dimension getMaximumSize() {
                 return new Dimension(MAX_SIZE.width, this.getPreferredSize().height);
             }
         };
+        approveButton = tmp4;
         approveButton.setMnemonic(getApproveButtonMnemonic(fc));
         approveButton.setToolTipText(getApproveButtonToolTipText(fc));
         approveButton.setInheritsPopupMenu(true);
@@ -450,6 +460,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         buttonPanel.add(approveButton);
         buttonPanel.add(Box.createGlue());
 
+        @SuppressWarnings("serial") // anonymous class
         JButton updateButton = new JButton(updateButtonText) {
             public Dimension getMaximumSize() {
                 return new Dimension(MAX_SIZE.width, this.getPreferredSize().height);
@@ -464,6 +475,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         buttonPanel.add(updateButton);
         buttonPanel.add(Box.createGlue());
 
+        @SuppressWarnings("serial") // anonymous class
         JButton cancelButton = new JButton(cancelButtonText) {
             public Dimension getMaximumSize() {
                 return new Dimension(MAX_SIZE.width, this.getPreferredSize().height);
@@ -478,6 +490,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         buttonPanel.add(cancelButton);
         buttonPanel.add(Box.createGlue());
 
+        @SuppressWarnings("serial") // anonymous class
         JButton helpButton = new JButton(helpButtonText) {
             public Dimension getMaximumSize() {
                 return new Dimension(MAX_SIZE.width, this.getPreferredSize().height);
@@ -640,6 +653,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         c.setAlignmentY(JComponent.TOP_ALIGNMENT);
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileCellRenderer extends DefaultListCellRenderer  {
         public Component getListCellRendererComponent(JList list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
@@ -651,6 +665,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryCellRenderer extends DefaultListCellRenderer  {
         public Component getListCellRendererComponent(JList list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
@@ -662,6 +677,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MotifDirectoryListModel extends AbstractListModel<File> implements ListDataListener {
         public MotifDirectoryListModel() {
             getModel().addListDataListener(this);
@@ -698,6 +714,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MotifFileListModel extends AbstractListModel<File> implements ListDataListener {
         public MotifFileListModel() {
             getModel().addListDataListener(this);
@@ -759,6 +776,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
     /**
      * Render different type sizes and styles.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list,
             Object value, int index, boolean isSelected,
@@ -777,6 +795,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
             PropertyChangeListener {
         protected FileFilter[] filters;

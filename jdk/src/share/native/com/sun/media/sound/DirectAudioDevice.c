@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 
 
 #include <jni.h>
+#include <jni_util.h>
 // for malloc
 #ifdef _ALLBSD_SOURCE
 #include <stdlib.h>
@@ -603,6 +604,7 @@ JNIEXPORT jint JNICALL Java_com_sun_media_sound_DirectAudioDevice_nWrite
     if (len == 0) return 0;
     if (info && info->handle) {
         data = (UINT8*) ((*env)->GetByteArrayElements(env, jData, &didCopy));
+        CHECK_NULL_RETURN(data, ret);
         dataOffset = data;
         dataOffset += (int) offset;
         convertedData = dataOffset;
@@ -671,6 +673,7 @@ JNIEXPORT jint JNICALL Java_com_sun_media_sound_DirectAudioDevice_nRead
     }
     if (info && info->handle) {
         data = (char*) ((*env)->GetByteArrayElements(env, jData, NULL));
+        CHECK_NULL_RETURN(data, ret);
         dataOffset = data;
         dataOffset += (int) offset;
         ret = DAUDIO_Read(info->handle, dataOffset, (int) len);

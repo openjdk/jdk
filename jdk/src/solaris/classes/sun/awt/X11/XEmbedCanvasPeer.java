@@ -688,6 +688,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     private static class XEmbedDropTarget extends DropTarget {
         public void addDropTargetListener(DropTargetListener dtl)
           throws TooManyListenersException {

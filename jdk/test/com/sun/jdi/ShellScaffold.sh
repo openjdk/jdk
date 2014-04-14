@@ -908,7 +908,7 @@ startDebuggee()
     debuggeepid=
     waitForJdbMsg Listening 4
 
-    beOption="-agentlib:jdwp=transport=$transport,address=$address,server=n,suspend=y"
+    beOption="-agentlib:jdwp=transport=$transport,address=$address,server=n,suspend=y" 
 #   beOption="-Xdebug -Xrunjdwp:transport=$transport,address=$address,server=n,suspend=y"
 
     thecmd="$jdk/bin/$java $mode -classpath $tmpFileDir $baseArgs $args \
@@ -976,14 +976,20 @@ waitForFinish()
         if [ $? != 0 ] ; then
             break
         fi
+
         if [ ! -z "$isWin98" ] ; then
             $psCmd | $grep -i 'JDB\.EXE' >$devnull 2>&1
             if [ $? != 0 ] ; then
                 break
             fi
         fi
-        # Something went wrong
-        jdbFailIfPresent "Input stream closed"
+
+        # (Don't use jdbFailIfPresent here since it is not safe 
+        # to call from different processes)
+	$grep -s 'Input stream closed' $jdbOutFile > $devnull 2>&1
+	if [ $? = 0 ] ; then
+            dofail "jdb input stream closed prematurely"
+	fi
 
         # If a failure has occured, quit
         if [ -r "$failFile" ] ; then
@@ -994,7 +1000,12 @@ waitForFinish()
     done
 
     # jdb exited because its input stream closed prematurely
-    jdbFailIfPresent "Input stream closed"
+    # (Don't use jdbFailIfPresent here since it is not safe 
+    # to call from different processes)
+    $grep -s 'Input stream closed' $jdbOutFile > $devnull 2>&1
+    if [ $? = 0 ] ; then
+        dofail "jdb input stream closed prematurely"
+    fi
 
     # It is necessary here to avoid the situation when JDB exited but
     # mydojdbCmds() didn't finish because it waits for JDB message
@@ -1085,6 +1096,7 @@ grepForString()
         fi
         unset theFile
     esac
+
     return $stat
 }
 

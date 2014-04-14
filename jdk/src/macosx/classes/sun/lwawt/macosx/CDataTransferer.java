@@ -52,7 +52,9 @@ public class CDataTransferer extends DataTransferer {
         "RICH_TEXT",
         "HTML",
         "PDF",
-        "URL"
+        "URL",
+        "PNG",
+        "JFIF"
     };
 
     static {
@@ -74,8 +76,8 @@ public class CDataTransferer extends DataTransferer {
     public static final int CF_HTML        = 5;
     public static final int CF_PDF         = 6;
     public static final int CF_URL         = 7;
-    public static final int CF_PNG         = 10;
-    public static final int CF_JPEG        = 11;
+    public static final int CF_PNG         = 8;
+    public static final int CF_JPEG        = 9;
 
     private CDataTransferer() {}
 
@@ -204,20 +206,9 @@ public class CDataTransferer extends DataTransferer {
         return handler;
     }
 
-    private native byte[] imageDataToPlatformImageBytes(int[] rData, int nW, int nH);
     @Override
     protected byte[] imageToPlatformBytes(Image image, long format) {
-        int w = image.getWidth(null);
-        int h = image.getHeight(null);
-        BufferedImage bimage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
-        Graphics g = bimage.getGraphics();
-        g.drawImage(image, 0, 0, w, h, null);
-        g.dispose();
-        Raster raster = bimage.getRaster();
-        DataBuffer buffer = raster.getDataBuffer();
-        return imageDataToPlatformImageBytes(((DataBufferInt)buffer).getData(),
-                                             raster.getWidth(),
-                                             raster.getHeight());
+        return CImage.getCreator().getPlatformImageBytes(image);
     }
 
     private static native String[] nativeDragQueryFile(final byte[] bytes);
@@ -228,14 +219,9 @@ public class CDataTransferer extends DataTransferer {
         return nativeDragQueryFile(bytes);
     }
 
-    private native Image getImageForByteStream(byte[] bytes);
-    /**
-     * Translates a byte array which contains
-     * platform-specific image data in the given format into an Image.
-     */
     @Override
     protected Image platformImageBytesToImage(byte[] bytes, long format) throws IOException {
-        return getImageForByteStream(bytes);
+        return CImage.getCreator().createImageFromPlatformImageBytes(bytes);
     }
 
     @Override

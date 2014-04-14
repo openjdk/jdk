@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,6 +194,8 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
         super.uninstallDesktopManager();
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only and
+                                // internal anonymous classes
     static class TaskBar extends JPanel implements ComponentListener, ContainerListener {
         TaskBar() {
             setOpaque(true);
@@ -321,7 +323,7 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
         }
     }
 
-
+    @SuppressWarnings("serial") // Same-version serialization only
     class SynthDesktopManager extends DefaultDesktopManager implements UIResource {
 
         public void maximizeFrame(JInternalFrame f) {

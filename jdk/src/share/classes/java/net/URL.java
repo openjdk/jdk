@@ -867,7 +867,7 @@ public final class URL implements java.io.Serializable {
      * Creates an integer suitable for hash table indexing.<p>
      *
      * The hash code is based upon all the URL components relevant for URL
-     * comparison. As such, this operation is a blocking operation.<p>
+     * comparison. As such, this operation is a blocking operation.
      *
      * @return  a hash code for this {@code URL}.
      */

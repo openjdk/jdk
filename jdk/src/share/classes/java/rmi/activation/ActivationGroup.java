@@ -172,7 +172,7 @@ public abstract class ActivationGroup
      *
      * <p>This method simply informs the group's monitor that the object
      * is inactive.  It is up to the concrete subclass of ActivationGroup
-     * to fulfill the additional requirement of unexporting the object. <p>
+     * to fulfill the additional requirement of unexporting the object.
      *
      * @param id the object's activation identifier
      * @return true if the object was successfully deactivated; otherwise

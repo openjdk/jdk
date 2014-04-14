@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ public class EmptyMessageImpl extends AbstractMessageImpl {
         super(that);
         this.headers = new HeaderList(that.headers);
         this.attachmentSet = that.attachmentSet;
+        this.copyFrom(that);
     }
 
     public boolean hasHeaders() {
@@ -115,7 +116,7 @@ public class EmptyMessageImpl extends AbstractMessageImpl {
     }
 
     public Message copy() {
-        return new EmptyMessageImpl(this);
+        return new EmptyMessageImpl(this).copyFrom(this);
     }
 
 }

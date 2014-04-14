@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,6 +182,11 @@ static int checkChannelOffsets(RasterS_t *rasterP, int dataArrayLength) {
 int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
     jobject joffs = NULL;
     /* int status;*/
+    jclass singlePixelPackedSampleModelClass = NULL;
+    jclass integerComponentRasterClass = NULL;
+    jclass byteComponentRasterClass = NULL;
+    jclass shortComponentRasterClass = NULL;
+    jclass bytePackedRasterClass = NULL;
 
     if (JNU_IsNull(env, jraster)) {
         JNU_ThrowNullPointerException(env, "null Raster object");
@@ -226,8 +231,11 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
 
     rasterP->sppsm.isUsed = 0;
 
+    singlePixelPackedSampleModelClass = (*env)->FindClass(env,
+                            "java/awt/image/SinglePixelPackedSampleModel");
+    CHECK_NULL_RETURN(singlePixelPackedSampleModelClass, -1);
     if ((*env)->IsInstanceOf(env, rasterP->jsampleModel,
-       (*env)->FindClass(env,"java/awt/image/SinglePixelPackedSampleModel"))) {
+                             singlePixelPackedSampleModelClass)) {
         jobject jmask, joffs, jnbits;
 
         rasterP->sppsm.isUsed = 1;
@@ -261,8 +269,15 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
                                                     rasterP->jsampleModel,
                                                     g_SMHeightID);
 
-    if ((*env)->IsInstanceOf(env, jraster,
-         (*env)->FindClass(env, "sun/awt/image/IntegerComponentRaster"))){
+    integerComponentRasterClass = (*env)->FindClass(env, "sun/awt/image/IntegerComponentRaster");
+    CHECK_NULL_RETURN(integerComponentRasterClass, -1);
+    byteComponentRasterClass = (*env)->FindClass(env, "sun/awt/image/ByteComponentRaster");
+    CHECK_NULL_RETURN(byteComponentRasterClass, -1);
+    shortComponentRasterClass = (*env)->FindClass(env,"sun/awt/image/ShortComponentRaster");
+    CHECK_NULL_RETURN(shortComponentRasterClass, -1);
+    bytePackedRasterClass = (*env)->FindClass(env, "sun/awt/image/BytePackedRaster");
+    CHECK_NULL_RETURN(bytePackedRasterClass, -1);
+    if ((*env)->IsInstanceOf(env, jraster, integerComponentRasterClass)){
         rasterP->jdata = (*env)->GetObjectField(env, jraster, g_ICRdataID);
         rasterP->dataType = INT_DATA_TYPE;
         rasterP->dataSize = 4;
@@ -273,8 +288,7 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         rasterP->pixelStride = (*env)->GetIntField(env, jraster, g_ICRpixstrID);
         joffs = (*env)->GetObjectField(env, jraster, g_ICRdataOffsetsID);
     }
-    else if ((*env)->IsInstanceOf(env, jraster,
-            (*env)->FindClass(env, "sun/awt/image/ByteComponentRaster"))){
+    else if ((*env)->IsInstanceOf(env, jraster, byteComponentRasterClass)){
         rasterP->jdata = (*env)->GetObjectField(env, jraster, g_BCRdataID);
         rasterP->dataType = BYTE_DATA_TYPE;
         rasterP->dataSize = 1;
@@ -285,8 +299,7 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         rasterP->pixelStride = (*env)->GetIntField(env, jraster, g_BCRpixstrID);
         joffs = (*env)->GetObjectField(env, jraster, g_BCRdataOffsetsID);
     }
-    else if ((*env)->IsInstanceOf(env, jraster,
-            (*env)->FindClass(env, "sun/awt/image/ShortComponentRaster"))){
+    else if ((*env)->IsInstanceOf(env, jraster, shortComponentRasterClass)){
         rasterP->jdata = (*env)->GetObjectField(env, jraster, g_SCRdataID);
         rasterP->dataType = SHORT_DATA_TYPE;
         rasterP->dataSize = 2;
@@ -297,8 +310,7 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         rasterP->pixelStride = (*env)->GetIntField(env, jraster, g_SCRpixstrID);
         joffs = (*env)->GetObjectField(env, jraster, g_SCRdataOffsetsID);
     }
-    else if ((*env)->IsInstanceOf(env, jraster,
-            (*env)->FindClass(env, "sun/awt/image/BytePackedRaster"))){
+    else if ((*env)->IsInstanceOf(env, jraster, bytePackedRasterClass)){
         rasterP->rasterType = PACKED_RASTER_TYPE;
         rasterP->dataType = BYTE_DATA_TYPE;
         rasterP->dataSize = 1;
@@ -397,30 +409,41 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
 }
 
 static int getColorModelType(JNIEnv *env, jobject jcmodel) {
-    int type = UNKNOWN_CM_TYPE;
+    jclass colorModelClass;
 
-    if ((*env)->IsInstanceOf(env, jcmodel,
-                 (*env)->FindClass(env, "java/awt/image/IndexColorModel")))
+    colorModelClass = (*env)->FindClass(env,
+                                        "java/awt/image/IndexColorModel");
+    CHECK_NULL_RETURN(colorModelClass, UNKNOWN_CM_TYPE);
+
+    if ((*env)->IsInstanceOf(env, jcmodel, colorModelClass))
     {
-        type = INDEX_CM_TYPE;
-    } else if ((*env)->IsInstanceOf(env, jcmodel,
-                 (*env)->FindClass(env, "java/awt/image/PackedColorModel")))
+        return INDEX_CM_TYPE;
+    }
+
+    colorModelClass = (*env)->FindClass(env,
+                                        "java/awt/image/PackedColorModel");
+    CHECK_NULL_RETURN(colorModelClass, UNKNOWN_CM_TYPE);
+    if ((*env)->IsInstanceOf(env, jcmodel, colorModelClass))
     {
-        if  ((*env)->IsInstanceOf(env, jcmodel,
-                (*env)->FindClass(env, "java/awt/image/DirectColorModel"))) {
-            type = DIRECT_CM_TYPE;
+        colorModelClass = (*env)->FindClass(env,
+                                            "java/awt/image/DirectColorModel");
+        CHECK_NULL_RETURN(colorModelClass, UNKNOWN_CM_TYPE);
+        if  ((*env)->IsInstanceOf(env, jcmodel, colorModelClass)) {
+            return DIRECT_CM_TYPE;
         }
         else {
-            type = PACKED_CM_TYPE;
+            return PACKED_CM_TYPE;
         }
     }
-    else if ((*env)->IsInstanceOf(env, jcmodel,
-                 (*env)->FindClass(env, "java/awt/image/ComponentColorModel")))
+    colorModelClass = (*env)->FindClass(env,
+                                        "java/awt/image/ComponentColorModel");
+    CHECK_NULL_RETURN(colorModelClass, UNKNOWN_CM_TYPE);
+    if ((*env)->IsInstanceOf(env, jcmodel, colorModelClass))
     {
-        type = COMPONENT_CM_TYPE;
+        return COMPONENT_CM_TYPE;
     }
 
-    return type;
+    return UNKNOWN_CM_TYPE;
 }
 
 int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
@@ -506,12 +529,13 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
         if (s_jdefCM == NULL) {
             jobject defCM;
             jclass jcm = (*env)->FindClass(env, "java/awt/image/ColorModel");
+            CHECK_NULL_RETURN(jcm, -1);
             defCM = (*env)->CallStaticObjectMethod(env, jcm,
                                                    g_CMgetRGBdefaultMID, NULL);
             s_jdefCM = (*env)->NewGlobalRef(env, defCM);
             if (defCM == NULL || s_jdefCM == NULL) {
-                JNU_ThrowNullPointerException(env,
-                                              "Unable to find default CM");
+                (*env)->ExceptionClear(env);
+                JNU_ThrowNullPointerException(env, "Unable to find default CM");
                 return -1;
             }
         }
@@ -931,6 +955,7 @@ int awt_getPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP) {
 
     jdata = (*env)->NewIntArray(env, maxSamples);
     if (JNU_IsNull(env, jdata)) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowOutOfMemoryError(env, "Out of Memory");
         return -1;
     }
@@ -1028,6 +1053,7 @@ int awt_setPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP) {
 
     jdata = (*env)->NewIntArray(env, maxSamples);
     if (JNU_IsNull(env, jdata)) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowOutOfMemoryError(env, "Out of Memory");
         return -1;
     }

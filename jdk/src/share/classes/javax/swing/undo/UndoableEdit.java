@@ -47,7 +47,7 @@ import javax.swing.event.*;
  *     be incorporated into a larger edit and treated as a single edit.
  * <li>If <code>addEdit</code> returns false <code>replaceEdit</code>
  *     is called on the new edit with the current edit passed in as the
- *     argument. This is the inverse of <code>addEdit</code> &#151;
+ *     argument. This is the inverse of <code>addEdit</code> &#8212;
  *     if the new edit returns true from <code>replaceEdit</code>, the new
  *     edit replaces the current edit.
  * </ol>

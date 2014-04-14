@@ -2834,6 +2834,7 @@ public class BasicListUI extends ListUI
 
     private static final TransferHandler defaultTransferHandler = new ListTransferHandler();
 
+    @SuppressWarnings("serial") // Superclass is a JDK-implementation class
     static class ListTransferHandler extends TransferHandler implements UIResource {
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1894,6 +1894,7 @@ public class BasicSliderUI extends SliderUI{
      * This class should be treated as a &quot;protected&quot; inner class.
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class ActionScroller extends AbstractAction {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Actions. If you need to add
@@ -1927,6 +1928,7 @@ public class BasicSliderUI extends SliderUI{
     /**
      * A static version of the above.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class SharedActionScroller extends AbstractAction {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Actions. If you need to add

@@ -184,7 +184,7 @@ public abstract class CharacterDecoder {
      * @exception CEFormatException An error has occurred while decoding
      */
     public byte[] decodeBuffer(String inputString) throws IOException {
-        byte inputBuffer[] = inputString.getBytes();
+        byte inputBuffer[] = inputString.getBytes("ISO-8859-1");
         ByteArrayInputStream inStream = new ByteArrayInputStream(inputBuffer);
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         decodeBuffer(inStream, outStream);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.*;
 
 import javax.swing.*;
 
+@SuppressWarnings("serial") // JDK implementation class
 public class ScreenMenuBar extends MenuBar implements ContainerListener, ScreenMenuPropertyHandler, ComponentListener {
     static boolean sJMenuBarHasHelpMenus = false; //$ could check by calling getHelpMenu in a try block
 

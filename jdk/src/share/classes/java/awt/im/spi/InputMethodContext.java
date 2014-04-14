@@ -85,7 +85,7 @@ public interface InputMethodContext extends InputMethodRequests {
      * <p>
      * Input methods must call {@link java.awt.Window#dispose() Window.dispose} on the
      * returned input method window when it is no longer needed.
-     * <p>
+     *
      * @param title the title to be displayed in the window's title bar,
      *              if there is such a title bar.
      *              A <code>null</code> value is treated as an empty string, "".
@@ -117,7 +117,7 @@ public interface InputMethodContext extends InputMethodRequests {
      * <p>
      * Input methods must call {@link java.awt.Window#dispose() Window.dispose} on the
      * returned input method window when it is no longer needed.
-     * <p>
+     *
      * @param title the title to be displayed in the window's title bar,
      *              if there is such a title bar.
      *              A <code>null</code> value is treated as an empty string, "".

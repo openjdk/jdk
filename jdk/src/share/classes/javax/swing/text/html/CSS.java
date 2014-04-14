@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,7 @@ import javax.swing.text.*;
  * @author  Scott Violet
  * @see StyleSheet
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class CSS implements Serializable {
 
     /**
@@ -1563,6 +1564,7 @@ public class CSS implements Serializable {
      * method to convert the CSS value to a StyleConstants
      * value.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static class CssValue implements Serializable {
 
         /**
@@ -1641,6 +1643,7 @@ public class CSS implements Serializable {
      * provides StyleConstants conversion support for the
      * CSS attributes that are held as strings.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static class StringValue extends CssValue {
 
         /**
@@ -1797,6 +1800,7 @@ public class CSS implements Serializable {
      * If the type is Integer, the value is specified
      * in terms of a size index.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     class FontSize extends CssValue {
 
         /**
@@ -1966,6 +1970,7 @@ public class CSS implements Serializable {
         LengthUnit lu;
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     static class FontFamily extends CssValue {
 
         /**
@@ -2063,6 +2068,7 @@ public class CSS implements Serializable {
         String family;
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     static class FontWeight extends CssValue {
 
         int getValue() {
@@ -2125,6 +2131,7 @@ public class CSS implements Serializable {
         int weight;
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     static class ColorValue extends CssValue {
 
         /**
@@ -2184,6 +2191,7 @@ public class CSS implements Serializable {
         Color c;
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     static class BorderStyle extends CssValue {
 
         CSS.Value getValue() {
@@ -2236,6 +2244,7 @@ public class CSS implements Serializable {
         transient private CSS.Value style;
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     static class LengthValue extends CssValue {
 
         /**
@@ -2373,6 +2382,7 @@ public class CSS implements Serializable {
      * BorderWidthValue is used to model BORDER_XXX_WIDTH and adds support
      * for the thin/medium/thick values.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static class BorderWidthValue extends LengthValue {
         BorderWidthValue(String svalue, int index) {
             this.svalue = svalue;
@@ -2412,6 +2422,7 @@ public class CSS implements Serializable {
      * Handles uniquing of CSS values, like lists, and background image
      * repeating.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static class CssValueMapper extends CssValue {
         Object parseCssValue(String value) {
             Object retValue = cssValueToInternalValueMap.get(value);
@@ -2435,6 +2446,7 @@ public class CSS implements Serializable {
     /**
      * Used for background images, to represent the position.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static class BackgroundPosition extends CssValue {
         float horizontalPosition;
         float verticalPosition;
@@ -2580,6 +2592,7 @@ public class CSS implements Serializable {
     /**
      * Used for BackgroundImages.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static class BackgroundImage extends CssValue {
         private boolean    loadedImage;
         private ImageIcon  image;
@@ -2619,6 +2632,7 @@ public class CSS implements Serializable {
      * Parses a length value, this is used internally, and never added
      * to an AttributeSet or returned to the developer.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static class LengthUnit implements Serializable {
         static Hashtable<String, Float> lengthMapping = new Hashtable<String, Float>(6);
         static Hashtable<String, Float> w3cLengthMapping = new Hashtable<String, Float>(6);

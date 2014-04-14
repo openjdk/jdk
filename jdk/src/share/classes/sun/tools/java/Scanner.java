@@ -511,6 +511,7 @@ class Scanner implements Constants {
      * Scan a number. The first digit of the number should be the current
      * character.  We may be scanning hex, decimal, or octal at this point
      */
+    @SuppressWarnings("fallthrough")
     private void scanNumber() throws IOException {
         boolean seenNonOctal = false;
         boolean overflow = false;
@@ -532,6 +533,7 @@ class Scanner implements Constants {
                 // We can't yet throw an error if reading an octal.  We might
                 // discover we're really reading a real.
                 seenNonOctal = true;
+                // Fall through
               case '0': case '1': case '2': case '3':
               case '4': case '5': case '6': case '7':
                 seenDigit = true;
@@ -668,6 +670,7 @@ class Scanner implements Constants {
      * Scan a float.  Should be called with the current character is either
      * the 'e', 'E' or '.'
      */
+    @SuppressWarnings("fallthrough")
     private void scanReal() throws IOException {
         boolean seenExponent = false;
         boolean isSingleFloat = false;
@@ -984,6 +987,7 @@ class Scanner implements Constants {
        return xscan();
    }
 
+    @SuppressWarnings("fallthrough")
     protected long xscan() throws IOException {
         final ScannerInputReader in = this.in;
         long retPos = pos;
@@ -1006,6 +1010,7 @@ class Scanner implements Constants {
                     token = COMMENT;
                     return retPos;
                 }
+                // Fall through
               case ' ':
               case '\t':
               case '\f':

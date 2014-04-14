@@ -2590,7 +2590,7 @@ public abstract class Toolkit {
     * If not set by the time of the {@code Toolkit} class initialization, this property will be
     * initialized with {@code true}.
     * Changing this value after the {@code Toolkit} class initialization will have no effect.
-    * <p>
+    *
     * @exception HeadlessException if GraphicsEnvironment.isHeadless() returns true
     * @return {@code true} if events from extra mouse buttons are allowed to be processed and posted;
     *         {@code false} otherwise

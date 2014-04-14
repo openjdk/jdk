@@ -280,11 +280,11 @@ class MetaspaceAux : AllStatic {
   // allocated to a Metaspace.  This is used instead of
   // iterating over all the classloaders. One for each
   // type of Metadata
-  static size_t _allocated_capacity_words[Metaspace:: MetadataTypeCount];
-  // Running sum of space in all Metachunks that have
+  static size_t _capacity_words[Metaspace:: MetadataTypeCount];
+  // Running sum of space in all Metachunks that
   // are being used for metadata. One for each
   // type of Metadata.
-  static size_t _allocated_used_words[Metaspace:: MetadataTypeCount];
+  static size_t _used_words[Metaspace:: MetadataTypeCount];
 
  public:
   // Decrement and increment _allocated_capacity_words
@@ -308,32 +308,32 @@ class MetaspaceAux : AllStatic {
   static size_t free_chunks_total_bytes();
   static size_t free_chunks_total_bytes(Metaspace::MetadataType mdtype);
 
-  static size_t allocated_capacity_words(Metaspace::MetadataType mdtype) {
-    return _allocated_capacity_words[mdtype];
+  static size_t capacity_words(Metaspace::MetadataType mdtype) {
+    return _capacity_words[mdtype];
   }
-  static size_t allocated_capacity_words() {
-    return allocated_capacity_words(Metaspace::NonClassType) +
-           allocated_capacity_words(Metaspace::ClassType);
+  static size_t capacity_words() {
+    return capacity_words(Metaspace::NonClassType) +
+           capacity_words(Metaspace::ClassType);
   }
-  static size_t allocated_capacity_bytes(Metaspace::MetadataType mdtype) {
-    return allocated_capacity_words(mdtype) * BytesPerWord;
+  static size_t capacity_bytes(Metaspace::MetadataType mdtype) {
+    return capacity_words(mdtype) * BytesPerWord;
   }
-  static size_t allocated_capacity_bytes() {
-    return allocated_capacity_words() * BytesPerWord;
+  static size_t capacity_bytes() {
+    return capacity_words() * BytesPerWord;
   }
 
-  static size_t allocated_used_words(Metaspace::MetadataType mdtype) {
-    return _allocated_used_words[mdtype];
+  static size_t used_words(Metaspace::MetadataType mdtype) {
+    return _used_words[mdtype];
   }
-  static size_t allocated_used_words() {
-    return allocated_used_words(Metaspace::NonClassType) +
-           allocated_used_words(Metaspace::ClassType);
+  static size_t used_words() {
+    return used_words(Metaspace::NonClassType) +
+           used_words(Metaspace::ClassType);
   }
-  static size_t allocated_used_bytes(Metaspace::MetadataType mdtype) {
-    return allocated_used_words(mdtype) * BytesPerWord;
+  static size_t used_bytes(Metaspace::MetadataType mdtype) {
+    return used_words(mdtype) * BytesPerWord;
   }
-  static size_t allocated_used_bytes() {
-    return allocated_used_words() * BytesPerWord;
+  static size_t used_bytes() {
+    return used_words() * BytesPerWord;
   }
 
   static size_t free_bytes();

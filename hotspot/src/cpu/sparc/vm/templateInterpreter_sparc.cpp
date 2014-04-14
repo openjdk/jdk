@@ -1147,7 +1147,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ ld_ptr(G2_thread, JavaThread::active_handles_offset(), G3_scratch);
-  __ st_ptr(G0, G3_scratch, JNIHandleBlock::top_offset_in_bytes());
+  __ st(G0, G3_scratch, JNIHandleBlock::top_offset_in_bytes());
 
   // If we have an oop result store it where it will be safe for any further gc
   // until we return now that we've released the handle it might be protected by

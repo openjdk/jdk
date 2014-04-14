@@ -32,20 +32,24 @@ import java.awt.image.*;
 import java.util.Arrays;
 import java.util.List;
 import sun.awt.image.MultiResolutionImage;
+import sun.awt.image.MultiResolutionBufferedImage;
 
 import sun.awt.image.SunWritableRaster;
 
 public class CImage extends CFRetainedResource {
     private static native long nativeCreateNSImageFromArray(int[] buffer, int w, int h);
+    private static native long nativeCreateNSImageFromBytes(byte[] buffer);
     private static native long nativeCreateNSImageFromArrays(int[][] buffers, int w[], int h[]);
     private static native long nativeCreateNSImageFromFileContents(String file);
     private static native long nativeCreateNSImageOfFileFromLaunchServices(String file);
     private static native long nativeCreateNSImageFromImageName(String name);
     private static native long nativeCreateNSImageFromIconSelector(int selector);
-    private static native void nativeCopyNSImageIntoArray(long image, int[] buffer, int w, int h);
+    private static native byte[] nativeGetPlatformImageBytes(int[] buffer, int w, int h);
+    private static native void nativeCopyNSImageIntoArray(long image, int[] buffer, int sw, int sh, int dw, int dh);
     private static native Dimension2D nativeGetNSImageSize(long image);
     private static native void nativeSetNSImageSize(long image, double w, double h);
     private static native void nativeResizeNSImageRepresentations(long image, double w, double h);
+    private static native Dimension2D[] nativeGetNSImageRepresentationSizes(long image, double w, double h);
 
     static Creator creator = new Creator();
     static Creator getCreator() {
@@ -145,6 +149,23 @@ public class CImage extends CFRetainedResource {
                                                            image.getHeight(null)));
         }
 
+        public byte[] getPlatformImageBytes(final Image image) {
+            int[] buffer = imageToArray(image, false);
+
+            if (buffer == null) {
+                return null;
+            }
+
+            return nativeGetPlatformImageBytes(buffer, image.getWidth(null), image.getHeight(null));
+        }
+
+        /**
+         * Translates a byte array which contains platform-specific image data in the given format into an Image.
+         */
+        public Image createImageFromPlatformImageBytes(final byte[] buffer) {
+            return createImageUsingNativeSize(nativeCreateNSImageFromBytes(buffer));
+        }
+
         // This is used to create a CImage from a Image
         public CImage createFromImage(final Image image) {
             if (image instanceof MultiResolutionImage) {
@@ -210,18 +231,30 @@ public class CImage extends CFRetainedResource {
         super(nsImagePtr, true);
     }
 
-    /** @return A BufferedImage created from nsImagePtr, or null. */
-    public BufferedImage toImage() {
+    /** @return A MultiResolution image created from nsImagePtr, or null. */
+    private BufferedImage toImage() {
         if (ptr == 0) return null;
 
         final Dimension2D size = nativeGetNSImageSize(ptr);
         final int w = (int)size.getWidth();
         final int h = (int)size.getHeight();
 
-        final BufferedImage bimg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
+        Dimension2D[] sizes
+                = nativeGetNSImageRepresentationSizes(ptr,
+                        size.getWidth(), size.getHeight());
+
+        BufferedImage baseImage = toImage(w, h, w, h);
+
+        return sizes == null || sizes.length < 2 ? baseImage
+                : new MultiResolutionBufferedImage(baseImage, sizes,
+                        (width, height) -> toImage(w, h, width, height));
+    }
+
+    private BufferedImage toImage(int srcWidth, int srcHeight, int dstWidth, int dstHeight) {
+        final BufferedImage bimg = new BufferedImage(dstWidth, dstHeight, BufferedImage.TYPE_INT_ARGB_PRE);
         final DataBufferInt dbi = (DataBufferInt)bimg.getRaster().getDataBuffer();
         final int[] buffer = SunWritableRaster.stealData(dbi, 0);
-        nativeCopyNSImageIntoArray(ptr, buffer, w, h);
+        nativeCopyNSImageIntoArray(ptr, buffer, srcWidth, srcHeight, dstWidth, dstHeight);
         SunWritableRaster.markDirty(dbi);
         return bimg;
     }

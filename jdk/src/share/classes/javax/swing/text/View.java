@@ -183,7 +183,6 @@ A view has the following responsibilities:
     <li>{@link #removeUpdate removeUpdate}
     <li>{@link #changedUpdate changedUpdate}
     </ul>
-    <p>
 </dl>
  *
  * @author  Timothy Prinzing

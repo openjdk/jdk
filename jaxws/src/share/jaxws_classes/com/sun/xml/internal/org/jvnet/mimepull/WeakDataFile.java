@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.xml.internal.org.jvnet.mimepull;
 
+import java.util.concurrent.TimeUnit;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -32,7 +34,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,6 +47,7 @@ import java.util.logging.Logger;
 final class WeakDataFile extends WeakReference<DataFile> {
 
     private static final Logger LOGGER = Logger.getLogger(WeakDataFile.class.getName());
+    private static int TIMEOUT = 10; //milliseconds
     //private static final int MAX_ITERATIONS = 2;
     private static ReferenceQueue<DataFile> refQueue = new ReferenceQueue<DataFile>();
     private static List<WeakDataFile> refList = new ArrayList<WeakDataFile>();
@@ -52,28 +55,22 @@ final class WeakDataFile extends WeakReference<DataFile> {
     private final RandomAccessFile raf;
     private static boolean hasCleanUpExecutor = false;
     static {
+        int delay = 10;
+        try {
+                delay = Integer.getInteger("com.sun.xml.internal.org.jvnet.mimepull.delay", 10);
+        } catch (SecurityException se) {
+            if (LOGGER.isLoggable(Level.CONFIG)) {
+                LOGGER.log(Level.CONFIG, "Cannot read ''{0}'' property, using defaults.",
+                        new Object[] {"com.sun.xml.internal.org.jvnet.mimepull.delay"});
+            }
+        }
         CleanUpExecutorFactory executorFactory = CleanUpExecutorFactory.newInstance();
         if (executorFactory!=null) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.log(Level.FINE, "Initializing clean up executor for MIMEPULL: {0}", executorFactory.getClass().getName());
             }
-            Executor executor = executorFactory.getExecutor();
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    WeakDataFile weak;
-                    while (true) {
-                        try {
-                            weak = (WeakDataFile) refQueue.remove();
-                            if (LOGGER.isLoggable(Level.FINE)) {
-                                LOGGER.log(Level.FINE, "Cleaning file = {0} from reference queue.", weak.file);
-                            }
-                            weak.close();
-                        } catch (InterruptedException e) {
-                        }
-                    }
-                }
-            });
+            ScheduledExecutorService scheduler = executorFactory.getScheduledExecutorService();
+            scheduler.scheduleWithFixedDelay(new CleanupRunnable(), delay, delay, TimeUnit.SECONDS);
             hasCleanUpExecutor = true;
         }
     }
@@ -157,4 +154,24 @@ final class WeakDataFile extends WeakReference<DataFile> {
             weak.close();
         }
     }
+
+private static class CleanupRunnable implements Runnable {
+    @Override
+    public void run() {
+        try {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE, "Running cleanup task");
+            }
+                WeakDataFile weak = (WeakDataFile) refQueue.remove(TIMEOUT);
+            while (weak != null) {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, "Cleaning file = {0} from reference queue.", weak.file);
+                }
+                weak.close();
+                weak = (WeakDataFile) refQueue.remove(TIMEOUT);
+            }
+        } catch (InterruptedException e) {
+        }
+    }
+}
 }

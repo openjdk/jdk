@@ -593,23 +593,16 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     /**
-     * Spec. mentions use of [[DefineOwnProperty]] for indexed properties in
-     * certain places (eg. Array.prototype.map, filter). We can not use ScriptObject.set
-     * method in such cases. This is because set method uses inherited setters (if any)
-     * from any object in proto chain such as Array.prototype, Object.prototype.
-     * This method directly sets a particular element value in the current object.
+     * Almost like defineOwnProperty(int,Object) for arrays this one does
+     * not add 'gap' elements (like the array one does).
      *
      * @param index key for property
      * @param value value to define
      */
-    public final void defineOwnProperty(final int index, final Object value) {
+    public void defineOwnProperty(final int index, final Object value) {
         assert isValidArrayIndex(index) : "invalid array index";
         final long longIndex = ArrayIndex.toLongIndex(index);
-        if (longIndex >= getArray().length()) {
-            // make array big enough to hold..
-            setArray(getArray().ensure(longIndex));
-        }
-        setArray(getArray().set(index, value, false));
+        setValueAtArrayIndex(longIndex, index, value, false);
     }
 
     private void checkIntegerKey(final String key) {
@@ -2747,9 +2740,7 @@ public abstract class ScriptObject implements PropertyAccess {
      * @param strict are we in strict mode
      */
     private void doesNotHave(final int index, final Object value, final boolean strict) {
-        final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
-
         if (getMap().containsArrayKeys()) {
             final String key = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
@@ -2760,6 +2751,18 @@ public abstract class ScriptObject implements PropertyAccess {
             }
         }
 
+        setValueAtArrayIndex(longIndex, index, value, strict);
+    }
+
+    /**
+     * Handle when an array doesn't have a slot - possibly grow and/or convert array.
+     *
+     * @param index  key as index
+     * @param value  element value
+     * @param strict are we in strict mode
+     */
+    private void setValueAtArrayIndex(final long longIndex, final int index, final Object value, final boolean strict) {
+        final long oldLength = getArray().length();
         if (longIndex >= oldLength) {
             if (!isExtensible()) {
                 if (strict) {

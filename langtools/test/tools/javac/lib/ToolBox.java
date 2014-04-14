@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,14 @@
  */
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
@@ -40,15 +43,22 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
@@ -451,6 +461,45 @@ public class ToolBox {
             }
         }
         throw new AssertionError("javac command has been invoked with less parameters than needed");
+    }
+
+    /**
+     * Run javac and return the resulting classfiles.
+     */
+    public static Map<String, byte[]> compile(JavaToolArgs params)
+            throws CommandExecutionException, IOException {
+        if (params.hasMinParams()) {
+            if (params.argsArr != null) {
+                throw new AssertionError("setAllArgs is not supported for compile");
+            }
+
+            StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+            MemoryFileManager mfm = new MemoryFileManager(fm);
+            StringWriter sw = null;
+            boolean rc;
+
+            try (PrintWriter pw = (params.errOutput == null) ?
+                    null : new PrintWriter(sw = new StringWriter())) {
+                JavacTask ct = (JavacTask)comp.getTask(pw, mfm, null,
+                        params.args, null, params.sources);
+                rc = ct.call();
+            }
+
+            String out = (sw == null) ? null : sw.toString();
+
+            if (params.errOutput != null && (out != null) && !out.isEmpty()) {
+                params.errOutput.addAll(splitLines(out, lineSeparator));
+            }
+
+            if ( ( rc && params.whatToExpect == Expect.SUCCESS) ||
+                 (!rc && params.whatToExpect == Expect.FAIL) ) {
+                return mfm.classes;
+            }
+
+            throw new CommandExecutionException(JavaCMD.JAVAC_API.getExceptionMsgContent(params),
+                    params.whatToExpect);
+        }
+        throw new AssertionError("compile command has been invoked with less parameters than needed");
     }
 
     /**
@@ -964,4 +1013,66 @@ public class ToolBox {
             return source;
         }
     }
+
+    /**
+     * A file manager for compiling strings to byte arrays.
+     * This file manager delegates to another file manager
+     * to lookup classes on boot class path.
+     */
+    public static final class MemoryFileManager extends ForwardingJavaFileManager {
+        /**
+         * Maps binary class names to class files stored as byte arrays.
+         */
+        private final Map<String, byte[]> classes;
+
+        /**
+         * Construct a memory file manager which delegates to the specified
+         * file manager for unknown sources.
+         * @param fileManager a file manager used to look up class files on class path, etc.
+         */
+        public MemoryFileManager(JavaFileManager fileManager) {
+            super(fileManager);
+            classes = new HashMap<>();
+        }
+
+        @java.lang.Override
+        public JavaFileObject getJavaFileForOutput(Location location,
+                                                   String name,
+                                                   Kind kind,
+                                                   FileObject sibling)
+            throws UnsupportedOperationException
+        {
+            return new JavaClassInArray(name);
+        }
+
+        /**
+         * A file object representing a Java class file stored in a byte array.
+         */
+        private class JavaClassInArray extends SimpleJavaFileObject {
+
+            private final String name;
+
+            /**
+             * Constructs a JavaClassInArray object.
+             * @param name binary name of the class to be stored in this file object
+             */
+            JavaClassInArray(String name) {
+                super(URI.create("mfm:///" + name.replace('.','/') + Kind.CLASS.extension),
+                      Kind.CLASS);
+                this.name = name;
+            }
+
+            public OutputStream openOutputStream() {
+                return new FilterOutputStream(new ByteArrayOutputStream()) {
+                    public void close() throws IOException {
+                        out.close();
+                        ByteArrayOutputStream bos = (ByteArrayOutputStream)out;
+                        classes.put(name, bos.toByteArray());
+                    }
+                };
+            }
+        }
+
+    }
+
 }

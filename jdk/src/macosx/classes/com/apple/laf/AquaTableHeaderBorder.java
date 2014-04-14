@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import apple.laf.JRSUIConstants.*;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaTableHeaderBorder extends AbstractBorder {
     protected static final int SORT_NONE = 0;
     protected static final int SORT_ASCENDING = 1;

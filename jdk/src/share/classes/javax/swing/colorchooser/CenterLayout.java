@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.*;
   * @author Tom Santos
   * @author Steve Wilson
   */
+@SuppressWarnings("serial") // Same-version serialization only
 class CenterLayout implements LayoutManager, Serializable {
     public void addLayoutComponent(String name, Component comp) { }
     public void removeLayoutComponent(Component comp) { }

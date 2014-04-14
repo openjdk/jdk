@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,9 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_WindowsVirtualMachine_createPipe
           NULL);                        // default security attribute
 
     if (hPipe == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "CreateNamedPipe failed");
+        char msg[256];
+        _snprintf(msg, sizeof(msg), "CreateNamedPipe failed: %d", GetLastError());
+        JNU_ThrowIOExceptionWithLastError(env, msg);
     }
     return (jlong)hPipe;
 }

@@ -104,7 +104,7 @@ class DatagramSocket implements java.io.Closeable {
     /**
      * Connects this socket to a remote socket address (IP address + port number).
      * Binds socket if not already bound.
-     * <p>
+     *
      * @param   address The remote address.
      * @param   port    The remote port
      * @throws  SocketException if binding the socket fails.
@@ -338,7 +338,7 @@ class DatagramSocket implements java.io.Closeable {
      * <p>
      * If the address is {@code null}, then the system will pick up
      * an ephemeral port and a valid local address to bind the socket.
-     *<p>
+     *
      * @param   addr The address and port to bind to.
      * @throws  SocketException if any error happens during the bind, or if the
      *          socket is already bound.
@@ -1240,10 +1240,8 @@ class DatagramSocket implements java.io.Closeable {
      *              datagram socket factory.
      * @exception  SocketException  if the factory is already defined.
      * @exception  SecurityException  if a security manager exists and its
-     *             {@code checkSetFactory} method doesn't allow the
-     operation.
-     * @see
-     java.net.DatagramSocketImplFactory#createDatagramSocketImpl()
+     *             {@code checkSetFactory} method doesn't allow the operation.
+     * @see       java.net.DatagramSocketImplFactory#createDatagramSocketImpl()
      * @see       SecurityManager#checkSetFactory
      * @since 1.3
      */
