@@ -123,6 +123,8 @@ class Method : public Metadata {
   void restore_vtable() { guarantee(is_method(), "vtable restored by this call"); }
   bool is_method() const volatile { return true; }
 
+  void restore_unshareable_info(TRAPS);
+
   // accessors for instance variables
 
   ConstMethod* constMethod() const             { return _constMethod; }

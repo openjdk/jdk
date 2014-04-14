@@ -1488,11 +1488,10 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
     movl(retry_on_abort_count_Reg, RTMRetryCount); // Retry on abort
     bind(L_rtm_retry);
   }
-  if (!UseRTMXendForLockBusy) {
-    movptr(tmpReg, Address(objReg, 0));
-    testptr(tmpReg, markOopDesc::monitor_value);  // inflated vs stack-locked|neutral|biased
-    jcc(Assembler::notZero, IsInflated);
-  }
+  movptr(tmpReg, Address(objReg, 0));
+  testptr(tmpReg, markOopDesc::monitor_value);  // inflated vs stack-locked|neutral|biased
+  jcc(Assembler::notZero, IsInflated);
+
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
@@ -1512,10 +1511,7 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
   Register abort_status_Reg = tmpReg; // status of abort is stored in RAX
   if (UseRTMXendForLockBusy) {
     xend();
-    movptr(tmpReg, Address(objReg, 0));
-    testptr(tmpReg, markOopDesc::monitor_value);  // inflated vs stack-locked|neutral|biased
-    jcc(Assembler::notZero, IsInflated);
-    movptr(abort_status_Reg, 0x1);                // Set the abort status to 1 (as xabort does)
+    movptr(abort_status_Reg, 0x2);   // Set the abort status to 2 (so we can retry)
     jmp(L_decrement_retry);
   }
   else {

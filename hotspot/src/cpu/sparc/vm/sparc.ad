@@ -1268,7 +1268,7 @@ int MachPrologNode::reloc() const {
 void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   Compile* C = ra_->C;
 
-  if( do_polling() && ra_->C->is_method_compilation() ) {
+  if(do_polling() && ra_->C->is_method_compilation()) {
     st->print("SETHI  #PollAddr,L0\t! Load Polling address\n\t");
 #ifdef _LP64
     st->print("LDX    [L0],G0\t!Poll for Safepointing\n\t");
@@ -1277,8 +1277,12 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 #endif
   }
 
-  if( do_polling() )
+  if(do_polling()) {
+    if (UseCBCond && !ra_->C->is_method_compilation()) {
+      st->print("NOP\n\t");
+    }
     st->print("RET\n\t");
+  }
 
   st->print("RESTORE");
 }
@@ -1291,15 +1295,20 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   __ verify_thread();
 
   // If this does safepoint polling, then do it here
-  if( do_polling() && ra_->C->is_method_compilation() ) {
+  if(do_polling() && ra_->C->is_method_compilation()) {
     AddressLiteral polling_page(os::get_polling_page());
     __ sethi(polling_page, L0);
     __ relocate(relocInfo::poll_return_type);
-    __ ld_ptr( L0, 0, G0 );
+    __ ld_ptr(L0, 0, G0);
   }
 
   // If this is a return, then stuff the restore in the delay slot
-  if( do_polling() ) {
+  if(do_polling()) {
+    if (UseCBCond && !ra_->C->is_method_compilation()) {
+      // Insert extra padding for the case when the epilogue is preceded by
+      // a cbcond jump, which can't be followed by a CTI instruction
+      __ nop();
+    }
     __ ret();
     __ delayed()->restore();
   } else {
@@ -3330,7 +3339,18 @@ op_attrib op_cost(1);          // Required cost attribute
 //----------Instruction Attributes---------------------------------------------
 ins_attrib ins_cost(DEFAULT_COST); // Required cost attribute
 ins_attrib ins_size(32);           // Required size attribute (in bits)
-ins_attrib ins_avoid_back_to_back(0); // instruction should not be generated back to back
+
+// avoid_back_to_back attribute is an expression that must return
+// one of the following values defined in MachNode:
+// AVOID_NONE   - instruction can be placed anywhere
+// AVOID_BEFORE - instruction cannot be placed after an
+//                instruction with MachNode::AVOID_AFTER
+// AVOID_AFTER  - the next instruction cannot be the one 
+//                with MachNode::AVOID_BEFORE
+// AVOID_BEFORE_AND_AFTER - BEFORE and AFTER attributes at 
+//                          the same time                                
+ins_attrib ins_avoid_back_to_back(MachNode::AVOID_NONE);
+
 ins_attrib ins_short_branch(0);    // Required flag: is this instruction a
                                    // non-matching short branch variant of some
                                                             // long branch?
@@ -6630,6 +6650,7 @@ instruct encodeHeapOop(iRegN dst, iRegP src) %{
   ins_encode %{
     __ encode_heap_oop($src$$Register, $dst$$Register);
   %}
+  ins_avoid_back_to_back(Universe::narrow_oop_base() == NULL ? AVOID_NONE : AVOID_BEFORE);
   ins_pipe(ialu_reg);
 %}
 
@@ -9199,6 +9220,7 @@ instruct branch(label labl) %{
     __ ba(*L);
     __ delayed()->nop();
   %}
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br);
 %}
 
@@ -9217,7 +9239,7 @@ instruct branch_short(label labl) %{
     __ ba_short(*L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_imm);
 %}
 
@@ -9231,6 +9253,7 @@ instruct branchCon(cmpOp cmp, flagsReg icc, label labl) %{
   format %{ "BP$cmp   $icc,$labl" %}
   // Prim = bits 24-22, Secnd = bits 31-30
   ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_cc);
 %}
 
@@ -9242,6 +9265,7 @@ instruct branchConU(cmpOpU cmp, flagsRegU icc, label labl) %{
   format %{ "BP$cmp  $icc,$labl" %}
   // Prim = bits 24-22, Secnd = bits 31-30
   ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_cc);
 %}
 
@@ -9260,6 +9284,7 @@ instruct branchConP(cmpOpP cmp, flagsRegP pcc, label labl) %{
     __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, *L);
     __ delayed()->nop();
   %}
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_cc);
 %}
 
@@ -9278,6 +9303,7 @@ instruct branchConF(cmpOpF cmp, flagsRegF fcc, label labl) %{
     __ fbp( (Assembler::Condition)($cmp$$cmpcode), false, (Assembler::CC)($fcc$$reg), predict_taken, *L);
     __ delayed()->nop();
   %}
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_fcc);
 %}
 
@@ -9290,6 +9316,7 @@ instruct branchLoopEnd(cmpOp cmp, flagsReg icc, label labl) %{
   format %{ "BP$cmp   $icc,$labl\t! Loop end" %}
   // Prim = bits 24-22, Secnd = bits 31-30
   ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_cc);
 %}
 
@@ -9302,6 +9329,7 @@ instruct branchLoopEndU(cmpOpU cmp, flagsRegU icc, label labl) %{
   format %{ "BP$cmp  $icc,$labl\t! Loop end" %}
   // Prim = bits 24-22, Secnd = bits 31-30
   ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_cc);
 %}
 
@@ -9552,7 +9580,7 @@ instruct cmpI_reg_branch_short(cmpOp cmp, iRegI op1, iRegI op2, label labl, flag
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_reg);
 %}
 
@@ -9570,7 +9598,7 @@ instruct cmpI_imm_branch_short(cmpOp cmp, iRegI op1, immI5 op2, label labl, flag
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_imm);
 %}
 
@@ -9588,7 +9616,7 @@ instruct cmpU_reg_branch_short(cmpOpU cmp, iRegI op1, iRegI op2, label labl, fla
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_reg);
 %}
 
@@ -9606,7 +9634,7 @@ instruct cmpU_imm_branch_short(cmpOpU cmp, iRegI op1, immI5 op2, label labl, fla
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_imm);
 %}
 
@@ -9624,7 +9652,7 @@ instruct cmpL_reg_branch_short(cmpOp cmp, iRegL op1, iRegL op2, label labl, flag
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::xcc, $op1$$Register, $op2$$Register, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_reg);
 %}
 
@@ -9642,7 +9670,7 @@ instruct cmpL_imm_branch_short(cmpOp cmp, iRegL op1, immL5 op2, label labl, flag
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::xcc, $op1$$Register, $op2$$constant, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_imm);
 %}
 
@@ -9665,7 +9693,7 @@ instruct cmpP_reg_branch_short(cmpOpP cmp, iRegP op1, iRegP op2, label labl, fla
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::ptr_cc, $op1$$Register, $op2$$Register, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_reg);
 %}
 
@@ -9687,7 +9715,7 @@ instruct cmpP_null_branch_short(cmpOpP cmp, iRegP op1, immP0 null, label labl, f
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::ptr_cc, $op1$$Register, G0, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_reg);
 %}
 
@@ -9705,7 +9733,7 @@ instruct cmpN_reg_branch_short(cmpOp cmp, iRegN op1, iRegN op2, label labl, flag
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_reg);
 %}
 
@@ -9723,7 +9751,7 @@ instruct cmpN_null_branch_short(cmpOp cmp, iRegN op1, immN0 null, label labl, fl
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, G0, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_reg);
 %}
 
@@ -9742,7 +9770,7 @@ instruct cmpI_reg_branchLoopEnd_short(cmpOp cmp, iRegI op1, iRegI op2, label lab
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_reg);
 %}
 
@@ -9760,7 +9788,7 @@ instruct cmpI_imm_branchLoopEnd_short(cmpOp cmp, iRegI op1, immI5 op2, label lab
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
   %}
   ins_short_branch(1);
-  ins_avoid_back_to_back(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
   ins_pipe(cbcond_reg_imm);
 %}
 
@@ -9777,6 +9805,7 @@ instruct branchCon_regI(cmpOp_reg cmp, iRegI op1, immI0 zero, label labl) %{
   ins_cost(BRANCH_COST);
   format %{ "BR$cmp   $op1,$labl" %}
   ins_encode( enc_bpr( labl, cmp, op1 ) );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_reg);
 %}
 
@@ -9789,6 +9818,7 @@ instruct branchCon_regP(cmpOp_reg cmp, iRegP op1, immP0 null, label labl) %{
   ins_cost(BRANCH_COST);
   format %{ "BR$cmp   $op1,$labl" %}
   ins_encode( enc_bpr( labl, cmp, op1 ) );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_reg);
 %}
 
@@ -9801,6 +9831,7 @@ instruct branchCon_regL(cmpOp_reg cmp, iRegL op1, immL0 zero, label labl) %{
   ins_cost(BRANCH_COST);
   format %{ "BR$cmp   $op1,$labl" %}
   ins_encode( enc_bpr( labl, cmp, op1 ) );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_reg);
 %}
 
@@ -9841,6 +9872,7 @@ instruct branchCon_long(cmpOp cmp, flagsRegL xcc, label labl) %{
     __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
     __ delayed()->nop();
   %}
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(br_cc);
 %}
 
@@ -9968,6 +10000,7 @@ instruct CallStaticJavaDirect( method meth ) %{
   ins_cost(CALL_COST);
   format %{ "CALL,static  ; NOP ==> " %}
   ins_encode( Java_Static_Call( meth ), call_epilog );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(simple_call);
 %}
 
@@ -10004,6 +10037,7 @@ instruct CallRuntimeDirect(method meth, l7RegP l7) %{
   format %{ "CALL,runtime" %}
   ins_encode( Java_To_Runtime( meth ),
               call_epilog, adjust_long_from_native_call );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(simple_call);
 %}
 
@@ -10016,6 +10050,7 @@ instruct CallLeafDirect(method meth, l7RegP l7) %{
   ins_encode( Java_To_Runtime( meth ),
               call_epilog,
               adjust_long_from_native_call );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(simple_call);
 %}
 
@@ -10028,6 +10063,7 @@ instruct CallLeafNoFPDirect(method meth, l7RegP l7) %{
   ins_encode( Java_To_Runtime( meth ),
               call_epilog,
               adjust_long_from_native_call );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(simple_call);
 %}
 
@@ -10041,6 +10077,7 @@ instruct TailCalljmpInd(g3RegP jump_target, inline_cache_regP method_oop) %{
   ins_cost(CALL_COST);
   format %{ "Jmp     $jump_target  ; NOP \t! $method_oop holds method oop" %}
   ins_encode(form_jmpl(jump_target));
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(tail_call);
 %}
 
@@ -10072,6 +10109,7 @@ instruct tailjmpInd(g1RegP jump_target, i0RegP ex_oop) %{
   // opcode(Assembler::jmpl_op3, Assembler::arith_op);
   // The hack duplicates the exception oop into G3, so that CreateEx can use it there.
   // ins_encode( form3_rs1_simm13_rd( jump_target, 0x00, R_G0 ), move_return_pc_to_o1() );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(tail_call);
 %}
 
@@ -10102,6 +10140,7 @@ instruct RethrowException()
   // use the following format syntax
   format %{ "Jmp    rethrow_stub" %}
   ins_encode(enc_rethrow);
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(tail_call);
 %}
 
@@ -10130,6 +10169,7 @@ instruct partialSubtypeCheck( o0RegP index, o1RegP sub, o2RegP super, flagsRegP 
   ins_cost(DEFAULT_COST*10);
   format %{ "CALL   PartialSubtypeCheck\n\tNOP" %}
   ins_encode( enc_PartialSubtypeCheck() );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(partial_subtype_check_pipe);
 %}
 
@@ -10139,6 +10179,7 @@ instruct partialSubtypeCheck_vs_zero( flagsRegP pcc, o1RegP sub, o2RegP super, i
   ins_cost(DEFAULT_COST*10);
   format %{ "CALL   PartialSubtypeCheck\n\tNOP\t# (sets condition codes)" %}
   ins_encode( enc_PartialSubtypeCheck() );
+  ins_avoid_back_to_back(AVOID_BEFORE);
   ins_pipe(partial_subtype_check_pipe);
 %}
 

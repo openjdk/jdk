@@ -33,7 +33,7 @@
 
 ConcurrentG1RefineThread::
 ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *next,
-                         int worker_id_offset, int worker_id) :
+                         uint worker_id_offset, uint worker_id) :
   ConcurrentGCThread(),
   _worker_id_offset(worker_id_offset),
   _worker_id(worker_id),

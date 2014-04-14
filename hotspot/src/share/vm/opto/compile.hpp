@@ -416,6 +416,7 @@ class Compile : public Phase {
     void set_cg(CallGenerator* cg) { _cg = cg; }
   };
 
+  stringStream* _print_inlining_stream;
   GrowableArray<PrintInliningBuffer>* _print_inlining_list;
   int _print_inlining_idx;
 
@@ -433,39 +434,36 @@ class Compile : public Phase {
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
+  void print_inlining_init();
+  void print_inlining_reinit();
+  void print_inlining_commit();
+  void print_inlining_push();
+  PrintInliningBuffer& print_inlining_current();
+
+  void log_late_inline_failure(CallGenerator* cg, const char* msg);
+
  public:
 
   outputStream* print_inlining_stream() const {
-    return _print_inlining_list->adr_at(_print_inlining_idx)->ss();
+    assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
+    return _print_inlining_stream;
   }
 
-  void print_inlining_skip(CallGenerator* cg) {
-    if (_print_inlining) {
-      _print_inlining_list->adr_at(_print_inlining_idx)->set_cg(cg);
-      _print_inlining_idx++;
-      _print_inlining_list->insert_before(_print_inlining_idx, PrintInliningBuffer());
-    }
-  }
-
-  void print_inlining_insert(CallGenerator* cg) {
-    if (_print_inlining) {
-      for (int i = 0; i < _print_inlining_list->length(); i++) {
-        if (_print_inlining_list->adr_at(i)->cg() == cg) {
-          _print_inlining_list->insert_before(i+1, PrintInliningBuffer());
-          _print_inlining_idx = i+1;
-          _print_inlining_list->adr_at(i)->set_cg(NULL);
-          return;
-        }
-      }
-      ShouldNotReachHere();
-    }
-  }
+  void print_inlining_update(CallGenerator* cg);
+  void print_inlining_update_delayed(CallGenerator* cg);
+  void print_inlining_move_to(CallGenerator* cg);
+  void print_inlining_assert_ready();
+  void print_inlining_reset();
 
   void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
     stringStream ss;
     CompileTask::print_inlining(&ss, method, inline_level, bci, msg);
     print_inlining_stream()->print(ss.as_string());
   }
+
+  void log_late_inline(CallGenerator* cg);
+  void log_inline_id(CallGenerator* cg);
+  void log_inline_failure(const char* msg);
 
   void* replay_inline_data() const { return _replay_inline_data; }
 

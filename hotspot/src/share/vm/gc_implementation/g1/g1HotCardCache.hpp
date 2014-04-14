@@ -99,7 +99,7 @@ class G1HotCardCache: public CHeapObj<mtGC> {
 
   // Refine the cards that have delayed as a result of
   // being in the cache.
-  void drain(int worker_i, G1RemSet* g1rs, DirtyCardQueue* into_cset_dcq);
+  void drain(uint worker_i, G1RemSet* g1rs, DirtyCardQueue* into_cset_dcq);
 
   // Set up for parallel processing of the cards in the hot cache
   void reset_hot_cache_claimed_index() {
