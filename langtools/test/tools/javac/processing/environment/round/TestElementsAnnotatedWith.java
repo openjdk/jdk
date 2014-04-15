@@ -93,7 +93,8 @@ public class TestElementsAnnotatedWith extends JavacTestingAbstractProcessor {
                     roundEnvironment.
                     getElementsAnnotatedWith(elements.getTypeElement(annotatedElementInfo.annotationName()));
 
-                System.err.println("Results: " + resultsMeta);
+                if (!resultsMeta.isEmpty())
+                    System.err.println("Results: " + resultsMeta);
 
                 if (resultsMeta.size() != annotatedElementInfo.expectedSize()) {
                     failed = true;
