@@ -6586,8 +6586,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     TableColumnModelListener, CellEditorListener, PropertyChangeListener,
     AccessibleExtendedTable {
 
-        int lastSelectedRow;
-        int lastSelectedCol;
+        int previousFocusedRow;
+        int previousFocusedCol;
 
         /**
          * AccessibleJTable constructor
@@ -6602,8 +6602,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             tcm.addColumnModelListener(this);
             tcm.getSelectionModel().addListSelectionListener(this);
             JTable.this.getModel().addTableModelListener(this);
-            lastSelectedRow = JTable.this.getSelectedRow();
-            lastSelectedCol = JTable.this.getSelectedColumn();
+            previousFocusedRow = JTable.this.getSelectionModel().
+                                        getLeadSelectionIndex();
+            previousFocusedCol = JTable.this.getColumnModel().
+                                        getSelectionModel().getLeadSelectionIndex();
         }
 
     // Listeners to track model, etc. changes to as to re-place the other
@@ -6929,20 +6931,23 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
          */
         public void valueChanged(ListSelectionEvent e) {
             firePropertyChange(AccessibleContext.ACCESSIBLE_SELECTION_PROPERTY,
-                               Boolean.valueOf(false), Boolean.valueOf(true));
+                            Boolean.valueOf(false), Boolean.valueOf(true));
 
-            int selectedRow = JTable.this.getSelectedRow();
-            int selectedCol = JTable.this.getSelectedColumn();
-            if (selectedRow != lastSelectedRow ||
-                selectedCol != lastSelectedCol) {
-                Accessible oldA = getAccessibleAt(lastSelectedRow,
-                                                  lastSelectedCol);
-                Accessible newA = getAccessibleAt(selectedRow, selectedCol);
+            // Using lead selection index to cover both cases: node selected and node
+            // is focused but not selected (Ctrl+up/down)
+            int focusedRow = JTable.this.getSelectionModel().getLeadSelectionIndex();
+            int focusedCol = JTable.this.getColumnModel().getSelectionModel().
+                                                    getLeadSelectionIndex();
+
+            if (focusedRow != previousFocusedRow ||
+                focusedCol != previousFocusedCol) {
+                Accessible oldA = getAccessibleAt(previousFocusedRow, previousFocusedCol);
+                Accessible newA = getAccessibleAt(focusedRow, focusedCol);
                 firePropertyChange(AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY,
-                                   oldA, newA);
-                 lastSelectedRow = selectedRow;
-                 lastSelectedCol = selectedCol;
-             }
+                                    oldA, newA);
+                previousFocusedRow = focusedRow;
+                previousFocusedCol = focusedCol;
+            }
         }
 
 
