@@ -27,7 +27,10 @@ import java.util.*;
 import java.io.IOException;
 
 /**
- * Tests path operations for zip provider.
+ *
+ * @test
+ * @bug 8038500
+ * @summary Tests path operations for zip provider.
  */
 
 public class PathOps {
@@ -447,8 +450,8 @@ public class PathOps {
     }
 
     public static void main(String[] args) throws Throwable {
-
-        Path zipfile = Paths.get(args[0]);
+        Path zipfile = Paths.get(System.getProperty("test.jdk"),
+                                 "jre/lib/ext/zipfs.jar");
         fs = FileSystems.newFileSystem(zipfile, null);
         npes();
         doPathOpTests();
