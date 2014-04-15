@@ -1150,6 +1150,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // Now force out all loop-invariant dominating tests.  The optimizer
   // finds some, but we _know_ they are all useless.
   peeled_dom_test_elim(loop,old_new);
+  loop->record_for_igvn();
 }
 
 //------------------------------is_invariant-----------------------------
