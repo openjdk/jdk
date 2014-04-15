@@ -36,6 +36,7 @@
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/intHisto.hpp"
 
 #define CARD_REPEAT_HISTO 0
@@ -163,7 +164,7 @@ public:
   void printCard(HeapRegion* card_region, size_t card_index,
                  HeapWord* card_start) {
     gclog_or_tty->print_cr("T %u Region [" PTR_FORMAT ", " PTR_FORMAT ") "
-                           "RS names card %p: "
+                           "RS names card " SIZE_FORMAT_HEX ": "
                            "[" PTR_FORMAT ", " PTR_FORMAT ")",
                            _worker_i,
                            card_region->bottom(), card_region->end(),

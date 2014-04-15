@@ -44,6 +44,7 @@
 #include "runtime/java.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
 //
@@ -131,7 +132,7 @@ void KlassScanClosure::do_klass(Klass* klass) {
 #ifndef PRODUCT
   if (TraceScavenge) {
     ResourceMark rm;
-    gclog_or_tty->print_cr("KlassScanClosure::do_klass %p, %s, dirty: %s",
+    gclog_or_tty->print_cr("KlassScanClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
                            klass,
                            klass->external_name(),
                            klass->has_modified_oops() ? "true" : "false");
