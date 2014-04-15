@@ -133,7 +133,7 @@ class WindowsPath extends AbstractPath {
 
     /**
      * Special implementation with attached/cached attributes (used to quicken
-     * file tree traveral)
+     * file tree traversal)
      */
     private static class WindowsPathWithAttributes
         extends WindowsPath implements BasicFileAttributesHolder

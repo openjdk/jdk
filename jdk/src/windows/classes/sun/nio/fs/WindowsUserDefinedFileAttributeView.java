@@ -200,7 +200,7 @@ class WindowsUserDefinedFileAttributeView
     public List<String> list() throws IOException  {
         if (System.getSecurityManager() != null)
             checkAccess(file.getPathForPermissionCheck(), true, false);
-        // use stream APIs on Windwos Server 2003 and newer
+        // use stream APIs on Windows Server 2003 and newer
         if (file.getFileSystem().supportsStreamEnumeration()) {
             return listUsingStreamEnumeration();
         } else {

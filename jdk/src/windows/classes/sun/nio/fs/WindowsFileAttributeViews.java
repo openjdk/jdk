@@ -98,9 +98,9 @@ class WindowsFileAttributeViews {
                             lastAccessTime,
                             lastWriteTime);
             } catch (WindowsException x) {
-                // If ERROR_INVALID_PARAMATER is returned and the volume is
+                // If ERROR_INVALID_PARAMETER is returned and the volume is
                 // FAT then adjust to the FAT epoch and retry.
-                if (followLinks && x.lastError() == ERROR_INVALID_PARAMATER) {
+                if (followLinks && x.lastError() == ERROR_INVALID_PARAMETER) {
                     try {
                         if (WindowsFileStore.create(file).type().equals("FAT")) {
                             SetFileTime(handle,
@@ -157,7 +157,7 @@ class WindowsFileAttributeViews {
         private static final String HIDDEN_NAME = "hidden";
         private static final String ATTRIBUTES_NAME = "attributes";
 
-        // the names of the DOS attribtues (includes basic)
+        // the names of the DOS attributes (includes basic)
         static final Set<String> dosAttributeNames =
             Util.newSet(basicAttributeNames,
                         READONLY_NAME, ARCHIVE_NAME, SYSTEM_NAME,  HIDDEN_NAME, ATTRIBUTES_NAME);
@@ -223,7 +223,7 @@ class WindowsFileAttributeViews {
         {
             file.checkWrite();
 
-            // GetFileAttribtues & SetFileAttributes do not follow links so when
+            // GetFileAttributes & SetFileAttributes do not follow links so when
             // following links we need the final target
             String path = WindowsLinkSupport.getFinalPath(file, followLinks);
             try {

@@ -48,7 +48,7 @@ class UnixDirectoryStream
     // filter (may be null)
     private final DirectoryStream.Filter<? super Path> filter;
 
-    // used to coorindate closing of directory stream
+    // used to coordinate closing of directory stream
     private final ReentrantReadWriteLock streamLock =
         new ReentrantReadWriteLock(true);
 
