@@ -94,7 +94,7 @@ class WindowsConstants {
     public static final int ERROR_NOT_READY             = 21;
     public static final int ERROR_SHARING_VIOLATION     = 32;
     public static final int ERROR_FILE_EXISTS           = 80;
-    public static final int ERROR_INVALID_PARAMATER     = 87;
+    public static final int ERROR_INVALID_PARAMETER     = 87;
     public static final int ERROR_DISK_FULL             = 112;
     public static final int ERROR_INSUFFICIENT_BUFFER   = 122;
     public static final int ERROR_INVALID_LEVEL         = 124;

@@ -627,14 +627,14 @@ class SolarisWatchService
 
         /**
          * Update watch key's events. If ENTRY_MODIFY changes to be enabled
-         * then register each file in the direcory; If ENTRY_MODIFY changed to
+         * then register each file in the directory; If ENTRY_MODIFY changed to
          * be disabled then unregister each file.
          */
         void updateEvents(SolarisWatchKey key, Set<? extends WatchEvent.Kind<?>> events)
             throws UnixException
         {
 
-            // update events, rembering if ENTRY_MODIFY was previously
+            // update events, remembering if ENTRY_MODIFY was previously
             // enabled or disabled.
             boolean oldModifyEnabled = key.events()
                 .contains(StandardWatchEventKinds.ENTRY_MODIFY);

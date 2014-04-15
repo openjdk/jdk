@@ -384,7 +384,7 @@ public class WindowsFileSystemProvider
                 file.getPathForExceptionMessage(), null,
                 "Permissions does not allow requested access");
 
-        // for write access we neeed to check if the DOS readonly attribute
+        // for write access we need to check if the DOS readonly attribute
         // and if the volume is read-only
         if (w) {
             try {
@@ -553,7 +553,7 @@ public class WindowsFileSystemProvider
         }
 
         /*
-         * Windows treates symbolic links to directories differently than it
+         * Windows treats symbolic links to directories differently than it
          * does to other file types. For that reason we need to check if the
          * target is a directory (or a directory junction).
          */

@@ -129,11 +129,11 @@ class WindowsSecurity {
         int genericRead, int genericWrite, int genericExecute, int genericAll)
         throws WindowsException
     {
-        int privilegies = TOKEN_QUERY;
-        long hToken = OpenThreadToken(GetCurrentThread(), privilegies, false);
+        int privileges = TOKEN_QUERY;
+        long hToken = OpenThreadToken(GetCurrentThread(), privileges, false);
         if (hToken == 0L && processTokenWithDuplicateAccess != 0L)
             hToken = DuplicateTokenEx(processTokenWithDuplicateAccess,
-                privilegies);
+                privileges);
 
         boolean hasRight = false;
         if (hToken != 0L) {

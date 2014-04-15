@@ -38,7 +38,6 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
@@ -739,7 +738,7 @@ public final class Files {
             // don't have permission to get absolute path
             se = x;
         }
-        // find a decendent that exists
+        // find a descendant that exists
         Path parent = dir.getParent();
         while (parent != null) {
             try {
@@ -1400,7 +1399,7 @@ public final class Files {
         return target;
     }
 
-    // -- Miscellenous --
+    // -- Miscellaneous --
 
     /**
      * Reads the target of a symbolic link <i>(optional operation)</i>.
@@ -1535,7 +1534,7 @@ public final class Files {
     private static class FileTypeDetectors{
         static final FileTypeDetector defaultFileTypeDetector =
             createDefaultFileTypeDetector();
-        static final List<FileTypeDetector> installeDetectors =
+        static final List<FileTypeDetector> installedDetectors =
             loadInstalledDetectors();
 
         // creates the default file type detector
@@ -1614,7 +1613,7 @@ public final class Files {
         throws IOException
     {
         // try installed file type detectors
-        for (FileTypeDetector detector: FileTypeDetectors.installeDetectors) {
+        for (FileTypeDetector detector: FileTypeDetectors.installedDetectors) {
             String result = detector.probeContentType(path);
             if (result != null)
                 return result;
@@ -1922,7 +1921,7 @@ public final class Files {
      * </tr>
      * <tr>
      *   <td> {@code "posix:permissions,owner,size"} </td>
-     *   <td> Reads the POSX file permissions, owner, and file size. </td>
+     *   <td> Reads the POSIX file permissions, owner, and file size. </td>
      * </tr>
      * </table>
      * </blockquote>
@@ -2448,7 +2447,7 @@ public final class Files {
     }
 
     /**
-     * Used by isReadbale, isWritable, isExecutable to test access to a file.
+     * Used by isReadable, isWritable, isExecutable to test access to a file.
      */
     private static boolean isAccessible(Path path, AccessMode... modes) {
         try {
