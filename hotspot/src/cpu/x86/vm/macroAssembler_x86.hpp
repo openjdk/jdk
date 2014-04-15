@@ -1170,7 +1170,7 @@ public:
   void movl2ptr(Register dst, Register src) { LP64_ONLY(movslq(dst, src)) NOT_LP64(if (dst != src) movl(dst, src)); }
 
   // C2 compiled method's prolog code.
-  void verified_entry(int framesize, bool stack_bang, bool fp_mode_24b);
+  void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b);
 
   // clear memory of size 'cnt' qwords, starting at 'base'.
   void clear_mem(Register base, Register cnt, Register rtmp);

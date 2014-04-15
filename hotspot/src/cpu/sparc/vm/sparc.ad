@@ -1193,15 +1193,16 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
     st->print_cr("Verify_Thread"); st->print("\t");
   }
 
-  size_t framesize = C->frame_slots() << LogBytesPerInt;
+  size_t framesize = C->frame_size_in_bytes();
+  int bangsize = C->bang_size_in_bytes();
 
   // Calls to C2R adapters often do not accept exceptional returns.
   // We require that their callers must bang for them.  But be careful, because
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(framesize)) {
-    st->print_cr("! stack bang"); st->print("\t");
+  if (C->need_stack_bang(bangsize)) {
+    st->print_cr("! stack bang (%d bytes)", bangsize); st->print("\t");
   }
 
   if (Assembler::is_simm13(-framesize)) {
@@ -1225,17 +1226,18 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ verify_thread();
 
-  size_t framesize = C->frame_slots() << LogBytesPerInt;
+  size_t framesize = C->frame_size_in_bytes();
   assert(framesize >= 16*wordSize, "must have room for reg. save area");
   assert(framesize%(2*wordSize) == 0, "must preserve 2*wordSize alignment");
+  int bangsize = C->bang_size_in_bytes();
 
   // Calls to C2R adapters often do not accept exceptional returns.
   // We require that their callers must bang for them.  But be careful, because
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(framesize)) {
-    __ generate_stack_overflow_check(framesize);
+  if (C->need_stack_bang(bangsize)) {
+    __ generate_stack_overflow_check(bangsize);
   }
 
   if (Assembler::is_simm13(-framesize)) {
@@ -2547,7 +2549,7 @@ encode %{
   enc_class call_epilog %{
     if( VerifyStackAtCalls ) {
       MacroAssembler _masm(&cbuf);
-      int framesize = ra_->C->frame_slots() << LogBytesPerInt;
+      int framesize = ra_->C->frame_size_in_bytes();
       Register temp_reg = G3;
       __ add(SP, framesize, temp_reg);
       __ cmp(temp_reg, FP);
