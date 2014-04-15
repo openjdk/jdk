@@ -158,15 +158,6 @@ COPY_FILES += $(CURSORS_TARGET_FILES)
 
 ##########################################################################################
 
-CONTENT_TYPES_SRC = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
-
-$(LIBDIR)/content-types.properties: $(CONTENT_TYPES_SRC)/content-types.properties
-	$(call install-file)
-
-COPY_FILES += $(LIBDIR)/content-types.properties
-
-##########################################################################################
-
 CALENDARS_SRC := $(JDK_TOPDIR)/src/share/lib
 
 $(LIBDIR)/calendars.properties: $(CALENDARS_SRC)/calendars.properties
