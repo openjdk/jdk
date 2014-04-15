@@ -26,7 +26,7 @@
 # Copy icu and _dict files used by the text break iterator
 
 COPY_PATTERNS := .icu _dict .dat _options .js aliasmap .spp .wav .css \
-    .png .gif .xml .dtd .txt oqlhelp.html
+    .png .gif .xml .dtd .txt oqlhelp.html content-types.properties
 
 # These directories should not be copied at all
 EXCLUDES += \
