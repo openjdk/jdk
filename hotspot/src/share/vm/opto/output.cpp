@@ -165,8 +165,13 @@ bool Compile::need_stack_bang(int frame_size_in_bytes) const {
   // Determine if we need to generate a stack overflow check.
   // Do it if the method is not a stub function and
   // has java calls or has frame size > vm_page_size/8.
+  // The debug VM checks that deoptimization doesn't trigger an
+  // unexpected stack overflow (compiled method stack banging should
+  // guarantee it doesn't happen) so we always need the stack bang in
+  // a debug VM.
   return (UseStackBanging && stub_function() == NULL &&
-          (has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3));
+          (has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3
+           DEBUG_ONLY(|| true)));
 }
 
 bool Compile::need_register_stack_bang() const {
