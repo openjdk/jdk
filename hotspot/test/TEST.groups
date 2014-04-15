@@ -127,6 +127,7 @@ needs_compact3 = \
   gc/6581734/Test6581734.java \
   gc/7072527/TestFullGCCount.java \
   gc/g1/TestHumongousAllocInitialMark.java \
+  gc/g1/TestHumongousShrinkHeap.java \
   gc/arguments/TestG1HeapRegionSize.java \
   gc/metaspace/TestMetaspaceMemoryPool.java \
   gc/arguments/TestDynMinHeapFreeRatio.java \
