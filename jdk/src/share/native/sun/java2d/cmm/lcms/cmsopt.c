@@ -27,6 +27,7 @@
 // However, the following notice accompanied the original version of this
 // file:
 //
+
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
@@ -80,10 +81,6 @@ typedef struct {
     // Number of channels
     int nInputs;
     int nOutputs;
-
-    // Since there is no limitation of the output number of channels, this buffer holding the connexion CLUT-shaper
-    // has to be dynamically allocated. This is not the case of first step shaper-CLUT, which is limited to max inputs
-    cmsUInt16Number* StageDEF;
 
     _cmsInterpFn16 EvalCurveIn16[MAX_INPUT_DIMENSIONS];       // The maximum number of input channels is known in advance
     cmsInterpParams*  ParamsCurveIn16[MAX_INPUT_DIMENSIONS];
@@ -202,8 +199,6 @@ cmsBool PreOptimize(cmsPipeline* Lut)
 {
     cmsBool AnyOpt = FALSE, Opt;
 
-    AnyOpt = FALSE;
-
     do {
 
         Opt = FALSE;
@@ -253,6 +248,7 @@ void PrelinEval16(register const cmsUInt16Number Input[],
 {
     Prelin16Data* p16 = (Prelin16Data*) D;
     cmsUInt16Number  StageABC[MAX_INPUT_DIMENSIONS];
+    cmsUInt16Number  StageDEF[cmsMAXCHANNELS];
     int i;
 
     for (i=0; i < p16 ->nInputs; i++) {
@@ -260,11 +256,11 @@ void PrelinEval16(register const cmsUInt16Number Input[],
         p16 ->EvalCurveIn16[i](&Input[i], &StageABC[i], p16 ->ParamsCurveIn16[i]);
     }
 
-    p16 ->EvalCLUT(StageABC, p16 ->StageDEF, p16 ->CLUTparams);
+    p16 ->EvalCLUT(StageABC, StageDEF, p16 ->CLUTparams);
 
     for (i=0; i < p16 ->nOutputs; i++) {
 
-        p16 ->EvalCurveOut16[i](&p16->StageDEF[i], &Output[i], p16 ->ParamsCurveOut16[i]);
+        p16 ->EvalCurveOut16[i](&StageDEF[i], &Output[i], p16 ->ParamsCurveOut16[i]);
     }
 }
 
@@ -274,7 +270,6 @@ void PrelinOpt16free(cmsContext ContextID, void* ptr)
 {
     Prelin16Data* p16 = (Prelin16Data*) ptr;
 
-    _cmsFree(ContextID, p16 ->StageDEF);
     _cmsFree(ContextID, p16 ->EvalCurveOut16);
     _cmsFree(ContextID, p16 ->ParamsCurveOut16);
 
@@ -289,7 +284,6 @@ void* Prelin16dup(cmsContext ContextID, const void* ptr)
 
     if (Duped == NULL) return NULL;
 
-    Duped ->StageDEF         = _cmsCalloc(ContextID, p16 ->nOutputs, sizeof(cmsUInt16Number));
     Duped ->EvalCurveOut16   = _cmsDupMem(ContextID, p16 ->EvalCurveOut16, p16 ->nOutputs * sizeof(_cmsInterpFn16));
     Duped ->ParamsCurveOut16 = _cmsDupMem(ContextID, p16 ->ParamsCurveOut16, p16 ->nOutputs * sizeof(cmsInterpParams* ));
 
@@ -328,7 +322,6 @@ Prelin16Data* PrelinOpt16alloc(cmsContext ContextID,
     p16 ->EvalCLUT   = ColorMap ->Interpolation.Lerp16;
 
 
-    p16 -> StageDEF = _cmsCalloc(ContextID, p16 ->nOutputs, sizeof(cmsUInt16Number));
     p16 -> EvalCurveOut16 = (_cmsInterpFn16*) _cmsCalloc(ContextID, nOutputs, sizeof(_cmsInterpFn16));
     p16 -> ParamsCurveOut16 = (cmsInterpParams**) _cmsCalloc(ContextID, nOutputs, sizeof(cmsInterpParams* ));
 
@@ -413,7 +406,7 @@ cmsBool  PatchLUT(cmsStage* CLUT, cmsUInt16Number At[], cmsUInt16Number Value[],
     int        i, index;
 
     if (CLUT -> Type != cmsSigCLutElemType) {
-        cmsSignalError(CLUT->ContextID, cmsERROR_INTERNAL, "(internal) Attempt to PatchLUT on non-lut MPE");
+        cmsSignalError(CLUT->ContextID, cmsERROR_INTERNAL, "(internal) Attempt to PatchLUT on non-lut stage");
         return FALSE;
     }
 
@@ -579,8 +572,8 @@ cmsBool FixWhiteMisalignment(cmsPipeline* Lut, cmsColorSpaceSignature EntryColor
 static
 cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt32Number* InputFormat, cmsUInt32Number* OutputFormat, cmsUInt32Number* dwFlags)
 {
-    cmsPipeline* Src;
-    cmsPipeline* Dest;
+    cmsPipeline* Src = NULL;
+    cmsPipeline* Dest = NULL;
     cmsStage* mpe;
     cmsStage* CLUT;
     cmsStage *KeepPreLin = NULL, *KeepPostLin = NULL;
@@ -592,7 +585,6 @@ cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
     cmsToneCurve** DataSetIn;
     cmsToneCurve** DataSetOut;
     Prelin16Data* p16;
-
 
     // This is a loosy optimization! does not apply in floating-point cases
     if (_cmsFormatterIsFloat(*InputFormat) || _cmsFormatterIsFloat(*OutputFormat)) return FALSE;
@@ -607,10 +599,10 @@ cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
 
     Src = *Lut;
 
-   // Named color pipelines cannot be optimized either
-   for (mpe = cmsPipelineGetPtrToFirstStage(Src);
-         mpe != NULL;
-         mpe = cmsStageNext(mpe)) {
+    // Named color pipelines cannot be optimized either
+    for (mpe = cmsPipelineGetPtrToFirstStage(Src);
+        mpe != NULL;
+        mpe = cmsStageNext(mpe)) {
             if (cmsStageType(mpe) == cmsSigNamedColorElemType) return FALSE;
     }
 
@@ -632,7 +624,8 @@ cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
 
                 // All seems ok, proceed.
                 NewPreLin = cmsStageDup(PreLin);
-                cmsPipelineInsertStage(Dest, cmsAT_BEGIN, NewPreLin);
+                if(!cmsPipelineInsertStage(Dest, cmsAT_BEGIN, NewPreLin))
+                    goto Error;
 
                 // Remove prelinearization. Since we have duplicated the curve
                 // in destination LUT, the sampling shoud be applied after this stage.
@@ -646,7 +639,9 @@ cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
     if (CLUT == NULL) return FALSE;
 
     // Add the CLUT to the destination LUT
-    cmsPipelineInsertStage(Dest, cmsAT_END, CLUT);
+    if (!cmsPipelineInsertStage(Dest, cmsAT_END, CLUT)) {
+        goto Error;
+    }
 
     // Postlinearization tables are kept unless indicated by flags
     if (*dwFlags & cmsFLAGS_CLUT_POST_LINEARIZATION) {
@@ -662,7 +657,8 @@ cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
 
                 // All seems ok, proceed.
                 NewPostLin = cmsStageDup(PostLin);
-                cmsPipelineInsertStage(Dest, cmsAT_END, NewPostLin);
+                if (!cmsPipelineInsertStage(Dest, cmsAT_END, NewPostLin))
+                    goto Error;
 
                 // In destination LUT, the sampling shoud be applied after this stage.
                 cmsPipelineUnlinkStage(Src, cmsAT_END, &KeepPostLin);
@@ -673,10 +669,18 @@ cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
     // Now its time to do the sampling. We have to ignore pre/post linearization
     // The source LUT whithout pre/post curves is passed as parameter.
     if (!cmsStageSampleCLut16bit(CLUT, XFormSampler16, (void*) Src, 0)) {
-
+Error:
         // Ops, something went wrong, Restore stages
-        if (KeepPreLin != NULL)  cmsPipelineInsertStage(Src, cmsAT_BEGIN, KeepPreLin);
-        if (KeepPostLin != NULL) cmsPipelineInsertStage(Src, cmsAT_END,   KeepPostLin);
+        if (KeepPreLin != NULL) {
+            if (!cmsPipelineInsertStage(Src, cmsAT_BEGIN, KeepPreLin)) {
+                _cmsAssert(0); // This never happens
+            }
+        }
+        if (KeepPostLin != NULL) {
+            if (!cmsPipelineInsertStage(Src, cmsAT_END,   KeepPostLin)) {
+                _cmsAssert(0); // This never happens
+            }
+        }
         cmsPipelineFree(Dest);
         return FALSE;
     }
@@ -703,12 +707,11 @@ cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
     else {
 
         p16 = PrelinOpt16alloc(Dest ->ContextID,
-                               DataCLUT ->Params,
-                               Dest ->InputChannels,
-                               DataSetIn,
-                               Dest ->OutputChannels,
-                               DataSetOut);
-
+            DataCLUT ->Params,
+            Dest ->InputChannels,
+            DataSetIn,
+            Dest ->OutputChannels,
+            DataSetOut);
 
         _cmsPipelineSetOptimizationParameters(Dest, PrelinEval16, (void*) p16, PrelinOpt16free, Prelin16dup);
     }
@@ -1062,7 +1065,8 @@ cmsBool OptimizeByComputingLinearization(cmsPipeline** Lut, cmsUInt32Number Inte
     LutPlusCurves = cmsPipelineDup(OriginalLut);
     if (LutPlusCurves == NULL) goto Error;
 
-    cmsPipelineInsertStage(LutPlusCurves, cmsAT_BEGIN, cmsStageAllocToneCurves(OriginalLut ->ContextID, OriginalLut ->InputChannels, TransReverse));
+    if (!cmsPipelineInsertStage(LutPlusCurves, cmsAT_BEGIN, cmsStageAllocToneCurves(OriginalLut ->ContextID, OriginalLut ->InputChannels, TransReverse)))
+        goto Error;
 
     // Create the result LUT
     OptimizedLUT = cmsPipelineAlloc(OriginalLut ->ContextID, OriginalLut ->InputChannels, OriginalLut ->OutputChannels);
@@ -1071,13 +1075,15 @@ cmsBool OptimizeByComputingLinearization(cmsPipeline** Lut, cmsUInt32Number Inte
     OptimizedPrelinMpe = cmsStageAllocToneCurves(OriginalLut ->ContextID, OriginalLut ->InputChannels, Trans);
 
     // Create and insert the curves at the beginning
-    cmsPipelineInsertStage(OptimizedLUT, cmsAT_BEGIN, OptimizedPrelinMpe);
+    if (!cmsPipelineInsertStage(OptimizedLUT, cmsAT_BEGIN, OptimizedPrelinMpe))
+        goto Error;
 
     // Allocate the CLUT for result
     OptimizedCLUTmpe = cmsStageAllocCLut16bit(OriginalLut ->ContextID, nGridPoints, OriginalLut ->InputChannels, OriginalLut ->OutputChannels, NULL);
 
     // Add the CLUT to the destination LUT
-    cmsPipelineInsertStage(OptimizedLUT, cmsAT_END, OptimizedCLUTmpe);
+    if (!cmsPipelineInsertStage(OptimizedLUT, cmsAT_END, OptimizedCLUTmpe))
+        goto Error;
 
     // Resample the LUT
     if (!cmsStageSampleCLut16bit(OptimizedCLUTmpe, XFormSampler16, (void*) LutPlusCurves, 0)) goto Error;
@@ -1205,13 +1211,14 @@ Curves16Data* CurvesAlloc(cmsContext ContextID, int nCurves, int nElements, cmsT
     for (i=0; i < nCurves; i++) {
 
         c16->Curves[i] = _cmsCalloc(ContextID, nElements, sizeof(cmsUInt16Number));
+
         if (c16->Curves[i] == NULL) {
+
             for (j=0; j < i; j++) {
                 _cmsFree(ContextID, c16->Curves[j]);
             }
             _cmsFree(ContextID, c16->Curves);
             _cmsFree(ContextID, c16);
-
             return NULL;
         }
 
@@ -1340,7 +1347,8 @@ cmsBool OptimizeByJoiningCurves(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUI
     // Maybe the curves are linear at the end
     if (!AllCurvesAreLinear(ObtainedCurves)) {
 
-        cmsPipelineInsertStage(Dest, cmsAT_BEGIN, ObtainedCurves);
+        if (!cmsPipelineInsertStage(Dest, cmsAT_BEGIN, ObtainedCurves))
+            goto Error;
 
         // If the curves are to be applied in 8 bits, we can save memory
         if (_cmsFormatterIs8bit(*InputFormat)) {
@@ -1348,6 +1356,7 @@ cmsBool OptimizeByJoiningCurves(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUI
             _cmsStageToneCurvesData* Data = (_cmsStageToneCurvesData*) ObtainedCurves ->Data;
              Curves16Data* c16 = CurvesAlloc(Dest ->ContextID, Data ->nCurves, 256, Data ->TheCurves);
 
+             if (c16 == NULL) goto Error;
              *dwFlags |= cmsFLAGS_NOCACHE;
             _cmsPipelineSetOptimizationParameters(Dest, FastEvaluateCurves8, c16, CurvesFree, CurvesDup);
 
@@ -1357,6 +1366,7 @@ cmsBool OptimizeByJoiningCurves(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUI
             _cmsStageToneCurvesData* Data = (_cmsStageToneCurvesData*) cmsStageData(ObtainedCurves);
              Curves16Data* c16 = CurvesAlloc(Dest ->ContextID, Data ->nCurves, 65536, Data ->TheCurves);
 
+             if (c16 == NULL) goto Error;
              *dwFlags |= cmsFLAGS_NOCACHE;
             _cmsPipelineSetOptimizationParameters(Dest, FastEvaluateCurves16, c16, CurvesFree, CurvesDup);
         }
@@ -1366,7 +1376,8 @@ cmsBool OptimizeByJoiningCurves(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUI
         // LUT optimizes to nothing. Set the identity LUT
         cmsStageFree(ObtainedCurves);
 
-        cmsPipelineInsertStage(Dest, cmsAT_BEGIN, cmsStageAllocIdentity(Dest ->ContextID, Src ->InputChannels));
+        if (!cmsPipelineInsertStage(Dest, cmsAT_BEGIN, cmsStageAllocIdentity(Dest ->ContextID, Src ->InputChannels)))
+            goto Error;
 
         *dwFlags |= cmsFLAGS_NOCACHE;
         _cmsPipelineSetOptimizationParameters(Dest, FastIdentity16, (void*) Dest, NULL, NULL);
@@ -1596,10 +1607,14 @@ cmsBool OptimizeMatrixShaper(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
     if (!Dest) return FALSE;
 
     // Assamble the new LUT
-    cmsPipelineInsertStage(Dest, cmsAT_BEGIN, cmsStageDup(Curve1));
+    if (!cmsPipelineInsertStage(Dest, cmsAT_BEGIN, cmsStageDup(Curve1)))
+        goto Error;
+
     if (!IdentityMat)
-        cmsPipelineInsertStage(Dest, cmsAT_END, cmsStageAllocMatrix(Dest ->ContextID, 3, 3, (const cmsFloat64Number*) &res, Data2 ->Offset));
-    cmsPipelineInsertStage(Dest, cmsAT_END, cmsStageDup(Curve2));
+        if (!cmsPipelineInsertStage(Dest, cmsAT_END, cmsStageAllocMatrix(Dest ->ContextID, 3, 3, (const cmsFloat64Number*) &res, Data2 ->Offset)))
+            goto Error;
+    if (!cmsPipelineInsertStage(Dest, cmsAT_END, cmsStageDup(Curve2)))
+        goto Error;
 
     // If identity on matrix, we can further optimize the curves, so call the join curves routine
     if (IdentityMat) {
@@ -1621,6 +1636,10 @@ cmsBool OptimizeMatrixShaper(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
     cmsPipelineFree(Src);
     *Lut = Dest;
     return TRUE;
+Error:
+    // Leave Src unchanged
+    cmsPipelineFree(Dest);
+    return FALSE;
 }
 
 
@@ -1650,7 +1669,7 @@ static _cmsOptimizationCollection DefaultOptimization[] = {
 static _cmsOptimizationCollection* OptimizationCollection = DefaultOptimization;
 
 // Register new ways to optimize
-cmsBool  _cmsRegisterOptimizationPlugin(cmsPluginBase* Data)
+cmsBool  _cmsRegisterOptimizationPlugin(cmsContext id, cmsPluginBase* Data)
 {
     cmsPluginOptimization* Plugin = (cmsPluginOptimization*) Data;
     _cmsOptimizationCollection* fl;
@@ -1664,7 +1683,7 @@ cmsBool  _cmsRegisterOptimizationPlugin(cmsPluginBase* Data)
     // Optimizer callback is required
     if (Plugin ->OptimizePtr == NULL) return FALSE;
 
-    fl = (_cmsOptimizationCollection*) _cmsPluginMalloc(sizeof(_cmsOptimizationCollection));
+    fl = (_cmsOptimizationCollection*) _cmsPluginMalloc(id, sizeof(_cmsOptimizationCollection));
     if (fl == NULL) return FALSE;
 
     // Copy the parameters

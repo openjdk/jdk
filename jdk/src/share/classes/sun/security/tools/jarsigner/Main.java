@@ -90,9 +90,6 @@ public class Main {
 
     private static final String META_INF = "META-INF/";
 
-    // prefix for new signature-related files in META-INF directory
-    private static final String SIG_PREFIX = META_INF + "SIG-";
-
     private static final Class<?>[] PARAM_STRING = { String.class };
 
     private static final String NONE = "NONE";
@@ -1522,22 +1519,7 @@ public class Main {
      * . META-INF/*.EC
      */
     private boolean signatureRelated(String name) {
-        String ucName = name.toUpperCase(Locale.ENGLISH);
-        if (ucName.equals(JarFile.MANIFEST_NAME) ||
-            ucName.equals(META_INF) ||
-            (ucName.startsWith(SIG_PREFIX) &&
-                ucName.indexOf("/") == ucName.lastIndexOf("/"))) {
-            return true;
-        }
-
-        if (ucName.startsWith(META_INF) &&
-            SignatureFileVerifier.isBlockOrSF(ucName)) {
-            // .SF/.DSA/.RSA/.EC files in META-INF subdirs
-            // are not considered signature-related
-            return (ucName.indexOf("/") == ucName.lastIndexOf("/"));
-        }
-
-        return false;
+        return SignatureFileVerifier.isSigningRelated(name);
     }
 
     Map<CodeSigner,String> cacheForSignerInfo = new IdentityHashMap<>();

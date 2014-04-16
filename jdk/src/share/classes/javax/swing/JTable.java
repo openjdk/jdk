@@ -4042,7 +4042,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 }
                 // Restore the lead
                 int viewLeadIndex = modelSelection.getLeadSelectionIndex();
-                if (viewLeadIndex != -1) {
+                if (viewLeadIndex != -1 && !modelSelection.isSelectionEmpty()) {
                     viewLeadIndex = convertRowIndexToView(viewLeadIndex);
                 }
                 SwingUtilities2.setLeadAnchorWithoutSelection(

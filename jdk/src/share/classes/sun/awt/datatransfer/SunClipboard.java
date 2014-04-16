@@ -63,9 +63,6 @@ import sun.awt.SunToolkit;
 public abstract class SunClipboard extends Clipboard
     implements PropertyChangeListener {
 
-    public static final FlavorTable flavorMap =
-        (FlavorTable)SystemFlavorMap.getDefaultFlavorMap();
-
     private AppContext contentsContext = null;
 
     private final Object CLIPBOARD_FLAVOR_LISTENER_KEY;
@@ -167,7 +164,7 @@ public abstract class SunClipboard extends Clipboard
         long[] formats = getClipboardFormatsOpenClose();
 
         return DataTransferer.getInstance().
-            getFlavorsForFormatsAsArray(formats, flavorMap);
+            getFlavorsForFormatsAsArray(formats, getDefaultFlavorTable());
     }
 
     /**
@@ -213,7 +210,7 @@ public abstract class SunClipboard extends Clipboard
 
             long[] formats = getClipboardFormats();
             Long lFormat = DataTransferer.getInstance().
-                    getFlavorsForFormats(formats, flavorMap).get(flavor);
+                    getFlavorsForFormats(formats, getDefaultFlavorTable()).get(flavor);
 
             if (lFormat == null) {
                 throw new UnsupportedFlavorException(flavor);
@@ -344,7 +341,7 @@ public abstract class SunClipboard extends Clipboard
     private static Set formatArrayAsDataFlavorSet(long[] formats) {
         return (formats == null) ? null :
                 DataTransferer.getInstance().
-                getFlavorsForFormatsAsSet(formats, flavorMap);
+                getFlavorsForFormatsAsSet(formats, getDefaultFlavorTable());
     }
 
 
@@ -446,5 +443,9 @@ public abstract class SunClipboard extends Clipboard
                 }
             }
         }
+    }
+
+    public static FlavorTable getDefaultFlavorTable() {
+        return (FlavorTable) SystemFlavorMap.getDefaultFlavorMap();
     }
 }
