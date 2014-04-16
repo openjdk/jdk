@@ -74,7 +74,7 @@ public final class HttpCookie implements Cloneable {
     private boolean httpOnly;   // HttpOnly ... i.e. not accessible to scripts
     private int version = 1;    // Version=1 ... RFC 2965 style
 
-    // The original header this cookie was consructed from, if it was
+    // The original header this cookie was constructed from, if it was
     // constructed by parsing a header, otherwise null.
     private final String header;
 
@@ -985,7 +985,7 @@ public final class HttpCookie implements Cloneable {
     }
 
     /*
-     * Returns the original header this cookie was consructed from, if it was
+     * Returns the original header this cookie was constructed from, if it was
      * constructed by parsing a header, otherwise null.
      */
     private String header() {
