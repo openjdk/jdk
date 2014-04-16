@@ -917,7 +917,7 @@ class WindowsNativeDispatcher {
         }
     }
     private static native void CreateHardLink0(long newFileBuffer,
-        long existingFiletBuffer) throws WindowsException;
+        long existingFileBuffer) throws WindowsException;
 
     /**
      * GetFullPathName(

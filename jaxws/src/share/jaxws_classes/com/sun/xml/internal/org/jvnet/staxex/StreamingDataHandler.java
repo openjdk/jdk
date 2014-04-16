@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ import java.net.URL;
  * @author Jitendra Kotamraju
  */
 public abstract class StreamingDataHandler extends DataHandler implements Closeable {
+
+    private String hrefCid;
 
     public StreamingDataHandler(Object o, String s) {
         super(o, s);
@@ -142,4 +144,11 @@ public abstract class StreamingDataHandler extends DataHandler implements Closea
      */
     public abstract void close() throws IOException;
 
+    public String getHrefCid() {
+        return hrefCid;
+    }
+
+    public void setHrefCid(final String cid) {
+        this.hrefCid = cid;
+    }
 }

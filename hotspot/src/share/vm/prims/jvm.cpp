@@ -1160,18 +1160,22 @@ static bool is_authorized(Handle context, instanceKlassHandle klass, TRAPS) {
 // and null permissions - which gives no permissions.
 oop create_dummy_access_control_context(TRAPS) {
   InstanceKlass* pd_klass = InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass());
-  // new ProtectionDomain(null,null);
-  oop null_protection_domain = pd_klass->allocate_instance(CHECK_NULL);
-  Handle null_pd(THREAD, null_protection_domain);
+  Handle obj = pd_klass->allocate_instance_handle(CHECK_NULL);
+  // Call constructor ProtectionDomain(null, null);
+  JavaValue result(T_VOID);
+  JavaCalls::call_special(&result, obj, KlassHandle(THREAD, pd_klass),
+                          vmSymbols::object_initializer_name(),
+                          vmSymbols::codesource_permissioncollection_signature(),
+                          Handle(), Handle(), CHECK_NULL);
 
   // new ProtectionDomain[] {pd};
   objArrayOop context = oopFactory::new_objArray(pd_klass, 1, CHECK_NULL);
-  context->obj_at_put(0, null_pd());
+  context->obj_at_put(0, obj());
 
   // new AccessControlContext(new ProtectionDomain[] {pd})
   objArrayHandle h_context(THREAD, context);
-  oop result = java_security_AccessControlContext::create(h_context, false, Handle(), CHECK_NULL);
-  return result;
+  oop acc = java_security_AccessControlContext::create(h_context, false, Handle(), CHECK_NULL);
+  return acc;
 }
 
 JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, jobject context, jboolean wrapException))

@@ -31,7 +31,6 @@
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
 #include "opto/coalesce.hpp"
-#include "opto/connode.hpp"
 #include "opto/indexSet.hpp"
 #include "opto/machnode.hpp"
 #include "opto/memnode.hpp"

@@ -536,7 +536,7 @@ public final class NativeJSAdapter extends ScriptObject {
      * @return new NativeJSAdapter
      */
     @Constructor
-    public static Object construct(final boolean isNew, final Object self, final Object... args) {
+    public static NativeJSAdapter construct(final boolean isNew, final Object self, final Object... args) {
         Object proto     = UNDEFINED;
         Object overrides = UNDEFINED;
         Object adaptee;

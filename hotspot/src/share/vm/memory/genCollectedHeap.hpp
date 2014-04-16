@@ -212,7 +212,6 @@ public:
 
   // Iteration functions.
   void oop_iterate(ExtendedOopClosure* cl);
-  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl);
   Space* space_containing(const void* addr) const;

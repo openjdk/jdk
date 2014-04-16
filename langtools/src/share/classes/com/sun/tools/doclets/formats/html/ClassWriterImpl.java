@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.jvm.Profile;
+import com.sun.tools.javadoc.RootDocImpl;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
@@ -528,7 +529,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      * {@inheritDoc}
      */
     public void addFunctionalInterfaceInfo (Content classInfoTree) {
-        if (classDoc.isFunctionalInterface()) {
+        if (isFunctionalInterface()) {
             Content dt = HtmlTree.DT(getResource("doclet.Functional_Interface"));
             Content dl = HtmlTree.DL(dt);
             Content dd = new HtmlTree(HtmlTag.DD);
@@ -536,6 +537,19 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             dl.addContent(dd);
             classInfoTree.addContent(dl);
         }
+    }
+
+    public boolean isFunctionalInterface() {
+        if (configuration.root instanceof RootDocImpl) {
+            RootDocImpl root = (RootDocImpl) configuration.root;
+            AnnotationDesc[] annotationDescList = classDoc.annotations();
+            for (AnnotationDesc annoDesc : annotationDescList) {
+                if (root.isFunctionalInterface(annoDesc)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

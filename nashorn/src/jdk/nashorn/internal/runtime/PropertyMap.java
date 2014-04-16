@@ -29,6 +29,10 @@ import static jdk.nashorn.internal.runtime.PropertyHashMap.EMPTY_HASHMAP;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndex;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.invoke.SwitchPoint;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
@@ -37,6 +41,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.WeakHashMap;
+import jdk.nashorn.internal.scripts.JO;
 
 /**
  * Map of object properties. The PropertyMap is the "template" for JavaScript object
@@ -47,7 +52,7 @@ import java.util.WeakHashMap;
  * All property maps are immutable. If a property is added, modified or removed, the mutator
  * will return a new map.
  */
-public final class PropertyMap implements Iterable<Object> {
+public final class PropertyMap implements Iterable<Object>, Serializable {
     /** Used for non extensible PropertyMaps, negative logic as the normal case is extensible. See {@link ScriptObject#preventExtensions()} */
     public static final int NOT_EXTENSIBLE        = 0b0000_0001;
     /** Does this map contain valid array keys? */
@@ -57,7 +62,7 @@ public final class PropertyMap implements Iterable<Object> {
     private int flags;
 
     /** Map of properties. */
-    private final PropertyHashMap properties;
+    private transient PropertyHashMap properties;
 
     /** Number of fields in use. */
     private int fieldCount;
@@ -68,17 +73,22 @@ public final class PropertyMap implements Iterable<Object> {
     /** Length of spill in use. */
     private int spillLength;
 
+    /** Structure class name */
+    private String className;
+
     /** {@link SwitchPoint}s for gets on inherited properties. */
-    private HashMap<String, SwitchPoint> protoGetSwitches;
+    private transient HashMap<String, SwitchPoint> protoGetSwitches;
 
     /** History of maps, used to limit map duplication. */
-    private WeakHashMap<Property, SoftReference<PropertyMap>> history;
+    private transient WeakHashMap<Property, SoftReference<PropertyMap>> history;
 
     /** History of prototypes, used to limit map duplication. */
-    private WeakHashMap<PropertyMap, SoftReference<PropertyMap>> protoHistory;
+    private transient WeakHashMap<PropertyMap, SoftReference<PropertyMap>> protoHistory;
 
     /** property listeners */
-    private PropertyListeners listeners;
+    private transient PropertyListeners listeners;
+
+    private static final long serialVersionUID = -7041836752008732533L;
 
     /**
      * Constructor.
@@ -89,8 +99,10 @@ public final class PropertyMap implements Iterable<Object> {
      * @param spillLength  Number of spill slots used.
      * @param containsArrayKeys True if properties contain numeric keys
      */
-    private PropertyMap(final PropertyHashMap properties, final int fieldCount, final int fieldMaximum, final int spillLength, final boolean containsArrayKeys) {
+    private PropertyMap(final PropertyHashMap properties, final String className, final int fieldCount,
+                        final int fieldMaximum, final int spillLength, final boolean containsArrayKeys) {
         this.properties   = properties;
+        this.className    = className;
         this.fieldCount   = fieldCount;
         this.fieldMaximum = fieldMaximum;
         this.spillLength  = spillLength;
@@ -145,7 +157,25 @@ public final class PropertyMap implements Iterable<Object> {
         if (Context.DEBUG) {
             duplicatedCount++;
         }
-        return new PropertyMap(this.properties, 0, 0, 0, containsArrayKeys());
+        return new PropertyMap(this.properties, this.className, 0, 0, 0, containsArrayKeys());
+    }
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+        out.writeObject(properties.getProperties());
+    }
+
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+
+        final Property[] props = (Property[]) in.readObject();
+        this.properties = EMPTY_HASHMAP.immutableAdd(props);
+
+        assert className != null;
+        final Class<?> structure = Context.forStructureClass(className);
+        for (Property prop : props) {
+            prop.initMethodHandles(structure);
+        }
     }
 
     /**
@@ -160,9 +190,9 @@ public final class PropertyMap implements Iterable<Object> {
      * @param spillLength  Number of used spill slots.
      * @return New {@link PropertyMap}.
      */
-    public static PropertyMap newMap(final Collection<Property> properties, final int fieldCount, final int fieldMaximum,  final int spillLength) {
+    public static PropertyMap newMap(final Collection<Property> properties, final String className, final int fieldCount, final int fieldMaximum,  final int spillLength) {
         PropertyHashMap newProperties = EMPTY_HASHMAP.immutableAdd(properties);
-        return new PropertyMap(newProperties, fieldCount, fieldMaximum, spillLength, false);
+        return new PropertyMap(newProperties, className, fieldCount, fieldMaximum, spillLength, false);
     }
 
     /**
@@ -175,7 +205,7 @@ public final class PropertyMap implements Iterable<Object> {
      * @return New {@link PropertyMap}.
      */
     public static PropertyMap newMap(final Collection<Property> properties) {
-        return (properties == null || properties.isEmpty())? newMap() : newMap(properties, 0, 0, 0);
+        return (properties == null || properties.isEmpty())? newMap() : newMap(properties, JO.class.getName(), 0, 0, 0);
     }
 
     /**
@@ -184,7 +214,7 @@ public final class PropertyMap implements Iterable<Object> {
      * @return New empty {@link PropertyMap}.
      */
     public static PropertyMap newMap() {
-        return new PropertyMap(EMPTY_HASHMAP, 0, 0, 0, false);
+        return new PropertyMap(EMPTY_HASHMAP, JO.class.getName(), 0, 0, 0, false);
     }
 
     /**

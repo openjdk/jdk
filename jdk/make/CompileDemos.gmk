@@ -176,7 +176,6 @@ $(eval $(call SetupDemo,FullThreadDump,management,,FullThreadDump,,,README*))
 $(eval $(call SetupDemo,JTop,management,,JTop,,,README*))
 $(eval $(call SetupDemo,MemoryMonitor,management,,MemoryMonitor,,,README*))
 $(eval $(call SetupDemo,VerboseGC,management,,VerboseGC,,,README*))
-$(eval $(call SetupDemo,zipfs,nio,,,,,README* *.java,,,,Main-Class: \n))
 
 ifndef OPENJDK
   $(eval $(call SetupDemo,Laffy,jfc,,,,closed/,*))

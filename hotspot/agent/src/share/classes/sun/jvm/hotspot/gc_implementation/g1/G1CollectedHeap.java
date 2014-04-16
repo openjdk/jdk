@@ -51,9 +51,9 @@ public class G1CollectedHeap extends SharedHeap {
     static private CIntegerField summaryBytesUsedField;
     // G1MonitoringSupport* _g1mm;
     static private AddressField g1mmField;
-    // MasterOldRegionSet _old_set;
+    // HeapRegionSet _old_set;
     static private long oldSetFieldOffset;
-    // MasterHumongousRegionSet _humongous_set;
+    // HeapRegionSet _humongous_set;
     static private long humongousSetFieldOffset;
 
     static {

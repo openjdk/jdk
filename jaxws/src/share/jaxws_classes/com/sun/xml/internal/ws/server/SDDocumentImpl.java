@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import com.sun.xml.internal.ws.api.streaming.XMLStreamWriterFactory;
 import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil;
 import com.sun.xml.internal.ws.wsdl.SDDocumentResolver;
 import com.sun.xml.internal.ws.util.RuntimeVersion;
-import com.sun.xml.internal.ws.util.xml.XMLStreamReaderToXMLStreamWriter;
+import com.sun.xml.internal.org.jvnet.staxex.util.XMLStreamReaderToXMLStreamWriter;
 import com.sun.xml.internal.ws.wsdl.parser.ParserUtil;
 import com.sun.xml.internal.ws.wsdl.parser.WSDLConstants;
 import com.sun.xml.internal.ws.wsdl.writer.DocumentLocationResolver;

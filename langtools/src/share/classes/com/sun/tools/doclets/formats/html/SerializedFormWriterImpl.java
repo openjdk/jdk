@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
+import java.util.*;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
@@ -45,6 +46,8 @@ import com.sun.tools.doclets.internal.toolkit.util.DocletAbortException;
 public class SerializedFormWriterImpl extends SubWriterHolderWriter
     implements SerializedFormWriter {
 
+    List<ClassDoc> visibleClasses;
+
     /**
      * @param configuration the configuration data for the doclet
      * @throws IOException
@@ -53,6 +56,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public SerializedFormWriterImpl(ConfigurationImpl configuration)
             throws IOException {
         super(configuration, DocPaths.SERIALIZED_FORM);
+        visibleClasses = Arrays.asList(configuration.root.classes());
     }
 
     /**
@@ -121,13 +125,23 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     }
 
     /**
+     * Checks if a class is generated and is visible.
+     *
+     * @param classDoc the class being processed.
+     * @return true if the class, that is being processed, is generated and is visible.
+     */
+    public boolean isVisibleClass(ClassDoc classDoc) {
+        return visibleClasses.contains(classDoc) && configuration.isGeneratedDoc(classDoc);
+    }
+
+    /**
      * Get the serializable class heading.
      *
      * @param classDoc the class being processed
      * @return a content tree for the class header
      */
     public Content getClassHeader(ClassDoc classDoc) {
-        Content classLink = (classDoc.isPublic() || classDoc.isProtected()) ?
+        Content classLink = (isVisibleClass(classDoc)) ?
             getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, classDoc)
             .label(configuration.getClassName(classDoc))) :
             new StringContent(classDoc.qualifiedName());

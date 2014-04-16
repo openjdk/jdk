@@ -1285,7 +1285,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void save_sweep_limit();
 
   // More iteration support
-  virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
   virtual void oop_iterate(ExtendedOopClosure* cl);
   virtual void safe_object_iterate(ObjectClosure* cl);
   virtual void object_iterate(ObjectClosure* cl);
@@ -1497,6 +1496,19 @@ class FalseBitMapClosure: public BitMapClosure {
     guarantee(false, "Should not have a 1 bit");
     return true;
   }
+};
+
+// A version of ObjectClosure with "memory" (see _previous_address below)
+class UpwardsObjectClosure: public BoolObjectClosure {
+  HeapWord* _previous_address;
+ public:
+  UpwardsObjectClosure() : _previous_address(NULL) { }
+  void set_previous(HeapWord* addr) { _previous_address = addr; }
+  HeapWord* previous()              { return _previous_address; }
+  // A return value of "true" can be used by the caller to decide
+  // if this object's end should *NOT* be recorded in
+  // _previous_address above.
+  virtual bool do_object_bm(oop obj, MemRegion mr) = 0;
 };
 
 // This closure is used during the second checkpointing phase

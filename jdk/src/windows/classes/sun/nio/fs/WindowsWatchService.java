@@ -556,7 +556,7 @@ class WindowsWatchService
                     // ReadDirectoryChangesW failed
                     criticalError = true;
                 } else {
-                    // ERROR_MORE_DATA is a warning about incomplite
+                    // ERROR_MORE_DATA is a warning about incomplete
                     // data transfer over TCP/UDP stack. For the case
                     // [messageSize] is zero in the most of cases.
 

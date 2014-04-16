@@ -632,7 +632,6 @@ jint universe_init() {
   guarantee(sizeof(oop) % sizeof(HeapWord) == 0,
             "oop size is not not a multiple of HeapWord size");
   TraceTime timer("Genesis", TraceStartupTime);
-  GC_locker::lock();  // do not allow gc during bootstrapping
   JavaClasses::compute_hard_coded_offsets();
 
   jint status = Universe::initialize_heap();
@@ -1163,8 +1162,6 @@ bool universe_post_init() {
   CompressedClassSpaceCounters::initialize_performance_counters();
 
   MemoryService::add_metaspace_memory_pools();
-
-  GC_locker::unlock();  // allow gc after bootstrapping
 
   MemoryService::set_universe_heap(Universe::_collectedHeap);
   return true;

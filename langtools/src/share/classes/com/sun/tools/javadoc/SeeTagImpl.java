@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,7 +398,8 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
 
     private MemberDoc findExecutableMember(String memName, String[] paramarr,
                                            ClassDoc referencedClass) {
-        if (memName.equals(referencedClass.name())) {
+        String className = referencedClass.name();
+        if (memName.equals(className.substring(className.lastIndexOf(".") + 1))) {
             return ((ClassDocImpl)referencedClass).findConstructor(memName,
                                                                    paramarr);
         } else {   // it's a method.
