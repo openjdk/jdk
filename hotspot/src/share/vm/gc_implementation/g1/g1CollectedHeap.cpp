@@ -1514,9 +1514,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       assert(g1_policy()->collection_set() == NULL, "must be");
       g1_policy()->start_incremental_cset_building();
 
-      // Clear the _cset_fast_test bitmap in anticipation of adding
-      // regions to the incremental collection set for the next
-      // evacuation pause.
       clear_cset_fast_test();
 
       init_mutator_alloc_region();
@@ -1936,8 +1933,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
   _concurrent_cycle_started(false),
-  _in_cset_fast_test(NULL),
-  _in_cset_fast_test_base(NULL),
+  _in_cset_fast_test(),
   _dirty_cards_region_list(NULL),
   _worker_cset_start_region(NULL),
   _worker_cset_start_region_time_stamp(NULL),
@@ -2079,20 +2075,7 @@ jint G1CollectedHeap::initialize() {
 
   _g1h = this;
 
-  _in_cset_fast_test_length = max_regions();
-  _in_cset_fast_test_base =
-                   NEW_C_HEAP_ARRAY(bool, (size_t) _in_cset_fast_test_length, mtGC);
-
-  // We're biasing _in_cset_fast_test to avoid subtracting the
-  // beginning of the heap every time we want to index; basically
-  // it's the same with what we do with the card table.
-  _in_cset_fast_test = _in_cset_fast_test_base -
-               ((uintx) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
-
-  // Clear the _cset_fast_test bitmap in anticipation of adding
-  // regions to the incremental collection set for the first
-  // evacuation pause.
-  clear_cset_fast_test();
+  _in_cset_fast_test.initialize(_g1_reserved.start(), _g1_reserved.end(), HeapRegion::GrainBytes);
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
@@ -4136,9 +4119,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // Start a new incremental collection set for the next pause.
         g1_policy()->start_incremental_cset_building();
 
-        // Clear the _cset_fast_test bitmap in anticipation of adding
-        // regions to the incremental collection set for the next
-        // evacuation pause.
         clear_cset_fast_test();
 
         _young_list->reset_sampled_info();
