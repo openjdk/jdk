@@ -79,8 +79,8 @@ le_int8 OpenTypeUtilities::highBit(le_int32 value)
 
 Offset OpenTypeUtilities::getTagOffset(LETag tag, const LEReferenceToArrayOf<TagAndOffsetRecord> &records, LEErrorCode &success)
 {
-  const TagAndOffsetRecord *r0 = (const TagAndOffsetRecord*)records.getAlias();
   if(LE_FAILURE(success)) return 0;
+  const TagAndOffsetRecord *r0 = (const TagAndOffsetRecord*)records.getAlias();
 
   le_uint32 recordCount = records.getCount();
   le_uint8 bit = highBit(recordCount);

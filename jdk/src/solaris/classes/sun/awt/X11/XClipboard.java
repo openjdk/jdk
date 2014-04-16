@@ -86,7 +86,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
     protected synchronized void setContentsNative(Transferable contents) {
         SortedMap<Long,DataFlavor> formatMap =
             DataTransferer.getInstance().getFormatsForTransferable
-                (contents, DataTransferer.adaptFlavorMap(flavorMap));
+                (contents, DataTransferer.adaptFlavorMap(getDefaultFlavorTable()));
         long[] formats = DataTransferer.keysToLongArray(formatMap);
 
         if (!selection.setOwner(contents, formatMap, formats,
@@ -125,7 +125,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
     private void checkChangeHere(Transferable contents) {
         if (areFlavorListenersRegistered()) {
             checkChange(DataTransferer.getInstance().
-                        getFormatsForTransferableAsArray(contents, flavorMap));
+                        getFormatsForTransferableAsArray(contents, getDefaultFlavorTable()));
         }
     }
 

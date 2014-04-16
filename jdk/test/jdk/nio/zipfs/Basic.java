@@ -29,13 +29,16 @@ import java.net.URI;
 import java.io.IOException;
 
 /**
- * Basic test for zip provider
+ *
+ * @test
+ * @bug 8038500
+ * @summary Basic test for zip provider
  */
 
 public class Basic {
     public static void main(String[] args) throws Exception {
-        Path zipfile = Paths.get(args[0]);
-
+        Path zipfile = Paths.get(System.getProperty("test.jdk"),
+                                 "jre/lib/ext/zipfs.jar");
         // Test: zip should should be returned in provider list
         boolean found = false;
 

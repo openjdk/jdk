@@ -1079,7 +1079,7 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Command InvokeMethod=3
         "Invokes a static method. "
         "The method must be member of the class type "
-        "or one of its superclasses, superinterfaces, or implemented interfaces. "
+        "or one of its superclasses. "
         "Access control is not enforced; for example, private "
         "methods can be invoked."
         "<p>"
