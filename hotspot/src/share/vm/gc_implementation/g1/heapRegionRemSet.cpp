@@ -1048,20 +1048,16 @@ size_t HeapRegionRemSet::strong_code_roots_mem_size() {
   return _code_roots.mem_size();
 }
 
-//-------------------- Iteration --------------------
-
 HeapRegionRemSetIterator:: HeapRegionRemSetIterator(HeapRegionRemSet* hrrs) :
   _hrrs(hrrs),
   _g1h(G1CollectedHeap::heap()),
   _coarse_map(&hrrs->_other_regions._coarse_map),
-  _fine_grain_regions(hrrs->_other_regions._fine_grain_regions),
   _bosa(hrrs->bosa()),
   _is(Sparse),
   // Set these values so that we increment to the first region.
   _coarse_cur_region_index(-1),
   _coarse_cur_region_cur_card(HeapRegion::CardsPerRegion-1),
-  _cur_region_cur_card(0),
-  _fine_array_index(-1),
+  _cur_card_in_prt(HeapRegion::CardsPerRegion),
   _fine_cur_prt(NULL),
   _n_yielded_coarse(0),
   _n_yielded_fine(0),
@@ -1093,58 +1089,59 @@ bool HeapRegionRemSetIterator::coarse_has_next(size_t& card_index) {
   return true;
 }
 
-void HeapRegionRemSetIterator::fine_find_next_non_null_prt() {
-  // Otherwise, find the next bucket list in the array.
-  _fine_array_index++;
-  while (_fine_array_index < (int) OtherRegionsTable::_max_fine_entries) {
-    _fine_cur_prt = _fine_grain_regions[_fine_array_index];
-    if (_fine_cur_prt != NULL) return;
-    else _fine_array_index++;
-  }
-  assert(_fine_cur_prt == NULL, "Loop post");
-}
-
 bool HeapRegionRemSetIterator::fine_has_next(size_t& card_index) {
   if (fine_has_next()) {
-    _cur_region_cur_card =
-      _fine_cur_prt->_bm.get_next_one_offset(_cur_region_cur_card + 1);
+    _cur_card_in_prt =
+      _fine_cur_prt->_bm.get_next_one_offset(_cur_card_in_prt + 1);
   }
-  while (!fine_has_next()) {
-    if (_cur_region_cur_card == (size_t) HeapRegion::CardsPerRegion) {
-      _cur_region_cur_card = 0;
-      _fine_cur_prt = _fine_cur_prt->collision_list_next();
+  if (_cur_card_in_prt == HeapRegion::CardsPerRegion) {
+    // _fine_cur_prt may still be NULL in case if there are not PRTs at all for
+    // the remembered set.
+    if (_fine_cur_prt == NULL || _fine_cur_prt->next() == NULL) {
+      return false;
     }
-    if (_fine_cur_prt == NULL) {
-      fine_find_next_non_null_prt();
-      if (_fine_cur_prt == NULL) return false;
-    }
-    assert(_fine_cur_prt != NULL && _cur_region_cur_card == 0,
-           "inv.");
-    HeapWord* r_bot =
-      _fine_cur_prt->hr()->bottom();
-    _cur_region_card_offset = _bosa->index_for(r_bot);
-    _cur_region_cur_card = _fine_cur_prt->_bm.get_next_one_offset(0);
+    PerRegionTable* next_prt = _fine_cur_prt->next();
+    switch_to_prt(next_prt);
+    _cur_card_in_prt = _fine_cur_prt->_bm.get_next_one_offset(_cur_card_in_prt + 1);
   }
-  assert(fine_has_next(), "Or else we exited the loop via the return.");
-  card_index = _cur_region_card_offset + _cur_region_cur_card;
+
+  card_index = _cur_region_card_offset + _cur_card_in_prt;
+  guarantee(_cur_card_in_prt < HeapRegion::CardsPerRegion,
+            err_msg("Card index "SIZE_FORMAT" must be within the region", _cur_card_in_prt));
   return true;
 }
 
 bool HeapRegionRemSetIterator::fine_has_next() {
-  return
-    _fine_cur_prt != NULL &&
-    _cur_region_cur_card < HeapRegion::CardsPerRegion;
+  return _cur_card_in_prt != HeapRegion::CardsPerRegion;
+}
+
+void HeapRegionRemSetIterator::switch_to_prt(PerRegionTable* prt) {
+  assert(prt != NULL, "Cannot switch to NULL prt");
+  _fine_cur_prt = prt;
+
+  HeapWord* r_bot = _fine_cur_prt->hr()->bottom();
+  _cur_region_card_offset = _bosa->index_for(r_bot);
+
+  // The bitmap scan for the PRT always scans from _cur_region_cur_card + 1.
+  // To avoid special-casing this start case, and not miss the first bitmap
+  // entry, initialize _cur_region_cur_card with -1 instead of 0.
+  _cur_card_in_prt = (size_t)-1;
 }
 
 bool HeapRegionRemSetIterator::has_next(size_t& card_index) {
   switch (_is) {
-  case Sparse:
+  case Sparse: {
     if (_sparse_iter.has_next(card_index)) {
       _n_yielded_sparse++;
       return true;
     }
     // Otherwise, deliberate fall-through
     _is = Fine;
+    PerRegionTable* initial_fine_prt = _hrrs->_other_regions._first_all_fine_prts;
+    if (initial_fine_prt != NULL) {
+      switch_to_prt(_hrrs->_other_regions._first_all_fine_prts);
+    }
+  }
   case Fine:
     if (fine_has_next(card_index)) {
       _n_yielded_fine++;

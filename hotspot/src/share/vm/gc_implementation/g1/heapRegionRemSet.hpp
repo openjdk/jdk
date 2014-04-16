@@ -428,26 +428,24 @@ public:
 };
 
 class HeapRegionRemSetIterator : public StackObj {
-
-  // The region RSet over which we're iterating.
+ private:
+  // The region RSet over which we are iterating.
   HeapRegionRemSet* _hrrs;
 
   // Local caching of HRRS fields.
   const BitMap*             _coarse_map;
-  PerRegionTable**          _fine_grain_regions;
 
   G1BlockOffsetSharedArray* _bosa;
   G1CollectedHeap*          _g1h;
 
-  // The number yielded since initialization.
+  // The number of cards yielded since initialization.
   size_t _n_yielded_fine;
   size_t _n_yielded_coarse;
   size_t _n_yielded_sparse;
 
-  // Indicates what granularity of table that we're currently iterating over.
+  // Indicates what granularity of table that we are currently iterating over.
   // We start iterating over the sparse table, progress to the fine grain
   // table, and then finish with the coarse table.
-  // See HeapRegionRemSetIterator::has_next().
   enum IterState {
     Sparse,
     Fine,
@@ -455,38 +453,30 @@ class HeapRegionRemSetIterator : public StackObj {
   };
   IterState _is;
 
-  // In both kinds of iteration, heap offset of first card of current
-  // region.
+  // For both Coarse and Fine remembered set iteration this contains the
+  // first card number of the heap region we currently iterate over.
   size_t _cur_region_card_offset;
-  // Card offset within cur region.
-  size_t _cur_region_cur_card;
 
-  // Coarse table iteration fields:
-
-  // Current region index;
+  // Current region index for the Coarse remembered set iteration.
   int    _coarse_cur_region_index;
   size_t _coarse_cur_region_cur_card;
 
   bool coarse_has_next(size_t& card_index);
 
-  // Fine table iteration fields:
-
-  // Index of bucket-list we're working on.
-  int _fine_array_index;
-
-  // Per Region Table we're doing within current bucket list.
+  // The PRT we are currently iterating over.
   PerRegionTable* _fine_cur_prt;
+  // Card offset within the current PRT.
+  size_t _cur_card_in_prt;
 
-  /* SparsePRT::*/ SparsePRTIter _sparse_iter;
-
-  void fine_find_next_non_null_prt();
-
+  // Update internal variables when switching to the given PRT.
+  void switch_to_prt(PerRegionTable* prt);
   bool fine_has_next();
   bool fine_has_next(size_t& card_index);
 
-public:
-  // We require an iterator to be initialized before use, so the
-  // constructor does little.
+  // The Sparse remembered set iterator.
+  SparsePRTIter _sparse_iter;
+
+ public:
   HeapRegionRemSetIterator(HeapRegionRemSet* hrrs);
 
   // If there remains one or more cards to be yielded, returns true and
