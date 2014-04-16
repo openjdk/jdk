@@ -1688,15 +1688,19 @@ private:
 
 public:
   G1ParGCAllocBuffer(size_t gclab_word_size);
+  virtual ~G1ParGCAllocBuffer() {
+    guarantee(_retired, "Allocation buffer has not been retired");
+  }
 
-  void set_buf(HeapWord* buf) {
+  virtual void set_buf(HeapWord* buf) {
     ParGCAllocBuffer::set_buf(buf);
     _retired = false;
   }
 
-  void retire(bool end_of_gc, bool retain) {
-    if (_retired)
+  virtual void retire(bool end_of_gc, bool retain) {
+    if (_retired) {
       return;
+    }
     ParGCAllocBuffer::retire(end_of_gc, retain);
     _retired = true;
   }
@@ -1766,6 +1770,7 @@ public:
   G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp);
 
   ~G1ParScanThreadState() {
+    retire_alloc_buffers();
     FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base, mtGC);
   }
 
@@ -1876,6 +1881,7 @@ public:
     return _surviving_young_words;
   }
 
+private:
   void retire_alloc_buffers() {
     for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
       size_t waste = _alloc_buffers[ap]->words_remaining();
@@ -1885,8 +1891,8 @@ public:
                                                  false /* retain */);
     }
   }
-private:
-  #define G1_PARTIAL_ARRAY_MASK 0x2
+
+#define G1_PARTIAL_ARRAY_MASK 0x2
 
   inline bool has_partial_array_mask(oop* ref) const {
     return ((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) == G1_PARTIAL_ARRAY_MASK;
