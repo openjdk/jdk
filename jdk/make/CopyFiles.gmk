@@ -174,9 +174,9 @@ COPY_FILES += $(LIBDIR)/hijrah-config-umalqura.properties
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifneq ($(findstring $(OPENJDK_TARGET_OS), windows aix),)
 
-  TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
+  TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS)/lib
 
   $(LIBDIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
 	$(call install-file)
