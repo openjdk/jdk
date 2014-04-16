@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class TestWarnBadParamNames extends JavadocTester {
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, SRC_DIR + FS + "C.java"
+        "-Xdoclint:none", "-d", BUG_ID, SRC_DIR + "/C.java"
     };
 
     /**

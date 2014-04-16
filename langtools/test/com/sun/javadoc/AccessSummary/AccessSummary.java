@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 public class AccessSummary extends JavadocTester {
 
     private static final String BUG_ID = "4637604-4775148";
-    private static final String OUTPUT_DIR1 = "docs1-" + BUG_ID + FS;
+    private static final String OUTPUT_DIR1 = "docs1-" + BUG_ID + "/";
 
     /**
      * Assign value for [ fileToSearch, stringToFind ]
@@ -47,7 +47,7 @@ public class AccessSummary extends JavadocTester {
                  "summary=\"Packages table, listing packages, and an explanation\"" },
 
         // Test that the summary attribute appears
-        { OUTPUT_DIR1 + "p1" + FS + "C1.html",
+        { OUTPUT_DIR1 + "p1/C1.html",
                  "summary=\"Constructor Summary table, listing constructors, and an explanation\"" },
 
         // Test that the summary attribute appears

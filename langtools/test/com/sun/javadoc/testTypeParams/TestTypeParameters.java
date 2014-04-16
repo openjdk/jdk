@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,32 +52,32 @@ public class TestTypeParameters extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST1 = {
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<td class=\"colFirst\"><code>&lt;W extends java.lang.String,V extends " +
             "java.util.List&gt;<br>java.lang.Object</code></td>"
         },
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<code>&lt;T&gt;&nbsp;java.lang.Object</code>"
         },
-        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
+        {BUG_ID + "/pkg/package-summary.html",
             "C</a>&lt;E extends <a href=\"../pkg/Parent.html\" " +
             "title=\"class in pkg\">Parent</a>&gt;"
         },
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "Foo4.html",
+        {BUG_ID + "/pkg/class-use/Foo4.html",
             "<a href=\"../../pkg/ClassUseTest3.html\" title=\"class in pkg\">" +
             "ClassUseTest3</a>&lt;T extends <a href=\"../../pkg/ParamTest2.html\" " +
             "title=\"class in pkg\">ParamTest2</a>&lt;java.util.List&lt;? extends " +
             "<a href=\"../../pkg/Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;"
         },
         //Nested type parameters
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<a name=\"formatDetails-java.util.Collection-java.util.Collection-\">" + NL +
-            "<!--   -->" + NL +
+        {BUG_ID + "/pkg/C.html",
+            "<a name=\"formatDetails-java.util.Collection-java.util.Collection-\">\n" +
+            "<!--   -->\n" +
             "</a>"
         },
     };
     private static final String[][] TEST2 = {
-        {BUG_ID + FS + "pkg" + FS + "ClassUseTest3.html",
+        {BUG_ID + "/pkg/ClassUseTest3.html",
             "public class <a href=\"../src-html/pkg/ClassUseTest3.html#line.28\">" +
             "ClassUseTest3</a>&lt;T extends <a href=\"../pkg/ParamTest2.html\" " +
             "title=\"class in pkg\">ParamTest2</a>&lt;java.util.List&lt;? extends " +

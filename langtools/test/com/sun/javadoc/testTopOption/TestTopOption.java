@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,34 +39,35 @@ public class TestTopOption extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-overview", "SRC_DIR + FS + overview.html", "-use", "-top", "TOP TEXT", "-d", BUG_ID, "-sourcepath",
+        "-overview", "SRC_DIR + '/' + overview.html", "-use", "-top",
+        "TOP TEXT", "-d", BUG_ID, "-sourcepath",
         SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
+        {BUG_ID + "/pkg/AnnotationType.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-            "TOP TEXT"},
-
-        {BUG_ID + FS + "pkg" + FS + "Cl.html",
-            "TOP TEXT"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "Cl.html",
+        {BUG_ID + "/pkg/class-use/AnnotationType.html",
             "TOP TEXT"},
 
-        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
+        {BUG_ID + "/pkg/Cl.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "pkg" + FS + "package-use.html",
+        {BUG_ID + "/pkg/class-use/Cl.html",
+            "TOP TEXT"},
+
+        {BUG_ID + "/pkg/package-summary.html",
+            "TOP TEXT"},
+        {BUG_ID + "/pkg/package-use.html",
            "TOP TEXT"},
 
-        {BUG_ID + FS + "overview-summary.html",
+        {BUG_ID + "/overview-summary.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "overview-tree.html",
+        {BUG_ID + "/overview-tree.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "constant-values.html",
+        {BUG_ID + "/constant-values.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "help-doc.html",
+        {BUG_ID + "/help-doc.html",
             "TOP TEXT"},
     };
     private static final String[][] NEGATED_TEST = NO_TEST;

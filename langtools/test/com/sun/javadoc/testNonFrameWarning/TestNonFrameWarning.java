@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class TestNonFrameWarning extends JavadocTester {
 
     private static final String BUG_ID = "7001086";
     private static final String[][] TEST = {
-        {BUG_ID + FS + "index.html",
+        {BUG_ID + "/index.html",
             "<p>This document is designed to be viewed using the frames feature. " +
             "If you see this message, you are using a non-frame-capable web client. " +
             "Link to <a href=\"pkg/package-summary.html\">Non-frame version</a>.</p>"

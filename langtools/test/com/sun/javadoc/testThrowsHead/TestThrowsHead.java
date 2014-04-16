@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@ public class TestThrowsHead extends JavadocTester {
 
     private static final String BUG_ID = "4530727";
     private static final String[][] TEST = {
-        {BUG_ID + FS + "C.html", "<dt><span class=\"throwsLabel\">Throws:</span>"}
+        {BUG_ID + "/C.html", "<dt><span class=\"throwsLabel\">Throws:</span>"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, SRC_DIR + FS + "C.java"
+        "-d", BUG_ID, SRC_DIR + "/C.java"
     };
 
     /**

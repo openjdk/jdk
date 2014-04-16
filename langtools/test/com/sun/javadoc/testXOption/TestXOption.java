@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,12 @@ public class TestXOption extends JavadocTester {
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR, "-X",
-            SRC_DIR + FS + "TestXOption.java"
+            SRC_DIR + "/TestXOption.java"
     };
 
     private static final String[] ARGS2 = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            SRC_DIR + FS + "TestXOption.java"
+            SRC_DIR + "/TestXOption.java"
     };
 
     private static final String[][] TEST = {

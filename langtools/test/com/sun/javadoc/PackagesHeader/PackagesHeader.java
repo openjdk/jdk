@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,9 @@ public class PackagesHeader extends JavadocTester {
     private static final String BUG_ID = "4766385";
     private static final String OUTPUT_DIR = "docs-" + BUG_ID;
 
-    private static final String OUTPUT_DIR1 = "docs1-" + BUG_ID + FS;
-    private static final String OUTPUT_DIR2 = "docs2-" + BUG_ID + FS;
-    private static final String OUTPUT_DIR3 = "docs3-" + BUG_ID + FS;
+    private static final String OUTPUT_DIR1 = "docs1-" + BUG_ID + "/";
+    private static final String OUTPUT_DIR2 = "docs2-" + BUG_ID + "/";
+    private static final String OUTPUT_DIR3 = "docs3-" + BUG_ID + "/";
 
     /**
      * Assign value for [ fileToSearch, stringToFind ]

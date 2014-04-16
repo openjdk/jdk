@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,15 @@ public class TestLegacyTaglet extends JavadocTester {
     private static final String[] ARGS =
         new String[] {"-d", BUG_ID, "-sourcepath", SRC_DIR,
             "-tagletpath", SRC_DIR, "-taglet", "ToDoTaglet", "-taglet", "Check",
-            "-taglet", "UnderlineTaglet", SRC_DIR + FS + "C.java"};
+            "-taglet", "UnderlineTaglet", SRC_DIR + "/C.java"};
 
     private static final String[][] TEST = new String[][] {
-            {BUG_ID + FS + "C.html", "This is an <u>underline</u>"},
-            {BUG_ID + FS + "C.html",
+            {BUG_ID + "/C.html", "This is an <u>underline</u>"},
+            {BUG_ID + "/C.html",
             "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
                 "<td bgcolor=\"yellow\">Finish this class.</td></tr></table></DD>"},
-            {BUG_ID + FS + "C.html",
-            "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
+            {BUG_ID + "/C.html",
+                "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
                 "<td bgcolor=\"yellow\">Tag in Method.</td></tr></table></DD>"}
     };
 

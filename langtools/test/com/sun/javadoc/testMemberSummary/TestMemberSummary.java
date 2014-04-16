@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,23 +47,23 @@ public class TestMemberSummary extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         // Check return type in member summary.
-        {BUG_ID + FS + "pkg" + FS + "PublicChild.html",
-            "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>" + NL +
+        {BUG_ID + "/pkg/PublicChild.html",
+            "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n" +
             "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">" +
             "returnTypeTest</a></span>()</code>"
         },
         // Check return type in member detail.
-        {BUG_ID + FS + "pkg" + FS + "PublicChild.html",
+        {BUG_ID + "/pkg/PublicChild.html",
             "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">" +
             "PublicChild</a>&nbsp;returnTypeTest()</pre>"
         },
 
          // Legacy anchor dimensions (6290760)
-        {BUG_ID + FS + "pkg2" + FS + "A.html",
-            "<a name=\"f-java.lang.Object:A-\">" + NL +
-            "<!--   -->" + NL +
-            "</a><a name=\"f-T:A-\">" + NL +
-            "<!--   -->" + NL +
+        {BUG_ID + "/pkg2/A.html",
+            "<a name=\"f-java.lang.Object:A-\">\n" +
+            "<!--   -->\n" +
+            "</a><a name=\"f-T:A-\">\n" +
+            "<!--   -->\n" +
             "</a>"
         },
     };

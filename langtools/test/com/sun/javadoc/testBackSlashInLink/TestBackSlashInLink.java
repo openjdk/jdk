@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,12 @@ public class TestBackSlashInLink extends JavadocTester {
 
     private static final String BUG_ID = "4511110";
     private static final String[][] TEST = {
-        {BUG_ID + FS + "C.html", "src-html/C.html#line.7"}};
+        {BUG_ID + "/C.html", "src-html/C.html#line.7"}};
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
             "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            "-linksource",  SRC_DIR + FS + "C.java"};
+            "-linksource",  SRC_DIR + "/C.java"};
 
     /**
      * The entry point of the test.

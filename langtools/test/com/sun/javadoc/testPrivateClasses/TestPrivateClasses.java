@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,179 +59,192 @@ public class TestPrivateClasses extends JavadocTester {
     // Test output when -private flag is not used.
     private static final String[][] TEST1 = {
         // Field inheritence from non-public superclass.
-        {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
+        {BUG_ID + "-1/pkg/PublicChild.html",
             "<a href=\"../pkg/PublicChild.html#fieldInheritedFromParent\">" +
                 "fieldInheritedFromParent</a>"
         },
 
         // Method inheritence from non-public superclass.
-        {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
+        {BUG_ID + "-1/pkg/PublicChild.html",
             "<a href=\"../pkg/PublicChild.html#methodInheritedFromParent-int-\">" +
                 "methodInheritedFromParent</a>"
         },
 
         // Field inheritence from non-public superinterface.
-        {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
+        {BUG_ID + "-1/pkg/PublicInterface.html",
             "<a href=\"../pkg/PublicInterface.html#fieldInheritedFromInterface\">" +
                 "fieldInheritedFromInterface</a>"
         },
 
         // Method inheritence from non-public superinterface.
-        {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
+        {BUG_ID + "-1/pkg/PublicInterface.html",
             "<a href=\"../pkg/PublicInterface.html#methodInterface-int-\">" +
                 "methodInterface</a>"
         },
 
         // private class does not show up in tree
-        {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-            "<ul class=\"inheritance\">" + NL + "<li>java.lang.Object</li>" + NL +
-            "<li>" + NL + "<ul class=\"inheritance\">" + NL + "<li>pkg.PublicChild</li>" + NL +
-            "</ul>" + NL + "</li>" + NL + "</ul>"
+        {BUG_ID + "-1/pkg/PublicChild.html",
+            "<ul class=\"inheritance\">\n" +
+            "<li>java.lang.Object</li>\n" +
+            "<li>\n" +
+            "<ul class=\"inheritance\">\n" +
+            "<li>pkg.PublicChild</li>\n" +
+            "</ul>\n" +
+            "</li>\n" +
+            "</ul>"
         },
 
         // Method is documented as though it is declared in the inheriting method.
-        {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
+        {BUG_ID + "-1/pkg/PublicChild.html",
             "<pre>public&nbsp;void&nbsp;methodInheritedFromParent(int&nbsp;p1)"
         },
 
         //Make sure implemented interfaces from private superclass are inherited
-        {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
-            "<dl>" + NL + "<dt>All Known Implementing Classes:</dt>" + NL +
+        {BUG_ID + "-1/pkg/PublicInterface.html",
+            "<dl>\n" +
+            "<dt>All Known Implementing Classes:</dt>\n" +
             "<dd><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">" +
-            "PublicChild</a></dd>" + NL + "</dl>"},
+            "PublicChild</a></dd>\n" +
+            "</dl>"},
 
-        {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-            "<dl>" + NL + "<dt>All Implemented Interfaces:</dt>" + NL +
+        {BUG_ID + "-1/pkg/PublicChild.html",
+            "<dl>\n" +
+            "<dt>All Implemented Interfaces:</dt>\n" +
             "<dd><a href=\"../pkg/PublicInterface.html\" title=\"interface in pkg\">" +
-            "PublicInterface</a></dd>" + NL + "</dl>"},
+            "PublicInterface</a></dd>\n" +
+            "</dl>"},
 
         //Generic interface method test.
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "C.html",
+        {BUG_ID + "-1/pkg2/C.html",
             "This comment should get copied to the implementing class"},
     };
     private static final String[][] NEGATED_TEST1 = {
        // Should not document that a method overrides method from private class.
-      {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
+      {BUG_ID + "-1/pkg/PublicChild.html",
         "<span class=\"overrideSpecifyLabel\">Overrides:</span>"},
       // Should not document that a method specified by private interface.
-      {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
+      {BUG_ID + "-1/pkg/PublicChild.html",
         "<span class=\"overrideSpecifyLabel\">Specified by:</span>"},
-      {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
+      {BUG_ID + "-1/pkg/PublicInterface.html",
         "<span class=\"overrideSpecifyLabel\">Specified by:</span>"},
       // Should not mention that any documentation was copied.
-      {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
+      {BUG_ID + "-1/pkg/PublicChild.html",
         "Description copied from"},
-      {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
+      {BUG_ID + "-1/pkg/PublicInterface.html",
         "Description copied from"},
       // Don't extend private classes or interfaces
-      {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
+      {BUG_ID + "-1/pkg/PublicChild.html",
         "PrivateParent"},
-      {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
+      {BUG_ID + "-1/pkg/PublicInterface.html",
         "PrivateInterface"},
-      {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
+      {BUG_ID + "-1/pkg/PublicChild.html",
         "PrivateInterface"},
-      {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
+      {BUG_ID + "-1/pkg/PublicInterface.html",
         "All Superinterfaces"},
       // Make inherited constant are documented correctly.
-      {BUG_ID + "-1" + FS + "constant-values.html",
+      {BUG_ID + "-1/constant-values.html",
         "PrivateInterface"},
 
         //Do not inherit private interface method with generic parameters.
         //This method has been implemented.
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "C.html",
+        {BUG_ID + "-1/pkg2/C.html",
             "<span class=\"memberNameLink\"><a href=\"../pkg2/I.html#hello-T-\">hello</a></span>"},
     };
 
     // Test output when -private flag is used.
     private static final String[][] TEST2 = {
         // Field inheritence from non-public superclass.
-        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
+        {BUG_ID + "-2/pkg/PublicChild.html",
             "Fields inherited from class&nbsp;pkg." +
             "<a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">" +
             "PrivateParent</a>"
         },
-        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
+        {BUG_ID + "-2/pkg/PublicChild.html",
             "<a href=\"../pkg/PrivateParent.html#fieldInheritedFromParent\">" +
                 "fieldInheritedFromParent</a>"
         },
         // Field inheritence from non-public superinterface.
-        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicInterface.html",
+        {BUG_ID + "-2/pkg/PublicInterface.html",
             "Fields inherited from interface&nbsp;pkg." +
             "<a href=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">" +
             "PrivateInterface</a>"
         },
-        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicInterface.html",
+        {BUG_ID + "-2/pkg/PublicInterface.html",
             "<a href=\"../pkg/PrivateInterface.html#fieldInheritedFromInterface\">" +
                 "fieldInheritedFromInterface</a>"
         },
         // Method inheritence from non-public superclass.
-        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
+        {BUG_ID + "-2/pkg/PublicChild.html",
             "Methods inherited from class&nbsp;pkg." +
             "<a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">" +
             "PrivateParent</a>"
         },
-        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
+        {BUG_ID + "-2/pkg/PublicChild.html",
             "<a href=\"../pkg/PrivateParent.html#methodInheritedFromParent-int-\">" +
                 "methodInheritedFromParent</a>"
         },
         // Should document that a method overrides method from private class.
-       {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+       {BUG_ID + "-2/pkg/PublicChild.html",
+            "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
             "<dd><code><a href=\"../pkg/PrivateParent.html#methodOverridenFromParent-char:A-int-T-V-java.util.List-\">" +
             "methodOverridenFromParent</a></code>&nbsp;in class&nbsp;<code>" +
             "<a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">" +
             "PrivateParent</a></code></dd>"},
        // Should document that a method is specified by private interface.
-       {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>" + NL +
+       {BUG_ID + "-2/pkg/PublicChild.html",
+            "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n" +
             "<dd><code><a href=\"../pkg/PrivateInterface.html#methodInterface-int-\">" +
             "methodInterface</a></code>&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">" +
             "PrivateInterface</a></code></dd>"},
        // Method inheritence from non-public superinterface.
-       {BUG_ID + "-2" + FS + "pkg" + FS + "PublicInterface.html",
+       {BUG_ID + "-2/pkg/PublicInterface.html",
             "Methods inherited from interface&nbsp;pkg." +
             "<a href=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">" +
             "PrivateInterface</a>"
         },
-        {BUG_ID + "-2" + FS + "pkg" + FS + "PrivateInterface.html",
+        {BUG_ID + "-2/pkg/PrivateInterface.html",
             "<a href=\"../pkg/PrivateInterface.html#methodInterface-int-\">" +
                 "methodInterface</a>"
         },
       // Should mention that any documentation was copied.
-      {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
+      {BUG_ID + "-2/pkg/PublicChild.html",
         "Description copied from"},
       // Extend documented private classes or interfaces
-      {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
+      {BUG_ID + "-2/pkg/PublicChild.html",
         "extends"},
-      {BUG_ID + "-2" + FS + "pkg" + FS + "PublicInterface.html",
+      {BUG_ID + "-2/pkg/PublicInterface.html",
         "extends"},
-      {BUG_ID + "-2" + FS + "pkg" + FS + "PublicInterface.html",
+      {BUG_ID + "-2/pkg/PublicInterface.html",
         "All Superinterfaces"},
 
       //Make sure implemented interfaces from private superclass are inherited
-      {BUG_ID + "-2" + FS + "pkg" + FS + "PublicInterface.html",
-        "<dl>" + NL + "<dt>All Known Implementing Classes:</dt>" + NL +
+      {BUG_ID + "-2/pkg/PublicInterface.html",
+        "<dl>\n" +
+        "<dt>All Known Implementing Classes:</dt>\n" +
         "<dd><a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">" +
         "PrivateParent</a>, " +
         "<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild" +
-        "</a></dd>" + NL + "</dl>"},
+        "</a></dd>\n" +
+        "</dl>"},
 
-      {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-        "<dl>" + NL + "<dt>All Implemented Interfaces:</dt>" + NL +
+      {BUG_ID + "-2/pkg/PublicChild.html",
+        "<dl>\n" +
+        "<dt>All Implemented Interfaces:</dt>\n" +
         "<dd><a href=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">" +
         "PrivateInterface</a>, " +
         "<a href=\"../pkg/PublicInterface.html\" title=\"interface in pkg\">" +
-        "PublicInterface</a></dd>" + NL + "</dl>"},
+        "PublicInterface</a></dd>\n" +
+        "</dl>"},
 
       //Since private flag is used, we can document that private interface method
       //with generic parameters has been implemented.
-      {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
+      {BUG_ID + "-2/pkg2/C.html",
             "<span class=\"descfrmTypeLabel\">Description copied from interface:&nbsp;<code>" +
             "<a href=\"../pkg2/I.html#hello-T-\">I</a></code></span>"},
 
-      {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
-            "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>" + NL +
+      {BUG_ID + "-2/pkg2/C.html",
+            "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n" +
             "<dd><code><a href=\"../pkg2/I.html#hello-T-\">hello</a></code>" +
             "&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg2/I.html\" title=\"interface in pkg2\">I</a>" +
@@ -239,14 +252,14 @@ public class TestPrivateClasses extends JavadocTester {
 
       //Make sure when no modifier appear in the class signature, the
       //signature is displayed correctly without extra space at the beginning.
-      {BUG_ID + "-2" + FS + "pkg" + FS + "PrivateParent.html",
+      {BUG_ID + "-2/pkg/PrivateParent.html",
             "<pre>class <span class=\"typeNameLabel\">PrivateParent</span>"},
 
-      {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
+      {BUG_ID + "-2/pkg/PublicChild.html",
             "<pre>public class <span class=\"typeNameLabel\">PublicChild</span>"},
     };
     private static final String[][] NEGATED_TEST2 = {
-        {BUG_ID + "-2" + FS + "pkg" + FS + "PrivateParent.html",
+        {BUG_ID + "-2/pkg/PrivateParent.html",
             "<pre> class <span class=\"typeNameLabel\">PrivateParent</span>"},
     };
 

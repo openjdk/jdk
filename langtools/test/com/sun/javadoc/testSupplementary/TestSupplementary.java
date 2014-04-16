@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class TestSupplementary extends JavadocTester {
         {WARNING_OUTPUT, "C.java:31: warning - illegal character"},
     };
     private static final String[] ARGS = new String[] {
-        "-locale", "en_US", "-d", BUG_ID, SRC_DIR + FS + "C.java"
+        "-locale", "en_US", "-d", BUG_ID, SRC_DIR + "/C.java"
     };
 
     /**

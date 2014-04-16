@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,22 @@ public class TestHtmlTag extends JavadocTester {
 
     private static final String BUG_ID = "6786682";
     private static final String[][] TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<html lang=\"" + Locale.getDefault().getLanguage() + "\">"},
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<html lang=\"" + Locale.getDefault().getLanguage() + "\">"}};
+        {BUG_ID + "/pkg1/C1.html",
+            "<html lang=\"" + Locale.getDefault().getLanguage() + "\">"},
+        {BUG_ID + "/pkg1/package-summary.html",
+            "<html lang=\"" + Locale.getDefault().getLanguage() + "\">"}};
     private static final String[][] NEGATED_TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<html>"}};
+        {BUG_ID + "/pkg1/C1.html", "<html>"}};
     private static final String[][] TEST2 = {
-        {BUG_ID + FS + "pkg2" + FS + "C2.html", "<html lang=\"ja\">"},
-        {BUG_ID + FS + "pkg2" + FS + "package-summary.html", "<html lang=\"ja\">"}};
+        {BUG_ID + "/pkg2/C2.html", "<html lang=\"ja\">"},
+        {BUG_ID + "/pkg2/package-summary.html", "<html lang=\"ja\">"}};
     private static final String[][] NEGATED_TEST2 = {
-        {BUG_ID + FS + "pkg2" + FS + "C2.html", "<html>"}};
+        {BUG_ID + "/pkg2/C2.html", "<html>"}};
     private static final String[][] TEST3 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<html lang=\"en\">"},
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<html lang=\"en\">"}};
+        {BUG_ID + "/pkg1/C1.html", "<html lang=\"en\">"},
+        {BUG_ID + "/pkg1/package-summary.html", "<html lang=\"en\">"}};
     private static final String[][] NEGATED_TEST3 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<html>"}};
+        {BUG_ID + "/pkg1/C1.html", "<html>"}};
 
     private static final String[] ARGS1 =
         new String[] {

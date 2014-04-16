@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,26 +42,26 @@ public class TestDocFileDir extends JavadocTester {
     private static final String BUG_ID = "4258405-4973606";
 
     private static final String[][] TEST1 = {
-        {BUG_ID + "-1" + FS + "pkg" + FS + "doc-files" + FS + "testfile.txt",
+        {BUG_ID + "-1/pkg/doc-files/testfile.txt",
             "This doc file did not get trashed."}
         };
     private static final String[][] NEGATED_TEST1 = NO_TEST;
 
     private static final String[] FILE_TEST2 = {
-        BUG_ID + "-2" + FS + "pkg" + FS + "doc-files" + FS + "subdir-used1" +
-            FS + "testfile.txt",
-        BUG_ID + "-2" + FS + "pkg" + FS + "doc-files" + FS + "subdir-used2" +
-            FS + "testfile.txt"
+        BUG_ID + "-2/pkg/doc-files/subdir-used1" +
+            "/testfile.txt",
+        BUG_ID + "-2/pkg/doc-files/subdir-used2" +
+            "/testfile.txt"
     };
     private static final String[] FILE_NEGATED_TEST2 = {
-        BUG_ID + "-2" + FS + "pkg" + FS + "doc-files" + FS + "subdir-excluded1" +
-            FS + "testfile.txt",
-        BUG_ID + "-2" + FS + "pkg" + FS + "doc-files" + FS + "subdir-excluded2" +
-            FS + "testfile.txt"
+        BUG_ID + "-2/pkg/doc-files/subdir-excluded1" +
+            "/testfile.txt",
+        BUG_ID + "-2/pkg/doc-files/subdir-excluded2" +
+            "/testfile.txt"
     };
 
     private static final String[][] TEST0 = {
-        {"pkg" + FS + "doc-files" + FS + "testfile.txt",
+        {"pkg/doc-files/testfile.txt",
             "This doc file did not get trashed."}
         };
     private static final String[][] NEGATED_TEST0 = {};
@@ -71,8 +71,8 @@ public class TestDocFileDir extends JavadocTester {
         new String[] {
             "-d", BUG_ID + "-1",
             "-sourcepath",
-                "blah" + File.pathSeparator + BUG_ID + "-1" + File.pathSeparator + "blah",
-            "pkg"};
+            "blah" + File.pathSeparator + BUG_ID + "-1" +
+            File.pathSeparator + "blah", "pkg"};
 
     //Exercising -docfilessubdirs and -excludedocfilessubdir
     private static final String[] ARGS2 =
@@ -85,7 +85,7 @@ public class TestDocFileDir extends JavadocTester {
 
     //Output dir = "", Input dir = ""
     private static final String[] ARGS0 =
-        new String[] {"pkg" + FS + "C.java"};
+        new String[] {"pkg/C.java"};
 
 
     /**
@@ -94,9 +94,9 @@ public class TestDocFileDir extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDocFileDir tester = new TestDocFileDir();
-        copyDir(SRC_DIR + FS + "pkg", ".");
+        copyDir(SRC_DIR + "/pkg", ".");
         run(tester, ARGS0, TEST0, NEGATED_TEST0);
-        copyDir(SRC_DIR + FS + "pkg", BUG_ID + "-1");
+        copyDir(SRC_DIR + "/pkg", BUG_ID + "-1");
         run(tester, ARGS1, TEST1, NEGATED_TEST1);
         run(tester, ARGS2, NO_TEST, NO_TEST, FILE_TEST2, FILE_NEGATED_TEST2);
         tester.printSummary();

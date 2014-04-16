@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,54 +47,54 @@ public class TestRelativeLinks extends JavadocTester {
     private static final String[][] TEST = {
         //These relative paths should stay relative because they appear
         //in the right places.
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<a href=\"relative-class-link.html\">relative class link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<a href=\"relative-field-link.html\">relative field link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<a href=\"relative-method-link.html\">relative method link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
+        {BUG_ID + "/pkg/package-summary.html",
             "<a href=\"relative-package-link.html\">relative package link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            " <a" + NL +
+        {BUG_ID + "/pkg/C.html",
+            " <a\n" +
             " href=\"relative-multi-line-link.html\">relative-multi-line-link</a>."},
 
         //These relative paths should be redirected because they are in different
         //places.
 
         //INDEX PAGE
-        {BUG_ID + FS + "index-all.html",
+        {BUG_ID + "/index-all.html",
             "<a href=\"./pkg/relative-class-link.html\">relative class link</a>"},
-        {BUG_ID + FS + "index-all.html",
+        {BUG_ID + "/index-all.html",
             "<a href=\"./pkg/relative-field-link.html\">relative field link</a>"},
-        {BUG_ID + FS + "index-all.html",
+        {BUG_ID + "/index-all.html",
             "<a href=\"./pkg/relative-method-link.html\">relative method link</a>"},
-        {BUG_ID + FS + "index-all.html",
+        {BUG_ID + "/index-all.html",
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
-        {BUG_ID + FS + "index-all.html",
-            " <a" + NL +
+        {BUG_ID + "/index-all.html",
+            " <a\n" +
             " href=\"./pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
 
 
         //PACKAGE USE
-        {BUG_ID + FS + "pkg" + FS + "package-use.html",
+        {BUG_ID + "/pkg/package-use.html",
             "<a href=\"../pkg/relative-package-link.html\">relative package link</a>."},
-        {BUG_ID + FS + "pkg" + FS + "package-use.html",
+        {BUG_ID + "/pkg/package-use.html",
             "<a href=\"../pkg/relative-class-link.html\">relative class link</a>"},
 
         //CLASS_USE
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
+        {BUG_ID + "/pkg/class-use/C.html",
             "<a href=\"../../pkg/relative-field-link.html\">relative field link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
+        {BUG_ID + "/pkg/class-use/C.html",
             "<a href=\"../../pkg/relative-method-link.html\">relative method link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
+        {BUG_ID + "/pkg/class-use/C.html",
             "<a href=\"../../pkg/relative-package-link.html\">relative package link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
-            " <a" + NL +
+        {BUG_ID + "/pkg/class-use/C.html",
+            " <a\n" +
             " href=\"../../pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
 
         //PACKAGE OVERVIEW
-        {BUG_ID + FS + "overview-summary.html",
+        {BUG_ID + "/overview-summary.html",
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
 
 

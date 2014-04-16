@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,72 +54,72 @@ public class TestValueTag extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         //Base case:  using @value on a constant.
-        {BUG_ID + FS + "pkg1" + FS + "Class1.html",
+        {BUG_ID + "/pkg1/Class1.html",
             "Result:  \"Test 1 passes\""},
         //Retrieve value of constant in same class.
-        {BUG_ID + FS + "pkg1" + FS + "Class1.html",
+        {BUG_ID + "/pkg1/Class1.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_2_PASSES\">\"Test 2 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class1.html",
+        {BUG_ID + "/pkg1/Class1.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_3_PASSES\">\"Test 3 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class1.html",
+        {BUG_ID + "/pkg1/Class1.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_4_PASSES\">\"Test 4 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class1.html",
+        {BUG_ID + "/pkg1/Class1.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_5_PASSES\">\"Test 5 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class1.html",
+        {BUG_ID + "/pkg1/Class1.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_6_PASSES\">\"Test 6 passes\"</a>"},
         //Retrieve value of constant in different class.
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_7_PASSES\">\"Test 7 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_8_PASSES\">\"Test 8 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_9_PASSES\">\"Test 9 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_10_PASSES\">\"Test 10 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_11_PASSES\">\"Test 11 passes\"</a>"},
         //Retrieve value of constant in different package
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg2/Class3.html#TEST_12_PASSES\">\"Test 12 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg2/Class3.html#TEST_13_PASSES\">\"Test 13 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg2/Class3.html#TEST_14_PASSES\">\"Test 14 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg2/Class3.html#TEST_15_PASSES\">\"Test 15 passes\"</a>"},
-        {BUG_ID + FS + "pkg1" + FS + "Class2.html",
+        {BUG_ID + "/pkg1/Class2.html",
             "Result:  <a href=\"../pkg2/Class3.html#TEST_16_PASSES\">\"Test 16 passes\"</a>"},
         //Retrieve value of constant from a package page
-        {BUG_ID + FS + "pkg2" + FS + "package-summary.html",
+        {BUG_ID + "/pkg2/package-summary.html",
             "Result: <a href=\"../pkg2/Class3.html#TEST_17_PASSES\">\"Test 17 passes\"</a>"},
         //Test @value tag used with custom tag.
-        {BUG_ID + FS + "pkg1" + FS + "CustomTagUsage.html",
-            "<dt><span class=\"simpleTagLabel\">Todo:</span></dt>" + NL +
+        {BUG_ID + "/pkg1/CustomTagUsage.html",
+            "<dt><span class=\"simpleTagLabel\">Todo:</span></dt>\n" +
                 "<dd>the value of this constant is 55.</dd>"},
         //Test @value errors printed dues to invalid use or when used with
         //non-constant or with bad references.
-        {ERROR_OUTPUT,"error: value does not refer to a constant" + NL +
+        {ERROR_OUTPUT,"error: value does not refer to a constant\n" +
             "     * Result:  {@value TEST_12_ERROR}"
         },
-        {ERROR_OUTPUT,"error: {@value} not allowed here" + NL +
+        {ERROR_OUTPUT,"error: {@value} not allowed here\n" +
             "     * Result:  {@value}"
         },
-        {ERROR_OUTPUT,"error: value does not refer to a constant" + NL +
+        {ERROR_OUTPUT,"error: value does not refer to a constant\n" +
             "     * Result:  {@value NULL}"
         },
-        {ERROR_OUTPUT,"error: {@value} not allowed here" + NL +
+        {ERROR_OUTPUT,"error: {@value} not allowed here\n" +
             "     * Invalid (null): {@value}"
         },
-        {ERROR_OUTPUT,"error: {@value} not allowed here" + NL +
+        {ERROR_OUTPUT,"error: {@value} not allowed here\n" +
             "     * Invalid (non-constant field): {@value}"
         },
-        {ERROR_OUTPUT,"error: value does not refer to a constant" + NL +
+        {ERROR_OUTPUT,"error: value does not refer to a constant\n" +
             "     * Here is a bad value reference: {@value UnknownClass#unknownConstant}"
         },
-        {ERROR_OUTPUT,"error: reference not found" + NL +
+        {ERROR_OUTPUT,"error: reference not found\n" +
             "     * Here is a bad value reference: {@value UnknownClass#unknownConstant}"
         },
-        {ERROR_OUTPUT,"error: {@value} not allowed here" + NL +
+        {ERROR_OUTPUT,"error: {@value} not allowed here\n" +
             "     * @todo the value of this constant is {@value}"
         }
     };
@@ -144,7 +144,7 @@ public class TestValueTag extends JavadocTester {
     };
     private static final String[][] NEGATED_TEST = {
         //Base case:  using @value on a constant.
-        {BUG_ID + FS + "pkg1" + FS + "Class1.html",
+        {BUG_ID + "/pkg1/Class1.html",
             "Result:  <a href=\"../pkg1/Class1.html#TEST_12_ERROR\">\"Test 12 " +
             "generates an error message\"</a>"},
     };

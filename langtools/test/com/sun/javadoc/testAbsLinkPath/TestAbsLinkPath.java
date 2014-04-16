@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public class TestAbsLinkPath extends JavadocTester {
 
     private static final String BUG_ID = "4640745";
     private static final String[][] TEST = {
-        {"tmp" + FS + "pkg1" + FS + "C1.html", "C2.html"}};
+        {"tmp/pkg1/C1.html", "C2.html"}};
     private static final String[][] NEGATED_TEST = NO_TEST;
 
     private static final String[] ARGS1 =
@@ -45,7 +45,7 @@ public class TestAbsLinkPath extends JavadocTester {
     private static final String[] ARGS2 =
         new String[] {
             "-d", "tmp", "-sourcepath", SRC_DIR,
-            "-link", ".." + FS + "tmp2", "pkg1"};
+            "-link", "../tmp2", "pkg1"};
 
     /**
      * The entry point of the test.

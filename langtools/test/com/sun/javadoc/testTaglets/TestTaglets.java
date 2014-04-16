@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,24 +45,24 @@ public class TestTaglets extends JavadocTester {
     //Javadoc arguments.
     private static final String[] ARGS_4654308 = new String[] {
         "-d", "4654308", "-tagletpath", SRC_DIR, "-taglet", "taglets.Foo",
-        "-sourcepath", SRC_DIR, SRC_DIR + FS + "C.java"
+        "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
     };
 
     private static final String[] ARGS_4767038 = new String[] {
-        "-d", "4767038", "-sourcepath", SRC_DIR, SRC_DIR + FS + "Parent.java",
-        SRC_DIR + FS + "Child.java"
+        "-d", "4767038", "-sourcepath", SRC_DIR, SRC_DIR + "/Parent.java",
+        SRC_DIR + "/Child.java"
     };
 
     //Input for string search tests.
     private static final String[][] TEST_4654308 = new String[][] {
-        {"4654308" + FS + "C.html", "<span class=\"simpleTagLabel\">Foo:</span></dt>" +
+        {"4654308/C.html", "<span class=\"simpleTagLabel\">Foo:</span></dt>" +
                  "<dd>my only method is <a href=\"C.html#method--\"><code>here" +
                  "</code></a></dd></dl>"}
     };
     private static final String[][] NEGATED_TEST_4654308 = NO_TEST;
 
     private static final String[][] TEST_4767038 = new String[][] {
-        {"4767038" + FS + "Child.html",
+        {"4767038/Child.html",
             "This is the first sentence."}
     };
     private static final String[][] NEGATED_TEST_4767038 = NO_TEST;

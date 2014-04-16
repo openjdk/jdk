@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,14 @@ public class TestTagOutput extends JavadocTester {
 
     private static final String BUG_ID = "8026370";
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "DeprecatedTag.html",
+        {BUG_ID + "/pkg1/DeprecatedTag.html",
             "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
-        {BUG_ID + FS + "pkg1" + FS + "DeprecatedTag.html",
+        {BUG_ID + "/pkg1/DeprecatedTag.html",
             "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;" +
             "<span class=\"deprecationComment\">Do not use this.</span></div>"}};
 
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "DeprecatedTag.html",
+        {BUG_ID + "/pkg1/DeprecatedTag.html",
             "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated." +
             "</span>&nbsp;<span class=\"deprecationComment\"></span></div>"}};
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,14 @@ public class TestIndentation extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        { BUG_ID + FS + "p" + FS + "Indent.html",
+        { BUG_ID + "/p/Indent.html",
           "<pre>public&nbsp;&lt;T&gt;&nbsp;void&nbsp;m(T&nbsp;t1," },
-        { BUG_ID + FS + "p" + FS + "Indent.html",
-          NL + "                  T&nbsp;t2)" },
-        { BUG_ID + FS + "p" + FS + "Indent.html",
-          NL + "           throws java.lang.Exception" }
+        { BUG_ID + "/p/Indent.html",
+          "\n" +
+          "                  T&nbsp;t2)" },
+        { BUG_ID + "/p/Indent.html",
+          "\n" +
+          "           throws java.lang.Exception" }
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,11 @@ public class TestRecurseSubPackages extends JavadocTester {
     public static void main(String[] args) {
         String[][] tests = new String[6][2];
         for (int i = 0; i < tests.length; i++) {
-            tests[i][0] = BUG_ID + FS + "allclasses-frame.html";
+            tests[i][0] = BUG_ID + "/allclasses-frame.html";
             tests[i][1] = "C" + (i+1) + ".html";
         }
         String[][] negatedTests = new String[][] {
-            {BUG_ID + FS + "allclasses-frame.html", "DummyClass.html"}
+            {BUG_ID + "/allclasses-frame.html", "DummyClass.html"}
         };
         TestRecurseSubPackages tester = new TestRecurseSubPackages();
         run(tester, ARGS, tests, negatedTests);

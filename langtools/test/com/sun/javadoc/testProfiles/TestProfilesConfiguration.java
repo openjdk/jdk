@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,61 +38,71 @@ public class TestProfilesConfiguration extends JavadocTester {
     private static final String NODEPR_NOPKGS_BUG_ID = BUG_ID + "-4";
     //Javadoc arguments.
     private static final String[] ARGS3 = new String[]{
-        "-d", PROFILE_CONFIGURATION_BUG_ID, "-sourcepath", SRC_DIR, "-nocomment",
-        "-keywords", "-Xprofilespath", SRC_DIR + FS + "profile-rtjar-includes.txt",
-        "-doctitle", "Simple doctitle", "-use", "pkg3", "pkg1", "pkg2", "pkg4",
+        "-d", PROFILE_CONFIGURATION_BUG_ID, "-sourcepath", SRC_DIR,
+        "-nocomment", "-keywords", "-Xprofilespath", SRC_DIR +
+        "/profile-rtjar-includes.txt", "-doctitle", "Simple doctitle",
+        "-use", "pkg3", "pkg1", "pkg2", "pkg4",
         "pkg5", "-packagesheader", "Simple packages header","pkgDeprecated"
     };
     private static final String[] ARGS4 = new String[]{
-        "-d", NODEPR_NOPKGS_BUG_ID, "-sourcepath", SRC_DIR, "-nocomment", "-nodeprecated",
-        "-keywords", "-Xprofilespath", SRC_DIR + FS + "profile-rtjar-includes-nopkgs.txt",
-        "-doctitle", "Simple doctitle", "-use", "-packagesheader", "Simple packages header",
+        "-d", NODEPR_NOPKGS_BUG_ID, "-sourcepath", SRC_DIR, "-nocomment",
+        "-nodeprecated", "-keywords", "-Xprofilespath", SRC_DIR +
+        "/profile-rtjar-includes-nopkgs.txt", "-doctitle", "Simple doctitle",
+        "-use", "-packagesheader", "Simple packages header",
         "pkg1", "pkg2", "pkg3", "pkg4", "pkg5", "pkgDeprecated"
     };
     private static final String[][] NODEPR_NOPKGS_TEST = {
-        {NODEPR_NOPKGS_BUG_ID + FS + "overview-summary.html",
-            "<ul>" + NL + "<li><a href=\"compact2-summary.html\" target=\"classFrame\">" +
-            "compact2</a></li>" + NL + "<li><a href=\"compact3-summary.html\" target=\"" +
-            "classFrame\">compact3</a></li>" + NL + "</ul>"
+        {NODEPR_NOPKGS_BUG_ID + "/overview-summary.html",
+            "<ul>\n" +
+            "<li><a href=\"compact2-summary.html\" target=\"classFrame\">" +
+            "compact2</a></li>\n" +
+            "<li><a href=\"compact3-summary.html\" target=\"" +
+            "classFrame\">compact3</a></li>\n" +
+            "</ul>"
         },
-        {NODEPR_NOPKGS_BUG_ID + FS + "profile-overview-frame.html",
-            "<ul title=\"Profiles\">" + NL + "<li><a href=\"compact2-frame.html\" target=\"packageListFrame\">" +
-            "compact2</a></li>" + NL + "<li><a href=\"compact3-frame.html\" target=\"" +
-            "packageListFrame\">compact3</a></li>" + NL + "</ul>"
+        {NODEPR_NOPKGS_BUG_ID + "/profile-overview-frame.html",
+            "<ul title=\"Profiles\">\n" +
+            "<li><a href=\"compact2-frame.html\" target=\"packageListFrame\">" +
+            "compact2</a></li>\n" +
+            "<li><a href=\"compact3-frame.html\" target=\"" +
+            "packageListFrame\">compact3</a></li>\n" +
+            "</ul>"
         }
     };
     private static final String[][] NODEPR_NOPKGS_NEGATED_TEST = {
-        {NODEPR_NOPKGS_BUG_ID + FS + "overview-summary.html",
+        {NODEPR_NOPKGS_BUG_ID + "/overview-summary.html",
             "compact1"
         }
     };
 
     private static final String[][] PROFILES_CONFIGURATION_TEST = {
         //-use option test string fo profile view page
-        {PROFILE_CONFIGURATION_BUG_ID + FS + "compact1-summary.html","<li>Use</li>"
+        {PROFILE_CONFIGURATION_BUG_ID + "/compact1-summary.html","<li>Use</li>"
         },
         //-doctitle option test string
-        {PROFILE_CONFIGURATION_BUG_ID + FS + "overview-summary.html",
-            "<div class=\"header\">" + NL + "<h1 class=\"title\">Simple doctitle</h1>"
+        {PROFILE_CONFIGURATION_BUG_ID + "/overview-summary.html",
+            "<div class=\"header\">\n" +
+            "<h1 class=\"title\">Simple doctitle</h1>"
         },
         //-packagesheader option test string fo profiles
-        {PROFILE_CONFIGURATION_BUG_ID + FS + "profile-overview-frame.html",
+        {PROFILE_CONFIGURATION_BUG_ID + "/profile-overview-frame.html",
             "<h1 title=\"Simple packages header\" class=\"bar\">Simple packages header</h1>"
         },
         //-keywords option test string for profiles
-        {PROFILE_CONFIGURATION_BUG_ID + FS + "compact1-summary.html",
+        {PROFILE_CONFIGURATION_BUG_ID + "/compact1-summary.html",
             "<meta name=\"keywords\" content=\"compact1 profile\">"
         },
         //Deprecated information on a package
-        {PROFILE_CONFIGURATION_BUG_ID + FS + "compact1-summary.html",
+        {PROFILE_CONFIGURATION_BUG_ID + "/compact1-summary.html",
             "<h3><a href=\"pkgDeprecated/compact1-package-summary.html\" target=\"" +
-            "classFrame\">pkgDeprecated</a></h3>" + NL + "<div class=\"deprecatedContent\">" +
+            "classFrame\">pkgDeprecated</a></h3>\n" +
+            "<div class=\"deprecatedContent\">" +
             "<span class=\"deprecatedLabel\">Deprecated.</span></div>"
         }
     };
     private static final String[][] PROFILES_CONFIGURATION_NEGATED_TEST = {
         //-nocomments option test string
-        {PROFILE_CONFIGURATION_BUG_ID + FS + "compact1-summary.html",
+        {PROFILE_CONFIGURATION_BUG_ID + "/compact1-summary.html",
             "<div class=\"block\"><i>Class1Pkg2.</i></div>"
         }
     };

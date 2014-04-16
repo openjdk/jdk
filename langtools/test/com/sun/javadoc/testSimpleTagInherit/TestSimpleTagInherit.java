@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,11 @@ public class TestSimpleTagInherit extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        { BUG_ID + FS + "p" + FS + "TestClass.html",
-          "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>" + NL +
+        { BUG_ID + "/p/TestClass.html",
+          "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n" +
           "<dd>doc for BaseClass class</dd>" },
-        { BUG_ID + FS + "p" + FS + "TestClass.html",
-          "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>" + NL +
+        { BUG_ID + "/p/TestClass.html",
+          "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n" +
           "<dd>doc for BaseClass method</dd>" }
     };
     private static final String[][] NEGATED_TEST = NO_TEST;

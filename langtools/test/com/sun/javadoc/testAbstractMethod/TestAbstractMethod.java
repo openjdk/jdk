@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ public class TestAbstractMethod extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "A.html",
+        {BUG_ID + "/pkg/A.html",
             "<td class=\"colFirst\"><code>default void</code></td>"},
-        {BUG_ID + FS + "pkg" + FS + "A.html",
+        {BUG_ID + "/pkg/A.html",
             "<caption><span id=\"t0\" class=\"activeTableTab\"><span>" +
             "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "<span id=\"t2\" class=\"tableTab\"><span>" +
@@ -57,7 +57,7 @@ public class TestAbstractMethod extends JavadocTester {
             "</span><span id=\"t5\" class=\"tableTab\"><span>" +
             "<a href=\"javascript:show(16);\">Default Methods</a></span>" +
             "<span class=\"tabEnd\">&nbsp;</span></span></caption>"},
-        {BUG_ID + FS + "pkg" + FS + "B.html",
+        {BUG_ID + "/pkg/B.html",
             "<caption><span id=\"t0\" class=\"activeTableTab\"><span>" +
             "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "<span id=\"t2\" class=\"tableTab\"><span>" +
@@ -68,9 +68,9 @@ public class TestAbstractMethod extends JavadocTester {
             "<span id=\"t4\" class=\"tableTab\"><span>" +
             "<a href=\"javascript:show(8);\">Concrete Methods</a></span>" +
             "<span class=\"tabEnd\">&nbsp;</span></span></caption>"},
-        {BUG_ID + FS + "pkg" + FS + "B.html",
+        {BUG_ID + "/pkg/B.html",
             "<td class=\"colFirst\"><code>abstract void</code></td>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<caption><span id=\"t0\" class=\"activeTableTab\"><span>" +
             "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "<span id=\"t2\" class=\"tableTab\"><span>" +
@@ -79,18 +79,18 @@ public class TestAbstractMethod extends JavadocTester {
             "<span id=\"t5\" class=\"tableTab\"><span>" +
             "<a href=\"javascript:show(16);\">Default Methods</a></span>" +
             "<span class=\"tabEnd\">&nbsp;</span></span></caption>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<td class=\"colFirst\"><code>default void</code></td>"}
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg" + FS + "A.html",
+        {BUG_ID + "/pkg/A.html",
             "<td class=\"colFirst\"><code>abstract void</code></td>"},
-        {BUG_ID + FS + "pkg" + FS + "B.html",
+        {BUG_ID + "/pkg/B.html",
             "<span><a href=\"javascript:show(16);\">Default Methods</a></span>" +
             "<span class=\"tabEnd\">&nbsp;</span>"},
-        {BUG_ID + FS + "pkg" + FS + "B.html",
+        {BUG_ID + "/pkg/B.html",
             "<td class=\"colFirst\"><code>default void</code></td>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<span><a href=\"javascript:show(4);\">Abstract Methods</a></span>" +
             "<span class=\"tabEnd\">&nbsp;</span>"}
     };

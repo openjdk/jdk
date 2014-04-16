@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,19 +36,21 @@ public class TestSubTitle extends JavadocTester {
 
     private static final String BUG_ID = "7010342";
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
+        {BUG_ID + "/pkg/package-summary.html",
             "<div class=\"block\">This is the description of package pkg.</div>"
         },
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<div class=\"subTitle\">pkg</div>"
         }
     };
     private static final String[][] NEG_TEST = {
-        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
-            "<p class=\"subTitle\">" + NL + "<div class=\"block\">This is the " +
-            "description of package pkg.</div>" + NL + "</p>"
+        {BUG_ID + "/pkg/package-summary.html",
+            "<p class=\"subTitle\">\n" +
+            "<div class=\"block\">This is the " +
+            "description of package pkg.</div>\n" +
+            "</p>"
         },
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "/pkg/C.html",
             "<p class=\"subTitle\">pkg</p>"
         }
     };

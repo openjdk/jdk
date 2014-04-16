@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,17 @@ public class TestThrowsTagInheritence extends JavadocTester {
     private static final String BUG_ID = "4684827-4633969";
     private static final String[][] TEST = {
         //The class should not inherit the tag from the interface.
-        {BUG_ID + FS + "Foo.html", "Test 1 passes."}
+        {BUG_ID + "/Foo.html", "Test 1 passes."}
     };
     private static final String[][] NEGATED_TEST = {
         //The class should not inherit the tag from the interface.
-        {BUG_ID + FS + "C.html", "Test 1 fails."}
+        {BUG_ID + "/C.html", "Test 1 fails."}
 
     };
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR + FS + "C.java",
-        SRC_DIR + FS + "I.java", SRC_DIR + FS + "Foo.java",
-        SRC_DIR + FS + "Iface.java"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java",
+        SRC_DIR + "/I.java", SRC_DIR + "/Foo.java",
+        SRC_DIR + "/Iface.java"
     };
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,65 +46,67 @@ public class TestHeadings extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         //Package summary
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
+        {BUG_ID + "/pkg1/package-summary.html",
             "<th class=\"colFirst\" scope=\"col\">" +
-            "Class</th>" + NL + "<th class=\"colLast\" scope=\"col\"" +
+            "Class</th>\n" +
+            "<th class=\"colLast\" scope=\"col\"" +
             ">Description</th>"
         },
 
         // Class documentation
-        {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+        {BUG_ID + "/pkg1/C1.html",
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
             "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
         },
-        {BUG_ID + FS + "pkg1" + FS + "C1.html",
+        {BUG_ID + "/pkg1/C1.html",
             "<h3>Methods inherited from class&nbsp;java.lang.Object</h3>"
         },
 
         // Class use documentation
-        {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Package</th>" + NL +
+        {BUG_ID + "/pkg1/class-use/C1.html",
+            "<th class=\"colFirst\" scope=\"col\">Package</th>\n" +
             "<th class=\"colLast\" scope=\"col\">Description</th>"
         },
-        {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
+        {BUG_ID + "/pkg1/class-use/C1.html",
+            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
             "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
         },
 
         // Deprecated
-        {BUG_ID + FS + "deprecated-list.html",
+        {BUG_ID + "/deprecated-list.html",
             "<th class=\"colOne\" scope=\"col\">Method and Description</th>"
         },
 
         // Constant values
-        {BUG_ID + FS + "constant-values.html",
+        {BUG_ID + "/constant-values.html",
             "<th class=\"colFirst\" scope=\"col\">" +
-            "Modifier and Type</th>" + NL + "<th scope=\"col\">Constant Field</th>" + NL +
+            "Modifier and Type</th>\n" +
+            "<th scope=\"col\">Constant Field</th>\n" +
             "<th class=\"colLast\" scope=\"col\">Value</th>"
         },
 
         // Serialized Form
-        {BUG_ID + FS + "serialized-form.html",
+        {BUG_ID + "/serialized-form.html",
             "<h2 title=\"Package\">Package&nbsp;pkg1</h2>"
         },
-        {BUG_ID + FS + "serialized-form.html",
+        {BUG_ID + "/serialized-form.html",
             "<h3>Class <a href=\"pkg1/C1.html\" title=\"class in pkg1\">" +
             "pkg1.C1</a> extends java.lang.Object implements Serializable</h3>"
         },
-        {BUG_ID + FS + "serialized-form.html",
+        {BUG_ID + "/serialized-form.html",
             "<h3>Serialized Fields</h3>"
         },
 
         // Overview Frame
-        {BUG_ID + FS + "overview-frame.html",
+        {BUG_ID + "/overview-frame.html",
             "<h1 title=\"Test Files\" class=\"bar\">Test Files</h1>"
         },
-        {BUG_ID + FS + "overview-frame.html",
+        {BUG_ID + "/overview-frame.html",
             "<title>Overview List</title>"
         },
 
         // Overview Summary
-        {BUG_ID + FS + "overview-summary.html",
+        {BUG_ID + "/overview-summary.html",
             "<title>Overview</title>"
         },
 

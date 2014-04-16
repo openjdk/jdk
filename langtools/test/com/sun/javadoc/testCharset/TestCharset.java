@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,16 +43,16 @@ public class TestCharset extends JavadocTester {
     };
 
     private static final String[][] TEST = {
-        {BUG_ID + FS + "index.html",
+        {BUG_ID + "/index.html",
             "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">"},
-        {BUG_ID + FS + "pkg" + FS + "Foo.html",
+        {BUG_ID + "/pkg/Foo.html",
             "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">"}
     };
 
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "index.html",
+        {BUG_ID + "/index.html",
             "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">"},
-        {BUG_ID + FS + "pkg" + FS + "Foo.html",
+        {BUG_ID + "/pkg/Foo.html",
             "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">"}
     };
 
