@@ -117,27 +117,30 @@ public:
 
 
 class ClearLoggedCardTableEntryClosure: public CardTableEntryClosure {
-  int _calls;
-  G1CollectedHeap* _g1h;
+  size_t _num_processed;
   CardTableModRefBS* _ctbs;
   int _histo[256];
-public:
+
+ public:
   ClearLoggedCardTableEntryClosure() :
-    _calls(0), _g1h(G1CollectedHeap::heap()), _ctbs(_g1h->g1_barrier_set())
+    _num_processed(0), _ctbs(G1CollectedHeap::heap()->g1_barrier_set())
   {
     for (int i = 0; i < 256; i++) _histo[i] = 0;
   }
+
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    if (_g1h->is_in_reserved(_ctbs->addr_for(card_ptr))) {
-      _calls++;
-      unsigned char* ujb = (unsigned char*)card_ptr;
-      int ind = (int)(*ujb);
-      _histo[ind]++;
-      *card_ptr = -1;
-    }
+    unsigned char* ujb = (unsigned char*)card_ptr;
+    int ind = (int)(*ujb);
+    _histo[ind]++;
+
+    *card_ptr = (jbyte)CardTableModRefBS::clean_card_val();
+    _num_processed++;
+
     return true;
   }
-  int calls() { return _calls; }
+
+  size_t num_processed() { return _num_processed; }
+
   void print_histo() {
     gclog_or_tty->print_cr("Card table value histogram:");
     for (int i = 0; i < 256; i++) {
@@ -148,22 +151,20 @@ public:
   }
 };
 
-class RedirtyLoggedCardTableEntryClosure: public CardTableEntryClosure {
-  int _calls;
-  G1CollectedHeap* _g1h;
-  CardTableModRefBS* _ctbs;
-public:
-  RedirtyLoggedCardTableEntryClosure() :
-    _calls(0), _g1h(G1CollectedHeap::heap()), _ctbs(_g1h->g1_barrier_set()) {}
+class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
+ private:
+  size_t _num_processed;
+
+ public:
+  RedirtyLoggedCardTableEntryClosure() : CardTableEntryClosure(), _num_processed(0) { }
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    if (_g1h->is_in_reserved(_ctbs->addr_for(card_ptr))) {
-      _calls++;
-      *card_ptr = 0;
-    }
+    *card_ptr = CardTableModRefBS::dirty_card_val();
+    _num_processed++;
     return true;
   }
-  int calls() { return _calls; }
+
+  size_t num_processed() const { return _num_processed; }
 };
 
 YoungList::YoungList(G1CollectedHeap* g1h) :
@@ -492,9 +493,10 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
   dcqs.apply_closure_to_all_completed_buffers(&redirty);
   dcqs.iterate_closure_all_threads(&redirty, false);
   gclog_or_tty->print_cr("Log entries = %d, dirty cards = %d.",
-                         clear.calls(), orig_count);
-  guarantee(redirty.calls() == clear.calls(),
-            "Or else mechanism is broken.");
+                         clear.num_processed(), orig_count);
+  guarantee(redirty.num_processed() == clear.num_processed(),
+            err_msg("Redirtied "SIZE_FORMAT" cards, bug cleared "SIZE_FORMAT,
+                    redirty.num_processed(), clear.num_processed()));
 
   CountNonCleanMemRegionClosure count3(this);
   ct_bs->mod_card_iterate(&count3);
@@ -5255,22 +5257,6 @@ void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive
   }
 }
 
-class RedirtyLoggedCardTableEntryFastClosure : public CardTableEntryClosure {
- private:
-  size_t _num_processed;
-
- public:
-  RedirtyLoggedCardTableEntryFastClosure() : CardTableEntryClosure(), _num_processed(0) { }
-
-  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    *card_ptr = CardTableModRefBS::dirty_card_val();
-    _num_processed++;
-    return true;
-  }
-
-  size_t num_processed() const { return _num_processed; }
-};
-
 class G1RedirtyLoggedCardsTask : public AbstractGangTask {
  private:
   DirtyCardQueueSet* _queue;
@@ -5280,7 +5266,7 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
   virtual void work(uint worker_id) {
     double start_time = os::elapsedTime();
 
-    RedirtyLoggedCardTableEntryFastClosure cl;
+    RedirtyLoggedCardTableEntryClosure cl;
     if (G1CollectedHeap::heap()->use_parallel_gc_threads()) {
       _queue->par_apply_closure_to_all_completed_buffers(&cl);
     } else {
