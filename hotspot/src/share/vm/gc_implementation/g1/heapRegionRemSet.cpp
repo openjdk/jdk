@@ -768,30 +768,6 @@ void OtherRegionsTable::clear() {
   clear_fcc();
 }
 
-void OtherRegionsTable::clear_incoming_entry(HeapRegion* from_hr) {
-  MutexLockerEx x(_m, Mutex::_no_safepoint_check_flag);
-  size_t hrs_ind = (size_t) from_hr->hrs_index();
-  size_t ind = hrs_ind & _mod_max_fine_entries_mask;
-  if (del_single_region_table(ind, from_hr)) {
-    assert(!_coarse_map.at(hrs_ind), "Inv");
-  } else {
-    _coarse_map.par_at_put(hrs_ind, 0);
-  }
-  // Check to see if any of the fcc entries come from here.
-  uint hr_ind = hr()->hrs_index();
-  for (uint tid = 0; tid < HeapRegionRemSet::num_par_rem_sets(); tid++) {
-    int fcc_ent = FromCardCache::at(tid, hr_ind);
-    if (fcc_ent != FromCardCache::InvalidCard) {
-      HeapWord* card_addr = (HeapWord*)
-        (uintptr_t(fcc_ent) << CardTableModRefBS::card_shift);
-      if (hr()->is_in_reserved(card_addr)) {
-        // Clear the from card cache.
-        FromCardCache::set(tid, hr_ind, FromCardCache::InvalidCard);
-      }
-    }
-  }
-}
-
 bool OtherRegionsTable::del_single_region_table(size_t ind,
                                                 HeapRegion* hr) {
   assert(0 <= ind && ind < _max_fine_entries, "Preconditions.");
