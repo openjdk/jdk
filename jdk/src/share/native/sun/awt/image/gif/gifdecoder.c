@@ -249,6 +249,7 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                 /* fill the block */
                 len = (*env)->CallIntMethod(env, this, readID,
                                             blockh, remain, blockLength + 1);
+                if (len > blockLength + 1) len = blockLength + 1;
                 if ((*env)->ExceptionOccurred(env)) {
                     return 0;
                 }
