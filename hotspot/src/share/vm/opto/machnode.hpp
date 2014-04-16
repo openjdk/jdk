@@ -53,6 +53,7 @@ class MachSpillCopyNode;
 class Matcher;
 class PhaseRegAlloc;
 class RegMask;
+class RTMLockingCounters;
 class State;
 
 //---------------------------MachOper------------------------------------------
@@ -714,8 +715,9 @@ public:
 class MachFastLockNode : public MachNode {
   virtual uint size_of() const { return sizeof(*this); } // Size is bigger
 public:
-  BiasedLockingCounters* _counters;
-
+  BiasedLockingCounters*        _counters;
+  RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
+  RTMLockingCounters* _stack_rtm_counters; // RTM lock counters for stack locks
   MachFastLockNode() : MachNode() {}
 };
 

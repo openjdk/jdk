@@ -4684,4 +4684,12 @@ public class Types {
         }
     }
     // </editor-fold>
+
+    public void newRound() {
+        descCache._map.clear();
+        isDerivedRawCache.clear();
+        implCache._map.clear();
+        membersCache._map.clear();
+        closureCache.clear();
+    }
 }

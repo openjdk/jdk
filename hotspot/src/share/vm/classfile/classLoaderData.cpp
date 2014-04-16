@@ -135,6 +135,14 @@ void ClassLoaderData::classes_do(void f(Klass * const)) {
   }
 }
 
+void ClassLoaderData::methods_do(void f(Method*)) {
+  for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
+    if (k->oop_is_instance()) {
+      InstanceKlass::cast(k)->methods_do(f);
+    }
+  }
+}
+
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
   // Lock to avoid classes being modified/added/removed during iteration
   MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
@@ -621,6 +629,12 @@ void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {
 void ClassLoaderDataGraph::classes_do(void f(Klass* const)) {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
     cld->classes_do(f);
+  }
+}
+
+void ClassLoaderDataGraph::methods_do(void f(Method*)) {
+  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    cld->methods_do(f);
   }
 }
 

@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1BIASEDARRAY_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1BIASEDARRAY_HPP
 
+#include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
-#include "memory/allocation.inline.hpp"
 
 // Implements the common base functionality for arrays that contain provisions
 // for accessing its elements using a biased index.
@@ -48,11 +48,7 @@ protected:
     _bias(0), _shift_by(0) { }
 
   // Allocate a new array, generic version.
-  static address create_new_base_array(size_t length, size_t elem_size) {
-    assert(length > 0, "just checking");
-    assert(elem_size > 0, "just checking");
-    return NEW_C_HEAP_ARRAY(u_char, length * elem_size, mtGC);
-  }
+  static address create_new_base_array(size_t length, size_t elem_size);
 
   // Initialize the members of this class. The biased start address of this array
   // is the bias (in elements) multiplied by the element size.

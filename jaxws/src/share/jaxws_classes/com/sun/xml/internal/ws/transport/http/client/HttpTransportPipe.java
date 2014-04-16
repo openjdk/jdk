@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,7 +257,14 @@ public class HttpTransportPipe extends AbstractTubeImpl {
         // Allows only certain http status codes for a binding. For all
         // other status codes, throws exception
         checkStatusCode(responseStream, con); // throws ClientTransportException
-
+        //To avoid zero-length chunk for One-Way
+        if (cl ==-1 && con.statusCode == 202 && "Accepted".equals(con.statusMessage) && responseStream != null) {
+            ByteArrayBuffer buf = new ByteArrayBuffer();
+            buf.write(responseStream); //What is within the responseStream?
+            responseStream.close();
+            responseStream = (buf.size()==0)? null : buf.newInputStream();
+            buf.close();
+        }
         Packet reply = request.createClientResponse(null);
         reply.wasTransportSecure = con.isSecure();
         if (responseStream != null) {

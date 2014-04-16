@@ -52,6 +52,7 @@ import javax.swing.plaf.FontUIResource;
 import sun.awt.AppContext;
 import sun.awt.FontConfiguration;
 import sun.awt.SunToolkit;
+import sun.misc.ThreadGroupUtils;
 import sun.java2d.FontSupport;
 import sun.util.logging.PlatformLogger;
 
@@ -2527,24 +2528,18 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                           });
                       }
                     };
-                    java.security.AccessController.doPrivileged(
-                       new java.security.PrivilegedAction<Object>() {
-                          public Object run() {
-                              /* The thread must be a member of a thread group
-                               * which will not get GCed before VM exit.
-                               * Make its parent the top-level thread group.
-                               */
-                              ThreadGroup tg =
-                                  Thread.currentThread().getThreadGroup();
-                              for (ThreadGroup tgn = tg;
-                                   tgn != null;
-                                   tg = tgn, tgn = tg.getParent());
-                              fileCloser = new Thread(tg, fileCloserRunnable);
-                              fileCloser.setContextClassLoader(null);
-                              Runtime.getRuntime().addShutdownHook(fileCloser);
-                              return null;
-                          }
-                    });
+                    AccessController.doPrivileged(
+                            (PrivilegedAction<Void>) () -> {
+                                /* The thread must be a member of a thread group
+                                 * which will not get GCed before VM exit.
+                                 * Make its parent the top-level thread group.
+                                 */
+                                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                                fileCloser = new Thread(rootTG, fileCloserRunnable);
+                                fileCloser.setContextClassLoader(null);
+                                Runtime.getRuntime().addShutdownHook(fileCloser);
+                                return null;
+                            });
                 }
             }
         }

@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.nio.channels.DatagramChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import java.util.Set;
+import java.util.Collections;
 
 /**
  * This class represents a socket for sending and receiving datagram packets.
@@ -315,6 +317,7 @@ class DatagramSocket implements java.io.Closeable {
         }
         // creates a udp socket
         impl.create();
+        impl.setDatagramSocket(this);
         created = true;
     }
 
@@ -445,7 +448,7 @@ class DatagramSocket implements java.io.Closeable {
      *
      * <p> If given an {@link InetSocketAddress InetSocketAddress}, this method
      * behaves as if invoking {@link #connect(InetAddress,int) connect(InetAddress,int)}
-     * with the the given socket addresses IP address and port number.
+     * with the given socket addresses IP address and port number.
      *
      * @param   addr    The remote address.
      *
@@ -1257,5 +1260,95 @@ class DatagramSocket implements java.io.Closeable {
             security.checkSetFactory();
         }
         factory = fac;
+    }
+
+    /**
+     * Sets the value of a socket option.
+     *
+     * @param name The socket option
+     * @param value The value of the socket option. A value of {@code null}
+     *              may be valid for some options.
+     *
+     * @return this DatagramSocket
+     *
+     * @throws UnsupportedOperationException if the datagram socket
+     *         does not support the option.
+     *
+     * @throws IllegalArgumentException if the value is not valid for
+     *         the option.
+     *
+     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     *
+     * @throws SecurityException if a security manager is set and if the socket
+     *         option requires a security permission and if the caller does
+     *         not have the required permission.
+     *         {@link java.net.StandardSocketOptions StandardSocketOptions}
+     *         do not require any security permission.
+     *
+     * @throws NullPointerException if name is {@code null}
+     *
+     * @since 1.9
+     */
+    public <T> DatagramSocket setOption(SocketOption<T> name, T value)
+        throws IOException
+    {
+        getImpl().setOption(name, value);
+        return this;
+    }
+
+    /**
+     * Returns the value of a socket option.
+     *
+     * @param name The socket option
+     *
+     * @return The value of the socket option.
+     *
+     * @throws UnsupportedOperationException if the datagram socket
+     *         does not support the option.
+     *
+     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     *
+     * @throws NullPointerException if name is {@code null}
+     *
+     * @throws SecurityException if a security manager is set and if the socket
+     *         option requires a security permission and if the caller does
+     *         not have the required permission.
+     *         {@link java.net.StandardSocketOptions StandardSocketOptions}
+     *         do not require any security permission.
+     *
+     * @since 1.9
+     */
+    public <T> T getOption(SocketOption<T> name) throws IOException {
+        return getImpl().getOption(name);
+    }
+
+    private static Set<SocketOption<?>> options;
+    private static boolean optionsSet = false;
+
+    /**
+     * Returns a set of the socket options supported by this socket.
+     *
+     * This method will continue to return the set of options even after
+     * the socket has been closed.
+     *
+     * @return A set of the socket options supported by this socket. This set
+     *        may be empty if the socket's DatagramSocketImpl cannot be created.
+     *
+     * @since 1.9
+     */
+    public Set<SocketOption<?>> supportedOptions() {
+        synchronized(DatagramSocket.class) {
+            if (optionsSet) {
+                return options;
+            }
+            try {
+                DatagramSocketImpl impl = getImpl();
+                options = Collections.unmodifiableSet(impl.supportedOptions());
+            } catch (IOException e) {
+                options = Collections.emptySet();
+            }
+            optionsSet = true;
+            return options;
+        }
     }
 }

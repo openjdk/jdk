@@ -270,7 +270,7 @@ cmsBool  ComputeAbsoluteIntent(cmsFloat64Number AdaptationState,
             // m2 holds CHAD from output white to D50 times abs. col. scaling
 
             // Observer is not adapted, undo the chromatic adaptation
-            _cmsMAT3per(m, &m3, ChromaticAdaptationMatrixOut);
+            _cmsMAT3per(m, &m2, ChromaticAdaptationMatrixOut);
 
             m3 = *ChromaticAdaptationMatrixIn;
             if (!_cmsMAT3inverse(&m3, &m4)) return FALSE;
@@ -411,57 +411,61 @@ cmsBool AddConversion(cmsPipeline* Result, cmsColorSpaceSignature InPCS, cmsColo
     // Handle PCS mismatches. A specialized stage is added to the LUT in such case
     switch (InPCS) {
 
-        case cmsSigXYZData: // Input profile operates in XYZ
+    case cmsSigXYZData: // Input profile operates in XYZ
 
-            switch (OutPCS) {
+        switch (OutPCS) {
 
-            case cmsSigXYZData:  // XYZ -> XYZ
-                if (!IsEmptyLayer(m, off))
-                    cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl));
-                break;
+        case cmsSigXYZData:  // XYZ -> XYZ
+            if (!IsEmptyLayer(m, off) &&
+                !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)))
+                return FALSE;
+            break;
 
-            case cmsSigLabData:  // XYZ -> Lab
-                if (!IsEmptyLayer(m, off))
-                    cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl));
-                cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocXYZ2Lab(Result ->ContextID));
-                break;
+        case cmsSigLabData:  // XYZ -> Lab
+            if (!IsEmptyLayer(m, off) &&
+                !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)))
+                return FALSE;
+            if (!cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocXYZ2Lab(Result ->ContextID)))
+                return FALSE;
+            break;
 
-            default:
-                return FALSE;   // Colorspace mismatch
-                }
-                break;
+        default:
+            return FALSE;   // Colorspace mismatch
+        }
+        break;
 
+    case cmsSigLabData: // Input profile operates in Lab
 
-        case cmsSigLabData: // Input profile operates in Lab
+        switch (OutPCS) {
 
-            switch (OutPCS) {
+        case cmsSigXYZData:  // Lab -> XYZ
 
-            case cmsSigXYZData:  // Lab -> XYZ
+            if (!cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocLab2XYZ(Result ->ContextID)))
+                return FALSE;
+            if (!IsEmptyLayer(m, off) &&
+                !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)))
+                return FALSE;
+            break;
 
-                cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocLab2XYZ(Result ->ContextID));
-                if (!IsEmptyLayer(m, off))
-                    cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl));
-                break;
+        case cmsSigLabData:  // Lab -> Lab
 
-            case cmsSigLabData:  // Lab -> Lab
-
-                if (!IsEmptyLayer(m, off)) {
-                    cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocLab2XYZ(Result ->ContextID));
-                    cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl));
-                    cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocXYZ2Lab(Result ->ContextID));
-                }
-                break;
-
-            default:
-                return FALSE;  // Mismatch
+            if (!IsEmptyLayer(m, off)) {
+                if (!cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocLab2XYZ(Result ->ContextID)) ||
+                    !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)) ||
+                    !cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocXYZ2Lab(Result ->ContextID)))
+                    return FALSE;
             }
             break;
 
-
-            // On colorspaces other than PCS, check for same space
         default:
-            if (InPCS != OutPCS) return FALSE;
-            break;
+            return FALSE;  // Mismatch
+        }
+        break;
+
+        // On colorspaces other than PCS, check for same space
+    default:
+        if (InPCS != OutPCS) return FALSE;
+        break;
     }
 
     return TRUE;
@@ -497,7 +501,8 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
                                cmsFloat64Number AdaptationStates[],
                                cmsUInt32Number  dwFlags)
 {
-    cmsPipeline* Lut, *Result;
+    cmsPipeline* Lut = NULL;
+    cmsPipeline* Result;
     cmsHPROFILE hProfile;
     cmsMAT3 m;
     cmsVEC3 off;
@@ -593,8 +598,11 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
         }
 
         // Concatenate to the output LUT
-        cmsPipelineCat(Result, Lut);
+        if (!cmsPipelineCat(Result, Lut))
+            goto Error;
+
         cmsPipelineFree(Lut);
+        Lut = NULL;
 
         // Update current space
         CurrentColorSpace = ColorSpaceOut;
@@ -604,6 +612,7 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
 
 Error:
 
+    if (Lut != NULL) cmsPipelineFree(Lut);
     if (Result != NULL) cmsPipelineFree(Result);
     return NULL;
 
@@ -742,7 +751,8 @@ cmsPipeline*  BlackPreservingKOnlyIntents(cmsContext     ContextID,
     if (CLUT == NULL) goto Error;
 
     // This is the one and only MPE in this LUT
-    cmsPipelineInsertStage(Result, cmsAT_BEGIN, CLUT);
+    if (!cmsPipelineInsertStage(Result, cmsAT_BEGIN, CLUT))
+        goto Error;
 
     // Sample it. We cannot afford pre/post linearization this time.
     if (!cmsStageSampleCLut16bit(CLUT, BlackPreservingGrayOnlySampler, (void*) &bp, 0))
@@ -959,7 +969,8 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
     CLUT = cmsStageAllocCLut16bit(ContextID, nGridPoints, 4, 4, NULL);
     if (CLUT == NULL) goto Cleanup;
 
-    cmsPipelineInsertStage(Result, cmsAT_BEGIN, CLUT);
+    if (!cmsPipelineInsertStage(Result, cmsAT_BEGIN, CLUT))
+        goto Cleanup;
 
     cmsStageSampleCLut16bit(CLUT, BlackPreservingSampler, (void*) &bp, 0);
 
@@ -1057,7 +1068,7 @@ cmsUInt32Number CMSEXPORT cmsGetSupportedIntents(cmsUInt32Number nMax, cmsUInt32
 }
 
 // The plug-in registration. User can add new intents or override default routines
-cmsBool  _cmsRegisterRenderingIntentPlugin(cmsPluginBase* Data)
+cmsBool  _cmsRegisterRenderingIntentPlugin(cmsContext id, cmsPluginBase* Data)
 {
     cmsPluginRenderingIntent* Plugin = (cmsPluginRenderingIntent*) Data;
     cmsIntentsList* fl;
@@ -1072,7 +1083,7 @@ cmsBool  _cmsRegisterRenderingIntentPlugin(cmsPluginBase* Data)
     fl = SearchIntent(Plugin ->Intent);
 
     if (fl == NULL) {
-        fl = (cmsIntentsList*) _cmsPluginMalloc(sizeof(cmsIntentsList));
+        fl = (cmsIntentsList*) _cmsPluginMalloc(id, sizeof(cmsIntentsList));
         if (fl == NULL) return FALSE;
     }
 

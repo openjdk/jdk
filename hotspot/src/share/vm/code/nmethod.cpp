@@ -460,7 +460,9 @@ void nmethod::init_defaults() {
   _scavenge_root_link      = NULL;
   _scavenge_root_state     = 0;
   _compiler                = NULL;
-
+#if INCLUDE_RTM_OPT
+  _rtm_state               = NoRTM;
+#endif
 #ifdef HAVE_DTRACE_H
   _trap_offset             = 0;
 #endif // def HAVE_DTRACE_H

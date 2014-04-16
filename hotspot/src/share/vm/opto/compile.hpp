@@ -319,9 +319,9 @@ class Compile : public Phase {
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
-
   // JSR 292
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
+  RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -591,6 +591,10 @@ class Compile : public Phase {
   void          set_print_inlining(bool z)       { _print_inlining = z; }
   bool              print_intrinsics() const     { return _print_intrinsics; }
   void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
+  RTMState          rtm_state()  const           { return _rtm_state; }
+  void          set_rtm_state(RTMState s)        { _rtm_state = s; }
+  bool              use_rtm() const              { return (_rtm_state & NoRTM) == 0; }
+  bool          profile_rtm() const              { return _rtm_state == ProfileRTM; }
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(const char * option) {
     return method() != NULL && method()->has_option(option);

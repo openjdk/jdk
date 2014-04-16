@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class T7021650 extends JavacTestingAbstractProcessor {
      * and verify that corresponding objects are created in each round.
      */
     void run() throws Exception {
-        Counter demoCounter = new Counter();
+        Counter myDemoCounter = new Counter();
         Counter myAttrCounter = new Counter();
 
         Context context = new Context();
@@ -76,7 +76,7 @@ public class T7021650 extends JavacTestingAbstractProcessor {
             }
         });
 
-        Demo.preRegister(context, demoCounter);
+        MyDemo.preRegister(context, myDemoCounter);
         MyAttr.preRegister(context, myAttrCounter);
 
         String[] args = {
@@ -88,13 +88,9 @@ public class T7021650 extends JavacTestingAbstractProcessor {
 
         compile(context, args);
 
-        // Expect to create Demo for initial round, then MAX_ROUNDS in which
-        // GenX files are generated, then standard final round of processing.
-        checkEqual("demoCounter", demoCounter.count, MAX_ROUNDS + 2);
-
-        // Expect to create MyAttr for same processing rounds as for Demo,
-        // plus additional context for final compilation.
-        checkEqual("myAttrCounter", myAttrCounter.count, MAX_ROUNDS + 3);
+        // the services should only be created once in the current scheme:
+        checkEqual("demoCounter", myDemoCounter.count, 1);
+        checkEqual("myAttrCounter", myAttrCounter.count, 1);
     }
 
     void compile(Context context, String... args) throws Exception {
@@ -123,21 +119,27 @@ public class T7021650 extends JavacTestingAbstractProcessor {
      * A custom class unknown to javac but nonetheless registered in the context.
      */
     static class Demo {
-        static void preRegister(Context context, final Counter counter) {
-            context.put(Demo.class, new Context.Factory<Demo>() {
-                public Demo make(Context c) {
-                    counter.count++;
-                    return new Demo(c);
-                }
-            });
-        }
-
         Demo(Context c) {
             c.put(Demo.class, this);
         }
 
         static Demo instance(Context context) {
             return context.get(Demo.class);
+        }
+    }
+
+    static class MyDemo extends Demo {
+        static void preRegister(Context context, final Counter counter) {
+            context.put(Demo.class, new Context.Factory<Demo>() {
+                public Demo make(Context c) {
+                    counter.count++;
+                    return new MyDemo(c);
+                }
+            });
+        }
+
+        MyDemo(Context c) {
+            super(c);
         }
     }
 
@@ -174,7 +176,7 @@ public class T7021650 extends JavacTestingAbstractProcessor {
         Context context = ((JavacProcessingEnvironment) processingEnv).getContext();
 
         // verify items in context as expected
-        check("Demo", Demo.instance(context), Demo.class);
+        check("Demo", Demo.instance(context), MyDemo.class);
         check("Attr", Attr.instance(context), MyAttr.class);
 
         // For a few rounds, generate new source files, so that we can check whether

@@ -42,6 +42,8 @@ import sun.java2d.opengl.GLXGraphicsConfig;
 import sun.java2d.xr.XRGraphicsConfig;
 import sun.java2d.loops.SurfaceType;
 
+import sun.misc.ThreadGroupUtils;
+
 /**
  * This is an implementation of a GraphicsDevice object for a single
  * X11 screen.
@@ -423,28 +425,19 @@ public class X11GraphicsDevice
             // is already in the original DisplayMode at that time, this
             // hook will have no effect)
             shutdownHookRegistered = true;
-            PrivilegedAction<Void> a = new PrivilegedAction<Void>() {
-                public Void run() {
-                    ThreadGroup mainTG = Thread.currentThread().getThreadGroup();
-                    ThreadGroup parentTG = mainTG.getParent();
-                    while (parentTG != null) {
-                        mainTG = parentTG;
-                        parentTG = mainTG.getParent();
+            PrivilegedAction<Void> a = () -> {
+                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                Runnable r = () -> {
+                    Window old = getFullScreenWindow();
+                    if (old != null) {
+                        exitFullScreenExclusive(old);
+                        setDisplayMode(origDisplayMode);
                     }
-                    Runnable r = new Runnable() {
-                            public void run() {
-                                Window old = getFullScreenWindow();
-                                if (old != null) {
-                                    exitFullScreenExclusive(old);
-                                    setDisplayMode(origDisplayMode);
-                                }
-                            }
-                        };
-                    Thread t = new Thread(mainTG, r,"Display-Change-Shutdown-Thread-"+screen);
-                    t.setContextClassLoader(null);
-                    Runtime.getRuntime().addShutdownHook(t);
-                    return null;
-                }
+                };
+                Thread t = new Thread(rootTG, r,"Display-Change-Shutdown-Thread-"+screen);
+                t.setContextClassLoader(null);
+                Runtime.getRuntime().addShutdownHook(t);
+                return null;
             };
             AccessController.doPrivileged(a);
         }

@@ -75,7 +75,7 @@ public final class NativeJava {
      * @see #type(Object, Object)
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object isType(final Object self, final Object type) {
+    public static boolean isType(final Object self, final Object type) {
         return type instanceof StaticClass;
     }
 
@@ -338,7 +338,7 @@ public final class NativeJava {
      * null.
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object from(final Object self, final Object objArray) {
+    public static NativeArray from(final Object self, final Object objArray) {
         if (objArray == null) {
             return null;
         } else if (objArray instanceof Collection) {

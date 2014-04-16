@@ -1,5 +1,5 @@
 l.class.name=java.util.ArrayList
-l.length=undefined
+l.length=2
 l.size()=2
 l[0]=foo
 l[1]=bar

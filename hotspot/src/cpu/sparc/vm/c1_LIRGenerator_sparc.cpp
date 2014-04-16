@@ -69,7 +69,7 @@ void LIRItem::load_nonconstant() {
 LIR_Opr LIRGenerator::exceptionOopOpr()              { return FrameMap::Oexception_opr;  }
 LIR_Opr LIRGenerator::exceptionPcOpr()               { return FrameMap::Oissuing_pc_opr; }
 LIR_Opr LIRGenerator::syncTempOpr()                  { return new_register(T_OBJECT); }
-LIR_Opr LIRGenerator::getThreadTemp()                { return rlock_callee_saved(T_INT); }
+LIR_Opr LIRGenerator::getThreadTemp()                { return rlock_callee_saved(NOT_LP64(T_INT) LP64_ONLY(T_LONG)); }
 
 LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
   LIR_Opr opr;

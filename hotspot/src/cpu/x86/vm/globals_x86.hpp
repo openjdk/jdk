@@ -129,6 +129,42 @@ define_pd_global(uintx, TypeProfileLevel, 111);
   product(bool, UseFastStosb, false,                                        \
           "Use fast-string operation for zeroing: rep stosb")               \
                                                                             \
+  /* Use Restricted Transactional Memory for lock eliding */                \
+  product(bool, UseRTMLocking, false,                                       \
+          "Enable RTM lock eliding for inflated locks in compiled code")    \
+                                                                            \
+  experimental(bool, UseRTMForStackLocks, false,                            \
+          "Enable RTM lock eliding for stack locks in compiled code")       \
+                                                                            \
+  product(bool, UseRTMDeopt, false,                                         \
+          "Perform deopt and recompilation based on RTM abort ratio")       \
+                                                                            \
+  product(uintx, RTMRetryCount, 5,                                          \
+          "Number of RTM retries on lock abort or busy")                    \
+                                                                            \
+  experimental(intx, RTMSpinLoopCount, 100,                                 \
+          "Spin count for lock to become free before RTM retry")            \
+                                                                            \
+  experimental(intx, RTMAbortThreshold, 1000,                               \
+          "Calculate abort ratio after this number of aborts")              \
+                                                                            \
+  experimental(intx, RTMLockingThreshold, 10000,                            \
+          "Lock count at which to do RTM lock eliding without "             \
+          "abort ratio calculation")                                        \
+                                                                            \
+  experimental(intx, RTMAbortRatio, 50,                                     \
+          "Lock abort ratio at which to stop use RTM lock eliding")         \
+                                                                            \
+  experimental(intx, RTMTotalCountIncrRate, 64,                             \
+          "Increment total RTM attempted lock count once every n times")    \
+                                                                            \
+  experimental(intx, RTMLockingCalculationDelay, 0,                         \
+          "Number of milliseconds to wait before start calculating aborts " \
+          "for RTM locking")                                                \
+                                                                            \
+  experimental(bool, UseRTMXendForLockBusy, false,                          \
+          "Use RTM Xend instead of Xabort when lock busy")                  \
+                                                                            \
   /* assembler */                                                           \
   product(bool, Use486InstrsOnly, false,                                    \
           "Use 80486 Compliant instruction subset")                         \

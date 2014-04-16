@@ -234,10 +234,10 @@ class ciMethod : public ciMetadata {
   ciCallProfile call_profile_at_bci(int bci);
   int           interpreter_call_site_count(int bci);
 
-  // Does type profiling provide a useful type at this point?
-  ciKlass*      argument_profiled_type(int bci, int i);
-  ciKlass*      parameter_profiled_type(int i);
-  ciKlass*      return_profiled_type(int bci);
+  // Does type profiling provide any useful information at this point?
+  bool          argument_profiled_type(int bci, int i, ciKlass*& type, bool& maybe_null);
+  bool          parameter_profiled_type(int i, ciKlass*& type, bool& maybe_null);
+  bool          return_profiled_type(int bci, ciKlass*& type, bool& maybe_null);
 
   ciField*      get_field_at_bci( int bci, bool &will_link);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);

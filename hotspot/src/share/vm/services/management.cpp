@@ -152,11 +152,14 @@ void Management::initialize(TRAPS) {
     // Load and initialize the sun.management.Agent class
     // invoke startAgent method to start the management server
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(),
+    Klass* k = SystemDictionary::resolve_or_null(vmSymbols::sun_management_Agent(),
                                                    loader,
                                                    Handle(),
-                                                   true,
-                                                   CHECK);
+                                                   THREAD);
+    if (k == NULL) {
+      vm_exit_during_initialization("Management agent initialization failure: "
+          "class sun.management.Agent not found.");
+    }
     instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);

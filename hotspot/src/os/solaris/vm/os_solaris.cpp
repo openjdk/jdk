@@ -311,33 +311,6 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
   return localtime_r(clock, res);
 }
 
-// interruptible infrastructure
-
-// setup_interruptible saves the thread state before going into an
-// interruptible system call.
-// The saved state is used to restore the thread to
-// its former state whether or not an interrupt is received.
-// Used by classloader os::read
-// os::restartable_read calls skip this layer and stay in _thread_in_native
-
-void os::Solaris::setup_interruptible(JavaThread* thread) {
-
-  JavaThreadState thread_state = thread->thread_state();
-
-  assert(thread_state != _thread_blocked, "Coming from the wrong thread");
-  assert(thread_state != _thread_in_native, "Native threads skip setup_interruptible");
-  OSThread* osthread = thread->osthread();
-  osthread->set_saved_interrupt_thread_state(thread_state);
-  thread->frame_anchor()->make_walkable(thread);
-  ThreadStateTransition::transition(thread, thread_state, _thread_blocked);
-}
-
-JavaThread* os::Solaris::setup_interruptible() {
-  JavaThread* thread = (JavaThread*)ThreadLocalStorage::thread();
-  setup_interruptible(thread);
-  return thread;
-}
-
 void os::Solaris::try_enable_extended_io() {
   typedef int (*enable_extended_FILE_stdio_t)(int, int);
 
@@ -351,41 +324,6 @@ void os::Solaris::try_enable_extended_io() {
   if (enabler) {
     enabler(-1, -1);
   }
-}
-
-
-#ifdef ASSERT
-
-JavaThread* os::Solaris::setup_interruptible_native() {
-  JavaThread* thread = (JavaThread*)ThreadLocalStorage::thread();
-  JavaThreadState thread_state = thread->thread_state();
-  assert(thread_state == _thread_in_native, "Assumed thread_in_native");
-  return thread;
-}
-
-void os::Solaris::cleanup_interruptible_native(JavaThread* thread) {
-  JavaThreadState thread_state = thread->thread_state();
-  assert(thread_state == _thread_in_native, "Assumed thread_in_native");
-}
-#endif
-
-// cleanup_interruptible reverses the effects of setup_interruptible
-// setup_interruptible_already_blocked() does not need any cleanup.
-
-void os::Solaris::cleanup_interruptible(JavaThread* thread) {
-  OSThread* osthread = thread->osthread();
-
-  ThreadStateTransition::transition(thread, _thread_blocked, osthread->saved_interrupt_thread_state());
-}
-
-// I/O interruption related counters called in _INTERRUPTIBLE
-
-void os::Solaris::bump_interrupted_before_count() {
-  RuntimeService::record_interrupted_before_count();
-}
-
-void os::Solaris::bump_interrupted_during_count() {
-  RuntimeService::record_interrupted_during_count();
 }
 
 static int _processors_online = 0;
@@ -642,9 +580,6 @@ bool os::have_special_privileges() {
 
 
 void os::init_system_properties_values() {
-  char arch[12];
-  sysinfo(SI_ARCHITECTURE, arch, sizeof(arch));
-
   // The next steps are taken in the product version:
   //
   // Obtain the JAVA_HOME value from the location of libjvm.so.
@@ -671,218 +606,174 @@ void os::init_system_properties_values() {
   // Important note: if the location of libjvm.so changes this
   // code needs to be changed accordingly.
 
-  // The next few definitions allow the code to be verbatim:
-#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n), mtInternal)
-#define free(p) FREE_C_HEAP_ARRAY(char, p, mtInternal)
-#define getenv(n) ::getenv(n)
-
+// Base path of extensions installed on the system.
+#define SYS_EXT_DIR     "/usr/jdk/packages"
 #define EXTENSIONS_DIR  "/lib/ext"
 #define ENDORSED_DIR    "/lib/endorsed"
-#define COMMON_DIR      "/usr/jdk/packages"
 
+  char cpu_arch[12];
+  // Buffer that fits several sprintfs.
+  // Note that the space for the colon and the trailing null are provided
+  // by the nulls included by the sizeof operator.
+  const size_t bufsize =
+    MAX4((size_t)MAXPATHLEN,  // For dll_dir & friends.
+         sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch), // invariant ld_library_path
+         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + sizeof(SYS_EXT_DIR) + sizeof(EXTENSIONS_DIR), // extensions dir
+         (size_t)MAXPATHLEN + sizeof(ENDORSED_DIR)); // endorsed dir
+  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+
+  // sysclasspath, java_home, dll_dir
   {
-    /* sysclasspath, java_home, dll_dir */
-    {
-        char *home_path;
-        char *dll_path;
-        char *pslash;
-        char buf[MAXPATHLEN];
-        os::jvm_path(buf, sizeof(buf));
+    char *pslash;
+    os::jvm_path(buf, bufsize);
 
-        // Found the full path to libjvm.so.
-        // Now cut the path to <java_home>/jre if we can.
-        *(strrchr(buf, '/')) = '\0';  /* get rid of /libjvm.so */
+    // Found the full path to libjvm.so.
+    // Now cut the path to <java_home>/jre if we can.
+    *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
+    pslash = strrchr(buf, '/');
+    if (pslash != NULL) {
+      *pslash = '\0';            // Get rid of /{client|server|hotspot}.
+    }
+    Arguments::set_dll_dir(buf);
+
+    if (pslash != NULL) {
+      pslash = strrchr(buf, '/');
+      if (pslash != NULL) {
+        *pslash = '\0';          // Get rid of /<arch>.
         pslash = strrchr(buf, '/');
-        if (pslash != NULL)
-            *pslash = '\0';           /* get rid of /{client|server|hotspot} */
-        dll_path = malloc(strlen(buf) + 1);
-        if (dll_path == NULL)
-            return;
-        strcpy(dll_path, buf);
-        Arguments::set_dll_dir(dll_path);
-
         if (pslash != NULL) {
-            pslash = strrchr(buf, '/');
-            if (pslash != NULL) {
-                *pslash = '\0';       /* get rid of /<arch> */
-                pslash = strrchr(buf, '/');
-                if (pslash != NULL)
-                    *pslash = '\0';   /* get rid of /lib */
-            }
+          *pslash = '\0';        // Get rid of /lib.
         }
-
-        home_path = malloc(strlen(buf) + 1);
-        if (home_path == NULL)
-            return;
-        strcpy(home_path, buf);
-        Arguments::set_java_home(home_path);
-
-        if (!set_boot_path('/', ':'))
-            return;
+      }
     }
-
-    /*
-     * Where to look for native libraries
-     */
-    {
-      // Use dlinfo() to determine the correct java.library.path.
-      //
-      // If we're launched by the Java launcher, and the user
-      // does not set java.library.path explicitly on the commandline,
-      // the Java launcher sets LD_LIBRARY_PATH for us and unsets
-      // LD_LIBRARY_PATH_32 and LD_LIBRARY_PATH_64.  In this case
-      // dlinfo returns LD_LIBRARY_PATH + crle settings (including
-      // /usr/lib), which is exactly what we want.
-      //
-      // If the user does set java.library.path, it completely
-      // overwrites this setting, and always has.
-      //
-      // If we're not launched by the Java launcher, we may
-      // get here with any/all of the LD_LIBRARY_PATH[_32|64]
-      // settings.  Again, dlinfo does exactly what we want.
-
-      Dl_serinfo     _info, *info = &_info;
-      Dl_serpath     *path;
-      char*          library_path;
-      char           *common_path;
-      int            i;
-
-      // determine search path count and required buffer size
-      if (dlinfo(RTLD_SELF, RTLD_DI_SERINFOSIZE, (void *)info) == -1) {
-        vm_exit_during_initialization("dlinfo SERINFOSIZE request", dlerror());
-      }
-
-      // allocate new buffer and initialize
-      info = (Dl_serinfo*)malloc(_info.dls_size);
-      if (info == NULL) {
-        vm_exit_out_of_memory(_info.dls_size, OOM_MALLOC_ERROR,
-                              "init_system_properties_values info");
-      }
-      info->dls_size = _info.dls_size;
-      info->dls_cnt = _info.dls_cnt;
-
-      // obtain search path information
-      if (dlinfo(RTLD_SELF, RTLD_DI_SERINFO, (void *)info) == -1) {
-        free(info);
-        vm_exit_during_initialization("dlinfo SERINFO request", dlerror());
-      }
-
-      path = &info->dls_serpath[0];
-
-      // Note: Due to a legacy implementation, most of the library path
-      // is set in the launcher.  This was to accomodate linking restrictions
-      // on legacy Solaris implementations (which are no longer supported).
-      // Eventually, all the library path setting will be done here.
-      //
-      // However, to prevent the proliferation of improperly built native
-      // libraries, the new path component /usr/jdk/packages is added here.
-
-      // Determine the actual CPU architecture.
-      char cpu_arch[12];
-      sysinfo(SI_ARCHITECTURE, cpu_arch, sizeof(cpu_arch));
-#ifdef _LP64
-      // If we are a 64-bit vm, perform the following translations:
-      //   sparc   -> sparcv9
-      //   i386    -> amd64
-      if (strcmp(cpu_arch, "sparc") == 0)
-        strcat(cpu_arch, "v9");
-      else if (strcmp(cpu_arch, "i386") == 0)
-        strcpy(cpu_arch, "amd64");
-#endif
-
-      // Construct the invariant part of ld_library_path. Note that the
-      // space for the colon and the trailing null are provided by the
-      // nulls included by the sizeof operator.
-      size_t bufsize = sizeof(COMMON_DIR) + sizeof("/lib/") + strlen(cpu_arch);
-      common_path = malloc(bufsize);
-      if (common_path == NULL) {
-        free(info);
-        vm_exit_out_of_memory(bufsize, OOM_MALLOC_ERROR,
-                              "init_system_properties_values common_path");
-      }
-      sprintf(common_path, COMMON_DIR "/lib/%s", cpu_arch);
-
-      // struct size is more than sufficient for the path components obtained
-      // through the dlinfo() call, so only add additional space for the path
-      // components explicitly added here.
-      bufsize = info->dls_size + strlen(common_path);
-      library_path = malloc(bufsize);
-      if (library_path == NULL) {
-        free(info);
-        free(common_path);
-        vm_exit_out_of_memory(bufsize, OOM_MALLOC_ERROR,
-                              "init_system_properties_values library_path");
-      }
-      library_path[0] = '\0';
-
-      // Construct the desired Java library path from the linker's library
-      // search path.
-      //
-      // For compatibility, it is optimal that we insert the additional path
-      // components specific to the Java VM after those components specified
-      // in LD_LIBRARY_PATH (if any) but before those added by the ld.so
-      // infrastructure.
-      if (info->dls_cnt == 0) { // Not sure this can happen, but allow for it
-        strcpy(library_path, common_path);
-      } else {
-        int inserted = 0;
-        for (i = 0; i < info->dls_cnt; i++, path++) {
-          uint_t flags = path->dls_flags & LA_SER_MASK;
-          if (((flags & LA_SER_LIBPATH) == 0) && !inserted) {
-            strcat(library_path, common_path);
-            strcat(library_path, os::path_separator());
-            inserted = 1;
-          }
-          strcat(library_path, path->dls_name);
-          strcat(library_path, os::path_separator());
-        }
-        // eliminate trailing path separator
-        library_path[strlen(library_path)-1] = '\0';
-      }
-
-      // happens before argument parsing - can't use a trace flag
-      // tty->print_raw("init_system_properties_values: native lib path: ");
-      // tty->print_raw_cr(library_path);
-
-      // callee copies into its own buffer
-      Arguments::set_library_path(library_path);
-
-      free(common_path);
-      free(library_path);
-      free(info);
-    }
-
-    /*
-     * Extensions directories.
-     *
-     * Note that the space for the colon and the trailing null are provided
-     * by the nulls included by the sizeof operator (so actually one byte more
-     * than necessary is allocated).
-     */
-    {
-        char *buf = (char *) malloc(strlen(Arguments::get_java_home()) +
-            sizeof(EXTENSIONS_DIR) + sizeof(COMMON_DIR) +
-            sizeof(EXTENSIONS_DIR));
-        sprintf(buf, "%s" EXTENSIONS_DIR ":" COMMON_DIR EXTENSIONS_DIR,
-            Arguments::get_java_home());
-        Arguments::set_ext_dirs(buf);
-    }
-
-    /* Endorsed standards default directory. */
-    {
-        char * buf = malloc(strlen(Arguments::get_java_home()) + sizeof(ENDORSED_DIR));
-        sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
-        Arguments::set_endorsed_dirs(buf);
-    }
+    Arguments::set_java_home(buf);
+    set_boot_path('/', ':');
   }
 
-#undef malloc
-#undef free
-#undef getenv
+  // Where to look for native libraries.
+  {
+    // Use dlinfo() to determine the correct java.library.path.
+    //
+    // If we're launched by the Java launcher, and the user
+    // does not set java.library.path explicitly on the commandline,
+    // the Java launcher sets LD_LIBRARY_PATH for us and unsets
+    // LD_LIBRARY_PATH_32 and LD_LIBRARY_PATH_64.  In this case
+    // dlinfo returns LD_LIBRARY_PATH + crle settings (including
+    // /usr/lib), which is exactly what we want.
+    //
+    // If the user does set java.library.path, it completely
+    // overwrites this setting, and always has.
+    //
+    // If we're not launched by the Java launcher, we may
+    // get here with any/all of the LD_LIBRARY_PATH[_32|64]
+    // settings.  Again, dlinfo does exactly what we want.
+
+    Dl_serinfo     info_sz, *info = &info_sz;
+    Dl_serpath     *path;
+    char           *library_path;
+    char           *common_path = buf;
+
+    // Determine search path count and required buffer size.
+    if (dlinfo(RTLD_SELF, RTLD_DI_SERINFOSIZE, (void *)info) == -1) {
+      FREE_C_HEAP_ARRAY(char, buf,  mtInternal);
+      vm_exit_during_initialization("dlinfo SERINFOSIZE request", dlerror());
+    }
+
+    // Allocate new buffer and initialize.
+    info = (Dl_serinfo*)NEW_C_HEAP_ARRAY(char, info_sz.dls_size, mtInternal);
+    info->dls_size = info_sz.dls_size;
+    info->dls_cnt = info_sz.dls_cnt;
+
+    // Obtain search path information.
+    if (dlinfo(RTLD_SELF, RTLD_DI_SERINFO, (void *)info) == -1) {
+      FREE_C_HEAP_ARRAY(char, buf,  mtInternal);
+      FREE_C_HEAP_ARRAY(char, info, mtInternal);
+      vm_exit_during_initialization("dlinfo SERINFO request", dlerror());
+    }
+
+    path = &info->dls_serpath[0];
+
+    // Note: Due to a legacy implementation, most of the library path
+    // is set in the launcher. This was to accomodate linking restrictions
+    // on legacy Solaris implementations (which are no longer supported).
+    // Eventually, all the library path setting will be done here.
+    //
+    // However, to prevent the proliferation of improperly built native
+    // libraries, the new path component /usr/jdk/packages is added here.
+
+    // Determine the actual CPU architecture.
+    sysinfo(SI_ARCHITECTURE, cpu_arch, sizeof(cpu_arch));
+#ifdef _LP64
+    // If we are a 64-bit vm, perform the following translations:
+    //   sparc   -> sparcv9
+    //   i386    -> amd64
+    if (strcmp(cpu_arch, "sparc") == 0) {
+      strcat(cpu_arch, "v9");
+    } else if (strcmp(cpu_arch, "i386") == 0) {
+      strcpy(cpu_arch, "amd64");
+    }
+#endif
+
+    // Construct the invariant part of ld_library_path.
+    sprintf(common_path, SYS_EXT_DIR "/lib/%s", cpu_arch);
+
+    // Struct size is more than sufficient for the path components obtained
+    // through the dlinfo() call, so only add additional space for the path
+    // components explicitly added here.
+    size_t library_path_size = info->dls_size + strlen(common_path);
+    library_path = (char *)NEW_C_HEAP_ARRAY(char, library_path_size, mtInternal);
+    library_path[0] = '\0';
+
+    // Construct the desired Java library path from the linker's library
+    // search path.
+    //
+    // For compatibility, it is optimal that we insert the additional path
+    // components specific to the Java VM after those components specified
+    // in LD_LIBRARY_PATH (if any) but before those added by the ld.so
+    // infrastructure.
+    if (info->dls_cnt == 0) { // Not sure this can happen, but allow for it.
+      strcpy(library_path, common_path);
+    } else {
+      int inserted = 0;
+      int i;
+      for (i = 0; i < info->dls_cnt; i++, path++) {
+        uint_t flags = path->dls_flags & LA_SER_MASK;
+        if (((flags & LA_SER_LIBPATH) == 0) && !inserted) {
+          strcat(library_path, common_path);
+          strcat(library_path, os::path_separator());
+          inserted = 1;
+        }
+        strcat(library_path, path->dls_name);
+        strcat(library_path, os::path_separator());
+      }
+      // Eliminate trailing path separator.
+      library_path[strlen(library_path)-1] = '\0';
+    }
+
+    // happens before argument parsing - can't use a trace flag
+    // tty->print_raw("init_system_properties_values: native lib path: ");
+    // tty->print_raw_cr(library_path);
+
+    // Callee copies into its own buffer.
+    Arguments::set_library_path(library_path);
+
+    FREE_C_HEAP_ARRAY(char, library_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, info, mtInternal);
+  }
+
+  // Extensions directories.
+  sprintf(buf, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
+  Arguments::set_ext_dirs(buf);
+
+  // Endorsed standards default directory.
+  sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
+  Arguments::set_endorsed_dirs(buf);
+
+  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+
+#undef SYS_EXT_DIR
 #undef EXTENSIONS_DIR
 #undef ENDORSED_DIR
-#undef COMMON_DIR
-
 }
 
 void os::breakpoint() {
@@ -3366,11 +3257,20 @@ bool os::can_execute_large_page_memory() {
 
 // Read calls from inside the vm need to perform state transitions
 size_t os::read(int fd, void *buf, unsigned int nBytes) {
-  INTERRUPTIBLE_RETURN_INT_VM(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
+  size_t res;
+  JavaThread* thread = (JavaThread*)Thread::current();
+  assert(thread->thread_state() == _thread_in_vm, "Assumed _thread_in_vm");
+  ThreadBlockInVM tbiv(thread);
+  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
+  return res;
 }
 
 size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
-  INTERRUPTIBLE_RETURN_INT(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
+  size_t res;
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
+  return res;
 }
 
 void os::naked_short_sleep(jlong ms) {
@@ -4471,6 +4371,11 @@ void os::Solaris::check_signal_handler(int sig) {
     tty->print_cr("  found:%s", get_signal_handler_name(thisHandler, buf, O_BUFLEN));
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
+    // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
+    if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
+      tty->print_cr("Running in non-interactive shell, %s handler is replaced by shell",
+                    exception_name(sig, buf, O_BUFLEN));
+    }
   } else if(os::Solaris::get_our_sigflags(sig) != 0 && act.sa_flags != os::Solaris::get_our_sigflags(sig)) {
     tty->print("Warning: %s handler flags ", exception_name(sig, buf, O_BUFLEN));
     tty->print("expected:" PTR32_FORMAT, os::Solaris::get_our_sigflags(sig));
@@ -5305,6 +5210,8 @@ int os::fsync(int fd)  {
 }
 
 int os::available(int fd, jlong *bytes) {
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
   jlong cur, end;
   int mode;
   struct stat64 buf64;
@@ -5312,14 +5219,9 @@ int os::available(int fd, jlong *bytes) {
   if (::fstat64(fd, &buf64) >= 0) {
     mode = buf64.st_mode;
     if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      /*
-      * XXX: is the following call interruptible? If so, this might
-      * need to go through the INTERRUPT_IO() wrapper as for other
-      * blocking, interruptible calls in this file.
-      */
       int n,ioctl_return;
 
-      INTERRUPTIBLE(::ioctl(fd, FIONREAD, &n),ioctl_return,os::Solaris::clear_interrupted);
+      RESTARTABLE(::ioctl(fd, FIONREAD, &n), ioctl_return);
       if (ioctl_return>= 0) {
           *bytes = n;
         return 1;
@@ -6250,7 +6152,11 @@ bool os::is_headless_jre() {
 }
 
 size_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  INTERRUPTIBLE_RETURN_INT(::write(fd, buf, nBytes), os::Solaris::clear_interrupted);
+  size_t res;
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+  return res;
 }
 
 int os::close(int fd) {
@@ -6262,11 +6168,15 @@ int os::socket_close(int fd) {
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
-  INTERRUPTIBLE_RETURN_INT((int)::recv(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::recv(fd, buf, nBytes, flags));
 }
 
 int os::send(int fd, char* buf, size_t nBytes, uint flags) {
-  INTERRUPTIBLE_RETURN_INT((int)::send(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::send(fd, buf, nBytes, flags));
 }
 
 int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
@@ -6287,11 +6197,14 @@ int os::timeout(int fd, long timeout) {
   pfd.fd = fd;
   pfd.events = POLLIN;
 
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+
   gettimeofday(&t, &aNull);
   prevtime = ((julong)t.tv_sec * 1000)  +  t.tv_usec / 1000;
 
   for(;;) {
-    INTERRUPTIBLE_NORESTART(::poll(&pfd, 1, timeout), res, os::Solaris::clear_interrupted);
+    res = ::poll(&pfd, 1, timeout);
     if(res == OS_ERR && errno == EINTR) {
         if(timeout != -1) {
           gettimeofday(&t, &aNull);
@@ -6307,17 +6220,30 @@ int os::timeout(int fd, long timeout) {
 
 int os::connect(int fd, struct sockaddr *him, socklen_t len) {
   int _result;
-  INTERRUPTIBLE_NORESTART(::connect(fd, him, len), _result,\
-                          os::Solaris::clear_interrupted);
+  _result = ::connect(fd, him, len);
 
-  // Depending on when thread interruption is reset, _result could be
-  // one of two values when errno == EINTR
-
-  if (((_result == OS_INTRPT) || (_result == OS_ERR))
-      && (errno == EINTR)) {
+  // On Solaris, when a connect() call is interrupted, the connection
+  // can be established asynchronously (see 6343810). Subsequent calls
+  // to connect() must check the errno value which has the semantic
+  // described below (copied from the connect() man page). Handling
+  // of asynchronously established connections is required for both
+  // blocking and non-blocking sockets.
+  //     EINTR            The  connection  attempt  was   interrupted
+  //                      before  any data arrived by the delivery of
+  //                      a signal. The connection, however, will  be
+  //                      established asynchronously.
+  //
+  //     EINPROGRESS      The socket is non-blocking, and the connec-
+  //                      tion  cannot  be completed immediately.
+  //
+  //     EALREADY         The socket is non-blocking,  and a previous
+  //                      connection  attempt  has  not yet been com-
+  //                      pleted.
+  //
+  //     EISCONN          The socket is already connected.
+  if (_result == OS_ERR && errno == EINTR) {
      /* restarting a connect() changes its errno semantics */
-     INTERRUPTIBLE(::connect(fd, him, len), _result,\
-                   os::Solaris::clear_interrupted);
+     RESTARTABLE(::connect(fd, him, len), _result);
      /* undo these changes */
      if (_result == OS_ERR) {
        if (errno == EALREADY) {
@@ -6335,20 +6261,23 @@ int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
   if (fd < 0) {
     return OS_ERR;
   }
-  INTERRUPTIBLE_RETURN_INT((int)::accept(fd, him, len),\
-                           os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::accept(fd, him, len));
 }
 
 int os::recvfrom(int fd, char* buf, size_t nBytes, uint flags,
                  sockaddr* from, socklen_t* fromlen) {
-  INTERRUPTIBLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen),\
-                           os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen));
 }
 
 int os::sendto(int fd, char* buf, size_t len, uint flags,
                struct sockaddr* to, socklen_t tolen) {
-  INTERRUPTIBLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen),\
-                           os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen));
 }
 
 int os::socket_available(int fd, jint *pbytes) {
@@ -6363,8 +6292,9 @@ int os::socket_available(int fd, jint *pbytes) {
 }
 
 int os::bind(int fd, struct sockaddr* him, socklen_t len) {
-   INTERRUPTIBLE_RETURN_INT_NORESTART(::bind(fd, him, len),\
-                                      os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+   return ::bind(fd, him, len);
 }
 
 // Get the default path to the core file
