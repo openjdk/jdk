@@ -28,6 +28,7 @@
 #include "gc_implementation/shared/concurrentGCThread.hpp"
 
 // Forward Decl.
+class CardTableEntryClosure;
 class ConcurrentG1Refine;
 
 // The G1 Concurrent Refinement Thread (could be several in the future).
@@ -49,6 +50,9 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   Monitor* _monitor;
   ConcurrentG1Refine* _cg1r;
 
+  // The closure applied to completed log buffers.
+  CardTableEntryClosure* _refine_closure;
+
   int _thread_threshold_step;
   // This thread activation threshold
   int _threshold;
@@ -68,6 +72,7 @@ public:
   virtual void run();
   // Constructor
   ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next,
+                           CardTableEntryClosure* refine_closure,
                            uint worker_id_offset, uint worker_id);
 
   void initialize();

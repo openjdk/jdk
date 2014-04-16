@@ -33,8 +33,10 @@
 
 ConcurrentG1RefineThread::
 ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *next,
+                         CardTableEntryClosure* refine_closure,
                          uint worker_id_offset, uint worker_id) :
   ConcurrentGCThread(),
+  _refine_closure(refine_closure),
   _worker_id_offset(worker_id_offset),
   _worker_id(worker_id),
   _active(false),
@@ -204,7 +206,7 @@ void ConcurrentG1RefineThread::run() {
         if (_next != NULL && !_next->is_active() && curr_buffer_num > _next->_threshold) {
           _next->activate();
         }
-      } while (dcqs.apply_closure_to_completed_buffer(_worker_id + _worker_id_offset, cg1r()->green_zone()));
+      } while (dcqs.apply_closure_to_completed_buffer(_refine_closure, _worker_id + _worker_id_offset, cg1r()->green_zone()));
 
       // We can exit the loop above while being active if there was a yield request.
       if (is_active()) {

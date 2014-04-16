@@ -93,16 +93,12 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // Local to this file.
 
 class RefineCardTableEntryClosure: public CardTableEntryClosure {
-  G1RemSet* _g1rs;
-  ConcurrentG1Refine* _cg1r;
   bool _concurrent;
 public:
-  RefineCardTableEntryClosure(G1RemSet* g1rs,
-                              ConcurrentG1Refine* cg1r) :
-    _g1rs(g1rs), _cg1r(cg1r), _concurrent(true)
-  {}
+  RefineCardTableEntryClosure() : _concurrent(true) { }
+
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    bool oops_into_cset = _g1rs->refine_card(card_ptr, worker_i, false);
+    bool oops_into_cset = G1CollectedHeap::heap()->g1_rem_set()->refine_card(card_ptr, worker_i, false);
     // This path is executed by the concurrent refine or mutator threads,
     // concurrently, and so we do not care if card_ptr contains references
     // that point into the collection set.
@@ -115,6 +111,7 @@ public:
     // Otherwise, we finished successfully; return true.
     return true;
   }
+
   void set_concurrent(bool b) { _concurrent = b; }
 };
 
@@ -478,9 +475,8 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
 
   // First clear the logged cards.
   ClearLoggedCardTableEntryClosure clear;
-  dcqs.set_closure(&clear);
-  dcqs.apply_closure_to_all_completed_buffers();
-  dcqs.iterate_closure_all_threads(false);
+  dcqs.apply_closure_to_all_completed_buffers(&clear);
+  dcqs.iterate_closure_all_threads(&clear, false);
   clear.print_histo();
 
   // Now ensure that there's no dirty cards.
@@ -493,9 +489,8 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
   guarantee(count2.n() == 0, "Card table should be clean.");
 
   RedirtyLoggedCardTableEntryClosure redirty;
-  JavaThread::dirty_card_queue_set().set_closure(&redirty);
-  dcqs.apply_closure_to_all_completed_buffers();
-  dcqs.iterate_closure_all_threads(false);
+  dcqs.apply_closure_to_all_completed_buffers(&redirty);
+  dcqs.iterate_closure_all_threads(&redirty, false);
   gclog_or_tty->print_cr("Log entries = %d, dirty cards = %d.",
                          clear.calls(), orig_count);
   guarantee(redirty.calls() == clear.calls(),
@@ -508,8 +503,6 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
                            orig_count, count3.n());
     guarantee(count3.n() >= orig_count, "Should have restored them all.");
   }
-
-  JavaThread::dirty_card_queue_set().set_closure(_refine_cte_cl);
 }
 
 // Private class members.
@@ -2003,7 +1996,9 @@ jint G1CollectedHeap::initialize() {
   Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, heap_alignment, "g1 heap");
 
-  _cg1r = new ConcurrentG1Refine(this);
+  _refine_cte_cl = new RefineCardTableEntryClosure();
+
+  _cg1r = new ConcurrentG1Refine(this, _refine_cte_cl);
 
   // Reserve the maximum.
 
@@ -2098,24 +2093,21 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init();
 
-  _refine_cte_cl =
-    new RefineCardTableEntryClosure(g1_rem_set(),
-                                    concurrent_g1_refine());
-  JavaThread::dirty_card_queue_set().set_closure(_refine_cte_cl);
-
   JavaThread::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
                                                SATB_Q_FL_lock,
                                                G1SATBProcessCompletedThreshold,
                                                Shared_SATB_Q_lock);
 
-  JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+  JavaThread::dirty_card_queue_set().initialize(_refine_cte_cl,
+                                                DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
                                                 concurrent_g1_refine()->yellow_zone(),
                                                 concurrent_g1_refine()->red_zone(),
                                                 Shared_DirtyCardQ_lock);
 
   if (G1DeferredRSUpdate) {
-    dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+    dirty_card_queue_set().initialize(NULL, // Should never be called by the Java code
+                                      DirtyCardQ_CBL_mon,
                                       DirtyCardQ_FL_lock,
                                       -1, // never trigger processing
                                       -1, // no limit on length
@@ -2125,7 +2117,8 @@ jint G1CollectedHeap::initialize() {
 
   // Initialize the card queue set used to hold cards containing
   // references into the collection set.
-  _into_cset_dirty_card_queue_set.initialize(DirtyCardQ_CBL_mon,
+  _into_cset_dirty_card_queue_set.initialize(NULL, // Should never be called by the Java code
+                                             DirtyCardQ_CBL_mon,
                                              DirtyCardQ_FL_lock,
                                              -1, // never trigger processing
                                              -1, // no limit on length
@@ -5263,10 +5256,40 @@ void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive
 }
 
 class RedirtyLoggedCardTableEntryFastClosure : public CardTableEntryClosure {
-public:
+ private:
+  size_t _num_processed;
+
+ public:
+  RedirtyLoggedCardTableEntryFastClosure() : CardTableEntryClosure(), _num_processed(0) { }
+
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     *card_ptr = CardTableModRefBS::dirty_card_val();
+    _num_processed++;
     return true;
+  }
+
+  size_t num_processed() const { return _num_processed; }
+};
+
+class G1RedirtyLoggedCardsTask : public AbstractGangTask {
+ private:
+  DirtyCardQueueSet* _queue;
+ public:
+  G1RedirtyLoggedCardsTask(DirtyCardQueueSet* queue) : AbstractGangTask("Redirty Cards"), _queue(queue) { }
+
+  virtual void work(uint worker_id) {
+    double start_time = os::elapsedTime();
+
+    RedirtyLoggedCardTableEntryFastClosure cl;
+    if (G1CollectedHeap::heap()->use_parallel_gc_threads()) {
+      _queue->par_apply_closure_to_all_completed_buffers(&cl);
+    } else {
+      _queue->apply_closure_to_all_completed_buffers(&cl);
+    }
+
+    G1GCPhaseTimes* timer = G1CollectedHeap::heap()->g1_policy()->phase_times();
+    timer->record_redirty_logged_cards_time_ms(worker_id, (os::elapsedTime() - start_time) * 1000.0);
+    timer->record_redirty_logged_cards_processed_cards(worker_id, cl.num_processed());
   }
 };
 
@@ -5274,9 +5297,18 @@ void G1CollectedHeap::redirty_logged_cards() {
   guarantee(G1DeferredRSUpdate, "Must only be called when using deferred RS updates.");
   double redirty_logged_cards_start = os::elapsedTime();
 
-  RedirtyLoggedCardTableEntryFastClosure redirty;
-  dirty_card_queue_set().set_closure(&redirty);
-  dirty_card_queue_set().apply_closure_to_all_completed_buffers();
+  uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
+                   _g1h->workers()->active_workers() : 1);
+
+  G1RedirtyLoggedCardsTask redirty_task(&dirty_card_queue_set());
+  dirty_card_queue_set().reset_for_par_iteration();
+  if (use_parallel_gc_threads()) {
+    set_par_threads(n_workers);
+    workers()->run_task(&redirty_task);
+    set_par_threads(0);
+  } else {
+    redirty_task.work(0);
+  }
 
   DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
   dcq.merge_bufferlists(&dirty_card_queue_set());
