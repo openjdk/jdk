@@ -206,9 +206,6 @@ public:
   // Specifically clear the from_card_cache.
   void clear_fcc();
 
-  // "from_hr" is being cleared; remove any entries from it.
-  void clear_incoming_entry(HeapRegion* from_hr);
-
   void do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task);
 
   // Declare the heap size (in # of regions) to the OtherRegionsTable.
