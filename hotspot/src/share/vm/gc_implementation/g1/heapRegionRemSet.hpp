@@ -351,7 +351,7 @@ public:
   // Returns the memory occupancy of all free_list data structures associated
   // with remembered sets.
   static size_t fl_mem_size() {
-    return OtherRegionsTable::fl_mem_size() + G1CodeRootSet::fl_mem_size();
+    return OtherRegionsTable::fl_mem_size() + G1CodeRootSet::free_chunks_mem_size();
   }
 
   bool contains_reference(OopOrNarrowOopStar from) const {
@@ -396,7 +396,6 @@ public:
   // Declare the heap size (in # of regions) to the HeapRegionRemSet(s).
   // (Uses it to initialize from_card_cache).
   static void init_heap(uint max_regions) {
-    G1CodeRootSet::initialize();
     OtherRegionsTable::init_from_card_cache(max_regions);
   }
 

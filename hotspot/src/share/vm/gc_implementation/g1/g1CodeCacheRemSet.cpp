@@ -45,32 +45,27 @@ void G1CodeRootChunk::nmethods_do(CodeBlobClosure* cl) {
   }
 }
 
-FreeList<G1CodeRootChunk> G1CodeRootSet::_free_list;
-size_t G1CodeRootSet::_num_chunks_handed_out = 0;
-
-G1CodeRootChunk* G1CodeRootSet::new_chunk() {
-  G1CodeRootChunk* result = _free_list.get_chunk_at_head();
-  if (result == NULL) {
-    result = new G1CodeRootChunk();
-  }
-  G1CodeRootSet::_num_chunks_handed_out++;
-  result->reset();
-  return result;
+G1CodeRootChunkManager::G1CodeRootChunkManager() : _free_list(), _num_chunks_handed_out(0) {
+  _free_list.initialize();
+  _free_list.set_size(G1CodeRootChunk::word_size());
 }
 
-void G1CodeRootSet::free_chunk(G1CodeRootChunk* chunk) {
-  _free_list.return_chunk_at_head(chunk);
-  G1CodeRootSet::_num_chunks_handed_out--;
+size_t G1CodeRootChunkManager::fl_mem_size() {
+  return _free_list.count() * _free_list.size();
 }
 
-void G1CodeRootSet::free_all_chunks(FreeList<G1CodeRootChunk>* list) {
-  G1CodeRootSet::_num_chunks_handed_out -= list->count();
+void G1CodeRootChunkManager::free_all_chunks(FreeList<G1CodeRootChunk>* list) {
+  _num_chunks_handed_out -= list->count();
   _free_list.prepend(list);
 }
 
-void G1CodeRootSet::purge_chunks(size_t keep_ratio) {
-  size_t keep = G1CodeRootSet::_num_chunks_handed_out * keep_ratio / 100;
+void G1CodeRootChunkManager::free_chunk(G1CodeRootChunk* chunk) {
+  _free_list.return_chunk_at_head(chunk);
+  _num_chunks_handed_out--;
+}
 
+void G1CodeRootChunkManager::purge_chunks(size_t keep_ratio) {
+  size_t keep = _num_chunks_handed_out * keep_ratio / 100;
   if (keep >= (size_t)_free_list.count()) {
     return;
   }
@@ -88,20 +83,51 @@ void G1CodeRootSet::purge_chunks(size_t keep_ratio) {
   }
 }
 
+size_t G1CodeRootChunkManager::static_mem_size() {
+  return sizeof(this);
+}
+
+
+G1CodeRootChunk* G1CodeRootChunkManager::new_chunk() {
+  G1CodeRootChunk* result = _free_list.get_chunk_at_head();
+  if (result == NULL) {
+    result = new G1CodeRootChunk();
+  }
+  _num_chunks_handed_out++;
+  result->reset();
+  return result;
+}
+
+#ifndef PRODUCT
+
+size_t G1CodeRootChunkManager::num_chunks_handed_out() const {
+  return _num_chunks_handed_out;
+}
+
+size_t G1CodeRootChunkManager::num_free_chunks() const {
+  return (size_t)_free_list.count();
+}
+
+#endif
+
+G1CodeRootChunkManager G1CodeRootSet::_default_chunk_manager;
+
+void G1CodeRootSet::purge_chunks(size_t keep_ratio) {
+  _default_chunk_manager.purge_chunks(keep_ratio);
+}
+
 size_t G1CodeRootSet::static_mem_size() {
-  return sizeof(_free_list) + sizeof(_num_chunks_handed_out);
+  return _default_chunk_manager.static_mem_size();
 }
 
-size_t G1CodeRootSet::fl_mem_size() {
-  return _free_list.count() * _free_list.size();
+size_t G1CodeRootSet::free_chunks_mem_size() {
+  return _default_chunk_manager.fl_mem_size();
 }
 
-void G1CodeRootSet::initialize() {
-  _free_list.initialize();
-  _free_list.set_size(G1CodeRootChunk::word_size());
-}
-
-G1CodeRootSet::G1CodeRootSet() : _list(), _length(0) {
+G1CodeRootSet::G1CodeRootSet(G1CodeRootChunkManager* manager) : _manager(manager), _list(), _length(0) {
+  if (_manager == NULL) {
+    _manager = &_default_chunk_manager;
+  }
   _list.initialize();
   _list.set_size(G1CodeRootChunk::word_size());
 }
@@ -194,21 +220,21 @@ size_t G1CodeRootSet::mem_size() {
 #ifndef PRODUCT
 
 void G1CodeRootSet::test() {
-  initialize();
+  G1CodeRootChunkManager mgr;
 
-  assert(_free_list.count() == 0, "Free List must be empty");
-  assert(_num_chunks_handed_out == 0, "No elements must have been handed out yet");
+  assert(mgr.num_chunks_handed_out() == 0, "Must not have handed out chunks yet");
 
   // The number of chunks that we allocate for purge testing.
   size_t const num_chunks = 10;
+
   {
-    G1CodeRootSet set1;
+    G1CodeRootSet set1(&mgr);
     assert(set1.is_empty(), "Code root set must be initially empty but is not.");
 
     set1.add((nmethod*)1);
-    assert(_num_chunks_handed_out == 1,
+    assert(mgr.num_chunks_handed_out() == 1,
            err_msg("Must have allocated and handed out one chunk, but handed out "
-                   SIZE_FORMAT" chunks", _num_chunks_handed_out));
+                   SIZE_FORMAT" chunks", mgr.num_chunks_handed_out()));
     assert(set1.length() == 1, err_msg("Added exactly one element, but set contains "
                                        SIZE_FORMAT" elements", set1.length()));
 
@@ -217,19 +243,19 @@ void G1CodeRootSet::test() {
     for (uint i = 0; i < G1CodeRootChunk::word_size() + 1; i++) {
       set1.add((nmethod*)1);
     }
-    assert(_num_chunks_handed_out == 1,
+    assert(mgr.num_chunks_handed_out() == 1,
            err_msg("Duplicate detection must have prevented allocation of further "
-                   "chunks but contains "SIZE_FORMAT, _num_chunks_handed_out));
+                   "chunks but allocated "SIZE_FORMAT, mgr.num_chunks_handed_out()));
     assert(set1.length() == 1,
            err_msg("Duplicate detection should not have increased the set size but "
                    "is "SIZE_FORMAT, set1.length()));
 
     size_t num_total_after_add = G1CodeRootChunk::word_size() + 1;
     for (size_t i = 0; i < num_total_after_add - 1; i++) {
-      set1.add((nmethod*)(2 + i));
+      set1.add((nmethod*)(uintptr_t)(2 + i));
     }
-    assert(_num_chunks_handed_out > 1,
-           "After adding more code roots, more than one chunks should have been handed out");
+    assert(mgr.num_chunks_handed_out() > 1,
+           "After adding more code roots, more than one additional chunk should have been handed out");
     assert(set1.length() == num_total_after_add,
            err_msg("After adding in total "SIZE_FORMAT" distinct code roots, they "
                    "need to be in the set, but there are only "SIZE_FORMAT,
@@ -242,27 +268,27 @@ void G1CodeRootSet::test() {
     assert(num_popped == num_total_after_add,
            err_msg("Managed to pop "SIZE_FORMAT" code roots, but only "SIZE_FORMAT" "
                    "were added", num_popped, num_total_after_add));
-    assert(_num_chunks_handed_out == 0,
+    assert(mgr.num_chunks_handed_out() == 0,
            err_msg("After popping all elements, all chunks must have been returned "
-                   "but are still "SIZE_FORMAT, _num_chunks_handed_out));
+                   "but there are still "SIZE_FORMAT" additional", mgr.num_chunks_handed_out()));
 
-    purge_chunks(0);
-    assert(_free_list.count() == 0,
+    mgr.purge_chunks(0);
+    assert(mgr.num_free_chunks() == 0,
            err_msg("After purging everything, the free list must be empty but still "
-                   "contains "SIZE_FORMAT" chunks", _free_list.count()));
+                   "contains "SIZE_FORMAT" chunks", mgr.num_free_chunks()));
 
     // Add some more handed out chunks.
     size_t i = 0;
-    while (_num_chunks_handed_out < num_chunks) {
+    while (mgr.num_chunks_handed_out() < num_chunks) {
       set1.add((nmethod*)i);
       i++;
     }
 
     {
       // Generate chunks on the free list.
-      G1CodeRootSet set2;
+      G1CodeRootSet set2(&mgr);
       size_t i = 0;
-      while (_num_chunks_handed_out < num_chunks * 2) {
+      while (mgr.num_chunks_handed_out() < (num_chunks * 2)) {
         set2.add((nmethod*)i);
         i++;
       }
@@ -270,45 +296,45 @@ void G1CodeRootSet::test() {
       // num_chunks elements on the free list.
     }
 
-    assert(_num_chunks_handed_out == num_chunks,
+    assert(mgr.num_chunks_handed_out() == num_chunks,
            err_msg("Deletion of the second set must have resulted in giving back "
-                   "those, but there is still "SIZE_FORMAT" handed out, expecting "
-                   SIZE_FORMAT, _num_chunks_handed_out, num_chunks));
-    assert((size_t)_free_list.count() == num_chunks,
+                   "those, but there are still "SIZE_FORMAT" additional handed out, expecting "
+                   SIZE_FORMAT, mgr.num_chunks_handed_out(), num_chunks));
+    assert(mgr.num_free_chunks() == num_chunks,
            err_msg("After freeing "SIZE_FORMAT" chunks, they must be on the free list "
-                   "but there are only "SIZE_FORMAT, num_chunks, _free_list.count()));
+                   "but there are only "SIZE_FORMAT, num_chunks, mgr.num_free_chunks()));
 
     size_t const test_percentage = 50;
-    purge_chunks(test_percentage);
-    assert(_num_chunks_handed_out == num_chunks,
+    mgr.purge_chunks(test_percentage);
+    assert(mgr.num_chunks_handed_out() == num_chunks,
            err_msg("Purging must not hand out chunks but there are "SIZE_FORMAT,
-                   _num_chunks_handed_out));
-    assert((size_t)_free_list.count() == (ssize_t)(num_chunks * test_percentage / 100),
+                   mgr.num_chunks_handed_out()));
+    assert(mgr.num_free_chunks() == (size_t)(mgr.num_chunks_handed_out() * test_percentage / 100),
            err_msg("Must have purged "SIZE_FORMAT" percent of "SIZE_FORMAT" chunks"
-                   "but there are "SSIZE_FORMAT, test_percentage, num_chunks,
-                   _free_list.count()));
+                   "but there are "SIZE_FORMAT, test_percentage, num_chunks,
+                   mgr.num_free_chunks()));
     // Purge the remainder of the chunks on the free list.
-    purge_chunks(0);
-    assert(_free_list.count() == 0, "Free List must be empty");
-    assert(_num_chunks_handed_out == num_chunks,
+    mgr.purge_chunks(0);
+    assert(mgr.num_free_chunks() == 0, "Free List must be empty");
+    assert(mgr.num_chunks_handed_out() == num_chunks,
            err_msg("Expected to be "SIZE_FORMAT" chunks handed out from the first set "
-                   "but there are "SIZE_FORMAT, num_chunks, _num_chunks_handed_out));
+                   "but there are "SIZE_FORMAT, num_chunks, mgr.num_chunks_handed_out()));
 
     // Exit of the scope of the set1 object will call the destructor that generates
     // num_chunks additional elements on the free list.
-  }
+   }
 
-  assert(_num_chunks_handed_out == 0,
+  assert(mgr.num_chunks_handed_out() == 0,
          err_msg("Deletion of the only set must have resulted in no chunks handed "
-                 "out, but there is still "SIZE_FORMAT" handed out", _num_chunks_handed_out));
-  assert((size_t)_free_list.count() == num_chunks,
+                 "out, but there is still "SIZE_FORMAT" handed out", mgr.num_chunks_handed_out()));
+  assert(mgr.num_free_chunks() == num_chunks,
          err_msg("After freeing "SIZE_FORMAT" chunks, they must be on the free list "
-                 "but there are only "SSIZE_FORMAT, num_chunks, _free_list.count()));
+                 "but there are only "SIZE_FORMAT, num_chunks, mgr.num_free_chunks()));
 
   // Restore initial state.
-  purge_chunks(0);
-  assert(_free_list.count() == 0, "Free List must be empty");
-  assert(_num_chunks_handed_out == 0, "No elements must have been handed out yet");
+  mgr.purge_chunks(0);
+  assert(mgr.num_free_chunks() == 0, "Free List must be empty");
+  assert(mgr.num_chunks_handed_out() == 0, "No additional elements must have been handed out yet");
 }
 
 void TestCodeCacheRemSet_test() {
