@@ -164,12 +164,7 @@ inline bool G1CollectedHeap::isMarkedNext(oop obj) const {
 // collection set or not. Assume that the reference
 // points into the heap.
 inline bool G1CollectedHeap::in_cset_fast_test(oop obj) {
-  assert(_in_cset_fast_test != NULL, "sanity");
-  assert(_g1_committed.contains((HeapWord*) obj), err_msg("Given reference outside of heap, is "PTR_FORMAT, (HeapWord*)obj));
-  // no need to subtract the bottom of the heap from obj,
-  // _in_cset_fast_test is biased
-  uintx index = cast_from_oop<uintx>(obj) >> HeapRegion::LogOfHRGrainBytes;
-  bool ret = _in_cset_fast_test[index];
+  bool ret = _in_cset_fast_test.get_by_address((HeapWord*)obj);
   // let's make sure the result is consistent with what the slower
   // test returns
   assert( ret || !obj_in_cs(obj), "sanity");

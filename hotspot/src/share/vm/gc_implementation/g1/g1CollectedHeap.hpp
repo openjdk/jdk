@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/evacuationInfo.hpp"
 #include "gc_implementation/g1/g1AllocRegion.hpp"
+#include "gc_implementation/g1/g1BiasedArray.hpp"
 #include "gc_implementation/g1/g1HRPrinter.hpp"
 #include "gc_implementation/g1/g1MonitoringSupport.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
@@ -197,6 +198,16 @@ public:
   bool do_object_b(oop p);
 };
 
+// Instances of this class are used for quick tests on whether a reference points
+// into the collection set. Each of the array's elements denotes whether the
+// corresponding region is in the collection set.
+class G1FastCSetBiasedMappedArray : public G1BiasedMappedArray<bool> {
+ protected:
+  bool default_value() const { return false; }
+ public:
+  void clear() { G1BiasedMappedArray<bool>::clear(); }
+};
+
 class RefineCardTableEntryClosure;
 
 class G1CollectedHeap : public SharedHeap {
@@ -353,26 +364,10 @@ private:
   // than the current allocation region.
   size_t _summary_bytes_used;
 
-  // This is used for a quick test on whether a reference points into
-  // the collection set or not. Basically, we have an array, with one
-  // byte per region, and that byte denotes whether the corresponding
-  // region is in the collection set or not. The entry corresponding
-  // the bottom of the heap, i.e., region 0, is pointed to by
-  // _in_cset_fast_test_base.  The _in_cset_fast_test field has been
-  // biased so that it actually points to address 0 of the address
-  // space, to make the test as fast as possible (we can simply shift
-  // the address to address into it, instead of having to subtract the
-  // bottom of the heap from the address before shifting it; basically
-  // it works in the same way the card table works).
-  bool* _in_cset_fast_test;
-
-  // The allocated array used for the fast test on whether a reference
-  // points into the collection set or not. This field is also used to
-  // free the array.
-  bool* _in_cset_fast_test_base;
-
-  // The length of the _in_cset_fast_test_base array.
-  uint _in_cset_fast_test_length;
+  // This array is used for a quick test on whether a reference points into
+  // the collection set or not. Each of the array's elements denotes whether the
+  // corresponding region is in the collection set or not.
+  G1FastCSetBiasedMappedArray _in_cset_fast_test;
 
   volatile unsigned _gc_time_stamp;
 
@@ -695,12 +690,7 @@ public:
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_region_with_in_cset_fast_test(HeapRegion* r) {
-    assert(_in_cset_fast_test_base != NULL, "sanity");
-    assert(r->in_collection_set(), "invariant");
-    uint index = r->hrs_index();
-    assert(index < _in_cset_fast_test_length, "invariant");
-    assert(!_in_cset_fast_test_base[index], "invariant");
-    _in_cset_fast_test_base[index] = true;
+    _in_cset_fast_test.set_by_index(r->hrs_index(), true);
   }
 
   // This is a fast test on whether a reference points into the
@@ -709,9 +699,7 @@ public:
   inline bool in_cset_fast_test(oop obj);
 
   void clear_cset_fast_test() {
-    assert(_in_cset_fast_test_base != NULL, "sanity");
-    memset(_in_cset_fast_test_base, false,
-           (size_t) _in_cset_fast_test_length * sizeof(bool));
+    _in_cset_fast_test.clear();
   }
 
   // This is called at the start of either a concurrent cycle or a Full
