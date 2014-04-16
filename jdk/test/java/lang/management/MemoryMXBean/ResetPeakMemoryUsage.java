@@ -32,11 +32,9 @@
  * @summary Basic Test for MemoryPool.resetPeakUsage()
  * @author  Mandy Chung
  *
- * @build ResetPeakMemoryUsage MemoryUtil
- * @run main/othervm -XX:+PrintGCDetails -XX:+UseSerialGC -Xms256m -XX:MarkSweepAlwaysCompactCount=1 -Xmn8m ResetPeakMemoryUsage
- * @run main/othervm -XX:+PrintGCDetails -XX:+UseConcMarkSweepGC -Xms256m -Xmn8m ResetPeakMemoryUsage
- * @run main/othervm -XX:+PrintGCDetails -XX:+UseParallelGC -Xms256m -Xmn8m ResetPeakMemoryUsage
- * @run main/othervm -XX:+PrintGCDetails -XX:+UseG1GC -Xms256m -Xmn8m -XX:G1HeapRegionSize=1m ResetPeakMemoryUsage
+ * @library /lib/testlibrary/
+ * @build ResetPeakMemoryUsage MemoryUtil RunUtil
+ * @run main ResetPeakMemoryUsage
  */
 
 import java.lang.management.*;
@@ -47,24 +45,42 @@ public class ResetPeakMemoryUsage {
     // make public so that it can't be optimized away easily
     public static Object[] obj;
 
-    public static void main(String[] argv) {
-        List pools = ManagementFactory.getMemoryPoolMXBeans();
-        ListIterator iter = pools.listIterator();
-        boolean found = false;
-        while (iter.hasNext()) {
-            MemoryPoolMXBean p = (MemoryPoolMXBean) iter.next();
-            // only check heap pools that support usage threshold
-            // this is typically only the old generation space
-            // since the other spaces are expected to get filled up
-            if (p.getType() == MemoryType.HEAP &&
-                p.isUsageThresholdSupported())
-            {
-                found = true;
-                testPool(p);
+    /**
+     * Run the test multiple times with different GC versions.
+     * First with default command line specified by the framework.
+     * Then with all GC versions specified by the test.
+     */
+    public static void main(String a[]) throws Throwable {
+        final String main = "ResetPeakMemoryUsage$TestMain";
+        final String ms = "-Xms256m";
+        final String mn = "-Xmn8m";
+        RunUtil.runTestClearGcOpts(main, ms, mn, "-XX:+UseConcMarkSweepGC");
+        RunUtil.runTestClearGcOpts(main, ms, mn, "-XX:+UseParallelGC");
+        RunUtil.runTestClearGcOpts(main, ms, mn, "-XX:+UseG1GC", "-XX:G1HeapRegionSize=1m");
+        RunUtil.runTestClearGcOpts(main, ms, mn, "-XX:+UseSerialGC",
+                "-XX:MarkSweepAlwaysCompactCount=1");
+    }
+
+    private static class TestMain {
+        public static void main(String[] argv) {
+            List pools = ManagementFactory.getMemoryPoolMXBeans();
+            ListIterator iter = pools.listIterator();
+            boolean found = false;
+            while (iter.hasNext()) {
+                MemoryPoolMXBean p = (MemoryPoolMXBean) iter.next();
+                // only check heap pools that support usage threshold
+                // this is typically only the old generation space
+                // since the other spaces are expected to get filled up
+                if (p.getType() == MemoryType.HEAP &&
+                    p.isUsageThresholdSupported())
+                {
+                    found = true;
+                    testPool(p);
+                }
             }
-        }
-        if (!found) {
-            throw new RuntimeException("No heap pool found");
+            if (!found) {
+                throw new RuntimeException("No heap pool found");
+            }
         }
     }
 
@@ -142,7 +158,7 @@ public class ResetPeakMemoryUsage {
                 formatSize("previous peak", peak2.getUsed()));
         }
 
-        System.out.println("Test passed.");
+        System.out.println(RunUtil.successMessage);
     }
 
     private static String INDENT = "    ";
