@@ -73,7 +73,8 @@ public:
 
 
 class DirtyCardQueueSet: public PtrQueueSet {
-  CardTableEntryClosure* _closure;
+  // The closure used in mut_process_buffer().
+  CardTableEntryClosure* _mut_process_closure;
 
   DirtyCardQueue _shared_dirty_card_queue;
 
@@ -88,10 +89,12 @@ class DirtyCardQueueSet: public PtrQueueSet {
   jint _processed_buffers_mut;
   jint _processed_buffers_rs_thread;
 
+  // Current buffer node used for parallel iteration.
+  BufferNode* volatile _cur_par_buffer_node;
 public:
   DirtyCardQueueSet(bool notify_when_complete = true);
 
-  void initialize(Monitor* cbl_mon, Mutex* fl_lock,
+  void initialize(CardTableEntryClosure* cl, Monitor* cbl_mon, Mutex* fl_lock,
                   int process_completed_threshold,
                   int max_completed_queue,
                   Mutex* lock, PtrQueueSet* fl_owner = NULL);
@@ -102,31 +105,13 @@ public:
 
   static void handle_zero_index_for_thread(JavaThread* t);
 
-  // Register "blk" as "the closure" for all queues.  Only one such closure
-  // is allowed.  The "apply_closure_to_completed_buffer" method will apply
-  // this closure to a completed buffer, and "iterate_closure_all_threads"
-  // applies it to partially-filled buffers (the latter should only be done
-  // with the world stopped).
-  void set_closure(CardTableEntryClosure* closure);
-
-  // If there is a registered closure for buffers, apply it to all entries
-  // in all currently-active buffers.  This should only be applied at a
-  // safepoint.  (Currently must not be called in parallel; this should
-  // change in the future.)  If "consume" is true, processed entries are
-  // discarded.
-  void iterate_closure_all_threads(bool consume = true,
+  // Apply the given closure to all entries in all currently-active buffers.
+  // This should only be applied at a safepoint. (Currently must not be called
+  // in parallel; this should change in the future.)  If "consume" is true,
+  // processed entries are discarded.
+  void iterate_closure_all_threads(CardTableEntryClosure* cl,
+                                   bool consume = true,
                                    uint worker_i = 0);
-
-  // If there exists some completed buffer, pop it, then apply the
-  // registered closure to all its elements, nulling out those elements
-  // processed.  If all elements are processed, returns "true".  If no
-  // completed buffers exist, returns false.  If a completed buffer exists,
-  // but is only partially completed before a "yield" happens, the
-  // partially completed buffer (with its processed elements set to NULL)
-  // is returned to the completed buffer set, and this call returns false.
-  bool apply_closure_to_completed_buffer(uint worker_i = 0,
-                                         int stop_at = 0,
-                                         bool during_pause = false);
 
   // If there exists some completed buffer, pop it, then apply the
   // specified closure to all its elements, nulling out those elements
@@ -149,7 +134,12 @@ public:
 
   // Applies the current closure to all completed buffers,
   // non-consumptively.
-  void apply_closure_to_all_completed_buffers();
+  void apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl);
+
+  void reset_for_par_iteration() { _cur_par_buffer_node = _completed_buffers_head; }
+  // Applies the current closure to all completed buffers, non-consumptively.
+  // Parallel version.
+  void par_apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl);
 
   DirtyCardQueue* shared_dirty_card_queue() {
     return &_shared_dirty_card_queue;
