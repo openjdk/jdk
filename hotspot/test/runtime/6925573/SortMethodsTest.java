@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 /*
- * @ignore 6959423
  * @test SortMethodsTest
  * @bug 6925573
  * @summary verify that class loading does not need quadratic time with regard to the number of class
@@ -82,7 +81,7 @@ public class SortMethodsTest {
     final String cName = new String("ManyMethodsClass");
     Vector<Long> results = new Vector<Long>();
 
-    for (int i = 6; i < 600000; i*=10) {
+    for (int i = 6; i < 60000; i*=10) {
       String klass =  createClass(cName, i);
       JavaMemoryFileObject file = new JavaMemoryFileObject(cName, klass);
       MemoryFileManager mfm = new MemoryFileManager(comp.getStandardFileManager(diags, null, null), file);
@@ -121,7 +120,7 @@ public class SortMethodsTest {
       System.out.println("10 x more methods requires " + ratio + " x more time");
     }
     // The following is just vague estimation but seems to work on current x86_64 and sparcv9 machines
-    if (lastRatio > 80) {
+    if (lastRatio > 60) {
       throw new RuntimeException("ATTENTION: it seems that class loading needs quadratic time with regard to the number of class methods!!!");
     }
   }
