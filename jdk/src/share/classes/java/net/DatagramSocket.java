@@ -448,7 +448,7 @@ class DatagramSocket implements java.io.Closeable {
      *
      * <p> If given an {@link InetSocketAddress InetSocketAddress}, this method
      * behaves as if invoking {@link #connect(InetAddress,int) connect(InetAddress,int)}
-     * with the the given socket addresses IP address and port number.
+     * with the given socket addresses IP address and port number.
      *
      * @param   addr    The remote address.
      *

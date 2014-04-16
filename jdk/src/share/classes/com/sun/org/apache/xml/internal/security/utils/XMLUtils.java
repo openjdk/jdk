@@ -922,7 +922,7 @@ public class XMLUtils {
         Element foundElement = null;
 
         String id = value.trim();
-        if (id.charAt(0) == '#') {
+        if (!id.isEmpty() && id.charAt(0) == '#') {
             id = id.substring(1);
         }
 
@@ -982,7 +982,7 @@ public class XMLUtils {
         Node processedNode = null;
 
         String id = value.trim();
-        if (id.charAt(0) == '#') {
+        if (!id.isEmpty() && id.charAt(0) == '#') {
             id = id.substring(1);
         }
 
