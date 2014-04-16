@@ -4562,7 +4562,7 @@ HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
 }
 
 G1ParGCAllocBuffer::G1ParGCAllocBuffer(size_t gclab_word_size) :
-  ParGCAllocBuffer(gclab_word_size), _retired(false) { }
+  ParGCAllocBuffer(gclab_word_size), _retired(true) { }
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp)
   : _g1h(g1h),
@@ -4926,8 +4926,6 @@ void G1ParEvacuateFollowersClosure::do_void() {
       pss->trim_queue();
     }
   } while (!offer_termination());
-
-  pss->retire_alloc_buffers();
 }
 
 class G1KlassScanClosure : public KlassClosure {
@@ -5753,10 +5751,8 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   }
 
   _gc_tracer_stw->report_gc_reference_stats(stats);
-  // We have completed copying any necessary live referent objects
-  // (that were not copied during the actual pause) so we can
-  // retire any active alloc buffers
-  pss.retire_alloc_buffers();
+
+  // We have completed copying any necessary live referent objects.
   assert(pss.refs()->is_empty(), "both queue and overflow should be empty");
 
   double ref_proc_time = os::elapsedTime() - ref_proc_start;
