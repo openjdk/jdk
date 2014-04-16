@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,12 @@ public class TestSeeTag extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        { OUTPUT_DIR + FS + "pkg" + FS + "Test.html",
+        { OUTPUT_DIR + "/pkg/Test.html",
           "<code>List</code>"
         }
     };
     private static final String[][] NEGATED_TEST = {
-        { OUTPUT_DIR + FS + "pkg" + FS + "Test.html",
+        { OUTPUT_DIR + "/pkg/Test.html",
           "&lt;code&gt;List&lt;/code&gt;"
         }
     };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,41 +41,45 @@ public class TestIndex extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", SRC_DIR + FS + "NoPackage.java"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", SRC_DIR + "/NoPackage.java"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
         //Make sure the horizontal scroll bar does not appear in class frame.
-        {BUG_ID + FS + "index.html",
+        {BUG_ID + "/index.html",
             "<frame src=\"overview-summary.html\" name=\"classFrame\" title=\"" +
             "Package, class and interface descriptions\" scrolling=\"yes\">"},
 
         //Test index-all.html
-        {BUG_ID + FS + "index-all.html",
+        {BUG_ID + "/index-all.html",
             "<a href=\"pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">C</span></a>" +
             " - Class in <a href=\"pkg/package-summary.html\">pkg</a>"},
-        {BUG_ID + FS + "index-all.html",
+        {BUG_ID + "/index-all.html",
             "<a href=\"pkg/Interface.html\" title=\"interface in pkg\">" +
             "<span class=\"typeNameLink\">Interface</span></a> - Interface in " +
             "<a href=\"pkg/package-summary.html\">pkg</a>"},
-        {BUG_ID + FS + "index-all.html",
+        {BUG_ID + "/index-all.html",
             "<a href=\"pkg/AnnotationType.html\" title=\"annotation in pkg\">" +
             "<span class=\"typeNameLink\">AnnotationType</span></a> - Annotation Type in " +
             "<a href=\"pkg/package-summary.html\">pkg</a>"},
-        {BUG_ID + FS + "index-all.html",
+        {BUG_ID + "/index-all.html",
             "<a href=\"pkg/Coin.html\" title=\"enum in pkg\">" +
             "<span class=\"typeNameLink\">Coin</span></a> - Enum in " +
             "<a href=\"pkg/package-summary.html\">pkg</a>"},
-        {BUG_ID + FS + "index-all.html",
+        {BUG_ID + "/index-all.html",
             "Class in <a href=\"package-summary.html\">&lt;Unnamed&gt;</a>"},
-        {BUG_ID + FS + "index-all.html",
-            "<dl>" + NL + "<dt><span class=\"memberNameLink\"><a href=\"pkg/C.html#Java\">" +
+        {BUG_ID + "/index-all.html",
+            "<dl>\n" +
+            "<dt><span class=\"memberNameLink\"><a href=\"pkg/C.html#Java\">" +
             "Java</a></span> - Static variable in class pkg.<a href=\"pkg/C.html\" " +
-            "title=\"class in pkg\">C</a></dt>" + NL + "<dd>&nbsp;</dd>" + NL +
+            "title=\"class in pkg\">C</a></dt>\n" +
+            "<dd>&nbsp;</dd>\n" +
             "<dt><span class=\"memberNameLink\"><a href=\"pkg/C.html#JDK\">JDK</a></span> " +
             "- Static variable in class pkg.<a href=\"pkg/C.html\" title=\"class in pkg\">" +
-            "C</a></dt>" + NL + "<dd>&nbsp;</dd>" + NL + "</dl>"},
+            "C</a></dt>\n" +
+            "<dd>&nbsp;</dd>\n" +
+            "</dl>"},
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
 

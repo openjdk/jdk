@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,13 @@ public class TestHtmlComments extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR + FS + "C.java"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = NO_TEST;
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "C.html",
+        {BUG_ID + "/C.html",
             "<!-- ============ FIELD DETAIL =========== -->"}
     };
 

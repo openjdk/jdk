@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,22 @@ public class TestCustomTag extends JavadocTester {
     private static final String[] ARGS = new String[] {
         "-Xdoclint:none", "-d", BUG_ID, "-tagletpath", SRC_DIR,
         "-taglet", "taglets.CustomTag", "-sourcepath",
-        SRC_DIR, SRC_DIR + FS + "TagTestClass.java"
+        SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
 
     private static final String[] ARGS1 = new String[] {
-        "-d", BUG_ID + "-1", "-tagletpath", SRC_DIR, "-taglet", "taglets.CustomTag",
-        "-sourcepath", SRC_DIR, SRC_DIR + FS + "TagTestClass.java"
+        "-d", BUG_ID + "-1", "-tagletpath",
+        SRC_DIR, "-taglet", "taglets.CustomTag",
+        "-sourcepath", SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
     private static final String[] ARGS2 = new String[] {
         "-Xdoclint:none", "-d", BUG_ID + "-2", "-sourcepath",
-        SRC_DIR, SRC_DIR + FS + "TagTestClass.java"
+        SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
 
     private static final String[] ARGS3 = new String[] {
-        "-d", BUG_ID + "-3", "-sourcepath", SRC_DIR, SRC_DIR + FS + "TagTestClass.java"
+        "-d", BUG_ID + "-3", "-sourcepath",
+        SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
 
     //Input for string search tests.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class TestDocFiles extends JavadocTester {
 
     private static final String BUG_ID = "8008949";
     private static final String[][] TEST = {
-        {"tmp" + FS + "pkg" + FS + "doc-files" + FS + "test.txt", "test file"}};
+        {"tmp/pkg/doc-files/test.txt", "test file"}};
 
     private static final String[] ARGS =
         new String[] {

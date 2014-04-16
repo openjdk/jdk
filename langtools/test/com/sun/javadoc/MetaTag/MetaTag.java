@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,30 +63,30 @@ public class MetaTag extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
 
-        { OUTPUT_DIR + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "/p1/C1.html",
            "<meta name=\"keywords\" content=\"p1.C1 class\">" },
 
-        { OUTPUT_DIR + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "/p1/C1.html",
            "<meta name=\"keywords\" content=\"field1\">" },
 
-        { OUTPUT_DIR + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "/p1/C1.html",
            "<meta name=\"keywords\" content=\"field2\">" },
 
-        { OUTPUT_DIR + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "/p1/C1.html",
            "<meta name=\"keywords\" content=\"method1()\">" },
 
-        { OUTPUT_DIR + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "/p1/C1.html",
            "<meta name=\"keywords\" content=\"method2()\">" },
 
-        { OUTPUT_DIR + FS + "p1" + FS + "package-summary.html",
+        { OUTPUT_DIR + "/p1/package-summary.html",
            "<meta name=\"keywords\" content=\"p1 package\">" },
 
-        { OUTPUT_DIR + FS + "overview-summary.html",
+        { OUTPUT_DIR + "/overview-summary.html",
            "<meta name=\"keywords\" content=\"Overview, Sample Packages\">" },
 
         //NOTE: Hopefully, this regression test is not run at midnight.  If the output
         //was generated yesterday and this test is run today, the test will fail.
-        {OUTPUT_DIR + FS + "overview-summary.html",
+        {OUTPUT_DIR + "/overview-summary.html",
            "<meta name=\"date\" "
                             + "content=\"" + m_dateFormat.format(new Date()) + "\">"},
     };
@@ -96,32 +96,32 @@ public class MetaTag extends JavadocTester {
     private static final String[][] TEST2 = NO_TEST;
     private static final String[][] NEGATED_TEST2 = {
         //No keywords when -keywords is not used.
-        { OUTPUT_DIR + "-2" + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "-2/p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"p1.C1 class\">" },
 
-        { OUTPUT_DIR + "-2" + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "-2/p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"field1\">" },
 
-        { OUTPUT_DIR + "-2" + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "-2/p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"field2\">" },
 
-        { OUTPUT_DIR + "-2" + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "-2/p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"method1()\">" },
 
-        { OUTPUT_DIR + "-2" + FS + "p1" + FS + "C1.html",
+        { OUTPUT_DIR + "-2/p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"method2()\">" },
 
-        { OUTPUT_DIR + "-2" + FS + "p1" + FS + "package-summary.html",
+        { OUTPUT_DIR + "-2/p1/package-summary.html",
            "<META NAME=\"keywords\" CONTENT=\"p1 package\">" },
 
-        { OUTPUT_DIR + "-2" + FS + "overview-summary.html",
+        { OUTPUT_DIR + "-2/overview-summary.html",
            "<META NAME=\"keywords\" CONTENT=\"Overview Summary, Sample Packages\">" },
 
         //The date metatag should not show up when -notimestamp is used.
 
         //NOTE: Hopefully, this regression test is not run at midnight.  If the output
         //was generated yesterday and this test is run today, the test will fail.
-        {OUTPUT_DIR + "-2" + FS + "overview-summary.html",
+        {OUTPUT_DIR + "-2/overview-summary.html",
            "<META NAME=\"date\" "
                             + "CONTENT=\"" + m_dateFormat.format(new Date()) + "\">"},
     };

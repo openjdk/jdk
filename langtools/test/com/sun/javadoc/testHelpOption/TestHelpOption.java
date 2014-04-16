@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,12 @@ public class TestHelpOption extends JavadocTester {
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR, "-help",
-            SRC_DIR + FS + "TestHelpOption.java"
+            SRC_DIR + "/TestHelpOption.java"
     };
 
     private static final String[] ARGS2 = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            SRC_DIR + FS + "TestHelpOption.java"
+            SRC_DIR + "/TestHelpOption.java"
     };
 
     private static final String[][] TEST = {
@@ -89,7 +89,7 @@ public class TestHelpOption extends JavadocTester {
     private static final String[][] NEGATED_TEST = NO_TEST;
 
     private static final String[][] TEST2 = {
-        {BUG_ID + FS + "TestHelpOption.html",
+        {BUG_ID + "/TestHelpOption.html",
             "<li><a href=\"help-doc.html\">Help</a></li>"
         },
     };

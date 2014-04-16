@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,18 +35,20 @@
 
 public class TestBadPackageFileInJar extends JavadocTester {
 
+    protected static final String FS = System.getProperty("file.separator");
+
     private static final String BUG_ID = "4691095";
 
     private static final String[][] TEST =
         new String[][] {
             {ERROR_OUTPUT,
-                "badPackageFileInJar.jar" +FS+"pkg/package.html: error - Body tag missing from HTML"}
+                "badPackageFileInJar.jar" + FS + "pkg/package.html: error - Body tag missing from HTML"}
         };
 
     private static final String[] ARGS =
         new String[] {
             "-d", BUG_ID, "-sourcepath", SRC_DIR, "-classpath",
-            SRC_DIR + FS + "badPackageFileInJar.jar", "pkg"};
+            SRC_DIR + "/badPackageFileInJar.jar", "pkg"};
 
 
     /**

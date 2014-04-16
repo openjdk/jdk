@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,19 @@ public class TestHtmlStrongTag extends JavadocTester {
 
     private static final String BUG_ID = "6786028";
     private static final String[][] TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<span class=\"seeLabel\">See Also:</span>"}};
+        {BUG_ID + "/pkg1/C1.html",
+            "<span class=\"seeLabel\">See Also:</span>"}};
     private static final String[][] NEGATED_TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<STRONG>Method Summary</STRONG>"},
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<B>"},
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<STRONG>Class Summary</STRONG>"}};
+        {BUG_ID + "/pkg1/C1.html", "<STRONG>Method Summary</STRONG>"},
+        {BUG_ID + "/pkg1/C1.html", "<B>"},
+        {BUG_ID + "/pkg1/package-summary.html",
+            "<STRONG>Class Summary</STRONG>"}};
     private static final String[][] TEST2 = {
-        {BUG_ID + FS + "pkg2" + FS + "C2.html", "<B>Comments:</B>"}};
+        {BUG_ID + "/pkg2/C2.html", "<B>Comments:</B>"}};
     private static final String[][] NEGATED_TEST2 = {
-        {BUG_ID + FS + "pkg2" + FS + "C2.html", "<STRONG>Method Summary</STRONG>"},
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<STRONG>Class Summary</STRONG>"}};
+        {BUG_ID + "/pkg2/C2.html", "<STRONG>Method Summary</STRONG>"},
+        {BUG_ID + "/pkg1/package-summary.html",
+            "<STRONG>Class Summary</STRONG>"}};
 
     private static final String[] ARGS1 =
         new String[] {

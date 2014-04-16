@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@ import java.io.*;
  */
 public abstract class JavadocTester {
 
-    protected static final String FS = System.getProperty("file.separator");
-    protected static final String PS = System.getProperty("path.separator");
     protected static final String NL = System.getProperty("line.separator");
+    protected static final String FS = System.getProperty("file.separator");
+
     protected static final String SRC_DIR = System.getProperty("test.src", ".");
     protected static final String JAVA_VERSION = System.getProperty("java.version");
     protected static final String[][] NO_TEST = new String[][] {};
@@ -123,14 +123,6 @@ public abstract class JavadocTester {
      * The current run of javadoc
      */
     private static int javadocRunNum = 0;
-
-    /**
-     * Whether or not to match newlines exactly.
-     * Set this value to false if the match strings
-     * contain text from javadoc comments containing
-     * non-platform newlines.
-     */
-    protected boolean exactNewlineMatch = true;
 
     /**
      * Construct a JavadocTester.
@@ -504,19 +496,13 @@ public abstract class JavadocTester {
     /**
      * Search for the string in the given file and return true
      * if the string was found.
-     * If exactNewlineMatch is false, newlines will be normalized
-     * before the comparison.
      *
      * @param fileString    the contents of the file to search through
      * @param stringToFind  the string to search for
      * @return              true if the string was found
      */
     private boolean findString(String fileString, String stringToFind) {
-        if (exactNewlineMatch) {
-            return fileString.indexOf(stringToFind) >= 0;
-        } else {
-            return fileString.replace(NL, "\n").indexOf(stringToFind.replace(NL, "\n")) >= 0;
-        }
+        return fileString.contains(stringToFind.replace("\n", NL));
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestSourceTab extends JavadocTester {
     private static final String[] ARGS1 =
         new String[] {
             "-d", OUTPUT_DIR1, "-sourcepath", TMP_SRC_DIR,
-            "-notimestamp", "-linksource", TMP_SRC_DIR + FS + "SingleTab" + FS + "C.java"
+            "-notimestamp", "-linksource", TMP_SRC_DIR + "/SingleTab/C.java"
         };
 
     //Run Javadoc on a source file with that is indented with a two tab per line
@@ -57,16 +57,16 @@ public class TestSourceTab extends JavadocTester {
     private static final String[] ARGS2 =
         new String[] {
             "-d", OUTPUT_DIR2, "-sourcepath", TMP_SRC_DIR,
-            "-notimestamp", "-sourcetab", "4", TMP_SRC_DIR + FS + "DoubleTab" + FS + "C.java"
+            "-notimestamp", "-sourcetab", "4", TMP_SRC_DIR + "/DoubleTab/C.java"
         };
 
     //Files to diff
     private static final String[][] FILES_TO_DIFF = {
-        {OUTPUT_DIR1 + FS + "src-html" + FS + "C.html",
-         OUTPUT_DIR2 + FS + "src-html" + FS + "C.html"
+        {OUTPUT_DIR1 + "/src-html/C.html",
+         OUTPUT_DIR2 + "/src-html/C.html"
         },
-        {OUTPUT_DIR1 + FS + "C.html",
-         OUTPUT_DIR2 + FS + "C.html"
+        {OUTPUT_DIR1 + "/C.html",
+         OUTPUT_DIR2 + "/C.html"
         }
 
     };

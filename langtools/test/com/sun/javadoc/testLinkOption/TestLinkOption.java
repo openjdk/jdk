@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,26 +44,26 @@ public class TestLinkOption extends JavadocTester {
     };
 
     private static final String[][] TEST1 = {
-        {BUG_ID + "-1" + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "-1/pkg/C.html",
             "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/String.html?is-external=true\" " +
             "title=\"class or interface in java.lang\"><code>Link to String Class</code></a>"
         },
         //Make sure the parameters are indented properly when the -link option is used.
-        {BUG_ID + "-1" + FS + "pkg" + FS + "C.html",
-                                "(int&nbsp;p1," + NL +
-                                "      int&nbsp;p2," + NL +
-                                "      int&nbsp;p3)"
+        {BUG_ID + "-1/pkg/C.html",
+            "(int&nbsp;p1,\n" +
+            "      int&nbsp;p2,\n" +
+            "      int&nbsp;p3)"
         },
-        {BUG_ID + "-1" + FS + "pkg" + FS + "C.html",
-                                "(int&nbsp;p1," + NL +
-                                "      int&nbsp;p2," + NL +
-                                "      <a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" title=\"class or interface in java.lang\">" +
-                                "Object</a>&nbsp;p3)"
+        {BUG_ID + "-1/pkg/C.html",
+            "(int&nbsp;p1,\n" +
+            "      int&nbsp;p2,\n" +
+            "      <a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" title=\"class or interface in java.lang\">" +
+            "Object</a>&nbsp;p3)"
         },
-        {BUG_ID + "-1" + FS + "java" + FS + "lang" + FS + "StringBuilderChild.html",
-                "<pre>public abstract class <span class=\"typeNameLabel\">StringBuilderChild</span>" + NL +
+        {BUG_ID + "-1/java/lang/StringBuilderChild.html",
+            "<pre>public abstract class <span class=\"typeNameLabel\">StringBuilderChild</span>\n" +
                 "extends <a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" " +
-                "title=\"class or interface in java.lang\">Object</a></pre>"
+            "title=\"class or interface in java.lang\">Object</a></pre>"
         },
 
     };
@@ -73,12 +73,14 @@ public class TestLinkOption extends JavadocTester {
     //We will try linking to the docs generated in test 1 with a relative path.
     private static final String[] ARGS2 = new String[] {
         "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR,
-        "-linkoffline", "../" + BUG_ID + "-1", BUG_ID + "-1", "-package", "pkg2"
+        "-linkoffline", "../" + BUG_ID + "-1",
+        BUG_ID + "-1", "-package", "pkg2"
     };
 
     private static final String[][] TEST2 = {
-        {BUG_ID + "-2" + FS + "pkg2" + FS + "C2.html",
-            "This is a link to <a href=\"../../" + BUG_ID + "-1/pkg/C.html?is-external=true\" " +
+        {BUG_ID + "-2/pkg2/C2.html",
+            "This is a link to <a href=\"../../" + BUG_ID +
+            "-1/pkg/C.html?is-external=true\" " +
             "title=\"class or interface in pkg\"><code>Class C</code></a>."
         }
     };

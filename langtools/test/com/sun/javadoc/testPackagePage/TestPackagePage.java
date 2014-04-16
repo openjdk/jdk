@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,36 +38,36 @@ public class TestPackagePage extends JavadocTester {
 
     private static final String BUG_ID = "4492643-4689286";
     private static final String[][] TEST1 = {
-        {BUG_ID + "-1" + FS + "com" + FS + "pkg" + FS + "package-summary.html",
+        {BUG_ID + "-1/com/pkg/package-summary.html",
             "This is a package page."
         },
         //With just one package, all general pages link to the single package page.
-        {BUG_ID + "-1" + FS + "com" + FS + "pkg" + FS + "C.html",
+        {BUG_ID + "-1/com/pkg/C.html",
             "<a href=\"../../com/pkg/package-summary.html\">Package</a>"
         },
-        {BUG_ID + "-1" + FS + "com" + FS + "pkg" + FS + "package-tree.html",
+        {BUG_ID + "-1/com/pkg/package-tree.html",
             "<li><a href=\"../../com/pkg/package-summary.html\">Package</a></li>"
         },
-        {BUG_ID + "-1" + FS + "deprecated-list.html",
+        {BUG_ID + "-1/deprecated-list.html",
             "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
         },
-        {BUG_ID + "-1" + FS + "index-all.html",
+        {BUG_ID + "-1/index-all.html",
             "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
         },
-        {BUG_ID + "-1" + FS + "help-doc.html",
+        {BUG_ID + "-1/help-doc.html",
             "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
         },
     };
 
     private static final String[][] TEST2 = {
         //With multiple packages, there is no package link in general pages.
-        {BUG_ID + "-2" + FS + "deprecated-list.html",
+        {BUG_ID + "-2/deprecated-list.html",
             "<li>Package</li>"
         },
-        {BUG_ID + "-2" + FS + "index-all.html",
+        {BUG_ID + "-2/index-all.html",
             "<li>Package</li>"
         },
-        {BUG_ID + "-2" + FS + "help-doc.html",
+        {BUG_ID + "-2/help-doc.html",
             "<li>Package</li>"
         },
     };
@@ -75,7 +75,7 @@ public class TestPackagePage extends JavadocTester {
     private static final String[] ARGS1 =
         new String[] {
             "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR,
-            SRC_DIR + FS + "com" + FS + "pkg" + FS + "C.java"
+            SRC_DIR + "/com/pkg/C.java"
         };
 
     private static final String[] ARGS2 =

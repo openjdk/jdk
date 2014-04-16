@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,13 @@ public class TestHelpFile extends JavadocTester {
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            SRC_DIR + FS + "TestHelpFile.java"
+            SRC_DIR + "/TestHelpFile.java"
     };
 
     private static final String[][] NEGATED_TEST = NO_TEST;
 
     private static final String[][] TEST = {
-        {BUG_ID + FS + "help-doc.html",
+        {BUG_ID + "/help-doc.html",
             "<a href=\"constant-values.html\">Constant Field Values</a>"
         },
     };

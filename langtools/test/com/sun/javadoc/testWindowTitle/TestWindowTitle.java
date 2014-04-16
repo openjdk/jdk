@@ -43,14 +43,14 @@ public class TestWindowTitle extends JavadocTester {
         "-d", BUG_ID + "-1", "-windowtitle", TITLE_JS_CHARS, "-sourcepath", SRC_DIR, "p1", "p2"
     };
     private static final String[][] TEST_JS_CHARS = {
-        {BUG_ID + "-1" + FS + "overview-summary.html",
+        {BUG_ID + "-1/overview-summary.html",
             "parent.document.title=\"Overview (Testing \\\"Window \\\'Title\\\'\\\" " +
             "with a \\\\ backslash and a / forward slash and a \\u00E8 unicode char " +
             "also a    tab and also a \\t special character another \\u0002 unicode))\";"
         },
     };
     private static final String[][] NEG_TEST_JS_CHARS = {
-        {BUG_ID + "-1" + FS + "overview-summary.html",
+        {BUG_ID + "-1/overview-summary.html",
             "parent.document.title=\"Overview (Testing \"Window \'Title\'\" " +
             "with a \\ backslash and a / forward slash and a \u00E8 unicode char " +
             "also a    tab and also a \t special character another \u0002 unicode))\";"
@@ -64,21 +64,21 @@ public class TestWindowTitle extends JavadocTester {
         "-d", BUG_ID + "-2", "-windowtitle", TITLE_SCRIPT_TAG, "-sourcepath", SRC_DIR, "p1", "p2"
     };
     private static final String[][] TEST_SCRIPT_TAG = {
-        {BUG_ID + "-2" + FS + "overview-summary.html",
+        {BUG_ID + "-2/overview-summary.html",
             "parent.document.title=\"Overview (Testing script tag in title alert" +
             "(\\\"Should not pop up\\\").)\";"
         },
-        {BUG_ID + "-2" + FS + "p2" + FS + "C2.html",
+        {BUG_ID + "-2/p2/C2.html",
             "parent.document.title=\"C2 (Testing script tag in title alert" +
             "(\\\"Should not pop up\\\").)\";"
         }
     };
     private static final String[][] NEG_TEST_SCRIPT_TAG = {
-        {BUG_ID + "-2" + FS + "overview-summary.html",
+        {BUG_ID + "-2/overview-summary.html",
             "parent.document.title=\"Overview (Testing script tag in title </title><script>" +
             "alert(\\\"Should not pop up\\\")</script>.)\";"
         },
-        {BUG_ID + "-2" + FS + "p2" + FS + "C2.html",
+        {BUG_ID + "-2/p2/C2.html",
             "parent.document.title=\"C2 (Testing script tag in title </title><script>" +
             "alert(\\\"Should not pop up\\\")</script>.)\";"
         }
@@ -89,16 +89,18 @@ public class TestWindowTitle extends JavadocTester {
             "Testing another <p>HTML</p> tag. Another <h1>tag</h1>. A " +
             "<span id=\"testTag\">tag with attributes</span>. <script and </p are not tags.";
     private static final String[] ARGS_HTML_TAGS = new String[]{
-        "-d", BUG_ID + "-3", "-windowtitle", TITLE_HTML_TAGS, "-sourcepath", SRC_DIR, "p1", "p2"
+        "-d", BUG_ID + "-3", "-windowtitle", TITLE_HTML_TAGS,
+        "-sourcepath", SRC_DIR,
+        "p1", "p2"
     };
     private static final String[][] TEST_HTML_TAGS = {
-        {BUG_ID + "-3" + FS + "overview-summary.html",
+        {BUG_ID + "-3/overview-summary.html",
             "parent.document.title=\"Overview (Testing another HTML tag. Another tag. A " +
             "tag with attributes. <script and </p are not tags.)\";"
         }
     };
     private static final String[][] NEG_TEST_HTML_TAGS = {
-        {BUG_ID + "-3" + FS + "overview-summary.html",
+        {BUG_ID + "-3/overview-summary.html",
             "parent.document.title=\"Overview (Testing another <p>HTML</p> tag. Another " +
             "<h1>tag</h1>. A <span id=\"testTag\">tag with attributes</span>. <script and " +
             "</p are not tags.)\";"
@@ -109,16 +111,18 @@ public class TestWindowTitle extends JavadocTester {
     private static final String TITLE_HTML_ENTITIES =
             "Testing entities &lt;script&gt;alert(\"Should not pop up\")&lt;/script&gt;.";
     private static final String[] ARGS_HTML_ENTITIES = new String[]{
-        "-d", BUG_ID + "-4", "-windowtitle", TITLE_HTML_ENTITIES, "-sourcepath", SRC_DIR, "p1", "p2"
+        "-d", BUG_ID + "-4", "-windowtitle", TITLE_HTML_ENTITIES,
+        "-sourcepath", SRC_DIR,
+        "p1", "p2"
     };
     private static final String[][] TEST_HTML_ENTITIES = {
-        {BUG_ID + "-4" + FS + "overview-summary.html",
+        {BUG_ID + "-4/overview-summary.html",
             "parent.document.title=\"Overview (Testing entities &lt;script&gt;alert(\\\"Should " +
             "not pop up\\\")&lt;/script&gt;.)\";"
         }
     };
     private static final String[][] NEG_TEST_HTML_ENTITIES = {
-        {BUG_ID + "-4" + FS  + "overview-summary.html",
+        {BUG_ID + "-4/overview-summary.html",
             "parent.document.title=\"Overview (Testing entities alert(\\\"Should not pop up\\\").)\";"
         }
     };
@@ -130,12 +134,12 @@ public class TestWindowTitle extends JavadocTester {
         "-d", BUG_ID + "-5", "-windowtitle", TITLE_EMPTY_TAGS, "-sourcepath", SRC_DIR, "p1", "p2"
     };
     private static final String[][] TEST_EMPTY_TAGS = {
-        {BUG_ID + "-5" + FS + "overview-summary.html",
+        {BUG_ID + "-5/overview-summary.html",
             "parent.document.title=\"Overview\";"
         }
     };
     private static final String[][] NEG_TEST_EMPTY_TAGS = {
-        {BUG_ID + "-5" + FS + "overview-summary.html",
+        {BUG_ID + "-5/overview-summary.html",
             "parent.document.title=\"Overview (</title><script></script>)\";"
         }
     };
@@ -147,13 +151,13 @@ public class TestWindowTitle extends JavadocTester {
         "-d", BUG_ID + "-6", "-windowtitle", TITLE_UNICODE_CHARS, "-sourcepath", SRC_DIR, "p1", "p2"
     };
     private static final String[][] TEST_UNICODE_CHARS = {
-        {BUG_ID + "-6" + FS + "overview-summary.html",
+        {BUG_ID + "-6/overview-summary.html",
             "parent.document.title=\"Overview (Testing unicode alert(\\\"Should " +
             "not pop up\\\").)\";"
         }
     };
     private static final String[][] NEG_TEST_UNICODE_CHARS = {
-        {BUG_ID + "-6" + FS + "overview-summary.html",
+        {BUG_ID + "-6/overview-summary.html",
             "parent.document.title=\"Overview (Testing unicode <script>alert(\\\"Should not pop up\\\")" +
             "</script>.)\";"
         }
@@ -166,7 +170,7 @@ public class TestWindowTitle extends JavadocTester {
         "-d", BUG_ID + "-7", "-windowtitle", TITLE_EMPTY, "-sourcepath", SRC_DIR, "p1", "p2"
     };
     private static final String[][] TEST_EMPTY = {
-        {BUG_ID + "-7" + FS + "overview-summary.html",
+        {BUG_ID + "-7/overview-summary.html",
             "parent.document.title=\"Overview\";"
         }
     };
@@ -176,7 +180,7 @@ public class TestWindowTitle extends JavadocTester {
         "-d", BUG_ID + "-8", "-doctitle", TITLE_JS_CHARS, "-sourcepath", SRC_DIR, "p1", "p2"
     };
     private static final String[][] NEG_TEST_DOCTITLE = {
-        {BUG_ID + "-8" + FS + "overview-summary.html",
+        {BUG_ID + "-8/overview-summary.html",
             "parent.document.title=\"Overview (Testing \\\"Window \\\'Title\\\'\\\" " +
             "with a \\\\ backslash and a / forward slash and a \\u00E8 unicode char " +
             "also a    tab and also a \\t special character another \\u0002 unicode)\";"

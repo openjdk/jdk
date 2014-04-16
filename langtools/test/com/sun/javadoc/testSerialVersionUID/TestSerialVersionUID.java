@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,12 @@ public class TestSerialVersionUID extends JavadocTester {
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", OUTPUT_DIR,
-        SRC_DIR + FS + "C.java"
+        SRC_DIR + "/C.java"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {OUTPUT_DIR + FS + "serialized-form.html", "-111111111111111L"}
+        {OUTPUT_DIR + "/serialized-form.html", "-111111111111111L"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
 

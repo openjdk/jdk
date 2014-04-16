@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class TestNoPackagesFile extends JavadocTester {
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR,
-        SRC_DIR + FS + "C.java"
+        SRC_DIR + "/C.java"
     };
 
     /**
@@ -51,7 +51,7 @@ public class TestNoPackagesFile extends JavadocTester {
     public static void main(String[] args) {
         TestNoPackagesFile tester = new TestNoPackagesFile();
         run(tester, ARGS, NO_TEST, NO_TEST);
-        if ((new java.io.File(BUG_ID + FS + "packages.html")).exists()) {
+        if ((new java.io.File(BUG_ID + "/packages.html")).exists()) {
             throw new Error("Test Fails: packages file should not be " +                "generated anymore.");
         } else {
             System.out.println("Test passes:  packages.html not found.");

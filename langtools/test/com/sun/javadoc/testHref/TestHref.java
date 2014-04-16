@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,41 +45,42 @@ public class TestHref extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         //External link.
-        {BUG_ID + FS + "pkg" + FS + "C1.html",
+        {BUG_ID + "/pkg/C1.html",
             "href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true#wait-long-int-\""
         },
         //Member summary table link.
-        {BUG_ID + FS + "pkg" + FS + "C1.html",
+        {BUG_ID + "/pkg/C1.html",
             "href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\""
         },
         //Anchor test.
-        {BUG_ID + FS + "pkg" + FS + "C1.html",
-            "<a name=\"method-int-int-java.util.ArrayList-\">" + NL +
-            "<!--   -->" + NL +
+        {BUG_ID + "/pkg/C1.html",
+            "<a name=\"method-int-int-java.util.ArrayList-\">\n" +
+            "<!--   -->\n" +
             "</a>"
         },
         //Backward compatibility anchor test.
-        {BUG_ID + FS + "pkg" + FS + "C1.html",
-            "<a name=\"method-int-int-java.util.ArrayList-\">" + NL +
-            "<!--   -->" + NL +
+        {BUG_ID + "/pkg/C1.html",
+            "<a name=\"method-int-int-java.util.ArrayList-\">\n" +
+            "<!--   -->\n" +
             "</a>"
         },
         //{@link} test.
-        {BUG_ID + FS + "pkg" + FS + "C2.html",
+        {BUG_ID + "/pkg/C2.html",
             "Link: <a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">"
         },
         //@see test.
-        {BUG_ID + FS + "pkg" + FS + "C2.html",
-            "See Also:</span></dt>" + NL + "<dd><a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">"
+        {BUG_ID + "/pkg/C2.html",
+            "See Also:</span></dt>\n" +
+            "<dd><a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">"
         },
 
         //Header does not link to the page itself.
-        {BUG_ID + FS + "pkg" + FS + "C4.html",
+        {BUG_ID + "/pkg/C4.html",
             "Class C4&lt;E extends C4&lt;E&gt;&gt;</h2>"
         },
 
         //Signature does not link to the page itself.
-        {BUG_ID + FS + "pkg" + FS + "C4.html",
+        {BUG_ID + "/pkg/C4.html",
             "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
         },
     };

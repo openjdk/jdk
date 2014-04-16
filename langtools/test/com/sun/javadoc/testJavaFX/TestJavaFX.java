@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,24 +38,28 @@ public class TestJavaFX extends JavadocTester {
     private static final String[][] TEST =
         new String[][] {
             {"./" + BUG_ID + "/C.html",
-                "<dt><span class=\"seeLabel\">See Also:</span></dt>" + NL + "<dd><a href=\"C.html#getRate--\"><code>getRate()</code></a>, " + NL +
+                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
+                "<dd><a href=\"C.html#getRate--\"><code>getRate()</code></a>, \n" +
                 "<a href=\"C.html#setRate-double-\"><code>setRate(double)</code></a></dd>"},
             {"./" + BUG_ID + "/C.html",
-                "<pre>public final&nbsp;void&nbsp;setRate(double&nbsp;value)</pre>" + NL +
-                "<div class=\"block\">Sets the value of the property rate.</div>" + NL +
-                "<dl>" + NL + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>" },
+                "<pre>public final&nbsp;void&nbsp;setRate(double&nbsp;value)</pre>\n" +
+                "<div class=\"block\">Sets the value of the property rate.</div>\n" +
+                "<dl>\n" +
+                "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>" },
             {"./" + BUG_ID + "/C.html",
-                "<pre>public final&nbsp;double&nbsp;getRate()</pre>" + NL +
-                "<div class=\"block\">Gets the value of the property rate.</div>" + NL +
-                "<dl>" + NL + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>" },
+                "<pre>public final&nbsp;double&nbsp;getRate()</pre>\n" +
+                "<div class=\"block\">Gets the value of the property rate.</div>\n" +
+                "<dl>\n" +
+                "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>" },
             {"./" + BUG_ID + "/C.html",
-                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"C.html#rateProperty\">rate</a></span></code>" + NL +
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"C.html#rateProperty\">rate</a></span></code>\n" +
                 "<div class=\"block\">Defines the direction/speed at which the <code>Timeline</code> is expected to"},
 
             {"./" + BUG_ID + "/C.html",
                 "<span class=\"simpleTagLabel\">Default value:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<span class=\"simpleTagLabel\">Since:</span></dt>" + NL + "<dd>JavaFX 8.0</dd>" },
+                "<span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dd>JavaFX 8.0</dd>" },
             {"./" + BUG_ID + "/C.html",
                 "<p>Sets the value of the property <code>Property</code>"},
             {"./" + BUG_ID + "/C.html",
@@ -65,11 +69,11 @@ public class TestJavaFX extends JavadocTester {
             {"./" + BUG_ID + "/C.html",
                 "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"C.html#setTestMethodProperty--\">setTestMethodProperty</a></span>()</code>&nbsp;</td>" },
             {"./" + BUG_ID + "/C.html",
-                "<h4>isPaused</h4>" + NL +
-                "<pre>public final&nbsp;double&nbsp;isPaused()</pre>" + NL +
+                "<h4>isPaused</h4>\n" +
+                "<pre>public final&nbsp;double&nbsp;isPaused()</pre>\n" +
                 "<div class=\"block\">Gets the value of the property paused.</div>" },
             {"./" + BUG_ID + "/D.html",
-                "<h3>Properties inherited from class&nbsp;<a href=\"C.html\" title=\"class in &lt;Unnamed&gt;\">C</a></h3>" + NL +
+                "<h3>Properties inherited from class&nbsp;<a href=\"C.html\" title=\"class in &lt;Unnamed&gt;\">C</a></h3>\n" +
                 "<code><a href=\"C.html#pausedProperty\">paused</a>, <a href=\"C.html#rateProperty\">rate</a></code></li>" },
         };
     private static final String[][] NO_TEST =
@@ -81,7 +85,7 @@ public class TestJavaFX extends JavadocTester {
 
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR, "-javafx",
-        SRC_DIR + FS + "C.java", SRC_DIR + FS + "D.java"
+        SRC_DIR + "/C.java", SRC_DIR + "/D.java"
     };
 
     /**

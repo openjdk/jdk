@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ public class TestWarnings extends JavadocTester {
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-private", "-sourcepath", SRC_DIR, "pkg"
+        "-Xdoclint:none", "-d", BUG_ID, "-private", "-sourcepath", SRC_DIR,
+        "pkg"
     };
 
     //Input for string search tests.
@@ -59,15 +60,18 @@ public class TestWarnings extends JavadocTester {
 
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg" + FS + "X.html", "can't find m()"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "can't find X()"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "can't find f"},
+        {BUG_ID + "/pkg/X.html", "can't find m()"},
+        {BUG_ID + "/pkg/X.html", "can't find X()"},
+        {BUG_ID + "/pkg/X.html", "can't find f"},
     };
 
     private static final String[][] TEST2 = {
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>"},
+        {BUG_ID + "/pkg/X.html",
+            "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>"},
+        {BUG_ID + "/pkg/X.html",
+            "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>"},
+        {BUG_ID + "/pkg/X.html",
+            "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>"},
     };
 
     private static final String[][] NEGATED_TEST2 = NO_TEST;
