@@ -2655,7 +2655,6 @@ public:
       str = " O";
     } else {
       HeapRegion* hr  = _g1h->heap_region_containing(obj);
-      guarantee(hr != NULL, "invariant");
       bool over_tams = _g1h->allocated_since_marking(obj, hr, _vo);
       bool marked = _g1h->is_marked(obj, _vo);
 
@@ -3413,9 +3412,8 @@ G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
 }
 
 void CMTask::setup_for_region(HeapRegion* hr) {
-  // Separated the asserts so that we know which one fires.
   assert(hr != NULL,
-        "claim_region() should have filtered out continues humongous regions");
+        "claim_region() should have filtered out NULL regions");
   assert(!hr->continuesHumongous(),
         "claim_region() should have filtered out continues humongous regions");
 

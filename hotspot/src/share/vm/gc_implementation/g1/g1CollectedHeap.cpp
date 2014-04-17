@@ -445,24 +445,18 @@ void G1CollectedHeap::stop_conc_gc_threads() {
 // implementation of is_scavengable() for G1 will indicate that
 // all nmethods must be scanned during a partial collection.
 bool G1CollectedHeap::is_in_partial_collection(const void* p) {
-  HeapRegion* hr = heap_region_containing(p);
-  return hr != NULL && hr->in_collection_set();
+  if (p == NULL) {
+    return false;
+  }
+  return heap_region_containing(p)->in_collection_set();
 }
 #endif
 
 // Returns true if the reference points to an object that
 // can move in an incremental collection.
 bool G1CollectedHeap::is_scavengable(const void* p) {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
   HeapRegion* hr = heap_region_containing(p);
-  if (hr == NULL) {
-     // null
-     assert(p == NULL, err_msg("Not NULL " PTR_FORMAT ,p));
-     return false;
-  } else {
-    return !hr->isHumongous();
-  }
+  return !hr->isHumongous();
 }
 
 void G1CollectedHeap::check_ct_logs_at_safepoint() {
@@ -2952,21 +2946,16 @@ CompactibleSpace* G1CollectedHeap::first_compactible_space() {
 
 
 Space* G1CollectedHeap::space_containing(const void* addr) const {
-  Space* res = heap_region_containing(addr);
-  return res;
+  return heap_region_containing(addr);
 }
 
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
   Space* sp = space_containing(addr);
-  if (sp != NULL) {
-    return sp->block_start(addr);
-  }
-  return NULL;
+  return sp->block_start(addr);
 }
 
 size_t G1CollectedHeap::block_size(const HeapWord* addr) const {
   Space* sp = space_containing(addr);
-  assert(sp != NULL, "block_size of address outside of heap");
   return sp->block_size(addr);
 }
 
@@ -4680,30 +4669,19 @@ G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1,
   _worker_id(par_scan_state->queue_num()) { }
 
 void G1ParCopyHelper::mark_object(oop obj) {
-#ifdef ASSERT
-  HeapRegion* hr = _g1->heap_region_containing(obj);
-  assert(hr != NULL, "sanity");
-  assert(!hr->in_collection_set(), "should not mark objects in the CSet");
-#endif // ASSERT
+  assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // We know that the object is not moving so it's safe to read its size.
   _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
 }
 
 void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
-#ifdef ASSERT
   assert(from_obj->is_forwarded(), "from obj should be forwarded");
   assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
   assert(from_obj != to_obj, "should not be self-forwarded");
 
-  HeapRegion* from_hr = _g1->heap_region_containing(from_obj);
-  assert(from_hr != NULL, "sanity");
-  assert(from_hr->in_collection_set(), "from obj should be in the CSet");
-
-  HeapRegion* to_hr = _g1->heap_region_containing(to_obj);
-  assert(to_hr != NULL, "sanity");
-  assert(!to_hr->in_collection_set(), "should not mark objects in the CSet");
-#endif // ASSERT
+  assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
+  assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // The object might be in the process of being copied by another
   // worker so we cannot trust that its to-space image is
@@ -6461,11 +6439,7 @@ void G1CollectedHeap::set_refine_cte_cl_concurrency(bool concurrent) {
 
 bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
   HeapRegion* hr = heap_region_containing(p);
-  if (hr == NULL) {
-    return false;
-  } else {
-    return hr->is_in(p);
-  }
+  return hr->is_in(p);
 }
 
 // Methods for the mutator alloc region

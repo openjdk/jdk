@@ -797,7 +797,6 @@ bool OtherRegionsTable::contains_reference(OopOrNarrowOopStar from) const {
 
 bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const {
   HeapRegion* hr = _g1h->heap_region_containing_raw(from);
-  if (hr == NULL) return false;
   RegionIdx_t hr_ind = (RegionIdx_t) hr->hrs_index();
   // Is this region in the coarse map?
   if (_coarse_map.at(hr_ind)) return true;

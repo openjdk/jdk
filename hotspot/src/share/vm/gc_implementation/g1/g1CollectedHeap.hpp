@@ -1380,16 +1380,14 @@ public:
   // space containing a given address, or else returns NULL.
   virtual Space* space_containing(const void* addr) const;
 
-  // A G1CollectedHeap will contain some number of heap regions.  This
-  // finds the region containing a given address, or else returns NULL.
-  template <class T>
-  inline HeapRegion* heap_region_containing(const T addr) const;
-
-  // Like the above, but requires "addr" to be in the heap (to avoid a
-  // null-check), and unlike the above, may return an continuing humongous
-  // region.
+  // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>
   inline HeapRegion* heap_region_containing_raw(const T addr) const;
+
+  // Returns the HeapRegion that contains addr. addr must not be NULL.
+  // If addr is within a humongous continues region, it returns its humongous start region.
+  template <class T>
+  inline HeapRegion* heap_region_containing(const T addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly
@@ -1532,7 +1530,6 @@ public:
   // the region to which the object belongs. An object is dead
   // iff a) it was not allocated since the last mark and b) it
   // is not marked.
-
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_prev_marking(obj) &&
@@ -1542,7 +1539,6 @@ public:
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
   // been marked during this marking.
-
   bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_next_marking(obj) &&

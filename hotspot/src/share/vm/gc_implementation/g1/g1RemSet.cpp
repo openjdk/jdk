@@ -210,7 +210,6 @@ public:
 #endif
 
       HeapRegion* card_region = _g1h->heap_region_containing(card_start);
-      assert(card_region != NULL, "Yielding cards not in the heap?");
       _cards++;
 
       if (!card_region->is_on_dirty_cards_region_list()) {
@@ -405,7 +404,6 @@ public:
     HeapWord* start = _ct_bs->addr_for(card_ptr);
     // And find the region containing it.
     HeapRegion* r = _g1->heap_region_containing(start);
-    assert(r != NULL, "unexpected null");
 
     // Scan oops in the card looking for references into the collection set
     // Don't use addr_for(card_ptr + 1) which can ask for
@@ -567,11 +565,6 @@ bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
   HeapWord* start = _ct_bs->addr_for(card_ptr);
   // And find the region containing it.
   HeapRegion* r = _g1->heap_region_containing(start);
-  if (r == NULL) {
-    // Again no need to return that this card contains refs that
-    // point into the collection set.
-    return false;  // Not in the G1 heap (might be in perm, for example.)
-  }
 
   // Why do we have to check here whether a card is on a young region,
   // given that we dirty young regions and, as a result, the
@@ -624,10 +617,6 @@ bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
 
     start = _ct_bs->addr_for(card_ptr);
     r = _g1->heap_region_containing(start);
-    if (r == NULL) {
-      // Not in the G1 heap
-      return false;
-    }
 
     // Checking whether the region we got back from the cache
     // is young here is inappropriate. The region could have been

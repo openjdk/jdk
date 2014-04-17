@@ -42,21 +42,22 @@ inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrs.at
 
 template <class T>
 inline HeapRegion*
-G1CollectedHeap::heap_region_containing(const T addr) const {
-  HeapRegion* hr = _hrs.addr_to_region((HeapWord*) addr);
-  // hr can be null if addr in perm_gen
-  if (hr != NULL && hr->continuesHumongous()) {
-    hr = hr->humongous_start_region();
-  }
-  return hr;
+G1CollectedHeap::heap_region_containing_raw(const T addr) const {
+  assert(addr != NULL, "invariant");
+  assert(_g1_reserved.contains((const void*) addr),
+      err_msg("Address "PTR_FORMAT" is outside of the heap ranging from ["PTR_FORMAT" to "PTR_FORMAT")",
+          (void*)addr, _g1_reserved.start(), _g1_reserved.end()));
+  return _hrs.addr_to_region((HeapWord*) addr);
 }
 
 template <class T>
 inline HeapRegion*
-G1CollectedHeap::heap_region_containing_raw(const T addr) const {
-  assert(_g1_reserved.contains((const void*) addr), "invariant");
-  HeapRegion* res = _hrs.addr_to_region_unsafe((HeapWord*) addr);
-  return res;
+G1CollectedHeap::heap_region_containing(const T addr) const {
+  HeapRegion* hr = heap_region_containing_raw(addr);
+  if (hr->continuesHumongous()) {
+    return hr->humongous_start_region();
+  }
+  return hr;
 }
 
 inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
@@ -134,8 +135,7 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   // have to keep calling heap_region_containing_raw() in the
   // asserts below.
   DEBUG_ONLY(HeapRegion* containing_hr = heap_region_containing_raw(start);)
-  assert(containing_hr != NULL && start != NULL && word_size > 0,
-         "pre-condition");
+  assert(word_size > 0, "pre-condition");
   assert(containing_hr->is_in(start), "it should contain start");
   assert(containing_hr->is_young(), "it should be young");
   assert(!containing_hr->isHumongous(), "it should not be humongous");
@@ -246,8 +246,10 @@ inline void G1CollectedHeap::reset_evacuation_should_fail() {
 #endif  // #ifndef PRODUCT
 
 inline bool G1CollectedHeap::is_in_young(const oop obj) {
-  HeapRegion* hr = heap_region_containing(obj);
-  return hr != NULL && hr->is_young();
+  if (obj == NULL) {
+    return false;
+  }
+  return heap_region_containing(obj)->is_young();
 }
 
 // We don't need barriers for initializing stores to objects
@@ -260,21 +262,17 @@ inline bool G1CollectedHeap::can_elide_initializing_store_barrier(oop new_obj) {
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
-  const HeapRegion* hr = heap_region_containing(obj);
-  if (hr == NULL) {
-    if (obj == NULL) return false;
-    else return true;
+  if (obj == NULL) {
+    return false;
   }
-  else return is_obj_dead(obj, hr);
+  return is_obj_dead(obj, heap_region_containing(obj));
 }
 
 inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
-  const HeapRegion* hr = heap_region_containing(obj);
-  if (hr == NULL) {
-    if (obj == NULL) return false;
-    else return true;
+  if (obj == NULL) {
+    return false;
   }
-  else return is_obj_ill(obj, hr);
+  return is_obj_ill(obj, heap_region_containing(obj));
 }
 
 template <class T> inline void G1ParScanThreadState::immediate_rs_update(HeapRegion* from, T* p, int tid) {
