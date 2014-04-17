@@ -775,10 +775,13 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
         // going to be unwound. Dispatch to a shared runtime stub
         // which will cause the StackOverflowError to be fabricated
         // and processed.
-        // For stack overflow in deoptimization blob, cleanup thread.
-        if (thread->deopt_mark() != NULL) {
-          Deoptimization::cleanup_deopt_info(thread, NULL);
-        }
+        // Stack overflow should never occur during deoptimization:
+        // the compiled method bangs the stack by as much as the
+        // interpreter would need in case of a deoptimization. The
+        // deoptimization blob and uncommon trap blob bang the stack
+        // in a debug VM to verify the correctness of the compiled
+        // method stack banging.
+        assert(thread->deopt_mark() == NULL, "no stack overflow from deopt blob/uncommon trap");
         Events::log_exception(thread, "StackOverflowError at " INTPTR_FORMAT, pc);
         return StubRoutines::throw_StackOverflowError_entry();
       }

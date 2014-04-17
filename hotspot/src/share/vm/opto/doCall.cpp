@@ -104,6 +104,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         log->print(" receiver2='%d' receiver2_count='%d'", r2id, profile.receiver_count(1));
       }
     }
+    if (callee->is_method_handle_intrinsic()) {
+      log->print(" method_handle_intrinsic='1'");
+    }
     log->end_elem();
   }
 
@@ -296,6 +299,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   if (call_does_dispatch) {
     const char* msg = "virtual call";
     if (PrintInlining) print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+    C->log_inline_failure(msg);
     return CallGenerator::for_virtual_call(callee, vtable_index);
   } else {
     // Class Hierarchy Analysis or Type Profile reveals a unique target,
