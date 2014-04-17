@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -73,6 +74,7 @@ final class CompiledFunction {
     private MethodHandle constructor;
     private OptimismInfo optimismInfo;
     private int flags; // from FunctionNode
+    private boolean applyToCall;
 
     CompiledFunction(final MethodHandle invoker) {
         this.invoker = invoker;
@@ -102,13 +104,21 @@ final class CompiledFunction {
         return flags;
     }
 
+    void setIsApplyToCall() {
+        applyToCall = true;
+    }
+
+    boolean isApplyToCall() {
+        return applyToCall;
+    }
+
     boolean isVarArg() {
         return isVarArgsType(invoker.type());
     }
 
     @Override
     public String toString() {
-        return "<callSiteType=" + invoker.type() + " invoker=" + invoker + " ctor=" + constructor + " weight=" + weight() + ">";
+        return "[invokerType=" + invoker.type() + " ctor=" + constructor + " weight=" + weight() + " isApplyToCall=" + isApplyToCall() + "]";
     }
 
     boolean needsCallee() {
@@ -637,7 +647,7 @@ final class CompiledFunction {
                 return null;
             }
             SwitchPoint.invalidateAll(new SwitchPoint[] { optimisticAssumptions });
-            return data.compile(callSiteType, invalidatedProgramPoints, e.getRuntimeScope(), "Deoptimizing recompilation");
+            return data.compile(callSiteType, invalidatedProgramPoints, e.getRuntimeScope(), "Deoptimizing recompilation", data.getDefaultTransform(callSiteType));
         }
 
         MethodHandle compileRestOfMethod(final MethodType callSiteType, final RewriteException e) {
@@ -651,7 +661,7 @@ final class CompiledFunction {
                 System.arraycopy(prevEntryPoints, 0, entryPoints, 1, l);
             }
             entryPoints[0] = e.getProgramPoint();
-            return data.compileRestOfMethod(callSiteType, invalidatedProgramPoints, entryPoints, e.getRuntimeScope());
+            return data.compileRestOfMethod(callSiteType, invalidatedProgramPoints, entryPoints, e.getRuntimeScope(), data.getDefaultTransform(callSiteType));
         }
     }
 

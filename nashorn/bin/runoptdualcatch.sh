@@ -6,7 +6,8 @@
 FILENAME="./optimistic_dual_catch_$(date|sed "s/ /_/g"|sed "s/:/_/g").jfr"
 
 DIR=..
-FAST_CATCH_COMBINATOR=$DIR/bin/fastCatchCombinator.jar
+FAST_CATCH_COMBINATOR=
+#$DIR/bin/fastCatchCombinator.jar
 NASHORN_JAR=$DIR/dist/nashorn.jar
 
 $JAVA_HOME/bin/java \

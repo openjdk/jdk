@@ -269,6 +269,16 @@ public final class IdentNode extends Expression implements PropertyKey, Function
         return (flags & OPTIMISTIC) == OPTIMISTIC;
     }
 
+    /**
+     * Is this an internal symbol, i.e. one that starts with ':'. Those can
+     * never be optimistic.
+     * @return true if internal symbol
+     */
+    public boolean isInternal() {
+        assert name != null;
+        return name.charAt(0) == ':';
+    }
+
     @Override
     public Optimistic setIsOptimistic(final boolean isOptimistic) {
         if (isOptimistic() == isOptimistic) {

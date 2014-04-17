@@ -156,7 +156,9 @@ function run_one_benchmark(arg, iters) {
 
     } catch (e) {
 	print_always("*** Aborted and setting score to zero. Reason: " + e);
-	e.printStackTrace();
+	if (e instanceof java.lang.Throwable) {
+	    e.printStackTrace();
+	}
 	mean_score = min_score = max_score = 0;
 	scores = [0];
     }
@@ -218,13 +220,19 @@ var min_time = 5;
 for (var i = 0; i < args.length; i++) { 
     arg = args[i];
     if (arg == "--iterations") {
-	iters = +args[++i];
+	iters = +args[++i];	
+	if (isNaN(iters)) {
+	    throw "'--iterations' must be followed by integer";
+	}
     } else if (arg == "--runtime") {
 	runtime = args[++i];
     } else if (arg == "--verbose") {
 	verbose = true;
     } else if (arg == "--min-time") {
 	min_time = +args[++i];
+	if (isNaN(iters)) {
+	    throw "'--min-time' must be followed by integer";
+	}
     } else if (arg == "") {
 	continue; //skip
     } else {

@@ -554,10 +554,13 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * (since it exposes {@code arguments.callee} property) will need to have a callee parameter. We also return true
      * for split functions to make sure symbols slots are the same in the main and split methods.
      *
+     * A function that has had an apply(this,arguments) turned into a call doesn't need arguments anymore, but still
+     * has to fit the old callsite, thus, we require a dummy callee parameter for those functions as well
+     *
      * @return true if the function's generated Java method needs a {@code callee} parameter.
      */
     public boolean needsCallee() {
-        return needsParentScope() || usesSelfSymbol() || isSplit() || (needsArguments() && !isStrict());
+        return needsParentScope() || usesSelfSymbol() || isSplit() || (needsArguments() && !isStrict()) || hasOptimisticApplyToCall();
     }
 
     /**

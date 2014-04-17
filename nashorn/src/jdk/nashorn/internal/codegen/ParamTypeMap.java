@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.codegen;
 
 import java.lang.invoke.MethodType;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,7 +65,7 @@ public class ParamTypeMap {
     }
 
     ParamTypeMap(final Map<FunctionNode, Type[]> typeMap) {
-        for (Map.Entry<FunctionNode, Type[]> entry : typeMap.entrySet()) {
+        for (final Map.Entry<FunctionNode, Type[]> entry : typeMap.entrySet()) {
             map.put(entry.getKey().getId(), entry.getValue());
         }
     }
@@ -77,10 +78,24 @@ public class ParamTypeMap {
      */
     Type get(final FunctionNode functionNode, final int pos) {
         final Type[] types = map.get(functionNode.getId());
-        assert types == null || pos < types.length;
+        assert types == null || pos < types.length : "fn = " + functionNode.getId() + " " + "types=" + Arrays.toString(types) + " || pos=" + pos + " >= length=" + types.length + " in " + this;
         if (types != null && pos < types.length) {
             return types[pos];
         }
         return null;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("\n[ParamTypeMap]\n");
+        if (map.isEmpty()) {
+            sb.append("\t{}");
+        } else {
+            for (final Map.Entry<Integer, Type[]> entry : map.entrySet()) {
+                sb.append('\t').append(entry.getKey() + "=>" + ((entry.getValue() == null) ? "[]" : Arrays.toString(entry.getValue()))).append('\n');
+            }
+        }
+        return sb.toString();
     }
 }

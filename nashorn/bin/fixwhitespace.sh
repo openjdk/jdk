@@ -28,3 +28,9 @@ find . -name "*.java" -exec sed -i "" 's/	/    /g' {} \;
 #remove trailing whitespace
 find . -name "*.java" -exec sed -i "" 's/[ 	]*$//' \{} \;
 
+#convert tabs to spaces
+find . -name "*.js" -exec sed -i "" 's/	/    /g' {} \;
+
+#remove trailing whitespace
+find . -name "*.js" -exec sed -i "" 's/[ 	]*$//' \{} \;
+

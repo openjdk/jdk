@@ -233,6 +233,8 @@ public final class CallNode extends LexicalContextExpression implements Optimist
         function.toString(fsb);
         if (isApplyToCall()) {
             sb.append(fsb.toString().replace("apply", "[apply => call]"));
+        } else {
+            sb.append(fsb);
         }
 
         sb.append('(');

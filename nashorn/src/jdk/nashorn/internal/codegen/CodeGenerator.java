@@ -1533,7 +1533,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             if (isRestOf) {
                 final ContinuationInfo ci = new ContinuationInfo();
                 fnIdToContinuationInfo.put(fnId, ci);
-                method._goto(ci.handlerLabel);
+                method._goto(ci.getHandlerLabel());
             }
         }
 
@@ -1939,7 +1939,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         //in the properties above, we need to reset the map to oc.getMap() in the continuation
         //handler
         if (restOfProperty) {
-            getContinuationInfo().objectLiteralMap = oc.getMap();
+            getContinuationInfo().setObjectLiteralMap(oc.getMap());
         }
 
         method.dup();
@@ -3995,15 +3995,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
                 if(currentContinuationEntryPoint) {
                     final ContinuationInfo ci = getContinuationInfo();
-                    assert ci.targetLabel == null; // No duplicate program points
-                    ci.targetLabel = afterConsumeStack;
-                    ci.localVariableTypes = localTypes;
-
-                    ci.stackStoreSpec = localLoads;
-
-                    ci.stackTypes = Arrays.copyOf(method.getTypesFromStack(method.getStackSize()), stackSizeOnEntry);
-                    assert ci.stackStoreSpec.length == ci.stackTypes.length;
-                    ci.returnValueType = method.peekType();
+                    assert !ci.hasTargetLabel(); // No duplicate program points
+                    ci.setTargetLabel(afterConsumeStack);
+                    ci.setLocalVariableTypes(localTypes);
+                    ci.setStackStoreSpec(localLoads);
+                    ci.setStackTypes(Arrays.copyOf(method.getTypesFromStack(method.getStackSize()), stackSizeOnEntry));
+                    assert ci.getStackStoreSpec().length == ci.getStackTypes().length;
+                    ci.setReturnValueType(method.peekType());
                 }
             }
             return method;
@@ -4436,28 +4434,83 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private static class ContinuationInfo {
-        final Label handlerLabel;
-        Label targetLabel; // Label for the target instruction.
+        private final Label handlerLabel;
+        private Label targetLabel; // Label for the target instruction.
         // Types the local variable slots have to have when this node completes
-        Type[] localVariableTypes;
+        private Type[] localVariableTypes;
         // Indices of local variables that need to be loaded on the stack when this node completes
-        int[] stackStoreSpec;
+        private int[] stackStoreSpec;
         // Types of values loaded on the stack
-        Type[] stackTypes;
+        private Type[] stackTypes;
         // If non-null, this node should perform the requisite type conversion
-        Type returnValueType;
-        // If we are in the middle of an object literal initialization, we need to update
-        // the map
-        PropertyMap objectLiteralMap;
+        private Type returnValueType;
+        // If we are in the middle of an object literal initialization, we need to update the map
+        private PropertyMap objectLiteralMap;
 
         ContinuationInfo() {
             this.handlerLabel = new Label("continuation_handler");
         }
 
+        Label getHandlerLabel() {
+            return handlerLabel;
+        }
+
+        boolean hasTargetLabel() {
+            return targetLabel != null;
+        }
+
+        Label getTargetLabel() {
+            return targetLabel;
+        }
+
+        void setTargetLabel(final Label targetLabel) {
+            this.targetLabel = targetLabel;
+        }
+
+        Type[] getLocalVariableTypes() {
+            return localVariableTypes.clone();
+        }
+
+        void setLocalVariableTypes(final Type[] localVariableTypes) {
+            this.localVariableTypes = localVariableTypes;
+        }
+
+        int[] getStackStoreSpec() {
+            return stackStoreSpec.clone();
+        }
+
+        void setStackStoreSpec(final int[] stackStoreSpec) {
+            this.stackStoreSpec = stackStoreSpec;
+        }
+
+        Type[] getStackTypes() {
+            return stackTypes.clone();
+        }
+
+        void setStackTypes(final Type[] stackTypes) {
+            this.stackTypes = stackTypes;
+        }
+
+        Type getReturnValueType() {
+            return returnValueType;
+        }
+
+        void setReturnValueType(final Type returnValueType) {
+            this.returnValueType = returnValueType;
+        }
+
+        PropertyMap getObjectLiteralMap() {
+            return objectLiteralMap;
+        }
+
+        void setObjectLiteralMap(final PropertyMap objectLiteralMap) {
+            this.objectLiteralMap = objectLiteralMap;
+        }
+
         @Override
         public String toString() {
-            return "[localVariableTypes=" + Arrays.toString(localVariableTypes) + ", stackStoreSpec=" +
-                    Arrays.toString(stackStoreSpec) + ", returnValueType=" + returnValueType + "]";
+             return "[localVariableTypes=" + Arrays.toString(localVariableTypes) + ", stackStoreSpec=" +
+                     Arrays.toString(stackStoreSpec) + ", returnValueType=" + returnValueType + "]";
         }
     }
 
@@ -4471,13 +4524,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         final ContinuationInfo ci = getContinuationInfo();
-        method.label(ci.handlerLabel);
+        method.label(ci.getHandlerLabel());
 
         // There should never be an exception thrown from the continuation handler, but in case there is (meaning,
         // Nashorn has a bug), then line number 0 will be an indication of where it came from (line numbers are Uint16).
         method.lineNumber(0);
 
-        final Type[] lvarTypes = ci.localVariableTypes;
+        final Type[] lvarTypes = ci.getLocalVariableTypes();
         final int    lvarCount = lvarTypes.length;
 
         final Type rewriteExceptionType = Type.typeFor(RewriteException.class);
@@ -4499,9 +4552,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             lvarIndex = nextLvarIndex;
         }
 
-        final int[] stackStoreSpec = ci.stackStoreSpec;
-        final Type[] stackTypes = ci.stackTypes;
-        final boolean isStackEmpty = stackStoreSpec.length == 0;
+        final int[]   stackStoreSpec = ci.getStackStoreSpec();
+        final Type[]  stackTypes     = ci.getStackTypes();
+        final boolean isStackEmpty   = stackStoreSpec.length == 0;
         if(!isStackEmpty) {
             // Store the RewriteException into an unused local variable slot.
             method.store(rewriteExceptionType, lvarCount);
@@ -4515,10 +4568,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // stack: s0=object literal being initialized
             // change map of s0 so that the property we are initilizing when we failed
             // is now ci.returnValueType
-            if (ci.objectLiteralMap != null) {
+            if (ci.getObjectLiteralMap() != null) {
                 method.dup(); //dup script object
                 assert ScriptObject.class.isAssignableFrom(method.peekType().getTypeClass()) : method.peekType().getTypeClass() + " is not a script object";
-                loadConstant(ci.objectLiteralMap);
+                loadConstant(ci.getObjectLiteralMap());
                 method.invoke(ScriptObject.SET_MAP);
             }
 
@@ -4530,9 +4583,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         // Load return value on the stack
         method.invoke(RewriteException.GET_RETURN_VALUE);
-        method.convert(ci.returnValueType);
+        method.convert(ci.getReturnValueType());
 
         // Jump to continuation point
-        method._goto(ci.targetLabel);
+        method._goto(ci.getTargetLabel());
     }
 }
