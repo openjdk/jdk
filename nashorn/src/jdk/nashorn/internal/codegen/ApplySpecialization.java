@@ -47,6 +47,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
+import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * An optimization that attempts to turn applies into calls. This pattern
@@ -79,7 +80,9 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
  * </pre>
  */
 
-public class ApplySpecialization {
+public final class ApplySpecialization {
+
+    private static final boolean USE_APPLY2CALL = Options.getBooleanProperty("nashorn.apply2call", true);
 
     private final RecompilableScriptFunctionData data;
 
@@ -95,10 +98,8 @@ public class ApplySpecialization {
 
     private boolean finished;
 
-    private final boolean isRestOf;
-
     /**
-     * Return the apply to call specialization logger
+     * Return the apply to call specialization logger g
      * @return the logger
      */
     public static DebugLogger getLogger() {
@@ -113,13 +114,11 @@ public class ApplySpecialization {
      * @param data                recompilable script function data, which contains e.g. needs callee information
      * @param functionNode        functionNode
      * @param actualCallSiteType  actual call site type that we use (not Object[] varargs)
-     * @param isRestOf            is this a restof method
      */
-    public ApplySpecialization(final RecompilableScriptFunctionData data, final FunctionNode functionNode, final MethodType actualCallSiteType, final boolean isRestOf) {
+    public ApplySpecialization(final RecompilableScriptFunctionData data, final FunctionNode functionNode, final MethodType actualCallSiteType) {
         this.data = data;
         this.functionNode = functionNode;
         this.actualCallSiteType = actualCallSiteType;
-        this.isRestOf = isRestOf;
     }
 
     /**
@@ -194,6 +193,10 @@ public class ApplySpecialization {
      * @return true if successful, false otherwise
      */
     public boolean transform() {
+        if (!USE_APPLY2CALL) {
+            return false;
+        }
+
         if (finished) {
             throw new AssertionError("Can't apply transform twice");
         }
@@ -262,7 +265,8 @@ public class ApplySpecialization {
                     setParameters(null, newParams);
         }
 
-        LOG.info("Successfully specialized apply to call in '" + functionNode.getName() + "' id=" + functionNode.getId() + " signature=" + actualCallSiteType + " isRestOf=" + isRestOf);
+        LOG.info("Successfully specialized apply to call in '" + functionNode.getName() + "' id=" + functionNode.getId() + " signature=" + actualCallSiteType);
+
         return finish();
     }
 

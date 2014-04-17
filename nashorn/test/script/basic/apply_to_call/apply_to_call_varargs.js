@@ -22,46 +22,54 @@
  */
 
 /**
- * apply_to_call3.js - do one apply to call specialization, then override, apply and make sure it reverts (i.e. stops 
- * calling call). Then apply should break and throw exception
+ * apply_to_call_varars - make sure that apply to call transform works
+ * even when supplying too few arguments
  *
  * @test
  * @run
  */
 
-print("start"); 
+var Class = {
+  create: function() {
+    return function() { //vararg
+        this.initialize.apply(this, arguments);
+    }
+  }
+};
 
-var x = {
-    a : 0,
-    b : 0,
-    c : 0,
-    initialize : function(x,y,z) {
-	this.a = x;
-	this.b = y;
-	this.c = z;
+Color = Class.create();
+Color.prototype = {
+    red: 0, green: 0, blue: 0,
+    initialize: function(r) {
+	this.red = r;
+	this.green = 255;
+	this.blue = 255;
+    },
+    toString: function() {
+	print("[red=" + this.red + ", green=" + this.green + ", blue=" + this.blue + "]");
     }
 };
 
-function test() {
-    x.initialize.apply(x, arguments);
+var colors = new Array(16);
+function run() {
+    for (var i = 0; i < colors.length; i++) {
+	colors[i&0xf] = (new Color(i));
+    }
 }
 
-test(4711,23,17);
-print(x.a);
-print(x.b);
-print(x.c);
+run();
+for (var i = 0; i < colors.length; i++) {
+    print(colors[i]);
+}
 
-print("Overwriting apply now");
-
-Function.prototype.apply = function() {
-    throw "This should be thrown, as the test call transform is no longer valid";
+print("Swapping out call");
+Function.prototype.call = function() {
+    throw "This should not happen, apply should be called instead";
 };
 
-try {
-    test(1,2,3);
-} catch (e) {
-    print(e);
+run();
+for (var i = 0; i < colors.length; i++) {
+    print(colors[i]);
 }
-print(x.a);
-print(x.b);
-print(x.c);
+
+print("All done!");

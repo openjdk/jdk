@@ -22,46 +22,23 @@
  */
 
 /**
- * apply_to_call3.js - do one apply to call specialization, then override, apply and make sure it reverts (i.e. stops 
- * calling call). Then apply should break and throw exception
+ * apply_to_recompile.js - make sure that recompilations of methods are
+ * transform equivalent when it comes to apply2call, or we will have
+ * erroneous contiunation info generation
  *
  * @test
  * @run
  */
 
-print("start"); 
-
-var x = {
-    a : 0,
-    b : 0,
-    c : 0,
-    initialize : function(x,y,z) {
-	this.a = x;
-	this.b = y;
-	this.c = z;
-    }
-};
-
-function test() {
-    x.initialize.apply(x, arguments);
+function K() {
+    K.b2BoundValues.apply(this, arguments);
+    this.constructor === K && K.b2BoundValues.apply(this, arguments)
 }
 
-test(4711,23,17);
-print(x.a);
-print(x.b);
-print(x.c);
-
-print("Overwriting apply now");
-
-Function.prototype.apply = function() {
-    throw "This should be thrown, as the test call transform is no longer valid";
+K.b2BoundValues = function(a,b,c) {
+    print(a);
+    print(b);
+    print(c);
 };
 
-try {
-    test(1,2,3);
-} catch (e) {
-    print(e);
-}
-print(x.a);
-print(x.b);
-print(x.c);
+new K(11,12,13,14,15,16);

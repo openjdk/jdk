@@ -29,6 +29,9 @@ import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.MAX_
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
+
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.CallNode;
@@ -40,6 +43,7 @@ import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Optimistic;
 import jdk.nashorn.internal.ir.UnaryNode;
+import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
 /**
@@ -48,6 +52,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 class ProgramPoints extends NodeVisitor<LexicalContext> {
 
     private final Deque<int[]> nextProgramPoint = new ArrayDeque<>();
+    private final Set<Node> noProgramPoint = new HashSet<>();
 
     ProgramPoints() {
         super(new LexicalContext());
@@ -73,9 +78,25 @@ class ProgramPoints extends NodeVisitor<LexicalContext> {
         return functionNode;
     }
 
-    private static Optimistic setProgramPoint(final Optimistic optimistic, final int programPoint) {
-        final Expression node = (Expression)optimistic.setProgramPoint(programPoint);
-        return (Optimistic)node;
+    private Optimistic setProgramPoint(final Optimistic optimistic, final int programPoint) {
+        if (noProgramPoint.contains(optimistic)) {
+            return optimistic;
+        }
+        return (Optimistic)(Expression)optimistic.setProgramPoint(programPoint);
+    }
+
+    @Override
+    public boolean enterVarNode(final VarNode varNode) {
+        noProgramPoint.add(varNode.getAssignmentDest());
+        return true;
+    }
+
+    @Override
+    public boolean enterIdentNode(final IdentNode identNode) {
+        if (identNode.isInternal()) {
+            noProgramPoint.add(identNode);
+        }
+        return true;
     }
 
     @Override

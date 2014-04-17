@@ -24,6 +24,8 @@
  */
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
+
 import java.lang.invoke.MethodType;
 import java.util.LinkedList;
 
@@ -59,6 +61,38 @@ final class CompiledFunctions {
     @Override
     public String toString() {
         return '\'' + name + "' code=" + functions;
+    }
+
+    /**
+     * Used to find an apply to call version that fits this callsite.
+     * We cannot just, as in the normal matcher case, return e.g. (Object, Object, int)
+     * for (Object, Object, int, int, int) or we will destroy the semantics and get
+     * a function that, when padded with undefineds, behaves differently
+     * @param type actual call site type
+     * @return apply to call that perfectly fits this callsite or null if none found
+     */
+    CompiledFunction lookupExactApplyToCall(final MethodType type) {
+        for (final CompiledFunction cf : functions) {
+            if (!cf.isApplyToCall()) {
+                continue;
+            }
+
+            final MethodType cftype = cf.type();
+            if (cftype.parameterCount() != type.parameterCount()) {
+                continue;
+            }
+
+            final Class<?>[] paramTypes = new Class<?>[cftype.parameterCount()];
+            for (int i = 0; i < cftype.parameterCount(); i++) {
+                paramTypes[i] = cftype.parameterType(i).isPrimitive() ? cftype.parameterType(i) : Object.class;
+            }
+
+            if (MH.type(cftype.returnType(), paramTypes).equals(type)) {
+                return cf;
+            }
+        }
+
+        return null;
     }
 
     private CompiledFunction pick(final MethodType callSiteType, final boolean canPickVarArg) {
