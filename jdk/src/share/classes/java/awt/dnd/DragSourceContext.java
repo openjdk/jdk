@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,7 +472,7 @@ public class DragSourceContext
      *               <code>ENTER</code>, <code>OVER</code>,
      *               <code>CHANGED</code>
      */
-
+    @SuppressWarnings("fallthrough")
     protected synchronized void updateCurrentCursor(int sourceAct, int targetAct, int status) {
 
         // if the cursor has been previously set then don't do any defaults
