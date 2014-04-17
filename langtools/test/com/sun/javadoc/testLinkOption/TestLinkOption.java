@@ -23,18 +23,20 @@
 
 /*
  * @test
- * @bug 4720957 5020118 8026567
+ * @bug 4720957 5020118 8026567 8038976
  * @summary Test to make sure that -link and -linkoffline link to
- * right files.
+ * right files, and URLs with and without trailing slash are accepted.
  * @author jamieh
  * @library ../lib/
  * @build JavadocTester TestLinkOption
  * @run main TestLinkOption
  */
 
+import java.io.File;
+
 public class TestLinkOption extends JavadocTester {
 
-    private static final String BUG_ID = "4720957-5020118";
+    private static final String BUG_ID = "4720957-5020118-8038976";
 
     //Generate the documentation using -linkoffline and a URL as the first parameter.
     private static final String[] ARGS1 = new String[] {
@@ -85,7 +87,34 @@ public class TestLinkOption extends JavadocTester {
         }
     };
     private static final String[][] NEGATED_TEST2 = NO_TEST;
-
+    /*
+     * Create the documentation using the -link option, vary the behavior with
+     * both trailing and no trailing slash. We are only interested in ensuring
+     * that the command executes with no errors or related warnings.
+     */
+    static String[] createArguments(boolean withTrailingSlash) {
+        String packagePath = new File(BUG_ID + "-1").getAbsolutePath();
+        String outputDirName = BUG_ID;
+        if (withTrailingSlash) {
+            // add the trailing slash, if it is not present!
+            if (!packagePath.endsWith(FS)) {
+                packagePath = packagePath + FS;
+            }
+            outputDirName = outputDirName + "-3";
+        } else {
+            // remove the trailing slash, if it is present!
+            if (packagePath.endsWith(FS)) {
+                packagePath = packagePath.substring(0, packagePath.length() - 1);
+            }
+            outputDirName = outputDirName + "-4";
+        }
+        String args[] = {
+            "-d", outputDirName, "-sourcepath", SRC_DIR,
+            "-link", "file:///" + packagePath, "-package", "pkg2"
+        };
+        System.out.println("packagePath: " + packagePath);
+        return args;
+    }
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
@@ -94,6 +123,12 @@ public class TestLinkOption extends JavadocTester {
         TestLinkOption tester = new TestLinkOption();
         run(tester, ARGS1, TEST1, NEGATED_TEST1);
         run(tester, ARGS2, TEST2, NEGATED_TEST2);
+        tester.runJavadoc(createArguments(true));  // with trailing slash
+        tester.runJavadoc(createArguments(false)); // without trailing slash
+        tester.printSummary();
+        if (tester.getWarningOutput().contains("warning - Error fetching URL")) {
+            throw new Error("URL rejected ?");
+        }
         tester.printSummary();
     }
 
