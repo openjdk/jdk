@@ -1542,7 +1542,7 @@ public class ClassReader {
             final int exception_index = nextChar();
             final TypeAnnotationPosition position =
                 TypeAnnotationPosition.exceptionParameter(readTypePath());
-            position.exception_index = exception_index;
+            position.setExceptionIndex(exception_index);
             return position;
         }
         // method receiver
