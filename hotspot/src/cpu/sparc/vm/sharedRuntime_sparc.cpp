@@ -3355,13 +3355,16 @@ static void make_new_frames(MacroAssembler* masm, bool deopt) {
   Register        O4array_size       = O4;
   Label           loop;
 
-  // Before we make new frames, check to see if stack is available.
-  // Do this after the caller's return address is on top of stack
+#ifdef ASSERT
+  // Compilers generate code that bang the stack by as much as the
+  // interpreter would need. So this stack banging should never
+  // trigger a fault. Verify that it does not on non product builds.
   if (UseStackBanging) {
     // Get total frame size for interpreted frames
     __ ld(O2UnrollBlock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes(), O4);
     __ bang_stack_size(O4, O3, G3_scratch);
   }
+#endif
 
   __ ld(O2UnrollBlock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes(), O4array_size);
   __ ld_ptr(O2UnrollBlock, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes(), G3pcs);
@@ -3409,9 +3412,11 @@ void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
   // setup code generation tools
   int pad = VerifyThread ? 512 : 0;// Extra slop space for more verify code
+#ifdef ASSERT
   if (UseStackBanging) {
     pad += StackShadowPages*16 + 32;
   }
+#endif
 #ifdef _LP64
   CodeBuffer buffer("deopt_blob", 2100+pad, 512);
 #else
@@ -3632,9 +3637,11 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   ResourceMark rm;
   // setup code generation tools
   int pad = VerifyThread ? 512 : 0;
+#ifdef ASSERT
   if (UseStackBanging) {
     pad += StackShadowPages*16 + 32;
   }
+#endif
 #ifdef _LP64
   CodeBuffer buffer("uncommon_trap_blob", 2700+pad, 512);
 #else

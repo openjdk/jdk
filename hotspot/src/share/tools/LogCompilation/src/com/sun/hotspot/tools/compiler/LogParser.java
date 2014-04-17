@@ -31,6 +31,7 @@ package com.sun.hotspot.tools.compiler;
 
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -144,9 +145,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
     private Stack<CallSite> scopes = new Stack<CallSite>();
     private Compilation compile;
     private CallSite site;
+    private CallSite methodHandleSite;
     private Stack<Phase> phaseStack = new Stack<Phase>();
     private UncommonTrapEvent currentTrap;
-    private Stack<CallSite> late_inline_scope;
+    private Stack<CallSite> lateInlineScope;
+    private boolean lateInlining;
+
 
     long parseLong(String l) {
         try {
@@ -330,18 +334,61 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             }
             methods.put(id, m);
         } else if (qname.equals("call")) {
-            site = new CallSite(bci, method(search(atts, "method")));
+            if (methodHandleSite != null) {
+                methodHandleSite = null;
+            }
+            Method m = method(search(atts, "method"));
+            if (lateInlining && scopes.size() == 0) {
+                // re-attempting already seen call site (late inlining for MH invokes)
+                if (m != site.getMethod()) {
+                    if (bci != site.getBci()) {
+                        System.out.println(m + " bci: " + bci);
+                        System.out.println(site.getMethod() +  " bci: " + site.getBci());
+                        throw new InternalError("bci mismatch after late inlining");
+                    }
+                    site.setMethod(m);
+                }
+            } else {
+                site = new CallSite(bci, m);
+            }
             site.setCount(Integer.parseInt(search(atts, "count", "0")));
             String receiver = atts.getValue("receiver");
             if (receiver != null) {
                 site.setReceiver(type(receiver));
                 site.setReceiver_count(Integer.parseInt(search(atts, "receiver_count")));
             }
-            scopes.peek().add(site);
+            int methodHandle = Integer.parseInt(search(atts, "method_handle_intrinsic", "0"));
+            if (lateInlining && scopes.size() == 0) {
+                // The call was added before this round of late inlining
+            } else if (methodHandle == 0) {
+                scopes.peek().add(site);
+            } else {
+                // method handle call site can be followed by another
+                // call (in case it is inlined). If that happens we
+                // discard the method handle call site. So we keep
+                // track of it but don't add it to the list yet.
+                methodHandleSite = site;
+            }
         } else if (qname.equals("regalloc")) {
             compile.setAttempts(Integer.parseInt(search(atts, "attempts")));
         } else if (qname.equals("inline_fail")) {
-            scopes.peek().last().setReason(search(atts, "reason"));
+            if (methodHandleSite != null) {
+                scopes.peek().add(methodHandleSite);
+                methodHandleSite = null;
+            }
+            if (lateInlining && scopes.size() == 0) {
+                site.setReason(search(atts, "reason"));
+                lateInlining = false;
+            } else {
+                scopes.peek().last().setReason(search(atts, "reason"));
+            }
+        } else if (qname.equals("inline_success")) {
+            if (methodHandleSite != null) {
+                throw new InternalError("method handle site should have been replaced");
+            }
+            if (lateInlining && scopes.size() == 0) {
+                site.setReason(null);
+            }
         } else if (qname.equals("failure")) {
             failureReason = search(atts, "reason");
         } else if (qname.equals("task_done")) {
@@ -371,22 +418,30 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
                 // ignore for now
             }
         } else if (qname.equals("late_inline")) {
-            late_inline_scope = new Stack<CallSite>();
+            long inlineId = Long.parseLong(search(atts, "inline_id"));
+            lateInlineScope = new Stack<CallSite>();
             site = new CallSite(-999, method(search(atts, "method")));
-            late_inline_scope.push(site);
+            site.setInlineId(inlineId);
+            lateInlineScope.push(site);
         } else if (qname.equals("jvms")) {
             // <jvms bci='4' method='java/io/DataInputStream readChar ()C' bytes='40' count='5815' iicount='20815'/>
             if (currentTrap != null) {
                 currentTrap.addJVMS(atts.getValue("method"), Integer.parseInt(atts.getValue("bci")));
-            } else if (late_inline_scope != null) {
+            } else if (lateInlineScope != null) {
                 bci = Integer.parseInt(search(atts, "bci"));
                 site = new CallSite(bci, method(search(atts, "method")));
-                late_inline_scope.push(site);
+                lateInlineScope.push(site);
             } else {
                 // Ignore <eliminate_allocation type='667'>,
                 //        <eliminate_lock lock='1'>,
                 //        <replace_string_concat arguments='2' string_alloc='0' multiple='0'>
             }
+        } else if (qname.equals("inline_id")) {
+            if (methodHandleSite != null) {
+                throw new InternalError("method handle site should have been replaced");
+            }
+            long id = Long.parseLong(search(atts, "id"));
+            site.setInlineId(id);
         } else if (qname.equals("nmethod")) {
             String id = makeId(atts);
             NMethod nm = new NMethod(Double.parseDouble(search(atts, "stamp")),
@@ -396,8 +451,18 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             nmethods.put(id, nm);
             events.add(nm);
         } else if (qname.equals("parse")) {
+            if (methodHandleSite != null) {
+                throw new InternalError("method handle site should have been replaced");
+            }
             Method m = method(search(atts, "method"));
-            if (scopes.size() == 0) {
+            if (lateInlining && scopes.size() == 0) {
+                if (site.getMethod() != m) {
+                    System.out.println(site.getMethod());
+                    System.out.println(m);
+                    throw new InternalError("Unexpected method mismatch during late inlining");
+                }
+            }
+            if (scopes.size() == 0 && !lateInlining) {
                 compile.setMethod(m);
                 scopes.push(site);
             } else {
@@ -427,14 +492,19 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         if (qname.equals("parse")) {
             indent -= 2;
             scopes.pop();
+            if (scopes.size() == 0) {
+                lateInlining = false;
+            }
         } else if (qname.equals("uncommon_trap")) {
             currentTrap = null;
         } else if (qname.equals("late_inline")) {
             // Populate late inlining info.
-
-            // late_inline scopes are specified in reverse order:
+            if (scopes.size() != 0) {
+                throw new InternalError("scopes should be empty for late inline");
+            }
+            // late inline scopes are specified in reverse order:
             // compiled method should be on top of stack.
-            CallSite caller = late_inline_scope.pop();
+            CallSite caller = lateInlineScope.pop();
             Method m = compile.getMethod();
             if (m != caller.getMethod()) {
                 System.out.println(m);
@@ -444,28 +514,42 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
 
             // late_inline contains caller+bci info, convert it
             // to bci+callee info used by LogCompilation.
-            site = compile.getLateInlineCall();
+            CallSite lateInlineSite = compile.getLateInlineCall();
+            ArrayDeque<CallSite> thisCallScopes = new ArrayDeque<CallSite>();
             do {
                 bci = caller.getBci();
                 // Next inlined call.
-                caller = late_inline_scope.pop();
+                caller = lateInlineScope.pop();
                 CallSite callee =  new CallSite(bci, caller.getMethod());
-                site.add(callee);
-                site = callee;
-            } while (!late_inline_scope.empty());
+                callee.setInlineId(caller.getInlineId());
+                thisCallScopes.addLast(callee);
+                lateInlineSite.add(callee);
+                lateInlineSite = callee;
+            } while (!lateInlineScope.empty());
+
+            site = compile.getCall().findCallSite(thisCallScopes);
+            if (site == null) {
+                System.out.println(caller.getMethod() + " bci: " + bci);
+                throw new InternalError("couldn't find call site");
+            }
+            lateInlining = true;
 
             if (caller.getBci() != -999) {
                 System.out.println(caller.getMethod());
                 throw new InternalError("broken late_inline info");
             }
             if (site.getMethod() != caller.getMethod()) {
-                System.out.println(site.getMethod());
-                System.out.println(caller.getMethod());
-                throw new InternalError("call site and late_inline info don't match");
+                if (site.getInlineId() == caller.getInlineId()) {
+                    site.setMethod(caller.getMethod());
+                } else {
+                    System.out.println(site.getMethod());
+                    System.out.println(caller.getMethod());
+                    throw new InternalError("call site and late_inline info don't match");
+                }
             }
             // late_inline is followed by parse with scopes.size() == 0,
             // 'site' will be pushed to scopes.
-            late_inline_scope = null;
+            lateInlineScope = null;
         } else if (qname.equals("task")) {
             types.clear();
             methods.clear();

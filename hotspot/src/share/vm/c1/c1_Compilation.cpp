@@ -546,6 +546,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _code(buffer_blob)
 , _has_access_indexed(false)
 , _current_instruction(NULL)
+, _interpreter_frame_size(0)
 #ifndef PRODUCT
 , _last_instruction_printed(NULL)
 #endif // PRODUCT
