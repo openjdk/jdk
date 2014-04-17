@@ -53,6 +53,9 @@ public class NewInstance {
                     System.out.println("  check");
                     Throwable t = e.getCause();
                     if (!(t instanceof InvalidAlgorithmParameterException)) {
+                        // Some engines require certain parameters to be
+                        // present on creation. Calling newInstance(null) will
+                        // trigger this exception and it's OK.
                         throw e;
                     }
                 }
