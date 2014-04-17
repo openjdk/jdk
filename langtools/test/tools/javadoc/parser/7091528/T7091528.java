@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     7091528 8029145
+ * @bug     7091528 8029145 8037484
  * @summary ensures javadoc parses unique source files and ignores all class files
  * @compile p/C1.java p/q/C2.java
  * @run main T7091528
@@ -50,6 +50,16 @@ public class T7091528 {
             "-sourcepath", testSrc.getAbsolutePath(),
             "-subpackages",
             "p:p.q");
+        File testPkgDir = new File(testSrc, "p");
+        File testFile = new File(testPkgDir, "C3.java");
+        runTest("-d", ".",
+            "-sourcepath", testSrc.getAbsolutePath(),
+            testFile.getAbsolutePath(),
+            "p");
+        runTest("-d", ".",
+            "-classpath", testSrc.getAbsolutePath(),
+            testFile.getAbsolutePath(),
+            "p");
 
     }
     void runTest(String... args) {
@@ -65,7 +75,7 @@ public class T7091528 {
         }
 
         if (rc != 0)
-            System.err.println("javadoc failed: exit code = " + rc);
+            throw new Error("javadoc failed: exit code = " + rc);
 
         if (out.matches("(?s).*p/[^ ]+\\.class.*"))
             throw new Error("reading .class files");
