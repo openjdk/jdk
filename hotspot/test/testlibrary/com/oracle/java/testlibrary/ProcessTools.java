@@ -145,18 +145,15 @@ public final class ProcessTools {
     return createJavaProcessBuilder(false, command);
   }
 
-  public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmOptions, String... command) throws Exception {
+  public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, String... command) throws Exception {
     String javapath = JDKToolFinder.getJDKTool("java");
 
     ArrayList<String> args = new ArrayList<>();
     args.add(javapath);
     Collections.addAll(args, getPlatformSpecificVMArgs());
 
-    if (addTestVmOptions) {
-      String vmopts = System.getProperty("test.vm.opts");
-      if (vmopts != null && vmopts.length() > 0) {
-        Collections.addAll(args, vmopts.split("\\s"));
-      }
+    if (addTestVmAndJavaOptions) {
+      Collections.addAll(args, Utils.getTestJavaOpts());
     }
 
     Collections.addAll(args, command);
