@@ -22,8 +22,8 @@
  */
 
 /*
- * This test is intentionally ignored because of huge memory requirements
- * @ test
+ * @test
+ * @ignore This test has huge memory requirements
  * @run main/timeout=180/othervm -Xmx8g SymmetricRangeTests
  * @bug 6910473 8021204 8021203 9005933
  * @summary Test range of BigInteger values
