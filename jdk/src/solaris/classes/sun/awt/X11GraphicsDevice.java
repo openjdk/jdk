@@ -42,7 +42,7 @@ import sun.java2d.opengl.GLXGraphicsConfig;
 import sun.java2d.xr.XRGraphicsConfig;
 import sun.java2d.loops.SurfaceType;
 
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 
 /**
  * This is an implementation of a GraphicsDevice object for a single

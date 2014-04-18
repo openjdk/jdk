@@ -51,7 +51,7 @@ import sun.awt.datatransfer.DataTransferer;
 import sun.font.FontConfigManager;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.misc.*;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 import sun.print.PrintJob2D;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;

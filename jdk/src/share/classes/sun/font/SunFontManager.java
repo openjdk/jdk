@@ -52,7 +52,7 @@ import javax.swing.plaf.FontUIResource;
 import sun.awt.AppContext;
 import sun.awt.FontConfiguration;
 import sun.awt.SunToolkit;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.FontSupport;
 import sun.util.logging.PlatformLogger;
 

@@ -35,7 +35,7 @@ import java.util.*;
 
 import sun.awt.*;
 import sun.print.*;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 
 import static sun.lwawt.LWWindowPeer.PeerType;
 
