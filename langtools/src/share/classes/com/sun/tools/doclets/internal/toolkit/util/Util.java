@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
+import java.text.Collator;
 import java.util.*;
 import javax.tools.StandardLocation;
 
@@ -49,7 +50,6 @@ import com.sun.tools.javac.util.StringUtils;
  * @author Jamie Ho
  */
 public class Util {
-
     /**
      * Return array of class members whose documentation is to be generated.
      * If the member is deprecated do not include such a member in the
@@ -780,5 +780,164 @@ public class Util {
                 elt.name().contentEquals(ElementType.PACKAGE.name()) ||
                 elt.name().contentEquals(ElementType.PARAMETER.name()) ||
                 elt.name().contentEquals(ElementType.TYPE.name());
+    }
+
+    /**
+     * A general purpose String comparator, which compares two Strings using a Collator
+     * strength of "SECONDARY", thus providing  optimum case insensitive comparisons in
+     * most Locales.
+     *
+     * @param s1 first String to compare.
+     * @param s2 second String to compare.
+     * @return a negative integer, zero, or a positive integer as the first
+     *         argument is less than, equal to, or greater than the second.
+     */
+    public static int compareStrings(String s1, String s2) {
+        Collator collator = Collator.getInstance();
+        collator.setStrength(Collator.SECONDARY);
+        return collator.compare(s1, s2);
+    }
+
+    /**
+     * A comparator for index file uses, this sorts first on names, then on
+     * parameter types and finally on the fully qualified name.
+     * @return a comparator for index file use
+     */
+    public static Comparator<Doc> makeComparatorForIndexUse() {
+        return new Util.DocComparator<Doc>() {
+            /**
+             * compare two given Doc entities, first sort on name, if
+             * applicable on the method's parameter types, and finally on the
+             * fully qualified name of the entity.
+             *
+             * @param d1 - a Doc element.
+             * @param d2 - a Doc element.
+             * @return a negative integer, zero, or a positive integer as the first
+             *         argument is less than, equal to, or greater than the second.
+             */
+            public int compare(Doc d1, Doc d2) {
+                int result = compareStrings(d1.name(), d2.name());
+                if (result != 0) {
+                    return result;
+                }
+                if (d1 instanceof ExecutableMemberDoc && d2 instanceof ExecutableMemberDoc) {
+                    result = compareExecutableMembers(
+                            (ExecutableMemberDoc) d1,
+                            (ExecutableMemberDoc) d2);
+                    if (result != 0) {
+                        return result;
+                    }
+                }
+                if (d1 instanceof ProgramElementDoc && d2 instanceof ProgramElementDoc) {
+                    return compareProgramElementDoc((ProgramElementDoc)d1, (ProgramElementDoc)d2);
+                }
+                return 0;
+            }
+        };
+    }
+
+    /**
+     * Comparator for ClassUse representations, this sorts on member names,
+     * fully qualified member names and then the parameter types if applicable.
+     * @return a comparator to sort classes and members for class use
+     */
+    public static Comparator<Doc> makeComparatorForClassUse() {
+        return new Util.DocComparator<Doc>() {
+            /**
+             * compare two given Doc entities, first sort on name, and if
+             * applicable on the fully qualified name, and finally if applicable
+             * on the parameter types.
+             * @param d1 - a Doc element.
+             * @param d2 - a Doc element.
+             * @return a negative integer, zero, or a positive integer as the first
+             *         argument is less than, equal to, or greater than the second.
+             */
+            public int compare(Doc d1, Doc d2) {
+                int result = compareStrings(d1.name(), d2.name());
+                if (result != 0) {
+                    return result;
+                }
+                if (d1 instanceof ProgramElementDoc && d2 instanceof ProgramElementDoc) {
+                    result = compareProgramElementDoc((ProgramElementDoc) d1, (ProgramElementDoc) d2);
+                    if (result != 0) {
+                        return result;
+                    }
+                }
+                if (d1 instanceof ExecutableMemberDoc && d2 instanceof ExecutableMemberDoc) {
+                    return compareExecutableMembers((ExecutableMemberDoc)d1, (ExecutableMemberDoc)d2);
+                }
+                return 0;
+            }
+        };
+    }
+
+    /**
+     * A general purpose comparator to sort Doc entities, basically provides the building blocks
+     * for creating specific comparators for an use-case.
+     * @param <T> a Doc entity
+     */
+    static abstract class DocComparator<T extends Doc> implements Comparator<Doc> {
+        /**
+         * compares two parameter arrays by first comparing the length of the arrays, and
+         * then each Type of the parameter in the array.
+         * @param params1 the first parameter array.
+         * @param params2 the first parameter array.
+         * @return a negative integer, zero, or a positive integer as the first
+         *         argument is less than, equal to, or greater than the second.
+         */
+        protected int compareParameters(Parameter[] params1, Parameter[] params2) {
+            if (params1.length == 0 && params2.length == 0) {
+                return 0;
+            }
+            int result = Integer.compare(params1.length, params2.length);
+            if (result != 0) {
+                return result;
+            }
+            for (int i = 0; i < params1.length; i++) {
+                result = compareStrings(params1[i].typeName(), params2[i].typeName());
+                if (result != 0) {
+                    return result;
+                }
+            }
+            return 0;
+        }
+
+        /**
+         * Compares two MemberDocs, typically the name of a method,
+         * field or constructor.
+         * @param e1 the first MemberDoc.
+         * @param e2 the second MemberDoc.
+         * @return a negative integer, zero, or a positive integer as the first
+         *         argument is less than, equal to, or greater than the second.
+         */
+        protected int compareMembers(MemberDoc e1, MemberDoc e2) {
+            return compareStrings(e1.name(), e2.name());
+        }
+
+        /**
+         * Compares two ExecutableMemberDocs such as methods and constructors,
+         * as well as the parameters the entity might take.
+         * @param m1 the first ExecutableMemberDoc.
+         * @param m2 the second  ExecutableMemberDoc.
+         * @return a negative integer, zero, or a positive integer as the first
+         *         argument is less than, equal to, or greater than the second.
+         */
+        protected int compareExecutableMembers(ExecutableMemberDoc m1, ExecutableMemberDoc m2) {
+            int result = compareMembers(m1, m2);
+            if (result == 0)
+                result = compareParameters(m1.parameters(), m2.parameters());
+            return result;
+        }
+
+        /**
+         * Compares the fully qualified names of the entities
+         * @param p1 the first ProgramElementDoc.
+         * @param p2 the first ProgramElementDoc.
+         * @return a negative integer, zero, or a positive integer as the first
+         *         argument is less than, equal to, or greater than the second.
+         */
+        protected int compareProgramElementDoc(ProgramElementDoc p1, ProgramElementDoc p2) {
+            return compareStrings(p1.qualifiedName(), p2.qualifiedName());
+        }
     }
 }
