@@ -100,6 +100,7 @@ public abstract class Property {
     /** Property field number or spill slot. */
     private final int slot;
 
+    /** SwitchPoint that is invalidated when property is changed, optional */
     protected SwitchPoint changeCallback;
 
     /**
@@ -173,6 +174,12 @@ public abstract class Property {
         return propFlags;
     }
 
+    /**
+     * Set the change callback for this property, i.e. a SwitchPoint
+     * that will be invalidated when the value of the property is
+     * changed
+     * @param sp SwitchPoint to use for change callback
+     */
     public final void setChangeCallback(final SwitchPoint sp) {
         this.changeCallback = sp;
     }

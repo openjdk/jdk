@@ -41,6 +41,7 @@ import java.util.logging.Level;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.runtime.events.RecompilationEvent;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
@@ -576,7 +577,7 @@ final class CompiledFunction {
 
         final FunctionNode fn = oldOptimismInfo.recompile(callSiteType, re);
         if (LOG.isEnabled()) {
-            LOG.info(new RuntimeEvent<>(Level.INFO, re), "\tRewriteException ", re.getMessageShort());
+            LOG.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "\tRewriteException ", re.getMessageShort());
         }
 
         // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already

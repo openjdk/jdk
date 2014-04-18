@@ -30,7 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jdk.nashorn.internal.objects.Global;
-import jdk.nashorn.internal.runtime.RuntimeEvent;
+import jdk.nashorn.internal.runtime.events.RuntimeEvent;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**

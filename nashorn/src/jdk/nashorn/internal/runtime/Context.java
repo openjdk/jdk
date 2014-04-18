@@ -64,6 +64,7 @@ import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
+import jdk.nashorn.internal.runtime.events.RuntimeEvent;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**

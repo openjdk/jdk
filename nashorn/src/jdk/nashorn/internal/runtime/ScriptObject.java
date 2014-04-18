@@ -2246,7 +2246,6 @@ public abstract class ScriptObject implements PropertyAccess {
      * @param request the link request
      * @return GuardedInvocation to be invoked at call site.
      */
-    @SuppressWarnings("null")
     public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
         final String       name        = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final FindProperty find        = findProperty(NO_SUCH_PROPERTY_NAME, true);

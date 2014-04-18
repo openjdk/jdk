@@ -712,7 +712,6 @@ public final class NativeArray extends ScriptObject {
         return new NativeArray(list.toArray());
     }
 
-    @SuppressWarnings("null")
     private static void concatToList(final ArrayList<Object> list, final Object obj) {
         final boolean isScriptArray = isArray(obj);
         final boolean isScriptObject = isScriptArray || obj instanceof ScriptObject;
