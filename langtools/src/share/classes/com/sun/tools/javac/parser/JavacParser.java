@@ -3417,16 +3417,28 @@ public class JavacParser implements Parser {
      *    | ModifiersOpt
      *      ( Type Ident
      *        ( VariableDeclaratorsRest ";" | MethodDeclaratorRest )
-     *      | VOID Ident MethodDeclaratorRest
-     *      | TypeParameters (Type | VOID) Ident MethodDeclaratorRest
+     *      | VOID Ident VoidMethodDeclaratorRest
+     *      | TypeParameters [Annotations]
+     *        ( Type Ident MethodDeclaratorRest
+     *        | VOID Ident VoidMethodDeclaratorRest
+     *        )
      *      | Ident ConstructorDeclaratorRest
      *      | TypeParameters Ident ConstructorDeclaratorRest
      *      | ClassOrInterfaceOrEnumDeclaration
      *      )
      *  InterfaceBodyDeclaration =
      *      ";"
-     *    | ModifiersOpt Type Ident
-     *      ( ConstantDeclaratorsRest | InterfaceMethodDeclaratorRest ";" )
+     *    | ModifiersOpt
+     *      ( Type Ident
+     *        ( ConstantDeclaratorsRest ";" | MethodDeclaratorRest )
+     *      | VOID Ident MethodDeclaratorRest
+     *      | TypeParameters [Annotations]
+     *        ( Type Ident MethodDeclaratorRest
+     *        | VOID Ident VoidMethodDeclaratorRest
+     *        )
+     *      | ClassOrInterfaceOrEnumDeclaration
+     *      )
+     *
      */
     protected List<JCTree> classOrInterfaceBodyDeclaration(Name className, boolean isInterface) {
         if (token.kind == SEMI) {
@@ -3458,28 +3470,29 @@ public class JavacParser implements Parser {
                 }
                 List<JCAnnotation> annosAfterParams = annotationsOpt(Tag.ANNOTATION);
 
+                if (annosAfterParams.nonEmpty()) {
+                    checkAnnotationsAfterTypeParams(annosAfterParams.head.pos);
+                    mods.annotations = mods.annotations.appendList(annosAfterParams);
+                    if (mods.pos == Position.NOPOS)
+                        mods.pos = mods.annotations.head.pos;
+                }
+
                 Token tk = token;
                 pos = token.pos;
                 JCExpression type;
                 boolean isVoid = token.kind == VOID;
                 if (isVoid) {
-                    if (annosAfterParams.nonEmpty())
-                        illegal(annosAfterParams.head.pos);
                     type = to(F.at(pos).TypeIdent(TypeTag.VOID));
                     nextToken();
                 } else {
-                    if (annosAfterParams.nonEmpty()) {
-                        checkAnnotationsAfterTypeParams(annosAfterParams.head.pos);
-                        mods.annotations = mods.annotations.appendList(annosAfterParams);
-                        if (mods.pos == Position.NOPOS)
-                            mods.pos = mods.annotations.head.pos;
-                    }
                     // method returns types are un-annotated types
                     type = unannotatedType();
                 }
                 if (token.kind == LPAREN && !isInterface && type.hasTag(IDENT)) {
                     if (isInterface || tk.name() != className)
                         error(pos, "invalid.meth.decl.ret.type.req");
+                    else if (annosAfterParams.nonEmpty())
+                        illegal(annosAfterParams.head.pos);
                     return List.of(methodDeclaratorRest(
                         pos, mods, null, names.init, typarams,
                         isInterface, true, dc));
@@ -3511,13 +3524,9 @@ public class JavacParser implements Parser {
     }
 
     /** MethodDeclaratorRest =
-     *      FormalParameters BracketsOpt [Throws TypeList] ( MethodBody | [DEFAULT AnnotationValue] ";")
+     *      FormalParameters BracketsOpt [THROWS TypeList] ( MethodBody | [DEFAULT AnnotationValue] ";")
      *  VoidMethodDeclaratorRest =
-     *      FormalParameters [Throws TypeList] ( MethodBody | ";")
-     *  InterfaceMethodDeclaratorRest =
-     *      FormalParameters BracketsOpt [THROWS TypeList] ";"
-     *  VoidInterfaceMethodDeclaratorRest =
-     *      FormalParameters [THROWS TypeList] ";"
+     *      FormalParameters [THROWS TypeList] ( MethodBody | ";")
      *  ConstructorDeclaratorRest =
      *      "(" FormalParameterListOpt ")" [THROWS TypeList] MethodBody
      */
