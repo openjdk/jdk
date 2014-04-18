@@ -45,11 +45,11 @@ public final class GraphicsPrimitiveMgr {
     private static GraphicsPrimitive generalPrimitives[];
     private static boolean needssort = true;
 
-    private static native void initIDs(Class GP, Class ST, Class CT,
-                                       Class SG2D, Class Color, Class AT,
-                                       Class XORComp, Class AlphaComp,
-                                       Class Path2D, Class Path2DFloat,
-                                       Class SHints);
+    private static native void initIDs(Class<?> GP, Class<?> ST, Class<?> CT,
+                                       Class<?> SG2D, Class<?> Color, Class<?> AT,
+                                       Class<?> XORComp, Class<?> AlphaComp,
+                                       Class<?> Path2D, Class<?> Path2DFloat,
+                                       Class<?> SHints);
     private static native void registerNativeLoops();
 
     static {
@@ -73,16 +73,17 @@ public final class GraphicsPrimitiveMgr {
         public int uniqueID;
     }
 
-    private static Comparator primSorter = new Comparator() {
-        public int compare(Object o1, Object o2) {
-            int id1 = ((GraphicsPrimitive) o1).getUniqueID();
-            int id2 = ((GraphicsPrimitive) o2).getUniqueID();
+    private static Comparator<GraphicsPrimitive> primSorter =
+            new Comparator<GraphicsPrimitive>() {
+        public int compare(GraphicsPrimitive o1, GraphicsPrimitive o2) {
+            int id1 = o1.getUniqueID();
+            int id2 = o2.getUniqueID();
 
             return (id1 == id2 ? 0 : (id1 < id2 ? -1 : 1));
         }
     };
 
-    private static Comparator primFinder = new Comparator() {
+    private static Comparator<Object> primFinder = new Comparator<Object>() {
         public int compare(Object o1, Object o2) {
             int id1 = ((GraphicsPrimitive) o1).getUniqueID();
             int id2 = ((PrimitiveSpec) o2).uniqueID;
