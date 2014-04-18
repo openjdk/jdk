@@ -22,7 +22,7 @@
  */
 
 /**
- * relinkIndexGetter: after call site was linked for array, make sure it
+ * relink_index_getter: after call site was linked for array, make sure it
  * gets correctly relinked for boolean.
  *
  * @test

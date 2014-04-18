@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.runtime;
+package jdk.nashorn.internal.runtime.events;
 
 import java.util.logging.Level;
 
@@ -46,6 +46,7 @@ public class RuntimeEvent<T> {
 
     /**
      * Constructor
+     *
      * @param level  log level for runtime event to create
      * @param object object to wrap
      */
@@ -58,7 +59,7 @@ public class RuntimeEvent<T> {
      * Return the value wrapped in this runtime event
      * @return value
      */
-    public T getValue() {
+    public final T getValue() {
         return value;
     }
 

@@ -167,7 +167,7 @@ public class RewriteException extends Exception {
         return getUOE().getReturnValueDestructive();
     }
 
-    private Object getReturnValueNonDestructive() {
+    Object getReturnValueNonDestructive() {
         return getUOE().getReturnValueNonDestructive();
     }
 

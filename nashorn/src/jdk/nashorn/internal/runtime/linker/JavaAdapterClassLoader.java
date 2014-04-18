@@ -39,14 +39,13 @@ import jdk.internal.dynalink.beans.StaticClass;
  * "class loader", it does not, in fact, extend {@code ClassLoader}, but rather uses them internally. Instances of this
  * class are normally created by {@link JavaAdapterBytecodeGenerator}.
  */
-@SuppressWarnings("javadoc")
 final class JavaAdapterClassLoader {
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
 
     private final String className;
     private final byte[] classBytes;
 
-    JavaAdapterClassLoader(String className, byte[] classBytes) {
+    JavaAdapterClassLoader(final String className, final byte[] classBytes) {
         this.className = className.replace('/', '.');
         this.classBytes = classBytes;
     }

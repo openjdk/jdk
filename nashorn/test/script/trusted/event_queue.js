@@ -35,7 +35,7 @@ print(Debug);
 print();
 
 var forName       = java.lang.Class["forName(String)"];
-var RuntimeEvent  = forName("jdk.nashorn.internal.runtime.RuntimeEvent").static;
+var RuntimeEvent  = forName("jdk.nashorn.internal.runtime.events.RuntimeEvent").static;
 var getValue      = RuntimeEvent.class.getMethod("getValue"); 
 var getValueClass = RuntimeEvent.class.getMethod("getValueClass"); 
 
