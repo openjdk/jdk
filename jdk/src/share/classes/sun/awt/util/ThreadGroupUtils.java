@@ -23,13 +23,13 @@
  * questions.
  */
 
-package sun.misc;
+package sun.awt.util;
 
 /**
  * A utility class needed to access the root {@code ThreadGroup}
  *
  * The class should not depend on any others, because it' called from JNI_OnLoad of the AWT
- * native library. Triggering class loading could could lead to a deadlock.
+ * native library. Triggering class loading could lead to a deadlock.
  */
 public final class ThreadGroupUtils {
 
