@@ -1564,37 +1564,23 @@ int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
   int monitor_size    = method->is_synchronized() ?
                                 1*frame::interpreter_frame_monitor_size() : 0;
   return size_activation_helper(method->max_locals(), method->max_stack(),
-                                 monitor_size) + call_stub_size;
+                                monitor_size) + call_stub_size;
 }
 
-int AbstractInterpreter::layout_activation(Method* method,
-                                           int tempcount,
-                                           int popframe_extra_args,
-                                           int moncount,
-                                           int caller_actual_parameters,
-                                           int callee_param_count,
-                                           int callee_local_count,
-                                           frame* caller,
-                                           frame* interpreter_frame,
-                                           bool is_top_frame,
-                                           bool is_bottom_frame) {
+int AbstractInterpreter::size_activation(int max_stack,
+                                         int temps,
+                                         int extra_args,
+                                         int monitors,
+                                         int callee_params,
+                                         int callee_locals,
+                                         bool is_top_frame) {
   // Note: This calculation must exactly parallel the frame setup
   // in InterpreterGenerator::generate_fixed_frame.
-  // If f!=NULL, set up the following variables:
-  //   - Lmethod
-  //   - Llocals
-  //   - Lmonitors (to the indicated number of monitors)
-  //   - Lesp (to the indicated number of temps)
-  // The frame f (if not NULL) on entry is a description of the caller of the frame
-  // we are about to layout. We are guaranteed that we will be able to fill in a
-  // new interpreter frame as its callee (i.e. the stack space is allocated and
-  // the amount was determined by an earlier call to this method with f == NULL).
-  // On return f (if not NULL) while describe the interpreter frame we just layed out.
 
-  int monitor_size           = moncount * frame::interpreter_frame_monitor_size();
-  int rounded_vm_local_words = round_to(frame::interpreter_frame_vm_local_words,WordsPerLong);
+  int monitor_size           = monitors * frame::interpreter_frame_monitor_size();
 
   assert(monitor_size == round_to(monitor_size, WordsPerLong), "must align");
+
   //
   // Note: if you look closely this appears to be doing something much different
   // than generate_fixed_frame. What is happening is this. On sparc we have to do
@@ -1619,146 +1605,171 @@ int AbstractInterpreter::layout_activation(Method* method,
   // there is no sense in messing working code.
   //
 
-  int rounded_cls = round_to((callee_local_count - callee_param_count), WordsPerLong);
+  int rounded_cls = round_to((callee_locals - callee_params), WordsPerLong);
   assert(rounded_cls == round_to(rounded_cls, WordsPerLong), "must align");
 
-  int raw_frame_size = size_activation_helper(rounded_cls, method->max_stack(),
-                                              monitor_size);
+  int raw_frame_size = size_activation_helper(rounded_cls, max_stack, monitor_size);
 
-  if (interpreter_frame != NULL) {
-    // The skeleton frame must already look like an interpreter frame
-    // even if not fully filled out.
-    assert(interpreter_frame->is_interpreted_frame(), "Must be interpreted frame");
+  return raw_frame_size;
+}
 
-    intptr_t* fp = interpreter_frame->fp();
+void AbstractInterpreter::layout_activation(Method* method,
+                                            int tempcount,
+                                            int popframe_extra_args,
+                                            int moncount,
+                                            int caller_actual_parameters,
+                                            int callee_param_count,
+                                            int callee_local_count,
+                                            frame* caller,
+                                            frame* interpreter_frame,
+                                            bool is_top_frame,
+                                            bool is_bottom_frame) {
+  // Set up the following variables:
+  //   - Lmethod
+  //   - Llocals
+  //   - Lmonitors (to the indicated number of monitors)
+  //   - Lesp (to the indicated number of temps)
+  // The frame caller on entry is a description of the caller of the
+  // frame we are about to layout. We are guaranteed that we will be
+  // able to fill in a new interpreter frame as its callee (i.e. the
+  // stack space is allocated and the amount was determined by an
+  // earlier call to the size_activation() method).  On return caller
+  // while describe the interpreter frame we just layed out.
 
-    JavaThread* thread = JavaThread::current();
-    RegisterMap map(thread, false);
-    // More verification that skeleton frame is properly walkable
-    assert(fp == caller->sp(), "fp must match");
+  // The skeleton frame must already look like an interpreter frame
+  // even if not fully filled out.
+  assert(interpreter_frame->is_interpreted_frame(), "Must be interpreted frame");
 
-    intptr_t* montop     = fp - rounded_vm_local_words;
+  int rounded_vm_local_words = round_to(frame::interpreter_frame_vm_local_words,WordsPerLong);
+  int monitor_size           = moncount * frame::interpreter_frame_monitor_size();
+  assert(monitor_size == round_to(monitor_size, WordsPerLong), "must align");
 
-    // preallocate monitors (cf. __ add_monitor_to_stack)
-    intptr_t* monitors = montop - monitor_size;
+  intptr_t* fp = interpreter_frame->fp();
 
-    // preallocate stack space
-    intptr_t*  esp = monitors - 1 -
-                     (tempcount * Interpreter::stackElementWords) -
-                     popframe_extra_args;
+  JavaThread* thread = JavaThread::current();
+  RegisterMap map(thread, false);
+  // More verification that skeleton frame is properly walkable
+  assert(fp == caller->sp(), "fp must match");
 
-    int local_words = method->max_locals() * Interpreter::stackElementWords;
-    NEEDS_CLEANUP;
-    intptr_t* locals;
-    if (caller->is_interpreted_frame()) {
-      // Can force the locals area to end up properly overlapping the top of the expression stack.
-      intptr_t* Lesp_ptr = caller->interpreter_frame_tos_address() - 1;
-      // Note that this computation means we replace size_of_parameters() values from the caller
-      // interpreter frame's expression stack with our argument locals
-      int parm_words  = caller_actual_parameters * Interpreter::stackElementWords;
-      locals = Lesp_ptr + parm_words;
-      int delta = local_words - parm_words;
-      int computed_sp_adjustment = (delta > 0) ? round_to(delta, WordsPerLong) : 0;
-      *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + computed_sp_adjustment) - STACK_BIAS;
-      if (!is_bottom_frame) {
-        // Llast_SP is set below for the current frame to SP (with the
-        // extra space for the callee's locals). Here we adjust
-        // Llast_SP for the caller's frame, removing the extra space
-        // for the current method's locals.
-        *caller->register_addr(Llast_SP) = *interpreter_frame->register_addr(I5_savedSP);
-      } else {
-        assert(*caller->register_addr(Llast_SP) >= *interpreter_frame->register_addr(I5_savedSP), "strange Llast_SP");
-      }
+  intptr_t* montop     = fp - rounded_vm_local_words;
+
+  // preallocate monitors (cf. __ add_monitor_to_stack)
+  intptr_t* monitors = montop - monitor_size;
+
+  // preallocate stack space
+  intptr_t*  esp = monitors - 1 -
+    (tempcount * Interpreter::stackElementWords) -
+    popframe_extra_args;
+
+  int local_words = method->max_locals() * Interpreter::stackElementWords;
+  NEEDS_CLEANUP;
+  intptr_t* locals;
+  if (caller->is_interpreted_frame()) {
+    // Can force the locals area to end up properly overlapping the top of the expression stack.
+    intptr_t* Lesp_ptr = caller->interpreter_frame_tos_address() - 1;
+    // Note that this computation means we replace size_of_parameters() values from the caller
+    // interpreter frame's expression stack with our argument locals
+    int parm_words  = caller_actual_parameters * Interpreter::stackElementWords;
+    locals = Lesp_ptr + parm_words;
+    int delta = local_words - parm_words;
+    int computed_sp_adjustment = (delta > 0) ? round_to(delta, WordsPerLong) : 0;
+    *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + computed_sp_adjustment) - STACK_BIAS;
+    if (!is_bottom_frame) {
+      // Llast_SP is set below for the current frame to SP (with the
+      // extra space for the callee's locals). Here we adjust
+      // Llast_SP for the caller's frame, removing the extra space
+      // for the current method's locals.
+      *caller->register_addr(Llast_SP) = *interpreter_frame->register_addr(I5_savedSP);
     } else {
-      assert(caller->is_compiled_frame() || caller->is_entry_frame(), "only possible cases");
-      // Don't have Lesp available; lay out locals block in the caller
-      // adjacent to the register window save area.
-      //
-      // Compiled frames do not allocate a varargs area which is why this if
-      // statement is needed.
-      //
-      if (caller->is_compiled_frame()) {
-        locals = fp + frame::register_save_words + local_words - 1;
-      } else {
-        locals = fp + frame::memory_parameter_word_sp_offset + local_words - 1;
-      }
-      if (!caller->is_entry_frame()) {
-        // Caller wants his own SP back
-        int caller_frame_size = caller->cb()->frame_size();
-        *interpreter_frame->register_addr(I5_savedSP) = (intptr_t)(caller->fp() - caller_frame_size) - STACK_BIAS;
+      assert(*caller->register_addr(Llast_SP) >= *interpreter_frame->register_addr(I5_savedSP), "strange Llast_SP");
+    }
+  } else {
+    assert(caller->is_compiled_frame() || caller->is_entry_frame(), "only possible cases");
+    // Don't have Lesp available; lay out locals block in the caller
+    // adjacent to the register window save area.
+    //
+    // Compiled frames do not allocate a varargs area which is why this if
+    // statement is needed.
+    //
+    if (caller->is_compiled_frame()) {
+      locals = fp + frame::register_save_words + local_words - 1;
+    } else {
+      locals = fp + frame::memory_parameter_word_sp_offset + local_words - 1;
+    }
+    if (!caller->is_entry_frame()) {
+      // Caller wants his own SP back
+      int caller_frame_size = caller->cb()->frame_size();
+      *interpreter_frame->register_addr(I5_savedSP) = (intptr_t)(caller->fp() - caller_frame_size) - STACK_BIAS;
+    }
+  }
+  if (TraceDeoptimization) {
+    if (caller->is_entry_frame()) {
+      // make sure I5_savedSP and the entry frames notion of saved SP
+      // agree.  This assertion duplicate a check in entry frame code
+      // but catches the failure earlier.
+      assert(*caller->register_addr(Lscratch) == *interpreter_frame->register_addr(I5_savedSP),
+             "would change callers SP");
+    }
+    if (caller->is_entry_frame()) {
+      tty->print("entry ");
+    }
+    if (caller->is_compiled_frame()) {
+      tty->print("compiled ");
+      if (caller->is_deoptimized_frame()) {
+        tty->print("(deopt) ");
       }
     }
-    if (TraceDeoptimization) {
-      if (caller->is_entry_frame()) {
-        // make sure I5_savedSP and the entry frames notion of saved SP
-        // agree.  This assertion duplicate a check in entry frame code
-        // but catches the failure earlier.
-        assert(*caller->register_addr(Lscratch) == *interpreter_frame->register_addr(I5_savedSP),
-               "would change callers SP");
-      }
-      if (caller->is_entry_frame()) {
-        tty->print("entry ");
-      }
-      if (caller->is_compiled_frame()) {
-        tty->print("compiled ");
-        if (caller->is_deoptimized_frame()) {
-          tty->print("(deopt) ");
-        }
-      }
-      if (caller->is_interpreted_frame()) {
-        tty->print("interpreted ");
-      }
-      tty->print_cr("caller fp=0x%x sp=0x%x", caller->fp(), caller->sp());
-      tty->print_cr("save area = 0x%x, 0x%x", caller->sp(), caller->sp() + 16);
-      tty->print_cr("save area = 0x%x, 0x%x", caller->fp(), caller->fp() + 16);
-      tty->print_cr("interpreter fp=0x%x sp=0x%x", interpreter_frame->fp(), interpreter_frame->sp());
-      tty->print_cr("save area = 0x%x, 0x%x", interpreter_frame->sp(), interpreter_frame->sp() + 16);
-      tty->print_cr("save area = 0x%x, 0x%x", interpreter_frame->fp(), interpreter_frame->fp() + 16);
-      tty->print_cr("Llocals = 0x%x", locals);
-      tty->print_cr("Lesp = 0x%x", esp);
-      tty->print_cr("Lmonitors = 0x%x", monitors);
+    if (caller->is_interpreted_frame()) {
+      tty->print("interpreted ");
     }
+    tty->print_cr("caller fp=0x%x sp=0x%x", caller->fp(), caller->sp());
+    tty->print_cr("save area = 0x%x, 0x%x", caller->sp(), caller->sp() + 16);
+    tty->print_cr("save area = 0x%x, 0x%x", caller->fp(), caller->fp() + 16);
+    tty->print_cr("interpreter fp=0x%x sp=0x%x", interpreter_frame->fp(), interpreter_frame->sp());
+    tty->print_cr("save area = 0x%x, 0x%x", interpreter_frame->sp(), interpreter_frame->sp() + 16);
+    tty->print_cr("save area = 0x%x, 0x%x", interpreter_frame->fp(), interpreter_frame->fp() + 16);
+    tty->print_cr("Llocals = 0x%x", locals);
+    tty->print_cr("Lesp = 0x%x", esp);
+    tty->print_cr("Lmonitors = 0x%x", monitors);
+  }
 
-    if (method->max_locals() > 0) {
-      assert(locals < caller->sp() || locals >= (caller->sp() + 16), "locals in save area");
-      assert(locals < caller->fp() || locals > (caller->fp() + 16), "locals in save area");
-      assert(locals < interpreter_frame->sp() || locals > (interpreter_frame->sp() + 16), "locals in save area");
-      assert(locals < interpreter_frame->fp() || locals >= (interpreter_frame->fp() + 16), "locals in save area");
-    }
+  if (method->max_locals() > 0) {
+    assert(locals < caller->sp() || locals >= (caller->sp() + 16), "locals in save area");
+    assert(locals < caller->fp() || locals > (caller->fp() + 16), "locals in save area");
+    assert(locals < interpreter_frame->sp() || locals > (interpreter_frame->sp() + 16), "locals in save area");
+    assert(locals < interpreter_frame->fp() || locals >= (interpreter_frame->fp() + 16), "locals in save area");
+  }
 #ifdef _LP64
-    assert(*interpreter_frame->register_addr(I5_savedSP) & 1, "must be odd");
+  assert(*interpreter_frame->register_addr(I5_savedSP) & 1, "must be odd");
 #endif
 
-    *interpreter_frame->register_addr(Lmethod)     = (intptr_t) method;
-    *interpreter_frame->register_addr(Llocals)     = (intptr_t) locals;
-    *interpreter_frame->register_addr(Lmonitors)   = (intptr_t) monitors;
-    *interpreter_frame->register_addr(Lesp)        = (intptr_t) esp;
-    // Llast_SP will be same as SP as there is no adapter space
-    *interpreter_frame->register_addr(Llast_SP)    = (intptr_t) interpreter_frame->sp() - STACK_BIAS;
-    *interpreter_frame->register_addr(LcpoolCache) = (intptr_t) method->constants()->cache();
+  *interpreter_frame->register_addr(Lmethod)     = (intptr_t) method;
+  *interpreter_frame->register_addr(Llocals)     = (intptr_t) locals;
+  *interpreter_frame->register_addr(Lmonitors)   = (intptr_t) monitors;
+  *interpreter_frame->register_addr(Lesp)        = (intptr_t) esp;
+  // Llast_SP will be same as SP as there is no adapter space
+  *interpreter_frame->register_addr(Llast_SP)    = (intptr_t) interpreter_frame->sp() - STACK_BIAS;
+  *interpreter_frame->register_addr(LcpoolCache) = (intptr_t) method->constants()->cache();
 #ifdef FAST_DISPATCH
-    *interpreter_frame->register_addr(IdispatchTables) = (intptr_t) Interpreter::dispatch_table();
+  *interpreter_frame->register_addr(IdispatchTables) = (intptr_t) Interpreter::dispatch_table();
 #endif
 
 
 #ifdef ASSERT
-    BasicObjectLock* mp = (BasicObjectLock*)monitors;
+  BasicObjectLock* mp = (BasicObjectLock*)monitors;
 
-    assert(interpreter_frame->interpreter_frame_method() == method, "method matches");
-    assert(interpreter_frame->interpreter_frame_local_at(9) == (intptr_t *)((intptr_t)locals - (9 * Interpreter::stackElementSize)), "locals match");
-    assert(interpreter_frame->interpreter_frame_monitor_end()   == mp, "monitor_end matches");
-    assert(((intptr_t *)interpreter_frame->interpreter_frame_monitor_begin()) == ((intptr_t *)mp)+monitor_size, "monitor_begin matches");
-    assert(interpreter_frame->interpreter_frame_tos_address()-1 == esp, "esp matches");
+  assert(interpreter_frame->interpreter_frame_method() == method, "method matches");
+  assert(interpreter_frame->interpreter_frame_local_at(9) == (intptr_t *)((intptr_t)locals - (9 * Interpreter::stackElementSize)), "locals match");
+  assert(interpreter_frame->interpreter_frame_monitor_end()   == mp, "monitor_end matches");
+  assert(((intptr_t *)interpreter_frame->interpreter_frame_monitor_begin()) == ((intptr_t *)mp)+monitor_size, "monitor_begin matches");
+  assert(interpreter_frame->interpreter_frame_tos_address()-1 == esp, "esp matches");
 
-    // check bounds
-    intptr_t* lo = interpreter_frame->sp() + (frame::memory_parameter_word_sp_offset - 1);
-    intptr_t* hi = interpreter_frame->fp() - rounded_vm_local_words;
-    assert(lo < monitors && montop <= hi, "monitors in bounds");
-    assert(lo <= esp && esp < monitors, "esp in bounds");
+  // check bounds
+  intptr_t* lo = interpreter_frame->sp() + (frame::memory_parameter_word_sp_offset - 1);
+  intptr_t* hi = interpreter_frame->fp() - rounded_vm_local_words;
+  assert(lo < monitors && montop <= hi, "monitors in bounds");
+  assert(lo <= esp && esp < monitors, "esp in bounds");
 #endif // ASSERT
-  }
-
-  return raw_frame_size;
 }
 
 //----------------------------------------------------------------------------------------------------
