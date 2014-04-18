@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void addPackageUse(Content contentTree) throws IOException {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addStyle(HtmlStyle.blockList);
-        if (configuration.packages.length > 1) {
+        if (configuration.packages.size() > 1) {
             addPackageList(ul);
         }
         addClassList(ul);

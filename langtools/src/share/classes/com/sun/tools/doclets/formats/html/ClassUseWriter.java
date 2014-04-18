@@ -245,7 +245,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void addClassUse(Content contentTree) throws IOException {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addStyle(HtmlStyle.blockList);
-        if (configuration.packages.length > 1) {
+        if (configuration.packages.size() > 1) {
             addPackageList(ul);
             addPackageAnnotationList(ul);
         }
