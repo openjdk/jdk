@@ -72,7 +72,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
 
     protected int depth;
 
-    private static native void initIDs(Class xorComp, boolean tryDGA);
+    private static native void initIDs(Class<?> xorComp, boolean tryDGA);
     protected native void initSurface(int depth, int width, int height,
                                       long drawable);
 
