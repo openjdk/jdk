@@ -39,31 +39,11 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
-import sun.misc.Unsafe;
 
 /**
  * ArrayData - abstraction for wrapping array elements
  */
 public abstract class ArrayData {
-    /**
-     * Unsafe instance used for unsafe array getters (de facto always safe as they are guarded
-     * by {@link ArrayData#has(int)} anyway
-     */
-    protected static final Unsafe UNSAFE = null;
-
-/*    static {
-        @SuppressWarnings("unused")
-        Unsafe unsafe = null;
-        try {
-            unsafe = Unsafe.getUnsafe();
-        } catch (final SecurityException e) {
-            System.err.println("WARNING: Disabling unsafe array getters... Unsafe not available");
-        }
-        //TODO: disabled for now as we have seen no real performance improvement on non-micros
-        //and using UNSAFE is a damn stupid thing to do
-        UNSAFE = unsafe;
-    }*/
-
     /** Minimum chunk size for underlying arrays */
     protected static final int CHUNK_SIZE = 32;
 
@@ -417,7 +397,7 @@ public abstract class ArrayData {
      * @param programPoint program point
      * @return the value
      */
-    public int getIntOptimistic(int index, int programPoint) {
+    public int getIntOptimistic(final int index, final int programPoint) {
         throw new UnwarrantedOptimismException(getObject(index), programPoint, getOptimisticType());
     }
 
@@ -437,7 +417,7 @@ public abstract class ArrayData {
      * @param programPoint program point
      * @return the value
      */
-    public long getLongOptimistic(int index, int programPoint) {
+    public long getLongOptimistic(final int index, final int programPoint) {
         throw new UnwarrantedOptimismException(getObject(index), programPoint, getOptimisticType());
     }
 
@@ -457,7 +437,7 @@ public abstract class ArrayData {
      * @param programPoint program point
      * @return the value
      */
-    public double getDoubleOptimistic(int index, int programPoint) {
+    public double getDoubleOptimistic(final int index, final int programPoint) {
         throw new UnwarrantedOptimismException(getObject(index), programPoint, getOptimisticType());
     }
 

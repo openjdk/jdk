@@ -83,6 +83,8 @@
 
 package jdk.internal.dynalink.linker;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -91,9 +93,7 @@ import java.lang.invoke.WrongMethodTypeException;
 import java.util.List;
 
 import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.support.CatchExceptionCombinator;
 import jdk.internal.dynalink.support.Guards;
-import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * Represents a conditionally valid method handle. It is an immutable triple of an invocation method handle, a guard
@@ -105,8 +105,6 @@ import jdk.nashorn.internal.runtime.options.Options;
  * @author Attila Szegedi
  */
 public class GuardedInvocation {
-    private static final boolean USE_FAST_REWRITE = Options.getBooleanProperty("nashorn.fastrewrite");
-
     private final MethodHandle invocation;
     private final MethodHandle guard;
     private final Class<? extends Throwable> exception;
@@ -417,7 +415,7 @@ public class GuardedInvocation {
         final MethodHandle catchGuarded =
                 exception == null ?
                         guarded :
-                        catchException(
+                        MH.catchException(
                                 guarded,
                                 exception,
                                 MethodHandles.dropArguments(
@@ -435,13 +433,6 @@ public class GuardedInvocation {
         }
 
         return spGuarded;
-    }
-
-    private static MethodHandle catchException(final MethodHandle target, final Class<? extends Throwable> exType, final MethodHandle handler) {
-        if (USE_FAST_REWRITE) {
-            return CatchExceptionCombinator.catchException(target, exType, handler);
-        }
-        return MethodHandles.catchException(target, exType, handler);
     }
 
     private static void assertType(final MethodHandle mh, final MethodType type) {
