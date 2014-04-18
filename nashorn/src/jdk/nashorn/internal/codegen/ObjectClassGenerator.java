@@ -162,7 +162,6 @@ public final class ObjectClassGenerator {
      */
     static {
         if (!OBJECT_FIELDS_ONLY) {
-            LOG.warning("Running with primitive fields - there is untested functionality!");
             FIELD_TYPES.add(PRIMITIVE_FIELD_TYPE);
         } else {
             LOG.warning("Running with object fields only - this is a deprecated configuration.");

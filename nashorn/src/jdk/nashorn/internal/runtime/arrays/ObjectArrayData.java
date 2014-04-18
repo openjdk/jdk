@@ -161,33 +161,13 @@ final class ObjectArrayData extends ContinuousArrayData {
         return Type.OBJECT;
     }
 
-    private static final MethodHandle HAS_GET_ELEM = specialCall(MethodHandles.lookup(), ObjectArrayData.class, UNSAFE == null ? "getElem" : "getElemUnsafe", Object.class, int.class).methodHandle();
-    private static final MethodHandle SET_ELEM     = specialCall(MethodHandles.lookup(), ObjectArrayData.class, UNSAFE == null ? "setElem" : "setElemUnsafe", void.class, int.class, Object.class).methodHandle();
-
-    private final static long UNSAFE_BASE  = UNSAFE == null ? 0L : UNSAFE.arrayBaseOffset(Object[].class);
-    private final static long UNSAFE_SCALE = UNSAFE == null ? 0L : UNSAFE.arrayIndexScale(Object[].class);
-
-    @SuppressWarnings("unused")
-    private Object getElemUnsafe(final int index) {
-        if (has(index)) {
-            return UNSAFE.getObject(array, UNSAFE_BASE + UNSAFE_SCALE * index);
-        }
-        throw new ClassCastException();
-    }
+    private static final MethodHandle HAS_GET_ELEM = specialCall(MethodHandles.lookup(), ObjectArrayData.class, "getElem", Object.class, int.class).methodHandle();
+    private static final MethodHandle SET_ELEM     = specialCall(MethodHandles.lookup(), ObjectArrayData.class, "setElem", void.class, int.class, Object.class).methodHandle();
 
     @SuppressWarnings("unused")
     private Object getElem(final int index) {
         if (has(index)) {
             return array[index];
-        }
-        throw new ClassCastException();
-    }
-
-    @SuppressWarnings("unused")
-    private void setElemUnsafe(final int index, final Object elem) {
-        if (hasRoomFor(index)) {
-            UNSAFE.putObject(array, UNSAFE_BASE + UNSAFE_SCALE * index, elem);
-            return;
         }
         throw new ClassCastException();
     }

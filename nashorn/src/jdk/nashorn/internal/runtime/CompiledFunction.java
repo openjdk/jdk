@@ -38,24 +38,16 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
-import jdk.internal.dynalink.support.CatchExceptionCombinator;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * An version of a JavaScript function, native or JavaScript.
  * Supports lazily generating a constructor version of the invocation.
  */
 final class CompiledFunction {
-    private static final boolean USE_FAST_REWRITE = Options.getBooleanProperty("nashorn.fastrewrite");
-    static {
-        if(USE_FAST_REWRITE && CompiledFunction.class.getClassLoader() != null) {
-            throw new AssertionError("-Dnashorn.fastrewrite can only be used with Nashorn in boot class path! (Try -Xbootclasspath/p:dist/nashorn.jar )");
-        }
-    }
 
     private static final MethodHandle NEWFILTER = findOwnMH("newFilter", Object.class, Object.class, Object.class);
     private static final MethodHandle RELINK_COMPOSABLE_INVOKER = findOwnMH("relinkComposableInvoker", void.class, CallSite.class, CompiledFunction.class, boolean.class);
@@ -548,9 +540,6 @@ final class CompiledFunction {
         if(isOptimistic) {
             assert handleRewriteException != null;
             final MethodHandle typedHandleRewriteException = changeReturnType(handleRewriteException, inv.type().returnType());
-            if(USE_FAST_REWRITE) {
-                return CatchExceptionCombinator.catchException(inv, RewriteException.class, typedHandleRewriteException);
-            }
             return MH.catchException(inv, RewriteException.class, typedHandleRewriteException);
         }
         return inv;
