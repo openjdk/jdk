@@ -145,23 +145,21 @@ public abstract class JavadocTester {
     /**
      * Execute the tests.
      *
-     * @param tester           the tester to execute
      * @param args             the arguments to pass to Javadoc
      * @param testArray        the array of tests
      * @param negatedTestArray the array of negated tests
      * @return                 the return code for the execution of Javadoc
      */
-    public static int run(JavadocTester tester, String[] args,
+    public int run(String[] args,
             String[][] testArray, String[][] negatedTestArray) {
-        int returnCode = tester.runJavadoc(args);
-        tester.runTestsOnHTML(testArray, negatedTestArray);
+        int returnCode = runJavadoc(args);
+        runTestsOnHTML(testArray, negatedTestArray);
         return returnCode;
     }
 
     /**
      * Execute the tests.
      *
-     * @param tester               the tester to execute
      * @param args                 the arguments to pass to Javadoc
      * @param testArray            the array of tests
      * @param negatedTestArray     the array of negated tests
@@ -169,12 +167,12 @@ public abstract class JavadocTester {
      * @param negatedFileTestArray the array of negated file tests
      * @return                     the return code for the execution of Javadoc
      */
-    public static int run(JavadocTester tester, String[] args,
-            String[][] testArray, String[][] negatedTestArray, String[] fileTestArray,
-            String[] negatedFileTestArray) {
-        int returnCode = tester.runJavadoc(args);
-        tester.runTestsOnHTML(testArray, negatedTestArray);
-        tester.runTestsOnFile(fileTestArray, negatedFileTestArray);
+    public int run(String[] args,
+            String[][] testArray, String[][] negatedTestArray,
+            String[] fileTestArray, String[] negatedFileTestArray) {
+        int returnCode = runJavadoc(args);
+        runTestsOnHTML(testArray, negatedTestArray);
+        runTestsOnFile(fileTestArray, negatedFileTestArray);
         return returnCode;
     }
 

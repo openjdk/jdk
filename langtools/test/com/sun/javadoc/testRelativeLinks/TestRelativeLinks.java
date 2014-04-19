@@ -107,7 +107,7 @@ public class TestRelativeLinks extends JavadocTester {
      */
     public static void main(String[] args) {
         TestRelativeLinks tester = new TestRelativeLinks();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

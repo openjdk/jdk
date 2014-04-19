@@ -60,7 +60,7 @@ public class TestCRLineSeparator extends JavadocTester {
     public static void main(String[] args) throws Exception {
         initFiles(new File(SRC_DIR), new File("."), "pkg");
         TestCRLineSeparator tester = new TestCRLineSeparator();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

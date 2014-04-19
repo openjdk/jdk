@@ -47,7 +47,7 @@ public class TestDocFiles extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDocFiles tester = new TestDocFiles();
-        run(tester, ARGS, TEST, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

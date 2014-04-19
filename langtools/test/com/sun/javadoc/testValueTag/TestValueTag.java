@@ -155,9 +155,9 @@ public class TestValueTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestValueTag tester = new TestValueTag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         checkForException(tester);
-        run(tester, ARGS1, TEST1, NO_TEST);
+        tester.run(ARGS1, TEST1, NO_TEST);
         checkForException(tester);
         tester.printSummary();
     }

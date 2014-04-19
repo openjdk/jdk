@@ -64,7 +64,7 @@ public class TestSubTitle extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSubTitle tester = new TestSubTitle();
-        run(tester, ARGS, TEST, NEG_TEST);
+        tester.run(ARGS, TEST, NEG_TEST);
         tester.printSummary();
     }
 

@@ -86,7 +86,7 @@ public class TestOverridenPrivateMethodsWithPrivateFlag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestOverridenPrivateMethodsWithPrivateFlag tester = new TestOverridenPrivateMethodsWithPrivateFlag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

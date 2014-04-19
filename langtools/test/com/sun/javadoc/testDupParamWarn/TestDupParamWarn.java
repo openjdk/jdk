@@ -48,7 +48,9 @@ public class TestDupParamWarn extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
-        run(new TestDupParamWarn(), ARGS, NO_TEST, NEGATED_TEST);
+        JavadocTester tester = new TestDupParamWarn();
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
+        tester.printSummary();
     }
 
     /**

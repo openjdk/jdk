@@ -95,10 +95,10 @@ public class TestDocFileDir extends JavadocTester {
     public static void main(String[] args) {
         TestDocFileDir tester = new TestDocFileDir();
         copyDir(SRC_DIR + "/pkg", ".");
-        run(tester, ARGS0, TEST0, NEGATED_TEST0);
+        tester.run(ARGS0, TEST0, NEGATED_TEST0);
         copyDir(SRC_DIR + "/pkg", BUG_ID + "-1");
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, NO_TEST, NO_TEST, FILE_TEST2, FILE_NEGATED_TEST2);
+        tester.run(ARGS1, TEST1, NEGATED_TEST1);
+        tester.run(ARGS2, NO_TEST, NO_TEST, FILE_TEST2, FILE_NEGATED_TEST2);
         tester.printSummary();
     }
 

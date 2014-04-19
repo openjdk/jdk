@@ -53,7 +53,7 @@ public class TestConstantValuesDriver extends JavadocTester {
         tests[tests.length-1][0] = BUG_ID + "/constant-values.html";
         tests[tests.length-1][1] = "<code>\"&lt;Hello World&gt;\"</code>";
         TestConstantValuesDriver tester = new TestConstantValuesDriver();
-        run(tester, ARGS, tests, NO_TEST);
+        tester.run(ARGS, tests, NO_TEST);
         tester.printSummary();
     }
 

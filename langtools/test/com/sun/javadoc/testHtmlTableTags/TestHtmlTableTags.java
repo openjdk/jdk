@@ -433,7 +433,7 @@ public class TestHtmlTableTags extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHtmlTableTags tester = new TestHtmlTableTags();
-        run(tester, ARGS, TABLE_TAGS_TEST, NEGATED_TEST);
+        tester.run(ARGS, TABLE_TAGS_TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

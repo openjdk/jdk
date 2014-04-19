@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,12 +69,12 @@ public class TestGroupOption extends JavadocTester {
     public static void main(String[] args) {
         //Make sure the warning is not printed when -group is used correctly.
         TestGroupOption tester = new TestGroupOption();
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
+        tester.run(ARGS1, TEST1, NEGATED_TEST1);
         tester.printSummary();
 
         //Make sure the warning is printed when -group is not used correctly.
         tester = new TestGroupOption();
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS2, TEST2, NEGATED_TEST2);
         tester.printSummary();
     }
 

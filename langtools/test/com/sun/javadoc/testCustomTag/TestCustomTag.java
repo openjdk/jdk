@@ -88,10 +88,10 @@ public class TestCustomTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestCustomTag tester = new TestCustomTag();
-        run(tester, ARGS, TEST, NO_TEST);
-        run(tester, ARGS1, TEST1, NO_TEST);
-        run(tester, ARGS2, TEST2, NO_TEST);
-        run(tester, ARGS3, TEST3, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
+        tester.run(ARGS1, TEST1, NO_TEST);
+        tester.run(ARGS2, TEST2, NO_TEST);
+        tester.run(ARGS3, TEST3, NO_TEST);
         tester.printSummary();
     }
 

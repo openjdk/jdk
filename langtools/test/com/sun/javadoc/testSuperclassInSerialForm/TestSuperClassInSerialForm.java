@@ -53,7 +53,7 @@ public class TestSuperClassInSerialForm extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSuperClassInSerialForm tester = new TestSuperClassInSerialForm();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

@@ -383,7 +383,7 @@ public class TestTypeAnnotations extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTypeAnnotations tester = new TestTypeAnnotations();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

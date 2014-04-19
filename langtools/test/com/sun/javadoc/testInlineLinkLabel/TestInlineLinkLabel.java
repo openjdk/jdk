@@ -55,7 +55,7 @@ public class TestInlineLinkLabel extends JavadocTester {
      */
     public static void main(String[] args) {
         TestInlineLinkLabel tester = new TestInlineLinkLabel();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

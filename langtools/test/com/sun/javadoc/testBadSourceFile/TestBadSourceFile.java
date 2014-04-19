@@ -53,7 +53,7 @@ public class TestBadSourceFile extends JavadocTester {
      */
     public static void main(String[] args) {
         TestBadSourceFile tester = new TestBadSourceFile();
-        int exitCode = run(tester, ARGS, TEST, NEGATED_TEST);
+        int exitCode = tester.run(ARGS, TEST, NEGATED_TEST);
         tester.checkExitCode(0, exitCode);
         tester.printSummary();
     }

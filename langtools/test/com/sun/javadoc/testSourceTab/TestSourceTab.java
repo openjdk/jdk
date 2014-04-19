@@ -77,8 +77,8 @@ public class TestSourceTab extends JavadocTester {
      */
     public static void main(String[] args) throws IOException {
         TestSourceTab tester = new TestSourceTab();
-        run(tester, ARGS1, TEST, NEGATED_TEST);
-        run(tester, ARGS2, TEST, NEGATED_TEST);
+        tester.run(ARGS1, TEST, NEGATED_TEST);
+        tester.run(ARGS2, TEST, NEGATED_TEST);
         tester.runDiffs(FILES_TO_DIFF);
     }
 

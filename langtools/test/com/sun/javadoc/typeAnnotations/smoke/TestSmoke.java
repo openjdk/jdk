@@ -114,7 +114,7 @@ public class TestSmoke extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSmoke tester = new TestSmoke();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

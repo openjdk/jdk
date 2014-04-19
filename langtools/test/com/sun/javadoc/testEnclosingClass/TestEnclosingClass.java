@@ -54,7 +54,7 @@ public class TestEnclosingClass extends JavadocTester {
      */
     public static void main(String[] args) {
         TestEnclosingClass tester = new TestEnclosingClass();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

@@ -56,7 +56,7 @@ public class TestSummaryHeading extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSummaryHeading tester = new TestSummaryHeading();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

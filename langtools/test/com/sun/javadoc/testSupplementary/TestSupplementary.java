@@ -61,7 +61,7 @@ public class TestSupplementary extends JavadocTester {
         Locale saveLocale = Locale.getDefault();
         try {
             TestSupplementary tester = new TestSupplementary();
-            run(tester, ARGS, TEST, NEGATED_TEST);
+            tester.run(ARGS, TEST, NEGATED_TEST);
             tester.printSummary();
         } finally {
             Locale.setDefault(saveLocale);

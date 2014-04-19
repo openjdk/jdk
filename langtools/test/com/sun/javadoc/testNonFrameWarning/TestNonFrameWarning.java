@@ -51,7 +51,7 @@ public class TestNonFrameWarning extends JavadocTester {
      */
     public static void main(String[] args) {
         TestNonFrameWarning tester = new TestNonFrameWarning();
-        run(tester, ARGS, TEST, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

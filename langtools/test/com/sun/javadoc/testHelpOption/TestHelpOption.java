@@ -104,9 +104,9 @@ public class TestHelpOption extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHelpOption tester = new TestHelpOption();
-        int actualExitCode = run(tester, ARGS, TEST, NEGATED_TEST);
+        int actualExitCode = tester.run(ARGS, TEST, NEGATED_TEST);
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS2, TEST2, NEGATED_TEST2);
         tester.printSummary();
     }
 

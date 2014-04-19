@@ -59,7 +59,7 @@ public class TestLegacyTaglet extends JavadocTester {
      */
     public static void main(String[] args) {
         TestLegacyTaglet tester = new TestLegacyTaglet();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         if (tester.getErrorOutput().contains("NullPointerException")) {
             throw new AssertionError("javadoc threw NullPointerException");
         }

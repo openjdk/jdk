@@ -105,7 +105,7 @@ public class TestMemberInheritence extends JavadocTester {
      */
     public static void main(String[] args) {
         TestMemberInheritence tester = new TestMemberInheritence();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

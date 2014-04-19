@@ -92,8 +92,8 @@ public class TestTypeParameters extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTypeParameters tester = new TestTypeParameters();
-        run(tester, ARGS1, TEST1, NEGATED_TEST);
-        run(tester, ARGS2, TEST2, NEGATED_TEST);
+        tester.run(ARGS1, TEST1, NEGATED_TEST);
+        tester.run(ARGS2, TEST2, NEGATED_TEST);
         tester.printSummary();
     }
 

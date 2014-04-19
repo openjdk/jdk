@@ -50,7 +50,7 @@ public class TestBaseClass extends JavadocTester {
      */
     public static void main(String[] args) {
         TestBaseClass tester = new TestBaseClass();
-        if (run(tester, ARGS, TEST, NEGATED_TEST) != 0) {
+        if (tester.run(ARGS, TEST, NEGATED_TEST) != 0) {
             throw new Error("Javadoc failed to execute.");
         }
     }

@@ -94,7 +94,7 @@ public class TestJavaFX extends JavadocTester {
      */
     public static void main(String[] args) {
         TestJavaFX tester = new TestJavaFX();
-        run(tester, ARGS, TEST, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

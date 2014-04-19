@@ -114,8 +114,8 @@ public class TestLambdaFeature extends JavadocTester {
      */
     public static void main(String[] args) {
         TestLambdaFeature tester = new TestLambdaFeature();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        run(tester, ARGS_1, NO_TEST, NEGATED_TEST_1);
+        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS_1, NO_TEST, NEGATED_TEST_1);
         tester.printSummary();
     }
 

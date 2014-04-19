@@ -105,9 +105,9 @@ public class TestUseOption extends JavadocTester {
             tests[i][1] = "Test " + j + " passes";
         }
         TestUseOption tester = new TestUseOption();
-        run(tester, ARGS, tests, NO_TEST);
+        tester.run(ARGS, tests, NO_TEST);
         tester.printSummary();
-        run(tester, ARGS2, NO_TEST, NO_TEST);
+        tester.run(ARGS2, NO_TEST, NO_TEST);
         String usePageContents = tester.readFileToString(BUG_ID +
             "-2/pkg1/class-use/UsedClass.html");
         int prevIndex = -1;
@@ -120,8 +120,8 @@ public class TestUseOption extends JavadocTester {
             prevIndex = currentIndex;
         }
         tester.printSummary();
-        run(tester, ARGS3, TEST3, NO_TEST);
-        run(tester, ARGS4, TEST4, NO_TEST);
+        tester.run(ARGS3, TEST3, NO_TEST);
+        tester.run(ARGS4, TEST4, NO_TEST);
         tester.printSummary();
     }
 

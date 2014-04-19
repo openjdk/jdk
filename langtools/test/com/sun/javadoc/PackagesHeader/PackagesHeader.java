@@ -107,9 +107,9 @@ public class PackagesHeader extends JavadocTester {
     public static void main(String[] args) {
         JavadocTester tester = new PackagesHeader();
 
-        run(tester, JAVADOC_ARGS1, TESTARRAY1, NEGATED_TEST);
-        run(tester, JAVADOC_ARGS2, TESTARRAY2, NEGATED_TEST);
-        run(tester, JAVADOC_ARGS3, TESTARRAY3, NEGATED_TEST);
+        tester.run(JAVADOC_ARGS1, TESTARRAY1, NEGATED_TEST);
+        tester.run(JAVADOC_ARGS2, TESTARRAY2, NEGATED_TEST);
+        tester.run(JAVADOC_ARGS3, TESTARRAY3, NEGATED_TEST);
 
         tester.printSummary();
     }

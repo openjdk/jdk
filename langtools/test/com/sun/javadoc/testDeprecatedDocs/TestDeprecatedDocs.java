@@ -100,7 +100,7 @@ public class TestDeprecatedDocs extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDeprecatedDocs tester = new TestDeprecatedDocs();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

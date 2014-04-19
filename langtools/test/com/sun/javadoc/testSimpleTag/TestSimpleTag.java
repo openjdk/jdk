@@ -66,7 +66,7 @@ public class TestSimpleTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSimpleTag tester = new TestSimpleTag();
-        run(tester, ARGS, TEST, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

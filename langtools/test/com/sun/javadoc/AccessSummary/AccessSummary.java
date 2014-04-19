@@ -67,7 +67,7 @@ public class AccessSummary extends JavadocTester {
      */
     public static void main(String[] args) {
         JavadocTester tester = new AccessSummary();
-        run(tester, JAVADOC_ARGS,  TESTARRAY1, new String[][] {});
+        tester.run(JAVADOC_ARGS,  TESTARRAY1, new String[][] {});
         tester.printSummary();       // Necessary for string search
     }
 

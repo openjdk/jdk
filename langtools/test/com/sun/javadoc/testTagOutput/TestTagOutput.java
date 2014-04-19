@@ -58,7 +58,7 @@ public class TestTagOutput extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTagOutput tester = new TestTagOutput();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

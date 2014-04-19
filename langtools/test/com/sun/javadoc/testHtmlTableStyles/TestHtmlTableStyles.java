@@ -90,7 +90,7 @@ public class TestHtmlTableStyles extends JavadocTester {
      */
     public static void main(String[] args) throws Exception {
         TestHtmlTableStyles tester = new TestHtmlTableStyles();
-        run(tester, ARGS, TEST, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

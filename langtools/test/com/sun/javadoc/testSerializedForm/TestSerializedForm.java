@@ -132,8 +132,8 @@ public class TestSerializedForm extends JavadocTester implements Serializable {
      */
     public static void main(String[] args) {
         TestSerializedForm tester = new TestSerializedForm();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        run(tester, ARGS_PRIVATE, TEST_PRIVATE, NEGATED_TEST_PRIVATE);
+        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS_PRIVATE, TEST_PRIVATE, NEGATED_TEST_PRIVATE);
         tester.printSummary();
     }
 

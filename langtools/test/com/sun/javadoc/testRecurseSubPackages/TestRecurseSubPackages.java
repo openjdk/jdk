@@ -55,7 +55,7 @@ public class TestRecurseSubPackages extends JavadocTester {
             {BUG_ID + "/allclasses-frame.html", "DummyClass.html"}
         };
         TestRecurseSubPackages tester = new TestRecurseSubPackages();
-        run(tester, ARGS, tests, negatedTests);
+        tester.run(ARGS, tests, negatedTests);
         tester.printSummary();
     }
 

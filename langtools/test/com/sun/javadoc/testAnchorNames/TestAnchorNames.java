@@ -270,7 +270,7 @@ public class TestAnchorNames extends JavadocTester {
      */
     public static void main(String[] args) throws Exception {
         TestAnchorNames tester = new TestAnchorNames();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

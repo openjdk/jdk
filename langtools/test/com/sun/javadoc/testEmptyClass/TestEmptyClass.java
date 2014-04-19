@@ -60,7 +60,7 @@ public class TestEmptyClass extends JavadocTester {
      */
     public static void main(String[] args) {
         TestEmptyClass tester = new TestEmptyClass();
-        int exitCode = run(tester, ARGS, TEST, NEGATED_TEST);
+        int exitCode = tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
         if (exitCode != 0) {
             throw new Error("Error found while executing Javadoc");

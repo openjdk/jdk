@@ -64,7 +64,7 @@ public class TestXOption extends JavadocTester {
      */
     public static void main(String[] args) {
         TestXOption tester = new TestXOption();
-        int actualExitCode = run(tester, ARGS, TEST, NEGATED_TEST);
+        int actualExitCode = tester.run(ARGS, TEST, NEGATED_TEST);
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
         tester.printSummary();
     }

@@ -128,8 +128,8 @@ public class TestDocRootLink extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDocRootLink tester = new TestDocRootLink();
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS1, TEST1, NEGATED_TEST1);
+        tester.run(ARGS2, TEST2, NEGATED_TEST2);
         tester.printSummary();
     }
 

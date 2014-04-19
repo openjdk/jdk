@@ -73,9 +73,9 @@ public class TestHtmlTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHtmlTag tester = new TestHtmlTag();
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
-        run(tester, ARGS3, TEST3, NEGATED_TEST3);
+        tester.run(ARGS1, TEST1, NEGATED_TEST1);
+        tester.run(ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS3, TEST3, NEGATED_TEST3);
         tester.printSummary();
     }
 
