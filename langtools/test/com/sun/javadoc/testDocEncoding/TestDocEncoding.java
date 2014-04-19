@@ -43,8 +43,11 @@ public class TestDocEncoding extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-docencoding", "Cp930",
-        "-sourcepath", SRC_DIR, "pkg"
+        "-d", BUG_ID,
+        "-docencoding", "Cp930",
+        "-sourcepath", SRC_DIR,
+        "-notimestamp",
+        "pkg"
     };
 
     private static final String[][] TEST = NO_TEST;
