@@ -53,8 +53,8 @@ public class TestAbsLinkPath extends JavadocTester {
      */
     public static void main(String[] args) {
         TestAbsLinkPath tester = new TestAbsLinkPath();
-        run(tester, ARGS1, NO_TEST, NO_TEST);
-        run(tester, ARGS2,  TEST, NEGATED_TEST);
+        tester.run(ARGS1, NO_TEST, NO_TEST);
+        tester.run(ARGS2,  TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

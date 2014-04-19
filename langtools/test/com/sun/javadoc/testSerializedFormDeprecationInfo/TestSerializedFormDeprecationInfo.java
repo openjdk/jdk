@@ -138,10 +138,10 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSerializedFormDeprecationInfo tester = new TestSerializedFormDeprecationInfo();
-        run(tester, ARGS1, TEST_CMNT_DEPR, TEST_NOCMNT);
-        run(tester, ARGS2, TEST_NOCMNT, TEST_CMNT_DEPR);
-        run(tester, ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
-        run(tester, ARGS4, TEST_NOCMNT_NODEPR, TEST_NODEPR);
+        tester.run(ARGS1, TEST_CMNT_DEPR, TEST_NOCMNT);
+        tester.run(ARGS2, TEST_NOCMNT, TEST_CMNT_DEPR);
+        tester.run(ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
+        tester.run(ARGS4, TEST_NOCMNT_NODEPR, TEST_NODEPR);
         tester.printSummary();
     }
 

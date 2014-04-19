@@ -61,7 +61,7 @@ public class TestConstructorIndent extends JavadocTester {
      */
     public static void main(String[] args) {
         TestConstructorIndent tester = new TestConstructorIndent();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

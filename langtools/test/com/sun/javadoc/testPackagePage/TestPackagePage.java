@@ -90,8 +90,8 @@ public class TestPackagePage extends JavadocTester {
      */
     public static void main(String[] args) {
         TestPackagePage tester = new TestPackagePage();
-        run(tester, ARGS1, TEST1, NO_TEST);
-        run(tester, ARGS2, TEST2, NO_TEST);
+        tester.run(ARGS1, TEST1, NO_TEST);
+        tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
     }
 

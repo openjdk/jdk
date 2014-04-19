@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,12 @@ public class TestNotifications extends JavadocTester {
     public static void main(String[] args) {
         TestNotifications tester = new TestNotifications();
         // Notify that the destination directory must be created.
-        run(tester, ARGS, TEST, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         // No need to notify that the destination must be created because
         // it already exists.
-        run(tester, ARGS, NO_TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         //Make sure classname is not include in javadoc usage message.
-        run(tester, ARGS2, NO_TEST, NEGATED_TEST2);
+        tester.run(ARGS2, NO_TEST, NEGATED_TEST2);
         tester.printSummary();
     }
 

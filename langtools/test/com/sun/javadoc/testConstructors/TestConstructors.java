@@ -127,7 +127,7 @@ public class TestConstructors extends JavadocTester {
      */
     public static void main(String[] args) throws Exception {
         TestConstructors tester = new TestConstructors();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

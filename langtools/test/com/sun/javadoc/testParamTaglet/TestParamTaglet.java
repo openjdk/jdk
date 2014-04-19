@@ -75,7 +75,7 @@ public class TestParamTaglet extends JavadocTester {
      */
     public static void main(String[] args) {
         TestParamTaglet tester = new TestParamTaglet();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

@@ -282,8 +282,8 @@ public class TestProfiles extends JavadocTester {
      */
     public static void main(String[] args) {
         TestProfiles tester = new TestProfiles();
-        run(tester, ARGS1, PROFILES_TEST, PROFILES_NEGATED_TEST);
-        run(tester, ARGS2, PACKAGES_TEST, PACKAGES_NEGATED_TEST, NO_FILE_TEST, PACKAGES_NEGATED_FILE_TEST);
+        tester.run(ARGS1, PROFILES_TEST, PROFILES_NEGATED_TEST);
+        tester.run(ARGS2, PACKAGES_TEST, PACKAGES_NEGATED_TEST, NO_FILE_TEST, PACKAGES_NEGATED_FILE_TEST);
         tester.printSummary();
     }
 

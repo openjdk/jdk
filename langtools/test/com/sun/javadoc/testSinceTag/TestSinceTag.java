@@ -65,8 +65,8 @@ public class TestSinceTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSinceTag tester = new TestSinceTag();
-        run(tester, ARGS1, TEST, NO_TEST);
-        run(tester, ARGS2, NO_TEST, TEST);
+        tester.run(ARGS1, TEST, NO_TEST);
+        tester.run(ARGS2, NO_TEST, TEST);
         tester.printSummary();
     }
 

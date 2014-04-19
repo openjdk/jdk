@@ -76,7 +76,7 @@ public class TestLinkTaglet extends JavadocTester {
      */
     public static void main(String[] args) {
         TestLinkTaglet tester = new TestLinkTaglet();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

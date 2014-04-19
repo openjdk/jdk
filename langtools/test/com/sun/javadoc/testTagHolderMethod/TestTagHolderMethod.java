@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,8 @@ public class TestTagHolderMethod extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
-        run(new TestTagHolderMethod(), ARGS, new String[][]{}, new String[][]{});
+        JavadocTester tester = new TestTagHolderMethod();
+        tester.run(ARGS, new String[][]{}, new String[][]{});
     }
 
     /**

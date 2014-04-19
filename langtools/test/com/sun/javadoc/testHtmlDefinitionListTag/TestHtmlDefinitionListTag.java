@@ -355,14 +355,14 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHtmlDefinitionListTag tester = new TestHtmlDefinitionListTag();
-        run(tester, ARGS1, TEST_ALL, NEGATED_TEST);
-        run(tester, ARGS1, TEST_CMNT_DEPR, NEGATED_TEST);
-        run(tester, ARGS2, TEST_ALL, NEGATED_TEST);
-        run(tester, ARGS2, NO_TEST, TEST_CMNT_DEPR);
-        run(tester, ARGS3, TEST_ALL, NEGATED_TEST);
-        run(tester, ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
-        run(tester, ARGS4, TEST_ALL, NEGATED_TEST);
-        run(tester, ARGS4, TEST_NOCMNT_NODEPR, TEST_CMNT_DEPR);
+        tester.run(ARGS1, TEST_ALL, NEGATED_TEST);
+        tester.run(ARGS1, TEST_CMNT_DEPR, NEGATED_TEST);
+        tester.run(ARGS2, TEST_ALL, NEGATED_TEST);
+        tester.run(ARGS2, NO_TEST, TEST_CMNT_DEPR);
+        tester.run(ARGS3, TEST_ALL, NEGATED_TEST);
+        tester.run(ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
+        tester.run(ARGS4, TEST_ALL, NEGATED_TEST);
+        tester.run(ARGS4, TEST_NOCMNT_NODEPR, TEST_CMNT_DEPR);
         tester.printSummary();
     }
 

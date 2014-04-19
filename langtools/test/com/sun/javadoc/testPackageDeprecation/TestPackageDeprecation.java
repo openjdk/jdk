@@ -70,8 +70,8 @@ public class TestPackageDeprecation extends JavadocTester {
      */
     public static void main(String[] args) {
         TestPackageDeprecation tester = new TestPackageDeprecation();
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS1, TEST1, NEGATED_TEST1);
+        tester.run(ARGS2, TEST2, NEGATED_TEST2);
         if ((new java.io.File(BUG_ID + "-2/pkg1/" +
                 "package-summary.html")).exists()) {
             throw new Error("Test Fails: packages summary should not be" +

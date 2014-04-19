@@ -50,7 +50,7 @@ public class TestBackSlashInLink extends JavadocTester {
      */
     public static void main(String[] args) {
         TestBackSlashInLink tester = new TestBackSlashInLink();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

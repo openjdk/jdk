@@ -69,7 +69,7 @@ public class TestTagInheritence extends JavadocTester {
         tests[tests.length - 1][1] =  "<div class=\"block\">First sentence.</div>";
 
         TestTagInheritence tester = new TestTagInheritence();
-        run(tester, ARGS, tests, NO_TEST);
+        tester.run(ARGS, tests, NO_TEST);
         tester.printSummary();
     }
 

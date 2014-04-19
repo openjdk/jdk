@@ -49,7 +49,7 @@ public class TestDupThrowsTags extends JavadocTester {
             tests[i][1] = "Test "+(i+1)+" passes";
         }
         TestDupThrowsTags tester = new TestDupThrowsTags();
-        run(tester, ARGS, tests, NO_TEST);
+        tester.run(ARGS, tests, NO_TEST);
         tester.printSummary();
     }
 

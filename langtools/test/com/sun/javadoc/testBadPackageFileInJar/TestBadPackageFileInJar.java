@@ -57,7 +57,7 @@ public class TestBadPackageFileInJar extends JavadocTester {
      */
     public static void main(String[] args) {
         TestBadPackageFileInJar tester = new TestBadPackageFileInJar();
-        run(tester, ARGS, TEST, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

@@ -74,10 +74,10 @@ public class TestTaglets extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTaglets tester = new TestTaglets();
-        run(tester, ARGS_4654308, TEST_4654308, NEGATED_TEST_4654308);
+        tester.run(ARGS_4654308, TEST_4654308, NEGATED_TEST_4654308);
         tester.printSummary();
         tester = new TestTaglets();
-        run(tester, ARGS_4767038, TEST_4767038, NEGATED_TEST_4767038);
+        tester.run(ARGS_4767038, TEST_4767038, NEGATED_TEST_4767038);
         tester.printSummary();
     }
 

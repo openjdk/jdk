@@ -51,7 +51,7 @@ public class TestSimpleTagExclude extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSimpleTagExclude tester = new TestSimpleTagExclude();
-        if (run(tester, ARGS, TEST, NEGATED_TEST) != 0) {
+        if (tester.run(ARGS, TEST, NEGATED_TEST) != 0) {
             throw new Error("Javadoc failed to execute.");
         }
         tester.printSummary();

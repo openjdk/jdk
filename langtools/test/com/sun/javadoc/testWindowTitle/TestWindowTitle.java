@@ -193,14 +193,14 @@ public class TestWindowTitle extends JavadocTester {
      */
     public static void main(String[] args) {
         TestWindowTitle tester = new TestWindowTitle();
-        run(tester, ARGS_JS_CHARS, TEST_JS_CHARS, NEG_TEST_JS_CHARS);
-        run(tester, ARGS_SCRIPT_TAG, TEST_SCRIPT_TAG, NEG_TEST_SCRIPT_TAG);
-        run(tester, ARGS_HTML_TAGS, TEST_HTML_TAGS, NEG_TEST_HTML_TAGS);
-        run(tester, ARGS_HTML_ENTITIES, TEST_HTML_ENTITIES, NEG_TEST_HTML_ENTITIES);
-        run(tester, ARGS_EMPTY_TAGS, TEST_EMPTY_TAGS, NEG_TEST_EMPTY_TAGS);
-        run(tester, ARGS_UNICODE_CHARS, TEST_UNICODE_CHARS, NEG_TEST_UNICODE_CHARS);
-        run(tester, ARGS_EMPTY_TITLE, TEST_EMPTY, NO_TEST);
-        run(tester, ARGS_DOCTITLE, NO_TEST, NEG_TEST_DOCTITLE);
+        tester.run(ARGS_JS_CHARS, TEST_JS_CHARS, NEG_TEST_JS_CHARS);
+        tester.run(ARGS_SCRIPT_TAG, TEST_SCRIPT_TAG, NEG_TEST_SCRIPT_TAG);
+        tester.run(ARGS_HTML_TAGS, TEST_HTML_TAGS, NEG_TEST_HTML_TAGS);
+        tester.run(ARGS_HTML_ENTITIES, TEST_HTML_ENTITIES, NEG_TEST_HTML_ENTITIES);
+        tester.run(ARGS_EMPTY_TAGS, TEST_EMPTY_TAGS, NEG_TEST_EMPTY_TAGS);
+        tester.run(ARGS_UNICODE_CHARS, TEST_UNICODE_CHARS, NEG_TEST_UNICODE_CHARS);
+        tester.run(ARGS_EMPTY_TITLE, TEST_EMPTY, NO_TEST);
+        tester.run(ARGS_DOCTITLE, NO_TEST, NEG_TEST_DOCTITLE);
         tester.printSummary();
     }
 

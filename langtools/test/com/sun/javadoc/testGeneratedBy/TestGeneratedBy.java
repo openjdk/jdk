@@ -100,8 +100,8 @@ public class TestGeneratedBy extends JavadocTester {
      */
     public static void main(String[] args) {
         TestGeneratedBy tester = new TestGeneratedBy();
-        int ec1 = run(tester, STD_ARGS, getTests(true), getNegatedTests(true));
-        int ec2 = run(tester, NO_TIMESTAMP_ARGS, getTests(false), getNegatedTests(false));
+        int ec1 = tester.run(STD_ARGS, getTests(true), getNegatedTests(true));
+        int ec2 = tester.run(NO_TIMESTAMP_ARGS, getTests(false), getNegatedTests(false));
         tester.printSummary();
         if (ec1 != 0 || ec2 != 0) {
             throw new Error("Error found while executing Javadoc");

@@ -89,7 +89,7 @@ public class TestIndex extends JavadocTester {
      */
     public static void main(String[] args) {
         TestIndex tester = new TestIndex();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

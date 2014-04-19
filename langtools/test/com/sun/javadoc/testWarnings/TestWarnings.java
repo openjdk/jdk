@@ -83,8 +83,8 @@ public class TestWarnings extends JavadocTester {
      */
     public static void main(String[] args) {
         TestWarnings tester = new TestWarnings();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS2, TEST2, NEGATED_TEST2);
         tester.printSummary();
     }
 

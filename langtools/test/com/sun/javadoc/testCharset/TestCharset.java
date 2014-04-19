@@ -62,7 +62,7 @@ public class TestCharset extends JavadocTester {
      */
     public static void main(String[] args) {
         TestCharset tester = new TestCharset();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

@@ -60,7 +60,7 @@ public class TestSeeTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSeeTag tester = new TestSeeTag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

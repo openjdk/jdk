@@ -50,7 +50,7 @@ public class TestNoPackagesFile extends JavadocTester {
      */
     public static void main(String[] args) {
         TestNoPackagesFile tester = new TestNoPackagesFile();
-        run(tester, ARGS, NO_TEST, NO_TEST);
+        tester.run(ARGS, NO_TEST, NO_TEST);
         if ((new java.io.File(BUG_ID + "/packages.html")).exists()) {
             throw new Error("Test Fails: packages file should not be " +                "generated anymore.");
         } else {

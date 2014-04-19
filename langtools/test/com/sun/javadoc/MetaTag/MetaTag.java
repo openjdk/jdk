@@ -132,8 +132,8 @@ public class MetaTag extends JavadocTester {
      */
     public static void main(String[] args) {
         MetaTag tester = new MetaTag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        run(tester, ARGS_NO_TIMESTAMP_NO_KEYWORDS, TEST2, NEGATED_TEST2);
+        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS_NO_TIMESTAMP_NO_KEYWORDS, TEST2, NEGATED_TEST2);
         tester.printSummary();
     }
 

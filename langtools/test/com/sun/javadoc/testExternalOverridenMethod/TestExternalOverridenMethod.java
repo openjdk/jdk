@@ -67,7 +67,7 @@ public class TestExternalOverridenMethod extends JavadocTester {
      */
     public static void main(String[] args) {
         TestExternalOverridenMethod tester = new TestExternalOverridenMethod();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

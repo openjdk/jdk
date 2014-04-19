@@ -51,7 +51,7 @@ public class TestThrowsHead extends JavadocTester {
      */
     public static void main(String[] args) {
         TestThrowsHead tester = new TestThrowsHead();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

@@ -114,9 +114,9 @@ public class TestProfilesConfiguration extends JavadocTester {
      */
     public static void main(String[] args) {
         TestProfilesConfiguration tester = new TestProfilesConfiguration();
-        run(tester, ARGS3, PROFILES_CONFIGURATION_TEST,
+        tester.run(ARGS3, PROFILES_CONFIGURATION_TEST,
         PROFILES_CONFIGURATION_NEGATED_TEST);
-        run(tester, ARGS4, NODEPR_NOPKGS_TEST,
+        tester.run(ARGS4, NODEPR_NOPKGS_TEST,
         NODEPR_NOPKGS_NEGATED_TEST);
         tester.printSummary();
     }
