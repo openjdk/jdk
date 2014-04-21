@@ -2359,6 +2359,7 @@ public class Lower extends TreeTranslator {
     /** Visitor method: Translate a single node.
      *  Attach the source position from the old tree to its replacement tree.
      */
+    @Override
     public <T extends JCTree> T translate(T tree) {
         if (tree == null) {
             return null;

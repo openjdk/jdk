@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,26 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8003280 8009131
- * @summary Add lambda tests
- *  check nested case of overload resolution and lambda parameter inference
- * @compile/fail/ref=TargetType01.out -XDrawDiagnostics TargetType01.java
- */
+// key: compiler.err.lambda.body.neither.value.nor.void.compatible
+// key: compiler.err.cant.apply.symbol
+// key: compiler.misc.incompatible.ret.type.in.lambda
+// key: compiler.misc.missing.ret.val
+// key: compiler.misc.no.conforming.assignment.exists
 
-class TargetType01 {
-
-    interface Func<A,B> {
-        B call(A a);
+class LambdaBodyNeitherValueNorVoidCompatible {
+    interface I {
+        String f(String x);
     }
 
-    interface F_I_I extends Func<Integer,Integer> {}
-    interface F_S_S extends Func<String,String> {}
+    static void foo(I i) {}
 
-    static Integer M(F_I_I f){ return null; }
-    static String M(F_S_S f){ return null; }
-
-    static {
-        M(x1 -> {
-            return M( x2 -> {
-                return x1 + x2;
-            });
-        }); //ambiguous
+    void m() {
+        foo((x) -> {
+            if (x == null) {
+                return;
+            } else {
+                return x;
+            }
+        });
     }
 }
