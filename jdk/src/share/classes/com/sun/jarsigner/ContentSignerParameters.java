@@ -69,6 +69,17 @@ public interface ContentSignerParameters {
     }
 
     /**
+     * Retreives the message digest algorithm that is used to generate
+     * the message imprint to be sent to the TSA server.
+     *
+     * @since 1.9
+     * @return The non-null string of the message digest algorithm name.
+     */
+    public default String getTSADigestAlg() {
+        return "SHA-256";
+    }
+
+    /**
      * Retrieves the JAR file's signature.
      *
      * @return The non-null array of signature bytes.
