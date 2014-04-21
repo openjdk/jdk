@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import static com.sun.tools.javac.code.TypeTag.VOID;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** This pass implements dataflow analysis for Java programs though
- *  different AST visitor steps. Liveness analysis (see AliveAlanyzer) checks that
+ *  different AST visitor steps. Liveness analysis (see AliveAnalyzer) checks that
  *  every statement is reachable. Exception analysis (see FlowAnalyzer) ensures that
  *  every checked exception that is thrown is declared or caught.  Definite assignment analysis
  *  (see AssignAnalyzer) ensures that each variable is assigned when used.  Definite
