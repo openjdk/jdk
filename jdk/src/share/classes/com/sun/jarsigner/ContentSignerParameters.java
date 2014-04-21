@@ -35,7 +35,7 @@ import java.util.zip.ZipFile;
  * @since 1.5
  * @author Vincent Ryan
  */
-
+@jdk.Exported
 public interface ContentSignerParameters {
 
     /**
@@ -64,7 +64,9 @@ public interface ContentSignerParameters {
      *
      * @return The TSAPolicyID. May be null.
      */
-    public String getTSAPolicyID();
+    public default String getTSAPolicyID() {
+        return null;
+    }
 
     /**
      * Retrieves the JAR file's signature.
