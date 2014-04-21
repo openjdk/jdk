@@ -902,7 +902,9 @@ public class ToolBox {
                       .append("Main-Class: ")
                       .append(mainClass).toString());
         }
-        Files.write(Paths.get("MANIFEST.MF"), lines, null);
+        Files.write(Paths.get("MANIFEST.MF"), lines,
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     /**
