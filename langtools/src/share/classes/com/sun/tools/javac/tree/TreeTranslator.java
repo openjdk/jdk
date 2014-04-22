@@ -116,8 +116,13 @@ public class TreeTranslator extends JCTree.Visitor {
  ****************************************************************************/
 
     public void visitTopLevel(JCCompilationUnit tree) {
-        tree.pid = translate(tree.pid);
         tree.defs = translate(tree.defs);
+        result = tree;
+    }
+
+    public void visitPackageDef(JCPackageDecl tree) {
+        tree.annotations = translate(tree.annotations);
+        tree.pid = translate(tree.pid);
         result = tree;
     }
 

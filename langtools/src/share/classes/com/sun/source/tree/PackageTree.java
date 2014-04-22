@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,35 +26,17 @@
 package com.sun.source.tree;
 
 import java.util.List;
-import javax.tools.JavaFileObject;
 
 /**
- * Represents the abstract syntax tree for compilation units (source
- * files) and package declarations (package-info.java).
+ * Represents the package declaration.
  *
  * @jls sections 7.3, and 7.4
  *
- * @author Peter von der Ah&eacute;
- * @since 1.6
+ * @author Paul Govereau
+ * @since 1.9
  */
 @jdk.Exported
-public interface CompilationUnitTree extends Tree {
-    List<? extends AnnotationTree> getPackageAnnotations();
+public interface PackageTree extends Tree {
+    List<? extends AnnotationTree> getAnnotations();
     ExpressionTree getPackageName();
-
-    /**
-     * Return the PackageTree associated with this compilation unit.
-     * @since 1.9
-     */
-    PackageTree getPackage();
-    List<? extends ImportTree> getImports();
-    List<? extends Tree> getTypeDecls();
-    JavaFileObject getSourceFile();
-
-    /**
-     * Gets the line map for this compilation unit, if available.
-     * Returns null if the line map is not available.
-     * @return the line map for this compilation unit
-     */
-    LineMap getLineMap();
 }

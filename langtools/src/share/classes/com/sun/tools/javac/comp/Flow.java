@@ -388,6 +388,10 @@ public class Flow {
                 super.scan(tree);
             }
         }
+
+        public void visitPackageDef(JCPackageDecl tree) {
+            // Do nothing for PackageDecl
+        }
     }
 
     /**
@@ -721,10 +725,6 @@ public class Flow {
                 pendingExits = prevPending;
                 alive = prevAlive;
             }
-        }
-
-        public void visitTopLevel(JCCompilationUnit tree) {
-            // Do nothing for TopLevel since each class is visited individually
         }
 
     /**************************************************************************
@@ -1287,10 +1287,6 @@ public class Flow {
                 caught = prevCaught;
                 thrown = prevThrown;
             }
-        }
-
-        public void visitTopLevel(JCCompilationUnit tree) {
-            // Do nothing for TopLevel since each class is visited individually
         }
 
     /**************************************************************************
@@ -2357,10 +2353,6 @@ public class Flow {
             tree.underlyingType.accept(this);
         }
 
-        public void visitTopLevel(JCCompilationUnit tree) {
-            // Do nothing for TopLevel since each class is visited individually
-        }
-
     /**************************************************************************
      * main method
      *************************************************************************/
@@ -2675,10 +2667,6 @@ public class Flow {
                 default:
                     scan(tree.arg);
             }
-        }
-
-        public void visitTopLevel(JCCompilationUnit tree) {
-            // Do nothing for TopLevel since each class is visited individually
         }
 
     /**************************************************************************

@@ -170,8 +170,8 @@ public class JavacElements implements Elements {
         Symbol sym = cast(Symbol.class, e);
         class Vis extends JCTree.Visitor {
             List<JCAnnotation> result = null;
-            public void visitTopLevel(JCCompilationUnit tree) {
-                result = tree.packageAnnotations;
+            public void visitPackageDef(JCPackageDecl tree) {
+                result = tree.annotations;
             }
             public void visitClassDef(JCClassDecl tree) {
                 result = tree.mods.annotations;
