@@ -24,7 +24,9 @@
 /**
  * runsunspider : runs the sunspider tests and checks for compliance
  *
- * @subtest
+ * @test
+ * @option -timezone=PST
+ * @runif external.sunspider
  */
 
 /**
