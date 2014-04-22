@@ -515,6 +515,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
         return getSurfaceType(gc, transparency, false);
     }
 
+    @SuppressWarnings("fallthrough")
     public static SurfaceType getSurfaceType(X11GraphicsConfig gc,
                                              int transparency,
                                              boolean pixmapSurface)
