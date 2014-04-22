@@ -4243,7 +4243,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1398168727
+DATE_WHEN_GENERATED=1398196583
 
 ###############################################################################
 #
@@ -48567,8 +48567,8 @@ $as_echo_n "checking for memory size... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MEMORY_SIZE MB" >&5
 $as_echo "$MEMORY_SIZE MB" >&6; }
   else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: could not detect memory size, defaulting to 1024 MB" >&5
-$as_echo "could not detect memory size, defaulting to 1024 MB" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: could not detect memory size, defaulting to $MEMORY_SIZE MB" >&5
+$as_echo "could not detect memory size, defaulting to $MEMORY_SIZE MB" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This might seriously impact build performance!" >&5
 $as_echo "$as_me: WARNING: This might seriously impact build performance!" >&2;}
   fi
