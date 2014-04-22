@@ -4243,7 +4243,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1396624161
+DATE_WHEN_GENERATED=1398121836
 
 ###############################################################################
 #
@@ -41662,7 +41662,8 @@ fi
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
       ppc )
-        # on ppc we don't prevent gcc to omit frame pointer nor strict-aliasing
+        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
       * )
         CCXXFLAGS_JDK="$CCXXFLAGS_JDK -fno-omit-frame-pointer"
