@@ -22,48 +22,12 @@
  */
 package test.sql;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.sql.SQLException;
 import static org.testng.Assert.*;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import util.BaseTest;
 
-public class SQLExceptionTests {
-
-    private final String reason = "reason";
-    private final String state = "SQLState";
-    private final String cause = "java.lang.Throwable: cause";
-    private final Throwable t = new Throwable("cause");
-    private final Throwable t1 = new Throwable("cause 1");
-    private final Throwable t2 = new Throwable("cause 2");
-    private final int errorCode = 21;
-    private final String[] msgs = {"Exception 1", "cause 1", "Exception 2",
-        "Exception 3", "cause 2"};
-
-    public SQLExceptionTests() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @BeforeMethod
-    public void setUpMethod() throws Exception {
-    }
-
-    @AfterMethod
-    public void tearDownMethod() throws Exception {
-    }
+public class SQLExceptionTests extends BaseTest {
 
     /**
      * Create SQLException and setting all objects to null
@@ -189,13 +153,7 @@ public class SQLExceptionTests {
     @Test
     public void test10() throws Exception {
         SQLException e = new SQLException(reason, state, errorCode, t);
-        ObjectOutputStream out
-                = new ObjectOutputStream(
-                        new FileOutputStream("SQLException.ser"));
-        out.writeObject(e);
-        ObjectInputStream is = new ObjectInputStream(
-                new FileInputStream("SQLException.ser"));
-        SQLException ex1 = (SQLException) is.readObject();
+        SQLException ex1 = createSerializedException(e);
         assertTrue(reason.equals(ex1.getMessage())
                 && ex1.getSQLState().equals(state)
                 && cause.equals(ex1.getCause().toString())
