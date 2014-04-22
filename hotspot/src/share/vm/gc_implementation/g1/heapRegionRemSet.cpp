@@ -167,7 +167,7 @@ public:
 
   // Mem size in bytes.
   size_t mem_size() const {
-    return sizeof(this) + _bm.size_in_words() * HeapWordSize;
+    return sizeof(PerRegionTable) + _bm.size_in_words() * HeapWordSize;
   }
 
   // Requires "from" to be in "hr()".
@@ -733,7 +733,7 @@ size_t OtherRegionsTable::mem_size() const {
   sum += (sizeof(PerRegionTable*) * _max_fine_entries);
   sum += (_coarse_map.size_in_words() * HeapWordSize);
   sum += (_sparse_table.mem_size());
-  sum += sizeof(*this) - sizeof(_sparse_table); // Avoid double counting above.
+  sum += sizeof(OtherRegionsTable) - sizeof(_sparse_table); // Avoid double counting above.
   return sum;
 }
 
@@ -1248,6 +1248,11 @@ HeapRegionRemSet::finish_cleanup_task(HRRSCleanupTask* hrrs_cleanup_task) {
 #ifndef PRODUCT
 void PerRegionTable::test_fl_mem_size() {
   PerRegionTable* dummy = alloc(NULL);
+
+  size_t min_prt_size = sizeof(void*) + dummy->bm()->size_in_words() * HeapWordSize;
+  assert(dummy->mem_size() > min_prt_size,
+         err_msg("PerRegionTable memory usage is suspiciously small, only has "SIZE_FORMAT" bytes. "
+                 "Should be at least "SIZE_FORMAT" bytes.", dummy->mem_size(), min_prt_size));
   free(dummy);
   guarantee(dummy->mem_size() == fl_mem_size(), "fl_mem_size() does not return the correct element size");
   // try to reset the state

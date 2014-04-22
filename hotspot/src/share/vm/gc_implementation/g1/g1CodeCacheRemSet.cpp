@@ -84,7 +84,7 @@ void G1CodeRootChunkManager::purge_chunks(size_t keep_ratio) {
 }
 
 size_t G1CodeRootChunkManager::static_mem_size() {
-  return sizeof(this);
+  return sizeof(G1CodeRootChunkManager);
 }
 
 
@@ -116,7 +116,7 @@ void G1CodeRootSet::purge_chunks(size_t keep_ratio) {
   _default_chunk_manager.purge_chunks(keep_ratio);
 }
 
-size_t G1CodeRootSet::static_mem_size() {
+size_t G1CodeRootSet::free_chunks_static_mem_size() {
   return _default_chunk_manager.static_mem_size();
 }
 
@@ -213,8 +213,12 @@ void G1CodeRootSet::nmethods_do(CodeBlobClosure* blk) const {
   }
 }
 
+size_t G1CodeRootSet::static_mem_size() {
+  return sizeof(G1CodeRootSet);
+}
+
 size_t G1CodeRootSet::mem_size() {
-  return sizeof(this) + _list.count() * _list.size();
+  return G1CodeRootSet::static_mem_size() + _list.count() * _list.size();
 }
 
 #ifndef PRODUCT
@@ -224,12 +228,18 @@ void G1CodeRootSet::test() {
 
   assert(mgr.num_chunks_handed_out() == 0, "Must not have handed out chunks yet");
 
+  assert(G1CodeRootChunkManager::static_mem_size() > sizeof(void*),
+         err_msg("The chunk manager's static memory usage seems too small, is only "SIZE_FORMAT" bytes.", G1CodeRootChunkManager::static_mem_size()));
+
   // The number of chunks that we allocate for purge testing.
   size_t const num_chunks = 10;
 
   {
     G1CodeRootSet set1(&mgr);
     assert(set1.is_empty(), "Code root set must be initially empty but is not.");
+
+    assert(G1CodeRootSet::static_mem_size() > sizeof(void*),
+           err_msg("The code root set's static memory usage seems too small, is only "SIZE_FORMAT" bytes", G1CodeRootSet::static_mem_size()));
 
     set1.add((nmethod*)1);
     assert(mgr.num_chunks_handed_out() == 1,

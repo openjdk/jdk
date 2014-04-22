@@ -147,7 +147,7 @@ class G1CodeRootChunkManager VALUE_OBJ_CLASS_SPEC {
   void initialize();
   void purge_chunks(size_t keep_ratio);
 
-  size_t static_mem_size();
+  static size_t static_mem_size();
   size_t fl_mem_size();
 
 #ifndef PRODUCT
@@ -186,7 +186,7 @@ class G1CodeRootSet VALUE_OBJ_CLASS_SPEC {
 
   static void purge_chunks(size_t keep_ratio);
 
-  static size_t static_mem_size();
+  static size_t free_chunks_static_mem_size();
   static size_t free_chunks_mem_size();
 
   // Search for the code blob from the recently allocated ones to find duplicates more quickly, as this
@@ -207,6 +207,8 @@ class G1CodeRootSet VALUE_OBJ_CLASS_SPEC {
   // Length in elements
   size_t length() const { return _length; }
 
+  // Static data memory size in bytes of this set.
+  static size_t static_mem_size();
   // Memory size in bytes taken by this set.
   size_t mem_size();
 
