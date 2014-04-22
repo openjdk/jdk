@@ -22,55 +22,25 @@
  */
 package test.sql;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.sql.SQLException;
 import java.sql.DataTruncation;
+import java.sql.SQLException;
 import static org.testng.Assert.*;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import util.BaseTest;
 
-public class DataTruncationTests {
+public class DataTruncationTests extends BaseTest {
 
     private final String READ_TRUNCATION = "01004";
     private final String WRITE_TRUNCATION = "22001";
-    private final String reason = "Data truncation";
-    private final String cause = "java.lang.Throwable: cause";
-    private final Throwable t = new Throwable("cause");
-    private final Throwable t1 = new Throwable("cause 1");
-    private final Throwable t2 = new Throwable("cause 2");
-    private final int errorCode = 0;
-    private final String[] msgs = {reason, "cause 1", reason,
-        reason, "cause 2"};
+    private final String dtReason = "Data truncation";
+    private final int dterrorCode = 0;
+    private final String[] dtmsgs = {dtReason, "cause 1", dtReason,
+        dtReason, "cause 2"};
     private boolean onRead = false;
     private final boolean parameter = false;
     private final int index = 21;
     private final int dataSize = 25;
     private final int transferSize = 10;
-
-    public DataTruncationTests() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @BeforeMethod
-    public void setUpMethod() throws Exception {
-    }
-
-    @AfterMethod
-    public void tearDownMethod() throws Exception {
-    }
 
     /**
      * Create DataTruncation object indicating a truncation on read
@@ -80,10 +50,10 @@ public class DataTruncationTests {
         onRead = true;
         DataTruncation e = new DataTruncation(index, parameter, onRead,
                 dataSize, transferSize);
-        assertTrue(e.getMessage().equals(reason)
+        assertTrue(e.getMessage().equals(dtReason)
                 && e.getSQLState().equals(READ_TRUNCATION)
                 && e.getCause() == null
-                && e.getErrorCode() == errorCode
+                && e.getErrorCode() == dterrorCode
                 && e.getParameter() == parameter
                 && e.getRead() == onRead
                 && e.getDataSize() == dataSize
@@ -99,10 +69,10 @@ public class DataTruncationTests {
         onRead = false;
         DataTruncation e = new DataTruncation(index, parameter, onRead,
                 dataSize, transferSize);
-        assertTrue(e.getMessage().equals(reason)
+        assertTrue(e.getMessage().equals(dtReason)
                 && e.getSQLState().equals(WRITE_TRUNCATION)
                 && e.getCause() == null
-                && e.getErrorCode() == errorCode
+                && e.getErrorCode() == dterrorCode
                 && e.getParameter() == parameter
                 && e.getRead() == onRead
                 && e.getDataSize() == dataSize
@@ -119,10 +89,10 @@ public class DataTruncationTests {
         onRead = true;
         DataTruncation e = new DataTruncation(index, parameter, onRead,
                 dataSize, transferSize, t);
-        assertTrue(e.getMessage().equals(reason)
+        assertTrue(e.getMessage().equals(dtReason)
                 && e.getSQLState().equals(READ_TRUNCATION)
                 && cause.equals(e.getCause().toString())
-                && e.getErrorCode() == errorCode
+                && e.getErrorCode() == dterrorCode
                 && e.getParameter() == parameter
                 && e.getRead() == onRead
                 && e.getDataSize() == dataSize
@@ -139,10 +109,10 @@ public class DataTruncationTests {
         onRead = true;;
         DataTruncation e = new DataTruncation(index, parameter, onRead,
                 dataSize, transferSize, null);
-        assertTrue(e.getMessage().equals(reason)
+        assertTrue(e.getMessage().equals(dtReason)
                 && e.getSQLState().equals(READ_TRUNCATION)
                 && e.getCause() == null
-                && e.getErrorCode() == errorCode
+                && e.getErrorCode() == dterrorCode
                 && e.getParameter() == parameter
                 && e.getRead() == onRead
                 && e.getDataSize() == dataSize
@@ -160,10 +130,10 @@ public class DataTruncationTests {
         int negIndex = -1;
         DataTruncation e = new DataTruncation(negIndex, parameter, onRead,
                 dataSize, transferSize);
-        assertTrue(e.getMessage().equals(reason)
+        assertTrue(e.getMessage().equals(dtReason)
                 && e.getSQLState().equals(READ_TRUNCATION)
                 && e.getCause() == null
-                && e.getErrorCode() == errorCode
+                && e.getErrorCode() == dterrorCode
                 && e.getParameter() == parameter
                 && e.getRead() == onRead
                 && e.getDataSize() == dataSize
@@ -178,17 +148,11 @@ public class DataTruncationTests {
     public void test5() throws Exception {
         DataTruncation e = new DataTruncation(index, parameter, onRead,
                 dataSize, transferSize);
-        ObjectOutputStream out
-                = new ObjectOutputStream(
-                        new FileOutputStream("DataTruncation.ser"));
-        out.writeObject(e);
-        ObjectInputStream is = new ObjectInputStream(
-                new FileInputStream("DataTruncation.ser"));
-        DataTruncation ex1 = (DataTruncation) is.readObject();
-        assertTrue(e.getMessage().equals(reason)
+        DataTruncation ex1 = createSerializedException(e);
+        assertTrue(e.getMessage().equals(dtReason)
                 && e.getSQLState().equals(READ_TRUNCATION)
                 && e.getCause() == null
-                && e.getErrorCode() == errorCode
+                && e.getErrorCode() == dterrorCode
                 && e.getParameter() == parameter
                 && e.getRead() == onRead
                 && e.getDataSize() == dataSize
@@ -212,7 +176,7 @@ public class DataTruncationTests {
         ex.setNextException(ex2);
         int num = 0;
         for (Throwable e : ex) {
-            assertTrue(msgs[num++].equals(e.getMessage()));
+            assertTrue(dtmsgs[num++].equals(e.getMessage()));
         }
     }
 
@@ -233,10 +197,10 @@ public class DataTruncationTests {
         int num = 0;
         SQLException sqe = ex;
         while (sqe != null) {
-            assertTrue(msgs[num++].equals(sqe.getMessage()));
+            assertTrue(dtmsgs[num++].equals(sqe.getMessage()));
             Throwable c = sqe.getCause();
             while (c != null) {
-                assertTrue(msgs[num++].equals(c.getMessage()));
+                assertTrue(dtmsgs[num++].equals(c.getMessage()));
                 c = c.getCause();
             }
             sqe = sqe.getNextException();

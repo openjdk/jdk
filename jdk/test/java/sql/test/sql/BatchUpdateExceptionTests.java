@@ -24,55 +24,22 @@ package test.sql;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import static org.testng.Assert.*;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import util.SerializedBatchUpdateException;
+import util.BaseTest;
 
-public class BatchUpdateExceptionTests {
+public class BatchUpdateExceptionTests extends BaseTest {
 
-    private final String reason = "reason";
-    private final String state = "SQLState";
-    private final String cause = "java.lang.Throwable: cause";
-    private final Throwable t1 = new Throwable("cause 1");
-    private final Throwable t2 = new Throwable("cause 2");
-    private final Throwable t = new Throwable("cause");
-    private final int errorCode = 21;
     private final int[] uc = {1, 2, 3};
     private final long[] luc = {1, 2, 3};
-    private final String[] msgs = {"Exception 1", "cause 1", "Exception 2",
-        "Exception 3", "cause 2"};
+
     private final String testSrcDir = System.getProperty("test.src", ".")
             + File.separatorChar;
-
-    public BatchUpdateExceptionTests() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @BeforeMethod
-    public void setUpMethod() throws Exception {
-    }
-
-    @AfterMethod
-    public void tearDownMethod() throws Exception {
-    }
 
     /**
      * Create BatchUpdateException and setting all objects to null
@@ -258,13 +225,8 @@ public class BatchUpdateExceptionTests {
     public void test12() throws Exception {
         BatchUpdateException be = new BatchUpdateException(reason, state, errorCode,
                 uc, t);
-        ObjectOutputStream out
-                = new ObjectOutputStream(
-                        new FileOutputStream("BatchUpdateException_JDBC42.ser"));
-        out.writeObject(be);
-        ObjectInputStream is = new ObjectInputStream(
-                new FileInputStream("BatchUpdateException_JDBC42.ser"));
-        BatchUpdateException bue = (BatchUpdateException) is.readObject();
+        BatchUpdateException bue
+                = createSerializedException(be);
         assertTrue(reason.equals(bue.getMessage())
                 && bue.getSQLState().equals(state)
                 && cause.equals(bue.getCause().toString())
@@ -272,6 +234,8 @@ public class BatchUpdateExceptionTests {
                 && Arrays.equals(bue.getLargeUpdateCounts(), luc)
                 && Arrays.equals(bue.getUpdateCounts(), uc));
     }
+
+
 
     /**
      * De-Serialize a BatchUpdateException from JDBC 4.0 and make sure you can
@@ -308,13 +272,8 @@ public class BatchUpdateExceptionTests {
         long[] luc1 = {Integer.MAX_VALUE, Integer.MAX_VALUE + 1};
         BatchUpdateException be = new BatchUpdateException(reason, state, errorCode,
                 luc1, t);
-        ObjectOutputStream out
-                = new ObjectOutputStream(
-                        new FileOutputStream("BatchUpdateException_MAX_INT.ser"));
-        out.writeObject(be);
-        ObjectInputStream is = new ObjectInputStream(
-                new FileInputStream("BatchUpdateException_MAX_INT.ser"));
-        BatchUpdateException bue = (BatchUpdateException) is.readObject();
+                BatchUpdateException bue
+                = createSerializedException(be);
         assertTrue(reason.equals(bue.getMessage())
                 && bue.getSQLState().equals(state)
                 && cause.equals(bue.getCause().toString())
