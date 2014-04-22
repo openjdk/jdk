@@ -24,6 +24,7 @@
 /**
  * @test
  * @runif external.octane
+ * @option -scripting
  */ 
 
 compile_only = true;

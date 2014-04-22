@@ -25,6 +25,14 @@
  * @subtest
  */
 
+var read = readFully;
+
+function initZlib() {
+    zlib = new BenchmarkSuite('zlib', [152815148], [
+						    new Benchmark('zlib', false, true, 10,
+								  runZlib, undefined, tearDownZlib, null, 3)]);
+}
+
 var tests = [
     {name:"box2d",         files:["box2d.js"],                         suite:"Box2DBenchmark"},
     {name:"code-load",     files:["code-load.js"],                     suite:"CodeLoad"},
@@ -39,9 +47,9 @@ var tests = [
     {name:"regexp",        files:["regexp.js"],                        suite:"RegExpSuite"},
     {name:"richards",      files:["richards.js"],                      suite:"Richards"},
     {name:"splay",         files:["splay.js"],                         suite:"Splay"},
-    {name:"typescript",    files:["typescript.js", "typescript-input.js", "typescript-compiler.js"], suite:"typescript"}
+    {name:"typescript",    files:["typescript.js", "typescript-input.js", "typescript-compiler.js"], suite:"typescript"},
     //zlib currently disabled - requires read
-    //    {name:"zlib",          files:["zlib.js", "zlib-data.js"], suite:"zlib"},
+    {name:"zlib",          files:["zlib.js", "zlib-data.js"], suite:"zlib", before:initZlib}
 ];
 var dir = (typeof(__DIR__) == 'undefined') ? "test/script/basic/" : __DIR__;
 
@@ -78,6 +86,10 @@ function load_bench(arg) {
 	print_verbose(arg, "loading '" + arg.name + "' [" + f + "]...");
 	load(file_name); 
     }
+    
+    if (typeof arg.before !== 'undefined') {
+	arg.before();
+    }
 
     if (compile_and_return) {
 	print_always(arg, "Compiled OK");
@@ -85,6 +97,7 @@ function load_bench(arg) {
     return !compile_and_return;
 
 }
+
 
 function run_one_benchmark(arg, iters) {
 

@@ -26,6 +26,7 @@
  * @option -Dnashorn.compiler.splitter.threshold=1000
  * @fork
  * @runif external.octane
+ * @option -scripting
  */ 
 
 compile_only = true;

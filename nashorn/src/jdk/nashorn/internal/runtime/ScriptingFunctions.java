@@ -157,7 +157,7 @@ public final class ScriptingFunctions {
             // Set up ENV variables.
             final Map<String, String> environment = processBuilder.environment();
             environment.clear();
-            for (Map.Entry<Object, Object> entry : envProperties.entrySet()) {
+            for (final Map.Entry<Object, Object> entry : envProperties.entrySet()) {
                 environment.put(JSType.toString(entry.getKey()), JSType.toString(entry.getValue()));
             }
         }
@@ -168,15 +168,15 @@ public final class ScriptingFunctions {
 
         // Collect output.
         final StringBuilder outBuffer = new StringBuilder();
-        Thread outThread = new Thread(new Runnable() {
+        final Thread outThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                char buffer[] = new char[1024];
+                final char buffer[] = new char[1024];
                 try (final InputStreamReader inputStream = new InputStreamReader(process.getInputStream())) {
                     for (int length; (length = inputStream.read(buffer, 0, buffer.length)) != -1; ) {
                         outBuffer.append(buffer, 0, length);
                     }
-                } catch (IOException ex) {
+                } catch (final IOException ex) {
                     exception[0] = ex;
                 }
             }
@@ -184,15 +184,15 @@ public final class ScriptingFunctions {
 
         // Collect errors.
         final StringBuilder errBuffer = new StringBuilder();
-        Thread errThread = new Thread(new Runnable() {
+        final Thread errThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                char buffer[] = new char[1024];
+                final char buffer[] = new char[1024];
                 try (final InputStreamReader inputStream = new InputStreamReader(process.getErrorStream())) {
                     for (int length; (length = inputStream.read(buffer, 0, buffer.length)) != -1; ) {
                         errBuffer.append(buffer, 0, length);
                     }
-                } catch (IOException ex) {
+                } catch (final IOException ex) {
                     exception[1] = ex;
                 }
             }
@@ -205,10 +205,10 @@ public final class ScriptingFunctions {
         // If input is present, pass on to process.
         try (OutputStreamWriter outputStream = new OutputStreamWriter(process.getOutputStream())) {
             if (input != UNDEFINED) {
-                String in = JSType.toString(input);
+                final String in = JSType.toString(input);
                 outputStream.write(in, 0, in.length());
             }
-        } catch (IOException ex) {
+        } catch (final IOException ex) {
             // Process was not expecting input.  May be normal state of affairs.
         }
 
@@ -226,9 +226,9 @@ public final class ScriptingFunctions {
         global.set(EXIT_NAME, exit, false);
 
         // Propagate exception if present.
-        for (int i = 0; i < exception.length; i++) {
-            if (exception[i] != null) {
-                throw exception[i];
+        for (final IOException element : exception) {
+            if (element != null) {
+                throw element;
             }
         }
 
