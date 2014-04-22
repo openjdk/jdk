@@ -4243,7 +4243,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1398121836
+DATE_WHEN_GENERATED=1398168727
 
 ###############################################################################
 #
@@ -19896,12 +19896,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20228,12 +20228,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20422,12 +20422,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20609,12 +20609,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20795,12 +20795,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20981,12 +20981,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -21158,12 +21158,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -21476,12 +21476,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -21804,12 +21804,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22019,12 +22019,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22199,12 +22199,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22407,12 +22407,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22587,12 +22587,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22795,12 +22795,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22975,12 +22975,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23183,12 +23183,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23363,12 +23363,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23558,12 +23558,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23736,12 +23736,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23932,12 +23932,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24110,12 +24110,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24305,12 +24305,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24483,12 +24483,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24679,12 +24679,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24857,12 +24857,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -25034,12 +25034,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
