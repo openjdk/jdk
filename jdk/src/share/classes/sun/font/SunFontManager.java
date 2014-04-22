@@ -1161,6 +1161,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             case FONTFORMAT_NATIVE:
                 NativeFont nf = new NativeFont(fileName, false);
                 physicalFont = addToFontList(nf, fontRank);
+                break;
             default:
 
             }
