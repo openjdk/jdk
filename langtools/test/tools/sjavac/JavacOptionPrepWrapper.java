@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,12 @@
 
 /*
  * @test
- * @summary Test all aspects of sjavac.
- *
- * @bug 8004658
- * @summary Add internal smart javac wrapper to solve JEP 139
- *
- * @run main SJavacWrapper
+ * @bug 8035063
+ * @summary Tests the preparation of javac-arguments.
+ * @run main JavacOptionPrepWrapper
  */
-
-public class SJavacWrapper {
+public class JavacOptionPrepWrapper {
     public static void main(String... args) throws Exception {
-        SJavacTestUtil.runSjavacTest("SJavac", args);
+        SJavacTestUtil.runSjavacTest("JavacOptionPrep", args);
     }
 }

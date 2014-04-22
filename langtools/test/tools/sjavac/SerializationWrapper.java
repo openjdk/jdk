@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,16 @@
 
 /*
  * @test
- * @summary Test all aspects of sjavac.
+ * @bug 8035063
  *
- * @bug 8004658
- * @summary Add internal smart javac wrapper to solve JEP 139
+ * @summary Tests serialization of options. The options needs to be serialized
+ *          and saved in the state file since the files need to be recompiled
+ *          if new options are provided.
  *
- * @run main SJavacWrapper
+ * @run main SerializationWrapper
  */
-
-public class SJavacWrapper {
+public class SerializationWrapper {
     public static void main(String... args) throws Exception {
-        SJavacTestUtil.runSjavacTest("SJavac", args);
+        SJavacTestUtil.runSjavacTest("Serialization", args);
     }
 }
