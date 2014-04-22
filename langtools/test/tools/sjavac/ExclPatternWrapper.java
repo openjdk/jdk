@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,12 @@
 
 /*
  * @test
- * @summary Test all aspects of sjavac.
- *
- * @bug 8004658
- * @summary Add internal smart javac wrapper to solve JEP 139
- *
- * @run main SJavacWrapper
+ * @bug 8037085
+ * @summary Ensures that sjavac can handle various exclusion patterns.
+ * @run main ExclPatternWrapper
  */
-
-public class SJavacWrapper {
+public class ExclPatternWrapper {
     public static void main(String... args) throws Exception {
-        SJavacTestUtil.runSjavacTest("SJavac", args);
+        SJavacTestUtil.runSjavacTest("ExclPattern", args);
     }
 }

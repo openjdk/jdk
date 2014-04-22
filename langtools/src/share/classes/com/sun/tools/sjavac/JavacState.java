@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.sjavac;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
@@ -36,6 +37,9 @@ import java.util.HashMap;
 import java.text.SimpleDateFormat;
 import java.net.URI;
 import java.util.*;
+
+import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.options.SourceLocation;
 
 /**
  * The javac state class maintains the previous (prev) and the current (now)
@@ -117,25 +121,20 @@ public class JavacState
     // It can also map from a jar file to the set of visible classes for that jar file.
     Map<URI,Set<String>> visibleClasses;
 
-    // Setup two transforms that always exist.
-    private CopyFile            copyFiles = new CopyFile();
+    // Setup transform that always exist.
     private CompileJavaPackages compileJavaPackages = new CompileJavaPackages();
 
     // Where to send stdout and stderr.
     private PrintStream out, err;
 
-    JavacState(String[] args, File bd, File gd, File hd, boolean permitUnidentifiedArtifacts, boolean removeJavacState,
-            PrintStream o, PrintStream e) {
+    JavacState(Options options, boolean removeJavacState, PrintStream o, PrintStream e) {
         out = o;
         err = e;
-        numCores = Main.findNumberOption(args, "-j");
-        theArgs = "";
-        for (String a : removeArgsNotAffectingState(args)) {
-            theArgs = theArgs+a+" ";
-        }
-        binDir = bd;
-        gensrcDir = gd;
-        headerDir = hd;
+        numCores = options.getNumCores();
+        theArgs = options.getStateArgsString();
+        binDir = Util.pathToFile(options.getDestDir());
+        gensrcDir = Util.pathToFile(options.getGenSrcDir());
+        headerDir = Util.pathToFile(options.getHeaderDir());
         javacStateFilename = binDir.getPath()+File.separator+"javac_state";
         javacState = new File(javacStateFilename);
         if (removeJavacState && javacState.exists()) {
@@ -148,7 +147,7 @@ public class JavacState
             // We do not want to risk building a broken incremental build.
             // BUT since the makefiles still copy things straight into the bin_dir et al,
             // we avoid deleting files here, if the option --permit-unidentified-classes was supplied.
-            if (!permitUnidentifiedArtifacts) {
+            if (!options.isUnidentifiedArtifactPermitted()) {
                 deleteContents(binDir);
                 deleteContents(gensrcDir);
                 deleteContents(headerDir);
@@ -301,9 +300,8 @@ public class JavacState
     /**
      * Load a javac_state file.
      */
-    public static JavacState load(String[] args, File binDir, File gensrcDir, File headerDir,
-            boolean permitUnidentifiedArtifacts, PrintStream out, PrintStream err) {
-        JavacState db = new JavacState(args, binDir, gensrcDir, headerDir, permitUnidentifiedArtifacts, false, out, err);
+    public static JavacState load(Options options, PrintStream out, PrintStream err) {
+        JavacState db = new JavacState(options, false, out, err);
         Module  lastModule = null;
         Package lastPackage = null;
         Source  lastSource = null;
@@ -370,22 +368,22 @@ public class JavacState
             noFileFound = true;
         } catch (IOException e) {
             Log.info("Dropping old javac_state because of errors when reading it.");
-            db = new JavacState(args, binDir, gensrcDir, headerDir, permitUnidentifiedArtifacts, true, out, err);
+            db = new JavacState(options, true, out, err);
             foundCorrectVerNr = true;
             newCommandLine = false;
             syntaxError = false;
     }
         if (foundCorrectVerNr == false && !noFileFound) {
             Log.info("Dropping old javac_state since it is of an old version.");
-            db = new JavacState(args, binDir, gensrcDir, headerDir, permitUnidentifiedArtifacts, true, out, err);
+            db = new JavacState(options, true, out, err);
         } else
         if (newCommandLine == true && !noFileFound) {
             Log.info("Dropping old javac_state since a new command line is used!");
-            db = new JavacState(args, binDir, gensrcDir, headerDir, permitUnidentifiedArtifacts, true, out, err);
+            db = new JavacState(options, true, out, err);
         } else
         if (syntaxError == true) {
             Log.info("Dropping old javac_state since it contains syntax errors.");
-            db = new JavacState(args, binDir, gensrcDir, headerDir, permitUnidentifiedArtifacts, true, out, err);
+            db = new JavacState(options, true, out, err);
         }
         db.prev.calculateDependents();
         return db;
@@ -467,12 +465,6 @@ public class JavacState
         return sr;
     }
 
-    /**
-     * Acquire the copying transform.
-     */
-    public Transformer getCopier() {
-        return copyFiles;
-    }
 
     /**
      * If artifacts have gone missing, force a recompile of the packages
@@ -629,7 +621,7 @@ public class JavacState
     public void performCopying(File binDir, Map<String,Transformer> suffixRules) {
         Map<String,Transformer> sr = new HashMap<>();
         for (Map.Entry<String,Transformer> e : suffixRules.entrySet()) {
-            if (e.getValue() == copyFiles) {
+            if (e.getValue().getClass().equals(CopyFile.class)) {
                 sr.put(e.getKey(), e.getValue());
             }
         }
@@ -643,10 +635,11 @@ public class JavacState
     public void performTranslation(File gensrcDir, Map<String,Transformer> suffixRules) {
         Map<String,Transformer> sr = new HashMap<>();
         for (Map.Entry<String,Transformer> e : suffixRules.entrySet()) {
-            if (e.getValue() != copyFiles &&
-                e.getValue() != compileJavaPackages) {
-                sr.put(e.getKey(), e.getValue());
-            }
+            Class<?> trClass = e.getValue().getClass();
+            if (trClass == CompileJavaPackages.class || trClass == CopyFile.class)
+                continue;
+
+            sr.put(e.getKey(), e.getValue());
         }
         perform(gensrcDir, sr);
     }
@@ -654,14 +647,11 @@ public class JavacState
     /**
      * Compile all the java sources. Return true, if it needs to be called again!
      */
-    public boolean performJavaCompilations(File binDir,
-                                           String serverSettings,
-                                           String[] args,
+    public boolean performJavaCompilations(Options args,
                                            Set<String> recentlyCompiled,
                                            boolean[] rcValue) {
         Map<String,Transformer> suffixRules = new HashMap<>();
         suffixRules.put(".java", compileJavaPackages);
-        compileJavaPackages.setExtra(serverSettings);
         compileJavaPackages.setExtra(args);
 
         rcValue[0] = perform(binDir, suffixRules);
@@ -813,7 +803,10 @@ public class JavacState
         for (Source s : now.sources().values()) {
             // Don't include link only sources when comparing sources to compile
             if (!s.isLinkedOnly()) {
-                calculatedSources.add(s.file().getPath());
+                String path = s.file().getPath();
+                if (mightNeedRewriting)
+                    path = Util.normalizeDriveLetter(path);
+                calculatedSources.add(path);
             }
         }
         // Read in the file and create another set of filenames with full paths.
