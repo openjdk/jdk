@@ -114,10 +114,15 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
  ****************************************************************************/
 
     public R visitCompilationUnit(CompilationUnitTree node, P p) {
-        R r = scan(node.getPackageAnnotations(), p);
-        r = scanAndReduce(node.getPackageName(), p, r);
+        R r = scan(node.getPackage(), p);
         r = scanAndReduce(node.getImports(), p, r);
         r = scanAndReduce(node.getTypeDecls(), p, r);
+        return r;
+    }
+
+    public R visitPackage(PackageTree node, P p) {
+        R r = scan(node.getAnnotations(), p);
+        r = scanAndReduce(node.getPackageName(), p, r);
         return r;
     }
 

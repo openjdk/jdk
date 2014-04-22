@@ -3081,27 +3081,33 @@ public class JavacParser implements Parser {
      */
     public JCTree.JCCompilationUnit parseCompilationUnit() {
         Token firstToken = token;
-        JCExpression pid = null;
         JCModifiers mods = null;
         boolean consumedToplevelDoc = false;
         boolean seenImport = false;
         boolean seenPackage = false;
-        List<JCAnnotation> packageAnnotations = List.nil();
+        ListBuffer<JCTree> defs = new ListBuffer<>();
         if (token.kind == MONKEYS_AT)
             mods = modifiersOpt();
 
         if (token.kind == PACKAGE) {
+            int packagePos = token.pos;
+            List<JCAnnotation> annotations = List.nil();
             seenPackage = true;
             if (mods != null) {
                 checkNoMods(mods.flags);
-                packageAnnotations = mods.annotations;
+                annotations = mods.annotations;
                 mods = null;
             }
             nextToken();
-            pid = qualident(false);
+            JCExpression pid = qualident(false);
             accept(SEMI);
+            JCPackageDecl pd = F.at(packagePos).PackageDecl(annotations, pid);
+            attach(pd, firstToken.comment(CommentStyle.JAVADOC));
+            consumedToplevelDoc = true;
+            storeEnd(pd, token.pos);
+            defs.append(pd);
         }
-        ListBuffer<JCTree> defs = new ListBuffer<>();
+
         boolean checkForImports = true;
         boolean firstTypeDecl = true;
         while (token.kind != EOF) {
@@ -3130,7 +3136,7 @@ public class JavacParser implements Parser {
                 firstTypeDecl = false;
             }
         }
-        JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(packageAnnotations, pid, defs.toList());
+        JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(defs.toList());
         if (!consumedToplevelDoc)
             attach(toplevel, firstToken.comment(CommentStyle.JAVADOC));
         if (defs.isEmpty())
