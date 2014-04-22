@@ -335,14 +335,14 @@ public:
     return _other_regions.mem_size()
       // This correction is necessary because the above includes the second
       // part.
-      + (sizeof(this) - sizeof(OtherRegionsTable))
+      + (sizeof(HeapRegionRemSet) - sizeof(OtherRegionsTable))
       + strong_code_roots_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return OtherRegionsTable::static_mem_size() + G1CodeRootSet::static_mem_size();
+    return OtherRegionsTable::static_mem_size() + G1CodeRootSet::free_chunks_static_mem_size();
   }
 
   // Returns the memory occupancy of all free_list data structures associated
