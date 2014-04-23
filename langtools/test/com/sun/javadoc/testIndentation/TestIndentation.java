@@ -32,22 +32,19 @@
 
 public class TestIndentation extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8011288";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "p"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "p"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        { BUG_ID + "/p/Indent.html",
+        { "p/Indent.html",
           "<pre>public&nbsp;&lt;T&gt;&nbsp;void&nbsp;m(T&nbsp;t1," },
-        { BUG_ID + "/p/Indent.html",
+        { "p/Indent.html",
           "\n" +
           "                  T&nbsp;t2)" },
-        { BUG_ID + "/p/Indent.html",
+        { "p/Indent.html",
           "\n" +
           "           throws java.lang.Exception" }
     };
@@ -60,19 +57,5 @@ public class TestIndentation extends JavadocTester {
         TestIndentation tester = new TestIndentation();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

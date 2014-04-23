@@ -35,16 +35,14 @@
 
 public class TestOverridenPrivateMethods extends JavadocTester {
 
-    private static final String BUG_ID = "4634891";
-
     private static final String[][] TEST = {
         //The public method should be overriden
-        {BUG_ID + "/pkg1/SubClass.html",
+        { "pkg1/SubClass.html",
          "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod"},
 
         //The public method in different package should be overriden
-        {BUG_ID + "/pkg2/SubClass.html",
+        { "pkg2/SubClass.html",
          "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod"}
     };
@@ -53,29 +51,29 @@ public class TestOverridenPrivateMethods extends JavadocTester {
 
         //The package private method should be overriden since the base and sub class are in the same
         //package.  However, the link should not show up because the package private methods are not documented.
-        {BUG_ID + "/pkg1/SubClass.html",
+        { "pkg1/SubClass.html",
          "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod"},
 
         //The private method in should not be overriden
-        {BUG_ID + "/pkg1/SubClass.html",
+        { "pkg1/SubClass.html",
          "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod"},
 
         //The private method in different package should not be overriden
-        {BUG_ID + "/pkg2/SubClass.html",
+        { "pkg2/SubClass.html",
          "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod"},
 
         //The package private method should not be overriden since the base and sub class are in
         //different packages.
-        {BUG_ID + "/pkg2/SubClass.html",
+        { "pkg2/SubClass.html",
          "Overrides:</span></dt><dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod"}
     };
 
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1", "pkg2"};
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1", "pkg2"};
 
     /**
      * The entry point of the test.
@@ -85,19 +83,5 @@ public class TestOverridenPrivateMethods extends JavadocTester {
         TestOverridenPrivateMethods tester = new TestOverridenPrivateMethods();
         tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

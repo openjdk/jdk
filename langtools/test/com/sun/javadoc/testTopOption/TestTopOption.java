@@ -34,40 +34,37 @@
 
 public class TestTopOption extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "6227616";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-overview", "SRC_DIR + '/' + overview.html", "-use", "-top",
-        "TOP TEXT", "-d", BUG_ID, "-sourcepath",
+        "TOP TEXT", "-d", OUTPUT_DIR, "-sourcepath",
         SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/AnnotationType.html",
+        { "pkg/AnnotationType.html",
             "TOP TEXT"},
-        {BUG_ID + "/pkg/class-use/AnnotationType.html",
-            "TOP TEXT"},
-
-        {BUG_ID + "/pkg/Cl.html",
-            "TOP TEXT"},
-        {BUG_ID + "/pkg/class-use/Cl.html",
+        { "pkg/class-use/AnnotationType.html",
             "TOP TEXT"},
 
-        {BUG_ID + "/pkg/package-summary.html",
+        { "pkg/Cl.html",
             "TOP TEXT"},
-        {BUG_ID + "/pkg/package-use.html",
+        { "pkg/class-use/Cl.html",
+            "TOP TEXT"},
+
+        { "pkg/package-summary.html",
+            "TOP TEXT"},
+        { "pkg/package-use.html",
            "TOP TEXT"},
 
-        {BUG_ID + "/overview-summary.html",
+        { "overview-summary.html",
             "TOP TEXT"},
-        {BUG_ID + "/overview-tree.html",
+        { "overview-tree.html",
             "TOP TEXT"},
-        {BUG_ID + "/constant-values.html",
+        { "constant-values.html",
             "TOP TEXT"},
-        {BUG_ID + "/help-doc.html",
+        { "help-doc.html",
             "TOP TEXT"},
     };
 
@@ -79,19 +76,5 @@ public class TestTopOption extends JavadocTester {
         TestTopOption tester = new TestTopOption();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

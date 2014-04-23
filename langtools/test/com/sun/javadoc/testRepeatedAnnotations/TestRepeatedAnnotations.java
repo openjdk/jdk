@@ -34,26 +34,25 @@
 public class TestRepeatedAnnotations extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "8005092";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", "pkg1"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg", "pkg1"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeSynthDoc</a> " +
             "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeSynthDoc</a>"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/ContaineeRegDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeRegDoc</a> " +
             "<a href=\"../pkg/ContaineeRegDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeRegDoc</a>"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/RegContainerDoc.html\" " +
             "title=\"annotation in pkg\">@RegContainerDoc</a>" +
             "(<a href=\"../pkg/RegContainerDoc.html#value--\">value</a>={" +
@@ -61,41 +60,41 @@ public class TestRepeatedAnnotations extends JavadocTester {
             "title=\"annotation in pkg\">@RegContaineeNotDoc</a>," +
             "<a href=\"../pkg/RegContaineeNotDoc.html\" " +
             "title=\"annotation in pkg\">@RegContaineeNotDoc</a>})"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeSynthDoc</a> " +
             "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeSynthDoc</a> " +
             "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeSynthDoc</a>"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/ContainerSynthDoc.html\" " +
             "title=\"annotation in pkg\">@ContainerSynthDoc</a>(" +
             "<a href=\"../pkg/ContainerSynthDoc.html#value--\">value</a>=" +
             "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeSynthDoc</a>)"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeSynthDoc</a> " +
             "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg\">@ContaineeSynthDoc</a>"},
 
-        {BUG_ID + "/pkg/D.html",
+        { "pkg/D.html",
             "<a href=\"../pkg/RegDoc.html\" title=\"annotation in pkg\">@RegDoc</a>" +
             "(<a href=\"../pkg/RegDoc.html#x--\">x</a>=1)"},
-        {BUG_ID + "/pkg/D.html",
+        { "pkg/D.html",
             "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>" +
             "(<a href=\"../pkg/RegArryDoc.html#y--\">y</a>=1)"},
-        {BUG_ID + "/pkg/D.html",
+        { "pkg/D.html",
             "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>" +
             "(<a href=\"../pkg/RegArryDoc.html#y--\">y</a>={1,2})"},
-        {BUG_ID + "/pkg/D.html",
+        { "pkg/D.html",
             "<a href=\"../pkg/NonSynthDocContainer.html\" " +
             "title=\"annotation in pkg\">@NonSynthDocContainer</a>" +
             "(<a href=\"../pkg/NonSynthDocContainer.html#value--\">value</a>=" +
             "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>)"},
 
-        {BUG_ID + "/pkg1/C.html",
+        { "pkg1/C.html",
             "<a href=\"../pkg1/RegContainerValDoc.html\" " +
             "title=\"annotation in pkg1\">@RegContainerValDoc</a>" +
             "(<a href=\"../pkg1/RegContainerValDoc.html#value--\">value</a>={" +
@@ -104,7 +103,7 @@ public class TestRepeatedAnnotations extends JavadocTester {
             "<a href=\"../pkg1/RegContaineeNotDoc.html\" " +
             "title=\"annotation in pkg1\">@RegContaineeNotDoc</a>}," +
             "<a href=\"../pkg1/RegContainerValDoc.html#y--\">y</a>=3)"},
-        {BUG_ID + "/pkg1/C.html",
+        { "pkg1/C.html",
             "<a href=\"../pkg1/ContainerValDoc.html\" " +
             "title=\"annotation in pkg1\">@ContainerValDoc</a>" +
             "(<a href=\"../pkg1/ContainerValDoc.html#value--\">value</a>={" +
@@ -116,12 +115,12 @@ public class TestRepeatedAnnotations extends JavadocTester {
     };
 
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/RegContaineeDoc.html\" " +
             "title=\"annotation in pkg\">@RegContaineeDoc</a> " +
             "<a href=\"../pkg/RegContaineeDoc.html\" " +
             "title=\"annotation in pkg\">@RegContaineeDoc</a>"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/RegContainerNotDoc.html\" " +
             "title=\"annotation in pkg\">@RegContainerNotDoc</a>" +
             "(<a href=\"../pkg/RegContainerNotDoc.html#value--\">value</a>={" +
@@ -130,12 +129,12 @@ public class TestRepeatedAnnotations extends JavadocTester {
             "<a href=\"../pkg/RegContaineeNotDoc.html\" " +
             "title=\"annotation in pkg\">@RegContaineeNotDoc</a>})"},
 
-        {BUG_ID + "/pkg1/C.html",
+        { "pkg1/C.html",
             "<a href=\"../pkg1/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg1\">@ContaineeSynthDoc</a> " +
             "<a href=\"../pkg1/ContaineeSynthDoc.html\" " +
             "title=\"annotation in pkg1\">@ContaineeSynthDoc</a>"},
-        {BUG_ID + "/pkg1/C.html",
+        { "pkg1/C.html",
             "<a href=\"../pkg1/RegContainerValNotDoc.html\" " +
             "title=\"annotation in pkg1\">@RegContainerValNotDoc</a>" +
             "(<a href=\"../pkg1/RegContainerValNotDoc.html#value--\">value</a>={" +
@@ -144,7 +143,7 @@ public class TestRepeatedAnnotations extends JavadocTester {
             "<a href=\"../pkg1/RegContaineeDoc.html\" " +
             "title=\"annotation in pkg1\">@RegContaineeDoc</a>}," +
             "<a href=\"../pkg1/RegContainerValNotDoc.html#y--\">y</a>=4)"},
-        {BUG_ID + "/pkg1/C.html",
+        { "pkg1/C.html",
             "<a href=\"../pkg1/ContainerValNotDoc.html\" " +
             "title=\"annotation in pkg1\">@ContainerValNotDoc</a>" +
             "(<a href=\"../pkg1/ContainerValNotDoc.html#value--\">value</a>={" +
@@ -153,7 +152,7 @@ public class TestRepeatedAnnotations extends JavadocTester {
             "<a href=\"../pkg1/ContaineeNotDoc.html\" " +
             "title=\"annotation in pkg1\">@ContaineeNotDoc</a>}," +
             "<a href=\"../pkg1/ContainerValNotDoc.html#x--\">x</a>=2)"},
-        {BUG_ID + "/pkg1/C.html",
+        { "pkg1/C.html",
             "<a href=\"../pkg1/ContainerSynthNotDoc.html\" " +
             "title=\"annotation in pkg1\">@ContainerSynthNotDoc</a>(" +
             "<a href=\"../pkg1/ContainerSynthNotDoc.html#value--\">value</a>=" +
@@ -169,19 +168,5 @@ public class TestRepeatedAnnotations extends JavadocTester {
         TestRepeatedAnnotations tester = new TestRepeatedAnnotations();
         tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

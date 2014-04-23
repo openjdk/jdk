@@ -35,12 +35,9 @@
 
 public class TestNoPackagesFile extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4475679";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
         SRC_DIR + "/C.java"
     };
 
@@ -51,24 +48,10 @@ public class TestNoPackagesFile extends JavadocTester {
     public static void main(String[] args) {
         TestNoPackagesFile tester = new TestNoPackagesFile();
         tester.run(ARGS, NO_TEST, NO_TEST);
-        if ((new java.io.File(BUG_ID + "/packages.html")).exists()) {
+        if ((new java.io.File(OUTPUT_DIR + "/packages.html")).exists()) {
             throw new Error("Test Fails: packages file should not be " +                "generated anymore.");
         } else {
             System.out.println("Test passes:  packages.html not found.");
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

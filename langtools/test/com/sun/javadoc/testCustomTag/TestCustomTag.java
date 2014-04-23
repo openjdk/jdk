@@ -33,28 +33,25 @@
 
 public class TestCustomTag extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8006248";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-tagletpath", SRC_DIR,
+        "-Xdoclint:none", "-d", OUTPUT_DIR, "-tagletpath", SRC_DIR,
         "-taglet", "taglets.CustomTag", "-sourcepath",
         SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
 
     private static final String[] ARGS1 = new String[] {
-        "-d", BUG_ID + "-1", "-tagletpath",
+        "-d", OUTPUT_DIR + "-1", "-tagletpath",
         SRC_DIR, "-taglet", "taglets.CustomTag",
         "-sourcepath", SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
     private static final String[] ARGS2 = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID + "-2", "-sourcepath",
+        "-Xdoclint:none", "-d", OUTPUT_DIR + "-2", "-sourcepath",
         SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
 
     private static final String[] ARGS3 = new String[] {
-        "-d", BUG_ID + "-3", "-sourcepath",
+        "-d", OUTPUT_DIR + "-3", "-sourcepath",
         SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
 
@@ -93,19 +90,5 @@ public class TestCustomTag extends JavadocTester {
         tester.run(ARGS2, TEST2, NO_TEST);
         tester.run(ARGS3, TEST3, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

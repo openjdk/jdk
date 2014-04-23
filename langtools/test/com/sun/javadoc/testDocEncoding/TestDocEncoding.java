@@ -38,12 +38,9 @@
 
 public class TestDocEncoding extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8000743";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID,
+        "-d", OUTPUT_DIR,
         "-docencoding", "Cp930",
         "-sourcepath", SRC_DIR,
         "-notimestamp",
@@ -51,7 +48,7 @@ public class TestDocEncoding extends JavadocTester {
     };
 
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/stylesheet.css",
+        { "stylesheet.css",
             "body {\n" +
             "    background-color:#ffffff;"}
     };
@@ -64,20 +61,6 @@ public class TestDocEncoding extends JavadocTester {
         TestDocEncoding tester = new TestDocEncoding();
         tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }
 

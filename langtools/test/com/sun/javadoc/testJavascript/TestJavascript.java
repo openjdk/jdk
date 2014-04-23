@@ -34,22 +34,19 @@
 
 public class TestJavascript extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4665566-4855876-8012375";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", SRC_DIR +
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg", SRC_DIR +
         "/TestJavascript.java"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../index.html?pkg/C.html\" target=\"_top\">Frames</a>"},
-        {BUG_ID + "/TestJavascript.html",
+        { "TestJavascript.html",
             "<a href=\"index.html?TestJavascript.html\" target=\"_top\">Frames</a>"},
-        {BUG_ID + "/index.html",
+        { "index.html",
             "<script type=\"text/javascript\">\n" +
                         "    targetPage = \"\" + window.location.search;\n" +
             "    if (targetPage != \"\" && targetPage != \"undefined\")\n" +
@@ -104,7 +101,7 @@ public class TestJavascript extends JavadocTester {
             "</script>"},
 
         //Make sure title javascript only runs if is-external is not true
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "    try {\n" +
             "        if (location.href.indexOf('is-external=true') == -1) {\n" +
             "            parent.document.title=\"C\";\n" +
@@ -122,19 +119,5 @@ public class TestJavascript extends JavadocTester {
         TestJavascript tester = new TestJavascript();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

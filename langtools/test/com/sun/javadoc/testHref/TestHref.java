@@ -33,54 +33,51 @@
 
 public class TestHref extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4663254";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-linkoffline",
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-linkoffline",
         "http://java.sun.com/j2se/1.4/docs/api/", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
         //External link.
-        {BUG_ID + "/pkg/C1.html",
+        { "pkg/C1.html",
             "href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true#wait-long-int-\""
         },
         //Member summary table link.
-        {BUG_ID + "/pkg/C1.html",
+        { "pkg/C1.html",
             "href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\""
         },
         //Anchor test.
-        {BUG_ID + "/pkg/C1.html",
+        { "pkg/C1.html",
             "<a name=\"method-int-int-java.util.ArrayList-\">\n" +
             "<!--   -->\n" +
             "</a>"
         },
         //Backward compatibility anchor test.
-        {BUG_ID + "/pkg/C1.html",
+        { "pkg/C1.html",
             "<a name=\"method-int-int-java.util.ArrayList-\">\n" +
             "<!--   -->\n" +
             "</a>"
         },
         //{@link} test.
-        {BUG_ID + "/pkg/C2.html",
+        { "pkg/C2.html",
             "Link: <a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">"
         },
         //@see test.
-        {BUG_ID + "/pkg/C2.html",
+        { "pkg/C2.html",
             "See Also:</span></dt>\n" +
             "<dd><a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">"
         },
 
         //Header does not link to the page itself.
-        {BUG_ID + "/pkg/C4.html",
+        { "pkg/C4.html",
             "Class C4&lt;E extends C4&lt;E&gt;&gt;</h2>"
         },
 
         //Signature does not link to the page itself.
-        {BUG_ID + "/pkg/C4.html",
+        { "pkg/C4.html",
             "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
         },
     };
@@ -97,19 +94,5 @@ public class TestHref extends JavadocTester {
         TestHref tester = new TestHref();
         tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

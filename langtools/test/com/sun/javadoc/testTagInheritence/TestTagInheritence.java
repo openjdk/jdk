@@ -34,10 +34,8 @@
 
 public class TestTagInheritence extends JavadocTester {
 
-    private static final String BUG_ID =
-        "4496223-4496270-4618686-4720974-4812240-6253614-6253604";
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg",
+        "-Xdoclint:none", "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg",
         "firstSentence", "firstSentence2"
     };
 
@@ -54,36 +52,20 @@ public class TestTagInheritence extends JavadocTester {
 
         //Test valid usage of inheritDoc tag.
         for (int i = 1; i < tests.length-2; i++) {
-            tests[i][0] = BUG_ID + "/pkg/TestTagInheritence.html";
+            tests[i][0] = "pkg/TestTagInheritence.html";
             tests[i][1] = "Test " + i + " passes";
         }
 
         //First sentence test (6253614)
-        tests[tests.length - 2][0] =BUG_ID + "/firstSentence/" +
-            "B.html";
+        tests[tests.length - 2][0] = "firstSentence/B.html";
         tests[tests.length - 2][1] =  "<div class=\"block\">First sentence.</div>";
 
         //Another first sentence test (6253604)
-        tests[tests.length - 1][0] =BUG_ID + "/firstSentence2/" +
-            "C.html";
+        tests[tests.length - 1][0] = "firstSentence2/C.html";
         tests[tests.length - 1][1] =  "<div class=\"block\">First sentence.</div>";
 
         TestTagInheritence tester = new TestTagInheritence();
         tester.run(ARGS, tests, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -35,15 +35,14 @@
 
 public class TestExternalOverridenMethod extends JavadocTester {
 
-    private static final String BUG_ID = "4857717";
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/XReader.html",
+        { "pkg/XReader.html",
             "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
             "<dd><code><a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/FilterReader.html?is-external=true#read--\" " +
             "title=\"class or interface in java.io\">read</a></code>&nbsp;in class&nbsp;<code>" +
             "<a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/FilterReader.html?is-external=true\" " +
             "title=\"class or interface in java.io\">FilterReader</a></code></dd>"},
-        {BUG_ID + "/pkg/XReader.html",
+        { "pkg/XReader.html",
             "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n" +
             "<dd><code><a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/DataInput.html?is-external=true#readInt--\" " +
             "title=\"class or interface in java.io\">readInt</a></code>&nbsp;in interface&nbsp;<code>" +
@@ -52,7 +51,7 @@ public class TestExternalOverridenMethod extends JavadocTester {
 
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             "-linkoffline", "http://java.sun.com/j2se/1.4.1/docs/api", SRC_DIR,
             "pkg"
         };
@@ -65,19 +64,5 @@ public class TestExternalOverridenMethod extends JavadocTester {
         TestExternalOverridenMethod tester = new TestExternalOverridenMethod();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

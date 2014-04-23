@@ -37,12 +37,9 @@
 public class PackagesHeader extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "4766385";
-    private static final String OUTPUT_DIR = "docs-" + BUG_ID;
-
-    private static final String OUTPUT_DIR1 = "docs1-" + BUG_ID + "/";
-    private static final String OUTPUT_DIR2 = "docs2-" + BUG_ID + "/";
-    private static final String OUTPUT_DIR3 = "docs3-" + BUG_ID + "/";
+    private static final String OUTPUT_DIR1 = OUTPUT_DIR + "-1/";
+    private static final String OUTPUT_DIR2 = OUTPUT_DIR + "-2/";
+    private static final String OUTPUT_DIR3 = OUTPUT_DIR + "-3/";
 
     /**
      * Assign value for [ fileToSearch, stringToFind ]
@@ -50,7 +47,7 @@ public class PackagesHeader extends JavadocTester {
     private static final String[][] TESTARRAY1 = {
 
         // Test that the -header shows up in the packages frame
-        { OUTPUT_DIR1 + "overview-frame.html",
+        { "overview-frame.html",
                  "Main Frame Header" }
     };
 
@@ -59,7 +56,7 @@ public class PackagesHeader extends JavadocTester {
         // Test that the -packagesheader string shows
         // up in the packages frame
 
-        {  OUTPUT_DIR2 + "overview-frame.html",
+        { "overview-frame.html",
                  "Packages Frame Header" }
     };
 
@@ -67,10 +64,10 @@ public class PackagesHeader extends JavadocTester {
 
         // Test that the both headers show up and are different
 
-        { OUTPUT_DIR3 + "overview-frame.html",
+        { "overview-frame.html",
                  "Packages Frame Header" },
 
-        { OUTPUT_DIR3 + "overview-summary.html",
+        { "overview-summary.html",
                  "Main Frame Header" }
     };
 
@@ -109,19 +106,5 @@ public class PackagesHeader extends JavadocTester {
         tester.run(JAVADOC_ARGS3, TESTARRAY3, NO_TEST);
 
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

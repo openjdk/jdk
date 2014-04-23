@@ -34,25 +34,22 @@
 
 public class TestTypeAnnotations extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8005091-8009686";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-private", "typeannos"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-private", "typeannos"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
         // Test for type annotations on Class Extends (ClassExtends.java).
-        {BUG_ID + "/typeannos/MyClass.html",
+        { "typeannos/MyClass.html",
             "extends <a href=\"../typeannos/ClassExtA.html\" title=\"annotation " +
             "in typeannos\">@ClassExtA</a> <a href=\"../typeannos/ParameterizedClass.html\" " +
             "title=\"class in typeannos\">ParameterizedClass</a>&lt;<a href=\"" +
             "../typeannos/ClassExtB.html\" title=\"annotation in typeannos\">" +
             "@ClassExtB</a> java.lang.String&gt;"
         },
-        {BUG_ID + "/typeannos/MyClass.html",
+        { "typeannos/MyClass.html",
             "implements <a href=\"../typeannos/ClassExtB.html\" title=\"" +
             "annotation in typeannos\">@ClassExtB</a> java.lang.CharSequence, " +
             "<a href=\"../typeannos/ClassExtA.html\" title=\"annotation in " +
@@ -61,7 +58,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "<a href=\"../typeannos/ClassExtB.html\" title=\"annotation in " +
             "typeannos\">@ClassExtB</a> java.lang.String&gt;</pre>"
         },
-        {BUG_ID + "/typeannos/MyInterface.html",
+        { "typeannos/MyInterface.html",
             "extends <a href=\"../typeannos/ClassExtA.html\" title=\"annotation " +
             "in typeannos\">@ClassExtA</a> <a href=\"../typeannos/" +
             "ParameterizedInterface.html\" title=\"interface in typeannos\">" +
@@ -72,12 +69,12 @@ public class TestTypeAnnotations extends JavadocTester {
         },
 
         // Test for type annotations on Class Parameters (ClassParameters.java).
-        {BUG_ID + "/typeannos/ExtendsBound.html",
+        { "typeannos/ExtendsBound.html",
             "class <span class=\"typeNameLabel\">ExtendsBound&lt;K extends <a " +
             "href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
             "typeannos\">@ClassParamA</a> java.lang.String&gt;</span>"
         },
-        {BUG_ID + "/typeannos/ExtendsGeneric.html",
+        { "typeannos/ExtendsGeneric.html",
             "<pre>class <span class=\"typeNameLabel\">ExtendsGeneric&lt;K extends " +
             "<a href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
             "typeannos\">@ClassParamA</a> <a href=\"../typeannos/Unannotated.html\" " +
@@ -85,24 +82,24 @@ public class TestTypeAnnotations extends JavadocTester {
             "../typeannos/ClassParamB.html\" title=\"annotation in typeannos\">" +
             "@ClassParamB</a> java.lang.String&gt;&gt;</span>"
         },
-        {BUG_ID + "/typeannos/TwoBounds.html",
+        { "typeannos/TwoBounds.html",
             "<pre>class <span class=\"typeNameLabel\">TwoBounds&lt;K extends <a href=\"" +
             "../typeannos/ClassParamA.html\" title=\"annotation in typeannos\">" +
             "@ClassParamA</a> java.lang.String,V extends <a href=\"../typeannos/" +
             "ClassParamB.html\" title=\"annotation in typeannos\">@ClassParamB" +
             "</a> java.lang.String&gt;</span>"
         },
-        {BUG_ID + "/typeannos/Complex1.html",
+        { "typeannos/Complex1.html",
             "class <span class=\"typeNameLabel\">Complex1&lt;K extends <a href=\"../" +
             "typeannos/ClassParamA.html\" title=\"annotation in typeannos\">" +
             "@ClassParamA</a> java.lang.String &amp; java.lang.Runnable&gt;</span>"
         },
-        {BUG_ID + "/typeannos/Complex2.html",
+        { "typeannos/Complex2.html",
             "class <span class=\"typeNameLabel\">Complex2&lt;K extends java.lang." +
             "String &amp; <a href=\"../typeannos/ClassParamB.html\" title=\"" +
             "annotation in typeannos\">@ClassParamB</a> java.lang.Runnable&gt;</span>"
         },
-        {BUG_ID + "/typeannos/ComplexBoth.html",
+        { "typeannos/ComplexBoth.html",
             "class <span class=\"typeNameLabel\">ComplexBoth&lt;K extends <a href=\"" +
             "../typeannos/ClassParamA.html\" title=\"annotation in typeannos\"" +
             ">@ClassParamA</a> java.lang.String &amp; <a href=\"../typeannos/" +
@@ -111,24 +108,24 @@ public class TestTypeAnnotations extends JavadocTester {
         },
 
         // Test for type annotations on fields (Fields.java).
-        {BUG_ID + "/typeannos/DefaultScope.html",
+        { "typeannos/DefaultScope.html",
             "<pre><a href=\"../typeannos/Parameterized.html\" title=\"class in " +
             "typeannos\">Parameterized</a>&lt;<a href=\"../typeannos/FldA.html\" " +
             "title=\"annotation in typeannos\">@FldA</a> java.lang.String,<a " +
             "href=\"../typeannos/FldB.html\" title=\"annotation in typeannos\">" +
             "@FldB</a> java.lang.String&gt; bothTypeArgs</pre>"
         },
-        {BUG_ID + "/typeannos/DefaultScope.html",
+        { "typeannos/DefaultScope.html",
             "<pre><a href=\"../typeannos/FldA.html\" title=\"annotation in " +
             "typeannos\">@FldA</a> java.lang.String <a href=\"../typeannos/" +
             "FldB.html\" title=\"annotation in typeannos\">@FldB</a> [] " +
             "array1Deep</pre>"
         },
-        {BUG_ID + "/typeannos/DefaultScope.html",
+        { "typeannos/DefaultScope.html",
             "<pre>java.lang.String[] <a href=\"../typeannos/FldB.html\" " +
             "title=\"annotation in typeannos\">@FldB</a> [] array2SecondOld</pre>"
         },
-        {BUG_ID + "/typeannos/DefaultScope.html",
+        { "typeannos/DefaultScope.html",
             "<pre><a href=\"../typeannos/FldD.html\" title=\"annotation in " +
             "typeannos\">@FldD</a> java.lang.String <a href=\"../typeannos/" +
             "FldC.html\" title=\"annotation in typeannos\">@FldC</a> <a href=\"" +
@@ -137,7 +134,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "typeannos\">@FldC</a> <a href=\"../typeannos/FldB.html\" title=\"" +
             "annotation in typeannos\">@FldB</a> [] array2Deep</pre>"
         },
-        {BUG_ID + "/typeannos/ModifiedScoped.html",
+        { "typeannos/ModifiedScoped.html",
             "<pre>public final&nbsp;<a href=\"../typeannos/Parameterized.html\" " +
             "title=\"class in typeannos\">Parameterized</a>&lt;<a href=\"../" +
             "typeannos/FldA.html\" title=\"annotation in typeannos\">@FldA</a> " +
@@ -149,30 +146,30 @@ public class TestTypeAnnotations extends JavadocTester {
             "title=\"annotation in typeannos\">@FldB</a> java.lang.String&gt; " +
             "nestedParameterized</pre>"
         },
-        {BUG_ID + "/typeannos/ModifiedScoped.html",
+        { "typeannos/ModifiedScoped.html",
             "<pre>public final&nbsp;<a href=\"../typeannos/FldA.html\" " +
             "title=\"annotation in typeannos\">@FldA</a> java.lang.String[][] " +
             "array2</pre>"
         },
 
         // Test for type annotations on method return types (MethodReturnType.java).
-        {BUG_ID + "/typeannos/MtdDefaultScope.html",
+        { "typeannos/MtdDefaultScope.html",
             "<pre>public&nbsp;&lt;T&gt;&nbsp;<a href=\"../typeannos/MRtnA.html\" " +
             "title=\"annotation in typeannos\">@MRtnA</a> java.lang.String" +
             "&nbsp;method()</pre>"
         },
-        {BUG_ID + "/typeannos/MtdDefaultScope.html",
+        { "typeannos/MtdDefaultScope.html",
             "<pre><a href=\"../typeannos/MRtnA.html\" title=\"annotation in " +
             "typeannos\">@MRtnA</a> java.lang.String <a href=\"../typeannos/" +
             "MRtnA.html\" title=\"annotation in typeannos\">@MRtnA</a> [] <a " +
             "href=\"../typeannos/MRtnB.html\" title=\"annotation in typeannos\">" +
             "@MRtnB</a> []&nbsp;array2Deep()</pre>"
         },
-        {BUG_ID + "/typeannos/MtdDefaultScope.html",
+        { "typeannos/MtdDefaultScope.html",
             "<pre><a href=\"../typeannos/MRtnA.html\" title=\"annotation in " +
             "typeannos\">@MRtnA</a> java.lang.String[][]&nbsp;array2()</pre>"
         },
-        {BUG_ID + "/typeannos/MtdModifiedScoped.html",
+        { "typeannos/MtdModifiedScoped.html",
             "<pre>public final&nbsp;<a href=\"../typeannos/MtdParameterized.html\" " +
             "title=\"class in typeannos\">MtdParameterized</a>&lt;<a href=\"../" +
             "typeannos/MRtnA.html\" title=\"annotation in typeannos\">@MRtnA</a> " +
@@ -186,12 +183,12 @@ public class TestTypeAnnotations extends JavadocTester {
         },
 
         // Test for type annotations on method type parameters (MethodTypeParameters.java).
-        {BUG_ID + "/typeannos/UnscopedUnmodified.html",
+        { "typeannos/UnscopedUnmodified.html",
             "<pre>&lt;K extends <a href=\"../typeannos/MTyParamA.html\" title=\"" +
             "annotation in typeannos\">@MTyParamA</a> java.lang.String&gt;" +
             "&nbsp;void&nbsp;methodExtends()</pre>"
         },
-        {BUG_ID + "/typeannos/UnscopedUnmodified.html",
+        { "typeannos/UnscopedUnmodified.html",
             "<pre>&lt;K extends <a href=\"../typeannos/MTyParamA.html\" title=\"" +
             "annotation in typeannos\">@MTyParamA</a> <a href=\"../typeannos/" +
             "MtdTyParameterized.html\" title=\"class in typeannos\">" +
@@ -199,12 +196,12 @@ public class TestTypeAnnotations extends JavadocTester {
             "title=\"annotation in typeannos\">@MTyParamB</a> java.lang.String" +
             "&gt;&gt;&nbsp;void&nbsp;nestedExtends()</pre>"
         },
-        {BUG_ID + "/typeannos/PublicModifiedMethods.html",
+        { "typeannos/PublicModifiedMethods.html",
             "<pre>public final&nbsp;&lt;K extends <a href=\"../typeannos/" +
             "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> " +
             "java.lang.String&gt;&nbsp;void&nbsp;methodExtends()</pre>"
         },
-        {BUG_ID + "/typeannos/PublicModifiedMethods.html",
+        { "typeannos/PublicModifiedMethods.html",
             "<pre>public final&nbsp;&lt;K extends <a href=\"../typeannos/" +
             "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> " +
             "java.lang.String,V extends <a href=\"../typeannos/MTyParamA.html\" " +
@@ -216,13 +213,13 @@ public class TestTypeAnnotations extends JavadocTester {
         },
 
         // Test for type annotations on parameters (Parameters.java).
-        {BUG_ID + "/typeannos/Parameters.html",
+        { "typeannos/Parameters.html",
             "<pre>void&nbsp;unannotated(<a href=\"../typeannos/" +
             "ParaParameterized.html\" title=\"class in typeannos\">" +
             "ParaParameterized</a>&lt;java.lang.String,java.lang.String&gt;" +
             "&nbsp;a)</pre>"
         },
-        {BUG_ID + "/typeannos/Parameters.html",
+        { "typeannos/Parameters.html",
             "<pre>void&nbsp;nestedParaParameterized(<a href=\"../typeannos/" +
             "ParaParameterized.html\" title=\"class in typeannos\">" +
             "ParaParameterized</a>&lt;<a href=\"../typeannos/ParamA.html\" " +
@@ -235,7 +232,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "typeannos/ParamB.html\" title=\"annotation in typeannos\">@ParamB" +
             "</a> java.lang.String&gt;&nbsp;a)</pre>"
         },
-        {BUG_ID + "/typeannos/Parameters.html",
+        { "typeannos/Parameters.html",
             "<pre>void&nbsp;array2Deep(<a href=\"../typeannos/ParamA.html\" " +
             "title=\"annotation in typeannos\">@ParamA</a> java.lang.String " +
             "<a href=\"../typeannos/ParamA.html\" title=\"annotation in " +
@@ -244,37 +241,37 @@ public class TestTypeAnnotations extends JavadocTester {
         },
 
         // Test for type annotations on throws (Throws.java).
-        {BUG_ID + "/typeannos/ThrDefaultUnmodified.html",
+        { "typeannos/ThrDefaultUnmodified.html",
             "<pre>void&nbsp;oneException()\n" +
             "           throws <a href=\"../typeannos/ThrA.html\" title=\"" +
             "annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>"
         },
-        {BUG_ID + "/typeannos/ThrDefaultUnmodified.html",
+        { "typeannos/ThrDefaultUnmodified.html",
             "<pre>void&nbsp;twoExceptions()\n" +
             "            throws <a href=\"../typeannos/ThrA.html\" title=\"" +
             "annotation in typeannos\">@ThrA</a> java.lang.RuntimeException,\n" +
             "                   <a href=\"../typeannos/ThrA.html\" title=\"" +
             "annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>"
         },
-        {BUG_ID + "/typeannos/ThrPublicModified.html",
+        { "typeannos/ThrPublicModified.html",
             "<pre>public final&nbsp;void&nbsp;oneException(java.lang.String&nbsp;a)\n" +
             "                        throws <a href=\"../typeannos/ThrA.html\" " +
             "title=\"annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>"
         },
-        {BUG_ID + "/typeannos/ThrPublicModified.html",
+        { "typeannos/ThrPublicModified.html",
             "<pre>public final&nbsp;void&nbsp;twoExceptions(java.lang.String&nbsp;a)\n" +
             "                         throws <a href=\"../typeannos/ThrA.html\" " +
             "title=\"annotation in typeannos\">@ThrA</a> java.lang.RuntimeException,\n" +
             "                                <a href=\"../typeannos/ThrA.html\" " +
             "title=\"annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>"
         },
-        {BUG_ID + "/typeannos/ThrWithValue.html",
+        { "typeannos/ThrWithValue.html",
             "<pre>void&nbsp;oneException()\n" +
             "           throws <a href=\"../typeannos/ThrB.html\" title=\"" +
             "annotation in typeannos\">@ThrB</a>(<a href=\"../typeannos/" +
             "ThrB.html#value--\">value</a>=\"m\") java.lang.Exception</pre>"
         },
-        {BUG_ID + "/typeannos/ThrWithValue.html",
+        { "typeannos/ThrWithValue.html",
             "<pre>void&nbsp;twoExceptions()\n" +
             "            throws <a href=\"../typeannos/ThrB.html\" title=\"" +
             "annotation in typeannos\">@ThrB</a>(<a href=\"../typeannos/" +
@@ -284,33 +281,33 @@ public class TestTypeAnnotations extends JavadocTester {
         },
 
         // Test for type annotations on type parameters (TypeParameters.java).
-        {BUG_ID + "/typeannos/TestMethods.html",
+        { "typeannos/TestMethods.html",
             "<pre>&lt;K,V extends <a href=\"../typeannos/TyParaA.html\" title=\"" +
             "annotation in typeannos\">@TyParaA</a> java.lang.String&gt;&nbsp;" +
             "void&nbsp;secondAnnotated()</pre>"
         },
 
         // Test for type annotations on wildcard type (Wildcards.java).
-        {BUG_ID + "/typeannos/BoundTest.html",
+        { "typeannos/BoundTest.html",
             "<pre>void&nbsp;wcExtends(<a href=\"../typeannos/MyList.html\" " +
             "title=\"class in typeannos\">MyList</a>&lt;? extends <a href=\"" +
             "../typeannos/WldA.html\" title=\"annotation in typeannos\">@WldA" +
             "</a> java.lang.String&gt;&nbsp;l)</pre>"
         },
-        {BUG_ID + "/typeannos/BoundTest.html",
+        { "typeannos/BoundTest.html",
             "<pre><a href=\"../typeannos/MyList.html\" title=\"class in " +
             "typeannos\">MyList</a>&lt;? super <a href=\"../typeannos/WldA.html\" " +
             "title=\"annotation in typeannos\">@WldA</a> java.lang.String&gt;" +
             "&nbsp;returnWcSuper()</pre>"
         },
-        {BUG_ID + "/typeannos/BoundWithValue.html",
+        { "typeannos/BoundWithValue.html",
             "<pre>void&nbsp;wcSuper(<a href=\"../typeannos/MyList.html\" title=\"" +
             "class in typeannos\">MyList</a>&lt;? super <a href=\"../typeannos/" +
             "WldB.html\" title=\"annotation in typeannos\">@WldB</a>(<a href=\"" +
             "../typeannos/WldB.html#value--\">value</a>=\"m\") java.lang." +
             "String&gt;&nbsp;l)</pre>"
         },
-        {BUG_ID + "/typeannos/BoundWithValue.html",
+        { "typeannos/BoundWithValue.html",
             "<pre><a href=\"../typeannos/MyList.html\" title=\"class in " +
             "typeannos\">MyList</a>&lt;? extends <a href=\"../typeannos/WldB." +
             "html\" title=\"annotation in typeannos\">@WldB</a>(<a href=\"../" +
@@ -319,40 +316,40 @@ public class TestTypeAnnotations extends JavadocTester {
         },
 
         // Test for receiver annotations (Receivers.java).
-        {BUG_ID + "/typeannos/DefaultUnmodified.html",
+        { "typeannos/DefaultUnmodified.html",
             "<pre>void&nbsp;withException(<a href=\"../typeannos/RcvrA.html\" " +
             "title=\"annotation in typeannos\">@RcvrA</a>&nbsp;" +
             "DefaultUnmodified&nbsp;this)\n" +
             "            throws java." +
             "lang.Exception</pre>"
         },
-        {BUG_ID + "/typeannos/DefaultUnmodified.html",
+        { "typeannos/DefaultUnmodified.html",
             "<pre>java.lang.String&nbsp;nonVoid(<a href=\"../typeannos/RcvrA." +
             "html\" title=\"annotation in typeannos\">@RcvrA</a> <a href=\"../" +
             "typeannos/RcvrB.html\" title=\"annotation in typeannos\">@RcvrB" +
             "</a>(<a href=\"../typeannos/RcvrB.html#value--\">value</a>=\"m\")" +
             "&nbsp;DefaultUnmodified&nbsp;this)</pre>"
         },
-        {BUG_ID + "/typeannos/DefaultUnmodified.html",
+        { "typeannos/DefaultUnmodified.html",
             "<pre>&lt;T extends java.lang.Runnable&gt;&nbsp;void&nbsp;accept(" +
             "<a href=\"../typeannos/RcvrA.html\" title=\"annotation in " +
             "typeannos\">@RcvrA</a>&nbsp;DefaultUnmodified&nbsp;this,\n" +
             "                                           T&nbsp;r)\n" +
             "                                    throws java.lang.Exception</pre>"
         },
-        {BUG_ID + "/typeannos/PublicModified.html",
+        { "typeannos/PublicModified.html",
             "<pre>public final&nbsp;java.lang.String&nbsp;nonVoid(<a href=\"" +
             "../typeannos/RcvrA.html\" title=\"annotation in typeannos\">" +
             "@RcvrA</a>&nbsp;PublicModified&nbsp;this)</pre>"
         },
-        {BUG_ID + "/typeannos/PublicModified.html",
+        { "typeannos/PublicModified.html",
             "<pre>public final&nbsp;&lt;T extends java.lang.Runnable&gt;&nbsp;" +
             "void&nbsp;accept(<a href=\"../typeannos/RcvrA.html\" title=\"" +
             "annotation in typeannos\">@RcvrA</a>&nbsp;PublicModified&nbsp;this,\n" +
             "                                                        T&nbsp;r)\n" +
             "                                                 throws java.lang.Exception</pre>"
         },
-        {BUG_ID + "/typeannos/WithValue.html",
+        { "typeannos/WithValue.html",
             "<pre>&lt;T extends java.lang.Runnable&gt;&nbsp;void&nbsp;accept(" +
             "<a href=\"../typeannos/RcvrB.html\" title=\"annotation in " +
             "typeannos\">@RcvrB</a>(<a href=\"../typeannos/RcvrB.html#value--\">" +
@@ -360,17 +357,17 @@ public class TestTypeAnnotations extends JavadocTester {
             "                                           T&nbsp;r)\n" +
             "                                    throws java.lang.Exception</pre>"
         },
-        {BUG_ID + "/typeannos/WithFinal.html",
+        { "typeannos/WithFinal.html",
             "<pre>java.lang.String&nbsp;nonVoid(<a href=\"../typeannos/RcvrB." +
             "html\" title=\"annotation in typeannos\">@RcvrB</a>(<a href=\"../" +
             "typeannos/RcvrB.html#value--\">value</a>=\"m\")&nbsp;WithFinal" +
             "&nbsp;this)</pre>"
         },
-        {BUG_ID + "/typeannos/WithBody.html",
+        { "typeannos/WithBody.html",
             "<pre>void&nbsp;field(<a href=\"../typeannos/RcvrA.html\" title=\"" +
             "annotation in typeannos\">@RcvrA</a>&nbsp;WithBody&nbsp;this)</pre>"
         },
-        {BUG_ID + "/typeannos/Generic2.html",
+        { "typeannos/Generic2.html",
             "<pre>void&nbsp;test2(<a href=\"../typeannos/RcvrA.html\" title=\"" +
             "annotation in typeannos\">@RcvrA</a>&nbsp;Generic2&lt;X&gt;&nbsp;this)</pre>"
         }
@@ -384,19 +381,5 @@ public class TestTypeAnnotations extends JavadocTester {
         TestTypeAnnotations tester = new TestTypeAnnotations();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

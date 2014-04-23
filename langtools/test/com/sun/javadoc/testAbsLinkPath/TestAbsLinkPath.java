@@ -34,9 +34,8 @@
 
 public class TestAbsLinkPath extends JavadocTester {
 
-    private static final String BUG_ID = "4640745";
     private static final String[][] TEST = {
-        {"tmp/pkg1/C1.html", "C2.html"}};
+        { "pkg1/C1.html", "C2.html"}};
 
     private static final String[] ARGS1 =
         new String[] {
@@ -55,19 +54,5 @@ public class TestAbsLinkPath extends JavadocTester {
         tester.run(ARGS1, NO_TEST, NO_TEST);
         tester.run(ARGS2,  TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

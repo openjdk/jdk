@@ -35,17 +35,14 @@
 
 public class TestOverridenMethodDocCopy extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4368820";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1", "pkg2"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1", "pkg2"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg1/SubClass.html",
+        { "pkg1/SubClass.html",
             "<span class=\"descfrmTypeLabel\">Description copied from class:&nbsp;<code>" +
             "<a href=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy--\">" +
             "BaseClass</a></code></span>"
@@ -60,19 +57,5 @@ public class TestOverridenMethodDocCopy extends JavadocTester {
         TestOverridenMethodDocCopy tester = new TestOverridenMethodDocCopy();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

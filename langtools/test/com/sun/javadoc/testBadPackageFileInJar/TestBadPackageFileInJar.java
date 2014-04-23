@@ -35,10 +35,6 @@
 
 public class TestBadPackageFileInJar extends JavadocTester {
 
-    protected static final String FS = System.getProperty("file.separator");
-
-    private static final String BUG_ID = "4691095";
-
     private static final String[][] TEST =
         new String[][] {
             {ERROR_OUTPUT,
@@ -47,7 +43,7 @@ public class TestBadPackageFileInJar extends JavadocTester {
 
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "-classpath",
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-classpath",
             SRC_DIR + "/badPackageFileInJar.jar", "pkg"};
 
 
@@ -59,19 +55,5 @@ public class TestBadPackageFileInJar extends JavadocTester {
         TestBadPackageFileInJar tester = new TestBadPackageFileInJar();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

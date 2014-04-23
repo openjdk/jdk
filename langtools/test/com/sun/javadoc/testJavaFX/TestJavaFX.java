@@ -33,58 +33,56 @@
 
 public class TestJavaFX extends JavadocTester {
 
-    private static final String BUG_ID = "7112427";
-
     private static final String[][] TEST =
         new String[][] {
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
                 "<dd><a href=\"C.html#getRate--\"><code>getRate()</code></a>, \n" +
                 "<a href=\"C.html#setRate-double-\"><code>setRate(double)</code></a></dd>"},
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<pre>public final&nbsp;void&nbsp;setRate(double&nbsp;value)</pre>\n" +
                 "<div class=\"block\">Sets the value of the property rate.</div>\n" +
                 "<dl>\n" +
                 "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>" },
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<pre>public final&nbsp;double&nbsp;getRate()</pre>\n" +
                 "<div class=\"block\">Gets the value of the property rate.</div>\n" +
                 "<dl>\n" +
                 "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>" },
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"C.html#rateProperty\">rate</a></span></code>\n" +
                 "<div class=\"block\">Defines the direction/speed at which the <code>Timeline</code> is expected to"},
 
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<span class=\"simpleTagLabel\">Default value:</span>"},
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<span class=\"simpleTagLabel\">Since:</span></dt>\n" +
                 "<dd>JavaFX 8.0</dd>" },
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<p>Sets the value of the property <code>Property</code>"},
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<p>Gets the value of the property <code>Property</code>"},
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<span class=\"simpleTagLabel\">Property description:</span>"},
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"C.html#setTestMethodProperty--\">setTestMethodProperty</a></span>()</code>&nbsp;</td>" },
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<h4>isPaused</h4>\n" +
                 "<pre>public final&nbsp;double&nbsp;isPaused()</pre>\n" +
                 "<div class=\"block\">Gets the value of the property paused.</div>" },
-            {"./" + BUG_ID + "/D.html",
+            { "D.html",
                 "<h3>Properties inherited from class&nbsp;<a href=\"C.html\" title=\"class in &lt;Unnamed&gt;\">C</a></h3>\n" +
                 "<code><a href=\"C.html#pausedProperty\">paused</a>, <a href=\"C.html#rateProperty\">rate</a></code></li>" },
         };
     private static final String[][] NO_TEST =
         new String[][] {
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "A()"},
         };
 
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-javafx",
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-javafx",
         SRC_DIR + "/C.java", SRC_DIR + "/D.java"
     };
 
@@ -96,19 +94,5 @@ public class TestJavaFX extends JavadocTester {
         TestJavaFX tester = new TestJavaFX();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

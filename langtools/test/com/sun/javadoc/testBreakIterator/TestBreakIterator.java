@@ -37,13 +37,12 @@
 
 public class TestBreakIterator extends JavadocTester {
 
-    private static final String BUG_ID = "4165985";
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/BreakIteratorTest.html",
+        { "pkg/BreakIteratorTest.html",
             "The class is empty (i.e. it has no members)."}};
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             "-breakiterator", "pkg"};
 
     /**
@@ -54,19 +53,5 @@ public class TestBreakIterator extends JavadocTester {
         TestBreakIterator tester = new TestBreakIterator();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

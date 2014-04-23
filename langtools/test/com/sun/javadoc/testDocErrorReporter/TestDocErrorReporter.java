@@ -35,12 +35,9 @@
 
 public class TestDocErrorReporter extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4927928";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-encoding", "xyz",
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-encoding", "xyz",
             SRC_DIR + "/TestDocErrorReporter.java"
     };
 
@@ -56,19 +53,5 @@ public class TestDocErrorReporter extends JavadocTester {
         int actualExitCode = tester.run(ARGS, NO_TEST, NO_TEST);
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

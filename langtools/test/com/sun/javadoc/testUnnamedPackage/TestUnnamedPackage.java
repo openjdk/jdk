@@ -35,32 +35,29 @@
 
 public class TestUnnamedPackage extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4904075-4774450-5015144";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/package-summary.html",
+        { "package-summary.html",
             "<h1 title=\"Package\" class=\"title\">Package&nbsp;&lt;Unnamed&gt;</h1>"
         },
-        {BUG_ID + "/package-summary.html",
+        { "package-summary.html",
             "This is a package comment for the unnamed package."
         },
-        {BUG_ID + "/package-summary.html",
+        { "package-summary.html",
             "This is a class in the unnamed package."
         },
-        {BUG_ID + "/package-tree.html",
+        { "package-tree.html",
             "<h1 class=\"title\">Hierarchy For Package &lt;Unnamed&gt;</h1>"
         },
-        {BUG_ID + "/index-all.html",
+        { "index-all.html",
             "title=\"class in &lt;Unnamed&gt;\""
         },
-        {BUG_ID + "/C.html", "<a href=\"package-summary.html\">"}
+        { "C.html", "<a href=\"package-summary.html\">"}
     };
     private static final String[][] NEGATED_TEST = {
         {ERROR_OUTPUT, "BadSource"},
@@ -74,19 +71,5 @@ public class TestUnnamedPackage extends JavadocTester {
         TestUnnamedPackage tester = new TestUnnamedPackage();
         tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -36,33 +36,31 @@ import java.io.File;
 
 public class TestLinkOption extends JavadocTester {
 
-    private static final String BUG_ID = "4720957-5020118-8038976";
-
     //Generate the documentation using -linkoffline and a URL as the first parameter.
     private static final String[] ARGS1 = new String[] {
-        "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR,
         "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api/",
         SRC_DIR, "-package", "pkg", "java.lang"
     };
 
     private static final String[][] TEST1 = {
-        {BUG_ID + "-1/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/String.html?is-external=true\" " +
             "title=\"class or interface in java.lang\"><code>Link to String Class</code></a>"
         },
         //Make sure the parameters are indented properly when the -link option is used.
-        {BUG_ID + "-1/pkg/C.html",
+        { "pkg/C.html",
             "(int&nbsp;p1,\n" +
             "      int&nbsp;p2,\n" +
             "      int&nbsp;p3)"
         },
-        {BUG_ID + "-1/pkg/C.html",
+        { "pkg/C.html",
             "(int&nbsp;p1,\n" +
             "      int&nbsp;p2,\n" +
             "      <a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" title=\"class or interface in java.lang\">" +
             "Object</a>&nbsp;p3)"
         },
-        {BUG_ID + "-1/java/lang/StringBuilderChild.html",
+        { "java/lang/StringBuilderChild.html",
             "<pre>public abstract class <span class=\"typeNameLabel\">StringBuilderChild</span>\n" +
                 "extends <a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" " +
             "title=\"class or interface in java.lang\">Object</a></pre>"
@@ -74,14 +72,14 @@ public class TestLinkOption extends JavadocTester {
     //Generate the documentation using -linkoffline and a relative path as the first parameter.
     //We will try linking to the docs generated in test 1 with a relative path.
     private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR,
-        "-linkoffline", "../" + BUG_ID + "-1",
-        BUG_ID + "-1", "-package", "pkg2"
+        "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR,
+        "-linkoffline", "../" + OUTPUT_DIR + "-1",
+        OUTPUT_DIR + "-1", "-package", "pkg2"
     };
 
     private static final String[][] TEST2 = {
-        {BUG_ID + "-2/pkg2/C2.html",
-            "This is a link to <a href=\"../../" + BUG_ID +
+        { "pkg2/C2.html",
+            "This is a link to <a href=\"../../" + OUTPUT_DIR +
             "-1/pkg/C.html?is-external=true\" " +
             "title=\"class or interface in pkg\"><code>Class C</code></a>."
         }
@@ -92,8 +90,8 @@ public class TestLinkOption extends JavadocTester {
      * that the command executes with no errors or related warnings.
      */
     static String[] createArguments(boolean withTrailingSlash) {
-        String packagePath = new File(BUG_ID + "-1").getAbsolutePath();
-        String outputDirName = BUG_ID;
+        String packagePath = new File(OUTPUT_DIR + "-1").getAbsolutePath();
+        String outputDirName = OUTPUT_DIR;
         if (withTrailingSlash) {
             // add the trailing slash, if it is not present!
             if (!packagePath.endsWith(FS)) {
@@ -130,19 +128,5 @@ public class TestLinkOption extends JavadocTester {
             throw new Error("URL rejected ?");
         }
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

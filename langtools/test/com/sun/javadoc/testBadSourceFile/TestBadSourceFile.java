@@ -35,12 +35,9 @@
 
 public class TestBadSourceFile extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4835749";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, SRC_DIR + "/C2.java"
+        "-Xdoclint:none", "-d", OUTPUT_DIR, SRC_DIR + "/C2.java"
     };
 
     /**
@@ -52,19 +49,5 @@ public class TestBadSourceFile extends JavadocTester {
         int exitCode = tester.run(ARGS, NO_TEST, NO_TEST);
         tester.checkExitCode(0, exitCode);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

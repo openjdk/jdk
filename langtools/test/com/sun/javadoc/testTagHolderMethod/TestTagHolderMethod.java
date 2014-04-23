@@ -21,8 +21,6 @@
  * questions.
  */
 
-import com.sun.javadoc.*;
-
 /*
  * @test
  * @bug 4706525
@@ -34,9 +32,10 @@ import com.sun.javadoc.*;
  * @run main TestTagHolderMethod
  */
 
+import com.sun.javadoc.*;
+
 public class TestTagHolderMethod extends JavadocTester {
 
-    private static final String BUG_ID = "4706525";
     public static final String[] ARGS = new String[] {
         "-docletpath", SRC_DIR, "-doclet", "TestTagHolderMethod", "-sourcepath",
                 SRC_DIR, "pkg"};
@@ -76,19 +75,5 @@ public class TestTagHolderMethod extends JavadocTester {
     public static void main(String[] args) {
         JavadocTester tester = new TestTagHolderMethod();
         tester.run(ARGS, new String[][]{}, new String[][]{});
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

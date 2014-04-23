@@ -35,10 +35,6 @@
 
 public class TestSerialVersionUID extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4525039";
-    private static final String OUTPUT_DIR = "docs-" + BUG_ID;
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", OUTPUT_DIR,
@@ -47,7 +43,7 @@ public class TestSerialVersionUID extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {OUTPUT_DIR + "/serialized-form.html", "-111111111111111L"}
+        { "serialized-form.html", "-111111111111111L"}
     };
 
     /**
@@ -58,19 +54,5 @@ public class TestSerialVersionUID extends JavadocTester {
         TestSerialVersionUID tester = new TestSerialVersionUID();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

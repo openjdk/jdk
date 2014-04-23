@@ -32,7 +32,6 @@
  */
 public class TestTagMisuse extends JavadocTester {
 
-    private static final String BUG_ID = "no-bug-id";
     private static final String[][] TEST = {
         {WARNING_OUTPUT, "warning - Tag @param cannot be used in field documentation."},
         {WARNING_OUTPUT, "warning - Tag @throws cannot be used in field documentation."},
@@ -40,7 +39,7 @@ public class TestTagMisuse extends JavadocTester {
         {WARNING_OUTPUT, "warning - Tag @throws cannot be used in inline documentation."},
     };
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, SRC_DIR + "/TestTagMisuse.java"
+        "-Xdoclint:none", "-d", OUTPUT_DIR, SRC_DIR + "/TestTagMisuse.java"
     };
 
     /**
@@ -51,20 +50,6 @@ public class TestTagMisuse extends JavadocTester {
         TestTagMisuse tester = new TestTagMisuse();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 
     /**

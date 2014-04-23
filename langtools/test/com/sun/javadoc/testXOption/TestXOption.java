@@ -32,17 +32,14 @@
 
 public class TestXOption extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8007687";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-X",
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-X",
             SRC_DIR + "/TestXOption.java"
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             SRC_DIR + "/TestXOption.java"
     };
 
@@ -66,19 +63,5 @@ public class TestXOption extends JavadocTester {
         int actualExitCode = tester.run(ARGS, TEST, NO_TEST);
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

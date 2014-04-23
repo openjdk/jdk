@@ -35,17 +35,14 @@
 
 public class TestThrowsTag extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4985072";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<dd><code><a href=\"../pkg/T1.html\" title=\"class in pkg\">T1</a></code> - the first throws tag.</dd>\n" +
             "<dd><code><a href=\"../pkg/T2.html\" title=\"class in pkg\">T2</a></code> - the second throws tag.</dd>\n" +
             "<dd><code><a href=\"../pkg/T3.html\" title=\"class in pkg\">T3</a></code> - the third throws tag.</dd>\n" +
@@ -65,19 +62,5 @@ public class TestThrowsTag extends JavadocTester {
         TestThrowsTag tester = new TestThrowsTag();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

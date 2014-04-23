@@ -35,7 +35,6 @@
 
 public class TestNewLineInLink extends JavadocTester {
 
-    private static final String BUG_ID = "4739870";
     private static final String[][] NEGATED_TEST =
         new String[][] {
             {ERROR_OUTPUT,
@@ -43,7 +42,7 @@ public class TestNewLineInLink extends JavadocTester {
         };
 
     private static final String[] ARGS = new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
                 "-linkoffline", "http://www.java.sun.com/j2se/1.4/docs/api",
                 SRC_DIR, "testNewLineInLink"};
 
@@ -55,19 +54,5 @@ public class TestNewLineInLink extends JavadocTester {
         TestNewLineInLink tester = new TestNewLineInLink();
         tester.run(ARGS, new String[][] {}, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

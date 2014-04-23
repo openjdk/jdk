@@ -33,11 +33,9 @@
 
 public class TestConstructors extends JavadocTester {
 
-    private static final String BUG_ID = "8025524";
-
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
             "<dd><a href=\"../pkg1/Outer.Inner.html#Inner--\"><code>Inner()</code></a>, \n" +
             "<a href=\"../pkg1/Outer.Inner.html#Inner-int-\"><code>Inner(int)</code></a>, \n" +
@@ -46,79 +44,79 @@ public class TestConstructors extends JavadocTester {
             "<a href=\"../pkg1/Outer.html#Outer--\"><code>Outer()</code></a>, \n" +
             "<a href=\"../pkg1/Outer.html#Outer-int-\"><code>Outer(int)</code></a>"
         },
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "Link: <a href=\"../pkg1/Outer.Inner.html#Inner--\"><code>Inner()</code></a>, " +
             "<a href=\"../pkg1/Outer.html#Outer-int-\"><code>Outer(int)</code></a>, " +
             "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\"><code>" +
             "NestedInner(int)</code></a>"
         },
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "<a href=\"../pkg1/Outer.html#Outer--\">Outer</a></span>()"
         },
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "<a name=\"Outer--\">"
         },
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "<a href=\"../pkg1/Outer.html#Outer-int-\">Outer</a></span>(int&nbsp;i)"
         },
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "<a name=\"Outer-int-\">"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.html",
+        { "pkg1/Outer.Inner.html",
             "<a href=\"../pkg1/Outer.Inner.html#Inner--\">Inner</a></span>()"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.html",
+        { "pkg1/Outer.Inner.html",
             "<a name=\"Inner--\">"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.html",
+        { "pkg1/Outer.Inner.html",
             "<a href=\"../pkg1/Outer.Inner.html#Inner-int-\">Inner</a></span>(int&nbsp;i)"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.html",
+        { "pkg1/Outer.Inner.html",
             "<a name=\"Inner-int-\">"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.NestedInner.html",
+        { "pkg1/Outer.Inner.NestedInner.html",
             "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner--\">NestedInner</a></span>()"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.NestedInner.html",
+        { "pkg1/Outer.Inner.NestedInner.html",
             "<a name=\"NestedInner--\">"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.NestedInner.html",
+        { "pkg1/Outer.Inner.NestedInner.html",
             "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\">NestedInner</a></span>(int&nbsp;i)"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.NestedInner.html",
+        { "pkg1/Outer.Inner.NestedInner.html",
             "<a name=\"NestedInner-int-\">"
         }
     };
 
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/pkg1/Outer.Inner.html",
+        { "pkg1/Outer.Inner.html",
             "Outer.Inner--"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.html",
+        { "pkg1/Outer.Inner.html",
             "Outer.Inner-int-"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.NestedInner.html",
+        { "pkg1/Outer.Inner.NestedInner.html",
             "Outer.Inner.NestedInner--"
         },
-        {BUG_ID + "/pkg1/Outer.Inner.NestedInner.html",
+        { "pkg1/Outer.Inner.NestedInner.html",
             "Outer.Inner.NestedInner-int-"
         },
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "<a href=\"../pkg1/Outer.Inner.html#Outer.Inner--\"><code>Outer.Inner()</code></a>"
         },
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "<a href=\"../pkg1/Outer.Inner.html#Outer.Inner-int-\"><code>Outer.Inner(int)</code></a>"
         },
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "<a href=\"../pkg1/Outer.Inner.NestedInner.html#Outer.Inner.NestedInner--\"><code>Outer.Inner.NestedInner()</code></a>"
         },
-        {BUG_ID + "/pkg1/Outer.html",
+        { "pkg1/Outer.html",
             "<a href=\"../pkg1/Outer.Inner.NestedInner.html#Outer.Inner.NestedInner-int-\"><code>Outer.Inner.NestedInner(int)</code></a>"
         }
     };
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"
     };
 
     /**
@@ -129,19 +127,5 @@ public class TestConstructors extends JavadocTester {
         TestConstructors tester = new TestConstructors();
         tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }
