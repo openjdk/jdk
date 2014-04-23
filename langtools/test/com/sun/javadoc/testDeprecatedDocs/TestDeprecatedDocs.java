@@ -92,15 +92,13 @@ public class TestDeprecatedDocs extends JavadocTester {
                  "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
         TestDeprecatedDocs tester = new TestDeprecatedDocs();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

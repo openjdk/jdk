@@ -89,15 +89,13 @@ public class TestLiteralCodeInPre extends JavadocTester {
             " and so it goes.</div>" }
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
         TestLiteralCodeInPre tester = new TestLiteralCodeInPre();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

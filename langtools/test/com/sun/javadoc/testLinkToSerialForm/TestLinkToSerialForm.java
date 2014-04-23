@@ -40,7 +40,6 @@ public class TestLinkToSerialForm extends JavadocTester {
         {BUG_ID + "/serialized-form.html", "<a name=\"pkg.C\">"},
         {BUG_ID + "/pkg/C.html", "<a href=\"../serialized-form.html#pkg.C\">"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
             "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"};
@@ -51,7 +50,7 @@ public class TestLinkToSerialForm extends JavadocTester {
      */
     public static void main(String[] args) {
         TestLinkToSerialForm tester = new TestLinkToSerialForm();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

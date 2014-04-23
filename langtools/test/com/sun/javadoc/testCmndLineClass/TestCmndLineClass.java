@@ -38,8 +38,6 @@ public class TestCmndLineClass extends JavadocTester {
 
     private static final String OUTPUT_DIR1 = "4506980-tmp1";
     private static final String OUTPUT_DIR2 = "4506980-tmp2";
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS1 =
         new String[] {
             "-d", OUTPUT_DIR1, "-sourcepath", SRC_DIR,
@@ -70,8 +68,8 @@ public class TestCmndLineClass extends JavadocTester {
      */
     public static void main(String[] args) {
         TestCmndLineClass tester = new TestCmndLineClass();
-        tester.run(ARGS1, TEST, NEGATED_TEST);
-        tester.run(ARGS2, TEST, NEGATED_TEST);
+        tester.run(ARGS1, NO_TEST, NO_TEST);
+        tester.run(ARGS2, NO_TEST, NO_TEST);
         tester.runDiffs(FILES_TO_DIFF);
     }
 

@@ -51,7 +51,6 @@ public class TestIndentation extends JavadocTester {
           "\n" +
           "           throws java.lang.Exception" }
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -59,7 +58,7 @@ public class TestIndentation extends JavadocTester {
      */
     public static void main(String[] args) {
         TestIndentation tester = new TestIndentation();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

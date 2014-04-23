@@ -50,8 +50,6 @@ public class TestDocEncoding extends JavadocTester {
         "pkg"
     };
 
-    private static final String[][] TEST = NO_TEST;
-
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + "/stylesheet.css",
             "body {\n" +
@@ -64,7 +62,7 @@ public class TestDocEncoding extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDocEncoding tester = new TestDocEncoding();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

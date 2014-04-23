@@ -50,10 +50,6 @@ public class TestExternalOverridenMethod extends JavadocTester {
             "<a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/DataInput.html?is-external=true\" " +
             "title=\"class or interface in java.io\">DataInput</a></code></dd>"}};
 
-
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     private static final String[] ARGS =
         new String[] {
             "-d", BUG_ID, "-sourcepath", SRC_DIR,
@@ -67,7 +63,7 @@ public class TestExternalOverridenMethod extends JavadocTester {
      */
     public static void main(String[] args) {
         TestExternalOverridenMethod tester = new TestExternalOverridenMethod();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

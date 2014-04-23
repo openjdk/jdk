@@ -52,7 +52,6 @@ public class TestSimpleTagInherit extends JavadocTester {
           "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n" +
           "<dd>doc for BaseClass method</dd>" }
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -60,7 +59,7 @@ public class TestSimpleTagInherit extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSimpleTagInherit tester = new TestSimpleTagInherit();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

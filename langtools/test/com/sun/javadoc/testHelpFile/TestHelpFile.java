@@ -42,8 +42,6 @@ public class TestHelpFile extends JavadocTester {
             SRC_DIR + "/TestHelpFile.java"
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     private static final String[][] TEST = {
         {BUG_ID + "/help-doc.html",
             "<a href=\"constant-values.html\">Constant Field Values</a>"
@@ -56,7 +54,7 @@ public class TestHelpFile extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHelpFile tester = new TestHelpFile();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

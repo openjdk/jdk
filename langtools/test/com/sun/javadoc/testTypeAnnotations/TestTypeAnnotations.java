@@ -43,7 +43,6 @@ public class TestTypeAnnotations extends JavadocTester {
     };
 
     //Input for string search tests.
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[][] TEST = {
         // Test for type annotations on Class Extends (ClassExtends.java).
         {BUG_ID + "/typeannos/MyClass.html",
@@ -383,7 +382,7 @@ public class TestTypeAnnotations extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTypeAnnotations tester = new TestTypeAnnotations();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

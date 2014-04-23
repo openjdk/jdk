@@ -86,14 +86,12 @@ public class TestHelpOption extends JavadocTester {
         {STANDARD_OUTPUT, "-stylesheetfile "},
         {STANDARD_OUTPUT, "-docencoding "},
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     private static final String[][] TEST2 = {
         {BUG_ID + "/TestHelpOption.html",
             "<li><a href=\"help-doc.html\">Help</a></li>"
         },
     };
-    private static final String[][] NEGATED_TEST2 = NO_TEST;
 
     //The help option should not crash the doclet.
     private static final int EXPECTED_EXIT_CODE = 0;
@@ -104,9 +102,9 @@ public class TestHelpOption extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHelpOption tester = new TestHelpOption();
-        int actualExitCode = tester.run(ARGS, TEST, NEGATED_TEST);
+        int actualExitCode = tester.run(ARGS, TEST, NO_TEST);
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
-        tester.run(ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
     }
 

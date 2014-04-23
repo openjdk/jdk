@@ -49,7 +49,6 @@ public class TestSerialVersionUID extends JavadocTester {
     private static final String[][] TEST = {
         {OUTPUT_DIR + "/serialized-form.html", "-111111111111111L"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -57,7 +56,7 @@ public class TestSerialVersionUID extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSerialVersionUID tester = new TestSerialVersionUID();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

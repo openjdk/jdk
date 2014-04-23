@@ -46,7 +46,6 @@ public class TestEnclosingClass extends JavadocTester {
     private static final String[][] TEST = {
         {BUG_ID + "/pkg/MyClass.MyInterface.html", "Enclosing class:"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -54,7 +53,7 @@ public class TestEnclosingClass extends JavadocTester {
      */
     public static void main(String[] args) {
         TestEnclosingClass tester = new TestEnclosingClass();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

@@ -59,13 +59,11 @@ public class TestTaglets extends JavadocTester {
                  "<dd>my only method is <a href=\"C.html#method--\"><code>here" +
                  "</code></a></dd></dl>"}
     };
-    private static final String[][] NEGATED_TEST_4654308 = NO_TEST;
 
     private static final String[][] TEST_4767038 = new String[][] {
         {"4767038/Child.html",
             "This is the first sentence."}
     };
-    private static final String[][] NEGATED_TEST_4767038 = NO_TEST;
 
 
     /**
@@ -74,10 +72,10 @@ public class TestTaglets extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTaglets tester = new TestTaglets();
-        tester.run(ARGS_4654308, TEST_4654308, NEGATED_TEST_4654308);
+        tester.run(ARGS_4654308, TEST_4654308, NO_TEST);
         tester.printSummary();
         tester = new TestTaglets();
-        tester.run(ARGS_4767038, TEST_4767038, NEGATED_TEST_4767038);
+        tester.run(ARGS_4767038, TEST_4767038, NO_TEST);
         tester.printSummary();
     }
 

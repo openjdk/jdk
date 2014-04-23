@@ -97,9 +97,6 @@ public class PackagesHeader extends JavadocTester {
             "p1", "p2"};
 
 
-    //Input for string search tests.
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
@@ -107,9 +104,9 @@ public class PackagesHeader extends JavadocTester {
     public static void main(String[] args) {
         JavadocTester tester = new PackagesHeader();
 
-        tester.run(JAVADOC_ARGS1, TESTARRAY1, NEGATED_TEST);
-        tester.run(JAVADOC_ARGS2, TESTARRAY2, NEGATED_TEST);
-        tester.run(JAVADOC_ARGS3, TESTARRAY3, NEGATED_TEST);
+        tester.run(JAVADOC_ARGS1, TESTARRAY1, NO_TEST);
+        tester.run(JAVADOC_ARGS2, TESTARRAY2, NO_TEST);
+        tester.run(JAVADOC_ARGS3, TESTARRAY3, NO_TEST);
 
         tester.printSummary();
     }

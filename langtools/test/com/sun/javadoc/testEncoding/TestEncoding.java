@@ -36,7 +36,6 @@
 public class TestEncoding extends JavadocTester {
 
     private static final String BUG_ID = "4661481";
-    private static final String[][] TEST = NO_TEST;
 
     //If ??? is found in the output, the source file was not read with the correct encoding setting.
     private static final String[][] NEGATED_TEST = {
@@ -54,7 +53,7 @@ public class TestEncoding extends JavadocTester {
      */
     public static void main(String[] args) {
         TestEncoding tester = new TestEncoding();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

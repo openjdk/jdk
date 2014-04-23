@@ -40,7 +40,6 @@ public class TestThrowsHead extends JavadocTester {
     private static final String[][] TEST = {
         {BUG_ID + "/C.html", "<dt><span class=\"throwsLabel\">Throws:</span>"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, SRC_DIR + "/C.java"
     };
@@ -51,7 +50,7 @@ public class TestThrowsHead extends JavadocTester {
      */
     public static void main(String[] args) {
         TestThrowsHead tester = new TestThrowsHead();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

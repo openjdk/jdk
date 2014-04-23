@@ -38,7 +38,6 @@ public class TestBackSlashInLink extends JavadocTester {
     private static final String BUG_ID = "4511110";
     private static final String[][] TEST = {
         {BUG_ID + "/C.html", "src-html/C.html#line.7"}};
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
             "-d", BUG_ID, "-sourcepath", SRC_DIR,
@@ -50,7 +49,7 @@ public class TestBackSlashInLink extends JavadocTester {
      */
     public static void main(String[] args) {
         TestBackSlashInLink tester = new TestBackSlashInLink();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

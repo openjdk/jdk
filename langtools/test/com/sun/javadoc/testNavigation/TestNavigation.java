@@ -65,7 +65,6 @@ public class TestNavigation extends JavadocTester {
             "<!--   -->\n" +
             "</a>"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -73,7 +72,7 @@ public class TestNavigation extends JavadocTester {
      */
     public static void main(String[] args) {
         TestNavigation tester = new TestNavigation();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

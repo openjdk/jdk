@@ -50,7 +50,6 @@ public class TestNestedGenerics extends JavadocTester {
             "(java.util.Map&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>"
         }
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -58,7 +57,7 @@ public class TestNestedGenerics extends JavadocTester {
      */
     public static void main(String[] args) {
         TestNestedGenerics tester = new TestNestedGenerics();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

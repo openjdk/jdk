@@ -86,7 +86,6 @@ public class TestLinkOption extends JavadocTester {
             "title=\"class or interface in pkg\"><code>Class C</code></a>."
         }
     };
-    private static final String[][] NEGATED_TEST2 = NO_TEST;
     /*
      * Create the documentation using the -link option, vary the behavior with
      * both trailing and no trailing slash. We are only interested in ensuring
@@ -122,7 +121,8 @@ public class TestLinkOption extends JavadocTester {
     public static void main(String[] args) {
         TestLinkOption tester = new TestLinkOption();
         tester.run(ARGS1, TEST1, NEGATED_TEST1);
-        tester.run(ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS1, TEST1, NEGATED_TEST1);
+        tester.run(ARGS2, TEST2, NO_TEST);
         tester.runJavadoc(createArguments(true));  // with trailing slash
         tester.runJavadoc(createArguments(false)); // without trailing slash
         tester.printSummary();

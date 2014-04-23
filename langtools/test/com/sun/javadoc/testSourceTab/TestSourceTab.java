@@ -41,8 +41,6 @@ public class TestSourceTab extends JavadocTester {
     private static final String TMP_SRC_DIR = "tmpSrc";
     private static final String OUTPUT_DIR1 = BUG_ID + "-tabLengthEight";
     private static final String OUTPUT_DIR2 = BUG_ID + "-tabLengthFour";
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     //Run Javadoc on a source file with that is indented with a single tab per line
     private static final String[] ARGS1 =
@@ -77,8 +75,8 @@ public class TestSourceTab extends JavadocTester {
      */
     public static void main(String[] args) throws IOException {
         TestSourceTab tester = new TestSourceTab();
-        tester.run(ARGS1, TEST, NEGATED_TEST);
-        tester.run(ARGS2, TEST, NEGATED_TEST);
+        tester.run(ARGS1, NO_TEST, NO_TEST);
+        tester.run(ARGS2, NO_TEST, NO_TEST);
         tester.runDiffs(FILES_TO_DIFF);
     }
 

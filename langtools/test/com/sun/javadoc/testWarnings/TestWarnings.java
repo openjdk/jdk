@@ -74,9 +74,6 @@ public class TestWarnings extends JavadocTester {
             "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>"},
     };
 
-    private static final String[][] NEGATED_TEST2 = NO_TEST;
-
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
@@ -84,7 +81,8 @@ public class TestWarnings extends JavadocTester {
     public static void main(String[] args) {
         TestWarnings tester = new TestWarnings();
         tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.run(ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
     }
 

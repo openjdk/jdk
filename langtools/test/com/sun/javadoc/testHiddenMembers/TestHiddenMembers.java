@@ -36,7 +36,6 @@
 public class TestHiddenMembers extends JavadocTester {
 
     private static final String BUG_ID = "4492178";
-    private static final String[][] TEST = NO_TEST;
 
     //We should not inherit any members from BaseClass because they are all overriden and hidden
     //(declared as private).
@@ -56,7 +55,7 @@ public class TestHiddenMembers extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHiddenMembers tester = new TestHiddenMembers();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

@@ -67,7 +67,6 @@ public class TestMemberSummary extends JavadocTester {
             "</a>"
         },
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -75,7 +74,7 @@ public class TestMemberSummary extends JavadocTester {
      */
     public static void main(String[] args) {
         TestMemberSummary tester = new TestMemberSummary();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

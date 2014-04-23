@@ -53,7 +53,6 @@ public class TestClassCrossReferences extends JavadocTester {
             "<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>\n" +
             "</dl>"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
             "-d", BUG_ID, "-sourcepath", SRC_DIR,
@@ -66,7 +65,7 @@ public class TestClassCrossReferences extends JavadocTester {
      */
     public static void main(String[] args) {
         TestClassCrossReferences tester = new TestClassCrossReferences();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

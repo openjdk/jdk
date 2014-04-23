@@ -48,7 +48,6 @@ public class TestReturnTag extends JavadocTester {
         {WARNING_OUTPUT,
             "warning - @return tag cannot be used in method with void return type."}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * Trigger warning message when return tag is used on a void method.
@@ -63,7 +62,7 @@ public class TestReturnTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestReturnTag tester = new TestReturnTag();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

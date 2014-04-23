@@ -41,7 +41,6 @@ public class TestWarnBadParamNames extends JavadocTester {
         {WARNING_OUTPUT, "warning - @param argument \"IDontExist\" is not a parameter name."},
         {WARNING_OUTPUT, "warning - Parameter \"arg\" is documented more than once."},
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS = new String[] {
         "-Xdoclint:none", "-d", BUG_ID, SRC_DIR + "/C.java"
     };
@@ -52,7 +51,7 @@ public class TestWarnBadParamNames extends JavadocTester {
      */
     public static void main(String[] args) {
         TestWarnBadParamNames tester = new TestWarnBadParamNames();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

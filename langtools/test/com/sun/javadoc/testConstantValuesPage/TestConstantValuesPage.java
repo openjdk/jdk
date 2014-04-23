@@ -36,7 +36,6 @@
 public class TestConstantValuesPage extends JavadocTester {
 
     private static final String BUG_ID = "4681599";
-    private static final String[][] TEST = NO_TEST;
     private static final String[][] NEGATED_TEST = {
         {NOTICE_OUTPUT, "constant-values.html..."}
         };
@@ -50,7 +49,7 @@ public class TestConstantValuesPage extends JavadocTester {
      */
     public static void main(String[] args) {
         TestConstantValuesPage tester = new TestConstantValuesPage();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
     }
 

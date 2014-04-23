@@ -44,7 +44,6 @@ public class TestHtmlComments extends JavadocTester {
     };
 
     //Input for string search tests.
-    private static final String[][] TEST = NO_TEST;
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + "/C.html",
             "<!-- ============ FIELD DETAIL =========== -->"}
@@ -56,7 +55,7 @@ public class TestHtmlComments extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHtmlComments tester = new TestHtmlComments();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
     }
 
