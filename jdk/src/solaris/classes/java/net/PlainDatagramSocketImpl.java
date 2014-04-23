@@ -56,6 +56,7 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {
         if (!name.equals(ExtendedSocketOptions.SO_FLOW_SLA)) {
             return super.getOption(name);
@@ -70,7 +71,7 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     }
 
     protected Set<SocketOption<?>> supportedOptions() {
-        HashSet<SocketOption<?>> options = new HashSet(
+        HashSet<SocketOption<?>> options = new HashSet<>(
             super.supportedOptions());
 
         if (flowSupported()) {
