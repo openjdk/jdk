@@ -1512,6 +1512,8 @@ bool CMSCollector::shouldConcurrentCollect() {
     gclog_or_tty->print_cr("cms_allocation_rate=%g", stats().cms_allocation_rate());
     gclog_or_tty->print_cr("occupancy=%3.7f", _cmsGen->occupancy());
     gclog_or_tty->print_cr("initiatingOccupancy=%3.7f", _cmsGen->initiating_occupancy());
+    gclog_or_tty->print_cr("cms_time_since_begin=%3.7f", stats().cms_time_since_begin());
+    gclog_or_tty->print_cr("cms_time_since_end=%3.7f", stats().cms_time_since_end());
     gclog_or_tty->print_cr("metadata initialized %d",
       MetaspaceGC::should_concurrent_collect());
   }
@@ -1573,6 +1575,28 @@ bool CMSCollector::shouldConcurrentCollect() {
       }
       return true;
     }
+
+  // CMSTriggerInterval starts a CMS cycle if enough time has passed.
+  if (CMSTriggerInterval >= 0) {
+    if (CMSTriggerInterval == 0) {
+      // Trigger always
+      return true;
+    }
+
+    // Check the CMS time since begin (we do not check the stats validity
+    // as we want to be able to trigger the first CMS cycle as well)
+    if (stats().cms_time_since_begin() >= (CMSTriggerInterval / ((double) MILLIUNITS))) {
+      if (Verbose && PrintGCDetails) {
+        if (stats().valid()) {
+          gclog_or_tty->print_cr("CMSCollector: collect because of trigger interval (time since last begin %3.7f secs)",
+                                 stats().cms_time_since_begin());
+        } else {
+          gclog_or_tty->print_cr("CMSCollector: collect because of trigger interval (first collection)");
+        }
+      }
+      return true;
+    }
+  }
 
   return false;
 }
