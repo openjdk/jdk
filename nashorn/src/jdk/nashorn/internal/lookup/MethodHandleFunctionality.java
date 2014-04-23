@@ -337,5 +337,6 @@ public interface MethodHandleFunctionality {
      * @return the method type
      */
     public MethodType type(Class<?> returnType, Class<?>... paramTypes);
+
 }
 

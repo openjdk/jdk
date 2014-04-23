@@ -190,8 +190,8 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
             return inv;
         }
 
-        if (LOG.isEnabled()) {
-            LOG.info(clazz.getSimpleName() + ": Missed fast GETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
+        if (log.isEnabled()) {
+            log.info(clazz.getSimpleName() + ": Missed fast GETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
         }
 
         return null;
@@ -205,8 +205,8 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
             return inv;
         }
 
-        if (LOG.isEnabled()) {
-            LOG.info(clazz.getSimpleName() + ": Missed fast SETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
+        if (log.isEnabled()) {
+            log.info(clazz.getSimpleName() + ": Missed fast SETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
         }
 
         return null;

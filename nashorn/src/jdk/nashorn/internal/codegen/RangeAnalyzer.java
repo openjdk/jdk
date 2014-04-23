@@ -47,8 +47,11 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.TokenType;
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Range analysis and narrowing of type where it can be proven
@@ -63,15 +66,28 @@ import jdk.nashorn.internal.runtime.DebugLogger;
  *
  *  Proves that the multiplication never exceeds 24 bits and can thus be an int
  */
-final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
-    static final DebugLogger LOG = new DebugLogger("ranges");
+@Logger(name="ranges")
+final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> implements Loggable {
+    private final DebugLogger log;
 
-    private static final Range.Functionality RANGE = new Range.Functionality(LOG);
+    private final Range.Functionality func;
 
     private final Map<LoopNode, Symbol> loopCounters = new HashMap<>();
 
     RangeAnalyzer() {
         super(new LexicalContext());
+        this.log  = initLogger(Global.instance());
+        this.func = new Range.Functionality(log);
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     @Override
@@ -80,7 +96,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
         //properly identified and that no optimizations can be made with it - its range is
         //simply unknown in that case, if it is assigned in the loop
         final Symbol counter = findLoopCounter(forNode);
-        LOG.fine("Entering forNode " + forNode + " counter = " + counter);
+        log.fine("Entering forNode " + forNode + " counter = " + counter);
         if (counter != null && !assignedInLoop(forNode,  counter)) {
             loopCounters.put(forNode, counter);
         }
@@ -96,7 +112,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
         final Symbol symbol = dest.getSymbol();
         assert symbol != null : dest + " " + dest.getClass() + " has no symbol";
         assert symbol.getRange() != null : symbol + " has no range";
-        final Range symRange = RANGE.join(symbol.getRange(), range);
+        final Range symRange = func.join(symbol.getRange(), range);
 
         //anything assigned in the loop, not being the safe loop counter(s) invalidates its entire range
         if (lc.inLoop() && !isLoopCounter(lc.getCurrentLoop(), symbol)) {
@@ -105,7 +121,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
         }
 
         if (!symRange.equals(symbol.getRange())) {
-            LOG.fine("Modify range for " + dest + " " + symbol + " from " + symbol.getRange() + " to " + symRange + " (in node = " + dest + ")" );
+            log.fine("Modify range for " + dest + " " + symbol + " from " + symbol.getRange() + " to " + symRange + " (in node = " + dest + ")" );
             symbol.setRange(symRange);
         }
 
@@ -114,67 +130,67 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveADD(final BinaryNode node) {
-        setRange(node, RANGE.add(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.add(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveSUB(final BinaryNode node) {
-        setRange(node, RANGE.sub(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.sub(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveMUL(final BinaryNode node) {
-        setRange(node, RANGE.mul(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.mul(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveDIV(final BinaryNode node) {
-        setRange(node, RANGE.div(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.div(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveMOD(final BinaryNode node) {
-        setRange(node, RANGE.mod(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.mod(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveBIT_AND(final BinaryNode node) {
-        setRange(node, RANGE.and(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.and(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveBIT_OR(final BinaryNode node) {
-        setRange(node, RANGE.or(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.or(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveBIT_XOR(final BinaryNode node) {
-        setRange(node, RANGE.xor(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.xor(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveSAR(final BinaryNode node) {
-        setRange(node, RANGE.sar(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.sar(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveSHL(final BinaryNode node) {
-        setRange(node, RANGE.shl(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.shl(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
     @Override
     public Node leaveSHR(final BinaryNode node) {
-        setRange(node, RANGE.shr(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        setRange(node, func.shr(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
         return node;
     }
 
@@ -250,17 +266,17 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveASSIGN_ADD(final BinaryNode node) {
-        return leaveSelfModifyingAssign(node, RANGE.add(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        return leaveSelfModifyingAssign(node, func.add(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
     }
 
     @Override
     public Node leaveASSIGN_SUB(final BinaryNode node) {
-        return leaveSelfModifyingAssign(node, RANGE.sub(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        return leaveSelfModifyingAssign(node, func.sub(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
     }
 
     @Override
     public Node leaveASSIGN_MUL(final BinaryNode node) {
-        return leaveSelfModifyingAssign(node, RANGE.mul(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        return leaveSelfModifyingAssign(node, func.mul(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
     }
 
     @Override
@@ -275,32 +291,32 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveASSIGN_BIT_AND(final BinaryNode node) {
-        return leaveSelfModifyingAssign(node, RANGE.and(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        return leaveSelfModifyingAssign(node, func.and(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
     }
 
     @Override
     public Node leaveASSIGN_BIT_OR(final BinaryNode node) {
-        return leaveSelfModifyingAssign(node, RANGE.or(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        return leaveSelfModifyingAssign(node, func.or(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
     }
 
     @Override
     public Node leaveASSIGN_BIT_XOR(final BinaryNode node) {
-        return leaveSelfModifyingAssign(node, RANGE.xor(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        return leaveSelfModifyingAssign(node, func.xor(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
     }
 
     @Override
     public Node leaveASSIGN_SAR(final BinaryNode node) {
-        return leaveSelfModifyingAssign(node, RANGE.sar(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        return leaveSelfModifyingAssign(node, func.sar(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
     }
 
     @Override
     public Node leaveASSIGN_SHR(final BinaryNode node) {
-        return leaveSelfModifyingAssign(node, RANGE.shr(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        return leaveSelfModifyingAssign(node, func.shr(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
     }
 
     @Override
     public Node leaveASSIGN_SHL(final BinaryNode node) {
-        return leaveSelfModifyingAssign(node, RANGE.shl(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
+        return leaveSelfModifyingAssign(node, func.shl(node.lhs().getSymbol().getRange(), node.rhs().getSymbol().getRange()));
     }
 
     @Override
@@ -308,10 +324,10 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
         switch (node.tokenType()) {
         case DECPREFIX:
         case DECPOSTFIX:
-            return leaveSelfModifyingAssign(node, RANGE.sub(node.getExpression().getSymbol().getRange(), Range.createRange(1)));
+            return leaveSelfModifyingAssign(node, func.sub(node.getExpression().getSymbol().getRange(), Range.createRange(1)));
         case INCPREFIX:
         case INCPOSTFIX:
-            return leaveSelfModifyingAssign(node, RANGE.add(node.getExpression().getSymbol().getRange(), Range.createRange(1)));
+            return leaveSelfModifyingAssign(node, func.add(node.getExpression().getSymbol().getRange(), Range.createRange(1)));
         default:
             throw new UnsupportedOperationException("" + node.tokenType());
         }
@@ -341,7 +357,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveSUB(final UnaryNode node) {
-        setRange(node, RANGE.neg(node.getExpression().getSymbol().getRange()));
+        setRange(node, func.neg(node.getExpression().getSymbol().getRange()));
         return node;
     }
 
@@ -436,7 +452,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
      * @param node loop node to check
      * @return
      */
-    private static Symbol findLoopCounter(final LoopNode node) {
+    private Symbol findLoopCounter(final LoopNode node) {
         final Expression test = node.getTest();
 
         if (test != null && test.isComparison()) {
@@ -453,7 +469,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
                 switch (op) {
                 case LT:
                 case LE:
-                    symbol.setRange(RANGE.join(symbol.getRange(), Range.createRange(op == TokenType.LT ? margin - 1 : margin)));
+                    symbol.setRange(func.join(symbol.getRange(), Range.createRange(op == TokenType.LT ? margin - 1 : margin)));
                     return symbol;
                 case GT:
                 case GE:

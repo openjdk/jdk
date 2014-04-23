@@ -50,30 +50,30 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.StringTokenizer;
-
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.FunctionScope;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Undefined;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * Generates the ScriptObject subclass structure with fields for a user objects.
  */
-public final class ObjectClassGenerator {
+@Logger(name="fields")
+public final class ObjectClassGenerator implements Loggable {
 
     /**
      * Type guard to make sure we don't unnecessarily explode field storages. Rather unbox e.g.
@@ -96,44 +96,12 @@ public final class ObjectClassGenerator {
      * Debug field logger
      * Should we print debugging information for fields when they are generated and getters/setters are called?
      */
-    private static final DebugLogger LOG = new DebugLogger("fields", "nashorn.fields.debug");
+    private final DebugLogger log;
 
-    /**
-     * Get the field logger
-     * @return logger
-     */
-    public static DebugLogger getLogger() {
-        return LOG;
-    }
-
-    private static final Set<String> FIELDS_TO_INSTRUMENT;
-    static {
-        final String fields = Options.getStringProperty("nashorn.fields", null);
-        final Set<String> fti = new HashSet<>();
-        if (fields != null) {
-            final StringTokenizer st = new StringTokenizer(fields, ",");
-            while (st.hasMoreTokens()) {
-                fti.add(st.nextToken());
-            }
-        }
-        FIELDS_TO_INSTRUMENT = fti.isEmpty() ? null : fti;
-    }
-
-    /**
-     * Should this particular field be instrumented with --log=fields
-     * Internal use only
-     * @param field field name
-     * @return true if it should be instrumented
-     */
-    public static boolean shouldInstrument(final String field) {
-        //if no explicit fields to imstrument are given, instrument all fields
-        return FIELDS_TO_INSTRUMENT == null || FIELDS_TO_INSTRUMENT.contains(field);
-    }
     /**
      * is field debugging enabled. Several modules in codegen and properties use this, hence
      * public access.
      */
-    public static final boolean DEBUG_FIELDS = LOG.isEnabled();
 
     private static final boolean EXPLICIT_OBJECT = Options.getBooleanProperty("nashorn.fields.objects");
 
@@ -163,11 +131,10 @@ public final class ObjectClassGenerator {
     static {
         if (!OBJECT_FIELDS_ONLY) {
             FIELD_TYPES.add(PRIMITIVE_FIELD_TYPE);
-        } else {
-            LOG.warning("Running with object fields only - this is a deprecated configuration.");
         }
         FIELD_TYPES.add(Type.OBJECT);
     }
+    private static boolean initialized = false;
 
     /** The context */
     private final Context context;
@@ -180,6 +147,25 @@ public final class ObjectClassGenerator {
     public ObjectClassGenerator(final Context context) {
         this.context = context;
         assert context != null;
+        this.log = initLogger(Global.instance());
+        synchronized (ObjectClassGenerator.class) {
+            if (!initialized) {
+                initialized = true;
+                if (OBJECT_FIELDS_ONLY) {
+                    log.warning("Running with object fields only - this is a deprecated configuration.");
+                }
+            }
+        }
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     /**

@@ -23,21 +23,38 @@
  * questions.
  */
 
-package jdk.nashorn.internal.runtime;
+package jdk.nashorn.internal.runtime.logging;
 
 import java.io.PrintWriter;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.Permissions;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.logging.LoggingPermission;
 
 import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.events.RuntimeEvent;
-import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * Wrapper class for Logging system. This is how you are supposed to register a logger and use it
  */
 
 public final class DebugLogger {
+
+    /** Disabled logger used for all loggers that need an instance, but shouldn't output anything */
+    public static final DebugLogger DISABLED_LOGGER = new DebugLogger("disabled", Level.OFF, false);
+
     private final Logger  logger;
     private final boolean isEnabled;
 
@@ -51,29 +68,53 @@ public final class DebugLogger {
     /**
      * Constructor
      *
-     * @param loggerName name of logger - this is the unique key with which it can be identified
-     */
-    public DebugLogger(final String loggerName) {
-        this(loggerName, null);
-    }
-
-    /**
-     * Constructor
-     *
      * A logger can be paired with a property, e.g. {@code --log:codegen:info} is equivalent to {@code -Dnashorn.codegen.log}
      *
-     * @param loggerName name of logger - this is the unique key with which it can be identified
-     * @param property   system property activating the logger on {@code info} level
+     * @param loggerName  name of logger - this is the unique key with which it can be identified
+     * @param loggerLevel level of the logger
+     * @param isQuiet     is this a quiet logger, i.e. enabled for things like e.g. RuntimeEvent:s, but quiet otherwise
      */
-    public DebugLogger(final String loggerName, final String property) {
-        if (property != null && Options.getBooleanProperty(property)) {
-            this.logger = Logging.getOrCreateLogger(loggerName, Level.INFO);
-        } else {
-            this.logger = Logging.getLogger(loggerName);
-        }
-        this.isQuiet = Logging.loggerIsQuiet(loggerName);
+    public DebugLogger(final String loggerName, final Level loggerLevel, final boolean isQuiet) {
+        this.logger  = instantiateLogger(loggerName, loggerLevel);
+        this.isQuiet = isQuiet;
         assert logger != null;
         this.isEnabled = getLevel() != Level.OFF;
+    }
+
+    private static Logger instantiateLogger(final String name, final Level level) {
+        final Logger logger = java.util.logging.Logger.getLogger(name);
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                for (final Handler h : logger.getHandlers()) {
+                    logger.removeHandler(h);
+                }
+
+                logger.setLevel(level);
+                logger.setUseParentHandlers(false);
+                final Handler c = new ConsoleHandler();
+
+                c.setFormatter(new Formatter() {
+                    @Override
+                    public String format(final LogRecord record) {
+                        final StringBuilder sb = new StringBuilder();
+
+                        sb.append('[')
+                           .append(record.getLoggerName())
+                           .append("] ")
+                           .append(record.getMessage())
+                           .append('\n');
+
+                        return sb.toString();
+                    }
+                });
+                logger.addHandler(c);
+                c.setLevel(level);
+                return null;
+            }
+        }, createLoggerControlAccCtxt());
+
+        return logger;
     }
 
     /**
@@ -81,7 +122,7 @@ public final class DebugLogger {
      * means disabled
      * @return level
      */
-    private Level getLevel() {
+    public Level getLevel() {
         return logger.getLevel() == null ? Level.OFF : logger.getLevel();
     }
 
@@ -543,4 +584,15 @@ public final class DebugLogger {
             log(level, sb.toString());
         }
     }
+
+    /**
+     * Access control context for logger level and instantiation permissions
+     * @return access control context
+     */
+    private static AccessControlContext createLoggerControlAccCtxt() {
+        final Permissions perms = new Permissions();
+        perms.add(new LoggingPermission("control", null));
+        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, perms) });
+    }
+
 }

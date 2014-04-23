@@ -41,18 +41,22 @@ import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Interface implemented by all arrays that are directly accessible as underlying
  * native arrays
  */
-public abstract class ContinuousArrayData extends ArrayData {
+@Logger(name="arrays")
+public abstract class ContinuousArrayData extends ArrayData implements Loggable {
 
     /** Logger for array accessor linkage */
-    protected static DebugLogger LOG = new DebugLogger("arrays");
+    protected final DebugLogger log;
 
     private SwitchPoint sp;
 
@@ -62,6 +66,17 @@ public abstract class ContinuousArrayData extends ArrayData {
      */
     protected ContinuousArrayData(final long length) {
         super(length);
+        this.log = initLogger(Global.instance());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     private SwitchPoint ensureSwitchPointExists() {
@@ -234,8 +249,8 @@ public abstract class ContinuousArrayData extends ArrayData {
             }
         }
 
-        if (LOG.isEnabled()) {
-            LOG.info(getClass().getSimpleName() + ": Missed fast GETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
+        if (log.isEnabled()) {
+            log.info(getClass().getSimpleName() + ": Missed fast GETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
         }
 
         return null;
@@ -275,8 +290,8 @@ public abstract class ContinuousArrayData extends ArrayData {
             }
         }
 
-        if (LOG.isEnabled()) {
-            LOG.info(getClass().getSimpleName() + ": Missed fast SETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
+        if (log.isEnabled()) {
+            log.info(getClass().getSimpleName() + ": Missed fast SETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
         }
 
         return null;

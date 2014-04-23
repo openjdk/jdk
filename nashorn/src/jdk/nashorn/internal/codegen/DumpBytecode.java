@@ -25,9 +25,6 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.Compiler.info;
-import static jdk.nashorn.internal.codegen.Compiler.warning;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -39,7 +36,7 @@ import jdk.nashorn.internal.runtime.ScriptEnvironment;
  * Class that facilitates dumping bytecode to disk
  */
 final class DumpBytecode {
-    static void dumpBytecode(final ScriptEnvironment env, final byte[] bytecode, final String className) {
+    static void dumpBytecode(final ScriptEnvironment env, final Compiler compiler, final byte[] bytecode, final String className) {
         File dir = null;
         try {
             // should could be printed to stderr for generate class?
@@ -54,7 +51,7 @@ final class DumpBytecode {
                 if (env._print_code_dir != null) {
 
                     String name = className;
-                    int dollar = name.lastIndexOf('$');
+                    final int dollar = name.lastIndexOf('$');
                     if (dollar != -1) {
                         name = name.substring(dollar + 1);
                     }
@@ -101,10 +98,10 @@ final class DumpBytecode {
                 try (final FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(bytecode);
                 }
-                info("Wrote class to '" + file.getAbsolutePath() + '\'');
+                compiler.getLogger().info("Wrote class to '" + file.getAbsolutePath() + '\'');
             }
         } catch (final IOException e) {
-            warning("Skipping class dump for ",
+            compiler.getLogger().warning("Skipping class dump for ",
                     className,
                     ": ",
                     ECMAErrors.getMessage(

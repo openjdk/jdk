@@ -42,9 +42,12 @@ import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Lower to more primitive operations. After lowering, an AST has symbols and
@@ -58,13 +61,24 @@ import jdk.nashorn.internal.runtime.DebugLogger;
  * that scope and slot information is correct. This enables e.g. AccessSpecialization
  * and frame optimizations
  */
+@Logger(name="finalize")
+final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> implements Loggable {
 
-final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
-
-    private static final DebugLogger LOG = new DebugLogger("finalize");
+    private final DebugLogger log;
 
     FinalizeTypes() {
         super(new LexicalContext());
+        this.log = initLogger(Global.instance());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     @Override
@@ -176,13 +190,13 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
         return functionNode.setState(lc, CompilationState.FINALIZED);
     }
 
-    private static void updateSymbolsLog(final FunctionNode functionNode, final Symbol symbol, final boolean loseSlot) {
-        if (LOG.isEnabled()) {
+    private void updateSymbolsLog(final FunctionNode functionNode, final Symbol symbol, final boolean loseSlot) {
+        if (log.isEnabled()) {
             if (!symbol.isScope()) {
-                LOG.finest("updateSymbols: ", symbol, " => scope, because all vars in ", functionNode.getName(), " are in scope");
+                log.finest("updateSymbols: ", symbol, " => scope, because all vars in ", functionNode.getName(), " are in scope");
             }
             if (loseSlot && symbol.hasSlot()) {
-                LOG.finest("updateSymbols: ", symbol, " => no slot, because all vars in ", functionNode.getName(), " are in scope");
+                log.finest("updateSymbols: ", symbol, " => no slot, because all vars in ", functionNode.getName(), " are in scope");
             }
         }
     }

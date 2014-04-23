@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
 
 /**
@@ -544,8 +544,8 @@ public abstract class Range {
                 final long         shift = ((IntegerRange) b).getMin() & 0x1f;
                 final IntegerRange left  = (IntegerRange)(a.isIntegerType() ? a : createTypeRange(Type.INT));
                 if (left.getMin() >= 0) {
-                    long min = left.getMin() >>> shift;
-                    long max = left.getMax() >>> shift;
+                    final long min = left.getMin() >>> shift;
+                    final long max = left.getMax() >>> shift;
                     return createIntegerRange(min, max);
                 } else if (shift >= 1) {
                     return createIntegerRange(0, JSType.MAX_UINT >>> shift);

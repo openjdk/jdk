@@ -133,7 +133,6 @@ import jdk.nashorn.internal.parser.Lexer.RegexToken;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
-import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.OptimisticReturnFilters;
@@ -149,6 +148,9 @@ import jdk.nashorn.internal.runtime.Undefined;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -170,7 +172,8 @@ import jdk.nashorn.internal.runtime.options.Options;
  * The CodeGenerator visits nodes only once, tags them as resolved and emits
  * bytecode for them.
  */
-final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContext> {
+@Logger(name="codegen")
+final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContext> implements Loggable {
 
     private static final Type SCOPE_TYPE = Type.typeFor(ScriptObject.class);
 
@@ -214,7 +217,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     /** Current compile unit */
     private CompileUnit unit;
 
-    private static final DebugLogger LOG   = new DebugLogger("codegen", "nashorn.codegen.debug");
+    private final DebugLogger log;
 
     /** From what size should we use spill instead of fields for JavaScript objects? */
     private static final int OBJECT_SPILL_THRESHOLD = Options.getIntProperty("nashorn.spill.threshold", 256);
@@ -237,6 +240,17 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         super(new CodeGeneratorLexicalContext());
         this.compiler      = compiler;
         this.callSiteFlags = compiler.getEnv()._callsite_flags;
+        this.log           = initLogger(Global.instance());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     /**
@@ -1511,7 +1525,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // exact type closure and deduplicate based on that, or just decide that functions in finally blocks aren't
         // worth it, and generate one method with most generic type closure.
         if (!emittedMethods.contains(fnName)) {
-            LOG.info("=== BEGIN ", fnName);
+            log.info("=== BEGIN ", fnName);
 
             assert functionNode.getCompileUnit() != null : "no compile unit for " + fnName + " " + Debug.id(functionNode);
             unit = lc.pushCompileUnit(functionNode.getCompileUnit());
@@ -1550,7 +1564,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.end(); // wrap up this method
                 unit   = lc.popCompileUnit(functionNode.getCompileUnit());
                 method = lc.popMethodEmitter(method);
-                LOG.info("=== END ", functionNode.getName());
+                log.info("=== END ", functionNode.getName());
             } else {
                 markOptimistic = false;
             }

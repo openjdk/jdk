@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime.events;
 
 import java.util.logging.Level;
 
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.RewriteException;
 
@@ -50,9 +51,10 @@ public final class RecompilationEvent extends RuntimeEvent<RewriteException> {
      *     {@link RewriteException#getReturnValueNonDestructive()} public, we pass it as
      *     an extra parameter, rather than querying the getter from another package.
      */
+    @SuppressWarnings("javadoc")
     public RecompilationEvent(final Level level, final RewriteException rewriteException, final Object returnValue) {
         super(level, rewriteException);
-        assert RecompilableScriptFunctionData.getLogger().isEnabled() :
+        assert Global.instance().getLogger(RecompilableScriptFunctionData.class).isEnabled() :
             "Unit test/instrumentation purpose only: RecompilationEvent instances should not be created without '--log=recompile', or we will leak memory in the general case";
         this.returnValue = returnValue;
     }

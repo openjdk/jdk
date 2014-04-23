@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -67,12 +68,15 @@ import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.CodeInstaller;
-import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Lower to more primitive operations. After lowering, an AST still has no symbols
@@ -83,10 +87,10 @@ import jdk.nashorn.internal.runtime.Source;
  * harder and context dependent to do any code copying after symbols have been
  * finalized.
  */
+@Logger(name="lower")
+final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Loggable {
 
-final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
-
-    private static final DebugLogger LOG = new DebugLogger("lower");
+    private final DebugLogger log;
 
     // needed only to get unique eval id
     private final CodeInstaller<?> installer;
@@ -137,7 +141,19 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                 return block.setIsTerminal(this, false);
             }
         });
+
         this.installer = installer;
+        this.log = initLogger(Global.instance());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     @Override
@@ -223,7 +239,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
     }
 
     @Override
-    public Node leaveBlockStatement(BlockStatement blockStatement) {
+    public Node leaveBlockStatement(final BlockStatement blockStatement) {
         return addStatement(blockStatement);
     }
 
@@ -252,7 +268,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
 
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
-        LOG.info("END FunctionNode: ", functionNode.getName());
+        log.info("END FunctionNode: ", functionNode.getName());
         return functionNode.setState(lc, CompilationState.LOWERED);
     }
 
@@ -478,7 +494,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         if (tryNode.getCatchBlocks().isEmpty()) {
             newTryNode = tryNode.setFinallyBody(null);
         } else {
-            Block outerBody = new Block(tryNode.getToken(), tryNode.getFinish(), tryNode.setFinallyBody(null));
+            final Block outerBody = new Block(tryNode.getToken(), tryNode.getFinish(), tryNode.setFinallyBody(null));
             newTryNode = tryNode.setBody(outerBody).setCatchBlocks(null);
         }
 
@@ -667,7 +683,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
      * @return true if an assignment to eval result, false otherwise
      */
     private static boolean isEvalResultAssignment(final Node expression) {
-        Node e = expression;
+        final Node e = expression;
         assert e.tokenType() != TokenType.DISCARD; //there are no discards this early anymore
         if (e instanceof BinaryNode) {
             final Node lhs = ((BinaryNode)e).lhs();

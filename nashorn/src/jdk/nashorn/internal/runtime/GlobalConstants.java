@@ -26,7 +26,8 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
-import static jdk.nashorn.internal.runtime.DebugLogger.quote;
+import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCall;
+import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
@@ -43,7 +44,11 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Each global owns one of these. This is basically table of accessors
@@ -67,21 +72,10 @@ import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
  * a receiver guard on the constant getter, but it currently leaks memory and its benefits
  * have not yet been investigated property.
  */
-public final class GlobalConstants {
-
-    private GlobalConstants() {
-        //singleton
-    }
-
-    /**
-     * Return the singleton global constant pool
-     * @return singleton global constant pool
-     */
-    public static GlobalConstants instance() {
-        return instance;
-    }
-
-    private static final GlobalConstants instance = new GlobalConstants();
+@Logger(name="const")
+public final class GlobalConstants implements Loggable {
+    /** singleton per global */
+    private static GlobalConstants instance;
 
     /**
      * Should we only try to link globals as constants, and not generic script objects.
@@ -92,17 +86,43 @@ public final class GlobalConstants {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private static final MethodHandle INVALIDATE_SP  = staticCall(LOOKUP, GlobalConstants.class, "invalidateSwitchPoint", Object.class, Object.class, Access.class).methodHandle();
+    private static final MethodHandle INVALIDATE_SP  = virtualCall(LOOKUP, GlobalConstants.class, "invalidateSwitchPoint", Object.class, Object.class, Access.class).methodHandle();
     private static final MethodHandle RECEIVER_GUARD = staticCall(LOOKUP, GlobalConstants.class, "receiverGuard", boolean.class, Access.class, Object.class, Object.class).methodHandle();
 
     /** Logger for constant getters */
-    private static final DebugLogger LOG = new DebugLogger("const");
+    private final DebugLogger log;
 
     /**
      * Access map for this global - associates a symbol name with an Access object, with getter
      * and invalidation information
      */
     private final Map<String, Access> map = new HashMap<>();
+
+    private GlobalConstants(final Global global) {
+        this.log = initLogger(global);
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
+    }
+
+    /**
+     * Return the singleton global constant pool
+     * @param global global
+     * @return singleton global constant pool
+     */
+    public static synchronized GlobalConstants instance(final Global global) {
+        if (instance == null) {
+            instance = new GlobalConstants(global);
+        }
+        return instance;
+    }
 
     /**
      * Information about a constant access and its potential invalidations
@@ -205,7 +225,7 @@ public final class GlobalConstants {
      * will have changed.
      */
     public void invalidateAll() {
-        LOG.info("New global created - invalidating all constant callsites without increasing invocation count.");
+        log.info("New global created - invalidating all constant callsites without increasing invocation count.");
         for (final Access acc : map.values()) {
             acc.invalidateUncounted();
         }
@@ -221,19 +241,19 @@ public final class GlobalConstants {
      * @return receiver, so this can be used as param filter
      */
     @SuppressWarnings("unused")
-    private static Object invalidateSwitchPoint(final Object obj, final Access acc) {
-        if (LOG.isEnabled()) {
-            LOG.info("*** Invalidating switchpoint " + acc.getSwitchPoint() + " for receiver=" + obj + " access=" + acc);
+    private Object invalidateSwitchPoint(final Object obj, final Access acc) {
+        if (log.isEnabled()) {
+            log.info("*** Invalidating switchpoint " + acc.getSwitchPoint() + " for receiver=" + obj + " access=" + acc);
         }
         acc.invalidateOnce();
         if (acc.mayRetry()) {
-            if (LOG.isEnabled()) {
-                LOG.info("Retry is allowed for " + acc + "... Creating a new switchpoint.");
+            if (log.isEnabled()) {
+                log.info("Retry is allowed for " + acc + "... Creating a new switchpoint.");
             }
             acc.newSwitchPoint();
         } else {
-            if (LOG.isEnabled()) {
-                LOG.info("This was the last time I allowed " + quote(acc.getName()) + " to relink as constant.");
+            if (log.isEnabled()) {
+                log.info("This was the last time I allowed " + quote(acc.getName()) + " to relink as constant.");
             }
         }
         return obj;
@@ -310,32 +330,33 @@ public final class GlobalConstants {
 
         final Access acc  = getOrCreateSwitchPoint(name);
 
-        if (LOG.isEnabled()) {
-            LOG.fine("Trying to link constant SETTER ", acc);
+        if (log.isEnabled()) {
+            log.fine("Trying to link constant SETTER ", acc);
         }
 
         if (!acc.mayRetry()) {
-            LOG.info("*** SET: Giving up on " + quote(name) + " - retry count has exceeded " + DynamicLinker.getLinkedCallSiteLocation());
+            log.info("*** SET: Giving up on " + quote(name) + " - retry count has exceeded " + DynamicLinker.getLinkedCallSiteLocation());
             return null;
         }
 
         assert acc.mayRetry();
 
         if (acc.hasBeenInvalidated()) {
-            LOG.info("New chance for " + acc);
+            log.info("New chance for " + acc);
             acc.newSwitchPoint();
         }
 
         assert !acc.hasBeenInvalidated();
 
         // if we haven't given up on this symbol, add a switchpoint invalidation filter to the receiver parameter
-        final MethodHandle target       = inv.getInvocation();
-        final Class<?>     receiverType = target.type().parameterType(0);
-        final MethodHandle invalidator  = MH.asType(INVALIDATE_SP, INVALIDATE_SP.type().changeParameterType(0, receiverType).changeReturnType(receiverType));
-        final MethodHandle mh           = MH.filterArguments(inv.getInvocation(), 0, MH.insertArguments(invalidator, 1, acc));
+        final MethodHandle target           = inv.getInvocation();
+        final Class<?>     receiverType     = target.type().parameterType(0);
+        final MethodHandle boundInvalidator = MH.bindTo(INVALIDATE_SP,  this);
+        final MethodHandle invalidator      = MH.asType(boundInvalidator, boundInvalidator.type().changeParameterType(0, receiverType).changeReturnType(receiverType));
+        final MethodHandle mh               = MH.filterArguments(inv.getInvocation(), 0, MH.insertArguments(invalidator, 1, acc));
 
         assert inv.getSwitchPoints() == null : Arrays.asList(inv.getSwitchPoints());
-        LOG.info("Linked setter " + quote(name) + " " + acc.getSwitchPoint());
+        log.info("Linked setter " + quote(name) + " " + acc.getSwitchPoint());
         return new GuardedInvocation(mh, inv.getGuard(), acc.getSwitchPoint(), inv.getException());
     }
 
@@ -373,15 +394,15 @@ public final class GlobalConstants {
 
         final Access acc = getOrCreateSwitchPoint(name);
 
-        LOG.fine("Starting to look up object value " + name);
+        log.fine("Starting to look up object value " + name);
         final Object c = find.getObjectValue();
 
-        if (LOG.isEnabled()) {
-            LOG.fine("Trying to link constant GETTER " + acc + " value = " + c);
+        if (log.isEnabled()) {
+            log.fine("Trying to link constant GETTER " + acc + " value = " + c);
         }
 
         if (acc.hasBeenInvalidated() || acc.guardFailed()) {
-            LOG.fine("*** GET: Giving up on " + quote(name) + " - retry count has exceeded");
+            log.fine("*** GET: Giving up on " + quote(name) + " - retry count has exceeded");
             return null;
         }
 
@@ -409,9 +430,9 @@ public final class GlobalConstants {
             guard = MH.insertArguments(RECEIVER_GUARD, 0, acc, receiver);
         }
 
-        if (LOG.isEnabled()) {
-            LOG.info("Linked getter " + quote(name) + " as MethodHandle.constant() -> " + c + " " + acc.getSwitchPoint());
-            mh = MethodHandleFactory.addDebugPrintout(LOG, Level.FINE, mh, "get const " + acc);
+        if (log.isEnabled()) {
+            log.info("Linked getter " + quote(name) + " as MethodHandle.constant() -> " + c + " " + acc.getSwitchPoint());
+            mh = MethodHandleFactory.addDebugPrintout(log, Level.FINE, mh, "get const " + acc);
         }
 
         return new GuardedInvocation(mh, guard, acc.getSwitchPoint(), null);
