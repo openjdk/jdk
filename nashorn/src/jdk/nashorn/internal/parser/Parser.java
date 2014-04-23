@@ -105,7 +105,7 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
@@ -114,11 +114,15 @@ import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.Timing;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Builds the IR.
  */
-public class Parser extends AbstractParser {
+@Logger(name="parser")
+public class Parser extends AbstractParser implements Loggable {
     private static final String ARGUMENTS_NAME = CompilerConstants.ARGUMENTS_VAR.symbolName();
 
     /** Current script environment. */
@@ -135,7 +139,7 @@ public class Parser extends AbstractParser {
     /** Namespace for function names where not explicitly given */
     private final Namespace namespace;
 
-    private static final DebugLogger LOG = new DebugLogger("parser");
+    private final DebugLogger log;
 
     /** to receive line information from Lexer when scanning multine literals. */
     protected final Lexer.LineInfoReceiver lineInfoReceiver;
@@ -194,6 +198,18 @@ public class Parser extends AbstractParser {
             // non-scripting mode script can't have multi-line literals
             this.lineInfoReceiver = null;
         }
+
+        this.log = !Global.hasInstance() ? DebugLogger.DISABLED_LOGGER : initLogger(Global.instance());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     /**
@@ -250,7 +266,7 @@ public class Parser extends AbstractParser {
      */
     public FunctionNode parse(final String scriptName, final int startPos, final int len, final boolean allowPropertyFunction) {
         final long t0 = Timing.isEnabled() ? System.currentTimeMillis() : 0L;
-        LOG.info(this, " begin for '", scriptName, "'");
+        log.info(this, " begin for '", scriptName, "'");
 
         try {
             stream = new TokenStream();
@@ -271,9 +287,9 @@ public class Parser extends AbstractParser {
             final String end = this + " end '" + scriptName + "'";
             if (Timing.isEnabled()) {
                 Timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
-                LOG.info(end, "' in ", System.currentTimeMillis() - t0, " ms");
+                log.info(end, "' in ", System.currentTimeMillis() - t0, " ms");
             } else {
-                LOG.info(end);
+                log.info(end);
             }
         }
     }
@@ -2538,7 +2554,7 @@ loop:
         return nodeList;
     }
 
-    private static <T> List<T> optimizeList(ArrayList<T> list) {
+    private static <T> List<T> optimizeList(final ArrayList<T> list) {
         switch(list.size()) {
             case 0: {
                 return Collections.emptyList();
@@ -2668,7 +2684,7 @@ loop:
         return isValidIdentifier(defaultFunctionName) ? defaultFunctionName : ANON_FUNCTION_PREFIX.symbolName() + functionLine;
     }
 
-    private static boolean isValidIdentifier(String name) {
+    private static boolean isValidIdentifier(final String name) {
         if(name == null || name.isEmpty()) {
             return false;
         }

@@ -65,6 +65,7 @@ import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.events.RuntimeEvent;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -195,7 +196,7 @@ public final class Context {
         // Trusted code only can call this method.
         assert getGlobal() != global;
         //same code can be cached between globals, then we need to invalidate method handle constants
-        GlobalConstants.instance().invalidateAll();
+        GlobalConstants.instance(global).invalidateAll();
         currentGlobal.set(global);
     }
 
@@ -915,9 +916,9 @@ public final class Context {
 
         Class<?> script = findCachedClass(source);
         if (script != null) {
-            final DebugLogger LOG = Compiler.getLogger();
-            if (LOG.isEnabled()) {
-                LOG.fine(new RuntimeEvent<>(Level.INFO, source), "Code cache hit for ", source, " avoiding recompile.");
+            final DebugLogger log = Global.instance().getLogger(Compiler.class);
+            if (log.isEnabled()) {
+                log.fine(new RuntimeEvent<>(Level.INFO, source), "Code cache hit for ", source, " avoiding recompile.");
             }
             return script;
         }

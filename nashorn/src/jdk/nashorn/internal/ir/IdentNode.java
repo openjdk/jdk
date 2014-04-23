@@ -28,9 +28,6 @@ package jdk.nashorn.internal.ir;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__DIR__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__FILE__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__LINE__;
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
-
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -218,9 +215,6 @@ public final class IdentNode extends Expression implements PropertyKey, Function
     public IdentNode setType(final TemporarySymbols ts, final Type callSiteType) {
         if (this.optimisticType == callSiteType) {
             return this;
-        }
-        if (DEBUG_FIELDS && ObjectClassGenerator.shouldInstrument(getName()) && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), callSiteType)) {
-            ObjectClassGenerator.getLogger().info(getClass().getName(), " ", this, " => ", callSiteType, " instead of ", getType());
         }
         return new IdentNode(this, name, callSiteType, flags, programPoint);
     }

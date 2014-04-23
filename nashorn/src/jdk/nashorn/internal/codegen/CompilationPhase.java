@@ -1,6 +1,30 @@
+/*
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.Compiler.info;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.ATTR;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.CONSTANT_FOLDED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.FINALIZED;
@@ -29,6 +53,7 @@ import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.Timing;
 
@@ -128,7 +153,7 @@ enum CompilationPhase {
                         accept(new Attr(compiler.getCompilationEnvironment(), ts));
 
             if (compiler.getEnv()._print_mem_usage) {
-                info("Attr temporary symbol count:", ts.getTotalSymbolCount());
+                compiler.getLogger().info("Attr temporary symbol count:", ts.getTotalSymbolCount());
             }
 
             return newFunctionNode;
@@ -213,7 +238,7 @@ enum CompilationPhase {
 
                             final Type rangeType  = range.getType();
                             if (!rangeType.isUnknown() && !Type.areEquivalent(symbolType, rangeType) && Type.widest(symbolType, rangeType) == symbolType) { //we can narrow range
-                                RangeAnalyzer.LOG.info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
+                                Global.instance().getLogger(RangeAnalyzer.class).info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
                                 return expr.setSymbol(lc, symbol.setTypeOverrideShared(range.getType(), compiler.getTemporarySymbols()));
                             }
                         }
@@ -332,7 +357,7 @@ enum CompilationPhase {
                     compiler.getCodeInstaller().verify(bytecode);
                 }
 
-                DumpBytecode.dumpBytecode(env, bytecode, className);
+                DumpBytecode.dumpBytecode(env, compiler, bytecode, className);
             }
 
             return newFunctionNode;

@@ -172,7 +172,6 @@ public final class PropertyHashMap implements Map <String, Property> {
      */
     public PropertyHashMap immutableReplace(final Property property, final Property newProperty) {
         assert property.getKey().equals(newProperty.getKey()) : "replacing properties with different keys: '" + property.getKey() + "' != '" + newProperty.getKey() + "'";
-        assert property.hashCode() != newProperty.hashCode()  : "replacing identical properties: '" + property + "'";
         assert findElement(property.getKey()) != null         : "replacing property that doesn't exist in map: '" + property.getKey() + "'";
         return cloneMap().replaceNoClone(property.getKey(), newProperty);
     }

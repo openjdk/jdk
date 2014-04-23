@@ -41,8 +41,10 @@ import java.util.logging.Level;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.events.RecompilationEvent;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
 
 /**
  * An version of a JavaScript function, native or JavaScript.
@@ -55,7 +57,7 @@ final class CompiledFunction {
     private static final MethodHandle HANDLE_REWRITE_EXCEPTION = findOwnMH("handleRewriteException", MethodHandle.class, CompiledFunction.class, OptimismInfo.class, RewriteException.class);
     private static final MethodHandle RESTOF_INVOKER = MethodHandles.exactInvoker(MethodType.methodType(Object.class, RewriteException.class));
 
-    private static final DebugLogger LOG = RecompilableScriptFunctionData.getLogger();
+    private final DebugLogger log;
 
     /**
      * The method type may be more specific than the invoker, if. e.g.
@@ -71,6 +73,7 @@ final class CompiledFunction {
 
     CompiledFunction(final MethodHandle invoker) {
         this.invoker = invoker;
+        this.log = Global.instance().getLogger(RecompilableScriptFunctionData.class);
     }
 
     static CompiledFunction createBuiltInConstructor(final MethodHandle invoker) {
@@ -576,8 +579,8 @@ final class CompiledFunction {
         final MethodType callSiteType = type.parameterType(0) == ScriptFunction.class ? type : type.insertParameterTypes(0, ScriptFunction.class);
 
         final FunctionNode fn = oldOptimismInfo.recompile(callSiteType, re);
-        if (LOG.isEnabled()) {
-            LOG.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "\tRewriteException ", re.getMessageShort());
+        if (log.isEnabled()) {
+            log.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "\tRewriteException ", re.getMessageShort());
         }
 
         // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already
@@ -588,8 +591,8 @@ final class CompiledFunction {
             //is recompiled
             assert optimismInfo == oldOptimismInfo;
             isOptimistic = fn.isOptimistic();
-            if (LOG.isEnabled()) {
-                LOG.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ")", isOptimistic ? " remains optimistic." : " is no longer optimistic.");
+            if (log.isEnabled()) {
+                log.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ")", isOptimistic ? " remains optimistic." : " is no longer optimistic.");
             }
             final MethodHandle newInvoker = oldOptimismInfo.data.lookup(fn);
             invoker = newInvoker.asType(type.changeReturnType(newInvoker.type().returnType()));
@@ -617,6 +620,7 @@ final class CompiledFunction {
         private final RecompilableScriptFunctionData data;
         private final Map<Integer, Type> invalidatedProgramPoints = new TreeMap<>();
         private SwitchPoint optimisticAssumptions;
+        private final DebugLogger log = Global.instance().getLogger(RecompilableScriptFunctionData.class);
 
         OptimismInfo(final RecompilableScriptFunctionData data) {
             this.data = data;
@@ -633,7 +637,7 @@ final class CompiledFunction {
             if (previousFailedType != null && !previousFailedType.narrowerThan(retType)) {
                 final StackTraceElement[] stack = e.getStackTrace();
                 final String functionId = stack.length == 0 ? data.getName() : stack[0].getClassName() + "." + stack[0].getMethodName();
-                LOG.info("RewriteException for an already invalidated program point ", e.getProgramPoint(), " in ", functionId, ". This is okay for a recursive function invocation, but a bug otherwise.");
+                log.info("RewriteException for an already invalidated program point ", e.getProgramPoint(), " in ", functionId, ". This is okay for a recursive function invocation, but a bug otherwise.");
                 return null;
             }
             SwitchPoint.invalidateAll(new SwitchPoint[] { optimisticAssumptions });

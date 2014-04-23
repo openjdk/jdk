@@ -178,7 +178,6 @@ public class Shell {
      *
      * @return null if there are problems with option parsing.
      */
-    @SuppressWarnings("resource")
     private static Context makeContext(final InputStream in, final OutputStream out, final OutputStream err, final String[] args) {
         final PrintStream pout = out instanceof PrintStream ? (PrintStream) out : new PrintStream(out);
         final PrintStream perr = err instanceof PrintStream ? (PrintStream) err : new PrintStream(err);
@@ -392,7 +391,6 @@ public class Shell {
      * @param global  global scope object to use
      * @return return code
      */
-    @SuppressWarnings("resource")
     private static int readEvalPrint(final Context context, final Global global) {
         final String prompt = bundle.getString("shell.prompt");
         final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));

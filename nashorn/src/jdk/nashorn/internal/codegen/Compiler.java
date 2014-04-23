@@ -51,6 +51,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilationEnvironment.CompilationPhases;
@@ -60,12 +61,15 @@ import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ClassHistogramElement;
 import jdk.nashorn.internal.ir.debug.ObjectSizeCalculator;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.CodeInstaller;
-import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.Timing;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Responsible for converting JavaScripts to java byte code. Main entry
@@ -73,7 +77,8 @@ import jdk.nashorn.internal.runtime.Timing;
  * predefined Code installation policy, given to it at construction time.
  * @see CodeInstaller
  */
-public final class Compiler {
+@Logger(name="compiler")
+public final class Compiler implements Loggable {
 
     /** Name of the scripts package */
     public static final String SCRIPTS_PACKAGE = "jdk/nashorn/internal/scripts";
@@ -104,21 +109,9 @@ public final class Compiler {
 
     /** logger for compiler, trampolines, splits and related code generation events
      *  that affect classes */
-    private static final DebugLogger LOG = new DebugLogger("compiler");
+    private final DebugLogger log;
 
-    /**
-     * Get the logger used for this compiler
-     * @return logger
-     */
-    public static DebugLogger getLogger() {
-        return LOG;
-    }
-
-    static {
-        if (!ScriptEnvironment.globalOptimistic()) {
-            LOG.warning("Running without optimistic types. This is a configuration that may be deprecated.");
-        }
-    }
+    private static boolean initialized = false;
 
     /**
      * This array contains names that need to be reserved at the start
@@ -157,6 +150,16 @@ public final class Compiler {
         this.constantData   = new ConstantData();
         this.compileUnits   = new TreeSet<>();
         this.bytecode       = new LinkedHashMap<>();
+        this.log            = initLogger(Global.instance());
+
+        synchronized (Compiler.class) {
+            if (!initialized) {
+                initialized = true;
+                if (!ScriptEnvironment.globalOptimistic()) {
+                    log.warning("Running without optimistic types. This is a configuration that may be deprecated.");
+                }
+            }
+        }
     }
 
     /**
@@ -177,12 +180,22 @@ public final class Compiler {
         this(new CompilationEnvironment(CompilationPhases.EAGER, scriptEnv._strict), scriptEnv, null);
     }
 
-    private static void printMemoryUsage(final String phaseName, final FunctionNode functionNode) {
-        if (!LOG.isEnabled()) {
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
+    }
+
+    private void printMemoryUsage(final String phaseName, final FunctionNode functionNode) {
+        if (!log.isEnabled()) {
             return;
         }
 
-        info(phaseName, "finished. Doing IR size calculation...");
+        log.info(phaseName, "finished. Doing IR size calculation...");
 
         final ObjectSizeCalculator osc = new ObjectSizeCalculator(ObjectSizeCalculator.getEffectiveMemoryLayoutSpecification());
         osc.calculateObjectSize(functionNode);
@@ -195,7 +208,7 @@ public final class Compiler {
             append(" Total size = ").
             append(totalSize / 1024 / 1024).
             append("MB");
-        LOG.info(sb);
+        log.info(sb);
 
         Collections.sort(list, new Comparator<ClassHistogramElement>() {
             @Override
@@ -212,9 +225,9 @@ public final class Compiler {
         });
         for (final ClassHistogramElement e : list) {
             final String line = String.format("    %-48s %10d bytes (%8d instances)", e.getClazz(), e.getBytes(), e.getInstances());
-            info(line);
+            log.info(line);
             if (e.getBytes() < totalSize / 200) {
-                info("    ...");
+                log.info("    ...");
                 break; // never mind, so little memory anyway
             }
         }
@@ -258,8 +271,8 @@ public final class Compiler {
             newFunctionNode.uniqueName(reservedName);
         }
 
-        final boolean fine = LOG.levelFinerThanOrEqual(Level.FINE);
-        final boolean info = LOG.levelFinerThanOrEqual(Level.INFO);
+        final boolean fine = log.levelFinerThanOrEqual(Level.FINE);
+        final boolean info = log.levelFinerThanOrEqual(Level.INFO);
 
         long time = 0L;
 
@@ -287,7 +300,7 @@ public final class Compiler {
                         append(" ms ");
                 }
 
-                LOG.fine(sb);
+                log.fine(sb);
             }
         }
 
@@ -305,14 +318,14 @@ public final class Compiler {
                     append(" ms");
             }
 
-            LOG.info(sb);
+            log.info(sb);
         }
 
         return newFunctionNode;
     }
 
     private Class<?> install(final String className, final byte[] code) {
-        LOG.fine("Installing class ", className);
+        log.fine("Installing class ", className);
 
         final Class<?> clazz = installer.install(Compiler.binaryName(className), code);
 
@@ -384,7 +397,7 @@ public final class Compiler {
         }
 
         final StringBuilder sb;
-        if (LOG.isEnabled()) {
+        if (log.isEnabled()) {
             sb = new StringBuilder();
             sb.append("Installed class '").
                 append(rootClass.getSimpleName()).
@@ -408,7 +421,7 @@ public final class Compiler {
         }
 
         if (sb != null) {
-            LOG.fine(sb);
+            log.fine(sb);
         }
 
         return rootClass;
@@ -482,7 +495,7 @@ public final class Compiler {
     private CompileUnit addCompileUnit(final String unitClassName, final long initialWeight) {
         final CompileUnit compileUnit = initCompileUnit(unitClassName, initialWeight);
         compileUnits.add(compileUnit);
-        LOG.fine("Added compile unit ", compileUnit);
+        log.fine("Added compile unit ", compileUnit);
         return compileUnit;
     }
 
@@ -523,35 +536,4 @@ public final class Compiler {
         return name.replace('/', '.');
     }
 
-    /**
-     * Log hook; level finest
-     * @param args args
-     */
-    public static void finest(final Object... args) {
-        LOG.finest(args);
-    }
-
-    /**
-     * Log hook; level fine
-     * @param args args
-     */
-    public static void fine(final Object... args) {
-        LOG.fine(args);
-    }
-
-    /**
-     * Log hook; level info
-     * @param args args
-     */
-    public static void info(final Object... args) {
-        LOG.info(args);
-    }
-
-    /**
-     * Log hook; level warning
-     * @param args args
-     */
-    public static void warning(final Object... args) {
-        LOG.warning(args);
-    }
 }

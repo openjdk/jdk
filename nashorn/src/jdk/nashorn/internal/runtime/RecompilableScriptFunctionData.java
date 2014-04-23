@@ -50,9 +50,13 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -61,7 +65,8 @@ import jdk.nashorn.internal.runtime.options.Options;
  * The common denominator is that it can get new invokers during its lifespan,
  * unlike {@code FinalScriptFunctionData}
  */
-public final class RecompilableScriptFunctionData extends ScriptFunctionData {
+@Logger(name="recompile")
+public final class RecompilableScriptFunctionData extends ScriptFunctionData implements Loggable {
     /** Is lazy compilation enabled? TODO: this should be the default */
     public static final boolean LAZY_COMPILATION = Options.getBooleanProperty("nashorn.lazy");
 
@@ -112,15 +117,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     /** Unique id for classes needed to wrap recompiled script functions */
     private static final AtomicInteger RECOMPILE_ID = new AtomicInteger(0);
 
-    private static final DebugLogger LOG = new DebugLogger("recompile");
-
-    /**
-     * Get the recompilation logger
-     * @return the logger
-     */
-    public static DebugLogger getLogger() {
-        return LOG;
-    }
+    private final DebugLogger log;
 
     private final Map<String, Integer> externalScopeDepths;
 
@@ -174,6 +171,18 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
             assert nfn.getParent() == null;
             nfn.setParent(this);
         }
+
+        this.log = initLogger(Global.instance());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     /**
@@ -400,8 +409,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     MethodHandle compileRestOfMethod(final MethodType fnCallSiteType, final Map<Integer, Type> invalidatedProgramPoints, final int[] continuationEntryPoints, final ScriptObject runtimeScope, final FunctionNodeTransform tr) {
-        if (LOG.isEnabled()) {
-            LOG.info("Rest-of compilation of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
+        if (log.isEnabled()) {
+            log.info("Rest-of compilation of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
         }
 
         final String scriptName = RECOMPILATION_PREFIX + RECOMPILE_ID.incrementAndGet() + "$restOf";
@@ -434,8 +443,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         final String scriptName = RECOMPILATION_PREFIX + RECOMPILE_ID.incrementAndGet();
         final MethodType fnCallSiteType = actualCallSiteType == null ? null : actualCallSiteType.changeParameterType(0, ScriptFunction.class);
 
-        if (LOG.isEnabled()) {
-            LOG.info(reason, " of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
+        if (log.isEnabled()) {
+            log.info(reason, " of '", functionName, "' signature: ", fnCallSiteType, " ", stringifyInvalidations(invalidatedProgramPoints));
         }
 
         FunctionNode fn = tr.apply(reparse(scriptName));

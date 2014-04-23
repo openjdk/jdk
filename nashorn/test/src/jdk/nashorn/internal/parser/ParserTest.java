@@ -50,7 +50,7 @@ public class ParserTest {
         public boolean exclude(File file, String content);
     }
 
-    private void log(String msg) {
+    private static void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 
@@ -63,7 +63,7 @@ public class ParserTest {
         options.set("parse.only", true);
         options.set("scripting", true);
 
-        ErrorManager errors = new ErrorManager();
+        final ErrorManager errors = new ErrorManager();
         this.context = new Context(options, errors, Thread.currentThread().getContextClassLoader());
     }
 
@@ -153,7 +153,7 @@ public class ParserTest {
                 }
             };
             errors.setLimit(0);
-            final Source            source   = new Source(file.getAbsolutePath(), buffer);
+            final Source source = new Source(file.getAbsolutePath(), buffer);
             new Parser(context.getEnv(), source, errors, context.getEnv()._strict).parse();
             if (errors.getNumberOfErrors() > 0) {
                 log("Parse failed: " + file.getAbsolutePath());
@@ -162,6 +162,7 @@ public class ParserTest {
                 passed++;
             }
         } catch (final Throwable exp) {
+            exp.printStackTrace();
             log("Parse failed: " + file.getAbsolutePath() + " : " + exp);
             if (VERBOSE) {
                 exp.printStackTrace(System.out);

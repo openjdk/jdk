@@ -42,9 +42,12 @@ import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Establishes depth of scope for non local symbols at the start of method.
@@ -52,8 +55,8 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
  * stored in the RecompilableScriptFunctionData and is transferred to the
  * FunctionNode being compiled
  */
-
-final class FindScopeDepths extends NodeVisitor<LexicalContext> {
+@Logger(name="scopedepths")
+final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Loggable {
 
     private final Compiler compiler;
     private final CompilationEnvironment env;
@@ -61,12 +64,23 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> {
     private final Map<Integer, Map<String, Integer>> externalSymbolDepths = new HashMap<>();
     private final Map<Integer, Set<String>> internalSymbols = new HashMap<>();
 
-    private final static DebugLogger LOG = new DebugLogger("scopedepths");
+    private final DebugLogger log;
 
     FindScopeDepths(final Compiler compiler) {
         super(new LexicalContext());
         this.compiler = compiler;
-        this.env = compiler.getCompilationEnvironment();
+        this.env      = compiler.getCompilationEnvironment();
+        this.log      = initLogger(Global.instance());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     static int findScopesToStart(final LexicalContext lc, final FunctionNode fn, final Block block) {
@@ -266,8 +280,8 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> {
 
         addInternalSymbols(fn, internals.keySet());
 
-        if (LOG.isEnabled()) {
-            LOG.info(fn.getName() + " internals=" + internals + " externals=" + externalSymbolDepths.get(fn.getId()));
+        if (log.isEnabled()) {
+            log.info(fn.getName() + " internals=" + internals + " externals=" + externalSymbolDepths.get(fn.getId()));
         }
 
         return true;

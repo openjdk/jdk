@@ -48,7 +48,6 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import jdk.nashorn.internal.runtime.Logging;
 import jdk.nashorn.internal.runtime.QuotedStringTokenizer;
 
 /**
@@ -532,9 +531,7 @@ public final class Options {
         case "keyvalues":
             return new KeyValueOption(value);
         case "log":
-            final KeyValueOption kv = new KeyValueOption(value);
-            Logging.initialize(kv.getValues());
-            return kv;
+            return new LoggingOption(value);
         case "boolean":
             return new Option<>(value != null && Boolean.parseBoolean(value));
         case "integer":

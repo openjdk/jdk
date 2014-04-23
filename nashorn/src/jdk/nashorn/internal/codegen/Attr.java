@@ -59,6 +59,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -99,13 +100,16 @@ import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
-import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * This is the attribution pass of the code generator. Attr takes Lowered IR,
@@ -121,8 +125,8 @@ import jdk.nashorn.internal.runtime.PropertyMap;
  * but in general, this is where the main symbol type information is
  * computed.
  */
-
-final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
+@Logger(name="Attr")
+final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> implements Loggable {
 
     private final CompilationEnvironment env;
 
@@ -146,8 +150,8 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
 
     private int catchNestingLevel;
 
-    private static final DebugLogger LOG   = new DebugLogger("attr");
-    private static final boolean     DEBUG = LOG.isEnabled();
+    private final DebugLogger log;
+    private final boolean     debug;
 
     private final TemporarySymbols temporarySymbols;
 
@@ -160,6 +164,18 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         this.temporarySymbols = temporarySymbols;
         this.localDefs        = new ArrayDeque<>();
         this.localUses        = new ArrayDeque<>();
+        this.log              = initLogger(Global.instance());
+        this.debug            = log.isEnabled();
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     @Override
@@ -564,7 +580,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
 
         if (newFunctionNode.usesSelfSymbol()) {
             syntheticInitializers = new ArrayList<>(2);
-            LOG.info("Accepting self symbol init for ", newFunctionNode.getName());
+            log.info("Accepting self symbol init for ", newFunctionNode.getName());
             // "var fn = :callee"
             syntheticInitializers.add(createSyntheticInitializer(newFunctionNode.getIdent(), CALLEE, newFunctionNode));
         }
@@ -628,8 +644,8 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         if (identNode.isPropertyName()) {
             // assign a pseudo symbol to property name
             final Symbol pseudoSymbol = pseudoSymbol(name);
-            LOG.info("IdentNode is property name -> assigning pseudo symbol ", pseudoSymbol);
-            LOG.unindent();
+            log.info("IdentNode is property name -> assigning pseudo symbol ", pseudoSymbol);
+            log.unindent();
             return end(identNode.setSymbol(lc, pseudoSymbol));
         }
 
@@ -639,7 +655,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
 
         //If an existing symbol with the name is found, use that otherwise, declare a new one
         if (symbol != null) {
-            LOG.info("Existing symbol = ", symbol);
+            log.info("Existing symbol = ", symbol);
             if (symbol.isFunctionSelf()) {
                 final FunctionNode functionNode = lc.getDefiningFunction(symbol);
                 assert functionNode != null;
@@ -667,7 +683,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             // if symbol is non-local or we're in a with block, we need to put symbol in scope (if it isn't already)
             maybeForceScope(symbol);
         } else {
-            LOG.info("No symbol exists. Declare undefined: ", symbol);
+            log.info("No symbol exists. Declare undefined: ", symbol);
             symbol = defineGlobalSymbol(block, name);
             // we have never seen this before, it can be undefined
             newType(symbol, Type.OBJECT); // TODO unknown -we have explicit casts anyway?
@@ -1686,7 +1702,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
 
             final Type callSiteParamType = env.getParamType(functionNode, pos);
             if (callSiteParamType != null) {
-                LOG.info("Callsite type override for parameter " + pos + " " + paramSymbol + " => " + callSiteParamType);
+                log.info("Callsite type override for parameter " + pos + " " + paramSymbol + " => " + callSiteParamType);
                 newType(paramSymbol, callSiteParamType);
             } else {
                 // When we're using optimistic compilation, we'll generate specialized versions of the functions anyway
@@ -1699,7 +1715,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
                 // with Type.UNKNOWN.
                 newType(paramSymbol, isOptimistic ? Type.OBJECT : Type.UNKNOWN);
             }
-            LOG.info("Initialized param ", pos, "=", paramSymbol);
+            log.info("Initialized param ", pos, "=", paramSymbol);
             pos++;
         }
 
@@ -1771,7 +1787,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             final String key    = property.getKey();
             final Symbol symbol = defineGlobalSymbol(block, key);
             newType(symbol, Type.OBJECT);
-            LOG.info("Added global symbol from property map ", symbol);
+            log.info("Added global symbol from property map ", symbol);
         }
     }
 
@@ -1811,8 +1827,8 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
                     }
                     final Type from = node.getType();
                     if (!Type.areEquivalent(from, to) && Type.widest(from, to) == to) {
-                        if (LOG.isEnabled()) {
-                            LOG.fine("Had to post pass widen '", node, "' ", Debug.id(node), " from ", node.getType(), " to ", to);
+                        if (log.isEnabled()) {
+                            log.fine("Had to post pass widen '", node, "' ", Debug.id(node), " from ", node.getType(), " to ", to);
                         }
                         Symbol symbol = node.getSymbol();
                         if (symbol.isShared() && symbol.wouldChangeType(to)) {
@@ -1983,7 +1999,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     private Expression ensureSymbol(final Expression expr, final Type type) {
-        LOG.info("New TEMPORARY added to ", lc.getCurrentFunction().getName(), " type=", type);
+        log.info("New TEMPORARY added to ", lc.getCurrentFunction().getName(), " type=", type);
         return temporarySymbols.ensureSymbol(lc, type, expr);
     }
 
@@ -2030,14 +2046,14 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
      */
     private void tagNeverOptimistic(final Expression expr) {
         if (expr instanceof Optimistic) {
-            LOG.info("Tagging TypeOverride node '" + expr + "' never optimistic");
+            log.info("Tagging TypeOverride node '" + expr + "' never optimistic");
             neverOptimistic.add(tag((Optimistic)expr));
         }
     }
 
     private void tagOptimistic(final Expression expr) {
         if (expr instanceof Optimistic) {
-            LOG.info("Tagging TypeOverride node '" + expr + "' as optimistic");
+            log.info("Tagging TypeOverride node '" + expr + "' as optimistic");
             optimistic.add(tag((Optimistic)expr));
         }
     }
@@ -2106,7 +2122,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
                         expr = (T)expr.setSymbol(lc, symbol.createUnshared(symbol.getName()));
                     }
                 }
-                LOG.fine(expr, " turned optimistic with type=", optimisticType);
+                log.fine(expr, " turned optimistic with type=", optimisticType);
                 assert ((Optimistic)expr).isOptimistic();
             }
         }
@@ -2118,17 +2134,17 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
         return defineSymbol(lc.getCurrentBlock(), name, IS_VAR | IS_INTERNAL).setType(type); //NASHORN-73
     }
 
-    private static void newType(final Symbol symbol, final Type type) {
+    private void newType(final Symbol symbol, final Type type) {
         final Type oldType = symbol.getSymbolType();
         symbol.setType(type);
 
         if (symbol.getSymbolType() != oldType) {
-            LOG.info("New TYPE ", type, " for ", symbol," (was ", oldType, ")");
+            log.info("New TYPE ", type, " for ", symbol," (was ", oldType, ")");
         }
 
         if (symbol.isParam()) {
             symbol.setType(type);
-            LOG.info("Param type change ", symbol);
+            log.info("Param type change ", symbol);
         }
     }
 
@@ -2156,12 +2172,12 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     private void addLocalDef(final String name) {
-        LOG.info("Adding local def of symbol: '", name, "'");
+        log.info("Adding local def of symbol: '", name, "'");
         localDefs.peek().add(name);
     }
 
     private void removeLocalDef(final String name) {
-        LOG.info("Removing local def of symbol: '", name, "'");
+        log.info("Removing local def of symbol: '", name, "'");
         localDefs.peek().remove(name);
     }
 
@@ -2170,7 +2186,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     private void addLocalUse(final String name) {
-        LOG.info("Adding local use of symbol: '", name, "'");
+        log.info("Adding local use of symbol: '", name, "'");
         localUses.peek().add(name);
     }
 
@@ -2183,7 +2199,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
                 return;
             }
             if (symbolType != type) {
-               LOG.info("Infer parameter type " + symbol + " ==> " + type + " " + lc.getCurrentFunction().getSource().getName() + " " + lc.getCurrentFunction().getName());
+               log.info("Infer parameter type " + symbol + " ==> " + type + " " + lc.getCurrentFunction().getSource().getName() + " " + lc.getCurrentFunction().getName());
             }
             symbol.setType(type); //will be overwritten by object later if pessimistic anyway
             lc.logOptimisticAssumption(symbol, type);
@@ -2230,7 +2246,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
     }
 
     private boolean start(final Node node, final boolean printNode) {
-        if (DEBUG) {
+        if (debug) {
             final StringBuilder sb = new StringBuilder();
 
             sb.append("[ENTER ").
@@ -2240,8 +2256,8 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
                 append(" in '").
                 append(lc.getCurrentFunction().getName()).
                 append("'");
-            LOG.info(sb);
-            LOG.indent();
+            log.info(sb);
+            log.indent();
         }
 
         return true;
@@ -2256,7 +2272,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
             // If we're done with a statement, all temporaries can be reused.
             temporarySymbols.reuse();
         }
-        if (DEBUG) {
+        if (debug) {
             final StringBuilder sb = new StringBuilder();
 
             sb.append("[LEAVE ").
@@ -2276,8 +2292,8 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> {
                 }
             }
 
-            LOG.unindent();
-            LOG.info(sb);
+            log.unindent();
+            log.info(sb);
         }
 
         return node;

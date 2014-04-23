@@ -681,7 +681,7 @@ public abstract class ScriptFunction extends ScriptObject {
         if (isApplyToCall) {
             if (isFailedApplyToCall) {
                 //take the real arguments that were passed to a call and force them into the apply instead
-                ApplySpecialization.getLogger().info("Collection arguments to revert call to apply in " + appliedFn);
+                Global.instance().getLogger(ApplySpecialization.class).info("Collection arguments to revert call to apply in " + appliedFn);
                 inv = MH.asCollector(inv, Object[].class, realArgCount);
             } else {
                 appliedInvocation = appliedInvocation.addSwitchPoint(applyToCallSwitchPoint);

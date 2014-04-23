@@ -45,7 +45,9 @@ import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.objects.Global;
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.options.Options;
 
@@ -80,7 +82,8 @@ import jdk.nashorn.internal.runtime.options.Options;
  * </pre>
  */
 
-public final class ApplySpecialization {
+@Logger(name="apply2call")
+public final class ApplySpecialization implements Loggable {
 
     private static final boolean USE_APPLY2CALL = Options.getBooleanProperty("nashorn.apply2call", true);
 
@@ -90,21 +93,13 @@ public final class ApplySpecialization {
 
     private final MethodType actualCallSiteType;
 
-    private static final DebugLogger LOG = new DebugLogger("apply2call");
+    private final DebugLogger log;
 
     private static final String ARGUMENTS = ARGUMENTS_VAR.symbolName();
 
     private boolean changed;
 
     private boolean finished;
-
-    /**
-     * Return the apply to call specialization logger g
-     * @return the logger
-     */
-    public static DebugLogger getLogger() {
-        return LOG;
-    }
 
     /**
      * Apply specialization optimization. Try to explode arguments and call
@@ -116,9 +111,20 @@ public final class ApplySpecialization {
      * @param actualCallSiteType  actual call site type that we use (not Object[] varargs)
      */
     public ApplySpecialization(final RecompilableScriptFunctionData data, final FunctionNode functionNode, final MethodType actualCallSiteType) {
-        this.data = data;
-        this.functionNode = functionNode;
+        this.data               = data;
+        this.functionNode       = functionNode;
         this.actualCallSiteType = actualCallSiteType;
+        this.log                = initLogger(Global.instance());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Global global) {
+        return global.getLogger(this.getClass());
     }
 
     /**
@@ -176,7 +182,7 @@ public final class ApplySpecialization {
                 }
             });
         } catch (final UnsupportedOperationException e) {
-            LOG.fine("'arguments' escapes, is not used in standard call dispatch, or is reassigned in '" + functionNode.getName() + "'. Aborting");
+            log.fine("'arguments' escapes, is not used in standard call dispatch, or is reassigned in '" + functionNode.getName() + "'. Aborting");
             return true; //bad
         }
 
@@ -204,7 +210,7 @@ public final class ApplySpecialization {
         changed = false;
 
         if (!Global.instance().isSpecialNameValid("apply")) {
-            LOG.fine("Apply transform disabled: apply/call overridden");
+            log.fine("Apply transform disabled: apply/call overridden");
             assert !Global.instance().isSpecialNameValid("call") : "call and apply should have the same SwitchPoint";
             return finish();
         }
@@ -251,7 +257,7 @@ public final class ApplySpecialization {
                     changed = true;
 
                     final CallNode newCallNode = callNode.setArgs(newArgs).setIsApplyToCall();
-                    LOG.fine("Transformed " + callNode + " from apply to call => " + newCallNode + " in '" + functionNode.getName() + "'");
+                    log.fine("Transformed " + callNode + " from apply to call => " + newCallNode + " in '" + functionNode.getName() + "'");
                     return newCallNode;
                 }
 
@@ -265,7 +271,7 @@ public final class ApplySpecialization {
                     setParameters(null, newParams);
         }
 
-        LOG.info("Successfully specialized apply to call in '" + functionNode.getName() + "' id=" + functionNode.getId() + " signature=" + actualCallSiteType);
+        log.info("Successfully specialized apply to call in '" + functionNode.getName() + "' id=" + functionNode.getId() + " signature=" + actualCallSiteType);
 
         return finish();
     }

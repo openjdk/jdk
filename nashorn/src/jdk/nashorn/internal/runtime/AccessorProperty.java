@@ -25,14 +25,12 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.PRIMITIVE_FIELD_TYPE;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.createGetter;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.createSetter;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getFieldCount;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getFieldName;
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.shouldInstrument;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.lookup.MethodHandleFactory.stripName;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
@@ -42,12 +40,12 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.SwitchPoint;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.Global;
 
 /**
@@ -56,13 +54,13 @@ import jdk.nashorn.internal.objects.Global;
  */
 public class AccessorProperty extends Property {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private static final MethodHandle REPLACE_MAP = findOwnMH("replaceMap", Object.class, Object.class, PropertyMap.class, String.class, Class.class, Class.class);
+
+    private static final MethodHandle REPLACE_MAP   = findOwnMH_S("replaceMap", Object.class, Object.class, PropertyMap.class);
+    private static final MethodHandle INVALIDATE_SP = findOwnMH_S("invalidateSwitchPoint", Object.class, Object.class, SwitchPoint.class);
+
+    private static final SwitchPoint NO_CHANGE_CALLBACK = new SwitchPoint();
 
     private static final int NOOF_TYPES = getNumberOfAccessorTypes();
-
-    private static final DebugLogger LOG = ObjectClassGenerator.getLogger();
-
-    private static final MethodHandle INVALIDATE_SP  = findOwnMH("invalidateSwitchPoint", Object.class, Object.class, SwitchPoint.class, String.class);
 
     /**
      * Properties in different maps for the same structure class will share their field getters and setters. This could
@@ -376,9 +374,6 @@ public class AccessorProperty extends Property {
             if (!canBeUndefined()) { //todo if !canBeUndefined it means that we have an exact initialType
                 initialType = int.class;
             }
-            if (shouldInstrument(getKey())) {
-                info(getKey(), canBeUndefined() ? " can be undefined" : " is always defined");
-            }
         }
         setCurrentType(initialType);
     }
@@ -594,27 +589,19 @@ public class AccessorProperty extends Property {
 
     // the final three arguments are for debug printout purposes only
     @SuppressWarnings("unused")
-    private static Object replaceMap(final Object sobj, final PropertyMap newMap, final String key, final Class<?> oldType, final Class<?> newType) {
-        if (DEBUG_FIELDS && shouldInstrument(key)) {
-            final PropertyMap oldMap = ((ScriptObject)sobj).getMap();
-            info("Type change for '" + key + "' " + oldType + "=>" + newType);
-            finest("setting map " + key+ " => " + sobj + " from " + Debug.id(oldMap) + " to " + Debug.id(newMap) + " " + oldMap + " => " + newMap);
-        }
+    private static Object replaceMap(final Object sobj, final PropertyMap newMap) {
         ((ScriptObject)sobj).setMap(newMap);
         return sobj;
     }
 
     @SuppressWarnings("unused")
-    private static Object invalidateSwitchPoint(final Object obj, final SwitchPoint sp, final String key) {
-        LOG.info("Field change callback for " + key + " triggered: " + sp);
+    private static Object invalidateSwitchPoint(final Object obj, final SwitchPoint sp) {
         SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
         return obj;
     }
 
     private MethodHandle generateSetter(final Class<?> forType, final Class<?> type) {
-        MethodHandle mh = createSetter(forType, type, primitiveSetter, objectSetter);
-        mh = debug(mh, getCurrentType(), type, "set");
-        return mh;
+        return debug(createSetter(forType, type, primitiveSetter, objectSetter), getCurrentType(), type, "set");
     }
 
     /**
@@ -638,8 +625,8 @@ public class AccessorProperty extends Property {
             final PropertyMap  newMap      = getWiderMap(currentMap, newProperty);
 
             final MethodHandle widerSetter = newProperty.getSetter(type, newMap);
-            final Class<?>   ct = getCurrentType();
-            mh = MH.filterArguments(widerSetter, 0, MH.insertArguments(REPLACE_MAP, 1, newMap, getKey(), ct, type));
+            final Class<?>     ct = getCurrentType();
+            mh = MH.filterArguments(widerSetter, 0, MH.insertArguments(debugReplace(ct, type, currentMap, newMap) , 1, newMap));
             if (ct != null && ct.isPrimitive() && !type.isPrimitive()) {
                  mh = ObjectClassGenerator.createGuardBoxedPrimitiveSetter(ct, generateSetter(ct, ct), mh);
             }
@@ -652,15 +639,13 @@ public class AccessorProperty extends Property {
          */
         final SwitchPoint ccb = getChangeCallback();
         if (ccb != null && ccb != NO_CHANGE_CALLBACK) {
-            mh = MH.filterArguments(mh, 0, MH.insertArguments(INVALIDATE_SP, 1, changeCallback, getKey()));
+            mh = MH.filterArguments(mh, 0, MH.insertArguments(debugInvalidate(getKey(), ccb), 1, changeCallback));
         }
 
-        assert mh.type().returnType() == void.class;
+        assert mh.type().returnType() == void.class : mh.type();
 
         return mh;
     }
-
-    private static final SwitchPoint NO_CHANGE_CALLBACK = new SwitchPoint();
 
     /**
      * Get the change callback for this property
@@ -693,32 +678,6 @@ public class AccessorProperty extends Property {
         return canChangeType() && ti > fti;
     }
 
-    // for loggers below, don't bother generating potentially expensive string concat
-    // operations that will be thrown away anyway, if the level isn't finer than ior
-    // equal to info
-    private static void finest(final String... strs) {
-        if (DEBUG_FIELDS && LOG.levelFinerThanOrEqual(Level.INFO)) {
-            LOG.finest((Object[])strs);
-        }
-    }
-
-    private static void info(final String... strs) {
-        if (DEBUG_FIELDS && LOG.levelFinerThanOrEqual(Level.INFO)) {
-            LOG.info((Object[])strs);
-        }
-    }
-
-    private MethodHandle debug(final MethodHandle mh, final Class<?> forType, final Class<?> type, final String tag) {
-        if (DEBUG_FIELDS && LOG.levelFinerThanOrEqual(Level.INFO) && shouldInstrument(getKey())) {
-           return MethodHandleFactory.addDebugPrintout(
-               LOG,
-               Level.INFO,
-               mh,
-               tag + " '" + getKey() + "' (property="+ Debug.id(this) + ", slot=" + getSlot() + " " + getClass().getSimpleName() + " forType=" + stripName(forType) + ", type=" + stripName(type) + ')');
-        }
-        return mh;
-    }
-
     @Override
     public final void setCurrentType(final Class<?> currentType) {
         assert currentType != boolean.class : "no boolean storage support yet - fix this";
@@ -730,8 +689,74 @@ public class AccessorProperty extends Property {
         return currentType;
     }
 
-    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(LOOKUP, AccessorProperty.class, name, MH.type(rtype, types));
+
+    private MethodHandle debug(final MethodHandle mh, final Class<?> forType, final Class<?> type, final String tag) {
+        if (Global.hasInstance()) {
+            return Global.instance().addLoggingToHandle(
+                    ObjectClassGenerator.class,
+                    Level.INFO,
+                    mh,
+                    0,
+                    true,
+                    new Supplier<String>() {
+                        @Override
+                        public String get() {
+                            return tag + " '" + getKey() + "' (property="+ Debug.id(this) + ", slot=" + getSlot() + " " + getClass().getSimpleName() + " forType=" + stripName(forType) + ", type=" + stripName(type) + ')';
+                        }
+                    });
+        }
+
+        return mh;
     }
 
+    private MethodHandle debugReplace(final Class<?> oldType, final Class<?> newType, final PropertyMap oldMap, final PropertyMap newMap) {
+        if (Global.hasInstance()) {
+            final Global global = Global.instance();
+            MethodHandle mh = global.addLoggingToHandle(
+                    ObjectClassGenerator.class,
+                    REPLACE_MAP,
+                    new Supplier<String>() {
+                        @Override
+                        public String get() {
+                            return "Type change for '" + getKey() + "' " + oldType + "=>" + newType;
+                        }
+                    });
+
+            mh = global.addLoggingToHandle(
+                    ObjectClassGenerator.class,
+                    Level.FINEST,
+                    mh,
+                    Integer.MAX_VALUE,
+                    false,
+                    new Supplier<String>() {
+                        @Override
+                        public String get() {
+                            return "Setting map " + Debug.id(oldMap) + " => " + Debug.id(newMap) + " " + oldMap + " => " + newMap;
+                        }
+                    });
+            return mh;
+        }
+
+        return REPLACE_MAP;
+    }
+
+    private static MethodHandle debugInvalidate(final String key, final SwitchPoint sp) {
+        if (Global.hasInstance()) {
+            return Global.instance().addLoggingToHandle(
+                    ObjectClassGenerator.class,
+                    INVALIDATE_SP,
+                    new Supplier<String>() {
+                        @Override
+                        public String get() {
+                            return "Field change callback for " + key + " triggered: " + sp;
+                        }
+                    });
+        }
+
+        return INVALIDATE_SP;
+    }
+
+    private static MethodHandle findOwnMH_S(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(LOOKUP, AccessorProperty.class, name, MH.type(rtype, types));
+    }
 }
