@@ -48,6 +48,7 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.options.Options;
 
@@ -106,15 +107,16 @@ public final class ApplySpecialization implements Loggable {
      * applies as calls if they just pass on the "arguments" array and
      * "arguments" doesn't escape.
      *
+     * @param context             context
      * @param data                recompilable script function data, which contains e.g. needs callee information
      * @param functionNode        functionNode
      * @param actualCallSiteType  actual call site type that we use (not Object[] varargs)
      */
-    public ApplySpecialization(final RecompilableScriptFunctionData data, final FunctionNode functionNode, final MethodType actualCallSiteType) {
+    public ApplySpecialization(final Context context, final RecompilableScriptFunctionData data, final FunctionNode functionNode, final MethodType actualCallSiteType) {
         this.data               = data;
         this.functionNode       = functionNode;
         this.actualCallSiteType = actualCallSiteType;
-        this.log                = initLogger(Global.instance());
+        this.log                = initLogger(context);
     }
 
     @Override
@@ -123,8 +125,8 @@ public final class ApplySpecialization implements Loggable {
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     /**

@@ -31,7 +31,6 @@ import java.lang.invoke.MethodHandle;
 import java.nio.Buffer;
 
 import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -101,22 +100,22 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
     }
 
     @Override
-    public void shiftLeft(int by) {
+    public void shiftLeft(final int by) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ArrayData shiftRight(int by) {
+    public ArrayData shiftRight(final int by) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ArrayData ensure(long safeIndex) {
+    public ArrayData ensure(final long safeIndex) {
         return this;
     }
 
     @Override
-    public ArrayData shrink(long newLength) {
+    public ArrayData shrink(final long newLength) {
         throw new UnsupportedOperationException();
     }
 
@@ -126,17 +125,17 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
     }
 
     @Override
-    public ArrayData delete(int index) {
+    public ArrayData delete(final int index) {
         return this;
     }
 
     @Override
-    public ArrayData delete(long fromIndex, long toIndex) {
+    public ArrayData delete(final long fromIndex, final long toIndex) {
         return this;
     }
 
     @Override
-    protected ArrayData convert(Class<?> type) {
+    protected ArrayData convert(final Class<?> type) {
         throw new UnsupportedOperationException();
     }
 
@@ -146,7 +145,7 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
     }
 
     @Override
-    public ArrayData slice(long from, long to) {
+    public ArrayData slice(final long from, final long to) {
         throw new UnsupportedOperationException();
     }
 
@@ -190,10 +189,6 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
             return inv;
         }
 
-        if (log.isEnabled()) {
-            log.info(clazz.getSimpleName() + ": Missed fast GETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
-        }
-
         return null;
     }
 
@@ -203,10 +198,6 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
 
         if (inv != null) {
             return inv;
-        }
-
-        if (log.isEnabled()) {
-            log.info(clazz.getSimpleName() + ": Missed fast SETTER " + clazz.getSimpleName() + " " + desc + " " + " line:" + DynamicLinker.getLinkedCallSiteLocation().getLineNumber());
         }
 
         return null;

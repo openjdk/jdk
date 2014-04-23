@@ -100,7 +100,6 @@ import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
@@ -164,7 +163,7 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> implement
         this.temporarySymbols = temporarySymbols;
         this.localDefs        = new ArrayDeque<>();
         this.localUses        = new ArrayDeque<>();
-        this.log              = initLogger(Global.instance());
+        this.log              = initLogger(env.getContext());
         this.debug            = log.isEnabled();
     }
 
@@ -174,8 +173,8 @@ final class Attr extends NodeOperatorVisitor<OptimisticLexicalContext> implement
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     @Override

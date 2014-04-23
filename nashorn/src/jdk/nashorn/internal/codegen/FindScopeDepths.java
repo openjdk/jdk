@@ -42,7 +42,7 @@ import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -70,7 +70,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         super(new LexicalContext());
         this.compiler = compiler;
         this.env      = compiler.getCompilationEnvironment();
-        this.log      = initLogger(Global.instance());
+        this.log      = initLogger(compiler.getCompilationEnvironment().getContext());
     }
 
     @Override
@@ -79,8 +79,8 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     static int findScopesToStart(final LexicalContext lc, final FunctionNode fn, final Block block) {
@@ -187,6 +187,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         final String      allocatorClassName = Compiler.binaryName(getClassName(fieldCount));
         final PropertyMap allocatorMap       = PropertyMap.newMap(null, 0, fieldCount, 0);
         final RecompilableScriptFunctionData data = new RecompilableScriptFunctionData(
+                compiler.getCompilationEnvironment().getContext(),
                 newFunctionNode,
                 compiler.getCodeInstaller(),
                 allocatorClassName,

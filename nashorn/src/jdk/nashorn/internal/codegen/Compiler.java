@@ -61,8 +61,8 @@ import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ClassHistogramElement;
 import jdk.nashorn.internal.ir.debug.ObjectSizeCalculator;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.CodeInstaller;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.Source;
@@ -150,14 +150,12 @@ public final class Compiler implements Loggable {
         this.constantData   = new ConstantData();
         this.compileUnits   = new TreeSet<>();
         this.bytecode       = new LinkedHashMap<>();
-        this.log            = initLogger(Global.instance());
+        this.log            = initLogger(compilationEnv.getContext());
 
-        synchronized (Compiler.class) {
-            if (!initialized) {
-                initialized = true;
-                if (!ScriptEnvironment.globalOptimistic()) {
-                    log.warning("Running without optimistic types. This is a configuration that may be deprecated.");
-                }
+        if (!initialized) {
+            initialized = true;
+            if (!ScriptEnvironment.globalOptimistic()) {
+                log.warning("Running without optimistic types. This is a configuration that may be deprecated.");
             }
         }
     }
@@ -177,7 +175,7 @@ public final class Compiler implements Loggable {
      * @param scriptEnv script environment
      */
     public Compiler(final ScriptEnvironment scriptEnv) {
-        this(new CompilationEnvironment(CompilationPhases.EAGER, scriptEnv._strict), scriptEnv, null);
+        this(new CompilationEnvironment(Context.getContext(), CompilationPhases.EAGER, scriptEnv._strict), scriptEnv, null);
     }
 
     @Override
@@ -186,8 +184,8 @@ public final class Compiler implements Loggable {
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     private void printMemoryUsage(final String phaseName, final FunctionNode functionNode) {
@@ -500,7 +498,7 @@ public final class Compiler implements Loggable {
     }
 
     private CompileUnit initCompileUnit(final String unitClassName, final long initialWeight) {
-        final ClassEmitter classEmitter = new ClassEmitter(scriptEnv, sourceName, unitClassName, compilationEnv.isStrict());
+        final ClassEmitter classEmitter = new ClassEmitter(compilationEnv.getContext(), sourceName, unitClassName, compilationEnv.isStrict());
         final CompileUnit  compileUnit  = new CompileUnit(unitClassName, classEmitter, initialWeight);
 
         classEmitter.begin();

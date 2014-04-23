@@ -53,7 +53,6 @@ import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.Timing;
 
@@ -69,7 +68,7 @@ enum CompilationPhase {
     CONSTANT_FOLDING_PHASE(EnumSet.of(INITIALIZED, PARSED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new FoldConstants());
+            return (FunctionNode)fn.accept(new FoldConstants(compiler.getCompilationEnvironment()));
         }
 
         @Override
@@ -88,7 +87,7 @@ enum CompilationPhase {
     LOWERING_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new Lower(compiler.getCodeInstaller()));
+            return (FunctionNode)fn.accept(new Lower(compiler));
         }
 
         @Override
@@ -191,7 +190,7 @@ enum CompilationPhase {
                 return fn;
             }
 
-            FunctionNode newFunctionNode = (FunctionNode)fn.accept(new RangeAnalyzer());
+            FunctionNode newFunctionNode = (FunctionNode)fn.accept(new RangeAnalyzer(compiler.getCompilationEnvironment()));
             final List<ReturnNode> returns = new ArrayList<>();
 
             newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
@@ -225,7 +224,7 @@ enum CompilationPhase {
 
                 @Override
                 public Node leaveDefault(final Node node) {
-                    if(node instanceof Expression) {
+                    if (node instanceof Expression) {
                         final Expression expr = (Expression)node;
                         final Symbol symbol = expr.getSymbol();
                         if (symbol != null) {
@@ -238,7 +237,7 @@ enum CompilationPhase {
 
                             final Type rangeType  = range.getType();
                             if (!rangeType.isUnknown() && !Type.areEquivalent(symbolType, rangeType) && Type.widest(symbolType, rangeType) == symbolType) { //we can narrow range
-                                Global.instance().getLogger(RangeAnalyzer.class).info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
+                                compiler.getCompilationEnvironment().getContext().getLogger(RangeAnalyzer.class).info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
                                 return expr.setSymbol(lc, symbol.setTypeOverrideShared(range.getType(), compiler.getTemporarySymbols()));
                             }
                         }
@@ -284,7 +283,7 @@ enum CompilationPhase {
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             final ScriptEnvironment env = compiler.getEnv();
 
-            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new FinalizeTypes());
+            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new FinalizeTypes(compiler.getCompilationEnvironment()));
 
             if (env._print_lower_ast) {
                 env.getErr().println(new ASTWriter(newFunctionNode));

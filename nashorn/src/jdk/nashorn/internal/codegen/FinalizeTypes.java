@@ -42,9 +42,9 @@ import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -66,9 +66,9 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> implements
 
     private final DebugLogger log;
 
-    FinalizeTypes() {
+    FinalizeTypes(final CompilationEnvironment env) {
         super(new LexicalContext());
-        this.log = initLogger(Global.instance());
+        this.log = initLogger(env.getContext());
     }
 
     @Override
@@ -77,8 +77,8 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> implements
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     @Override

@@ -70,7 +70,6 @@ import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ParserException;
-import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
@@ -81,14 +80,14 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
     /**
      * Returns AST as JSON compatible string.
      *
-     * @param env  script environment to use
+     * @param context context
      * @param code code to be parsed
      * @param name name of the code source (used for location)
      * @param includeLoc tells whether to include location information for nodes or not
      * @return JSON string representation of AST of the supplied code
      */
-    public static String parse(final ScriptEnvironment env, final String code, final String name, final boolean includeLoc) {
-        final Parser       parser     = new Parser(env, new Source(name, code), new Context.ThrowErrorManager(), env._strict);
+    public static String parse(final Context context, final String code, final String name, final boolean includeLoc) {
+        final Parser       parser     = new Parser(context.getEnv(), new Source(name, code), new Context.ThrowErrorManager(), context.getEnv()._strict, context.getLogger(Parser.class));
         final JSONWriter   jsonWriter = new JSONWriter(includeLoc);
         try {
             final FunctionNode functionNode = parser.parse(CompilerConstants.PROGRAM.symbolName());
@@ -317,7 +316,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
     }
 
     @Override
-    public boolean enterBlockStatement(BlockStatement blockStatement) {
+    public boolean enterBlockStatement(final BlockStatement blockStatement) {
         enterDefault(blockStatement);
 
         type("BlockStatement");
@@ -337,13 +336,13 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
             type("ForInStatement");
             comma();
 
-            Node init = forNode.getInit();
+            final Node init = forNode.getInit();
             assert init != null;
             property("left");
             init.accept(this);
             comma();
 
-            Node modify = forNode.getModify();
+            final Node modify = forNode.getModify();
             assert modify != null;
             property("right");
             modify.accept(this);
@@ -760,8 +759,8 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         final List<CatchNode> guarded = new ArrayList<>();
         CatchNode unguarded = null;
         if (catches != null) {
-            for (Node n : catches) {
-                CatchNode cn = (CatchNode)n;
+            for (final Node n : catches) {
+                final CatchNode cn = (CatchNode)n;
                 if (cn.getExceptionCondition() != null) {
                     guarded.add(cn);
                 } else {
@@ -957,9 +956,13 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         buf.append(key);
         buf.append("\":");
         if (value != null) {
-            if (escape) buf.append('"');
+            if (escape) {
+                buf.append('"');
+            }
             buf.append(value);
-            if (escape) buf.append('"');
+            if (escape) {
+                buf.append('"');
+            }
         }
     }
 

@@ -45,7 +45,7 @@ import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -60,9 +60,9 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
 
     private final DebugLogger log;
 
-    FoldConstants() {
+    FoldConstants(final CompilationEnvironment env) {
         super(new LexicalContext());
-        this.log = initLogger(Global.instance());
+        this.log = initLogger(env.getContext());
     }
 
     @Override
@@ -71,8 +71,8 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     @Override

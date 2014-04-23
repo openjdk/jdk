@@ -918,7 +918,7 @@ public abstract class ScriptObject implements PropertyAccess {
                 if (property instanceof UserAccessorProperty) {
                     ((UserAccessorProperty)property).setAccessors(this, getMap(), null);
                 }
-                GlobalConstants.instance(Global.instance()).delete(property.getKey());
+                Global.getConstants().delete(property.getKey());
                 return true;
             }
         }
@@ -1930,7 +1930,7 @@ public abstract class ScriptObject implements PropertyAccess {
             }
         }
 
-        final GuardedInvocation cinv = GlobalConstants.instance(Global.instance()).findGetMethod(find, this, desc, request, operator);
+        final GuardedInvocation cinv = Global.getConstants().findGetMethod(find, this, desc, request, operator);
         if (cinv != null) {
             return cinv;
         }
@@ -1971,7 +1971,7 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod, final boolean isScope) {
-        Global.instance().getLogger(ObjectClassGenerator.class).warning("Megamorphic getter: " + desc + " " + name + " " +isMethod);
+        Context.getContextTrusted().getLogger(ObjectClassGenerator.class).warning("Megamorphic getter: " + desc + " " + name + " " +isMethod);
         final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod, isScope);
         final MethodHandle guard   = getScriptObjectGuard(desc.getMethodType(), true);
         return new GuardedInvocation(invoker, guard);
@@ -2121,7 +2121,7 @@ public abstract class ScriptObject implements PropertyAccess {
 
         final GuardedInvocation inv = new SetMethodCreator(this, find, desc, explicitInstanceOfCheck).createGuardedInvocation();
 
-        final GuardedInvocation cinv = GlobalConstants.instance(Global.instance()).findSetMethod(find, this, inv, desc, request);
+        final GuardedInvocation cinv = Global.getConstants().findSetMethod(find, this, inv, desc, request);
         if (cinv != null) {
             return cinv;
         }

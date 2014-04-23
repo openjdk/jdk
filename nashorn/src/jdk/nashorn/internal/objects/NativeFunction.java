@@ -289,7 +289,7 @@ public final class NativeFunction {
     private static void checkFunctionParameters(final String params) {
         final Source            src    = new Source("<function>", params);
         final ScriptEnvironment env    = Global.getEnv();
-        final Parser            parser = new Parser(env, src, new Context.ThrowErrorManager(), env._strict);
+        final Parser            parser = new Parser(env, src, new Context.ThrowErrorManager(), env._strict, null);
         try {
             parser.parseFormalParameterList();
         } catch (final ParserException pe) {
@@ -300,7 +300,7 @@ public final class NativeFunction {
     private static void checkFunctionBody(final String funcBody) {
         final Source            src    = new Source("<function>", funcBody);
         final ScriptEnvironment env    = Global.getEnv();
-        final Parser            parser = new Parser(env, src, new Context.ThrowErrorManager(), env._strict);
+        final Parser            parser = new Parser(env, src, new Context.ThrowErrorManager(), env._strict, null);
         try {
             parser.parseFunctionBody();
         } catch (final ParserException pe) {

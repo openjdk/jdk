@@ -25,6 +25,7 @@ $FLAGS \
 -cp $CLASSPATH:../build/test/classes/ \
 jdk.nashorn.tools.Shell ${@}
 
+#-Djava.security.manager= -Djava.security.policy=$DIR/build/nashorn.policy \
 #-XX:+ShowHiddenFrames \
 #-XX:+PrintOptoAssembly \
 #-XX:-TieredCompilation \

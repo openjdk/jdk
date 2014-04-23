@@ -240,7 +240,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         super(new CodeGeneratorLexicalContext());
         this.compiler      = compiler;
         this.callSiteFlags = compiler.getEnv()._callsite_flags;
-        this.log           = initLogger(Global.instance());
+        this.log           = initLogger(compiler.getCompilationEnvironment().getContext());
     }
 
     @Override
@@ -249,8 +249,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     /**

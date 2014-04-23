@@ -68,10 +68,10 @@ import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.CodeInstaller;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -98,7 +98,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     /**
      * Constructor.
      */
-    Lower(final CodeInstaller<?> installer) {
+    Lower(final Compiler compiler) {
         super(new BlockLexicalContext() {
 
             @Override
@@ -142,8 +142,8 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
             }
         });
 
-        this.installer = installer;
-        this.log = initLogger(Global.instance());
+        this.installer = compiler.getCodeInstaller();
+        this.log       = initLogger(compiler.getCompilationEnvironment().getContext());
     }
 
     @Override
@@ -152,8 +152,8 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     @Override

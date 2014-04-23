@@ -50,7 +50,6 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
@@ -123,11 +122,14 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     private final Set<String> internalSymbols;
 
+    private final Context context;
+
     private static final int GET_SET_PREFIX_LENGTH = "*et ".length();
 
     /**
      * Constructor - public as scripts use it
      *
+     * @param context             context
      * @param functionNode        functionNode that represents this function code
      * @param installer           installer for code regeneration versions of this function
      * @param allocatorClassName  name of our allocator class, will be looked up dynamically if used as a constructor
@@ -138,6 +140,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @param internalSymbols     internal symbols to method, defined in its scope
      */
     public RecompilableScriptFunctionData(
+        final Context context,
         final FunctionNode functionNode,
         final CodeInstaller<ScriptEnvironment> installer,
         final String allocatorClassName,
@@ -151,6 +154,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
               Math.min(functionNode.getParameters().size(), MAX_ARITY),
               getFlags(functionNode));
 
+        this.context             = context;
         this.functionName        = functionNode.getName();
         this.lineNumber          = functionNode.getLineNumber();
         this.isDeclared          = functionNode.isDeclared();
@@ -172,7 +176,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             nfn.setParent(this);
         }
 
-        this.log = initLogger(Global.instance());
+        this.log = initLogger(context);
     }
 
     @Override
@@ -181,8 +185,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context ctxt) {
+        return ctxt.getLogger(this.getClass());
     }
 
     /**
@@ -331,12 +335,13 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         // NOTE: If we aren't recompiling the top-level program, we decrease functionNodeId 'cause we'll have a synthetic program node
         final int descPosition = Token.descPosition(token);
         final Parser parser = new Parser(
-            installer.getOwner(),
+            context.getEnv(),
             source,
             new Context.ThrowErrorManager(),
             isStrict(),
             functionNodeId - (isProgram ? 0 : 1),
-            lineNumber - 1); // source starts at line 0, so even though lineNumber is the correct declaration line, back off one to make it exclusive
+            lineNumber - 1,
+            context.getLogger(Parser.class)); // source starts at line 0, so even though lineNumber is the correct declaration line, back off one to make it exclusive
 
         if (isAnonymous) {
             parser.setFunctionName(functionName);
@@ -420,6 +425,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
         final Compiler compiler = new Compiler(
                 new CompilationEnvironment(
+                    context,
                     CompilationPhases.EAGER.makeOptimistic(),
                     isStrict(),
                     this,
@@ -454,13 +460,14 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         final CompilationPhases phases = CompilationPhases.EAGER;
         final Compiler compiler = new Compiler(
             new CompilationEnvironment(
-                phases.makeOptimistic(ScriptEnvironment.globalOptimistic()),
-                isStrict(),
-                this,
-                runtimeScope,
-                ptm,
-                invalidatedProgramPoints,
-                true),
+                    context,
+                    phases.makeOptimistic(ScriptEnvironment.globalOptimistic()),
+                    isStrict(),
+                    this,
+                    runtimeScope,
+                    ptm,
+                    invalidatedProgramPoints,
+                    true),
             installer);
 
         fn = compiler.compile(scriptName, fn);
@@ -744,7 +751,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         public FunctionNode apply(final FunctionNode functionNode) {
             this.initialFunctionNode = functionNode;
             if (data.isVariableArity()) {
-                final ApplySpecialization spec = new ApplySpecialization(data, functionNode, actualCallSiteType);
+                final ApplySpecialization spec = new ApplySpecialization(data.context, data, functionNode, actualCallSiteType);
                 if (spec.transform()) {
                     setTransformedFunctionNode(spec.getFunctionNode());
                     return transformedFunctionNode;

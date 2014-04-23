@@ -55,7 +55,6 @@ import java.util.LinkedList;
 import java.util.List;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.FunctionScope;
@@ -147,13 +146,11 @@ public final class ObjectClassGenerator implements Loggable {
     public ObjectClassGenerator(final Context context) {
         this.context = context;
         assert context != null;
-        this.log = initLogger(Global.instance());
-        synchronized (ObjectClassGenerator.class) {
-            if (!initialized) {
-                initialized = true;
-                if (OBJECT_FIELDS_ONLY) {
-                    log.warning("Running with object fields only - this is a deprecated configuration.");
-                }
+        this.log = initLogger(context);
+        if (!initialized) {
+            initialized = true;
+            if (OBJECT_FIELDS_ONLY) {
+                log.warning("Running with object fields only - this is a deprecated configuration.");
             }
         }
     }
@@ -164,8 +161,8 @@ public final class ObjectClassGenerator implements Loggable {
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context ctxt) {
+        return ctxt.getLogger(this.getClass());
     }
 
     /**
@@ -386,7 +383,7 @@ public final class ObjectClassGenerator implements Loggable {
      * @return Open class emitter.
      */
     private ClassEmitter newClassEmitter(final String className, final String superName) {
-        final ClassEmitter classEmitter = new ClassEmitter(context.getEnv(), className, superName);
+        final ClassEmitter classEmitter = new ClassEmitter(context, className, superName);
         classEmitter.begin();
 
         return classEmitter;
