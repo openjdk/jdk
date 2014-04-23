@@ -31,18 +31,20 @@ JavaVM* jvm;
 void *
 floobydust (void *p) {
   JNIEnv *env;
+  jclass class_id;
+  jmethodID method_id;
 
-  jvm->AttachCurrentThread((void**)&env, NULL);
+  (*jvm)->AttachCurrentThread(jvm, (void**)&env, NULL);
 
-  jclass class_id = env->FindClass ("DoOverflow");
+  class_id = (*env)->FindClass (env, "DoOverflow");
   assert (class_id);
 
-  jmethodID method_id = env->GetStaticMethodID(class_id, "printIt", "()V");
+  method_id = (*env)->GetStaticMethodID(env, class_id, "printIt", "()V");
   assert (method_id);
 
-  env->CallStaticVoidMethod(class_id, method_id, NULL);
+  (*env)->CallStaticVoidMethod(env, class_id, method_id, NULL);
 
-  jvm->DetachCurrentThread();
+  (*jvm)->DetachCurrentThread(jvm);
 }
 
 int

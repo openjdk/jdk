@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1943,7 +1943,7 @@ bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
   InstanceKlass* target_instance = InstanceKlass::cast(target_class);
   fieldDescriptor fd;
   if (is_method) {
-    Method* m = target_instance->uncached_lookup_method(field_name, field_sig);
+    Method* m = target_instance->uncached_lookup_method(field_name, field_sig, Klass::normal);
     if (m != NULL && m->is_protected()) {
       if (!this_class->is_same_class_package(m->method_holder())) {
         return true;
@@ -2280,7 +2280,8 @@ void ClassVerifier::verify_invoke_init(
         ref_class_type.name(), CHECK_VERIFY(this));
       Method* m = InstanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
-        cp->signature_ref_at(bcs->get_index_u2()));
+        cp->signature_ref_at(bcs->get_index_u2()),
+        Klass::normal);
       instanceKlassHandle mh(THREAD, m->method_holder());
       if (m->is_protected() && !mh->is_same_class_package(_klass())) {
         bool assignable = current_type().is_assignable_from(
