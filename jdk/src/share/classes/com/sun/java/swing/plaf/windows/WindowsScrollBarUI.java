@@ -51,6 +51,8 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 public class WindowsScrollBarUI extends BasicScrollBarUI {
     private Grid thumbGrid;
     private Grid highlightGrid;
+    private Dimension horizontalThumbSize;
+    private Dimension verticalThumbSize;
 
     /**
      * Creates a UI for a JScrollBar.
@@ -65,9 +67,30 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
     protected void installDefaults() {
         super.installDefaults();
 
-        if (XPStyle.getXP() != null) {
+        XPStyle xp = XPStyle.getXP();
+        if (xp != null) {
             scrollbar.setBorder(null);
+            horizontalThumbSize = getSize(scrollbar, xp, Part.SBP_THUMBBTNHORZ);
+            verticalThumbSize = getSize(scrollbar, xp, Part.SBP_THUMBBTNVERT);
+        } else {
+            horizontalThumbSize = null;
+            verticalThumbSize = null;
         }
+    }
+
+    private static Dimension getSize(Component component, XPStyle xp, Part part) {
+        Skin skin = xp.getSkin(component, part);
+        return new Dimension(skin.getWidth(), skin.getHeight());
+    }
+
+    @Override
+    protected Dimension getMinimumThumbSize() {
+        if ((horizontalThumbSize == null) || (verticalThumbSize == null)) {
+            return super.getMinimumThumbSize();
+        }
+        return JScrollBar.HORIZONTAL == scrollbar.getOrientation()
+                ? horizontalThumbSize
+                : verticalThumbSize;
     }
 
     public void uninstallUI(JComponent c) {
