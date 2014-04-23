@@ -35,7 +35,6 @@
 
 public class TestBaseClass extends JavadocTester {
 
-    private static final String BUG_ID = "4197513";
     private static final String[] ARGS =
         new String[] {
             "-sourcepath", SRC_DIR,
@@ -51,19 +50,5 @@ public class TestBaseClass extends JavadocTester {
         if (tester.run(ARGS, NO_TEST, NO_TEST) != 0) {
             throw new Error("Javadoc failed to execute.");
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

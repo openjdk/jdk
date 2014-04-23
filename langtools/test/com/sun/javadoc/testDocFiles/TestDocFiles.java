@@ -33,9 +33,8 @@
 
 public class TestDocFiles extends JavadocTester {
 
-    private static final String BUG_ID = "8008949";
     private static final String[][] TEST = {
-        {"tmp/pkg/doc-files/test.txt", "test file"}};
+        { "pkg/doc-files/test.txt", "test file"}};
 
     private static final String[] ARGS =
         new String[] {
@@ -49,19 +48,5 @@ public class TestDocFiles extends JavadocTester {
         TestDocFiles tester = new TestDocFiles();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

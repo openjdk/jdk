@@ -34,17 +34,14 @@
 
 public class TestHelpOption extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4934778-4777599-6553182";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-help",
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-help",
             SRC_DIR + "/TestHelpOption.java"
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             SRC_DIR + "/TestHelpOption.java"
     };
 
@@ -88,7 +85,7 @@ public class TestHelpOption extends JavadocTester {
     };
 
     private static final String[][] TEST2 = {
-        {BUG_ID + "/TestHelpOption.html",
+        { "TestHelpOption.html",
             "<li><a href=\"help-doc.html\">Help</a></li>"
         },
     };
@@ -106,19 +103,5 @@ public class TestHelpOption extends JavadocTester {
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
         tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -37,7 +37,6 @@ import java.util.Locale;
 
 public class TestSupplementary extends JavadocTester {
 
-    private static final String BUG_ID = "4914724";
     private static final String[][] TEST = {
         {WARNING_OUTPUT, "C.java:38: warning - Tag @see:illegal character: \"119040\" in \"C#method\ud834\udd00()"},
         {WARNING_OUTPUT, "C.java:44: warning - illegal character \ud801 in @serialField tag: field\ud801\ud801 int."},
@@ -50,7 +49,7 @@ public class TestSupplementary extends JavadocTester {
         {WARNING_OUTPUT, "C.java:31: warning - illegal character"},
     };
     private static final String[] ARGS = new String[] {
-        "-locale", "en_US", "-d", BUG_ID, SRC_DIR + "/C.java"
+        "-locale", "en_US", "-d", OUTPUT_DIR, SRC_DIR + "/C.java"
     };
 
     /**
@@ -66,19 +65,5 @@ public class TestSupplementary extends JavadocTester {
         } finally {
             Locale.setDefault(saveLocale);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

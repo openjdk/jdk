@@ -35,18 +35,15 @@
 
 public class TestLinkTaglet extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4732864-6280605-7064544-8014636";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", SRC_DIR +
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg", SRC_DIR +
         "/checkPkg/B.java"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "Qualified Link: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n" +
             " Unqualified Link1: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n" +
             " Unqualified Link2: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n" +
@@ -54,12 +51,12 @@ public class TestLinkTaglet extends JavadocTester {
             " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>\n" +
             " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(InnerC, InnerC2)</code></a>.<br/>"
         },
-        {BUG_ID + "/pkg/C.InnerC.html",
+        { "pkg/C.InnerC.html",
             "Link to member in outer class: <a href=\"../pkg/C.html#MEMBER\"><code>C.MEMBER</code></a> <br/>\n" +
             " Link to member in inner class: <a href=\"../pkg/C.InnerC2.html#MEMBER2\"><code>C.InnerC2.MEMBER2</code></a> <br/>\n" +
             " Link to another inner class: <a href=\"../pkg/C.InnerC2.html\" title=\"class in pkg\"><code>C.InnerC2</code></a>"
         },
-        {BUG_ID + "/pkg/C.InnerC2.html",
+        { "pkg/C.InnerC2.html",
             "<dl>\n" +
             "<dt>Enclosing class:</dt>\n" +
             "<dd><a href=\"../pkg/C.html\" title=\"class in pkg\">C</a></dd>\n" +
@@ -78,19 +75,5 @@ public class TestLinkTaglet extends JavadocTester {
         TestLinkTaglet tester = new TestLinkTaglet();
         tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

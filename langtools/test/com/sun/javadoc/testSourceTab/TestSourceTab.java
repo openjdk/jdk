@@ -37,10 +37,9 @@ import java.io.*;
 
 public class TestSourceTab extends JavadocTester {
 
-    private static final String BUG_ID = "4510979";
     private static final String TMP_SRC_DIR = "tmpSrc";
-    private static final String OUTPUT_DIR1 = BUG_ID + "-tabLengthEight";
-    private static final String OUTPUT_DIR2 = BUG_ID + "-tabLengthFour";
+    private static final String OUTPUT_DIR1 = OUTPUT_DIR + "-tabLengthEight";
+    private static final String OUTPUT_DIR2 = OUTPUT_DIR + "-tabLengthFour";
 
     //Run Javadoc on a source file with that is indented with a single tab per line
     private static final String[] ARGS1 =
@@ -59,14 +58,9 @@ public class TestSourceTab extends JavadocTester {
         };
 
     //Files to diff
-    private static final String[][] FILES_TO_DIFF = {
-        {OUTPUT_DIR1 + "/src-html/C.html",
-         OUTPUT_DIR2 + "/src-html/C.html"
-        },
-        {OUTPUT_DIR1 + "/C.html",
-         OUTPUT_DIR2 + "/C.html"
-        }
-
+    private static final String[] FILES_TO_DIFF = {
+        "src-html/C.html",
+        "C.html"
     };
 
     /**
@@ -77,7 +71,7 @@ public class TestSourceTab extends JavadocTester {
         TestSourceTab tester = new TestSourceTab();
         tester.run(ARGS1, NO_TEST, NO_TEST);
         tester.run(ARGS2, NO_TEST, NO_TEST);
-        tester.runDiffs(FILES_TO_DIFF);
+        tester.runDiffs(OUTPUT_DIR1, OUTPUT_DIR2, FILES_TO_DIFF);
     }
 
     TestSourceTab() throws IOException {
@@ -118,19 +112,5 @@ public class TestSourceTab extends JavadocTester {
         } finally {
             out.close();
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -39,24 +39,18 @@ import java.io.File;
 
 public class TestDocFileDir extends JavadocTester {
 
-    private static final String BUG_ID = "4258405-4973606";
-
     private static final String[][] TEST1 = {
-        {BUG_ID + "-1/pkg/doc-files/testfile.txt",
+        { "pkg/doc-files/testfile.txt",
             "This doc file did not get trashed."}
         };
 
     private static final String[] FILE_TEST2 = {
-        BUG_ID + "-2/pkg/doc-files/subdir-used1" +
-            "/testfile.txt",
-        BUG_ID + "-2/pkg/doc-files/subdir-used2" +
-            "/testfile.txt"
+        "pkg/doc-files/subdir-used1/testfile.txt",
+        "pkg/doc-files/subdir-used2/testfile.txt"
     };
     private static final String[] FILE_NEGATED_TEST2 = {
-        BUG_ID + "-2/pkg/doc-files/subdir-excluded1" +
-            "/testfile.txt",
-        BUG_ID + "-2/pkg/doc-files/subdir-excluded2" +
-            "/testfile.txt"
+        "pkg/doc-files/subdir-excluded1/testfile.txt",
+        "pkg/doc-files/subdir-excluded2/testfile.txt"
     };
 
     private static final String[][] TEST0 = {
@@ -67,15 +61,15 @@ public class TestDocFileDir extends JavadocTester {
     //Output dir = Input Dir
     private static final String[] ARGS1 =
         new String[] {
-            "-d", BUG_ID + "-1",
+            "-d", OUTPUT_DIR + "-1",
             "-sourcepath",
-            "blah" + File.pathSeparator + BUG_ID + "-1" +
+            "blah" + File.pathSeparator + OUTPUT_DIR + "-1" +
             File.pathSeparator + "blah", "pkg"};
 
     //Exercising -docfilessubdirs and -excludedocfilessubdir
     private static final String[] ARGS2 =
         new String[] {
-            "-d", BUG_ID + "-2",
+            "-d", OUTPUT_DIR + "-2",
             "-sourcepath", SRC_DIR,
             "-docfilessubdirs",
             "-excludedocfilessubdir", "subdir-excluded1:subdir-excluded2",
@@ -94,23 +88,9 @@ public class TestDocFileDir extends JavadocTester {
         TestDocFileDir tester = new TestDocFileDir();
         copyDir(SRC_DIR + "/pkg", ".");
         tester.run(ARGS0, TEST0, NO_TEST);
-        copyDir(SRC_DIR + "/pkg", BUG_ID + "-1");
+        copyDir(SRC_DIR + "/pkg", OUTPUT_DIR + "-1");
         tester.run(ARGS1, TEST1, NO_TEST);
         tester.run(ARGS2, NO_TEST, NO_TEST, FILE_TEST2, FILE_NEGATED_TEST2);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

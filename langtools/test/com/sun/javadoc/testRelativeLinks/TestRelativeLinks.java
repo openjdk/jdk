@@ -35,27 +35,24 @@
 
 public class TestRelativeLinks extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4460354-8014636";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-use", "-sourcepath", SRC_DIR, "pkg", "pkg2"
+        "-d", OUTPUT_DIR, "-use", "-sourcepath", SRC_DIR, "pkg", "pkg2"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
         //These relative paths should stay relative because they appear
         //in the right places.
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"relative-class-link.html\">relative class link</a>"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"relative-field-link.html\">relative field link</a>"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"relative-method-link.html\">relative method link</a>"},
-        {BUG_ID + "/pkg/package-summary.html",
+        { "pkg/package-summary.html",
             "<a href=\"relative-package-link.html\">relative package link</a>"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             " <a\n" +
             " href=\"relative-multi-line-link.html\">relative-multi-line-link</a>."},
 
@@ -63,38 +60,38 @@ public class TestRelativeLinks extends JavadocTester {
         //places.
 
         //INDEX PAGE
-        {BUG_ID + "/index-all.html",
+        { "index-all.html",
             "<a href=\"./pkg/relative-class-link.html\">relative class link</a>"},
-        {BUG_ID + "/index-all.html",
+        { "index-all.html",
             "<a href=\"./pkg/relative-field-link.html\">relative field link</a>"},
-        {BUG_ID + "/index-all.html",
+        { "index-all.html",
             "<a href=\"./pkg/relative-method-link.html\">relative method link</a>"},
-        {BUG_ID + "/index-all.html",
+        { "index-all.html",
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
-        {BUG_ID + "/index-all.html",
+        { "index-all.html",
             " <a\n" +
             " href=\"./pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
 
 
         //PACKAGE USE
-        {BUG_ID + "/pkg/package-use.html",
+        { "pkg/package-use.html",
             "<a href=\"../pkg/relative-package-link.html\">relative package link</a>."},
-        {BUG_ID + "/pkg/package-use.html",
+        { "pkg/package-use.html",
             "<a href=\"../pkg/relative-class-link.html\">relative class link</a>"},
 
         //CLASS_USE
-        {BUG_ID + "/pkg/class-use/C.html",
+        { "pkg/class-use/C.html",
             "<a href=\"../../pkg/relative-field-link.html\">relative field link</a>"},
-        {BUG_ID + "/pkg/class-use/C.html",
+        { "pkg/class-use/C.html",
             "<a href=\"../../pkg/relative-method-link.html\">relative method link</a>"},
-        {BUG_ID + "/pkg/class-use/C.html",
+        { "pkg/class-use/C.html",
             "<a href=\"../../pkg/relative-package-link.html\">relative package link</a>"},
-        {BUG_ID + "/pkg/class-use/C.html",
+        { "pkg/class-use/C.html",
             " <a\n" +
             " href=\"../../pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
 
         //PACKAGE OVERVIEW
-        {BUG_ID + "/overview-summary.html",
+        { "overview-summary.html",
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
     };
 
@@ -106,19 +103,5 @@ public class TestRelativeLinks extends JavadocTester {
         TestRelativeLinks tester = new TestRelativeLinks();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

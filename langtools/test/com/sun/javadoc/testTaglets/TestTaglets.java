@@ -38,10 +38,6 @@
 
 public class TestTaglets extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4654308-4767038";
-    private static final String OUTPUT_DIR = BUG_ID;
-
     //Javadoc arguments.
     private static final String[] ARGS_4654308 = new String[] {
         "-d", "4654308", "-tagletpath", SRC_DIR, "-taglet", "taglets.Foo",
@@ -55,13 +51,13 @@ public class TestTaglets extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST_4654308 = new String[][] {
-        {"4654308/C.html", "<span class=\"simpleTagLabel\">Foo:</span></dt>" +
+        { "C.html", "<span class=\"simpleTagLabel\">Foo:</span></dt>" +
                  "<dd>my only method is <a href=\"C.html#method--\"><code>here" +
                  "</code></a></dd></dl>"}
     };
 
     private static final String[][] TEST_4767038 = new String[][] {
-        {"4767038/Child.html",
+        { "Child.html",
             "This is the first sentence."}
     };
 
@@ -77,19 +73,5 @@ public class TestTaglets extends JavadocTester {
         tester = new TestTaglets();
         tester.run(ARGS_4767038, TEST_4767038, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

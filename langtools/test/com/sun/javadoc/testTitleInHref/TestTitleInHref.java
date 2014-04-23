@@ -34,25 +34,23 @@
 
 public class TestTitleInHref extends JavadocTester {
 
-    private static final String BUG_ID = "4714257";
-
     private static final String[][] TEST = {
         //Test to make sure that the title shows up in a class link.
-        {BUG_ID + "/pkg/Links.html",
+        { "pkg/Links.html",
             "<a href=\"../pkg/Class.html\" title=\"class in pkg\">"},
 
         //Test to make sure that the title shows up in an interface link.
-        {BUG_ID + "/pkg/Links.html",
+        { "pkg/Links.html",
             "<a href=\"../pkg/Interface.html\" title=\"interface in pkg\">"},
 
         //Test to make sure that the title shows up in cross link shows up
-        {BUG_ID + "/pkg/Links.html",
+        { "pkg/Links.html",
             "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/io/File.html?is-external=true\" title=\"class or interface in java.io\"><code>This is a cross link to class File</code></a>"},
 
     };
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
         "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api",
         SRC_DIR, "pkg"
     };
@@ -65,19 +63,5 @@ public class TestTitleInHref extends JavadocTester {
         TestTitleInHref tester = new TestTitleInHref();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

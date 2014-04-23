@@ -32,92 +32,91 @@
  */
 public class TestDocRootLink extends JavadocTester {
 
-    private static final String BUG_ID = "6553182";
     private static final String[][] TEST1 = {
-        {BUG_ID + "/pkg1/C1.html",
+        { "pkg1/C1.html",
             "Refer <a href=\"../../technotes/guides/index.html\">Here</a>"
         },
-        {BUG_ID + "/pkg1/C1.html",
+        { "pkg1/C1.html",
             "This <a href=\"../pkg2/C2.html\">Here</a> should not be replaced\n" +
             " with an absolute link."
         },
-        {BUG_ID + "/pkg1/C1.html",
+        { "pkg1/C1.html",
             "Testing <a href=\"../technotes/guides/index.html\">Link 1</a> and\n" +
             " <a href=\"../pkg2/C2.html\">Link 2</a>."
         },
-        {BUG_ID + "/pkg1/package-summary.html",
+        { "pkg1/package-summary.html",
             "<a href=\"../../technotes/guides/index.html\">\n" +
             "            Test document 1</a>"
         },
-        {BUG_ID + "/pkg1/package-summary.html",
+        { "pkg1/package-summary.html",
             "<a href=\"../pkg2/C2.html\">\n" +
             "            Another Test document 1</a>"
         },
-        {BUG_ID + "/pkg1/package-summary.html",
+        { "pkg1/package-summary.html",
             "<a href=\"../technotes/guides/index.html\">\n" +
             "            Another Test document 2.</a>"
         }
     };
     private static final String[][] NEGATED_TEST1 = {
-        {BUG_ID + "/pkg1/C1.html",
+        { "pkg1/C1.html",
             "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">"
         },
-        {BUG_ID + "/pkg1/C1.html",
+        { "pkg1/C1.html",
             "<a href=\"http://download.oracle.com/javase/7/docs/pkg2/C2.html\">"
         },
-        {BUG_ID + "/pkg1/package-summary.html",
+        { "pkg1/package-summary.html",
             "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">"
         },
-        {BUG_ID + "/pkg1/package-summary.html",
+        { "pkg1/package-summary.html",
             "<a href=\"http://download.oracle.com/javase/7/docs/pkg2/C2.html\">"
         }
     };
     private static final String[][] TEST2 = {
-        {BUG_ID + "-1/pkg2/C2.html",
+        { "pkg2/C2.html",
             "Refer <a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">Here</a>"
         },
-        {BUG_ID + "-1/pkg2/C2.html",
+        { "pkg2/C2.html",
             "This <a href=\"../pkg1/C1.html\">Here</a> should not be replaced\n" +
             " with an absolute link."
         },
-        {BUG_ID + "-1/pkg2/C2.html",
+        { "pkg2/C2.html",
             "Testing <a href=\"../technotes/guides/index.html\">Link 1</a> and\n" +
             " <a href=\"../pkg1/C1.html\">Link 2</a>."
         },
-        {BUG_ID + "-1/pkg2/package-summary.html",
+        { "pkg2/package-summary.html",
             "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">\n" +
             "            Test document 1</a>"
         },
-        {BUG_ID + "-1/pkg2/package-summary.html",
+        { "pkg2/package-summary.html",
             "<a href=\"../pkg1/C1.html\">\n" +
             "            Another Test document 1</a>"
         },
-        {BUG_ID + "-1/pkg2/package-summary.html",
+        { "pkg2/package-summary.html",
             "<a href=\"../technotes/guides/index.html\">\n" +
             "            Another Test document 2.</a>"
         }
     };
     private static final String[][] NEGATED_TEST2 = {
-        {BUG_ID + "-1/pkg2/C2.html",
+        { "pkg2/C2.html",
             "<a href=\"../../technotes/guides/index.html\">"
         },
-        {BUG_ID + "-1/pkg2/C2.html",
+        { "pkg2/C2.html",
             "<a href=\"http://download.oracle.com/javase/7/docs/pkg1/C1.html\">"
         },
-        {BUG_ID + "-1/pkg2/package-summary.html",
+        { "pkg2/package-summary.html",
             "<a href=\"../../technotes/guides/index.html\">"
         },
-        {BUG_ID + "-1/pkg2/package-summary.html",
+        { "pkg2/package-summary.html",
             "<a href=\"http://download.oracle.com/javase/7/docs/pkg1/C1.html\">"
         }
     };
     private static final String[] ARGS1 =
             new String[]{
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1", "pkg2"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1", "pkg2"
     };
     private static final String[] ARGS2 =
             new String[]{
-        "-d", BUG_ID + "-1", "-Xdocrootparent",
+        "-d", OUTPUT_DIR + "-1", "-Xdocrootparent",
         "http://download.oracle.com/javase/7/docs", "-sourcepath",
         SRC_DIR, "pkg1", "pkg2"
     };
@@ -131,19 +130,5 @@ public class TestDocRootLink extends JavadocTester {
         tester.run(ARGS1, TEST1, NEGATED_TEST1);
         tester.run(ARGS2, TEST2, NEGATED_TEST2);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

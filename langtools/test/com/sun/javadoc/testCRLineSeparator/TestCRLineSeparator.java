@@ -37,17 +37,14 @@ import java.util.*;
 
 public class TestCRLineSeparator extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4979486-8014636";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", ".", "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", ".", "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/MyClass.html", "Line 1\n" +
+        { "pkg/MyClass.html", "Line 1\n" +
         " Line 2"}
     };
 
@@ -61,20 +58,6 @@ public class TestCRLineSeparator extends JavadocTester {
         TestCRLineSeparator tester = new TestCRLineSeparator();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 
     // recursively copy files from fromDir to toDir, replacing newlines

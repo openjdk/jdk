@@ -34,12 +34,9 @@
 
 public class TestReturnTag extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4490068";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR +
+        "-Xdoclint:none", "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR +
         "/TestReturnTag.java"
     };
 
@@ -64,19 +61,5 @@ public class TestReturnTag extends JavadocTester {
         TestReturnTag tester = new TestReturnTag();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

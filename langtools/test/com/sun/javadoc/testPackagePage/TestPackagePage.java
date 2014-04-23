@@ -36,51 +36,50 @@
 
 public class TestPackagePage extends JavadocTester {
 
-    private static final String BUG_ID = "4492643-4689286";
     private static final String[][] TEST1 = {
-        {BUG_ID + "-1/com/pkg/package-summary.html",
+        { "com/pkg/package-summary.html",
             "This is a package page."
         },
         //With just one package, all general pages link to the single package page.
-        {BUG_ID + "-1/com/pkg/C.html",
+        { "com/pkg/C.html",
             "<a href=\"../../com/pkg/package-summary.html\">Package</a>"
         },
-        {BUG_ID + "-1/com/pkg/package-tree.html",
+        { "com/pkg/package-tree.html",
             "<li><a href=\"../../com/pkg/package-summary.html\">Package</a></li>"
         },
-        {BUG_ID + "-1/deprecated-list.html",
+        { "deprecated-list.html",
             "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
         },
-        {BUG_ID + "-1/index-all.html",
+        { "index-all.html",
             "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
         },
-        {BUG_ID + "-1/help-doc.html",
+        { "help-doc.html",
             "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
         },
     };
 
     private static final String[][] TEST2 = {
         //With multiple packages, there is no package link in general pages.
-        {BUG_ID + "-2/deprecated-list.html",
+        { "deprecated-list.html",
             "<li>Package</li>"
         },
-        {BUG_ID + "-2/index-all.html",
+        { "index-all.html",
             "<li>Package</li>"
         },
-        {BUG_ID + "-2/help-doc.html",
+        { "help-doc.html",
             "<li>Package</li>"
         },
     };
 
     private static final String[] ARGS1 =
         new String[] {
-            "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR,
             SRC_DIR + "/com/pkg/C.java"
         };
 
     private static final String[] ARGS2 =
         new String[] {
-            "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR,
             "com.pkg", "pkg2"
         };
 
@@ -93,19 +92,5 @@ public class TestPackagePage extends JavadocTester {
         tester.run(ARGS1, TEST1, NO_TEST);
         tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -32,10 +32,6 @@
 
 public class TestSimpleTagInherit extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8008768";
-    private static final String OUTPUT_DIR = BUG_ID;
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
@@ -45,10 +41,10 @@ public class TestSimpleTagInherit extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        { BUG_ID + "/p/TestClass.html",
+        { "p/TestClass.html",
           "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n" +
           "<dd>doc for BaseClass class</dd>" },
-        { BUG_ID + "/p/TestClass.html",
+        { "p/TestClass.html",
           "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n" +
           "<dd>doc for BaseClass method</dd>" }
     };
@@ -61,19 +57,5 @@ public class TestSimpleTagInherit extends JavadocTester {
         TestSimpleTagInherit tester = new TestSimpleTagInherit();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

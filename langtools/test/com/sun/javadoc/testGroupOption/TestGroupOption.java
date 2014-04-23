@@ -35,12 +35,9 @@
 
 public class TestGroupOption extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4924383";
-
     //Javadoc arguments.
     private static final String[] ARGS1 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
         "-group", "Package One", "pkg1",
         "-group", "Package Two", "pkg2",
         "-group", "Package Three", "pkg3",
@@ -48,7 +45,7 @@ public class TestGroupOption extends JavadocTester {
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
         "-group", "Package One", "pkg1",
         "-group", "Package One", "pkg2",
         "-group", "Package One", "pkg3",
@@ -74,19 +71,5 @@ public class TestGroupOption extends JavadocTester {
         tester = new TestGroupOption();
         tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -35,13 +35,12 @@
 
 public class TestConstantValuesPage extends JavadocTester {
 
-    private static final String BUG_ID = "4681599";
     private static final String[][] NEGATED_TEST = {
         {NOTICE_OUTPUT, "constant-values.html..."}
         };
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "foo"};
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "foo"};
 
     /**
      * The entry point of the test.
@@ -51,19 +50,5 @@ public class TestConstantValuesPage extends JavadocTester {
         TestConstantValuesPage tester = new TestConstantValuesPage();
         tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

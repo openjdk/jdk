@@ -21,8 +21,6 @@
  * questions.
  */
 
-import com.sun.javadoc.*;
-import java.util.*;
 import java.io.*;
 
 
@@ -56,6 +54,7 @@ public abstract class JavadocTester {
 
     protected static final String SRC_DIR = System.getProperty("test.src", ".");
     protected static final String JAVA_VERSION = System.getProperty("java.version");
+    protected static final String OUTPUT_DIR = "out";
     protected static final String[][] NO_TEST = new String[][] {};
     protected static final String[] NO_FILE_TEST = new String[] {};
 
@@ -105,9 +104,14 @@ public abstract class JavadocTester {
     public StringWriter warnings;
 
     /**
-     * The buffer of warning output..
+     * The buffer of warning output.
      */
     public StringBuffer standardOut;
+
+    /**
+     * The output directory.
+     */
+    private File outputDir;
 
     /**
      * The current subtest number.
@@ -129,18 +133,6 @@ public abstract class JavadocTester {
      */
     public JavadocTester() {
     }
-
-    /**
-     * Return the bug id.
-     * @return the bug id
-     */
-    public abstract String getBugId();
-
-    /**
-     * Return the name of the bug.
-     * @return the name of the bug
-     */
-    public abstract String getBugName();
 
     /**
      * Execute the tests.
@@ -206,6 +198,13 @@ public abstract class JavadocTester {
                                     + javadocRunNum + ")...");
         }
         initOutputBuffers();
+        outputDir = new File(".");
+        for (int i = 0; i < args.length - 2; i++) {
+            if (args[i].equals("-d")) {
+                outputDir = new File(args[++i]);
+                break;
+            }
+        }
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         PrintStream prevOut = System.out;
@@ -216,7 +215,7 @@ public abstract class JavadocTester {
         System.setErr(new PrintStream(stderr));
 
         int returnCode = com.sun.tools.javadoc.Main.execute(
-                getBugName(),
+                "javadoc",
                 new PrintWriter(errors, true),
                 new PrintWriter(warnings, true),
                 new PrintWriter(notices, true),
@@ -258,60 +257,53 @@ public abstract class JavadocTester {
      * Run array of tests on the generated files.
      * This method accepts a fileTestArray for testing if a file is generated
      * and a negatedFileTestArray for testing if a file is not found.
+     * The files are relative to the most recent output directory specified
+     * with -d.
      *
-     * @param testArray         the array of file tests
-     * @param negatedTestArray  the array of negated file tests
+     * @param fileTestArray         the array of file tests
+     * @param negatedFileTestArray  the array of negated file tests
      */
     public void runTestsOnFile(String[] fileTestArray, String[] negatedFileTestArray) {
-        runTestsOnFile(fileTestArray, false);
-        runTestsOnFile(negatedFileTestArray, true);
+        runTestsOnFile(outputDir, fileTestArray, false);
+        runTestsOnFile(outputDir, negatedFileTestArray, true);
     }
 
     /**
      * Run the array of tests on the resulting HTML.
+     * The files are relative to the most recent output directory specified
+     * with -d.
      *
      * @param testArray the array of tests
      * @param isNegated true if test is negated; false otherwise
      */
     private void runTestsOnHTML(String[][] testArray , boolean isNegated) {
-        for (int i = 0; i < testArray.length; i++) {
-
+        for (String[] test : testArray) {
             numTestsRun++;
-
             System.out.print("Running subtest #" + numTestsRun + "... ");
-
             // Get string to find
-            String stringToFind = testArray[i][1];
-
+            String stringToFind = test[1];
             // Read contents of file into a string
             String fileString;
             try {
-                fileString = readFileToString(testArray[i][0]);
+                fileString = readFileToString(outputDir, test[0]);
             } catch (Error e) {
                 if (isNegated) {
-                  System.out.println( "FAILED" + "\n"
-                                    + "for bug " + getBugId()
-                                    + " (" + getBugName() + ") "
-                                    + "due to "
-                                    + e + "\n");
-                  continue;
+                    System.out.println( "FAILED, due to " + e + "\n");
+                    continue;
                 }
                 throw e;
             }
             // Find string in file's contents
             boolean isFound = findString(fileString, stringToFind);
-            if ((isNegated && !isFound) || (!isNegated && isFound) ) {
+            if ((isNegated && !isFound) || (!isNegated && isFound)) {
                 numTestsPassed += 1;
-                System.out.println( "Passed" + "\n"
-                                    + (isNegated ? "not found:" : "found:") + "\n"
-                                    + stringToFind + " in " + testArray[i][0] + "\n");
+                System.out.println("Passed" + "\n"
+                        + (isNegated ? "not found:" : "found:") + "\n"
+                        + stringToFind + " in " + test[0] + "\n");
             } else {
-                System.out.println( "FAILED" + "\n"
-                                    + "for bug " + getBugId()
-                                    + " (" + getBugName() + ")" + "\n"
-                                    + "when searching for:" + "\n"
-                                    + stringToFind
-                                    + " in " + testArray[i][0] + "\n");
+                System.out.println("FAILED, when searching for:" + "\n"
+                        + stringToFind
+                        + " in " + test[0] + "\n");
             }
         }
     }
@@ -322,21 +314,15 @@ public abstract class JavadocTester {
      * @param testArray the array of file tests
      * @param isNegated true if test is negated; false otherwise
      */
-    private void runTestsOnFile(String[] testArray, boolean isNegated) {
-        String fileName;
-        String failedString;
-        String passedString;
-        for (int i = 0; i < testArray.length; i++) {
+    private void runTestsOnFile(File baseDir, String[] testArray, boolean isNegated) {
+        for (String fileName : testArray) {
             numTestsRun++;
-            fileName = testArray[i];
-            failedString = "FAILED" + "\n"
-                    + "for bug " + getBugId() + " (" + getBugName() + ") "
-                    + "file (" + fileName + ") found" + "\n";
-            passedString = "Passed" + "\n" +
-                        "file (" + fileName + ") not found" + "\n";
+            String failedString = "FAILED: file (" + fileName + ") found" + "\n";
+            String passedString = "Passed" + "\n" +
+                    "file (" + fileName + ") not found" + "\n";
             System.out.print("Running subtest #" + numTestsRun + "... ");
             try {
-                File file = new File(fileName);
+                File file = new File(baseDir, fileName);
                 if ((file.exists() && !isNegated) || (!file.exists() && isNegated)) {
                     numTestsPassed += 1;
                     System.out.println(passedString);
@@ -352,27 +338,33 @@ public abstract class JavadocTester {
     /**
      * Iterate through the list of given file pairs and diff each file.
      *
-     * @param filePairs the pairs of files to diff.
-     * @throws an Error is thrown if any differences are found between
+     * @param baseDir1 the directory containing the first set of files
+     * @param baseDir2 the directory containing the second set of files
+     * @param files the set of files to be compared
+     * @throws Error if any differences are found between
      * file pairs.
      */
-    public void runDiffs(String[][] filePairs) throws Error {
-        runDiffs(filePairs, true);
+    public void runDiffs(String baseDir1, String baseDir2, String[] files) throws Error {
+        runDiffs(baseDir1, baseDir2, files, true);
     }
 
     /**
      * Iterate through the list of given file pairs and diff each file.
      *
-     * @param filePairs the pairs of files to diff.
-     * @param throwErrorIFNoMatch flag to indicate whether or not to throw
+     * @param baseDir1 the directory containing the first set of files
+     * @param baseDir2 the directory containing the second set of files
+     * @param files the set of files to be compared
+     * @param throwErrorIfNoMatch flag to indicate whether or not to throw
      * an error if the files do not match.
      *
-     * @throws an Error is thrown if any differences are found between
-     * file pairs and throwErrorIFNoMatch is true.
+     * @throws Error if any differences are found between
+     * file pairs and throwErrorIfNoMatch is true.
      */
-    public void runDiffs(String[][] filePairs, boolean throwErrorIfNoMatch) throws Error {
-        for (int i = 0; i < filePairs.length; i++) {
-            diff(filePairs[i][0], filePairs[i][1], throwErrorIfNoMatch);
+    public void runDiffs(String baseDir1, String baseDir2, String[] files, boolean throwErrorIfNoMatch) throws Error {
+        File bd1 = new File(baseDir1);
+        File bd2 = new File(baseDir2);
+        for (String file : files) {
+            diff(bd1, bd2, file, throwErrorIfNoMatch);
         }
     }
 
@@ -392,8 +384,7 @@ public abstract class JavadocTester {
                 actualExitCode);
             numTestsPassed++;
         } else {
-            System.out.println( "FAILED" + "\n" + "for bug " + getBugId()
-                + " (" + getBugName() + ")" + "\n" + "Expected return code " +
+            System.out.println( "FAILED: expected return code " +
                 expectedExitCode + " but got " + actualExitCode);
         }
     }
@@ -410,8 +401,7 @@ public abstract class JavadocTester {
             // Test failed
             throw new Error("\n" + (numTestsRun - numTestsPassed)
                                     + " of " + (numTestsRun)
-                                    + " subtests failed for bug " + getBugId()
-                                    + " (" + getBugName() + ")" + "\n");
+                                    + " subtests failed\n");
         }
     }
 
@@ -432,28 +422,39 @@ public abstract class JavadocTester {
      * @return          the file in string format
      */
     public String readFileToString(String fileName) throws Error {
-        if (fileName.equals(ERROR_OUTPUT)) {
-            return getErrorOutput();
-        } else if (fileName.equals(NOTICE_OUTPUT)) {
-            return getNoticeOutput();
-        } else if (fileName.equals(WARNING_OUTPUT)) {
-            return getWarningOutput();
-        } else if (fileName.equals(STANDARD_OUTPUT)) {
-            return getStandardOutput();
+        return readFileToString(outputDir, fileName);
+    }
+
+    /**
+     * Read the file and return it as a string.
+     *
+     * @param baseDir   the directory in which to locate the file
+     * @param fileName  the name of the file to read
+     * @return          the file in string format
+     */
+    private String readFileToString(File baseDir, String fileName) throws Error {
+        switch (fileName) {
+            case ERROR_OUTPUT:
+                return getErrorOutput();
+            case NOTICE_OUTPUT:
+                return getNoticeOutput();
+            case WARNING_OUTPUT:
+                return getWarningOutput();
+            case STANDARD_OUTPUT:
+                return getStandardOutput();
         }
         try {
-            File file = new File(fileName);
+            File file = new File(baseDir, fileName);
             if ( !file.exists() ) {
                 System.out.println("\n" + "FILE DOES NOT EXIST: " + fileName);
             }
-            BufferedReader in = new BufferedReader(new FileReader(file));
-
-            // Create an array of characters the size of the file
-            char[] allChars = new char[(int)file.length()];
-
-            // Read the characters into the allChars array
-            in.read(allChars, 0, (int)file.length());
-            in.close();
+            char[] allChars;
+            try (BufferedReader in = new BufferedReader(new FileReader(file))) {
+                // Create an array of characters the size of the file
+                allChars = new char[(int)file.length()];
+                // Read the characters into the allChars array
+                in.read(allChars, 0, (int)file.length());
+            }
 
             // Convert to a string
             String allCharsString = new String(allChars);
@@ -470,22 +471,24 @@ public abstract class JavadocTester {
     /**
      * Compare the two given files.
      *
-     * @param file1 the first file to compare.
-     * @param file2 the second file to compare.
+     * @param baseDir1 the directory in which to locate the first file
+     * @param baseDir2 the directory in which to locate the second file
+     * @param file the file to compare in the two base directories
      * @param throwErrorIFNoMatch flag to indicate whether or not to throw
      * an error if the files do not match.
      * @return true if the files are the same and false otherwise.
      */
-    public boolean diff(String file1, String file2, boolean throwErrorIFNoMatch) throws Error {
-        String file1Contents = readFileToString(file1);
-        String file2Contents = readFileToString(file2);
+    private boolean diff(File baseDir1, File baseDir2, String file,
+            boolean throwErrorIFNoMatch) throws Error {
+        String file1Contents = readFileToString(baseDir1, file);
+        String file2Contents = readFileToString(baseDir2, file);
         numTestsRun++;
         if (file1Contents.trim().compareTo(file2Contents.trim()) == 0) {
-            System.out.println("Diff successful: " + file1 + ", " + file2);
+            System.out.println("Diff successful: " + new File(baseDir1, file) + ", " + new File(baseDir2, file));
             numTestsPassed++;
             return true;
         } else if (throwErrorIFNoMatch) {
-            throw new Error("Diff failed: " + file1 + ", " + file2);
+            throw new Error("Diff failed: " + new File(baseDir1, file) + ", " + new File(baseDir2, file));
         } else {
             return false;
         }
@@ -559,12 +562,12 @@ public abstract class JavadocTester {
                 destDirObj.mkdir();
             }
             String[] files = targetDirObj.list();
-            for (int i = 0; i < files.length; i++) {
-                File srcFile = new File(targetDirObj, files[i]);
-                File destFile = new File(destDirObj, files[i]);
+            for (String file : files) {
+                File srcFile = new File(targetDirObj, file);
+                File destFile = new File(destDirObj, file);
                 if (srcFile.isFile()) {
                     System.out.println("Copying " + srcFile + " to " + destFile);
-                        copyFile(destFile, srcFile);
+                    copyFile(destFile, srcFile);
                 } else if(srcFile.isDirectory()) {
                     copyDir(srcFile.getAbsolutePath(), destDirObj.getAbsolutePath());
                 }
@@ -577,13 +580,15 @@ public abstract class JavadocTester {
     /**
      * Copy source file to destination file.
      *
+     * @param destfile the destination file
+     * @param srcfile the source file
      * @throws SecurityException
      * @throws IOException
      */
     public static void copyFile(File destfile, File srcfile)
         throws IOException {
         byte[] bytearr = new byte[512];
-        int len = 0;
+        int len;
         FileInputStream input = new FileInputStream(srcfile);
         File destDir = destfile.getParentFile();
         destDir.mkdirs();
@@ -592,8 +597,7 @@ public abstract class JavadocTester {
             while ((len = input.read(bytearr)) != -1) {
                 output.write(bytearr, 0, len);
             }
-        } catch (FileNotFoundException exc) {
-        } catch (SecurityException exc) {
+        } catch (FileNotFoundException | SecurityException exc) {
         } finally {
             input.close();
             output.close();

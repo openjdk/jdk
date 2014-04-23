@@ -35,15 +35,13 @@
 
 public class TestSuperClassInSerialForm extends JavadocTester {
 
-    private static final String BUG_ID = "4671694";
-
     private static final String[][] TEST = {
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
          "<a href=\"pkg/SubClass.html\" title=\"class in pkg\">pkg.SubClass</a> extends <a href=\"pkg/SuperClass.html\" title=\"class in pkg\">SuperClass</a>"}
     };
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     /**
@@ -54,19 +52,5 @@ public class TestSuperClassInSerialForm extends JavadocTester {
         TestSuperClassInSerialForm tester = new TestSuperClassInSerialForm();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

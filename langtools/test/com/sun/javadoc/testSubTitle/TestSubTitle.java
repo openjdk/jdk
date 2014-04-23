@@ -34,28 +34,27 @@
 
 public class TestSubTitle extends JavadocTester {
 
-    private static final String BUG_ID = "7010342";
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/package-summary.html",
+        { "pkg/package-summary.html",
             "<div class=\"block\">This is the description of package pkg.</div>"
         },
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<div class=\"subTitle\">pkg</div>"
         }
     };
     private static final String[][] NEG_TEST = {
-        {BUG_ID + "/pkg/package-summary.html",
+        { "pkg/package-summary.html",
             "<p class=\"subTitle\">\n" +
             "<div class=\"block\">This is the " +
             "description of package pkg.</div>\n" +
             "</p>"
         },
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<p class=\"subTitle\">pkg</p>"
         }
     };
     private static final String[] ARGS = new String[]{
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     /**
@@ -66,19 +65,5 @@ public class TestSubTitle extends JavadocTester {
         TestSubTitle tester = new TestSubTitle();
         tester.run(ARGS, TEST, NEG_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

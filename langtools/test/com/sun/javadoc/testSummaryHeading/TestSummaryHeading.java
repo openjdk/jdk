@@ -36,17 +36,14 @@
 
 public class TestSummaryHeading extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4904036";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/C.html",  "<h3>Method Summary</h3>"}
+        { "C.html",  "<h3>Method Summary</h3>"}
     };
 
     /**
@@ -57,19 +54,5 @@ public class TestSummaryHeading extends JavadocTester {
         TestSummaryHeading tester = new TestSummaryHeading();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -32,21 +32,20 @@
  */
 public class TestSingleQuotedLink extends JavadocTester {
 
-    private static final String BUG_ID = "6457406";
     // We are testing the redirection algorithm with a known scenario when a writer is not forced to ignore it: "-use".
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg1/class-use/C1.html",
+        { "pkg1/class-use/C1.html",
             "<a href=\'http://download.oracle.com/javase/8/docs/technotes/guides/indexC2.html\'>"
         }
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/pkg1/class-use/C1.html",
+        { "pkg1/class-use/C1.html",
             "pkg1/\'http://download.oracle.com/javase/8/docs/technotes/guides/indexC2.html\'>"
         }
     };
     private static final String[] ARGS =
             new String[]{
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-use", "pkg1"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-use", "pkg1"
     };
 
     /**
@@ -57,19 +56,5 @@ public class TestSingleQuotedLink extends JavadocTester {
         TestSingleQuotedLink tester = new TestSingleQuotedLink();
         tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

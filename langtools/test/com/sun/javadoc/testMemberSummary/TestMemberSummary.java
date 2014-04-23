@@ -36,30 +36,27 @@
 
 public class TestMemberSummary extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4951228-6290760";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg","pkg2"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg","pkg2"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
         // Check return type in member summary.
-        {BUG_ID + "/pkg/PublicChild.html",
+        { "pkg/PublicChild.html",
             "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n" +
             "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">" +
             "returnTypeTest</a></span>()</code>"
         },
         // Check return type in member detail.
-        {BUG_ID + "/pkg/PublicChild.html",
+        { "pkg/PublicChild.html",
             "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">" +
             "PublicChild</a>&nbsp;returnTypeTest()</pre>"
         },
 
          // Legacy anchor dimensions (6290760)
-        {BUG_ID + "/pkg2/A.html",
+        { "pkg2/A.html",
             "<a name=\"f-java.lang.Object:A-\">\n" +
             "<!--   -->\n" +
             "</a><a name=\"f-T:A-\">\n" +
@@ -76,19 +73,5 @@ public class TestMemberSummary extends JavadocTester {
         TestMemberSummary tester = new TestMemberSummary();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

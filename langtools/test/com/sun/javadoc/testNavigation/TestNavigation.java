@@ -34,32 +34,29 @@
 
 public class TestNavigation extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4131628-4664607";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/A.html", "<li>Prev&nbsp;Class</li>"},
-        {BUG_ID + "/pkg/A.html",
+        { "pkg/A.html", "<li>Prev&nbsp;Class</li>"},
+        { "pkg/A.html",
             "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/A.html\" title=\"annotation in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>"},
-        {BUG_ID + "/pkg/C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>"},
-        {BUG_ID + "/pkg/E.html",
+        { "pkg/E.html",
             "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>"},
-        {BUG_ID + "/pkg/E.html",
+        { "pkg/E.html",
             "<a href=\"../pkg/I.html\" title=\"interface in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>"},
-        {BUG_ID + "/pkg/I.html",
+        { "pkg/I.html",
             "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>"},
-        {BUG_ID + "/pkg/I.html", "<li>Next&nbsp;Class</li>"},
+        { "pkg/I.html", "<li>Next&nbsp;Class</li>"},
         // Test for 4664607
-        {BUG_ID + "/pkg/I.html",
+        { "pkg/I.html",
             "<div class=\"skipNav\"><a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a></div>\n" +
             "<a name=\"navbar.top.firstrow\">\n" +
             "<!--   -->\n" +
@@ -74,19 +71,5 @@ public class TestNavigation extends JavadocTester {
         TestNavigation tester = new TestNavigation();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -35,12 +35,11 @@
 
 public class TestBackSlashInLink extends JavadocTester {
 
-    private static final String BUG_ID = "4511110";
     private static final String[][] TEST = {
-        {BUG_ID + "/C.html", "src-html/C.html#line.7"}};
+        { "C.html", "src-html/C.html#line.7"}};
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             "-linksource",  SRC_DIR + "/C.java"};
 
     /**
@@ -51,19 +50,5 @@ public class TestBackSlashInLink extends JavadocTester {
         TestBackSlashInLink tester = new TestBackSlashInLink();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

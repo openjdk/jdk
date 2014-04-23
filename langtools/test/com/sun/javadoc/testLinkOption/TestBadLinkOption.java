@@ -34,11 +34,9 @@
 
 public class TestBadLinkOption extends JavadocTester {
 
-    private static final String BUG_ID = "4720957";
-
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-        "-link", BUG_ID, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
+        "-link", OUTPUT_DIR, "pkg"
     };
 
     private static final String[][] TEST = {
@@ -57,19 +55,5 @@ public class TestBadLinkOption extends JavadocTester {
         TestBadLinkOption tester = new TestBadLinkOption();
         tester.run(ARGS, TEST, NEG_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

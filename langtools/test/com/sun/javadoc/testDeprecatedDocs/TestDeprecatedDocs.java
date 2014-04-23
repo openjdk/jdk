@@ -33,19 +33,16 @@
 
 public class TestDeprecatedDocs extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4927552";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     private static final String TARGET_FILE  =
-        BUG_ID + "/deprecated-list.html";
+        "deprecated-list.html";
 
     private static final String TARGET_FILE2  =
-        BUG_ID + "/pkg/DeprecatedClassByAnnotation.html";
+        "pkg/DeprecatedClassByAnnotation.html";
 
     //Input for string search tests.
     private static final String[][] TEST = {
@@ -100,19 +97,5 @@ public class TestDeprecatedDocs extends JavadocTester {
         TestDeprecatedDocs tester = new TestDeprecatedDocs();
         tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }
