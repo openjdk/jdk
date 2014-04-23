@@ -259,28 +259,9 @@ public class XDataTransferer extends DataTransferer {
                                   Transferable localeTransferable)
       throws IOException {
 
-        String charset = null;
-        if (localeTransferable != null &&
-            isLocaleDependentTextFormat(format) &&
-            localeTransferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
-            try {
-                charset = new String(
-                    (byte[])localeTransferable.getTransferData(javaTextEncodingFlavor),
-                    "UTF-8"
-                );
-            } catch (UnsupportedFlavorException cannotHappen) {
-            }
-        } else {
-            charset = getCharsetForTextFormat(format);
-        }
-        if (charset == null) {
-            // Only happens when we have a custom text type.
-            charset = getDefaultTextCharset();
-        }
-
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(stream, charset));
+        String charset = getBestCharsetForTextFormat(format, localeTransferable);
+        try (InputStreamReader isr = new InputStreamReader(stream, charset);
+             BufferedReader reader = new BufferedReader(isr)) {
             String line;
             ArrayList<URI> uriList = new ArrayList<>();
             URI uri;
@@ -293,9 +274,6 @@ public class XDataTransferer extends DataTransferer {
                 uriList.add(uri);
             }
             return uriList.toArray(new URI[uriList.size()]);
-        } finally {
-            if (reader != null)
-                reader.close();
         }
     }
 

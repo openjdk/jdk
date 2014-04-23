@@ -57,6 +57,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 
 import java.lang.reflect.Constructor;
@@ -149,7 +150,7 @@ public abstract class DataTransferer {
             tempSet.add("UTF-16BE");
             tempSet.add("UTF-16LE");
             tempSet.add("UTF-16");
-            tempSet.add(getDefaultTextCharset());
+            tempSet.add(Charset.defaultCharset().name());
             return Collections.unmodifiableSortedSet(tempSet);
         }
     }
@@ -161,12 +162,6 @@ public abstract class DataTransferer {
      * entries may be added during the life of the JRE for text/<other> types.
      */
     private static final Map<String, Boolean> textMIMESubtypeCharsetSupport;
-
-    /**
-     * Cache of the platform default encoding as specified in the
-     * "file.encoding" system property.
-     */
-    private static String defaultEncoding;
 
     /**
      * A collection of all natives listed in flavormap.properties with
@@ -266,17 +261,7 @@ public abstract class DataTransferer {
 
         String encoding = flavor.getParameter("charset");
 
-        return (encoding != null) ? encoding : getDefaultTextCharset();
-    }
-
-    /**
-     * Returns the platform's default character encoding.
-     */
-    public static String getDefaultTextCharset() {
-        if (defaultEncoding != null) {
-            return defaultEncoding;
-        }
-        return defaultEncoding = Charset.defaultCharset().name();
+        return (encoding != null) ? encoding : Charset.defaultCharset().name();
     }
 
     /**
@@ -470,7 +455,7 @@ public abstract class DataTransferer {
 
         textNatives.add(format);
         nativeCharsets.put(format, (charset != null && charset.length() != 0)
-                ? charset : getDefaultTextCharset());
+                ? charset : Charset.defaultCharset().name());
         if (eoln != null && eoln.length() != 0 && !eoln.equals("\n")) {
             nativeEOLNs.put(format, eoln);
         }
@@ -771,19 +756,17 @@ public abstract class DataTransferer {
      * clipboard string encoding/decoding, basing on clipboard
      * format and localeTransferable(on decoding, if available)
      */
-    private String getBestCharsetForTextFormat(Long lFormat,
+    protected String getBestCharsetForTextFormat(Long lFormat,
         Transferable localeTransferable) throws IOException
     {
         String charset = null;
         if (localeTransferable != null &&
             isLocaleDependentTextFormat(lFormat) &&
-            localeTransferable.isDataFlavorSupported(javaTextEncodingFlavor))
-        {
+            localeTransferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
             try {
-                charset = new String(
-                    (byte[])localeTransferable.getTransferData(javaTextEncodingFlavor),
-                    "UTF-8"
-                );
+                byte[] charsetNameBytes = (byte[])localeTransferable
+                        .getTransferData(javaTextEncodingFlavor);
+                charset = new String(charsetNameBytes, StandardCharsets.UTF_8);
             } catch (UnsupportedFlavorException cannotHappen) {
             }
         } else {
@@ -791,7 +774,7 @@ public abstract class DataTransferer {
         }
         if (charset == null) {
             // Only happens when we have a custom text type.
-            charset = getDefaultTextCharset();
+            charset = Charset.defaultCharset().name();
         }
         return charset;
     }
@@ -1716,28 +1699,8 @@ search:
         {
             Long lFormat = format;
 
-            String sourceEncoding = null;
-            if (isLocaleDependentTextFormat(format) &&
-                localeTransferable != null &&
-                localeTransferable.
-                    isDataFlavorSupported(javaTextEncodingFlavor))
-            {
-                try {
-                    sourceEncoding = new String((byte[])localeTransferable.
-                                       getTransferData(javaTextEncodingFlavor),
-                                       "UTF-8");
-                } catch (UnsupportedFlavorException cannotHappen) {
-                }
-            } else {
-                sourceEncoding = getCharsetForTextFormat(lFormat);
-            }
-
-            if (sourceEncoding == null) {
-                // Only happens when we have a custom text type.
-                sourceEncoding = getDefaultTextCharset();
-            }
-            wrapped = new BufferedReader
-                (new InputStreamReader(bytestream, sourceEncoding));
+            String sourceEncoding = getBestCharsetForTextFormat(format, localeTransferable);
+            wrapped = new BufferedReader(new InputStreamReader(bytestream, sourceEncoding));
 
             if (targetEncoding == null) {
                 // Throw NullPointerException for compatibility with the former
@@ -2318,7 +2281,6 @@ search:
      */
     public static class CharsetComparator extends IndexedComparator<String> {
         private static final Map<String, Integer> charsets;
-        private static final String defaultEncoding;
 
         private static final Integer DEFAULT_CHARSET_INDEX = 2;
         private static final Integer OTHER_CHARSET_INDEX = 1;
@@ -2339,8 +2301,7 @@ search:
             // US-ASCII is the worst charset supported
             charsetsMap.put(canonicalName("US-ASCII"), WORST_CHARSET_INDEX);
 
-            defaultEncoding = DataTransferer.canonicalName(DataTransferer.getDefaultTextCharset());
-            charsetsMap.putIfAbsent(defaultEncoding, DEFAULT_CHARSET_INDEX);
+            charsetsMap.putIfAbsent(Charset.defaultCharset().name(), DEFAULT_CHARSET_INDEX);
 
             charsetsMap.put(UNSUPPORTED_CHARSET, UNSUPPORTED_CHARSET_INDEX);
 
