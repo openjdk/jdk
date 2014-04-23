@@ -49,15 +49,13 @@ public class TestOptions extends JavadocTester {
             "<div class=\"aboutLanguage\">Test footer</div>"}
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
         TestOptions tester = new TestOptions();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

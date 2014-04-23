@@ -57,8 +57,6 @@ public class TestPackageDeprecation extends JavadocTester {
             "<li><a href=\"#package\">Deprecated Packages</a></li>"
         }
     };
-    private static final String[][] TEST2 = NO_TEST;
-    private static final String[][] NEGATED_TEST1 = NO_TEST;
     private static final String[][] NEGATED_TEST2 = {
         {BUG_ID + "-2/overview-summary.html", "pkg1"},
         {BUG_ID + "-2/allclasses-frame.html", "FooDepr"}
@@ -70,8 +68,8 @@ public class TestPackageDeprecation extends JavadocTester {
      */
     public static void main(String[] args) {
         TestPackageDeprecation tester = new TestPackageDeprecation();
-        tester.run(ARGS1, TEST1, NEGATED_TEST1);
-        tester.run(ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS1, TEST1, NO_TEST);
+        tester.run(ARGS2, NO_TEST, NEGATED_TEST2);
         if ((new java.io.File(BUG_ID + "-2/pkg1/" +
                 "package-summary.html")).exists()) {
             throw new Error("Test Fails: packages summary should not be" +

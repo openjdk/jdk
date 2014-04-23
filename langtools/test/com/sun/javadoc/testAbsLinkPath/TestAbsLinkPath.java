@@ -37,7 +37,6 @@ public class TestAbsLinkPath extends JavadocTester {
     private static final String BUG_ID = "4640745";
     private static final String[][] TEST = {
         {"tmp/pkg1/C1.html", "C2.html"}};
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     private static final String[] ARGS1 =
         new String[] {
@@ -54,7 +53,7 @@ public class TestAbsLinkPath extends JavadocTester {
     public static void main(String[] args) {
         TestAbsLinkPath tester = new TestAbsLinkPath();
         tester.run(ARGS1, NO_TEST, NO_TEST);
-        tester.run(ARGS2,  TEST, NEGATED_TEST);
+        tester.run(ARGS2,  TEST, NO_TEST);
         tester.printSummary();
     }
 

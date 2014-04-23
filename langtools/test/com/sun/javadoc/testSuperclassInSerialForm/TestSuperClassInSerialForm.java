@@ -42,7 +42,6 @@ public class TestSuperClassInSerialForm extends JavadocTester {
          "<a href=\"pkg/SubClass.html\" title=\"class in pkg\">pkg.SubClass</a> extends <a href=\"pkg/SuperClass.html\" title=\"class in pkg\">SuperClass</a>"}
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
     };
@@ -53,7 +52,7 @@ public class TestSuperClassInSerialForm extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSuperClassInSerialForm tester = new TestSuperClassInSerialForm();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

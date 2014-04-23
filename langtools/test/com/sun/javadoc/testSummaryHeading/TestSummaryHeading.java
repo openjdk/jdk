@@ -48,7 +48,6 @@ public class TestSummaryHeading extends JavadocTester {
     private static final String[][] TEST = {
         {BUG_ID + "/C.html",  "<h3>Method Summary</h3>"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -56,7 +55,7 @@ public class TestSummaryHeading extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSummaryHeading tester = new TestSummaryHeading();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

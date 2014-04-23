@@ -53,7 +53,6 @@ public class TestConstructorIndent extends JavadocTester {
                  "</dl>"
         }
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -61,7 +60,7 @@ public class TestConstructorIndent extends JavadocTester {
      */
     public static void main(String[] args) {
         TestConstructorIndent tester = new TestConstructorIndent();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

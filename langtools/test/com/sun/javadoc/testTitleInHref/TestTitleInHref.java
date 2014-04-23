@@ -51,7 +51,6 @@ public class TestTitleInHref extends JavadocTester {
 
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR,
         "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api",
@@ -64,7 +63,7 @@ public class TestTitleInHref extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTitleInHref tester = new TestTitleInHref();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

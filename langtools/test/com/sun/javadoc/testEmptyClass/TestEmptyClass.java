@@ -36,7 +36,6 @@
 public class TestEmptyClass extends JavadocTester {
 
     private static final String OUTPUT_DIR = "tmp";
-    private static final String[][] TEST = NO_TEST;
     private static final String[][] NEGATED_TEST = {
 
         //The overview tree should not link to classes that were not documented
@@ -60,7 +59,7 @@ public class TestEmptyClass extends JavadocTester {
      */
     public static void main(String[] args) {
         TestEmptyClass tester = new TestEmptyClass();
-        int exitCode = tester.run(ARGS, TEST, NEGATED_TEST);
+        int exitCode = tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
         if (exitCode != 0) {
             throw new Error("Error found while executing Javadoc");

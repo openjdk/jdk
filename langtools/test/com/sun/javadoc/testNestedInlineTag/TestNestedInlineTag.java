@@ -77,7 +77,6 @@ public class TestNestedInlineTag extends JavadocTester {
         }
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
             "-d", BUG_ID, "-sourcepath", SRC_DIR,
@@ -93,7 +92,7 @@ public class TestNestedInlineTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestNestedInlineTag tester = new TestNestedInlineTag();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

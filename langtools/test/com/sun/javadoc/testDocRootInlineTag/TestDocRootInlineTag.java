@@ -50,7 +50,6 @@ public class TestDocRootInlineTag extends JavadocTester {
         {BUG_ID + "/index-all.html", "My package page is " +
             "<a href=\"./pkg/package-summary.html\">here</a>"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
             "-bottom", "The value of @docRoot is \"{@docRoot}\"",
@@ -65,7 +64,7 @@ public class TestDocRootInlineTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDocRootInlineTag tester = new TestDocRootInlineTag();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

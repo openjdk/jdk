@@ -44,7 +44,6 @@ public class TestInlineLinkLabel extends JavadocTester {
         {BUG_ID + "/pkg/C1.html" ,
             "<a href=\"../pkg/C2.html\" title=\"class in pkg\"><code>Here is a link to a class</code></a>"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
             "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"};
@@ -55,7 +54,7 @@ public class TestInlineLinkLabel extends JavadocTester {
      */
     public static void main(String[] args) {
         TestInlineLinkLabel tester = new TestInlineLinkLabel();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

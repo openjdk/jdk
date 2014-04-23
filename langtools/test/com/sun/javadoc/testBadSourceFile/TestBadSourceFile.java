@@ -43,17 +43,13 @@ public class TestBadSourceFile extends JavadocTester {
         "-Xdoclint:none", "-d", BUG_ID, SRC_DIR + "/C2.java"
     };
 
-    //Input for string search tests.
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
         TestBadSourceFile tester = new TestBadSourceFile();
-        int exitCode = tester.run(ARGS, TEST, NEGATED_TEST);
+        int exitCode = tester.run(ARGS, NO_TEST, NO_TEST);
         tester.checkExitCode(0, exitCode);
         tester.printSummary();
     }

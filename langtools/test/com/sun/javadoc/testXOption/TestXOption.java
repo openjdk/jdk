@@ -53,7 +53,6 @@ public class TestXOption extends JavadocTester {
         {STANDARD_OUTPUT, "-Xdoclint "},
         {STANDARD_OUTPUT, "-Xdoclint:"},
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     //The help option should not crash the doclet.
     private static final int EXPECTED_EXIT_CODE = 0;
@@ -64,7 +63,7 @@ public class TestXOption extends JavadocTester {
      */
     public static void main(String[] args) {
         TestXOption tester = new TestXOption();
-        int actualExitCode = tester.run(ARGS, TEST, NEGATED_TEST);
+        int actualExitCode = tester.run(ARGS, TEST, NO_TEST);
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
         tester.printSummary();
     }

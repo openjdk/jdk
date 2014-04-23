@@ -51,7 +51,6 @@ public class TestCRLineSeparator extends JavadocTester {
         " Line 2"}
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -60,7 +59,7 @@ public class TestCRLineSeparator extends JavadocTester {
     public static void main(String[] args) throws Exception {
         initFiles(new File(SRC_DIR), new File("."), "pkg");
         TestCRLineSeparator tester = new TestCRLineSeparator();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

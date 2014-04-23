@@ -45,7 +45,6 @@ public class TestDocFileDir extends JavadocTester {
         {BUG_ID + "-1/pkg/doc-files/testfile.txt",
             "This doc file did not get trashed."}
         };
-    private static final String[][] NEGATED_TEST1 = NO_TEST;
 
     private static final String[] FILE_TEST2 = {
         BUG_ID + "-2/pkg/doc-files/subdir-used1" +
@@ -64,7 +63,6 @@ public class TestDocFileDir extends JavadocTester {
         {"pkg/doc-files/testfile.txt",
             "This doc file did not get trashed."}
         };
-    private static final String[][] NEGATED_TEST0 = {};
 
     //Output dir = Input Dir
     private static final String[] ARGS1 =
@@ -95,9 +93,9 @@ public class TestDocFileDir extends JavadocTester {
     public static void main(String[] args) {
         TestDocFileDir tester = new TestDocFileDir();
         copyDir(SRC_DIR + "/pkg", ".");
-        tester.run(ARGS0, TEST0, NEGATED_TEST0);
+        tester.run(ARGS0, TEST0, NO_TEST);
         copyDir(SRC_DIR + "/pkg", BUG_ID + "-1");
-        tester.run(ARGS1, TEST1, NEGATED_TEST1);
+        tester.run(ARGS1, TEST1, NO_TEST);
         tester.run(ARGS2, NO_TEST, NO_TEST, FILE_TEST2, FILE_NEGATED_TEST2);
         tester.printSummary();
     }

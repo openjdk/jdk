@@ -56,7 +56,6 @@ public class TestThrowsTag extends JavadocTester {
             "<dd><code><a href=\"../pkg/T8.html\" title=\"class in pkg\">T8</a></code> - the fourth inherited throws tag.</dd>"
         },
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -64,7 +63,7 @@ public class TestThrowsTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestThrowsTag tester = new TestThrowsTag();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

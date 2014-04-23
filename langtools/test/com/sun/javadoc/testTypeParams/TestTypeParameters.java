@@ -84,7 +84,6 @@ public class TestTypeParameters extends JavadocTester {
             "<a href=\"../pkg/Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;"
         }
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -92,8 +91,8 @@ public class TestTypeParameters extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTypeParameters tester = new TestTypeParameters();
-        tester.run(ARGS1, TEST1, NEGATED_TEST);
-        tester.run(ARGS2, TEST2, NEGATED_TEST);
+        tester.run(ARGS1, TEST1, NO_TEST);
+        tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
     }
 

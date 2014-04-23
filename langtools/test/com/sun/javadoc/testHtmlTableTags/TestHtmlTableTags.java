@@ -425,7 +425,6 @@ public class TestHtmlTableTags extends JavadocTester {
             ">Description</th>"
         }
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -433,7 +432,7 @@ public class TestHtmlTableTags extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHtmlTableTags tester = new TestHtmlTableTags();
-        tester.run(ARGS, TABLE_TAGS_TEST, NEGATED_TEST);
+        tester.run(ARGS, TABLE_TAGS_TEST, NO_TEST);
         tester.printSummary();
     }
 

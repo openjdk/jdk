@@ -39,7 +39,6 @@ public class TestTagMisuse extends JavadocTester {
         {WARNING_OUTPUT, "warning - Tag @return cannot be used in constructor documentation."},
         {WARNING_OUTPUT, "warning - Tag @throws cannot be used in inline documentation."},
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS = new String[] {
         "-Xdoclint:none", "-d", BUG_ID, SRC_DIR + "/TestTagMisuse.java"
     };
@@ -50,7 +49,7 @@ public class TestTagMisuse extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTagMisuse tester = new TestTagMisuse();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

@@ -96,10 +96,7 @@ public class TestRelativeLinks extends JavadocTester {
         //PACKAGE OVERVIEW
         {BUG_ID + "/overview-summary.html",
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
-
-
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -107,7 +104,7 @@ public class TestRelativeLinks extends JavadocTester {
      */
     public static void main(String[] args) {
         TestRelativeLinks tester = new TestRelativeLinks();
-        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
     }
 

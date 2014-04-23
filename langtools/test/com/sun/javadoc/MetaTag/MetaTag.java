@@ -91,9 +91,6 @@ public class MetaTag extends JavadocTester {
                             + "content=\"" + m_dateFormat.format(new Date()) + "\">"},
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    private static final String[][] TEST2 = NO_TEST;
     private static final String[][] NEGATED_TEST2 = {
         //No keywords when -keywords is not used.
         { OUTPUT_DIR + "-2/p1/C1.html",
@@ -132,8 +129,8 @@ public class MetaTag extends JavadocTester {
      */
     public static void main(String[] args) {
         MetaTag tester = new MetaTag();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.run(ARGS_NO_TIMESTAMP_NO_KEYWORDS, TEST2, NEGATED_TEST2);
+        tester.run(ARGS, TEST, NO_TEST);
+        tester.run(ARGS_NO_TIMESTAMP_NO_KEYWORDS, NO_TEST, NEGATED_TEST2);
         tester.printSummary();
     }
 

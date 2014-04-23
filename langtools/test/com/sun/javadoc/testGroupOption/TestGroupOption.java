@@ -56,11 +56,9 @@ public class TestGroupOption extends JavadocTester {
     };
 
     //Input for string search tests.
-    private static final String[][] TEST1 = NO_TEST;
     private static final String[][] NEGATED_TEST1 = {{WARNING_OUTPUT, "-group"}};
 
     private static final String[][] TEST2 = {{WARNING_OUTPUT, "-group"}};
-    private static final String[][] NEGATED_TEST2 = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -69,12 +67,12 @@ public class TestGroupOption extends JavadocTester {
     public static void main(String[] args) {
         //Make sure the warning is not printed when -group is used correctly.
         TestGroupOption tester = new TestGroupOption();
-        tester.run(ARGS1, TEST1, NEGATED_TEST1);
+        tester.run(ARGS1, NO_TEST, NEGATED_TEST1);
         tester.printSummary();
 
         //Make sure the warning is printed when -group is not used correctly.
         tester = new TestGroupOption();
-        tester.run(ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
     }
 

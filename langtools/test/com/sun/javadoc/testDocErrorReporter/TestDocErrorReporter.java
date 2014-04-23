@@ -44,10 +44,6 @@ public class TestDocErrorReporter extends JavadocTester {
             SRC_DIR + "/TestDocErrorReporter.java"
     };
 
-    //Input for string search tests.
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     //Input for Javadoc return code test.
     private static final int EXPECTED_EXIT_CODE = 1;
 
@@ -57,7 +53,7 @@ public class TestDocErrorReporter extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDocErrorReporter tester = new TestDocErrorReporter();
-        int actualExitCode = tester.run(ARGS, TEST, NEGATED_TEST);
+        int actualExitCode = tester.run(ARGS, NO_TEST, NO_TEST);
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
         tester.printSummary();
     }
