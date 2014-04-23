@@ -390,20 +390,6 @@ class MethodFamily : public ResourceObj {
   Symbol* get_exception_message() { return _exception_message; }
   Symbol* get_exception_name() { return _exception_name; }
 
-  // Return true if the specified klass has a static method that matches
-  // the name and signature of the target method.
-  bool has_matching_static(InstanceKlass* root) {
-    if (_members.length() > 0) {
-      Pair<Method*,QualifiedState> entry = _members.at(0);
-      Method* impl = root->find_method(entry.first->name(),
-                                       entry.first->signature());
-      if ((impl != NULL) && impl->is_static()) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   // Either sets the target or the exception error message
   void determine_target(InstanceKlass* root, TRAPS) {
     if (has_target() || throws_exception()) {
@@ -433,21 +419,19 @@ class MethodFamily : public ResourceObj {
       // If the root klass has a static method with matching name and signature
       // then do not generate an overpass method because it will hide the
       // static method during resolution.
-      if (!has_matching_static(root)) {
-        if (qualified_methods.length() == 0) {
-          _exception_message = generate_no_defaults_message(CHECK);
-        } else {
-          assert(root != NULL, "Null root class");
-          _exception_message = generate_method_message(root->name(), qualified_methods.at(0), CHECK);
-        }
-        _exception_name = vmSymbols::java_lang_AbstractMethodError();
+      if (qualified_methods.length() == 0) {
+        _exception_message = generate_no_defaults_message(CHECK);
+      } else {
+        assert(root != NULL, "Null root class");
+        _exception_message = generate_method_message(root->name(), qualified_methods.at(0), CHECK);
       }
+      _exception_name = vmSymbols::java_lang_AbstractMethodError();
 
     // If only one qualified method is default, select that
     } else if (num_defaults == 1) {
         _selected_target = qualified_methods.at(default_index);
 
-    } else if (num_defaults > 1 && !has_matching_static(root)) {
+    } else if (num_defaults > 1) {
       _exception_message = generate_conflicts_message(&qualified_methods,CHECK);
       _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();
       if (TraceDefaultMethods) {

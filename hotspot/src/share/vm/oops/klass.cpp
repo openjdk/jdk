@@ -129,7 +129,7 @@ bool Klass::compute_is_subtype_of(Klass* k) {
 }
 
 
-Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
+Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const {
 #ifdef ASSERT
   tty->print_cr("Error: uncached_lookup_method called on a klass oop."
                 " Likely error: reflection method does not correctly"
