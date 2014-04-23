@@ -45,6 +45,7 @@ import java.net.URISyntaxException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -330,8 +331,8 @@ public class XDataTransferer extends DataTransferer {
      * type can be translated by the Data Transfer subsystem.
      */
     @Override
-    public List<DataFlavor> getPlatformMappingsForNative(String nat) {
-        List<DataFlavor> flavors = new ArrayList<>();
+    public LinkedHashSet<DataFlavor> getPlatformMappingsForNative(String nat) {
+        LinkedHashSet<DataFlavor> flavors = new LinkedHashSet<>();
 
         if (nat == null) {
             return flavors;
@@ -392,8 +393,8 @@ public class XDataTransferer extends DataTransferer {
      * Transfer subsystem.
      */
     @Override
-    public List<String> getPlatformMappingsForFlavor(DataFlavor df) {
-        List<String> natives = new ArrayList<>(1);
+    public LinkedHashSet<String> getPlatformMappingsForFlavor(DataFlavor df) {
+        LinkedHashSet<String> natives = new LinkedHashSet<>(1);
 
         if (df == null) {
             return natives;
