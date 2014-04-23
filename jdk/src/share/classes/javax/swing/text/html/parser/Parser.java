@@ -852,6 +852,7 @@ class Parser implements DTDConstants {
             if (lower) {
                 ch = 'a' + (ch - 'A');
             }
+            break;
 
           case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
           case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
@@ -876,6 +877,7 @@ class Parser implements DTDConstants {
                 if (lower) {
                     ch = 'a' + (ch - 'A');
                 }
+                break;
 
               case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
               case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
@@ -1214,6 +1216,7 @@ class Parser implements DTDConstants {
     /**
      * Parse attribute value. [33] 331:1
      */
+    @SuppressWarnings("fallthrough")
     String parseAttributeValue(boolean lower) throws IOException {
         int delim = -1;
 
@@ -1258,6 +1261,7 @@ class Parser implements DTDConstants {
               case '\t':
                   if (delim < 0)
                       c = ' ';
+                  // Fall through
               case ' ':
                 ch = readCh();
                 if (delim < 0) {
@@ -1559,6 +1563,7 @@ class Parser implements DTDConstants {
     /**
      * Parse a start or end tag.
      */
+    @SuppressWarnings("fallthrough")
     void parseTag() throws IOException {
         Element elem;
         boolean net = false;
@@ -1602,6 +1607,7 @@ class Parser implements DTDConstants {
                         continue;
                       case '>':
                         ch = readCh();
+                        return;
                       case -1:
                         return;
                       default:
@@ -1626,6 +1632,7 @@ class Parser implements DTDConstants {
                     switch(ch) {
                       case '>':
                         ch = readCh();
+                        // Fall through
                       case -1:
                         error("invalid.markup");
                         return;
@@ -1657,6 +1664,7 @@ class Parser implements DTDConstants {
             switch (ch = readCh()) {
               case '>':
                 ch = readCh();
+                // Fall through
               case '<':
                 // empty end tag. either </> or </<
                 if (recent == null) {
@@ -1675,6 +1683,7 @@ class Parser implements DTDConstants {
                 switch (ch) {
                   case '>':
                     ch = readCh();
+                    break;
                   case '<':
                     break;
 
@@ -1875,6 +1884,7 @@ class Parser implements DTDConstants {
         switch (ch) {
           case '/':
             net = true;
+            // Fall through
           case '>':
             ch = readCh();
             if (ch == '>' && net) {
