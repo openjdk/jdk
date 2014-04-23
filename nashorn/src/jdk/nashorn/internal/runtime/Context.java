@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandle;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
@@ -46,9 +47,11 @@ import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -62,11 +65,15 @@ import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.events.RuntimeEvent;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.options.Options;
+import jdk.nashorn.internal.runtime.options.LoggingOption.LoggerInfo;
 
 /**
  * This class manages the global state of execution. Context is immutable.
@@ -196,7 +203,9 @@ public final class Context {
         // Trusted code only can call this method.
         assert getGlobal() != global;
         //same code can be cached between globals, then we need to invalidate method handle constants
-        GlobalConstants.instance(global).invalidateAll();
+        if (global != null) {
+            Global.getConstants().invalidateAll();
+        }
         currentGlobal.set(global);
     }
 
@@ -383,6 +392,8 @@ public final class Context {
         if (env._fullversion) {
             getErr().println("nashorn full version " + Version.fullVersion());
         }
+
+        initLoggers();
     }
 
     /**
@@ -916,14 +927,14 @@ public final class Context {
 
         Class<?> script = findCachedClass(source);
         if (script != null) {
-            final DebugLogger log = Global.instance().getLogger(Compiler.class);
+            final DebugLogger log = getLogger(Compiler.class);
             if (log.isEnabled()) {
                 log.fine(new RuntimeEvent<>(Level.INFO, source), "Code cache hit for ", source, " avoiding recompile.");
             }
             return script;
         }
 
-        final FunctionNode functionNode = new Parser(env, source, errMan, strict).parse();
+        final FunctionNode functionNode = new Parser(env, source, errMan, strict, getLogger(Parser.class)).parse();
         if (errors.hasErrors()) {
             return null;
         }
@@ -948,6 +959,7 @@ public final class Context {
         final CompilationPhases phases = CompilationEnvironment.CompilationPhases.EAGER;
         final Compiler compiler = new Compiler(
                 new CompilationEnvironment(
+                    this,
                     phases.
                         makeOptimistic(
                             ScriptEnvironment.globalOptimistic()),
@@ -1032,4 +1044,79 @@ public final class Context {
             classCache.cache(source, clazz);
         }
     }
+
+    // logging
+    private final Map<String, DebugLogger> loggers = new HashMap<>();
+
+    private void initLoggers() {
+        ((Loggable)MethodHandleFactory.getFunctionality()).initLogger(this);
+    }
+
+    /**
+     * Get a logger, given a loggable class
+     * @param clazz a Loggable class
+     * @return debuglogger associated with that class
+     */
+    public DebugLogger getLogger(final Class<? extends Loggable> clazz) {
+        final String name = getLoggerName(clazz);
+        DebugLogger logger = loggers.get(name);
+        if (logger == null) {
+            if (!env.hasLogger(name)) {
+                return DebugLogger.DISABLED_LOGGER;
+            }
+            final LoggerInfo info = env._loggers.get(name);
+            logger = new DebugLogger(name, info.getLevel(), info.isQuiet());
+            loggers.put(name, logger);
+        }
+        return logger;
+    }
+
+    /**
+     * Given a Loggable class, weave debug info info a method handle for that logger.
+     * Level.INFO is used
+     *
+     * @param clazz loggable
+     * @param mh    method handle
+     * @param text  debug printout to add
+     *
+     * @return instrumented method handle, or null if logger not enabled
+     */
+    public MethodHandle addLoggingToHandle(final Class<? extends Loggable> clazz, final MethodHandle mh, final Supplier<String> text) {
+        return addLoggingToHandle(clazz, Level.INFO, mh, Integer.MAX_VALUE, false, text);
+    }
+
+    /**
+     * Given a Loggable class, weave debug info info a method handle for that logger.
+     *
+     * @param clazz            loggable
+     * @param level            log level
+     * @param mh               method handle
+     * @param paramStart       first parameter to print
+     * @param printReturnValue should we print the return vaulue?
+     * @param text             debug printout to add
+     *
+     * @return instrumented method handle, or null if logger not enabled
+     */
+    public MethodHandle addLoggingToHandle(final Class<? extends Loggable> clazz, final Level level, final MethodHandle mh, final int paramStart, final boolean printReturnValue, final Supplier<String> text) {
+        final DebugLogger log = getLogger(clazz);
+        if (log.isEnabled()) {
+            return MethodHandleFactory.addDebugPrintout(log, level, mh, paramStart, printReturnValue, text.get());
+        }
+        return mh;
+    }
+
+    private static String getLoggerName(final Class<?> clazz) {
+        Class<?> current = clazz;
+        while (current != null) {
+            final Logger log = current.getAnnotation(Logger.class);
+            if (log != null) {
+                assert !"".equals(log.name());
+                return log.name();
+            }
+            current = current.getSuperclass();
+        }
+        assert false;
+        return null;
+    }
+
 }

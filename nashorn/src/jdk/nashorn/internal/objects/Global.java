@@ -44,15 +44,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -73,11 +71,7 @@ import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
-import jdk.nashorn.internal.runtime.options.LoggingOption.LoggerInfo;
 import jdk.nashorn.internal.runtime.regexp.RegExpResult;
-import jdk.nashorn.internal.runtime.logging.DebugLogger;
-import jdk.nashorn.internal.runtime.logging.Logger;
-import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.scripts.JO;
 
 /**
@@ -437,12 +431,8 @@ public final class Global extends ScriptObject implements Scope {
     // context to which this global belongs to
     private final Context context;
 
-    // logging
-    private final Map<String, DebugLogger> loggers = new HashMap<>();
-
-    private void initLoggers() {
-        ((Loggable)MethodHandleFactory.getFunctionality()).initLogger(this);
-    }
+    // global constants for this global - they can be replaced with MethodHandle.constant until invalidated
+    private static AtomicReference<GlobalConstants> gcsInstance = new AtomicReference<>();
 
     @Override
     protected Context getContext() {
@@ -479,8 +469,11 @@ public final class Global extends ScriptObject implements Scope {
         this.context = context;
         this.setIsScope();
         this.optimisticFunctionMap = new HashMap<>();
-        final GlobalConstants gc = GlobalConstants.instance(this);
-        gc.invalidateAll();
+        //we can only share one instance of Global constants between globals, or we consume way too much
+        //memory - this is good enough for most programs
+        while (gcsInstance.get() == null) {
+            gcsInstance.compareAndSet(null, new GlobalConstants(context.getLogger(GlobalConstants.class)));
+        }
     }
 
     /**
@@ -492,6 +485,15 @@ public final class Global extends ScriptObject implements Scope {
         final Global global = Context.getGlobal();
         global.getClass(); // null check
         return global;
+    }
+
+    /**
+     * Return the global constants map for fields that
+     * can be accessed as MethodHandle.constant
+     * @return constant map
+     */
+    public static GlobalConstants getConstants() {
+        return gcsInstance.get();
     }
 
     /**
@@ -1714,8 +1716,6 @@ public final class Global extends ScriptObject implements Scope {
             // synonym for "arguments" in scripting mode
             addOwnProperty("$ARG", argumentsFlags, argumentsObject);
         }
-
-        initLoggers();
     }
 
     private void initErrorObjects() {
@@ -2097,7 +2097,7 @@ public final class Global extends ScriptObject implements Scope {
     public void invalidateReservedName(final String name) {
         final SwitchPoint sp = getChangeCallback(name);
         if (sp != null) {
-            getLogger(ApplySpecialization.class).info("Overwrote special name '" + name +"' - invalidating switchpoint");
+            getContext().getLogger(ApplySpecialization.class).info("Overwrote special name '" + name +"' - invalidating switchpoint");
             SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
         }
     }
@@ -2114,72 +2114,5 @@ public final class Global extends ScriptObject implements Scope {
         return new ConstantCallSite(target);
     }
 
-    /**
-     * Get a logger, given a loggable class
-     * @param clazz a Loggable class
-     * @return debuglogger associated with that class
-     */
-    public DebugLogger getLogger(final Class<? extends Loggable> clazz) {
-        final String name = getLoggerName(clazz);
-        DebugLogger logger = loggers.get(name);
-        if (logger == null) {
-            final ScriptEnvironment env = context.getEnv();
-            if (!env.hasLogger(name)) {
-                return DebugLogger.DISABLED_LOGGER;
-            }
-            final LoggerInfo info = env._loggers.get(name);
-            logger = new DebugLogger(name, info.getLevel(), info.isQuiet());
-            loggers.put(name, logger);
-        }
-        return logger;
-    }
-
-    /**
-     * Given a Loggable class, weave debug info info a method handle for that logger.
-     * Level.INFO is used
-     *
-     * @param clazz loggable
-     * @param mh    method handle
-     * @param text  debug printout to add
-     *
-     * @return instrumented method handle, or null if logger not enabled
-     */
-    public MethodHandle addLoggingToHandle(final Class<? extends Loggable> clazz, final MethodHandle mh, final Supplier<String> text) {
-        return addLoggingToHandle(clazz, Level.INFO, mh, Integer.MAX_VALUE, false, text);
-    }
-
-    /**
-     * Given a Loggable class, weave debug info info a method handle for that logger.
-     *
-     * @param clazz            loggable
-     * @param level            log level
-     * @param mh               method handle
-     * @param paramStart       first parameter to print
-     * @param printReturnValue should we print the return vaulue?
-     * @param text             debug printout to add
-     *
-     * @return instrumented method handle, or null if logger not enabled
-     */
-    public MethodHandle addLoggingToHandle(final Class<? extends Loggable> clazz, final Level level, final MethodHandle mh, final int paramStart, final boolean printReturnValue, final Supplier<String> text) {
-        final DebugLogger log = getLogger(clazz);
-        if (log.isEnabled()) {
-            return MethodHandleFactory.addDebugPrintout(log, level, mh, paramStart, printReturnValue, text.get());
-        }
-        return mh;
-    }
-
-    private static String getLoggerName(final Class<?> clazz) {
-        Class<?> current = clazz;
-        while (current != null) {
-            final Logger log = current.getAnnotation(Logger.class);
-            if (log != null) {
-                assert !"".equals(log.name());
-                return log.name();
-            }
-            current = current.getSuperclass();
-        }
-        assert false;
-        return null;
-    }
 
 }

@@ -451,7 +451,7 @@ public final class ScriptRuntime {
      * @return JSON string representation of AST of the supplied code
      */
     public static String parse(final String code, final String name, final boolean includeLoc) {
-        return JSONWriter.parse(Context.getContextTrusted().getEnv(), code, name, includeLoc);
+        return JSONWriter.parse(Context.getContextTrusted(), code, name, includeLoc);
     }
 
     /**

@@ -37,8 +37,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ConsString;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
@@ -107,7 +107,7 @@ public final class MethodHandleFactory {
      * Return the method handle functionality used for all method handle operations
      * @return a method handle functionality implementation
      */
-    public static synchronized MethodHandleFunctionality getFunctionality() {
+    public static MethodHandleFunctionality getFunctionality() {
         return FUNC;
     }
 
@@ -286,8 +286,8 @@ public final class MethodHandleFactory {
         }
 
         @Override
-        public DebugLogger initLogger(final Global global) {
-            return this.log = global.getLogger(this.getClass());
+        public DebugLogger initLogger(final Context context) {
+            return this.log = context.getLogger(this.getClass());
         }
 
         @Override

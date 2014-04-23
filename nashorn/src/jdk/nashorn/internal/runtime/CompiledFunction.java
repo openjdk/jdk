@@ -41,7 +41,6 @@ import java.util.logging.Level;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.events.RecompilationEvent;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -72,22 +71,25 @@ final class CompiledFunction {
     private boolean applyToCall;
 
     CompiledFunction(final MethodHandle invoker) {
-        this.invoker = invoker;
-        this.log = Global.instance().getLogger(RecompilableScriptFunctionData.class);
+        this(invoker, null);
     }
 
     static CompiledFunction createBuiltInConstructor(final MethodHandle invoker) {
-        return new CompiledFunction(MH.insertArguments(invoker, 0, false),
-                createConstructorFromInvoker(MH.insertArguments(invoker, 0, true)));
+        return new CompiledFunction(MH.insertArguments(invoker, 0, false), createConstructorFromInvoker(MH.insertArguments(invoker, 0, true)));
     }
 
     CompiledFunction(final MethodHandle invoker, final MethodHandle constructor) {
-        this(invoker);
+        this(invoker, constructor, DebugLogger.DISABLED_LOGGER);
+    }
+
+    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor, final DebugLogger log) {
+        this.invoker = invoker;
         this.constructor = constructor;
+        this.log = log;
     }
 
     CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData, final int flags) {
-        this(invoker);
+        this(invoker, null, functionData.getLogger());
         this.flags = flags;
         if ((flags & FunctionNode.IS_OPTIMISTIC) != 0) {
             optimismInfo = new OptimismInfo(functionData);
@@ -620,10 +622,11 @@ final class CompiledFunction {
         private final RecompilableScriptFunctionData data;
         private final Map<Integer, Type> invalidatedProgramPoints = new TreeMap<>();
         private SwitchPoint optimisticAssumptions;
-        private final DebugLogger log = Global.instance().getLogger(RecompilableScriptFunctionData.class);
+        private final DebugLogger log;
 
         OptimismInfo(final RecompilableScriptFunctionData data) {
             this.data = data;
+            this.log  = data.getLogger();
             newOptimisticAssumptions();
         }
 

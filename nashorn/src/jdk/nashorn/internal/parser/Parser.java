@@ -105,7 +105,7 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
@@ -125,7 +125,7 @@ import jdk.nashorn.internal.runtime.logging.Logger;
 public class Parser extends AbstractParser implements Loggable {
     private static final String ARGUMENTS_NAME = CompilerConstants.ARGUMENTS_VAR.symbolName();
 
-    /** Current script environment. */
+    /** Current env. */
     private final ScriptEnvironment env;
 
     /** Is scripting mode. */
@@ -154,7 +154,7 @@ public class Parser extends AbstractParser implements Loggable {
      * @param errors  error manager
      */
     public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors) {
-        this(env, source, errors, env._strict);
+        this(env, source, errors, env._strict, null);
     }
 
     /**
@@ -164,9 +164,10 @@ public class Parser extends AbstractParser implements Loggable {
      * @param source  source to parse
      * @param errors  error manager
      * @param strict  strict
+     * @param log debug logger if one is needed
      */
-    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict) {
-        this(env, source, errors, strict, FunctionNode.FIRST_FUNCTION_ID, 0);
+    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict, final DebugLogger log) {
+        this(env, source, errors, strict, FunctionNode.FIRST_FUNCTION_ID, 0, log);
     }
 
     /**
@@ -178,10 +179,11 @@ public class Parser extends AbstractParser implements Loggable {
      * @param strict  parser created with strict mode enabled.
      * @param nextFunctionId  starting value for assigning new unique ids to function nodes
      * @param lineOffset line offset to start counting lines from
+     * @param log debug logger if one is needed
      */
-    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict, final int nextFunctionId, final int lineOffset) {
+    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict, final int nextFunctionId, final int lineOffset, final DebugLogger log) {
         super(source, errors, strict, lineOffset);
-        this.env        = env;
+        this.env = env;
         this.namespace = new Namespace(env.getNamespace());
         this.nextFunctionId    = nextFunctionId;
         this.scripting = env._scripting;
@@ -199,7 +201,7 @@ public class Parser extends AbstractParser implements Loggable {
             this.lineInfoReceiver = null;
         }
 
-        this.log = !Global.hasInstance() ? DebugLogger.DISABLED_LOGGER : initLogger(Global.instance());
+        this.log = log == null ? DebugLogger.DISABLED_LOGGER : log;
     }
 
     @Override
@@ -208,8 +210,8 @@ public class Parser extends AbstractParser implements Loggable {
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     /**

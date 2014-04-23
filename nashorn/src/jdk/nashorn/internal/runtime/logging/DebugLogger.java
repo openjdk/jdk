@@ -179,6 +179,15 @@ public final class DebugLogger {
     }
 
     /**
+     * Check if the logger is enabled
+     * @param logger logger to check, null will return false
+     * @return true if enabled
+     */
+    public static boolean isEnabled(final DebugLogger logger) {
+        return logger != null && logger.isEnabled();
+    }
+
+    /**
      * If you want to change the indent level of your logger, call indent with a new position.
      * Positions start at 0 and are increased by one for a new "tab"
      *

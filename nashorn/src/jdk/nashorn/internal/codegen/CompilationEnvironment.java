@@ -34,6 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -42,6 +43,7 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.Optimistic;
 import jdk.nashorn.internal.objects.NativeArray;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.Property;
@@ -56,6 +58,8 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 public final class CompilationEnvironment {
     private final CompilationPhases phases;
     private final boolean optimistic;
+
+    private final Context context;
 
     private final ParamTypeMap paramTypes;
 
@@ -176,17 +180,21 @@ public final class CompilationEnvironment {
 
     /**
      * Constructor
+     * @param context context
      * @param phases compilation phases
      * @param strict strict mode
      */
     public CompilationEnvironment(
+        final Context context,
         final CompilationPhases phases,
         final boolean strict) {
-        this(phases, null, null, null, null, null, strict, false);
+        this(context, phases, null, null, null, null, null, strict, false);
     }
 
     /**
      * Constructor for compilation environment of the rest-of method
+     *
+     * @param context context
      * @param phases compilation phases
      * @param strict strict mode
      * @param compiledFunction the function being compiled
@@ -200,19 +208,22 @@ public final class CompilationEnvironment {
      * @param onDemand is this an on demand compilation
      */
     public CompilationEnvironment(
-        final CompilationPhases phases,
-        final boolean strict,
-        final RecompilableScriptFunctionData compiledFunction,
-        final ScriptObject runtimeScope,
-        final ParamTypeMap paramTypeMap,
-        final Map<Integer, Type> invalidatedProgramPoints,
-        final int[] continuationEntryPoint,
-        final boolean onDemand) {
-            this(phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, runtimeScope, continuationEntryPoint, strict, onDemand);
+            final Context context,
+            final CompilationPhases phases,
+            final boolean strict,
+            final RecompilableScriptFunctionData compiledFunction,
+            final ScriptObject runtimeScope,
+            final ParamTypeMap paramTypeMap,
+            final Map<Integer, Type> invalidatedProgramPoints,
+            final int[] continuationEntryPoint,
+            final boolean onDemand) {
+            this(context, phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, runtimeScope, continuationEntryPoint, strict, onDemand);
     }
 
     /**
      * Constructor
+     *
+     * @param context context
      * @param phases compilation phases
      * @param strict strict mode
      * @param compiledFunction recompiled function
@@ -225,17 +236,19 @@ public final class CompilationEnvironment {
      * @param onDemand is this an on demand compilation
      */
     public CompilationEnvironment(
-        final CompilationPhases phases,
-        final boolean strict,
-        final RecompilableScriptFunctionData compiledFunction,
-        final ScriptObject runtimeScope,
-        final ParamTypeMap paramTypeMap,
-        final Map<Integer, Type> invalidatedProgramPoints,
-        final boolean onDemand) {
-        this(phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, runtimeScope, null, strict, onDemand);
+            final Context context,
+            final CompilationPhases phases,
+            final boolean strict,
+            final RecompilableScriptFunctionData compiledFunction,
+            final ScriptObject runtimeScope,
+            final ParamTypeMap paramTypeMap,
+            final Map<Integer, Type> invalidatedProgramPoints,
+            final boolean onDemand) {
+        this(context, phases, paramTypeMap, invalidatedProgramPoints, compiledFunction, runtimeScope, null, strict, onDemand);
     }
 
     private CompilationEnvironment(
+            final Context context,
             final CompilationPhases phases,
             final ParamTypeMap paramTypes,
             final Map<Integer, Type> invalidatedProgramPoints,
@@ -244,6 +257,7 @@ public final class CompilationEnvironment {
             final int[] continuationEntryPoints,
             final boolean strict,
             final boolean onDemand) {
+        this.context                  = context;
         this.phases                   = phases;
         this.paramTypes               = paramTypes;
         this.continuationEntryPoints  = continuationEntryPoints;
@@ -259,6 +273,10 @@ public final class CompilationEnvironment {
         assert !isCompileRestOf() || isOnDemandCompilation(); // isCompileRestOf => isRecompilation
         // continuation entry points must be among the invalidated program points
         assert !isCompileRestOf() || invalidatedProgramPoints != null && containsAll(invalidatedProgramPoints.keySet(), continuationEntryPoints);
+    }
+
+    Context getContext() {
+        return context;
     }
 
     private static boolean containsAll(final Set<Integer> set, final int[] array) {

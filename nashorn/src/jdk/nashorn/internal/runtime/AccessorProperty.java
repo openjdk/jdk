@@ -691,69 +691,77 @@ public class AccessorProperty extends Property {
 
 
     private MethodHandle debug(final MethodHandle mh, final Class<?> forType, final Class<?> type, final String tag) {
-        if (Global.hasInstance()) {
-            return Global.instance().addLoggingToHandle(
-                    ObjectClassGenerator.class,
-                    Level.INFO,
-                    mh,
-                    0,
-                    true,
-                    new Supplier<String>() {
-                        @Override
-                        public String get() {
-                            return tag + " '" + getKey() + "' (property="+ Debug.id(this) + ", slot=" + getSlot() + " " + getClass().getSimpleName() + " forType=" + stripName(forType) + ", type=" + stripName(type) + ')';
-                        }
-                    });
-        }
-
-        return mh;
-    }
-
-    private MethodHandle debugReplace(final Class<?> oldType, final Class<?> newType, final PropertyMap oldMap, final PropertyMap newMap) {
-        if (Global.hasInstance()) {
-            final Global global = Global.instance();
-            MethodHandle mh = global.addLoggingToHandle(
-                    ObjectClassGenerator.class,
-                    REPLACE_MAP,
-                    new Supplier<String>() {
-                        @Override
-                        public String get() {
-                            return "Type change for '" + getKey() + "' " + oldType + "=>" + newType;
-                        }
-                    });
-
-            mh = global.addLoggingToHandle(
-                    ObjectClassGenerator.class,
-                    Level.FINEST,
-                    mh,
-                    Integer.MAX_VALUE,
-                    false,
-                    new Supplier<String>() {
-                        @Override
-                        public String get() {
-                            return "Setting map " + Debug.id(oldMap) + " => " + Debug.id(newMap) + " " + oldMap + " => " + newMap;
-                        }
-                    });
+        if (!Global.hasInstance()) {
             return mh;
         }
 
-        return REPLACE_MAP;
+        final Context context = Context.getContextTrusted();
+        assert context != null;
+
+        return context.addLoggingToHandle(
+                ObjectClassGenerator.class,
+                Level.INFO,
+                mh,
+                0,
+                true,
+                new Supplier<String>() {
+                    @Override
+                    public String get() {
+                        return tag + " '" + getKey() + "' (property="+ Debug.id(this) + ", slot=" + getSlot() + " " + getClass().getSimpleName() + " forType=" + stripName(forType) + ", type=" + stripName(type) + ')';
+                    }
+                });
+    }
+
+    private MethodHandle debugReplace(final Class<?> oldType, final Class<?> newType, final PropertyMap oldMap, final PropertyMap newMap) {
+        if (!Global.hasInstance()) {
+            return REPLACE_MAP;
+        }
+
+        final Context context = Context.getContextTrusted();
+        assert context != null;
+
+        MethodHandle mh = context.addLoggingToHandle(
+                ObjectClassGenerator.class,
+                REPLACE_MAP,
+                new Supplier<String>() {
+                    @Override
+                    public String get() {
+                        return "Type change for '" + getKey() + "' " + oldType + "=>" + newType;
+                    }
+                });
+
+        mh = context.addLoggingToHandle(
+                ObjectClassGenerator.class,
+                Level.FINEST,
+                mh,
+                Integer.MAX_VALUE,
+                false,
+                new Supplier<String>() {
+                    @Override
+                    public String get() {
+                        return "Setting map " + Debug.id(oldMap) + " => " + Debug.id(newMap) + " " + oldMap + " => " + newMap;
+                    }
+                });
+        return mh;
     }
 
     private static MethodHandle debugInvalidate(final String key, final SwitchPoint sp) {
-        if (Global.hasInstance()) {
-            return Global.instance().addLoggingToHandle(
-                    ObjectClassGenerator.class,
-                    INVALIDATE_SP,
-                    new Supplier<String>() {
-                        @Override
-                        public String get() {
-                            return "Field change callback for " + key + " triggered: " + sp;
-                        }
-                    });
+        if (!Global.hasInstance()) {
+            return INVALIDATE_SP;
         }
 
-        return INVALIDATE_SP;
+        final Context context = Context.getContextTrusted();
+        assert context != null;
+
+        return context.addLoggingToHandle(
+                ObjectClassGenerator.class,
+                INVALIDATE_SP,
+                new Supplier<String>() {
+                    @Override
+                    public String get() {
+                        return "Field change callback for " + key + " triggered: " + sp;
+                    }
+                });
     }
 
     private static MethodHandle findOwnMH_S(final String name, final Class<?> rtype, final Class<?>... types) {

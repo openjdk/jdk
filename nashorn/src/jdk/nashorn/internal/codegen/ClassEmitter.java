@@ -70,7 +70,6 @@ import jdk.nashorn.internal.ir.debug.NashornTextifier;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.RewriteException;
-import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -128,7 +127,7 @@ public class ClassEmitter implements Emitter {
     protected final ClassWriter cw;
 
     /** The script environment */
-    protected final ScriptEnvironment env;
+    protected final Context context;
 
     /** Compile unit class name. */
     private String unitClassName;
@@ -143,10 +142,8 @@ public class ClassEmitter implements Emitter {
      * @param env script environment
      * @param cw  ASM classwriter
      */
-    private ClassEmitter(final ScriptEnvironment env, final ClassWriter cw) {
-        assert env != null;
-
-        this.env            = env;
+    private ClassEmitter(final Context context, final ClassWriter cw) {
+        this.context        = context;
         this.cw             = cw;
         this.methodsStarted = new HashSet<>();
     }
@@ -159,8 +156,8 @@ public class ClassEmitter implements Emitter {
      * @param superClassName  super class name for class
      * @param interfaceNames  names of interfaces implemented by this class, or null if none
      */
-    ClassEmitter(final ScriptEnvironment env, final String className, final String superClassName, final String... interfaceNames) {
-        this(env, new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
+    ClassEmitter(final Context context, final String className, final String superClassName, final String... interfaceNames) {
+        this(context, new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
         cw.visit(V1_7, ACC_PUBLIC | ACC_SUPER, className, null, superClassName, interfaceNames);
     }
 
@@ -172,8 +169,8 @@ public class ClassEmitter implements Emitter {
      * @param unitClassName Compile unit class name.
      * @param strictMode    Should we generate this method in strict mode
      */
-    ClassEmitter(final ScriptEnvironment env, final String sourceName, final String unitClassName, final boolean strictMode) {
-        this(env,
+    ClassEmitter(final Context context, final String sourceName, final String unitClassName, final boolean strictMode) {
+        this(context,
              new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
                 private static final String OBJECT_CLASS  = "java/lang/Object";
 
@@ -197,6 +194,10 @@ public class ClassEmitter implements Emitter {
         cw.visitSource(sourceName, null);
 
         defineCommonStatics(strictMode);
+    }
+
+    Context getContext() {
+        return context;
     }
 
     /**
@@ -391,13 +392,6 @@ public class ClassEmitter implements Emitter {
 
         final String str = new String(baos.toByteArray());
         return str;
-    }
-
-    /**
-     * @return env used for class emission
-     */
-    ScriptEnvironment getEnv() {
-        return env;
     }
 
     /**

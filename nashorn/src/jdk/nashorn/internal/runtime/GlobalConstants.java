@@ -44,7 +44,6 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
@@ -71,11 +70,12 @@ import jdk.nashorn.internal.runtime.logging.Logger;
  * We can extend this to ScriptObjects in general (GLOBAL_ONLY=false), which requires
  * a receiver guard on the constant getter, but it currently leaks memory and its benefits
  * have not yet been investigated property.
+ *
+ * As long as all Globals share the same constant instance, we need synchronization
+ * whenever we access the instance.
  */
 @Logger(name="const")
 public final class GlobalConstants implements Loggable {
-    /** singleton per global */
-    private static GlobalConstants instance;
 
     /**
      * Should we only try to link globals as constants, and not generic script objects.
@@ -98,8 +98,12 @@ public final class GlobalConstants implements Loggable {
      */
     private final Map<String, Access> map = new HashMap<>();
 
-    private GlobalConstants(final Global global) {
-        this.log = initLogger(global);
+    /**
+     * Constructor - used only by global
+     * @param log logger, or null if none
+     */
+    public GlobalConstants(final DebugLogger log) {
+        this.log = log == null ? DebugLogger.DISABLED_LOGGER : log;
     }
 
     @Override
@@ -108,20 +112,8 @@ public final class GlobalConstants implements Loggable {
     }
 
     @Override
-    public DebugLogger initLogger(final Global global) {
-        return global.getLogger(this.getClass());
-    }
-
-    /**
-     * Return the singleton global constant pool
-     * @param global global
-     * @return singleton global constant pool
-     */
-    public static synchronized GlobalConstants instance(final Global global) {
-        if (instance == null) {
-            instance = new GlobalConstants(global);
-        }
-        return instance;
+    public DebugLogger initLogger(final Context context) {
+        return DebugLogger.DISABLED_LOGGER;
     }
 
     /**
@@ -224,7 +216,7 @@ public final class GlobalConstants implements Loggable {
      * the same class for a new global, but the builtins and global scoped variables
      * will have changed.
      */
-    public void invalidateAll() {
+    public synchronized void invalidateAll() {
         log.info("New global created - invalidating all constant callsites without increasing invocation count.");
         for (final Access acc : map.values()) {
             acc.invalidateUncounted();
@@ -241,7 +233,7 @@ public final class GlobalConstants implements Loggable {
      * @return receiver, so this can be used as param filter
      */
     @SuppressWarnings("unused")
-    private Object invalidateSwitchPoint(final Object obj, final Access acc) {
+    private synchronized Object invalidateSwitchPoint(final Object obj, final Access acc) {
         if (log.isEnabled()) {
             log.info("*** Invalidating switchpoint " + acc.getSwitchPoint() + " for receiver=" + obj + " access=" + acc);
         }
@@ -259,7 +251,7 @@ public final class GlobalConstants implements Loggable {
         return obj;
     }
 
-    private Access getOrCreateSwitchPoint(final String name) {
+    private synchronized Access getOrCreateSwitchPoint(final String name) {
         Access acc = map.get(name);
         if (acc != null) {
             return acc;
@@ -321,7 +313,7 @@ public final class GlobalConstants implements Loggable {
      *
      * @return null if failed to set up constant linkage
      */
-    GuardedInvocation findSetMethod(final FindProperty find, final ScriptObject receiver, final GuardedInvocation inv, final CallSiteDescriptor desc, final LinkRequest request) {
+    synchronized GuardedInvocation findSetMethod(final FindProperty find, final ScriptObject receiver, final GuardedInvocation inv, final CallSiteDescriptor desc, final LinkRequest request) {
         if (GLOBAL_ONLY && !isGlobalSetter(receiver, find)) {
             return null;
         }
@@ -365,8 +357,12 @@ public final class GlobalConstants implements Loggable {
      * @param c constant value
      * @return method handle (with dummy receiver) that returns this constant
      */
-    private static MethodHandle constantGetter(final Object c) {
-        return MH.dropArguments(JSType.unboxConstant(c), 0, Object.class);
+    private MethodHandle constantGetter(final Object c) {
+        final MethodHandle mh = MH.dropArguments(JSType.unboxConstant(c), 0, Object.class);
+        if (log.isEnabled()) {
+            return MethodHandleFactory.addDebugPrintout(log, Level.FINEST, mh, "getting as constant");
+        }
+        return mh;
     }
 
     /**
@@ -380,7 +376,7 @@ public final class GlobalConstants implements Loggable {
      *
      * @return resulting getter, or null if failed to create constant
      */
-    GuardedInvocation findGetMethod(final FindProperty find, final ScriptObject receiver, final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
+    synchronized GuardedInvocation findGetMethod(final FindProperty find, final ScriptObject receiver, final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
         if (GLOBAL_ONLY && !find.getOwner().isGlobal()) {
             return null;
         }
