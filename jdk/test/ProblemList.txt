@@ -148,9 +148,6 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
 # jdk_net
 
-# Filed 7052625
-com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
-
 # 7148829
 sun/net/InetAddress/nameservice/simple/CacheTest.java		generic-all
 sun/net/InetAddress/nameservice/simple/DefaultCaching.java	generic-all
