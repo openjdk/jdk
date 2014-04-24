@@ -117,7 +117,7 @@ VARIANT_TEXT=Tiered
 # These can be overridden via the nmake.exe command line.
 # They are overridden by RE during the control builds.
 #
-!include "$(WorkSpace)/make/hotspot_version"
+!include "$(WorkSpace)/make/jdk_version"
 
 # Define HOTSPOT_VM_DISTRO based on settings in make/openjdk_distro
 # or make/hotspot_distro.
@@ -163,7 +163,7 @@ HS_FILEDESC=$(HOTSPOT_VM_DISTRO) $(ARCH_TEXT) $(VARIANT_TEXT) VM
 #       1.6.0-b01     will be 6.0.0.1
 #       1.6.0_01a-b02 will be 6.0.11.2
 #
-# JDK_* variables are defined in make/hotspot_version or on command line
+# JDK_* variables are defined in make/jdk_version or on command line
 #
 JDK_VER=$(JDK_MINOR_VER),$(JDK_MICRO_VER),$(JDK_UPDATE_VER),$(JDK_BUILD_NUMBER)
 JDK_DOTVER=$(JDK_MINOR_VER).$(JDK_MICRO_VER).$(JDK_UPDATE_VER).$(JDK_BUILD_NUMBER)
@@ -179,13 +179,12 @@ JDK_MKTG_VERSION=$(JDK_MINOR_VER).$(JDK_MICRO_VER)
 # Hotspot Express VM FileVersion:
 # 10.0-b<yz> will have DLL version 10.0.0.yz (need 4 numbers).
 #
-# HS_* variables are defined in make/hotspot_version
 #
-HS_VER=$(HS_MAJOR_VER),$(HS_MINOR_VER),0,$(HS_BUILD_NUMBER)
-HS_DOTVER=$(HS_MAJOR_VER).$(HS_MINOR_VER).0.$(HS_BUILD_NUMBER)
+HS_VER=$(JDK_VER)
+HS_DOTVER=$(JDK_DOTVER)
 
 !if "$(HOTSPOT_RELEASE_VERSION)" == ""
-HOTSPOT_RELEASE_VERSION=$(HS_MAJOR_VER).$(HS_MINOR_VER)-b$(HS_BUILD_NUMBER)
+HOTSPOT_RELEASE_VERSION=$(JRE_RELEASE_VERSION)
 !endif
 
 !if "$(HOTSPOT_BUILD_VERSION)" == ""

@@ -69,8 +69,13 @@ else
 endif
 
 # The following variables are defined in the generated flags.make file.
-BUILD_VERSION = -DHOTSPOT_RELEASE_VERSION="\"$(HS_BUILD_VER)\""
-JRE_VERSION   = -DJRE_RELEASE_VERSION="\"$(JRE_RELEASE_VER)\""
+JDK_VER_DEFS  = -DJDK_MAJOR_VERSION="\"$(JDK_MAJOR_VERSION)\"" \
+		-DJDK_MINOR_VERSION="\"$(JDK_MINOR_VERSION)\"" \
+		-DJDK_MICRO_VERSION="\"$(JDK_MICRO_VERSION)\"" \
+		-DJDK_BUILD_NUMBER="\"$(JDK_BUILD_NUMBER)\""
+VM_VER_DEFS   = -DHOTSPOT_RELEASE_VERSION="\"$(HS_BUILD_VER)\"" \
+		-DJRE_RELEASE_VERSION="\"$(JRE_RELEASE_VER)\""  \
+		$(JDK_VER_DEFS)
 HS_LIB_ARCH   = -DHOTSPOT_LIB_ARCH=\"$(LIBARCH)\"
 BUILD_TARGET  = -DHOTSPOT_BUILD_TARGET="\"$(TARGET)\""
 BUILD_USER    = -DHOTSPOT_BUILD_USER="\"$(HOTSPOT_BUILD_USER)\""
@@ -79,7 +84,6 @@ VM_DISTRO     = -DHOTSPOT_VM_DISTRO="\"$(HOTSPOT_VM_DISTRO)\""
 CXXFLAGS =           \
   ${SYSDEFS}         \
   ${INCLUDES}        \
-  ${BUILD_VERSION}   \
   ${BUILD_TARGET}    \
   ${BUILD_USER}      \
   ${HS_LIB_ARCH}     \
@@ -88,7 +92,7 @@ CXXFLAGS =           \
 # This is VERY important! The version define must only be supplied to vm_version.o
 # If not, ccache will not re-use the cache at all, since the version string might contain
 # a time and date.
-CXXFLAGS/vm_version.o += ${JRE_VERSION}
+CXXFLAGS/vm_version.o += ${VM_VER_DEFS}
 
 CXXFLAGS/BYFILE = $(CXXFLAGS/$@)
 
