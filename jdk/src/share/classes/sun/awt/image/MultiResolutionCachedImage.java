@@ -26,9 +26,7 @@ package sun.awt.image;
 
 import java.awt.Dimension;
 import java.awt.Image;
-import java.awt.Graphics;
 import java.awt.geom.Dimension2D;
-import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.util.Arrays;
 import java.util.List;
@@ -36,50 +34,39 @@ import java.util.function.Function;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-public class MultiResolutionBufferedImage extends BufferedImage
-        implements MultiResolutionImage {
+public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
 
-    private final BiFunction<Integer, Integer, Image> mapper;
+    private final int baseImageWidth;
+    private final int baseImageHeight;
     private final Dimension2D[] sizes;
+    private final BiFunction<Integer, Integer, Image> mapper;
     private int availableInfo;
 
-    public MultiResolutionBufferedImage(Image baseImage,
+    public MultiResolutionCachedImage(int baseImageWidth, int baseImageHeight,
             BiFunction<Integer, Integer, Image> mapper) {
-        this(baseImage, new Dimension[]{new Dimension(
-            baseImage.getWidth(null), baseImage.getHeight(null))
+        this(baseImageWidth, baseImageHeight, new Dimension[]{new Dimension(
+            baseImageWidth, baseImageHeight)
         }, mapper);
     }
 
-    public MultiResolutionBufferedImage(Image baseImage,
+    public MultiResolutionCachedImage(int baseImageWidth, int baseImageHeight,
             Dimension2D[] sizes, BiFunction<Integer, Integer, Image> mapper) {
-        super(baseImage.getWidth(null), baseImage.getHeight(null),
-                BufferedImage.TYPE_INT_ARGB_PRE);
+        this.baseImageWidth = baseImageWidth;
+        this.baseImageHeight = baseImageHeight;
         this.sizes = sizes;
         this.mapper = mapper;
-        this.availableInfo = getInfo(baseImage);
-        Graphics g = getGraphics();
-        g.drawImage(baseImage, 0, 0, null);
-        g.dispose();
     }
 
     @Override
     public Image getResolutionVariant(int width, int height) {
-        int baseWidth = getWidth();
-        int baseHeight = getHeight();
-
-        if (baseWidth == width && baseHeight == height) {
-            return this;
-        }
-
         ImageCache cache = ImageCache.getInstance();
         ImageCacheKey key = new ImageCacheKey(this, width, height);
         Image resolutionVariant = cache.getImage(key);
         if (resolutionVariant == null) {
             resolutionVariant = mapper.apply(width, height);
             cache.setImage(key, resolutionVariant);
-            preload(resolutionVariant, availableInfo);
         }
-
+        preload(resolutionVariant, availableInfo);
         return resolutionVariant;
     }
 
@@ -90,28 +77,37 @@ public class MultiResolutionBufferedImage extends BufferedImage
                         (int) size.getHeight())).collect(Collectors.toList());
     }
 
-    public MultiResolutionBufferedImage map(Function<Image, Image> mapper) {
-        return new MultiResolutionBufferedImage(mapper.apply(this), sizes,
-                (width, height) ->
+    public MultiResolutionCachedImage map(Function<Image, Image> mapper) {
+        return new MultiResolutionCachedImage(baseImageWidth, baseImageHeight,
+                sizes, (width, height) ->
                         mapper.apply(getResolutionVariant(width, height)));
     }
 
     @Override
     public int getWidth(ImageObserver observer) {
-        availableInfo |= ImageObserver.WIDTH;
+        updateInfo(observer, ImageObserver.WIDTH);
         return super.getWidth(observer);
     }
 
     @Override
     public int getHeight(ImageObserver observer) {
-        availableInfo |= ImageObserver.HEIGHT;
+        updateInfo(observer, ImageObserver.HEIGHT);
         return super.getHeight(observer);
     }
 
     @Override
     public Object getProperty(String name, ImageObserver observer) {
-        availableInfo |= ImageObserver.PROPERTIES;
+        updateInfo(observer, ImageObserver.PROPERTIES);
         return super.getProperty(name, observer);
+    }
+
+    @Override
+    protected Image getBaseImage() {
+        return getResolutionVariant(baseImageWidth, baseImageHeight);
+    }
+
+    private void updateInfo(ImageObserver observer, int info) {
+        availableInfo |= (observer == null) ? ImageObserver.ALLBITS : info;
     }
 
     private static int getInfo(Image image) {

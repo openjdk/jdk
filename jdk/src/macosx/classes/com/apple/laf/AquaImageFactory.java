@@ -46,10 +46,8 @@ import com.apple.laf.AquaIcon.JRSUIControlSpec;
 import com.apple.laf.AquaIcon.SystemIcon;
 import com.apple.laf.AquaUtils.RecyclableObject;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
-import java.util.Arrays;
-import java.util.List;
-import sun.awt.image.MultiResolutionBufferedImage;
 import sun.awt.image.MultiResolutionImage;
+import sun.awt.image.MultiResolutionCachedImage;
 
 public class AquaImageFactory {
     public static IconUIResource getConfirmImageIcon() {
@@ -125,9 +123,9 @@ public class AquaImageFactory {
     private static final int kAlertIconSize = 64;
     static IconUIResource getAppIconCompositedOn(final Image background) {
 
-        if (background instanceof MultiResolutionBufferedImage) {
+        if (background instanceof MultiResolutionCachedImage) {
             int width = background.getWidth(null);
-            Image mrIconImage = ((MultiResolutionBufferedImage) background).map(
+            Image mrIconImage = ((MultiResolutionCachedImage) background).map(
                     rv -> getAppIconImageCompositedOn(rv, rv.getWidth(null) / width));
             return new IconUIResource(new ImageIcon(mrIconImage));
         }
@@ -306,21 +304,7 @@ public class AquaImageFactory {
     private static Image getNSIcon(String imageName) {
         Image icon = Toolkit.getDefaultToolkit()
                 .getImage("NSImage://" + imageName);
-
-        if (icon instanceof MultiResolutionImage) {
-            return icon;
-        }
-
-        int w = icon.getWidth(null);
-        int h = icon.getHeight(null);
-
-        Dimension[] sizes = new Dimension[]{
-            new Dimension(w, h), new Dimension(2 * w, 2 * h)
-        };
-
-        return new MultiResolutionBufferedImage(icon, sizes, (width, height) ->
-                AquaUtils.getCImageCreator().createImageFromName(
-                        imageName, width, height));
+        return icon;
     }
 
     public static class NineSliceMetrics {
