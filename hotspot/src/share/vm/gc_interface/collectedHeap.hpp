@@ -151,7 +151,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   inline static void post_allocation_setup_no_klass_install(KlassHandle klass,
                                                             HeapWord* objPtr);
 
-  inline static void post_allocation_setup_obj(KlassHandle klass, HeapWord* obj);
+  inline static void post_allocation_setup_obj(KlassHandle klass, HeapWord* obj, int size);
 
   inline static void post_allocation_setup_array(KlassHandle klass,
                                                  HeapWord* obj, int length);

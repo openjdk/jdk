@@ -2402,6 +2402,10 @@ bool Arguments::check_vm_args_consistency() {
   const int num_min_compiler_threads = (TieredCompilation && (TieredStopAtLevel >= CompLevel_full_optimization)) ? 2 : 1;
   status &=verify_min_value(CICompilerCount, num_min_compiler_threads, "CICompilerCount");
 
+  if (!FLAG_IS_DEFAULT(CICompilerCount) && !FLAG_IS_DEFAULT(CICompilerCountPerCPU) && CICompilerCountPerCPU) {
+    warning("The VM option CICompilerCountPerCPU overrides CICompilerCount.");
+  }
+
   return status;
 }
 

@@ -90,6 +90,7 @@ public:
   void print_symbol() {
     print_symbol_on(tty);
   }
+  const char* as_klass_external_name() const;
 
   // Make a ciSymbol from a C string.
   // Consider adding to vmSymbols.hpp instead of using this constructor.

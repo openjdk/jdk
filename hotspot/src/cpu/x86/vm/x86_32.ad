@@ -512,14 +512,15 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   Compile* C = ra_->C;
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
+  int bangsize = C->bang_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove wordSize for return addr which is already pushed.
   framesize -= wordSize;
 
-  if (C->need_stack_bang(framesize)) {
+  if (C->need_stack_bang(bangsize)) {
     framesize -= wordSize;
-    st->print("# stack bang");
+    st->print("# stack bang (%d bytes)", bangsize);
     st->print("\n\t");
     st->print("PUSH   EBP\t# Save EBP");
     if (framesize) {
@@ -563,9 +564,10 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   MacroAssembler _masm(&cbuf);
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
+  int bangsize = C->bang_size_in_bytes();
 
-  __ verified_entry(framesize, C->need_stack_bang(framesize), C->in_24_bit_fp_mode());
+  __ verified_entry(framesize, C->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode());
 
   C->set_frame_complete(cbuf.insts_size());
 
@@ -589,7 +591,7 @@ int MachPrologNode::reloc() const {
 #ifndef PRODUCT
 void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   Compile *C = ra_->C;
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;
@@ -629,7 +631,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
   }
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;
@@ -663,7 +665,7 @@ uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
   if (C->max_vector_size() > 16) size += 3; // vzeroupper
   if (do_polling() && C->is_method_compilation()) size += 6;
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;
