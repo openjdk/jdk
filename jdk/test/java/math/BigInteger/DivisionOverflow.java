@@ -22,9 +22,10 @@
  */
 
 /*
- * @ test
+ * @test
  * @bug 8022780
  * @summary Test division of large values
+ * @run main/othervm -Xshare:off DivisionOverflow
  * @author Dmitry Nadezhin
  */
 import java.math.BigInteger;
@@ -38,14 +39,17 @@ public class DivisionOverflow {
             BigInteger[] qr = a.divideAndRemainder(b);
             BigInteger q = qr[0];
             BigInteger r = qr[1];
-            if (!r.equals(BigInteger.ZERO))
-                throw new RuntimeException("Incorrect singum() of remainder " + r.signum());
-            if (q.bitLength() != 2147482079)
+            if (!r.equals(BigInteger.ZERO)) {
+                throw new RuntimeException("Incorrect signum() of remainder " + r.signum());
+            }
+            if (q.bitLength() != 2147482079) {
                 throw new RuntimeException("Incorrect bitLength() of quotient " + q.bitLength());
+            }
             System.out.println("Division of large values passed without overflow.");
         } catch (OutOfMemoryError e) {
             // possible
-            System.out.println("OutOfMemoryError");
+            System.err.println("DivisionOverflow skipped: OutOfMemoryError");
+            System.err.println("Run jtreg with -javaoption:-Xmx8g");
         }
     }
 }

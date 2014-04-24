@@ -194,7 +194,7 @@ jdk_other = \
     com/sun/jndi \
     com/sun/corba \
     lib/testlibrary \
-    demo/zipfs \
+    jdk/nio/zipfs \
     sample
 
 #
