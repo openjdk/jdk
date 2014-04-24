@@ -30,7 +30,7 @@ import com.oracle.java.testlibrary.*;
  * @build Agent
  * @run main ClassFileInstaller Agent
  * @run main Launcher
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -Xmx1M -XX:ReservedCodeCacheSize=3M Agent
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -XX:ReservedCodeCacheSize=3M Agent
  */
 public class Launcher {
     public static void main(String[] args) throws Exception  {
