@@ -31,7 +31,7 @@ import sun.awt.OSInfo;
 
 /**
  * @test
- * @bug 8024926
+ * @bug 8024926 8040279
  * @summary [macosx] AquaIcon HiDPI support
  * @author Alexander Scherbatiy
  * @run applet/manual=yesno bug8024926.html

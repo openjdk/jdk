@@ -28,7 +28,7 @@ import javax.swing.JMenuBar;
 import javax.swing.SwingUtilities;
 
 /* @test
- * @bug 8031573
+ * @bug 8031573 8040279
  * @summary [macosx] Checkmarks of JCheckBoxMenuItems aren't rendered
  *           in high resolution on Retina
  * @author Alexander Scherbatiy
