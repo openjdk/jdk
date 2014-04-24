@@ -2568,30 +2568,23 @@ public abstract class Toolkit {
         public void firePropertyChange(final PropertyChangeEvent evt) {
             Object oldValue = evt.getOldValue();
             Object newValue = evt.getNewValue();
-            String propertyName = evt.getPropertyName();
             if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
                 return;
             }
-            Runnable updater = new Runnable() {
-                public void run() {
-                    PropertyChangeSupport pcs = (PropertyChangeSupport)
-                            AppContext.getAppContext().get(PROP_CHANGE_SUPPORT_KEY);
-                    if (null != pcs) {
-                        pcs.firePropertyChange(evt);
-                    }
-                }
-            };
-            final AppContext currentAppContext = AppContext.getAppContext();
             for (AppContext appContext : AppContext.getAppContexts()) {
                 if (null == appContext || appContext.isDisposed()) {
                     continue;
                 }
-                if (currentAppContext == appContext) {
-                    updater.run();
-                } else {
-                    final PeerEvent e = new PeerEvent(source, updater, PeerEvent.ULTIMATE_PRIORITY_EVENT);
-                    SunToolkit.postEvent(appContext, e);
-                }
+                final PeerEvent e = new PeerEvent(source,
+                        () -> {
+                            PropertyChangeSupport pcs = (PropertyChangeSupport)
+                                    AppContext.getAppContext().get(PROP_CHANGE_SUPPORT_KEY);
+                            if (null != pcs) {
+                                pcs.firePropertyChange(evt);
+                            }
+                        },
+                        PeerEvent.ULTIMATE_PRIORITY_EVENT);
+                SunToolkit.postEvent(appContext, e);
             }
         }
     }
