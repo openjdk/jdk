@@ -34,19 +34,16 @@
 
 public class TestHeadings extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4905786-6259611";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-use", "-header", "Test Files",
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-use", "-header", "Test Files",
         "pkg1", "pkg2"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
         //Package summary
-        {BUG_ID + "/pkg1/package-summary.html",
+        { "pkg1/package-summary.html",
             "<th class=\"colFirst\" scope=\"col\">" +
             "Class</th>\n" +
             "<th class=\"colLast\" scope=\"col\"" +
@@ -54,31 +51,31 @@ public class TestHeadings extends JavadocTester {
         },
 
         // Class documentation
-        {BUG_ID + "/pkg1/C1.html",
+        { "pkg1/C1.html",
             "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
             "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
         },
-        {BUG_ID + "/pkg1/C1.html",
+        { "pkg1/C1.html",
             "<h3>Methods inherited from class&nbsp;java.lang.Object</h3>"
         },
 
         // Class use documentation
-        {BUG_ID + "/pkg1/class-use/C1.html",
+        { "pkg1/class-use/C1.html",
             "<th class=\"colFirst\" scope=\"col\">Package</th>\n" +
             "<th class=\"colLast\" scope=\"col\">Description</th>"
         },
-        {BUG_ID + "/pkg1/class-use/C1.html",
+        { "pkg1/class-use/C1.html",
             "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
             "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
         },
 
         // Deprecated
-        {BUG_ID + "/deprecated-list.html",
+        { "deprecated-list.html",
             "<th class=\"colOne\" scope=\"col\">Method and Description</th>"
         },
 
         // Constant values
-        {BUG_ID + "/constant-values.html",
+        { "constant-values.html",
             "<th class=\"colFirst\" scope=\"col\">" +
             "Modifier and Type</th>\n" +
             "<th scope=\"col\">Constant Field</th>\n" +
@@ -86,32 +83,30 @@ public class TestHeadings extends JavadocTester {
         },
 
         // Serialized Form
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h2 title=\"Package\">Package&nbsp;pkg1</h2>"
         },
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class <a href=\"pkg1/C1.html\" title=\"class in pkg1\">" +
             "pkg1.C1</a> extends java.lang.Object implements Serializable</h3>"
         },
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Serialized Fields</h3>"
         },
 
         // Overview Frame
-        {BUG_ID + "/overview-frame.html",
+        { "overview-frame.html",
             "<h1 title=\"Test Files\" class=\"bar\">Test Files</h1>"
         },
-        {BUG_ID + "/overview-frame.html",
+        { "overview-frame.html",
             "<title>Overview List</title>"
         },
 
         // Overview Summary
-        {BUG_ID + "/overview-summary.html",
+        { "overview-summary.html",
             "<title>Overview</title>"
-        },
-
+        }
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -119,21 +114,7 @@ public class TestHeadings extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHeadings tester = new TestHeadings();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

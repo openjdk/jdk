@@ -34,24 +34,20 @@
 
 public class TestLegacyTaglet extends JavadocTester {
 
-    private static final String BUG_ID = "4638723-8015882";
-
     private static final String[] ARGS =
-        new String[] {"-d", BUG_ID, "-sourcepath", SRC_DIR,
+        new String[] {"-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             "-tagletpath", SRC_DIR, "-taglet", "ToDoTaglet", "-taglet", "Check",
             "-taglet", "UnderlineTaglet", SRC_DIR + "/C.java"};
 
     private static final String[][] TEST = new String[][] {
-            {BUG_ID + "/C.html", "This is an <u>underline</u>"},
-            {BUG_ID + "/C.html",
+            { "C.html", "This is an <u>underline</u>"},
+            { "C.html",
             "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
                 "<td bgcolor=\"yellow\">Finish this class.</td></tr></table></DD>"},
-            {BUG_ID + "/C.html",
+            { "C.html",
                 "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
                 "<td bgcolor=\"yellow\">Tag in Method.</td></tr></table></DD>"}
     };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -59,24 +55,10 @@ public class TestLegacyTaglet extends JavadocTester {
      */
     public static void main(String[] args) {
         TestLegacyTaglet tester = new TestLegacyTaglet();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         if (tester.getErrorOutput().contains("NullPointerException")) {
             throw new AssertionError("javadoc threw NullPointerException");
         }
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -39,8 +39,6 @@ import java.util.Date;
 public class MetaTag extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "4034096-4764726-6235799";
-    private static final String OUTPUT_DIR = "docs-" + BUG_ID;
     private static final SimpleDateFormat m_dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
     //Javadoc arguments.
@@ -63,65 +61,62 @@ public class MetaTag extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
 
-        { OUTPUT_DIR + "/p1/C1.html",
+        { "p1/C1.html",
            "<meta name=\"keywords\" content=\"p1.C1 class\">" },
 
-        { OUTPUT_DIR + "/p1/C1.html",
+        { "p1/C1.html",
            "<meta name=\"keywords\" content=\"field1\">" },
 
-        { OUTPUT_DIR + "/p1/C1.html",
+        { "p1/C1.html",
            "<meta name=\"keywords\" content=\"field2\">" },
 
-        { OUTPUT_DIR + "/p1/C1.html",
+        { "p1/C1.html",
            "<meta name=\"keywords\" content=\"method1()\">" },
 
-        { OUTPUT_DIR + "/p1/C1.html",
+        { "p1/C1.html",
            "<meta name=\"keywords\" content=\"method2()\">" },
 
-        { OUTPUT_DIR + "/p1/package-summary.html",
+        { "p1/package-summary.html",
            "<meta name=\"keywords\" content=\"p1 package\">" },
 
-        { OUTPUT_DIR + "/overview-summary.html",
+        { "overview-summary.html",
            "<meta name=\"keywords\" content=\"Overview, Sample Packages\">" },
 
         //NOTE: Hopefully, this regression test is not run at midnight.  If the output
         //was generated yesterday and this test is run today, the test will fail.
-        {OUTPUT_DIR + "/overview-summary.html",
+        { "overview-summary.html",
            "<meta name=\"date\" "
                             + "content=\"" + m_dateFormat.format(new Date()) + "\">"},
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    private static final String[][] TEST2 = NO_TEST;
     private static final String[][] NEGATED_TEST2 = {
         //No keywords when -keywords is not used.
-        { OUTPUT_DIR + "-2/p1/C1.html",
+        { "p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"p1.C1 class\">" },
 
-        { OUTPUT_DIR + "-2/p1/C1.html",
+        { "p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"field1\">" },
 
-        { OUTPUT_DIR + "-2/p1/C1.html",
+        { "p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"field2\">" },
 
-        { OUTPUT_DIR + "-2/p1/C1.html",
+        { "p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"method1()\">" },
 
-        { OUTPUT_DIR + "-2/p1/C1.html",
+        { "p1/C1.html",
            "<META NAME=\"keywords\" CONTENT=\"method2()\">" },
 
-        { OUTPUT_DIR + "-2/p1/package-summary.html",
+        { "p1/package-summary.html",
            "<META NAME=\"keywords\" CONTENT=\"p1 package\">" },
 
-        { OUTPUT_DIR + "-2/overview-summary.html",
+        { "overview-summary.html",
            "<META NAME=\"keywords\" CONTENT=\"Overview Summary, Sample Packages\">" },
 
         //The date metatag should not show up when -notimestamp is used.
 
         //NOTE: Hopefully, this regression test is not run at midnight.  If the output
         //was generated yesterday and this test is run today, the test will fail.
-        {OUTPUT_DIR + "-2/overview-summary.html",
+        { "overview-summary.html",
            "<META NAME=\"date\" "
                             + "CONTENT=\"" + m_dateFormat.format(new Date()) + "\">"},
     };
@@ -132,22 +127,8 @@ public class MetaTag extends JavadocTester {
      */
     public static void main(String[] args) {
         MetaTag tester = new MetaTag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        run(tester, ARGS_NO_TIMESTAMP_NO_KEYWORDS, TEST2, NEGATED_TEST2);
+        tester.run(ARGS, TEST, NO_TEST);
+        tester.run(ARGS_NO_TIMESTAMP_NO_KEYWORDS, NO_TEST, NEGATED_TEST2);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

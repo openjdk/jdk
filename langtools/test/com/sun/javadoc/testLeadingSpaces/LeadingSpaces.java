@@ -37,9 +37,8 @@
 
 public class LeadingSpaces extends JavadocTester {
 
-    private static final String BUG_ID = "4232882-8014636";
     private static final String[][] TEST = {
-        {BUG_ID + "/LeadingSpaces.html",
+        { "LeadingSpaces.html",
 "        1\n" +
 "          2\n" +
 "            3\n" +
@@ -48,10 +47,9 @@ public class LeadingSpaces extends JavadocTester {
 "                  6\n" +
 "                    7"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
         SRC_DIR + "/LeadingSpaces.java"};
 
     /**
@@ -60,22 +58,8 @@ public class LeadingSpaces extends JavadocTester {
      */
     public static void main(String[] args) {
         LeadingSpaces tester = new LeadingSpaces();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 
     /**

@@ -75,6 +75,7 @@ import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTreePathScanner;
 import com.sun.source.util.TreePath;
@@ -145,8 +146,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
         boolean isOverridingMethod = !env.currOverriddenMethods.isEmpty();
 
-        if (p.getLeaf() == p.getCompilationUnit()) {
-            // If p points to a compilation unit, the implied declaration is the
+        if (p.getLeaf().getKind() == Tree.Kind.PACKAGE) {
+            // If p points to a package, the implied declaration is the
             // package declaration (if any) for the compilation unit.
             // Handle this case specially, because doc comments are only
             // expected in package-info files.

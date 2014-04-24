@@ -35,18 +35,16 @@
 
 public class TestHiddenMembers extends JavadocTester {
 
-    private static final String BUG_ID = "4492178";
-    private static final String[][] TEST = NO_TEST;
 
     //We should not inherit any members from BaseClass because they are all overriden and hidden
     //(declared as private).
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/pkg/SubClass.html",
+        { "pkg/SubClass.html",
             "inherited from class pkg.<A HREF=\"../pkg/BaseClass.html\">BaseClass</A>"}
         };
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             "pkg"
         };
 
@@ -56,21 +54,7 @@ public class TestHiddenMembers extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHiddenMembers tester = new TestHiddenMembers();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

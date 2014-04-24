@@ -36,28 +36,27 @@
 
 public class TestHtmlStrongTag extends JavadocTester {
 
-    private static final String BUG_ID = "6786028";
     private static final String[][] TEST1 = {
-        {BUG_ID + "/pkg1/C1.html",
+        { "pkg1/C1.html",
             "<span class=\"seeLabel\">See Also:</span>"}};
     private static final String[][] NEGATED_TEST1 = {
-        {BUG_ID + "/pkg1/C1.html", "<STRONG>Method Summary</STRONG>"},
-        {BUG_ID + "/pkg1/C1.html", "<B>"},
-        {BUG_ID + "/pkg1/package-summary.html",
+        { "pkg1/C1.html", "<STRONG>Method Summary</STRONG>"},
+        { "pkg1/C1.html", "<B>"},
+        { "pkg1/package-summary.html",
             "<STRONG>Class Summary</STRONG>"}};
     private static final String[][] TEST2 = {
-        {BUG_ID + "/pkg2/C2.html", "<B>Comments:</B>"}};
+        { "pkg2/C2.html", "<B>Comments:</B>"}};
     private static final String[][] NEGATED_TEST2 = {
-        {BUG_ID + "/pkg2/C2.html", "<STRONG>Method Summary</STRONG>"},
-        {BUG_ID + "/pkg1/package-summary.html",
+        { "pkg2/C2.html", "<STRONG>Method Summary</STRONG>"},
+        { "pkg1/package-summary.html",
             "<STRONG>Class Summary</STRONG>"}};
 
     private static final String[] ARGS1 =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"};
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"};
     private static final String[] ARGS2 =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg2"};
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg2"};
 
     /**
      * The entry point of the test.
@@ -65,22 +64,8 @@ public class TestHtmlStrongTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHtmlStrongTag tester = new TestHtmlStrongTag();
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS1, TEST1, NEGATED_TEST1);
+        tester.run(ARGS2, TEST2, NEGATED_TEST2);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

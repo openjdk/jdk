@@ -2616,7 +2616,7 @@ public class Attr extends JCTree.Visitor {
          * - an instance field, we use the first constructor.
          * - a static field, we create a fake clinit method.
          */
-        private Env<AttrContext> lambdaEnv(JCLambda that, Env<AttrContext> env) {
+        public Env<AttrContext> lambdaEnv(JCLambda that, Env<AttrContext> env) {
             Env<AttrContext> lambdaEnv;
             Symbol owner = env.info.scope.owner;
             if (owner.kind == VAR && owner.owner.kind == TYP) {

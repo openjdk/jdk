@@ -34,19 +34,15 @@
 
 public class TestEnclosingClass extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "5008230";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/MyClass.MyInterface.html", "Enclosing class:"}
+        { "pkg/MyClass.MyInterface.html", "Enclosing class:"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -54,21 +50,7 @@ public class TestEnclosingClass extends JavadocTester {
      */
     public static void main(String[] args) {
         TestEnclosingClass tester = new TestEnclosingClass();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

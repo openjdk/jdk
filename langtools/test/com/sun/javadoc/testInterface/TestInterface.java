@@ -37,24 +37,21 @@
 
 public class TestInterface extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4682448-4947464-5029946";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/Interface.html",
+        { "pkg/Interface.html",
             "<pre>int&nbsp;method()</pre>"},
-        {BUG_ID + "/pkg/Interface.html",
+        { "pkg/Interface.html",
             "<pre>static final&nbsp;int field</pre>"},
 
 
         // Make sure known implementing class list is correct and omits type parameters.
-        {BUG_ID + "/pkg/Interface.html",
+        { "pkg/Interface.html",
             "<dl>\n" +
             "<dt>All Known Implementing Classes:</dt>\n" +
             "<dd><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child" +
@@ -63,7 +60,7 @@ public class TestInterface extends JavadocTester {
             "</dl>"},
 
          // Make sure "All Implemented Interfaces": has substituted type parameters
-         {BUG_ID + "/pkg/Child.html",
+         { "pkg/Child.html",
             "<dl>\n" +
             "<dt>All Implemented Interfaces:</dt>\n" +
             "<dd><a href=\"../pkg/Interface.html\" title=\"interface in pkg\">" +
@@ -71,7 +68,7 @@ public class TestInterface extends JavadocTester {
             "</dl>"
          },
          //Make sure Class Tree has substituted type parameters.
-         {BUG_ID + "/pkg/Child.html",
+         { "pkg/Child.html",
             "<ul class=\"inheritance\">\n" +
             "<li>java.lang.Object</li>\n" +
             "<li>\n" +
@@ -88,7 +85,7 @@ public class TestInterface extends JavadocTester {
             "</ul>"
          },
          //Make sure "Direct Know Subclasses" omits type parameters
-        {BUG_ID + "/pkg/Parent.html",
+        { "pkg/Parent.html",
             "<dl>\n" +
             "<dt>Direct Known Subclasses:</dt>\n" +
             "<dd><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child" +
@@ -96,7 +93,7 @@ public class TestInterface extends JavadocTester {
             "</dl>"
         },
         //Make sure "Specified By" has substituted type parameters.
-        {BUG_ID + "/pkg/Child.html",
+        { "pkg/Child.html",
             "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n" +
             "<dd><code><a href=\"../pkg/Interface.html#method--\">method</a>" +
             "</code>&nbsp;in interface&nbsp;<code>" +
@@ -105,7 +102,7 @@ public class TestInterface extends JavadocTester {
             "T</a>&gt;</code></dd>"
          },
         //Make sure "Overrides" has substituted type parameters.
-        {BUG_ID + "/pkg/Child.html",
+        { "pkg/Child.html",
             "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
             "<dd><code><a href=\"../pkg/Parent.html#method--\">method</a>" +
             "</code>&nbsp;in class&nbsp;<code><a href=\"../pkg/Parent.html\" " +
@@ -114,9 +111,9 @@ public class TestInterface extends JavadocTester {
          },
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/pkg/Interface.html",
+        { "pkg/Interface.html",
             "public int&nbsp;method()"},
-        {BUG_ID + "/pkg/Interface.html",
+        { "pkg/Interface.html",
             "public static final&nbsp;int field"},
     };
 
@@ -126,21 +123,7 @@ public class TestInterface extends JavadocTester {
      */
     public static void main(String[] args) {
         TestInterface tester = new TestInterface();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

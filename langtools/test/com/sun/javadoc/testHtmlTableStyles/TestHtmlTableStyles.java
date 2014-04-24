@@ -33,47 +33,45 @@
 
 public class TestHtmlTableStyles extends JavadocTester {
 
-    private static final String BUG_ID = "8008164";
-
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg1/TestTable.html",
+        { "pkg1/TestTable.html",
             "<table border cellpadding=3 cellspacing=1>"
         },
-        {BUG_ID + "/pkg1/TestTable.html",
+        { "pkg1/TestTable.html",
             "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Field Summary table, listing fields, " +
             "and an explanation\">"
         },
-        {BUG_ID + "/pkg1/TestTable.html",
+        { "pkg1/TestTable.html",
             "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Constructor Summary table, listing " +
             "constructors, and an explanation\">"
         },
-        {BUG_ID + "/pkg1/TestTable.html",
+        { "pkg1/TestTable.html",
             "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Method Summary table, listing methods, " +
             "and an explanation\">"
         },
-        {BUG_ID + "/pkg1/package-summary.html",
+        { "pkg1/package-summary.html",
             "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Class Summary table, listing classes, " +
             "and an explanation\">"
         },
-        {BUG_ID + "/pkg1/class-use/TestTable.html",
+        { "pkg1/class-use/TestTable.html",
             "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Use table, listing fields, and an explanation\">"
         },
-        {BUG_ID + "/overview-summary.html",
+        { "overview-summary.html",
             "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Packages table, listing packages, and an explanation\">"
         },
-        {BUG_ID + "/deprecated-list.html",
+        { "deprecated-list.html",
             "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Deprecated Methods table, listing " +
             "deprecated methods, and an explanation\">"
         },
-        {BUG_ID + "/constant-values.html",
+        { "constant-values.html",
             "<table class=\"constantsSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Constant Field Values table, listing " +
             "constant fields, and values\">"
@@ -81,7 +79,7 @@ public class TestHtmlTableStyles extends JavadocTester {
     };
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-use", "pkg1", "pkg2"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-use", "pkg1", "pkg2"
     };
 
     /**
@@ -90,21 +88,7 @@ public class TestHtmlTableStyles extends JavadocTester {
      */
     public static void main(String[] args) throws Exception {
         TestHtmlTableStyles tester = new TestHtmlTableStyles();
-        run(tester, ARGS, TEST, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

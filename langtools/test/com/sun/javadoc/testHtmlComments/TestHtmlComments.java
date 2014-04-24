@@ -35,18 +35,14 @@
 
 public class TestHtmlComments extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4904038";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
     };
 
     //Input for string search tests.
-    private static final String[][] TEST = NO_TEST;
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/C.html",
+        { "C.html",
             "<!-- ============ FIELD DETAIL =========== -->"}
     };
 
@@ -56,21 +52,7 @@ public class TestHtmlComments extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHtmlComments tester = new TestHtmlComments();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }
