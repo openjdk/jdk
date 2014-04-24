@@ -33,6 +33,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CountDownLatch;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * In order to demonstrate the issue we make several threads (two appears to be sufficient)
@@ -93,9 +94,9 @@ public class EarlyTimeout extends Thread {
     public void run() {
         try {
             startedSignal.countDown();
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             reference = queue.remove(TIMEOUT);
-            actual = System.currentTimeMillis() - start;
+            actual = NANOSECONDS.toMillis(System.nanoTime() - start);
         } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
         }
