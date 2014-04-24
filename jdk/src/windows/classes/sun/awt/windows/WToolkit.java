@@ -38,6 +38,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.awt.AWTAutoShutdown;
 import sun.awt.AWTPermissions;
+import sun.awt.AppContext;
 import sun.awt.LightweightFrame;
 import sun.awt.SunToolkit;
 import sun.awt.util.ThreadGroupUtils;
@@ -930,7 +931,13 @@ public final class WToolkit extends SunToolkit implements Runnable {
      * Windows doesn't always send WM_SETTINGCHANGE when it should.
      */
     private void windowsSettingChange() {
-        updateProperties();
+        if (AppContext.getAppContext() == null) {
+            // No AppContext, so we can update properties on the current thread,
+            // DesktopPropertyChangeSupport will only post events.
+            updateProperties();
+        } else {
+            EventQueue.invokeLater(this::updateProperties);
+        }
     }
 
     private synchronized void updateProperties() {
