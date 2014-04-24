@@ -33,10 +33,6 @@
 
 public class TestSeeTag extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8017191";
-    private static final String OUTPUT_DIR = BUG_ID;
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
@@ -44,12 +40,12 @@ public class TestSeeTag extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        { OUTPUT_DIR + "/pkg/Test.html",
+        { "pkg/Test.html",
           "<code>List</code>"
         }
     };
     private static final String[][] NEGATED_TEST = {
-        { OUTPUT_DIR + "/pkg/Test.html",
+        { "pkg/Test.html",
           "&lt;code&gt;List&lt;/code&gt;"
         }
     };
@@ -60,21 +56,7 @@ public class TestSeeTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSeeTag tester = new TestSeeTag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -34,47 +34,44 @@
 
 public class TestAnnotationTypes extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4973609-8015249";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/AnnotationTypeField.html",
+        { "pkg/AnnotationTypeField.html",
             "<li>Summary:&nbsp;</li>\n" +
             "<li><a href=\"#annotation.type." +
             "field.summary\">Field</a>&nbsp;|&nbsp;</li>"},
-        {BUG_ID + "/pkg/AnnotationTypeField.html",
+        { "pkg/AnnotationTypeField.html",
             "<li>Detail:&nbsp;</li>\n" +
             "<li><a href=\"#annotation.type." +
             "field.detail\">Field</a>&nbsp;|&nbsp;</li>"},
-        {BUG_ID + "/pkg/AnnotationTypeField.html",
+        { "pkg/AnnotationTypeField.html",
             "<!-- =========== ANNOTATION TYPE FIELD SUMMARY =========== -->"},
-        {BUG_ID + "/pkg/AnnotationTypeField.html",
+        { "pkg/AnnotationTypeField.html",
             "<h3>Field Summary</h3>"},
-        {BUG_ID + "/pkg/AnnotationTypeField.html",
+        { "pkg/AnnotationTypeField.html",
             "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../" +
             "pkg/AnnotationTypeField.html#DEFAULT_NAME\">DEFAULT_NAME</a></span>" +
             "</code>&nbsp;</td>"},
-        {BUG_ID + "/pkg/AnnotationTypeField.html",
+        { "pkg/AnnotationTypeField.html",
             "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->"},
-        {BUG_ID + "/pkg/AnnotationTypeField.html",
+        { "pkg/AnnotationTypeField.html",
             "<h4>DEFAULT_NAME</h4>\n" +
             "<pre>public static final&nbsp;java." +
             "lang.String&nbsp;DEFAULT_NAME</pre>"},
-        {BUG_ID + "/pkg/AnnotationType.html",
+        { "pkg/AnnotationType.html",
             "<li>Summary:&nbsp;</li>\n" +
             "<li>Field&nbsp;|&nbsp;</li>"},
-        {BUG_ID + "/pkg/AnnotationType.html",
+        { "pkg/AnnotationType.html",
             "<li>Detail:&nbsp;</li>\n" +
             "<li>Field&nbsp;|&nbsp;</li>"},
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/pkg/AnnotationType.html",
+        { "pkg/AnnotationType.html",
             "<HR>\n\n" +
             "<P>\n\n" +
             "<P>" +
@@ -87,21 +84,7 @@ public class TestAnnotationTypes extends JavadocTester {
      */
     public static void main(String[] args) {
         TestAnnotationTypes tester = new TestAnnotationTypes();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

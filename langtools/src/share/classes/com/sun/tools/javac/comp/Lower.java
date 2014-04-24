@@ -2359,6 +2359,7 @@ public class Lower extends TreeTranslator {
     /** Visitor method: Translate a single node.
      *  Attach the source position from the old tree to its replacement tree.
      */
+    @Override
     public <T extends JCTree> T translate(T tree) {
         if (tree == null) {
             return null;
@@ -2407,39 +2408,39 @@ public class Lower extends TreeTranslator {
         return trees;
     }
 
-    public void visitTopLevel(JCCompilationUnit tree) {
-        if (needPackageInfoClass(tree)) {
-            Name name = names.package_info;
-            long flags = Flags.ABSTRACT | Flags.INTERFACE;
-            if (target.isPackageInfoSynthetic())
-                // package-info is marked SYNTHETIC in JDK 1.6 and later releases
-                flags = flags | Flags.SYNTHETIC;
-            JCClassDecl packageAnnotationsClass
-                = make.ClassDef(make.Modifiers(flags,
-                                               tree.packageAnnotations),
-                                name, List.<JCTypeParameter>nil(),
-                                null, List.<JCExpression>nil(), List.<JCTree>nil());
-            ClassSymbol c = tree.packge.package_info;
-            c.flags_field |= flags;
-            c.setAttributes(tree.packge);
-            ClassType ctype = (ClassType) c.type;
-            ctype.supertype_field = syms.objectType;
-            ctype.interfaces_field = List.nil();
-            packageAnnotationsClass.sym = c;
+    public void visitPackageDef(JCPackageDecl tree) {
+        if (!needPackageInfoClass(tree))
+            return;
 
-            translated.append(packageAnnotationsClass);
-        }
+        Name name = names.package_info;
+        long flags = Flags.ABSTRACT | Flags.INTERFACE;
+        if (target.isPackageInfoSynthetic())
+            // package-info is marked SYNTHETIC in JDK 1.6 and later releases
+            flags = flags | Flags.SYNTHETIC;
+        JCClassDecl packageAnnotationsClass
+            = make.ClassDef(make.Modifiers(flags, tree.getAnnotations()),
+                            name, List.<JCTypeParameter>nil(),
+                            null, List.<JCExpression>nil(), List.<JCTree>nil());
+        ClassSymbol c = tree.packge.package_info;
+        c.flags_field |= flags;
+        c.setAttributes(tree.packge);
+        ClassType ctype = (ClassType) c.type;
+        ctype.supertype_field = syms.objectType;
+        ctype.interfaces_field = List.nil();
+        packageAnnotationsClass.sym = c;
+
+        translated.append(packageAnnotationsClass);
     }
     // where
-    private boolean needPackageInfoClass(JCCompilationUnit tree) {
+    private boolean needPackageInfoClass(JCPackageDecl pd) {
         switch (pkginfoOpt) {
             case ALWAYS:
                 return true;
             case LEGACY:
-                return tree.packageAnnotations.nonEmpty();
+                return pd.getAnnotations().nonEmpty();
             case NONEMPTY:
                 for (Attribute.Compound a :
-                         tree.packge.getDeclarationAttributes()) {
+                         pd.packge.getDeclarationAttributes()) {
                     Attribute.RetentionPolicy p = types.getRetention(a);
                     if (p != Attribute.RetentionPolicy.SOURCE)
                         return true;

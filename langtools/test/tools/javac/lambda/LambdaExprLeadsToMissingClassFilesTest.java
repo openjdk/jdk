@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,16 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  stale state after speculative attribution round leads to missing classfiles
- * @compile/fail/ref=ErroneousLambdaExpr.out -XDrawDiagnostics ErroneousLambdaExpr.java
  */
-public class ErroneousLambdaExpr<T> {
+public class LambdaExprLeadsToMissingClassFilesTest<T> {
 
     static int assertionCount = 0;
 
     static void assertTrue(boolean cond) {
         assertionCount++;
-        if (!cond)
+        if (!cond) {
             throw new AssertionError();
+        }
     }
 
     interface SAM1<X> {
@@ -57,8 +57,8 @@ public class ErroneousLambdaExpr<T> {
     void call(SAM3<T> s3) { assertTrue(false); }
 
     public static void main(String[] args) {
-        ErroneousLambdaExpr<StringBuilder> test =
-                new ErroneousLambdaExpr<>();
+        LambdaExprLeadsToMissingClassFilesTest<StringBuilder> test =
+                new LambdaExprLeadsToMissingClassFilesTest<>();
 
         test.call((builder, string) -> { builder.append(string); return builder; });
         assertTrue(assertionCount == 1);

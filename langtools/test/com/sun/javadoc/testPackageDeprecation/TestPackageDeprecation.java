@@ -33,35 +33,30 @@
 
 public class TestPackageDeprecation extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "6492694";
-
     //Javadoc arguments.
     private static final String[] ARGS1 = new String[]{
-        "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR, "-use", "pkg", "pkg1",
+        "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "-use", "pkg", "pkg1",
         SRC_DIR + "/C2.java", SRC_DIR + "/FooDepr.java"
     };
     private static final String[] ARGS2 = new String[]{
-        "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR, "-use", "-nodeprecated",
+        "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR, "-use", "-nodeprecated",
         "pkg", "pkg1", SRC_DIR + "/C2.java", SRC_DIR + "/FooDepr.java"
     };
 
     //Input for string search tests.
     private static final String[][] TEST1 = {
-        {BUG_ID + "-1/pkg1/package-summary.html",
+        { "pkg1/package-summary.html",
             "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>\n" +
             "<div class=\"block\"><span class=\"deprecationComment\">This package is Deprecated." +
             "</span></div>"
         },
-        {BUG_ID + "-1/deprecated-list.html",
+        { "deprecated-list.html",
             "<li><a href=\"#package\">Deprecated Packages</a></li>"
         }
     };
-    private static final String[][] TEST2 = NO_TEST;
-    private static final String[][] NEGATED_TEST1 = NO_TEST;
     private static final String[][] NEGATED_TEST2 = {
-        {BUG_ID + "-2/overview-summary.html", "pkg1"},
-        {BUG_ID + "-2/allclasses-frame.html", "FooDepr"}
+        { "overview-summary.html", "pkg1"},
+        { "allclasses-frame.html", "FooDepr"}
     };
 
     /**
@@ -70,35 +65,21 @@ public class TestPackageDeprecation extends JavadocTester {
      */
     public static void main(String[] args) {
         TestPackageDeprecation tester = new TestPackageDeprecation();
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
-        if ((new java.io.File(BUG_ID + "-2/pkg1/" +
+        tester.run(ARGS1, TEST1, NO_TEST);
+        tester.run(ARGS2, NO_TEST, NEGATED_TEST2);
+        if ((new java.io.File(OUTPUT_DIR + "-2/pkg1/" +
                 "package-summary.html")).exists()) {
             throw new Error("Test Fails: packages summary should not be" +
                     "generated for deprecated package.");
         } else {
             System.out.println("Test passes:  package-summary.html not found.");
         }
-        if ((new java.io.File(BUG_ID + "-2/FooDepr.html")).exists()) {
+        if ((new java.io.File(OUTPUT_DIR + "-2/FooDepr.html")).exists()) {
             throw new Error("Test Fails: FooDepr should not be" +
                     "generated as it is deprecated.");
         } else {
             System.out.println("Test passes:  FooDepr.html not found.");
         }
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

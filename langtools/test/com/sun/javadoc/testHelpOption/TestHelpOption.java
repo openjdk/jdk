@@ -34,17 +34,14 @@
 
 public class TestHelpOption extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4934778-4777599-6553182";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-help",
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-help",
             SRC_DIR + "/TestHelpOption.java"
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             SRC_DIR + "/TestHelpOption.java"
     };
 
@@ -86,14 +83,12 @@ public class TestHelpOption extends JavadocTester {
         {STANDARD_OUTPUT, "-stylesheetfile "},
         {STANDARD_OUTPUT, "-docencoding "},
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     private static final String[][] TEST2 = {
-        {BUG_ID + "/TestHelpOption.html",
+        { "TestHelpOption.html",
             "<li><a href=\"help-doc.html\">Help</a></li>"
         },
     };
-    private static final String[][] NEGATED_TEST2 = NO_TEST;
 
     //The help option should not crash the doclet.
     private static final int EXPECTED_EXIT_CODE = 0;
@@ -104,23 +99,9 @@ public class TestHelpOption extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHelpOption tester = new TestHelpOption();
-        int actualExitCode = run(tester, ARGS, TEST, NEGATED_TEST);
+        int actualExitCode = tester.run(ARGS, TEST, NO_TEST);
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

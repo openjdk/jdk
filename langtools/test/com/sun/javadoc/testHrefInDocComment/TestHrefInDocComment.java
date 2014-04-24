@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,9 @@
 
 public class TestHrefInDocComment extends JavadocTester {
 
-    private static final String BUG_ID = "4638015";
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"};
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"};
 
     /**
      * The entry point of the test.
@@ -48,23 +45,8 @@ public class TestHrefInDocComment extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHrefInDocComment tester = new TestHrefInDocComment();
-        if (run(tester, ARGS, TEST, NEGATED_TEST) != 0) {
+        if (tester.run(ARGS, NO_TEST, NO_TEST) != 0) {
             throw new Error("Javadoc failed to execute properly with given source.");
         }
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

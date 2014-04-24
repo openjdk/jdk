@@ -38,16 +38,13 @@
 
 public class TestWarnings extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4515705-4804296-4702454-4697036";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-Xdoclint:none", "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-private", "-sourcepath", SRC_DIR,
+        "-Xdoclint:none", "-d", OUTPUT_DIR, "-private", "-sourcepath", SRC_DIR,
         "pkg"
     };
 
@@ -60,22 +57,19 @@ public class TestWarnings extends JavadocTester {
 
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/pkg/X.html", "can't find m()"},
-        {BUG_ID + "/pkg/X.html", "can't find X()"},
-        {BUG_ID + "/pkg/X.html", "can't find f"},
+        { "pkg/X.html", "can't find m()"},
+        { "pkg/X.html", "can't find X()"},
+        { "pkg/X.html", "can't find f"},
     };
 
     private static final String[][] TEST2 = {
-        {BUG_ID + "/pkg/X.html",
+        { "pkg/X.html",
             "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>"},
-        {BUG_ID + "/pkg/X.html",
+        { "pkg/X.html",
             "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>"},
-        {BUG_ID + "/pkg/X.html",
+        { "pkg/X.html",
             "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>"},
     };
-
-    private static final String[][] NEGATED_TEST2 = NO_TEST;
-
 
     /**
      * The entry point of the test.
@@ -83,22 +77,9 @@ public class TestWarnings extends JavadocTester {
      */
     public static void main(String[] args) {
         TestWarnings tester = new TestWarnings();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
+        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

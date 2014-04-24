@@ -33,41 +33,40 @@
 
 public class TestAnchorNames extends JavadocTester {
 
-    private static final String BUG_ID = "8025633";
 
     //Input for string search tests.
     private static final String[][] TEST = {
 
         //Test some section markers and links to these markers
 
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"skip.navbar.top\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"nested.class.summary\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"#nested.class.summary\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"method.summary\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"#method.summary\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"field.detail\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"#field.detail\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"constructor.detail\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"#constructor.detail\">"
         },
 
@@ -75,170 +74,170 @@ public class TestAnchorNames extends JavadocTester {
 
         //The marker for this appears in the serialized-form.html which we will
         //test below
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../serialized-form.html#pkg1.RegClass\">"
         },
         //Test some fields
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"Z:Z_\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#Z:Z_\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"Z:Z_:D\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#Z:Z_:D\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"Z:Z:D_\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#Z:Z:D_\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"Z:Z:Dfield\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#Z:Z:Dfield\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"fieldInCla:D:D\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#fieldInCla:D:D\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"S_:D:D:D:D:DINT\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#S_:D:D:D:D:DINT\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"method:D:D\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#method:D:D\">"
         },
-        {BUG_ID + "/pkg1/DeprMemClass.html",
+        { "pkg1/DeprMemClass.html",
             "<a name=\"Z:Z_field_In_Class\">"
         },
-        {BUG_ID + "/pkg1/DeprMemClass.html",
+        { "pkg1/DeprMemClass.html",
             "<a href=\"../pkg1/DeprMemClass.html#Z:Z_field_In_Class\">"
         },
         //Test constructor
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"RegClass-java.lang.String-int-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#RegClass-java.lang.String-int-\">"
         },
         //Test some methods
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"Z:Z_methodInClass-java.lang.String-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#Z:Z_methodInClass-java.lang.String-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"method--\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#method--\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"foo-java.util.Map-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#foo-java.util.Map-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"methodInCla:Ds-java.lang.String:A-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#methodInCla:Ds-java.lang.String:A-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"Z:Z_methodInClas:D-java.lang.String-int-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#Z:Z_methodInClas:D-java.lang.String-int-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"methodD-pkg1.RegClass.:DA-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#methodD-pkg1.RegClass.:DA-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a name=\"methodD-pkg1.RegClass.D:A-\">"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             "<a href=\"../pkg1/RegClass.html#methodD-pkg1.RegClass.D:A-\">"
         },
-        {BUG_ID + "/pkg1/DeprMemClass.html",
+        { "pkg1/DeprMemClass.html",
             "<a name=\"Z:Z:Dmethod_In_Class--\">"
         },
-        {BUG_ID + "/pkg1/DeprMemClass.html",
+        { "pkg1/DeprMemClass.html",
             "<a href=\"../pkg1/DeprMemClass.html#Z:Z:Dmethod_In_Class--\">"
         },
 
         //Test enum
 
-        {BUG_ID + "/pkg1/RegClass.Te$t_Enum.html",
+        { "pkg1/RegClass.Te$t_Enum.html",
             "<a name=\"Z:Z:DFLD2\">"
         },
-        {BUG_ID + "/pkg1/RegClass.Te$t_Enum.html",
+        { "pkg1/RegClass.Te$t_Enum.html",
             "<a href=\"../pkg1/RegClass.Te$t_Enum.html#Z:Z:DFLD2\">"
         },
 
         //Test nested class
 
-        {BUG_ID + "/pkg1/RegClass._NestedClas$.html",
+        { "pkg1/RegClass._NestedClas$.html",
             "<a name=\"Z:Z_NestedClas:D--\">"
         },
-        {BUG_ID + "/pkg1/RegClass._NestedClas$.html",
+        { "pkg1/RegClass._NestedClas$.html",
             "<a href=\"../pkg1/RegClass._NestedClas$.html#Z:Z_NestedClas:D--\">"
         },
 
         //Test class use page
 
-        {BUG_ID + "/pkg1/class-use/DeprMemClass.html",
+        { "pkg1/class-use/DeprMemClass.html",
             "<a href=\"../../pkg1/RegClass.html#d____mc\">"
         },
 
         //Test deprecated list page
 
-        {BUG_ID + "/deprecated-list.html",
+        { "deprecated-list.html",
             "<a href=\"pkg1/DeprMemClass.html#Z:Z_field_In_Class\">"
         },
-        {BUG_ID + "/deprecated-list.html",
+        { "deprecated-list.html",
             "<a href=\"pkg1/DeprMemClass.html#Z:Z:Dmethod_In_Class--\">"
         },
 
         //Test constant values page
 
-        {BUG_ID + "/constant-values.html",
+        { "constant-values.html",
             "<a href=\"pkg1/RegClass.html#S_:D:D:D:D:DINT\">"
         },
 
         //Test serialized form page
 
         //This is the marker for the link that appears in the pkg1.RegClass.html page
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<a name=\"pkg1.RegClass\">"
         },
 
         //Test member name index page
 
-        {BUG_ID + "/index-all.html",
+        { "index-all.html",
             "<a name=\"I:Z:Z:D\">"
         },
-        {BUG_ID + "/index-all.html",
+        { "index-all.html",
             "<a href=\"#I:Z:Z:D\">$"
         },
-        {BUG_ID + "/index-all.html",
+        { "index-all.html",
             "<a href=\"#I:Z:Z_\">_"
         }
     };
@@ -246,22 +245,22 @@ public class TestAnchorNames extends JavadocTester {
     private static final String[][] NEGATED_TEST = {
         //The marker name conversion should only affect HTML anchors. It should not
         //affect the lables.
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             " Z:Z_"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             " Z:Z:Dfield"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             " Z:Z_field_In_Class"
         },
-        {BUG_ID + "/pkg1/RegClass.html",
+        { "pkg1/RegClass.html",
             " S_:D:D:D:D:DINT"
         },
     };
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-use", "pkg1"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-use", "pkg1"
     };
 
     /**
@@ -270,21 +269,7 @@ public class TestAnchorNames extends JavadocTester {
      */
     public static void main(String[] args) throws Exception {
         TestAnchorNames tester = new TestAnchorNames();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

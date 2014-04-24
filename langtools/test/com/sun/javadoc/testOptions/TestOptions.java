@@ -33,23 +33,18 @@
 
 public class TestOptions extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4749567";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-header", "Test header", "-footer", "Test footer",
+        "-d", OUTPUT_DIR, "-header", "Test header", "-footer", "Test footer",
         "-sourcepath", SRC_DIR, "pkg"
     };
 
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg/package-summary.html",
+        { "pkg/package-summary.html",
             "<div class=\"aboutLanguage\">Test header</div>"},
-        {BUG_ID + "/pkg/package-summary.html",
+        { "pkg/package-summary.html",
             "<div class=\"aboutLanguage\">Test footer</div>"}
     };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -57,22 +52,8 @@ public class TestOptions extends JavadocTester {
      */
     public static void main(String[] args) {
         TestOptions tester = new TestOptions();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }
 

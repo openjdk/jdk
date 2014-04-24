@@ -36,12 +36,10 @@
 
 public class TestSerializedFormDeprecationInfo extends JavadocTester {
 
-    private static final String BUG_ID = "6802694";
-
     // Test for normal run of javadoc. The serialized-form.html should
     // display the inline comments, tags and deprecation information if any.
     private static final String[][] TEST_CMNT_DEPR = {
-        {BUG_ID + "/serialized-form.html", "<dl>\n" +
+        { "serialized-form.html", "<dl>\n" +
                  "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n" +
                  "<dd><code>" +
                  "java.io.IOException</code></dd>\n" +
@@ -50,7 +48,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                  "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
                  "</dl>"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
                  "<span class=\"deprecatedLabel\">Deprecated.</span>" +
                  "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
                  " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
@@ -66,7 +64,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                  "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
                  "</dl>"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
                  "<span class=\"deprecatedLabel\">Deprecated.</span>" +
                  "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
                  " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
@@ -78,7 +76,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                  "IOException</code></code></dd>\n" +
                  "<dd><code>java.io.IOException</code></dd>\n" +
                  "</dl>"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
                  "<span class=\"deprecatedLabel\">Deprecated.</span>" +
                  "&nbsp;</div>\n" +
                  "<div class=\"block\">" +
@@ -88,14 +86,14 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     // not display the inline comments and tags but should display deprecation
     // information if any.
     private static final String[][] TEST_NOCMNT = {
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
                  "<pre>boolean undecorated</pre>\n" +
                  "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;<span class=\"deprecationComment\">" +
                  "As of JDK version 1.5, replaced by\n" +
                  " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>" +
                  "setUndecorated(boolean)</code></a>.</span></div>\n" +
                  "</li>"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
                  "<span class=\"deprecatedLabel\">" +
                  "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version" +
                  " 1.5, replaced by\n" +
@@ -117,19 +115,19 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
 
     private static final String[] ARGS1 =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"};
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS2 =
         new String[] {
-            "-d", BUG_ID, "-nocomment", "-sourcepath", SRC_DIR, "pkg1"};
+            "-d", OUTPUT_DIR, "-nocomment", "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS3 =
         new String[] {
-            "-d", BUG_ID, "-nodeprecated", "-sourcepath", SRC_DIR, "pkg1"};
+            "-d", OUTPUT_DIR, "-nodeprecated", "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS4 =
         new String[] {
-            "-d", BUG_ID, "-nocomment", "-nodeprecated", "-sourcepath",
+            "-d", OUTPUT_DIR, "-nocomment", "-nodeprecated", "-sourcepath",
             SRC_DIR, "pkg1"};
 
     /**
@@ -138,24 +136,10 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSerializedFormDeprecationInfo tester = new TestSerializedFormDeprecationInfo();
-        run(tester, ARGS1, TEST_CMNT_DEPR, TEST_NOCMNT);
-        run(tester, ARGS2, TEST_NOCMNT, TEST_CMNT_DEPR);
-        run(tester, ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
-        run(tester, ARGS4, TEST_NOCMNT_NODEPR, TEST_NODEPR);
+        tester.run(ARGS1, TEST_CMNT_DEPR, TEST_NOCMNT);
+        tester.run(ARGS2, TEST_NOCMNT, TEST_CMNT_DEPR);
+        tester.run(ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
+        tester.run(ARGS4, TEST_NOCMNT_NODEPR, TEST_NODEPR);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

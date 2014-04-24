@@ -32,10 +32,6 @@
 
 public class TestLiteralCodeInPre extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8002387-8014636";
-    private static final String OUTPUT_DIR = BUG_ID;
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-Xdoclint:none", "pkg"
@@ -43,25 +39,25 @@ public class TestLiteralCodeInPre extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        { BUG_ID + "/pkg/Test.html",
+        { "pkg/Test.html",
             "no_pre()</pre>\n" +
             "<div class=\"block\">abc<code>def</code>ghi</div>" },
-        { BUG_ID + "/pkg/Test.html",
+        { "pkg/Test.html",
             "no_pre_extra_whitespace()</pre>\n" +
             "<div class=\"block\">abc<code>def  </code>ghi</div>" },
-        { BUG_ID + "/pkg/Test.html",
+        { "pkg/Test.html",
             "in_pre()</pre>\n" +
             "<div class=\"block\"><pre> abc<code>  def  </code>ghi</pre></div>" },
-        { BUG_ID + "/pkg/Test.html",
+        { "pkg/Test.html",
             "pre_after_text()</pre>\n" +
             "<div class=\"block\">xyz <pre> abc<code>  def  </code>ghi</pre></div>" },
-        { BUG_ID + "/pkg/Test.html",
+        { "pkg/Test.html",
             "after_pre()</pre>\n" +
             "<div class=\"block\">xyz <pre> pqr </pre> abc<code>def  </code>ghi</div>" },
-        { BUG_ID + "/pkg/Test.html",
+        { "pkg/Test.html",
             "back_in_pre()</pre>\n" +
             "<div class=\"block\">xyz <pre> pqr </pre> mno <pre> abc<code>  def  </code>ghi</pre></div>" },
-        { BUG_ID + "/pkg/Test.html",
+        { "pkg/Test.html",
             "typical_usage_code()</pre>\n" +
             "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n" +
             " Example:  <pre><code>\n" +
@@ -70,7 +66,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
             "   line 3 }\n" +
             " </code></pre>\n" +
             " and so it goes.</div>" },
-        { BUG_ID + "/pkg/Test.html",
+        { "pkg/Test.html",
             "typical_usage_literal()</pre>\n" +
             "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n" +
             " Example:  <pre>\n" +
@@ -79,7 +75,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
             "   line 3 }\n" +
             " </pre>\n" +
             " and so it goes.</div>" },
-        { BUG_ID + "/pkg/Test.html",
+        { "pkg/Test.html",
             "recommended_usage_literal()</pre>\n" +
             "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n" +
             " Example:  <pre>\n" +
@@ -89,29 +85,13 @@ public class TestLiteralCodeInPre extends JavadocTester {
             " and so it goes.</div>" }
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
         TestLiteralCodeInPre tester = new TestLiteralCodeInPre();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

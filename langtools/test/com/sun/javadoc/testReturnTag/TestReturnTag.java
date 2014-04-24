@@ -34,12 +34,9 @@
 
 public class TestReturnTag extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4490068";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR +
+        "-Xdoclint:none", "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR +
         "/TestReturnTag.java"
     };
 
@@ -48,7 +45,6 @@ public class TestReturnTag extends JavadocTester {
         {WARNING_OUTPUT,
             "warning - @return tag cannot be used in method with void return type."}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * Trigger warning message when return tag is used on a void method.
@@ -63,21 +59,7 @@ public class TestReturnTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestReturnTag tester = new TestReturnTag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

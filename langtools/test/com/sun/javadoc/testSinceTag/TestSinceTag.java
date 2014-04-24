@@ -33,26 +33,23 @@
 
 public class TestSinceTag extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "7180906";
-
     //Javadoc arguments.
     private static final String[] ARGS1 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-nosince", "pkg1"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-nosince", "pkg1"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + "/pkg1/C1.html",
+        { "pkg1/C1.html",
             "<dl>\n" +
             "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
             "<dd>JDK1.0</dd>"
         },
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<dl>\n" +
             "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
             "<dd>1.4</dd>"
@@ -65,22 +62,8 @@ public class TestSinceTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSinceTag tester = new TestSinceTag();
-        run(tester, ARGS1, TEST, NO_TEST);
-        run(tester, ARGS2, NO_TEST, TEST);
+        tester.run(ARGS1, TEST, NO_TEST);
+        tester.run(ARGS2, NO_TEST, TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

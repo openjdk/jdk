@@ -31,19 +31,10 @@
  */
 public class T6735320 extends JavadocTester {
 
-    private static final String BUG_ID = "6735320";
     private static final String[] ARGS = new String[]{
-        "-d", BUG_ID + ".out",
+        "-d", OUTPUT_DIR + ".out",
         SRC_DIR + "/SerialFieldTest.java"
     };
-
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    public String getBugName() {
-        return getClass().getName();
-    }
 
     public static void main(String... args) {
         T6735320 tester = new T6735320();

@@ -34,29 +34,27 @@
 
 public class TestClassCrossReferences extends JavadocTester {
 
-    private static final String BUG_ID = "4652655-4857717";
     private static final String[][] TEST = {
-        {BUG_ID + "/C.html",
+        { "C.html",
             "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/math/package-summary.html?is-external=true\"><code>Link to math package</code></a>"},
-        {BUG_ID + "/C.html",
+        { "C.html",
             "<a href=\"http://java.sun.com/j2se/1.4/docs/api/javax/swing/text/AbstractDocument.AttributeContext.html?is-external=true\" " +
             "title=\"class or interface in javax.swing.text\"><code>Link to AttributeContext innerclass</code></a>"},
-        {BUG_ID + "/C.html",
+        { "C.html",
             "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/math/BigDecimal.html?is-external=true\" " +
                 "title=\"class or interface in java.math\"><code>Link to external class BigDecimal</code></a>"},
-        {BUG_ID + "/C.html",
+        { "C.html",
             "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/math/BigInteger.html?is-external=true#gcd-java.math.BigInteger-\" " +
                 "title=\"class or interface in java.math\"><code>Link to external member gcd</code></a>"},
-        {BUG_ID + "/C.html",
+        { "C.html",
             "<dl>\n" +
             "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
             "<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>\n" +
             "</dl>"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api/",
             SRC_DIR, SRC_DIR + "/C.java"};
 
@@ -66,21 +64,7 @@ public class TestClassCrossReferences extends JavadocTester {
      */
     public static void main(String[] args) {
         TestClassCrossReferences tester = new TestClassCrossReferences();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -34,25 +34,22 @@
 
 public class TestCharset extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "7052170";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-charset", "UTF-8", "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-charset", "UTF-8", "-sourcepath", SRC_DIR, "pkg"
     };
 
     private static final String[][] TEST = {
-        {BUG_ID + "/index.html",
+        { "index.html",
             "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">"},
-        {BUG_ID + "/pkg/Foo.html",
+        { "pkg/Foo.html",
             "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">"}
     };
 
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/index.html",
+        { "index.html",
             "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">"},
-        {BUG_ID + "/pkg/Foo.html",
+        { "pkg/Foo.html",
             "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">"}
     };
 
@@ -62,21 +59,7 @@ public class TestCharset extends JavadocTester {
      */
     public static void main(String[] args) {
         TestCharset tester = new TestCharset();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }
