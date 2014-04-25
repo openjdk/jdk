@@ -11,6 +11,7 @@ grant {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.tools.attach";
     permission java.lang.RuntimePermission "loadLibrary.attach";
     permission java.util.PropertyPermission "sun.jvmstat.*", "read";
+    permission java.util.PropertyPermission "java.io.tmpdir", "read";
 
     /* to read configuration file in META-INF/services, and write/delete .attach_pid<pid> */
     permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
