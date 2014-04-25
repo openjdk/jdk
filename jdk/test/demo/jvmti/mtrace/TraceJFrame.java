@@ -36,7 +36,7 @@ import java.awt.GraphicsEnvironment;
 
 public class TraceJFrame {
     public static void main(String args[]) throws Exception {
-        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
+        if (GraphicsEnvironment.isHeadless()) {
             System.out.println("JFrame test was skipped due to headless mode");
         } else {
             DemoRun demo;
