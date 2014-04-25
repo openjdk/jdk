@@ -392,6 +392,7 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
 
   Values* args_list_for_profiling(ciMethod* target, int& start, bool may_have_receiver);
   Values* collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver);
+  void check_args_for_profiling(Values* obj_args, int expected);
 
  public:
   NOT_PRODUCT(void print_stats();)
