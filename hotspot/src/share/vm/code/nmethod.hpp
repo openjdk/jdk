@@ -203,7 +203,7 @@ class nmethod : public CodeBlob {
   // and is not made into a zombie. However, once the nmethod is made into
   // a zombie, it will be locked one final time if CompiledMethodUnload
   // event processing needs to be done.
-  jint  _lock_count;
+  volatile jint _lock_count;
 
   // not_entrant method removal. Each mark_sweep pass will update
   // this mark to current sweep invocation count if it is seen on the
