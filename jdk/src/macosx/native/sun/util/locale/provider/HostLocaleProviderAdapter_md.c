@@ -154,7 +154,10 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
                 if (pmStr != NULL) {
                     CFStringGetCString(pmStr, buf, BUFLEN, kCFStringEncodingUTF8);
                     CFRelease(pmStr);
-                    (*env)->SetObjectArrayElement(env, ampms, 1, (*env)->NewStringUTF(env, buf));
+                    tmp_string = (*env)->NewStringUTF(env, buf);
+                    if (tmp_string != NULL) {
+                        (*env)->SetObjectArrayElement(env, ampms, 1, tmp_string);
+                    }
                 }
             }
             CFRelease(df);
