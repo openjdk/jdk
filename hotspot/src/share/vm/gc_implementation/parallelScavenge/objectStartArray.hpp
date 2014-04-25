@@ -128,8 +128,6 @@ class ObjectStartArray : public CHeapObj<mtGC> {
     // When doing MT offsets, we can't assert this.
     //assert(offset > *block, "Found backwards allocation");
     *block = (jbyte)offset;
-
-    // tty->print_cr("[%p]", p);
   }
 
   // Optimized for finding the first object that crosses into

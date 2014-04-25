@@ -976,11 +976,11 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
   }
 
   if (concurrent()) {
-    ConcurrentGCThread::stsLeave();
+    SuspendibleThreadSet::leave();
   }
   _first_overflow_barrier_sync.enter();
   if (concurrent()) {
-    ConcurrentGCThread::stsJoin();
+    SuspendibleThreadSet::join();
   }
   // at this point everyone should have synced up and not be doing any
   // more work
@@ -1024,11 +1024,11 @@ void ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
   }
 
   if (concurrent()) {
-    ConcurrentGCThread::stsLeave();
+    SuspendibleThreadSet::leave();
   }
   _second_overflow_barrier_sync.enter();
   if (concurrent()) {
-    ConcurrentGCThread::stsJoin();
+    SuspendibleThreadSet::join();
   }
   // at this point everything should be re-initialized and ready to go
 
@@ -1076,7 +1076,7 @@ public:
 
     double start_vtime = os::elapsedVTime();
 
-    ConcurrentGCThread::stsJoin();
+    SuspendibleThreadSet::join();
 
     assert(worker_id < _cm->active_tasks(), "invariant");
     CMTask* the_task = _cm->task(worker_id);
@@ -1103,9 +1103,9 @@ public:
         if (!_cm->has_aborted() && the_task->has_aborted()) {
           sleep_time_ms =
             (jlong) (elapsed_vtime_sec * _cm->sleep_factor() * 1000.0);
-          ConcurrentGCThread::stsLeave();
+          SuspendibleThreadSet::leave();
           os::sleep(Thread::current(), sleep_time_ms, false);
-          ConcurrentGCThread::stsJoin();
+          SuspendibleThreadSet::join();
         }
         double end_time2_sec = os::elapsedTime();
         double elapsed_time2_sec = end_time2_sec - start_time_sec;
@@ -1123,7 +1123,7 @@ public:
     the_task->record_end_time();
     guarantee(!the_task->has_aborted() || _cm->has_aborted(), "invariant");
 
-    ConcurrentGCThread::stsLeave();
+    SuspendibleThreadSet::leave();
 
     double end_vtime = os::elapsedVTime();
     _cm->update_accum_task_vtime(worker_id, end_vtime - start_vtime);
@@ -2655,7 +2655,6 @@ public:
       str = " O";
     } else {
       HeapRegion* hr  = _g1h->heap_region_containing(obj);
-      guarantee(hr != NULL, "invariant");
       bool over_tams = _g1h->allocated_since_marking(obj, hr, _vo);
       bool marked = _g1h->is_marked(obj, _vo);
 
@@ -3302,19 +3301,15 @@ void ConcurrentMark::print_on_error(outputStream* st) const {
 
 // We take a break if someone is trying to stop the world.
 bool ConcurrentMark::do_yield_check(uint worker_id) {
-  if (should_yield()) {
+  if (SuspendibleThreadSet::should_yield()) {
     if (worker_id == 0) {
       _g1h->g1_policy()->record_concurrent_pause();
     }
-    cmThread()->yield();
+    SuspendibleThreadSet::yield();
     return true;
   } else {
     return false;
   }
-}
-
-bool ConcurrentMark::should_yield() {
-  return cmThread()->should_yield();
 }
 
 bool ConcurrentMark::containing_card_is_marked(void* p) {
@@ -3417,9 +3412,8 @@ G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
 }
 
 void CMTask::setup_for_region(HeapRegion* hr) {
-  // Separated the asserts so that we know which one fires.
   assert(hr != NULL,
-        "claim_region() should have filtered out continues humongous regions");
+        "claim_region() should have filtered out NULL regions");
   assert(!hr->continuesHumongous(),
         "claim_region() should have filtered out continues humongous regions");
 
@@ -3605,7 +3599,7 @@ void CMTask::regular_clock_call() {
 #endif // _MARKING_STATS_
 
   // (4) We check whether we should yield. If we have to, then we abort.
-  if (_cm->should_yield()) {
+  if (SuspendibleThreadSet::should_yield()) {
     // We should yield. To do this we abort the task. The caller is
     // responsible for yielding.
     set_has_aborted();
@@ -3754,7 +3748,7 @@ void CMTask::drain_local_queue(bool partially) {
 
   if (_task_queue->size() > target_size) {
     if (_cm->verbose_high()) {
-      gclog_or_tty->print_cr("[%u] draining local queue, target size = %d",
+      gclog_or_tty->print_cr("[%u] draining local queue, target size = " SIZE_FORMAT,
                              _worker_id, target_size);
     }
 
@@ -3782,7 +3776,7 @@ void CMTask::drain_local_queue(bool partially) {
     }
 
     if (_cm->verbose_high()) {
-      gclog_or_tty->print_cr("[%u] drained local queue, size = %d",
+      gclog_or_tty->print_cr("[%u] drained local queue, size = %u",
                              _worker_id, _task_queue->size());
     }
   }
@@ -3810,7 +3804,7 @@ void CMTask::drain_global_stack(bool partially) {
 
   if (_cm->mark_stack_size() > target_size) {
     if (_cm->verbose_low()) {
-      gclog_or_tty->print_cr("[%u] draining global_stack, target size %d",
+      gclog_or_tty->print_cr("[%u] draining global_stack, target size " SIZE_FORMAT,
                              _worker_id, target_size);
     }
 
@@ -3820,7 +3814,7 @@ void CMTask::drain_global_stack(bool partially) {
     }
 
     if (_cm->verbose_low()) {
-      gclog_or_tty->print_cr("[%u] drained global stack, size = %d",
+      gclog_or_tty->print_cr("[%u] drained global stack, size = " SIZE_FORMAT,
                              _worker_id, _cm->mark_stack_size());
     }
   }
