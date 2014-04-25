@@ -24,12 +24,11 @@
 import java.io.IOException;
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.Utils;
 import jdk.testlibrary.ProcessThread;
@@ -39,6 +38,7 @@ import jdk.testlibrary.ProcessThread;
  * (Test runner = class that launch a test)
  */
 public class RunnerUtil {
+
     /**
      * The Application process must be run concurrently with our tests since
      * the tests will attach to the Application.
@@ -49,15 +49,30 @@ public class RunnerUtil {
      *
      * The Application will write its pid and shutdownPort in the given outFile.
      */
-    public static ProcessThread startApplication(String outFile) throws Throwable {
+    public static ProcessThread startApplication(String outFile, String... additionalOpts) throws Throwable {
         String classpath = System.getProperty("test.class.path", ".");
-        String[] args = Utils.addTestJavaOpts(
-            "-Dattach.test=true", "-classpath", classpath, "Application", outFile);
+        String[] myArgs = concat(additionalOpts, new String [] { "-Dattach.test=true", "-classpath", classpath, "Application", outFile });
+        String[] args = Utils.addTestJavaOpts(myArgs);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
         ProcessThread pt = new ProcessThread("runApplication", pb);
         pt.start();
         return pt;
     }
+
+    public static String[] concat(String[] a, String[] b) {
+        if (a == null) {
+            return b;
+        }
+        if (b == null) {
+            return a;
+        }
+        int aLen = a.length;
+        int bLen = b.length;
+        String[] c = new String[aLen + bLen];
+        System.arraycopy(a, 0, c, 0, aLen);
+        System.arraycopy(b, 0, c, aLen, bLen);
+        return c;
+     }
 
     /**
      * Will stop the running Application.
