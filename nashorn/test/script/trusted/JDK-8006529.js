@@ -113,7 +113,7 @@ function findFunction(node) {
 var getContextMethod = Context.class.getMethod("getContext")
 var getEnvMethod = Context.class.getMethod("getEnv")
 
-var SourceConstructor = Source.class.getConstructor(java.lang.String.class, java.lang.String.class)
+var sourceForMethod = Source.class.getMethod("sourceFor", java.lang.String.class, java.lang.String.class)
 var ParserConstructor = Parser.class.getConstructor(ScriptEnvironment.class, Source.class, ErrorManager.class)
 var CompilerConstructor = Compiler.class.getConstructor(ScriptEnvironment.class)
 
@@ -121,7 +121,7 @@ var CompilerConstructor = Compiler.class.getConstructor(ScriptEnvironment.class)
 // source code, returns a jdk.nashorn.internal.ir.FunctionNode object 
 // representing it.
 function compile(source) {
-    var source = SourceConstructor.newInstance("<no name>", source);
+    var source = sourceForMethod.invoke(null, "<no name>", source);
 
     var env = getEnvMethod.invoke(getContextMethod.invoke(null))
 
