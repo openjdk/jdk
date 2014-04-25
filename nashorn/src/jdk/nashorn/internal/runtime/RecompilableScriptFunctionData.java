@@ -750,7 +750,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         @Override
         public FunctionNode apply(final FunctionNode functionNode) {
             this.initialFunctionNode = functionNode;
-            if (data.isVariableArity()) {
+            if (data.isVariableArity() && !CompiledFunction.isVarArgsType(actualCallSiteType)) {
                 final ApplySpecialization spec = new ApplySpecialization(data.context, data, functionNode, actualCallSiteType);
                 if (spec.transform()) {
                     setTransformedFunctionNode(spec.getFunctionNode());

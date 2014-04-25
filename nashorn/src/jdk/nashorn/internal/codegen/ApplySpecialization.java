@@ -49,6 +49,7 @@ import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.options.Options;
 
@@ -139,6 +140,10 @@ public final class ApplySpecialization implements Loggable {
 
     /**
      * Arguments may only be used as args to the apply. Everything else is disqualified
+     * We cannot control arguments if they escape from the method and go into an unknown
+     * scope, thus we are conservative and treat any access to arguments outside the
+     * apply call as a case of "we cannot apply the optimization".
+     *
      * @return true if arguments escape
      */
     private boolean argumentsEscape() {
@@ -148,16 +153,25 @@ public final class ApplySpecialization implements Loggable {
         try {
             functionNode = (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 private boolean isCurrentArg(final Expression expr) {
-                    return !stack.isEmpty() && stack.peek().contains(expr);
+                    return !stack.isEmpty() && stack.peek().contains(expr); //args to current apply call
                 }
 
                 private boolean isArguments(final Expression expr) {
                     return expr instanceof IdentNode && ARGUMENTS.equals(((IdentNode)expr).getName());
                 }
 
+                private boolean isParam(final String name) {
+                    for (final IdentNode param : functionNode.getParameters()) {
+                        if (param.getName().equals(name)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
                 @Override
                 public Node leaveIdentNode(final IdentNode identNode) {
-                    if (ARGUMENTS.equals(identNode.getName()) && !isCurrentArg(identNode)) {
+                    if (isParam(identNode.getName()) || ARGUMENTS.equals(identNode.getName()) && !isCurrentArg(identNode)) {
                         throw new UnsupportedOperationException();
                     }
                     return identNode;
@@ -209,6 +223,9 @@ public final class ApplySpecialization implements Loggable {
             throw new AssertionError("Can't apply transform twice");
         }
 
+
+        assert actualCallSiteType.parameterType(actualCallSiteType.parameterCount() - 1) != Object[].class : "error vararg callsite passed to apply2call " + functionNode.getName() + " " + actualCallSiteType;
+
         changed = false;
 
         if (!Global.instance().isSpecialNameValid("apply")) {
@@ -234,9 +251,15 @@ public final class ApplySpecialization implements Loggable {
 
         start++; //we always uses this
 
+        final List<IdentNode> params = functionNode.getParameters();
         final List<IdentNode> newParams = new ArrayList<>();
-        for (int i = start; i < actualCallSiteType.parameterCount(); i++) {
-            newParams.add(new IdentNode(functionNode.getToken(), functionNode.getFinish(), EXPLODED_ARGUMENT_PREFIX.symbolName() + (i - start)));
+        final long to = Math.max(params.size(), actualCallSiteType.parameterCount() - start);
+        for (int i = 0; i < to; i++) {
+            if (i >= params.size()) {
+                newParams.add(new IdentNode(functionNode.getToken(), functionNode.getFinish(), EXPLODED_ARGUMENT_PREFIX.symbolName() + (i)));
+            } else {
+                newParams.add(params.get(i));
+            }
         }
 
         // expand arguments
@@ -273,7 +296,9 @@ public final class ApplySpecialization implements Loggable {
                     setParameters(null, newParams);
         }
 
-        log.info("Successfully specialized apply to call in '" + functionNode.getName() + "' id=" + functionNode.getId() + " signature=" + actualCallSiteType);
+        if (log.isEnabled()) {
+            log.info(Debug.id(data) + " Successfully specialized apply to call in '" + functionNode.getName() + "' id=" + functionNode.getId() + " signature=" + actualCallSiteType + " needsCallee=" + data.needsCallee() + " " + functionNode.getSource().getURL());
+        }
 
         return finish();
     }
