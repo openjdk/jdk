@@ -66,7 +66,8 @@ static CFMutableArrayRef getAllValidDisplayModes(jint displayID){
             CFArrayAppendValue(validModes, cRef);
         }
     }
-
+    CFRelease(allModes);
+    
     CGDisplayModeRef currentMode = CGDisplayCopyDisplayMode(displayID);
 
     BOOL containsCurrentMode = NO;
@@ -81,6 +82,7 @@ static CFMutableArrayRef getAllValidDisplayModes(jint displayID){
     if (!containsCurrentMode) {
         CFArrayAppendValue(validModes, currentMode);
     }
+    CGDisplayModeRelease(currentMode);
 
     return validModes;
 }
