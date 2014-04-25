@@ -265,7 +265,7 @@ void PromotionInfo::print_statistics(uint worker_id) const {
     slots += _spoolHead->bufferSize - 1;
     blocks++;
   }
-  gclog_or_tty->print_cr(" [worker %d] promo_blocks = %d, promo_slots = %d ",
+  gclog_or_tty->print_cr(" [worker %d] promo_blocks = " SIZE_FORMAT ", promo_slots = " SIZE_FORMAT,
                          worker_id, blocks, slots);
 }
 

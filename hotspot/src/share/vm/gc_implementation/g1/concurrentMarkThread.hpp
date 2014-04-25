@@ -89,9 +89,6 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   // that started() is set and set in_progress().
   bool during_cycle()      { return started() || in_progress(); }
 
-  // Yield for GC
-  void            yield();
-
   // shutdown
   void stop();
 };
