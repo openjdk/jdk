@@ -264,7 +264,7 @@ void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
   cm->set_region_stack(ParCompactionManager::region_list(which_stack_index));
   if (TraceDynamicGCThreads) {
     gclog_or_tty->print_cr("StealRegionCompactionTask::do_it "
-                           "region_stack_index %d region_stack = 0x%x "
+                           "region_stack_index %d region_stack = " PTR_FORMAT " "
                            " empty (%d) use all workers %d",
     which_stack_index, ParCompactionManager::region_list(which_stack_index),
     cm->region_stack()->is_empty(),
@@ -366,7 +366,7 @@ void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
     if (TraceDynamicGCThreads) {
       void* old_region_stack = (void*) cm->region_stack();
       int old_region_stack_index = cm->region_stack_index();
-      gclog_or_tty->print_cr("Pushing region stack 0x%x/%d",
+      gclog_or_tty->print_cr("Pushing region stack " PTR_FORMAT "/%d",
         old_region_stack, old_region_stack_index);
     }
 

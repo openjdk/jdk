@@ -1512,6 +1512,8 @@ bool CMSCollector::shouldConcurrentCollect() {
     gclog_or_tty->print_cr("cms_allocation_rate=%g", stats().cms_allocation_rate());
     gclog_or_tty->print_cr("occupancy=%3.7f", _cmsGen->occupancy());
     gclog_or_tty->print_cr("initiatingOccupancy=%3.7f", _cmsGen->initiating_occupancy());
+    gclog_or_tty->print_cr("cms_time_since_begin=%3.7f", stats().cms_time_since_begin());
+    gclog_or_tty->print_cr("cms_time_since_end=%3.7f", stats().cms_time_since_end());
     gclog_or_tty->print_cr("metadata initialized %d",
       MetaspaceGC::should_concurrent_collect());
   }
@@ -1573,6 +1575,28 @@ bool CMSCollector::shouldConcurrentCollect() {
       }
       return true;
     }
+
+  // CMSTriggerInterval starts a CMS cycle if enough time has passed.
+  if (CMSTriggerInterval >= 0) {
+    if (CMSTriggerInterval == 0) {
+      // Trigger always
+      return true;
+    }
+
+    // Check the CMS time since begin (we do not check the stats validity
+    // as we want to be able to trigger the first CMS cycle as well)
+    if (stats().cms_time_since_begin() >= (CMSTriggerInterval / ((double) MILLIUNITS))) {
+      if (Verbose && PrintGCDetails) {
+        if (stats().valid()) {
+          gclog_or_tty->print_cr("CMSCollector: collect because of trigger interval (time since last begin %3.7f secs)",
+                                 stats().cms_time_since_begin());
+        } else {
+          gclog_or_tty->print_cr("CMSCollector: collect because of trigger interval (first collection)");
+        }
+      }
+      return true;
+    }
+  }
 
   return false;
 }
@@ -2894,13 +2918,13 @@ bool CMSCollector::is_cms_reachable(HeapWord* addr) {
 
   // Clear the marking bit map array before starting, but, just
   // for kicks, first report if the given address is already marked
-  gclog_or_tty->print_cr("Start: Address 0x%x is%s marked", addr,
+  gclog_or_tty->print_cr("Start: Address " PTR_FORMAT " is%s marked", addr,
                 _markBitMap.isMarked(addr) ? "" : " not");
 
   if (verify_after_remark()) {
     MutexLockerEx x(verification_mark_bm()->lock(), Mutex::_no_safepoint_check_flag);
     bool result = verification_mark_bm()->isMarked(addr);
-    gclog_or_tty->print_cr("TransitiveMark: Address 0x%x %s marked", addr,
+    gclog_or_tty->print_cr("TransitiveMark: Address " PTR_FORMAT " %s marked", addr,
                            result ? "IS" : "is NOT");
     return result;
   } else {
@@ -4569,7 +4593,7 @@ void CMSCollector::abortable_preclean() {
       }
     }
     if (PrintCMSStatistics > 0) {
-      gclog_or_tty->print(" [%d iterations, %d waits, %d cards)] ",
+      gclog_or_tty->print(" [" SIZE_FORMAT " iterations, " SIZE_FORMAT " waits, " SIZE_FORMAT " cards)] ",
                           loops, waited, cumworkdone);
     }
   }
@@ -4721,7 +4745,7 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
        numIter++, lastNumCards = curNumCards, cumNumCards += curNumCards) {
     curNumCards  = preclean_mod_union_table(_cmsGen, &smoac_cl);
     if (Verbose && PrintGCDetails) {
-      gclog_or_tty->print(" (modUnionTable: %d cards)", curNumCards);
+      gclog_or_tty->print(" (modUnionTable: " SIZE_FORMAT " cards)", curNumCards);
     }
     // Either there are very few dirty cards, so re-mark
     // pause will be small anyway, or our pre-cleaning isn't
@@ -4743,7 +4767,7 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
   curNumCards = preclean_card_table(_cmsGen, &smoac_cl);
   cumNumCards += curNumCards;
   if (PrintGCDetails && PrintCMSStatistics != 0) {
-    gclog_or_tty->print_cr(" (cardTable: %d cards, re-scanned %d cards, %d iterations)",
+    gclog_or_tty->print_cr(" (cardTable: " SIZE_FORMAT " cards, re-scanned " SIZE_FORMAT " cards, " SIZE_FORMAT " iterations)",
                   curNumCards, cumNumCards, numIter);
   }
   return cumNumCards;   // as a measure of useful work done
@@ -8205,7 +8229,7 @@ SweepClosure::~SweepClosure() {
 void SweepClosure::initialize_free_range(HeapWord* freeFinger,
     bool freeRangeInFreeLists) {
   if (CMSTraceSweeper) {
-    gclog_or_tty->print("---- Start free range at 0x%x with free block (%d)\n",
+    gclog_or_tty->print("---- Start free range at " PTR_FORMAT " with free block (%d)\n",
                freeFinger, freeRangeInFreeLists);
   }
   assert(!inFreeRange(), "Trampling existing free range");
@@ -8275,10 +8299,10 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
                            pointer_delta(addr, freeFinger()));
       if (CMSTraceSweeper) {
         gclog_or_tty->print("Sweep: last chunk: ");
-        gclog_or_tty->print("put_free_blk 0x%x ("SIZE_FORMAT") "
-                   "[coalesced:"SIZE_FORMAT"]\n",
+        gclog_or_tty->print("put_free_blk " PTR_FORMAT " ("SIZE_FORMAT") "
+                   "[coalesced:%d]\n",
                    freeFinger(), pointer_delta(addr, freeFinger()),
-                   lastFreeRangeCoalesced());
+                   lastFreeRangeCoalesced() ? 1 : 0);
       }
     }
 
@@ -8421,7 +8445,7 @@ void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
         // the midst of a free range, we are coalescing
         print_free_block_coalesced(fc);
         if (CMSTraceSweeper) {
-          gclog_or_tty->print("  -- pick up free block 0x%x (%d)\n", fc, size);
+          gclog_or_tty->print("  -- pick up free block " PTR_FORMAT " (" SIZE_FORMAT ")\n", fc, size);
         }
         // remove it from the free lists
         _sp->removeFreeChunkFromFreeLists(fc);
@@ -8483,7 +8507,7 @@ size_t SweepClosure::do_garbage_chunk(FreeChunk* fc) {
       // this will be swept up when we hit the end of the
       // free range
       if (CMSTraceSweeper) {
-        gclog_or_tty->print("  -- pick up garbage 0x%x (%d) \n", fc, size);
+        gclog_or_tty->print("  -- pick up garbage " PTR_FORMAT " (" SIZE_FORMAT ")\n", fc, size);
       }
       // If the chunk is being coalesced and the current free range is
       // in the free lists, remove the current free range so that it
@@ -8576,7 +8600,7 @@ void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
   }
 
   if (CMSTraceSweeper) {
-    gclog_or_tty->print_cr("  -- pick up another chunk at 0x%x (%d)", fc, chunkSize);
+    gclog_or_tty->print_cr("  -- pick up another chunk at " PTR_FORMAT " (" SIZE_FORMAT ")", fc, chunkSize);
   }
 
   HeapWord* const fc_addr = (HeapWord*) fc;
@@ -8705,7 +8729,7 @@ void SweepClosure::flush_cur_free_chunk(HeapWord* chunk, size_t size) {
         "chunk should not be in free lists yet");
     }
     if (CMSTraceSweeper) {
-      gclog_or_tty->print_cr(" -- add free block 0x%x (%d) to free lists",
+      gclog_or_tty->print_cr(" -- add free block " PTR_FORMAT " (" SIZE_FORMAT ") to free lists",
                     chunk, size);
     }
     // A new free range is going to be starting.  The current
