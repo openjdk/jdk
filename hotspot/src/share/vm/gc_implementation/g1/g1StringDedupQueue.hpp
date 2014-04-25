@@ -65,6 +65,7 @@ private:
   G1StringDedupWorkerQueue*  _queues;
   size_t                     _nqueues;
   size_t                     _cursor;
+  bool                       _cancel;
   volatile bool              _empty;
 
   // Statistics counter, only used for logging.
@@ -80,6 +81,9 @@ public:
 
   // Blocks and waits for the queue to become non-empty.
   static void wait();
+
+  // Wakes up any thread blocked waiting for the queue to become non-empty.
+  static void cancel_wait();
 
   // Pushes a deduplication candidate onto a specific GC worker queue.
   static void push(uint worker_id, oop java_string);

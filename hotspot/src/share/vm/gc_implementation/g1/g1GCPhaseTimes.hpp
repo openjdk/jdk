@@ -151,6 +151,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
 
+  WorkerDataArray<double> _last_redirty_logged_cards_time_ms;
+  WorkerDataArray<size_t> _last_redirty_logged_cards_processed_cards;
   double _recorded_redirty_logged_cards_time_ms;
 
   double _recorded_young_free_cset_time_ms;
@@ -291,6 +293,14 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_non_young_cset_choice_time_ms(double time_ms) {
     _recorded_non_young_cset_choice_time_ms = time_ms;
+  }
+
+  void record_redirty_logged_cards_time_ms(uint worker_i, double time_ms) {
+    _last_redirty_logged_cards_time_ms.set(worker_i, time_ms);
+  }
+
+  void record_redirty_logged_cards_processed_cards(uint worker_i, size_t processed_buffers) {
+    _last_redirty_logged_cards_processed_cards.set(worker_i, processed_buffers);
   }
 
   void record_redirty_logged_cards_time_ms(double time_ms) {
