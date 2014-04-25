@@ -45,7 +45,7 @@ public class TestGroupOption extends JavadocTester {
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR,
         "-group", "Package One", "pkg1",
         "-group", "Package One", "pkg2",
         "-group", "Package One", "pkg3",
