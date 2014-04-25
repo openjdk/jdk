@@ -47,16 +47,14 @@ public class TestHtmlStrongTag extends JavadocTester {
     private static final String[][] TEST2 = {
         { "pkg2/C2.html", "<B>Comments:</B>"}};
     private static final String[][] NEGATED_TEST2 = {
-        { "pkg2/C2.html", "<STRONG>Method Summary</STRONG>"},
-        { "pkg1/package-summary.html",
-            "<STRONG>Class Summary</STRONG>"}};
+        { "pkg2/C2.html", "<STRONG>Method Summary</STRONG>"}};
 
     private static final String[] ARGS1 =
         new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"};
+            "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg1"};
     private static final String[] ARGS2 =
         new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg2"};
+            "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR, "pkg2"};
 
     /**
      * The entry point of the test.

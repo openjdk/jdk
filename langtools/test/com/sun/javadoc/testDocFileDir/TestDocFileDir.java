@@ -86,10 +86,12 @@ public class TestDocFileDir extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDocFileDir tester = new TestDocFileDir();
+        tester.setCheckOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
         copyDir(SRC_DIR + "/pkg", ".");
         tester.run(ARGS0, TEST0, NO_TEST);
         copyDir(SRC_DIR + "/pkg", OUTPUT_DIR + "-1");
         tester.run(ARGS1, TEST1, NO_TEST);
+        tester.setCheckOutputDirectoryCheck(DirectoryCheck.NONE);
         tester.run(ARGS2, NO_TEST, NO_TEST, FILE_TEST2, FILE_NEGATED_TEST2);
         tester.printSummary();
     }
