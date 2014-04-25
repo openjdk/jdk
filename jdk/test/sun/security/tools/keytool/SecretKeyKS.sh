@@ -68,6 +68,6 @@ esac
 
 # the test code
 
-${TESTJAVA}${FS}bin${FS}keytool -list -keystore ${TESTSRC}${FS}SecretKeyKS.jks -storepass password
+${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -list -keystore ${TESTSRC}${FS}SecretKeyKS.jks -storepass password
 
 exit $?

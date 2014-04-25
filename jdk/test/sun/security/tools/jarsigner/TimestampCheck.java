@@ -255,18 +255,16 @@ public class TimestampCheck {
         // nonce generation in timestamping request. Not avaibale on
         // Windows and defaults to thread seed generator, not too bad.
         if (System.getProperty("java.home").endsWith("jre")) {
-            cmd = System.getProperty("java.home") + "/../bin/jarsigner" +
-                " -J-Djava.security.egd=file:/dev/./urandom" +
-                " -debug -keystore " + TSKS + " -storepass changeit" +
-                " -tsa http://localhost:" + port + "/%d" +
-                " -signedjar new_%d.jar " + JAR + " old";
+            cmd = System.getProperty("java.home") + "/../bin/jarsigner";
         } else {
-            cmd = System.getProperty("java.home") + "/bin/jarsigner" +
+            cmd = System.getProperty("java.home") + "/bin/jarsigner";
+        }
+
+        cmd +=  " " + System.getProperty("test.tool.vm.opts") +
                 " -J-Djava.security.egd=file:/dev/./urandom" +
                 " -debug -keystore " + TSKS + " -storepass changeit" +
                 " -tsa http://localhost:" + port + "/%d" +
                 " -signedjar new_%d.jar " + JAR + " old";
-        }
 
         try {
             if (args.length == 0) {         // Run this test

@@ -45,7 +45,7 @@ case "$OS" in
 esac
 
 KS=emptysubject.jks
-KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore $KS -keyalg rsa"
+KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keystore $KS -keyalg rsa"
 
 rm $KS
 
