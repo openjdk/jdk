@@ -50,7 +50,7 @@ case "$OS" in
     Windows* | CYGWIN* )
 
         echo "Creating a temporary RSA keypair in the Windows-My store..."
-        ${TESTJAVA}/bin/keytool \
+        ${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} \
 	    -genkeypair \
 	    -storetype Windows-My \
 	    -keyalg RSA \
@@ -60,14 +60,14 @@ case "$OS" in
 
         echo
 	echo "Running the test..."
-        ${TESTJAVA}/bin/javac -d . ${TESTSRC}\\SignUsingNONEwithRSA.java
+        ${TESTJAVA}/bin/javac ${TESTTOOLVMOPTS} ${TESTJAVACOPTS} -d . ${TESTSRC}\\SignUsingNONEwithRSA.java
         ${TESTJAVA}/bin/java ${TESTVMOPTS} SignUsingNONEwithRSA
 
         rc=$?
 
         echo
         echo "Removing the temporary RSA keypair from the Windows-My store..."
-        ${TESTJAVA}/bin/keytool \
+        ${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} \
 	    -delete \
 	    -storetype Windows-My \
 	    -alias 6578658
