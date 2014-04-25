@@ -97,4 +97,14 @@ public class VMSupport {
             throw new RuntimeException(ioe.getMessage());
         }
     }
+
+    /*
+     * Return the temporary directory that the VM uses for the attach
+     * and perf data files.
+     *
+     * It is important that this directory is well-known and the
+     * same for all VM instances. It cannot be affected by configuration
+     * variables such as java.io.tmpdir.
+     */
+    public static native String getVMTemporaryDirectory();
 }
