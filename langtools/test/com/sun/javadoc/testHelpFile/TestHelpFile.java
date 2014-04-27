@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,19 +33,14 @@
 
 public class TestHelpFile extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "7132631";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            SRC_DIR + FS + "TestHelpFile.java"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
+            SRC_DIR + "/TestHelpFile.java"
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     private static final String[][] TEST = {
-        {BUG_ID + FS + "help-doc.html",
+        { "help-doc.html",
             "<a href=\"constant-values.html\">Constant Field Values</a>"
         },
     };
@@ -56,21 +51,7 @@ public class TestHelpFile extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHelpFile tester = new TestHelpFile();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

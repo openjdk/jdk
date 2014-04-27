@@ -97,6 +97,7 @@ void StateTableProcessor::process(LEGlyphStorage &glyphStorage, LEErrorCode &suc
 
         LEReferenceToArrayOf<EntryTableIndex> stateArray(stHeader, success, currentState, LE_UNBOUNDED_ARRAY);
         EntryTableIndex entryTableIndex = stateArray.getObject((le_uint8)classCode, success);
+        if (LE_FAILURE(success)) { break; }
         LE_STATE_PATIENCE_CURR(le_int32, currGlyph);
         currentState = processStateEntry(glyphStorage, currGlyph, entryTableIndex);
         LE_STATE_PATIENCE_INCR(currGlyph);

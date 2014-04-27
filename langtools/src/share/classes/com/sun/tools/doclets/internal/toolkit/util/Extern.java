@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class Extern {
         try {
             url = adjustEndFileSeparator(url);
             if (isUrl(pkglisturl)) {
-                readPackageListFromURL(url, toURL(pkglisturl));
+                readPackageListFromURL(url, toURL(adjustEndFileSeparator(pkglisturl)));
             } else {
                 readPackageListFromFile(url, DocFile.createFileForInput(configuration, pkglisturl));
             }

@@ -33,10 +33,8 @@
 
 public class T5093723 extends JavadocTester {
 
-    private static final String BUG_ID = "5093723";
-
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID + ".out", "-Xdoclint:none",
+        "-d", OUTPUT_DIR + ".out", "-Xdoclint:none",
         SRC_DIR + "/DocumentedClass.java",
         SRC_DIR + "/UndocumentedClass.java"
     };
@@ -45,13 +43,5 @@ public class T5093723 extends JavadocTester {
         T5093723 tester = new T5093723();
         if (tester.runJavadoc(ARGS) != 0)
           throw new AssertionError("non-zero return code from javadoc");
-    }
-
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    public String getBugName() {
-        return getClass().getName();
     }
 }

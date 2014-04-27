@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,27 +37,25 @@
 
 public class TestSimpleTag extends JavadocTester {
 
-    private static final String BUG_ID = "4695326-4750173-4920381";
-
     private static final String[][] TEST =
         new String[][] {
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<span class=\"simpleTagLabel\">Todo:</span>"},
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<span class=\"simpleTagLabel\">EJB Beans:</span>"},
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<span class=\"simpleTagLabel\">Regular Tag:</span>"},
-            {"./" + BUG_ID + "/C.html",
+            { "C.html",
                 "<span class=\"simpleTagLabel\">Back-Slash-Tag:</span>"},
         };
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
         "-tag", "todo",
         "-tag", "ejb\\:bean:a:EJB Beans:",
         "-tag", "regular:a:Regular Tag:",
         "-tag", "back-slash\\:tag\\\\:a:Back-Slash-Tag:",
-        SRC_DIR + FS + "C.java"
+        SRC_DIR + "/C.java"
     };
 
     /**
@@ -66,21 +64,7 @@ public class TestSimpleTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSimpleTag tester = new TestSimpleTag();
-        run(tester, ARGS, TEST, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -104,6 +104,17 @@ public class JavacServer {
             allPortFiles = new HashMap<>();
         }
         PortFile pf = allPortFiles.get(filename);
+
+        // Port file known. Does it still exist?
+        if (pf != null) {
+            try {
+                if (!pf.exists())
+                    pf = null;
+            } catch (IOException ioex) {
+                ioex.printStackTrace();
+            }
+        }
+
         if (pf == null) {
             pf = new PortFile(filename);
             allPortFiles.put(filename, pf);
@@ -305,7 +316,7 @@ public class JavacServer {
                     // We could not connect to the server. Try again.
                     attempts++;
                     try {
-                        Thread.sleep(WAIT_BETWEEN_CONNECT_ATTEMPTS);
+                        Thread.sleep(WAIT_BETWEEN_CONNECT_ATTEMPTS * 1000);
                     } catch (InterruptedException e) {
                     }
                 }

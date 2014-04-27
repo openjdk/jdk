@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -89,12 +91,10 @@ public class NIOCharsetAvailabilityTest {
     private static void addCharsets(Set charsets, final String packageName)
             throws Exception {
 
-        String classPath =
-            (String) java.security.AccessController.doPrivileged(
-             new sun.security.action.GetPropertyAction("sun.boot.class.path"));
-        String s =
-            (String) java.security.AccessController.doPrivileged(
-             new sun.security.action.GetPropertyAction("java.class.path"));
+        String classPath = AccessController.doPrivileged(
+             (PrivilegedAction<String>)() -> System.getProperty("sun.boot.class.path"));
+        String s = AccessController.doPrivileged(
+             (PrivilegedAction<String>)() -> System.getProperty("java.class.path"));
 
         // Search combined system and application class path
         if (s != null && s.length() != 0) {

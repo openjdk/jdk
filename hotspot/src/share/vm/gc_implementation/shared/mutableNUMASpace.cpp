@@ -888,7 +888,9 @@ void MutableNUMASpace::print_on(outputStream* st) const {
       for (int i = 0; i < lgrp_spaces()->length(); i++) {
         lgrp_spaces()->at(i)->accumulate_statistics(page_size());
       }
-      st->print("    local/remote/unbiased/uncommitted: %dK/%dK/%dK/%dK, large/small pages: %d/%d\n",
+      st->print("    local/remote/unbiased/uncommitted: " SIZE_FORMAT "K/"
+                SIZE_FORMAT "K/" SIZE_FORMAT "K/" SIZE_FORMAT
+                "K, large/small pages: " SIZE_FORMAT "/" SIZE_FORMAT "\n",
                 ls->space_stats()->_local_space / K,
                 ls->space_stats()->_remote_space / K,
                 ls->space_stats()->_unbiased_space / K,

@@ -290,7 +290,7 @@ class SolarisAclFileAttributeView
         return acl;
     }
 
-    // Retrns true if NFSv4 ACLs not enabled on file system
+    // Returns true if NFSv4 ACLs not enabled on file system
     private static boolean isAclsEnabled(int fd) {
         try {
             long enabled = fpathconf(fd, _PC_ACL_ENABLED);

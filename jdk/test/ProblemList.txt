@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -120,9 +120,6 @@
 
 # jdk_lang
 
-# 8029415
-java/lang/reflect/Method/invoke/TestPrivateInterfaceMethodReflect.java generic-all
-
 ############################################################################
 
 # jdk_management
@@ -150,9 +147,6 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 ############################################################################
 
 # jdk_net
-
-# Filed 7052625
-com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
 
 # 7148829
 sun/net/InetAddress/nameservice/simple/CacheTest.java		generic-all

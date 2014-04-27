@@ -27,7 +27,7 @@
 // However, the following notice accompanied the original version of this
 // file:
 //
-//---------------------------------------------------------------------------------
+
 //
 //  Little Color Management System
 //  Copyright (c) 1998-2011 Marti Maria Saguer
@@ -196,7 +196,7 @@ cmsINLINE cmsUInt16Number _cmsQuickSaturateWord(cmsFloat64Number d)
 // Plug-In registering ---------------------------------------------------------------
 
 // Specialized function for plug-in memory management. No pairing free() since whole pool is freed at once.
-void* _cmsPluginMalloc(cmsUInt32Number size);
+void* _cmsPluginMalloc(cmsContext ContextID, cmsUInt32Number size);
 
 // Memory management
 cmsBool   _cmsRegisterMemHandlerPlugin(cmsPluginBase* Plugin);
@@ -205,28 +205,28 @@ cmsBool   _cmsRegisterMemHandlerPlugin(cmsPluginBase* Plugin);
 cmsBool  _cmsRegisterInterpPlugin(cmsPluginBase* Plugin);
 
 // Parametric curves
-cmsBool  _cmsRegisterParametricCurvesPlugin(cmsPluginBase* Plugin);
+cmsBool  _cmsRegisterParametricCurvesPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
 // Formatters management
-cmsBool  _cmsRegisterFormattersPlugin(cmsPluginBase* Plugin);
+cmsBool  _cmsRegisterFormattersPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
 // Tag type management
-cmsBool  _cmsRegisterTagTypePlugin(cmsPluginBase* Plugin);
+cmsBool  _cmsRegisterTagTypePlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
 // Tag management
-cmsBool  _cmsRegisterTagPlugin(cmsPluginBase* Plugin);
+cmsBool  _cmsRegisterTagPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
 // Intent management
-cmsBool  _cmsRegisterRenderingIntentPlugin(cmsPluginBase* Plugin);
+cmsBool  _cmsRegisterRenderingIntentPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
 // Multi Process elements
-cmsBool  _cmsRegisterMultiProcessElementPlugin(cmsPluginBase* Plugin);
+cmsBool  _cmsRegisterMultiProcessElementPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
 // Optimization
-cmsBool  _cmsRegisterOptimizationPlugin(cmsPluginBase* Plugin);
+cmsBool  _cmsRegisterOptimizationPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
 // Transform
-cmsBool  _cmsRegisterTransformPlugin(cmsPluginBase* Plugin);
+cmsBool  _cmsRegisterTransformPlugin(cmsContext ContextID, cmsPluginBase* Plugin);
 
 // ---------------------------------------------------------------------------------------------------------
 
@@ -263,7 +263,7 @@ typedef struct {
     cmsUInt16Number Country;
 
     cmsUInt32Number StrW;       // Offset to current unicode string
-    cmsUInt32Number Len;        // Lenght in bytes
+    cmsUInt32Number Len;        // Length in bytes
 
 } _cmsMLUentry;
 
@@ -330,9 +330,11 @@ typedef struct _cms_iccprofile_struct {
     cmsColorSpaceSignature   ColorSpace;
     cmsColorSpaceSignature   PCS;
     cmsUInt32Number          RenderingIntent;
+
     cmsUInt32Number          flags;
     cmsUInt32Number          manufacturer, model;
     cmsUInt64Number          attributes;
+    cmsUInt32Number          creator;
 
     cmsProfileID             ProfileID;
 
@@ -584,6 +586,10 @@ typedef struct _cmstransform_struct {
     // Informational only
     cmsColorSpaceSignature EntryColorSpace;
     cmsColorSpaceSignature ExitColorSpace;
+
+    // White points (informative only)
+    cmsCIEXYZ EntryWhitePoint;
+    cmsCIEXYZ ExitWhitePoint;
 
     // Profiles used to create the transform
     cmsSEQ* Sequence;

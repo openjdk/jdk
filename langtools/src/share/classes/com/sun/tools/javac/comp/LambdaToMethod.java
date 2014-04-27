@@ -1893,11 +1893,11 @@ public class LambdaToMethod extends TreeTranslator {
                         };
                         break;
                     case LOCAL_VAR:
-                        ret = new VarSymbol(FINAL, name, types.erasure(sym.type), translatedSym);
+                        ret = new VarSymbol(sym.flags() & FINAL, name, types.erasure(sym.type), translatedSym);
                         ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
                         break;
                     case PARAM:
-                        ret = new VarSymbol(FINAL | PARAMETER, name, types.erasure(sym.type), translatedSym);
+                        ret = new VarSymbol((sym.flags() & FINAL) | PARAMETER, name, types.erasure(sym.type), translatedSym);
                         ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
                         break;
                     default:

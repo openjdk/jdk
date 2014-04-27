@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,7 @@ public class DocRootSlash
 {
     private static final String BUGID = "4524350, 4662945, or 4633447";
     private static final String BUGNAME = "DocRootSlash";
-    private static final String FS = System.getProperty("file.separator");
-    private static final String PS = System.getProperty("path.separator");
-    private static final String TMPDIR_STRING1 = "." + FS + "docs1" + FS;
+    private static final String TMPDIR_STRING1 = "./docs1/";
 
     // Test number.  Needed because runResultsOnHTMLFile is run twice, and subtestNum
     // should increment across test runs.
@@ -61,7 +59,7 @@ public class DocRootSlash
 
         runJavadoc(new String[] {"-d", TMPDIR_STRING1,
                                  "-Xdoclint:none",
-                                 "-overview", (srcdir + FS + "overview.html"),
+                                 "-overview", (srcdir + "/overview.html"),
                                  "-header", "<A HREF=\"{@docroot}/package-list\">{&#064;docroot}</A> <A HREF=\"{@docRoot}/help-doc\">{&#064;docRoot}</A>",
                                  "-sourcepath", srcdir,
                                  "p1", "p2"});
@@ -79,8 +77,8 @@ public class DocRootSlash
 
     /**  The array of filenames to test */
     private static final String[] filenameArray = {
-        TMPDIR_STRING1 + "p1" + FS + "C1.html" ,
-        TMPDIR_STRING1 + "p1" + FS + "package-summary.html",
+        TMPDIR_STRING1 + "p1/C1.html" ,
+        TMPDIR_STRING1 + "p1/package-summary.html",
         TMPDIR_STRING1 + "overview-summary.html"
     };
 

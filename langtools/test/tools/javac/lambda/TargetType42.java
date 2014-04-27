@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,18 @@
 class TargetType42 {
 
     interface SAM<X, Y> {
-      Y f(X x);
+        Y f(X x);
     }
 
     <Z> void m(SAM<String, SAM<Z, Object>> s, Z z) { }
 
     void test(Object obj) {
-        m((x)->{ class Foo { }; return (x2)-> { new Foo(); return null; }; }, obj);
+        m((x)->{
+            class Foo { }
+            return (x2)-> {
+                new Foo();
+                return null;
+            };
+        }, obj);
     }
 }

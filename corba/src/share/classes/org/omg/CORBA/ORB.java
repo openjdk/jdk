@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.io.FileInputStream;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * A class providing APIs for the CORBA Object Request Broker
@@ -161,6 +163,20 @@ import java.security.PrivilegedAction;
  * <P>
  * An application or applet can be initialized in one or more ORBs.
  * ORB initialization is a bootstrap call into the CORBA world.
+ *
+ *
+ * @implNote
+ * As described above it is possible to specify, at runtime, an alternative ORBSingleton class and
+ * an alternative ORB implementation class, via the system properties {@code org.omg.CORBA.ORBSingletonClass}
+ * and {@code org.omg.CORBA.ORBClass} respectively.
+ * The class loading strategy is organized, such that, in the case of the ORBSingleton
+ * the system class loader is used to load the alternative singleton ORB.
+ * Thus, it is necessary that an application's CLASSPATH
+ * includes the classes for this alternative ORBSingleton, when specified.
+ *
+ * In the case of specifying an alternative ORB implementation class, the loading
+ * strategy will use the thread context class loader, as appropriate.
+ *
  * @since   JDK1.2
  */
 abstract public class ORB {
@@ -289,20 +305,38 @@ abstract public class ORB {
                     (className.equals("com.sun.corba.se.impl.orb.ORBSingleton"))) {
                 singleton = new com.sun.corba.se.impl.orb.ORBSingleton();
             } else {
-                singleton = create_impl(className);
+                singleton = create_impl_with_systemclassloader(className);
             }
         }
         return singleton;
     }
 
-    private static ORB create_impl(String className) {
+   private static ORB create_impl_with_systemclassloader(String className) {
 
+        try {
+            ReflectUtil.checkPackageAccess(className);
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            Class<org.omg.CORBA.ORB> orbBaseClass = org.omg.CORBA.ORB.class;
+            Class<?> singletonOrbClass = Class.forName(className, true, cl).asSubclass(orbBaseClass);
+            return (ORB)singletonOrbClass.newInstance();
+        } catch (Throwable ex) {
+            SystemException systemException = new INITIALIZE(
+                "can't instantiate default ORB implementation " + className);
+            systemException.initCause(ex);
+            throw systemException;
+        }
+    }
+
+    private static ORB create_impl(String className) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         if (cl == null)
             cl = ClassLoader.getSystemClassLoader();
 
         try {
-            return (ORB) Class.forName(className, true, cl).newInstance();
+            ReflectUtil.checkPackageAccess(className);
+            Class<org.omg.CORBA.ORB> orbBaseClass = org.omg.CORBA.ORB.class;
+            Class<?> orbClass = Class.forName(className, true, cl).asSubclass(orbBaseClass);
+            return (ORB)orbClass.newInstance();
         } catch (Throwable ex) {
             SystemException systemException = new INITIALIZE(
                "can't instantiate default ORB implementation " + className);
@@ -346,7 +380,6 @@ abstract public class ORB {
         } else {
             orb = create_impl(className);
         }
-
         orb.set_parameters(args, props);
         return orb;
     }
@@ -377,7 +410,6 @@ abstract public class ORB {
         } else {
             orb = create_impl(className);
         }
-
         orb.set_parameters(app, props);
         return orb;
     }
@@ -573,7 +605,7 @@ abstract public class ORB {
         try {
             // First try to load the OperationDef class
             String opDefClassName = "org.omg.CORBA.OperationDef";
-            Class opDefClass = null;
+            Class<?> opDefClass = null;
 
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             if ( cl == null )
@@ -583,7 +615,7 @@ abstract public class ORB {
 
             // OK, we loaded OperationDef. Now try to get the
             // create_operation_list(OperationDef oper) method.
-            Class[] argc = { opDefClass };
+            Class<?>[] argc = { opDefClass };
             java.lang.reflect.Method meth =
                 this.getClass().getMethod("create_operation_list", argc);
 

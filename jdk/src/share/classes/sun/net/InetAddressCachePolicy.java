@@ -84,19 +84,31 @@ public final class InetAddressCachePolicy {
      * Initialize
      */
     static {
-        Integer tmp = null;
 
-        try {
-            tmp = new Integer(
-              java.security.AccessController.doPrivileged (
-                new PrivilegedAction<String>() {
-                  public String run() {
-                      return Security.getProperty(cachePolicyProp);
-                  }
-              }));
-        } catch (NumberFormatException e) {
-            // ignore
-        }
+        Integer tmp = java.security.AccessController.doPrivileged(
+          new PrivilegedAction<Integer>() {
+            public Integer run() {
+                try {
+                    String tmpString = Security.getProperty(cachePolicyProp);
+                    if (tmpString != null) {
+                        return Integer.valueOf(tmpString);
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Ignore
+                }
+
+                try {
+                    String tmpString = System.getProperty(cachePolicyPropFallback);
+                    if (tmpString != null) {
+                        return Integer.decode(tmpString);
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Ignore
+                }
+                return null;
+            }
+          });
+
         if (tmp != null) {
             cachePolicy = tmp.intValue();
             if (cachePolicy < 0) {
@@ -104,35 +116,36 @@ public final class InetAddressCachePolicy {
             }
             propertySet = true;
         } else {
-            tmp = java.security.AccessController.doPrivileged
-                (new sun.security.action.GetIntegerAction(cachePolicyPropFallback));
-            if (tmp != null) {
-                cachePolicy = tmp.intValue();
-                if (cachePolicy < 0) {
-                    cachePolicy = FOREVER;
-                }
-                propertySet = true;
-            } else {
-                /* No properties defined for positive caching. If there is no
-                 * security manager then use the default positive cache value.
-                 */
-                if (System.getSecurityManager() == null) {
-                    cachePolicy = DEFAULT_POSITIVE;
-                }
+            /* No properties defined for positive caching. If there is no
+             * security manager then use the default positive cache value.
+             */
+            if (System.getSecurityManager() == null) {
+                cachePolicy = DEFAULT_POSITIVE;
             }
         }
+        tmp = java.security.AccessController.doPrivileged (
+          new PrivilegedAction<Integer>() {
+            public Integer run() {
+                try {
+                    String tmpString = Security.getProperty(negativeCachePolicyProp);
+                    if (tmpString != null) {
+                        return Integer.valueOf(tmpString);
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Ignore
+                }
 
-        try {
-            tmp = new Integer(
-              java.security.AccessController.doPrivileged (
-                new PrivilegedAction<String>() {
-                  public String run() {
-                      return Security.getProperty(negativeCachePolicyProp);
-                  }
-              }));
-        } catch (NumberFormatException e) {
-            // ignore
-        }
+                try {
+                    String tmpString = System.getProperty(negativeCachePolicyPropFallback);
+                    if (tmpString != null) {
+                        return Integer.decode(tmpString);
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Ignore
+                }
+                return null;
+            }
+          });
 
         if (tmp != null) {
             negativeCachePolicy = tmp.intValue();
@@ -140,16 +153,6 @@ public final class InetAddressCachePolicy {
                 negativeCachePolicy = FOREVER;
             }
             propertyNegativeSet = true;
-        } else {
-            tmp = java.security.AccessController.doPrivileged
-                (new sun.security.action.GetIntegerAction(negativeCachePolicyPropFallback));
-            if (tmp != null) {
-                negativeCachePolicy = tmp.intValue();
-                if (negativeCachePolicy < 0) {
-                    negativeCachePolicy = FOREVER;
-                }
-                propertyNegativeSet = true;
-            }
         }
     }
 
