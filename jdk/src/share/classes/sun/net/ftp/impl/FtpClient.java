@@ -32,6 +32,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
@@ -42,8 +43,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 import sun.net.ftp.*;
 import sun.util.logging.PlatformLogger;
 
@@ -1899,22 +1898,16 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     }
 
     private boolean sendSecurityData(byte[] buf) throws IOException {
-        BASE64Encoder encoder = new BASE64Encoder();
-        String s = encoder.encode(buf);
+        String s = Base64.getMimeEncoder().encodeToString(buf);
         return issueCommand("ADAT " + s);
     }
 
     private byte[] getSecurityData() {
         String s = getLastResponseString();
         if (s.substring(4, 9).equalsIgnoreCase("ADAT=")) {
-            BASE64Decoder decoder = new BASE64Decoder();
-            try {
-                // Need to get rid of the leading '315 ADAT='
-                // and the trailing newline
-                return decoder.decodeBuffer(s.substring(9, s.length() - 1));
-            } catch (IOException e) {
-                //
-            }
+            // Need to get rid of the leading '315 ADAT='
+            // and the trailing newline
+            return Base64.getMimeDecoder().decode(s.substring(9, s.length() - 1));
         }
         return null;
     }

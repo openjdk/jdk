@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,9 @@
 public class PackagesHeader extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "4766385";
-    private static final String OUTPUT_DIR = "docs-" + BUG_ID;
-
-    private static final String OUTPUT_DIR1 = "docs1-" + BUG_ID + FS;
-    private static final String OUTPUT_DIR2 = "docs2-" + BUG_ID + FS;
-    private static final String OUTPUT_DIR3 = "docs3-" + BUG_ID + FS;
+    private static final String OUTPUT_DIR1 = OUTPUT_DIR + "-1/";
+    private static final String OUTPUT_DIR2 = OUTPUT_DIR + "-2/";
+    private static final String OUTPUT_DIR3 = OUTPUT_DIR + "-3/";
 
     /**
      * Assign value for [ fileToSearch, stringToFind ]
@@ -50,7 +47,7 @@ public class PackagesHeader extends JavadocTester {
     private static final String[][] TESTARRAY1 = {
 
         // Test that the -header shows up in the packages frame
-        { OUTPUT_DIR1 + "overview-frame.html",
+        { "overview-frame.html",
                  "Main Frame Header" }
     };
 
@@ -59,7 +56,7 @@ public class PackagesHeader extends JavadocTester {
         // Test that the -packagesheader string shows
         // up in the packages frame
 
-        {  OUTPUT_DIR2 + "overview-frame.html",
+        { "overview-frame.html",
                  "Packages Frame Header" }
     };
 
@@ -67,10 +64,10 @@ public class PackagesHeader extends JavadocTester {
 
         // Test that the both headers show up and are different
 
-        { OUTPUT_DIR3 + "overview-frame.html",
+        { "overview-frame.html",
                  "Packages Frame Header" },
 
-        { OUTPUT_DIR3 + "overview-summary.html",
+        { "overview-summary.html",
                  "Main Frame Header" }
     };
 
@@ -97,9 +94,6 @@ public class PackagesHeader extends JavadocTester {
             "p1", "p2"};
 
 
-    //Input for string search tests.
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
@@ -107,24 +101,10 @@ public class PackagesHeader extends JavadocTester {
     public static void main(String[] args) {
         JavadocTester tester = new PackagesHeader();
 
-        run(tester, JAVADOC_ARGS1, TESTARRAY1, NEGATED_TEST);
-        run(tester, JAVADOC_ARGS2, TESTARRAY2, NEGATED_TEST);
-        run(tester, JAVADOC_ARGS3, TESTARRAY3, NEGATED_TEST);
+        tester.run(JAVADOC_ARGS1, TESTARRAY1, NO_TEST);
+        tester.run(JAVADOC_ARGS2, TESTARRAY2, NO_TEST);
+        tester.run(JAVADOC_ARGS3, TESTARRAY3, NO_TEST);
 
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

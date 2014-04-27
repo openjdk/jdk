@@ -152,6 +152,52 @@ public class SignatureFileVerifier {
         return false;
     }
 
+    /**
+     * Yet another utility method used by JarVerifier and JarSigner
+     * to determine what files are signature related, which includes
+     * the MANIFEST, SF files, known signature block files, and other
+     * unknown signature related files (those starting with SIG- with
+     * an optional [A-Z0-9]{1,3} extension right inside META-INF).
+     *
+     * @param s file name
+     * @return true if the input file name is signature related
+     */
+    public static boolean isSigningRelated(String name) {
+        name = name.toUpperCase(Locale.ENGLISH);
+        if (!name.startsWith("META-INF/")) {
+            return false;
+        }
+        name = name.substring(9);
+        if (name.indexOf('/') != -1) {
+            return false;
+        }
+        if (isBlockOrSF(name) || name.equals("MANIFEST.MF")) {
+            return true;
+        } else if (name.startsWith("SIG-")) {
+            // check filename extension
+            // see http://docs.oracle.com/javase/7/docs/technotes/guides/jar/jar.html#Digital_Signatures
+            // for what filename extensions are legal
+            int extIndex = name.lastIndexOf('.');
+            if (extIndex != -1) {
+                String ext = name.substring(extIndex + 1);
+                // validate length first
+                if (ext.length() > 3 || ext.length() < 1) {
+                    return false;
+                }
+                // then check chars, must be in [a-zA-Z0-9] per the jar spec
+                for (int index = 0; index < ext.length(); index++) {
+                    char cc = ext.charAt(index);
+                    // chars are promoted to uppercase so skip lowercase checks
+                    if ((cc < 'A' || cc > 'Z') && (cc < '0' || cc > '9')) {
+                        return false;
+                    }
+                }
+            }
+            return true; // no extension is OK
+        }
+        return false;
+    }
+
     /** get digest from cache */
 
     private MessageDigest getDigest(String algorithm)

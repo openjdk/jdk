@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,53 +37,64 @@
 
 public class TestInterface extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4682448-4947464-5029946";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "Interface.html",
+        { "pkg/Interface.html",
             "<pre>int&nbsp;method()</pre>"},
-        {BUG_ID + FS + "pkg" + FS + "Interface.html",
+        { "pkg/Interface.html",
             "<pre>static final&nbsp;int field</pre>"},
 
 
         // Make sure known implementing class list is correct and omits type parameters.
-        {BUG_ID + FS + "pkg" + FS + "Interface.html",
-            "<dl>" + NL + "<dt>All Known Implementing Classes:</dt>" + NL +
+        { "pkg/Interface.html",
+            "<dl>\n" +
+            "<dt>All Known Implementing Classes:</dt>\n" +
             "<dd><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child" +
             "</a>, <a href=\"../pkg/Parent.html\" title=\"class in pkg\">Parent" +
-            "</a></dd>" + NL + "</dl>"},
+            "</a></dd>\n" +
+            "</dl>"},
 
          // Make sure "All Implemented Interfaces": has substituted type parameters
-         {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<dl>" + NL + "<dt>All Implemented Interfaces:</dt>" + NL +
+         { "pkg/Child.html",
+            "<dl>\n" +
+            "<dt>All Implemented Interfaces:</dt>\n" +
             "<dd><a href=\"../pkg/Interface.html\" title=\"interface in pkg\">" +
-            "Interface</a>&lt;T&gt;</dd>" + NL + "</dl>"
+            "Interface</a>&lt;T&gt;</dd>\n" +
+            "</dl>"
          },
          //Make sure Class Tree has substituted type parameters.
-         {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<ul class=\"inheritance\">" + NL + "<li>java.lang.Object</li>" + NL +
-            "<li>" + NL + "<ul class=\"inheritance\">" + NL +
+         { "pkg/Child.html",
+            "<ul class=\"inheritance\">\n" +
+            "<li>java.lang.Object</li>\n" +
+            "<li>\n" +
+            "<ul class=\"inheritance\">\n" +
             "<li><a href=\"../pkg/Parent.html\" title=\"class in pkg\">" +
-            "pkg.Parent</a>&lt;T&gt;</li>" + NL + "<li>" + NL +
-            "<ul class=\"inheritance\">" + NL + "<li>pkg.Child&lt;T&gt;</li>" + NL +
-            "</ul>" + NL + "</li>" + NL + "</ul>" + NL + "</li>" + NL + "</ul>"
+            "pkg.Parent</a>&lt;T&gt;</li>\n" +
+            "<li>\n" +
+            "<ul class=\"inheritance\">\n" +
+            "<li>pkg.Child&lt;T&gt;</li>\n" +
+            "</ul>\n" +
+            "</li>\n" +
+            "</ul>\n" +
+            "</li>\n" +
+            "</ul>"
          },
          //Make sure "Direct Know Subclasses" omits type parameters
-        {BUG_ID + FS + "pkg" + FS + "Parent.html",
-            "<dl>" + NL + "<dt>Direct Known Subclasses:</dt>" + NL +
+        { "pkg/Parent.html",
+            "<dl>\n" +
+            "<dt>Direct Known Subclasses:</dt>\n" +
             "<dd><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child" +
-            "</a></dd>" + NL + "</dl>"
+            "</a></dd>\n" +
+            "</dl>"
         },
         //Make sure "Specified By" has substituted type parameters.
-        {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>" + NL +
+        { "pkg/Child.html",
+            "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n" +
             "<dd><code><a href=\"../pkg/Interface.html#method--\">method</a>" +
             "</code>&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg/Interface.html\" title=\"interface in pkg\">" +
@@ -91,8 +102,8 @@ public class TestInterface extends JavadocTester {
             "T</a>&gt;</code></dd>"
          },
         //Make sure "Overrides" has substituted type parameters.
-        {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+        { "pkg/Child.html",
+            "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
             "<dd><code><a href=\"../pkg/Parent.html#method--\">method</a>" +
             "</code>&nbsp;in class&nbsp;<code><a href=\"../pkg/Parent.html\" " +
             "title=\"class in pkg\">Parent</a>&lt;<a href=\"../pkg/Child.html\" " +
@@ -100,9 +111,9 @@ public class TestInterface extends JavadocTester {
          },
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg" + FS + "Interface.html",
+        { "pkg/Interface.html",
             "public int&nbsp;method()"},
-        {BUG_ID + FS + "pkg" + FS + "Interface.html",
+        { "pkg/Interface.html",
             "public static final&nbsp;int field"},
     };
 
@@ -112,21 +123,7 @@ public class TestInterface extends JavadocTester {
      */
     public static void main(String[] args) {
         TestInterface tester = new TestInterface();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

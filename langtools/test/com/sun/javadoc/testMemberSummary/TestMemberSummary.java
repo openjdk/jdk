@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,38 +36,34 @@
 
 public class TestMemberSummary extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4951228-6290760";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg","pkg2"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg","pkg2"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
         // Check return type in member summary.
-        {BUG_ID + FS + "pkg" + FS + "PublicChild.html",
-            "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>" + NL +
+        { "pkg/PublicChild.html",
+            "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n" +
             "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">" +
             "returnTypeTest</a></span>()</code>"
         },
         // Check return type in member detail.
-        {BUG_ID + FS + "pkg" + FS + "PublicChild.html",
+        { "pkg/PublicChild.html",
             "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">" +
             "PublicChild</a>&nbsp;returnTypeTest()</pre>"
         },
 
          // Legacy anchor dimensions (6290760)
-        {BUG_ID + FS + "pkg2" + FS + "A.html",
-            "<a name=\"f-java.lang.Object:A-\">" + NL +
-            "<!--   -->" + NL +
-            "</a><a name=\"f-T:A-\">" + NL +
-            "<!--   -->" + NL +
+        { "pkg2/A.html",
+            "<a name=\"f-java.lang.Object:A-\">\n" +
+            "<!--   -->\n" +
+            "</a><a name=\"f-T:A-\">\n" +
+            "<!--   -->\n" +
             "</a>"
         },
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -75,21 +71,7 @@ public class TestMemberSummary extends JavadocTester {
      */
     public static void main(String[] args) {
         TestMemberSummary tester = new TestMemberSummary();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

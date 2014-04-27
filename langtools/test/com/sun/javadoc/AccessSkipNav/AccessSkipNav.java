@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,12 @@ import java.io.*;
  */
 public class AccessSkipNav {
 
+    protected static final String NL = System.getProperty("line.separator");
+
     private static final String BUGID = "4638136 - 7198273";
     private static final String BUGNAME = "AccessSkipNav";
-    private static final String FS = System.getProperty("file.separator");
-    private static final String PS = System.getProperty("path.separator");
-    private static final String LS = System.getProperty("line.separator");
-    private static final String TMPDEST_DIR1 = "." + FS + "docs1" + FS;
-    private static final String TMPDEST_DIR2 = "." + FS + "docs2" + FS;
+    private static final String TMPDEST_DIR1 = "./docs1/";
+    private static final String TMPDEST_DIR2 = "./docs2/";
 
     // Subtest number.  Needed because runResultsOnHTML is run twice,
     // and subtestNum should increment across subtest runs.
@@ -87,21 +86,23 @@ public class AccessSkipNav {
 
             // Top navbar <a href>
             { "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a>",
-                     TMPDEST_DIR1 + "p1" + FS + "C1.html" },
+                     TMPDEST_DIR1 + "p1/C1.html" },
 
             // Top navbar <a name>
-            { "<a name=\"skip.navbar.top\">" + LS +
-                      "<!--   -->" + LS + "</a>",
-                     TMPDEST_DIR1 + "p1" + FS + "C1.html" },
+            { "<a name=\"skip.navbar.top\">\n" +
+                      "<!--   -->\n" +
+                      "</a>",
+                     TMPDEST_DIR1 + "p1/C1.html" },
 
             // Bottom navbar <a href>
             { "<a href=\"#skip.navbar.bottom\" title=\"Skip navigation links\">Skip navigation links</a>",
-                     TMPDEST_DIR1 + "p1" + FS + "C1.html" },
+                     TMPDEST_DIR1 + "p1/C1.html" },
 
             // Bottom navbar <a name>
-            { "<a name=\"skip.navbar.bottom\">" + LS +
-                      "<!--   -->" + LS + "</a>",
-                     TMPDEST_DIR1 + "p1" + FS + "C1.html" }
+            { "<a name=\"skip.navbar.bottom\">\n" +
+                      "<!--   -->\n" +
+                      "</a>",
+                     TMPDEST_DIR1 + "p1/C1.html" }
         };
 
     public static void runTestsOnHTML(String[][] testArray) {
@@ -169,6 +170,6 @@ public class AccessSkipNav {
     }
 
     public static int findString(String fileString, String stringToFind) {
-        return fileString.indexOf(stringToFind);
+        return fileString.replace(NL, "\n").indexOf(stringToFind);
     }
 }
