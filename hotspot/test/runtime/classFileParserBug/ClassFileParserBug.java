@@ -20,28 +20,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.PrintWriter;
-import com.oracle.java.testlibrary.*;
 
 /*
  * @test
- * @bug 8038636
+ * @bug 8040018
  * @library /testlibrary
- * @build Agent
- * @run main ClassFileInstaller Agent
- * @run main Launcher
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -XX:ReservedCodeCacheSize=3M Agent
+ * @summary Check for exception instead of assert.
+ * @run main ClassFileParserBug
  */
-public class Launcher {
-    public static void main(String[] args) throws Exception  {
 
-      PrintWriter pw = new PrintWriter("MANIFEST.MF");
-      pw.println("Agent-Class: Agent");
-      pw.println("Can-Retransform-Classes: true");
-      pw.close();
+import java.io.File;
+import com.oracle.java.testlibrary.*;
 
-      ProcessBuilder pb = new ProcessBuilder();
-      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", System.getProperty("test.classes",".") + "/agent.jar", "Agent.class"});
-      pb.start().waitFor();
+public class ClassFileParserBug {
+    public static void main(String args[]) throws Throwable {
+
+        System.out.println("Regression test for bug 8040018");
+        String testsrc = System.getProperty("test.src") + "/";
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-jar", testsrc + File.separator + "test.jar");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("java.lang.ClassFormatError: Bad length on BootstrapMethods");
+        output.shouldHaveExitValue(1);
     }
 }

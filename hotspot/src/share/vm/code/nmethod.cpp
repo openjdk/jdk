@@ -2288,13 +2288,13 @@ nmethodLocker::nmethodLocker(address pc) {
 void nmethodLocker::lock_nmethod(nmethod* nm, bool zombie_ok) {
   if (nm == NULL)  return;
   Atomic::inc(&nm->_lock_count);
-  guarantee(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method");
+  assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method");
 }
 
 void nmethodLocker::unlock_nmethod(nmethod* nm) {
   if (nm == NULL)  return;
   Atomic::dec(&nm->_lock_count);
-  guarantee(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
+  assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
 }
 
 
