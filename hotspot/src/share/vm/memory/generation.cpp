@@ -573,8 +573,8 @@ void CardGeneration::compute_new_size() {
                       maximum_desired_capacity / (double) K);
         gclog_or_tty->print_cr("  "
                       "  shrink_bytes: %.1fK"
-                      "  current_shrink_factor: %d"
-                      "  new shrink factor: %d"
+                      "  current_shrink_factor: " SIZE_FORMAT
+                      "  new shrink factor: " SIZE_FORMAT
                       "  _min_heap_delta_bytes: %.1fK",
                       shrink_bytes / (double) K,
                       current_shrink_factor,

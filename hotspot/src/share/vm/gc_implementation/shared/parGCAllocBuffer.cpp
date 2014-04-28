@@ -27,6 +27,7 @@
 #include "memory/sharedHeap.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ParGCAllocBuffer::ParGCAllocBuffer(size_t desired_plab_sz_) :
   _word_sz(desired_plab_sz_), _bottom(NULL), _top(NULL),
@@ -112,7 +113,7 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   }
   _used = _allocated - _wasted - _unused;
   size_t plab_sz = _used/(target_refills*no_of_gc_workers);
-  if (PrintPLAB) gclog_or_tty->print(" (plab_sz = %d ", plab_sz);
+  if (PrintPLAB) gclog_or_tty->print(" (plab_sz = " SIZE_FORMAT " ", plab_sz);
   // Take historical weighted average
   _filter.sample(plab_sz);
   // Clip from above and below, and align to object boundary
@@ -120,7 +121,7 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   plab_sz = MIN2(max_size(), plab_sz);
   plab_sz = align_object_size(plab_sz);
   // Latch the result
-  if (PrintPLAB) gclog_or_tty->print(" desired_plab_sz = %d) ", plab_sz);
+  if (PrintPLAB) gclog_or_tty->print(" desired_plab_sz = " SIZE_FORMAT ") ", plab_sz);
   _desired_plab_sz = plab_sz;
   // Now clear the accumulators for next round:
   // note this needs to be fixed in the case where we
@@ -132,8 +133,9 @@ void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
 
 #ifndef PRODUCT
 void ParGCAllocBuffer::print() {
-  gclog_or_tty->print("parGCAllocBuffer: _bottom: %p  _top: %p  _end: %p  _hard_end: %p"
-             "_retained: %c _retained_filler: [%p,%p)\n",
+  gclog_or_tty->print("parGCAllocBuffer: _bottom: " PTR_FORMAT "  _top: " PTR_FORMAT
+             "  _end: " PTR_FORMAT "  _hard_end: " PTR_FORMAT " _retained: %c"
+             " _retained_filler: [" PTR_FORMAT "," PTR_FORMAT ")\n",
              _bottom, _top, _end, _hard_end,
              "FT"[_retained], _retained_filler.start(), _retained_filler.end());
 }

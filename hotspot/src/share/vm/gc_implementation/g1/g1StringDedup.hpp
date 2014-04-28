@@ -110,7 +110,11 @@ public:
     return _enabled;
   }
 
+  // Initialize string deduplication.
   static void initialize();
+
+  // Stop the deduplication thread.
+  static void stop();
 
   // Immediately deduplicates the given String object, bypassing the
   // the deduplication queue.
