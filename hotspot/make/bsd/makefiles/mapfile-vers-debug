@@ -122,7 +122,7 @@ SUNWprivate_1.1 {
                 JVM_GetClassModifiers;
                 JVM_GetClassName;
                 JVM_GetClassNameUTF;
-		JVM_GetClassSignature;
+                JVM_GetClassSignature;
                 JVM_GetClassSigners;
                 JVM_GetClassTypeAnnotations;
                 JVM_GetComponentType;
@@ -163,6 +163,7 @@ SUNWprivate_1.1 {
                 JVM_GetStackTraceElement;
                 JVM_GetSystemPackage;
                 JVM_GetSystemPackages;
+                JVM_GetTemporaryDirectory;
                 JVM_GetThreadStateNames;
                 JVM_GetThreadStateValues;
                 JVM_GetVersionInfo;
