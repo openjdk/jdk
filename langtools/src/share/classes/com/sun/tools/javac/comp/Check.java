@@ -81,6 +81,7 @@ public class Check {
     private final TreeInfo treeinfo;
     private final JavaFileManager fileManager;
     private final Profile profile;
+    private final boolean warnOnAccessToSensitiveMembers;
 
     // The set of lint options currently in effect. It is initialized
     // from the context, and then is set/reset as needed by Attr as it
@@ -130,6 +131,7 @@ public class Check {
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
         enableSunApiLintControl = options.isSet("enableSunApiLintControl");
+        warnOnAccessToSensitiveMembers = options.isSet("warnOnAccessToSensitiveMembers");
 
         Target target = Target.instance(context);
         syntheticNameChar = target.syntheticNameChar();
@@ -2586,6 +2588,44 @@ public class Check {
                 return;
             }
         }
+    }
+
+    void checkElemAccessFromSerializableLambda(final JCTree tree) {
+        if (warnOnAccessToSensitiveMembers) {
+            Symbol sym = TreeInfo.symbol(tree);
+            if ((sym.kind & (VAR | MTH)) == 0) {
+                return;
+            }
+
+            if (sym.kind == VAR) {
+                if ((sym.flags() & PARAMETER) != 0 ||
+                    sym.isLocal() ||
+                    sym.name == names._this ||
+                    sym.name == names._super) {
+                    return;
+                }
+            }
+
+            if (!types.isSubtype(sym.owner.type, syms.serializableType) &&
+                    isEffectivelyNonPublic(sym)) {
+                log.warning(tree.pos(),
+                        "access.to.sensitive.member.from.serializable.element", sym);
+            }
+        }
+    }
+
+    private boolean isEffectivelyNonPublic(Symbol sym) {
+        if (sym.packge() == syms.rootPackage) {
+            return false;
+        }
+
+        while (sym.kind != Kinds.PCK) {
+            if ((sym.flags() & PUBLIC) == 0) {
+                return true;
+            }
+            sym = sym.owner;
+        }
+        return false;
     }
 
     /** Report a conflict between a user symbol and a synthetic symbol.

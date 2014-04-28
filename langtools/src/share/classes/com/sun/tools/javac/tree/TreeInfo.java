@@ -851,6 +851,8 @@ public class TreeInfo {
             return symbol(((JCTypeApply) tree).clazz);
         case ANNOTATED_TYPE:
             return symbol(((JCAnnotatedType) tree).underlyingType);
+        case REFERENCE:
+            return ((JCMemberReference) tree).sym;
         default:
             return null;
         }
