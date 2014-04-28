@@ -383,7 +383,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     /** A class is an inner class if it it has an enclosing instance class.
      */
     public boolean isInner() {
-        return type.getEnclosingType().hasTag(CLASS);
+        return kind == TYP && type.getEnclosingType().hasTag(CLASS);
     }
 
     /** An inner class has an outer instance if it is not an interface

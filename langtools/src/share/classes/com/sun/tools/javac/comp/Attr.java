@@ -2141,6 +2141,11 @@ public class Attr extends JCTree.Visitor {
                     cdef.extending = clazz;
                 }
 
+                if (resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
+                    isSerializable(clazztype)) {
+                    localEnv.info.isSerializable = true;
+                }
+
                 attribStat(cdef, localEnv);
 
                 checkLambdaCandidate(tree, cdef.sym, clazztype);
@@ -2296,6 +2301,9 @@ public class Attr extends JCTree.Visitor {
                 resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK;
         try {
             Type currentTarget = pt();
+            if (needsRecovery && isSerializable(currentTarget)) {
+                localEnv.info.isSerializable = true;
+            }
             List<Type> explicitParamTypes = null;
             if (that.paramKind == JCLambda.ParameterKind.EXPLICIT) {
                 //attribute lambda parameters
@@ -2700,17 +2708,20 @@ public class Attr extends JCTree.Visitor {
                 typeargtypes = attribTypes(that.typeargs, localEnv);
             }
 
-            Type target;
             Type desc;
-            if (pt() != Type.recoveryType) {
-                target = targetChecker.visit(pt(), that);
-                desc = types.findDescriptorType(target);
+            Type currentTarget = pt();
+            boolean isTargetSerializable =
+                    resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
+                    isSerializable(currentTarget);
+            if (currentTarget != Type.recoveryType) {
+                currentTarget = targetChecker.visit(currentTarget, that);
+                desc = types.findDescriptorType(currentTarget);
             } else {
-                target = Type.recoveryType;
+                currentTarget = Type.recoveryType;
                 desc = fallbackDescriptorType(that);
             }
 
-            setFunctionalInfo(localEnv, that, pt(), desc, target, resultInfo.checkContext);
+            setFunctionalInfo(localEnv, that, pt(), desc, currentTarget, resultInfo.checkContext);
             List<Type> argtypes = desc.getParameterTypes();
             Resolve.MethodCheck referenceCheck = rs.resolveMethodCheck;
 
@@ -2761,10 +2772,10 @@ public class Attr extends JCTree.Visitor {
                 JCDiagnostic diag = diags.create(diagKind, log.currentSource(), that,
                         "invalid.mref", Kinds.kindName(that.getMode()), detailsDiag);
 
-                if (targetError && target == Type.recoveryType) {
+                if (targetError && currentTarget == Type.recoveryType) {
                     //a target error doesn't make sense during recovery stage
                     //as we don't know what actual parameter types are
-                    result = that.type = target;
+                    result = that.type = currentTarget;
                     return;
                 } else {
                     if (targetError) {
@@ -2772,7 +2783,7 @@ public class Attr extends JCTree.Visitor {
                     } else {
                         log.report(diag);
                     }
-                    result = that.type = types.createErrorType(target);
+                    result = that.type = types.createErrorType(currentTarget);
                     return;
                 }
             }
@@ -2783,7 +2794,7 @@ public class Attr extends JCTree.Visitor {
 
             if (desc.getReturnType() == Type.recoveryType) {
                 // stop here
-                result = that.type = target;
+                result = that.type = currentTarget;
                 return;
             }
 
@@ -2801,7 +2812,7 @@ public class Attr extends JCTree.Visitor {
                     //static ref with class type-args
                     log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
                             diags.fragment("static.mref.with.targs"));
-                    result = that.type = types.createErrorType(target);
+                    result = that.type = types.createErrorType(currentTarget);
                     return;
                 }
 
@@ -2810,13 +2821,17 @@ public class Attr extends JCTree.Visitor {
                     //no static bound mrefs
                     log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
                             diags.fragment("static.bound.mref"));
-                    result = that.type = types.createErrorType(target);
+                    result = that.type = types.createErrorType(currentTarget);
                     return;
                 }
 
                 if (!refSym.isStatic() && that.kind == JCMemberReference.ReferenceKind.SUPER) {
                     // Check that super-qualified symbols are not abstract (JLS)
                     rs.checkNonAbstract(that.pos(), that.sym);
+                }
+
+                if (isTargetSerializable) {
+                    chk.checkElemAccessFromSerializableLambda(that);
                 }
             }
 
@@ -2849,9 +2864,9 @@ public class Attr extends JCTree.Visitor {
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
             checkReferenceCompatible(that, desc, refType, resultInfo.checkContext, isSpeculativeRound);
             if (!isSpeculativeRound) {
-                checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), desc, target);
+                checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), desc, currentTarget);
             }
-            result = check(that, target, VAL, resultInfo);
+            result = check(that, currentTarget, VAL, resultInfo);
         } catch (Types.FunctionDescriptorLookupError ex) {
             JCDiagnostic cause = ex.getDiagnostic();
             resultInfo.checkContext.report(that, cause);
@@ -3191,6 +3206,11 @@ public class Attr extends JCTree.Visitor {
             while (env1.outer != null && !rs.isAccessible(env, env1.enclClass.sym.type, sym))
                 env1 = env1.outer;
         }
+
+        if (env.info.isSerializable) {
+            chk.checkElemAccessFromSerializableLambda(tree);
+        }
+
         result = checkId(tree, env1.enclClass.sym.type, sym, env, resultInfo);
     }
 
@@ -3313,6 +3333,10 @@ public class Attr extends JCTree.Visitor {
                 Type site1 = types.asSuper(env.enclClass.sym.type, site.tsym);
                 if (site1 != null) site = site1;
             }
+        }
+
+        if (env.info.isSerializable) {
+            chk.checkElemAccessFromSerializableLambda(tree);
         }
 
         env.info.selectSuper = selectSuperPrev;
@@ -4181,6 +4205,11 @@ public class Attr extends JCTree.Visitor {
                     ((c.flags_field & (Flags.ENUM | Flags.COMPOUND)) == 0)) {
                     log.error(env.tree.pos(), "enum.types.not.extensible");
                 }
+
+                if (isSerializable(c.type)) {
+                    env.info.isSerializable = true;
+                }
+
                 attribClassBody(env, c);
 
                 chk.checkDeprecatedAnnotation(env.tree.pos(), c);
@@ -4294,7 +4323,7 @@ public class Attr extends JCTree.Visitor {
 
         // Check for proper use of serialVersionUID
         if (env.info.lint.isEnabled(LintCategory.SERIAL) &&
-            isSerializable(c) &&
+            isSerializable(c.type) &&
             (c.flags() & Flags.ENUM) == 0 &&
             checkForSerial(c)) {
             checkSerialVersionUID(tree, c);
@@ -4334,15 +4363,15 @@ public class Attr extends JCTree.Visitor {
             return null;
         }
 
-        /** check if a class is a subtype of Serializable, if that is available. */
-        private boolean isSerializable(ClassSymbol c) {
+        /** check if a type is a subtype of Serializable, if that is available. */
+        boolean isSerializable(Type t) {
             try {
                 syms.serializableType.complete();
             }
             catch (CompletionFailure e) {
                 return false;
             }
-            return types.isSubtype(c.type, syms.serializableType);
+            return types.isSubtype(t, syms.serializableType);
         }
 
         /** Check that an appropriate serialVersionUID member is defined. */
