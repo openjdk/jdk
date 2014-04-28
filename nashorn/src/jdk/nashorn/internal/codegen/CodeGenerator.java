@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -1898,6 +1899,37 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return false;
     }
 
+    /**
+     * Check if a property value contains a particular program point
+     * @param value value
+     * @param pp    program point
+     * @return true if it's there.
+     */
+    private static boolean propertyValueContains(final Expression value, final int pp) {
+        return new Supplier<Boolean>() {
+            boolean contains;
+
+            @Override
+            public Boolean get() {
+                value.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                    @Override
+                    public boolean enterDefault(final Node node) {
+                        if (contains) {
+                            return false;
+                        }
+                        if (node instanceof Optimistic && ((Optimistic)node).getProgramPoint() == pp) {
+                            contains = true;
+                            return false;
+                        }
+                        return true;
+                    }
+                });
+
+                return contains;
+            }
+        }.get();
+    }
+
     @Override
     public boolean enterObjectNode(final ObjectNode objectNode) {
         final List<PropertyNode> elements = objectNode.getElements();
@@ -1926,7 +1958,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 value != null &&
                 isValid(ccp) &&
                 value instanceof Optimistic &&
-                ((Optimistic)value).getProgramPoint() == ccp;
+                propertyValueContains(value, ccp);
 
             //for literals, a value of null means object type, i.e. the value null or getter setter function
             //(I think)
@@ -1949,11 +1981,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }};
         }
         oc.makeObject(method);
+
         //if this is a rest of method and our continuation point was found as one of the values
         //in the properties above, we need to reset the map to oc.getMap() in the continuation
         //handler
         if (restOfProperty) {
-            getContinuationInfo().setObjectLiteralMap(oc.getMap());
+            final ContinuationInfo ci = getContinuationInfo();
+            ci.setObjectLiteralMap(oc.getMap());
+            ci.setObjectLiteralStackDepth(method.getStackSize());
         }
 
         method.dup();
@@ -4460,6 +4495,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         private Type returnValueType;
         // If we are in the middle of an object literal initialization, we need to update the map
         private PropertyMap objectLiteralMap;
+        // Object literal stack depth for object literal - not necessarly top if property is a tree
+        private int objectLiteralStackDepth = -1;
 
         ContinuationInfo() {
             this.handlerLabel = new Label("continuation_handler");
@@ -4511,6 +4548,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         void setReturnValueType(final Type returnValueType) {
             this.returnValueType = returnValueType;
+        }
+
+        int getObjectLiteralStackDepth() {
+            return objectLiteralStackDepth;
+        }
+
+        void setObjectLiteralStackDepth(final int objectLiteralStackDepth) {
+            this.objectLiteralStackDepth = objectLiteralStackDepth;
         }
 
         PropertyMap getObjectLiteralMap() {
@@ -4573,20 +4618,21 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // Store the RewriteException into an unused local variable slot.
             method.store(rewriteExceptionType, lvarCount);
             // Load arguments on the stack
+            final int objectLiteralStackDepth = ci.getObjectLiteralStackDepth();
             for(int i = 0; i < stackStoreSpec.length; ++i) {
                 final int slot = stackStoreSpec[i];
                 method.load(lvarTypes[slot], slot);
                 method.convert(stackTypes[i]);
-            }
-
-            // stack: s0=object literal being initialized
-            // change map of s0 so that the property we are initilizing when we failed
-            // is now ci.returnValueType
-            if (ci.getObjectLiteralMap() != null) {
-                method.dup(); //dup script object
-                assert ScriptObject.class.isAssignableFrom(method.peekType().getTypeClass()) : method.peekType().getTypeClass() + " is not a script object";
-                loadConstant(ci.getObjectLiteralMap());
-                method.invoke(ScriptObject.SET_MAP);
+                // stack: s0=object literal being initialized
+                // change map of s0 so that the property we are initilizing when we failed
+                // is now ci.returnValueType
+                if (i == objectLiteralStackDepth) {
+                    method.dup();
+                    assert ci.getObjectLiteralMap() != null;
+                    assert ScriptObject.class.isAssignableFrom(method.peekType().getTypeClass()) : method.peekType().getTypeClass() + " is not a script object";
+                    loadConstant(ci.getObjectLiteralMap());
+                    method.invoke(ScriptObject.SET_MAP);
+                }
             }
 
             // Load RewriteException back; get rid of the stored reference.

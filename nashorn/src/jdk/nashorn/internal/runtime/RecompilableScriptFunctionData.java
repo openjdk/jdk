@@ -352,13 +352,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return (isProgram ? program : extractFunctionFromScript(program)).setName(null, functionName).setSourceURL(null,  sourceURL);
     }
 
-    private static String getShortDescriptor(final Object value) {
-        if (value == null || !value.getClass().isPrimitive() || value.getClass() != Boolean.class) {
-            return "O";
-        }
-        return value.getClass().getSimpleName();
-    }
-
     private static String stringifyInvalidations(final Map<Integer, Type> ipp) {
         if (ipp == null) {
             return "";
@@ -367,10 +360,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         final Iterator<Map.Entry<Integer, Type>> iter = ipp.entrySet().iterator();
         while (iter.hasNext()) {
             final Map.Entry<Integer, Type> entry = iter.next();
+            final char bct = entry.getValue().getBytecodeStackType();
             sb.append('[').
                     append(entry.getKey()).
                     append("->").
-                    append(getShortDescriptor(entry.getValue())).
+                    append(bct == 'A' ? 'O' : bct).
                     append(']');
             if (iter.hasNext()) {
                 sb.append(' ');
