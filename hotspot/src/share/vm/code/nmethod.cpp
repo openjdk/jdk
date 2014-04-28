@@ -750,7 +750,11 @@ nmethod::nmethod(
     _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
     code_buffer->copy_values_to(this);
-    debug_only(verify_scavenge_root_oops());
+    if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
+      CodeCache::add_scavenge_root_nmethod(this);
+      Universe::heap()->register_nmethod(this);
+    }
+    DEBUG_ONLY(verify_scavenge_root_oops();)
     CodeCache::commit(this);
   }
 
