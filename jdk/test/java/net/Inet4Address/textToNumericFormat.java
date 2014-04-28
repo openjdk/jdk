@@ -25,7 +25,17 @@
  * @test
  * @bug 4749938
  * @summary Bug in the parsing IPv4 literal addresses
+ * @compile -XDignore.symbol.file=true DummyNameService.java DummyNameServiceDescriptor.java
+ * @run main/othervm -Dsun.net.spi.nameservice.provider.1=dummy,oracle textToNumericFormat
 */
+
+/**
+ * We use a dummy name service which throws UHE any time it is called.
+ * We do this because the "good" tests here should parse correctly
+ * without needing to call the name service, and the bad tests will
+ * not parse and then invoke the name service, where we expect
+ * the exception.
+ */
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
