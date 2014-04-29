@@ -72,7 +72,7 @@ public class X11GraphicsEnvironment
 
     static {
         java.security.AccessController.doPrivileged(
-                          new java.security.PrivilegedAction() {
+                          new java.security.PrivilegedAction<Object>() {
             public Object run() {
                 System.loadLibrary("awt");
 
@@ -254,12 +254,12 @@ public class X11GraphicsEnvironment
             return true;
         }
 
-        Boolean result = (Boolean)java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-            public Object run() {
+        Boolean result = java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Boolean>() {
+            public Boolean run() {
                 InetAddress remAddr[] = null;
-                Enumeration locals = null;
-                Enumeration interfaces = null;
+                Enumeration<InetAddress> locals = null;
+                Enumeration<NetworkInterface> interfaces = null;
                 try {
                     interfaces = NetworkInterface.getNetworkInterfaces();
                     remAddr = InetAddress.getAllByName(hostName);
@@ -275,7 +275,7 @@ public class X11GraphicsEnvironment
                 }
 
                 for (; interfaces.hasMoreElements();) {
-                    locals = ((NetworkInterface)interfaces.nextElement()).getInetAddresses();
+                    locals = interfaces.nextElement().getInetAddresses();
                     for (; locals.hasMoreElements();) {
                         for (int i = 0; i < remAddr.length; i++) {
                             if (locals.nextElement().equals(remAddr[i])) {

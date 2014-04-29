@@ -252,11 +252,11 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
             throw new InvalidDnDOperationException("No drop current");
         }
 
-        Map flavorMap = DataTransferer.getInstance().getFlavorsForFormats
-            (currentT, DataTransferer.adaptFlavorMap
+        Map<DataFlavor, Long> flavorMap = DataTransferer.getInstance()
+            .getFlavorsForFormats(currentT, DataTransferer.adaptFlavorMap
                 (currentDT.getFlavorMap()));
 
-        lFormat = (Long)flavorMap.get(df);
+        lFormat = flavorMap.get(df);
         if (lFormat == null) {
             throw new UnsupportedFlavorException(df);
         }
@@ -745,7 +745,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         // dispatcher state fields
         private int returnValue = 0;
         // set of events to be dispatched by this dispatcher
-        private final HashSet eventSet = new HashSet(3);
+        private final HashSet<SunDropTargetEvent> eventSet = new HashSet<>(3);
 
         static final ToolkitThreadBlockedHandler handler =
             DataTransferer.getInstance().getToolkitThreadBlockedHandler();

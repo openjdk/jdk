@@ -66,7 +66,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
 
         AWTAccessor.setMenuAccessor(
             new AWTAccessor.MenuAccessor() {
-                public Vector<MenuComponent> getItems(Menu menu) {
+                public Vector<MenuItem> getItems(Menu menu) {
                     return menu.items;
                 }
             });
@@ -78,7 +78,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @serial
      * @see #countItems()
      */
-    Vector<MenuComponent> items = new Vector<>();
+    Vector<MenuItem> items = new Vector<>();
 
     /**
      * This field indicates whether the menu has the
@@ -252,7 +252,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * be called on the toolkit thread.
      */
     final MenuItem getItemImpl(int index) {
-        return (MenuItem)items.elementAt(index);
+        return items.elementAt(index);
     }
 
     /**
@@ -544,7 +544,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
       // HeadlessException will be thrown from MenuComponent's readObject
       s.defaultReadObject();
       for(int i = 0; i < items.size(); i++) {
-        MenuItem item = (MenuItem)items.elementAt(i);
+        MenuItem item = items.elementAt(i);
         item.parent = this;
       }
     }

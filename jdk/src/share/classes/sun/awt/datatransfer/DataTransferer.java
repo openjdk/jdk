@@ -324,7 +324,7 @@ public abstract class DataTransferer {
             return false;
         }
 
-        Class rep_class = flavor.getRepresentationClass();
+        Class<?> rep_class = flavor.getRepresentationClass();
 
         if (flavor.isRepresentationClassReader() ||
             String.class.equals(rep_class) ||
@@ -696,7 +696,7 @@ public abstract class DataTransferer {
      *            DataFlavors and data formats
      * @throws NullPointerException if formats or map is <code>null</code>
      */
-    public Set getFlavorsForFormatsAsSet(long[] formats, FlavorTable map) {
+    public Set<DataFlavor> getFlavorsForFormatsAsSet(long[] formats, FlavorTable map) {
         Set<DataFlavor> flavorSet = new HashSet<>(formats.length);
 
         for (long format : formats) {
@@ -1085,7 +1085,7 @@ search:
                 throw new IOException("data translation failed");
             }
 
-            final List list = (List)obj;
+            final List<?> list = (List<?>)obj;
 
             final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
 
@@ -1113,7 +1113,7 @@ search:
             if (targetCharset == null) {
                 targetCharset = "UTF-8";
             }
-            final List list = (List)obj;
+            final List<?> list = (List<?>)obj;
             final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
             final ArrayList<String> fileList = castToFiles(list, userProtectionDomain);
             final ArrayList<String> uriList = new ArrayList<>(fileList.size());
@@ -1258,7 +1258,7 @@ search:
         return true;
     }
 
-    private ArrayList<String> castToFiles(final List files,
+    private ArrayList<String> castToFiles(final List<?> files,
                                           final ProtectionDomain userProtectionDomain) throws IOException {
         try {
             return AccessController.doPrivileged((PrivilegedExceptionAction<ArrayList<String>>) () -> {
@@ -1636,7 +1636,7 @@ search:
      * instance of the Class as its sole parameter.
      */
     private Object constructFlavoredObject(Object arg, DataFlavor flavor,
-                                           Class clazz)
+                                           Class<?> clazz)
         throws IOException
     {
         final Class<?> dfrc = flavor.getRepresentationClass();
@@ -1644,19 +1644,19 @@ search:
         if (clazz.equals(dfrc)) {
             return arg; // simple case
         } else {
-            Constructor[] constructors;
+            Constructor<?>[] constructors;
 
             try {
                 constructors = AccessController.doPrivileged(
-                        (PrivilegedAction<Constructor[]>) dfrc::getConstructors);
+                        (PrivilegedAction<Constructor<?>[]>) dfrc::getConstructors);
             } catch (SecurityException se) {
                 throw new IOException(se.getMessage());
             }
 
-            Constructor constructor = Stream.of(constructors)
+            Constructor<?> constructor = Stream.of(constructors)
                     .filter(c -> Modifier.isPublic(c.getModifiers()))
                     .filter(c -> {
-                        Class[] ptypes = c.getParameterTypes();
+                        Class<?>[] ptypes = c.getParameterTypes();
                         return ptypes != null
                                 && ptypes.length == 1
                                 && clazz.equals(ptypes[0]);
@@ -1865,7 +1865,8 @@ search:
         byte[] bytes, String mimeType) throws IOException
     {
 
-        Iterator readerIterator = ImageIO.getImageReadersByMIMEType(mimeType);
+        Iterator<ImageReader> readerIterator =
+            ImageIO.getImageReadersByMIMEType(mimeType);
 
         if (!readerIterator.hasNext()) {
             throw new IOException("No registered service provider can decode " +
@@ -1875,7 +1876,7 @@ search:
         IOException ioe = null;
 
         while (readerIterator.hasNext()) {
-            ImageReader imageReader = (ImageReader)readerIterator.next();
+            ImageReader imageReader = readerIterator.next();
             try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
                 try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(bais)) {
                     ImageReadParam param = imageReader.getDefaultReadParam();
@@ -1918,7 +1919,8 @@ search:
       throws IOException {
         IOException originalIOE = null;
 
-        Iterator writerIterator = ImageIO.getImageWritersByMIMEType(mimeType);
+        Iterator<ImageWriter> writerIterator =
+            ImageIO.getImageWritersByMIMEType(mimeType);
 
         if (!writerIterator.hasNext()) {
             throw new IOException("No registered service provider can encode " +
@@ -1977,7 +1979,8 @@ search:
                                               String mimeType)
         throws IOException {
 
-        Iterator writerIterator = ImageIO.getImageWritersByMIMEType(mimeType);
+        Iterator<ImageWriter> writerIterator =
+            ImageIO.getImageWritersByMIMEType(mimeType);
 
         ImageTypeSpecifier typeSpecifier =
             new ImageTypeSpecifier(renderedImage);
@@ -1986,7 +1989,7 @@ search:
         IOException ioe = null;
 
         while (writerIterator.hasNext()) {
-            ImageWriter imageWriter = (ImageWriter)writerIterator.next();
+            ImageWriter imageWriter = writerIterator.next();
             ImageWriterSpi writerSpi = imageWriter.getOriginatingProvider();
 
             if (!writerSpi.canEncodeImage(typeSpecifier)) {
@@ -2070,7 +2073,7 @@ search:
     public byte[] convertData(final Object source,
                               final Transferable contents,
                               final long format,
-                              final Map formatMap,
+                              final Map<Long, DataFlavor> formatMap,
                               final boolean isToolkitThread)
         throws IOException
     {
@@ -2093,7 +2096,7 @@ search:
                     }
                     byte[] data = null;
                     try {
-                        DataFlavor flavor = (DataFlavor)formatMap.get(format);
+                        DataFlavor flavor = formatMap.get(format);
                         if (flavor != null) {
                             data = translateTransferable(contents, flavor, format);
                         }
@@ -2134,7 +2137,7 @@ search:
         } finally {
             getToolkitThreadBlockedHandler().unlock();
         } else {
-            DataFlavor flavor = (DataFlavor)formatMap.get(format);
+            DataFlavor flavor = formatMap.get(format);
             if (flavor != null) {
                 ret = translateTransferable(contents, flavor, format);
             }
@@ -2183,7 +2186,7 @@ search:
      * Helper function to convert a Set of DataFlavors to a sorted array.
      * The array will be sorted according to <code>DataFlavorComparator</code>.
      */
-    public static DataFlavor[] setToSortedDataFlavorArray(Set flavorsSet) {
+    public static DataFlavor[] setToSortedDataFlavorArray(Set<DataFlavor> flavorsSet) {
         DataFlavor[] flavors = new DataFlavor[flavorsSet.size()];
         flavorsSet.toArray(flavors);
         final Comparator<DataFlavor> comparator =
@@ -2544,12 +2547,12 @@ search:
             String primaryType1 = flavor1.getPrimaryType();
             String subType1 = flavor1.getSubType();
             String mimeType1 = primaryType1 + "/" + subType1;
-            Class class1 = flavor1.getRepresentationClass();
+            Class<?> class1 = flavor1.getRepresentationClass();
 
             String primaryType2 = flavor2.getPrimaryType();
             String subType2 = flavor2.getSubType();
             String mimeType2 = primaryType2 + "/" + subType2;
-            Class class2 = flavor2.getRepresentationClass();
+            Class<?> class2 = flavor2.getRepresentationClass();
 
             if (flavor1.isFlavorTextType() && flavor2.isFlavorTextType()) {
                 // First, compare MIME types

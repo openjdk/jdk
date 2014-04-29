@@ -127,14 +127,14 @@ public abstract class ShellFolder extends File {
         File[] files = super.listFiles();
 
         if (!includeHiddenFiles) {
-            Vector v = new Vector();
+            Vector<File> v = new Vector<>();
             int nameCount = (files == null) ? 0 : files.length;
             for (int i = 0; i < nameCount; i++) {
                 if (!files[i].isHidden()) {
                     v.addElement(files[i]);
                 }
             }
-            files = (File[])v.toArray(new File[v.size()]);
+            files = v.toArray(new File[v.size()]);
         }
 
         return files;
@@ -208,7 +208,7 @@ public abstract class ShellFolder extends File {
     static {
         String managerClassName = (String)Toolkit.getDefaultToolkit().
                                       getDesktopProperty("Shell.shellFolderManager");
-        Class managerClass = null;
+        Class<?> managerClass = null;
         try {
             managerClass = ReflectUtil.forName(managerClassName);
         // swallow the exceptions below and use default shell folder
@@ -554,7 +554,7 @@ public abstract class ShellFolder extends File {
     /**
      * Provides a default comparator for the default column set
      */
-    private static final Comparator DEFAULT_COMPARATOR = new Comparator() {
+    private static final Comparator<Object> DEFAULT_COMPARATOR = new Comparator<Object>() {
         public int compare(Object o1, Object o2) {
             int gt;
 
@@ -565,7 +565,9 @@ public abstract class ShellFolder extends File {
             } else if (o1 == null && o2 != null) {
                 gt = -1;
             } else if (o1 instanceof Comparable) {
-                gt = ((Comparable) o1).compareTo(o2);
+                @SuppressWarnings("unchecked")
+                Comparable<Object> o = (Comparable<Object>) o1;
+                gt = o.compareTo(o2);
             } else {
                 gt = 0;
             }
