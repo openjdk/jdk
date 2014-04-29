@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,24 +33,20 @@
 
 public class TestNestedGenerics extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "6758050";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[]{
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
         "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "NestedGenerics.html",
+        { "pkg/NestedGenerics.html",
             "<div class=\"block\">Contains <a " +
             "href=\"../pkg/NestedGenerics.html#foo-java.util.Map-\"><code>foo" +
             "(java.util.Map&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>"
         }
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -58,21 +54,7 @@ public class TestNestedGenerics extends JavadocTester {
      */
     public static void main(String[] args) {
         TestNestedGenerics tester = new TestNestedGenerics();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

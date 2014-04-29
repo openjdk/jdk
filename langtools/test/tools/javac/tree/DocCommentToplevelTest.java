@@ -144,12 +144,24 @@ public class DocCommentToplevelTest {
             public ClassTree visitCompilationUnit(CompilationUnitTree node, Void unused) {
                 docComments = ((JCTree.JCCompilationUnit)node).docComments;
                 boolean expectedComment = tdk == ToplevelDocKind.HAS_DOC &&
-                        (pk != PackageKind.NO_PKG || ik != ImportKind.ZERO);
+                                          pk == PackageKind.NO_PKG &&
+                                          ik != ImportKind.ZERO;
                 boolean foundComment = docComments.hasComment((JCTree) node);
                 if (expectedComment != foundComment) {
                     error("Unexpected comment " + docComments.getComment((JCTree) node) + " on toplevel");
                 }
                 return super.visitCompilationUnit(node, null);
+            }
+
+            @Override
+            public ClassTree visitPackage(PackageTree node, Void unused) {
+                boolean expectedComment = tdk == ToplevelDocKind.HAS_DOC &&
+                                          pk != PackageKind.NO_PKG;
+                boolean foundComment = docComments.hasComment((JCTree) node);
+                if (expectedComment != foundComment) {
+                    error("Unexpected comment " + docComments.getComment((JCTree) node) + " on toplevel");
+                }
+                return super.visitPackage(node, null);
             }
 
             @Override

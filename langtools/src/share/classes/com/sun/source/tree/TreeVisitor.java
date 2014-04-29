@@ -88,6 +88,7 @@ public interface TreeVisitor<R,P> {
     R visitNewArray(NewArrayTree node, P p);
     R visitNewClass(NewClassTree node, P p);
     R visitLambdaExpression(LambdaExpressionTree node, P p);
+    R visitPackage(PackageTree node, P p);
     R visitParenthesized(ParenthesizedTree node, P p);
     R visitReturn(ReturnTree node, P p);
     R visitMemberSelect(MemberSelectTree node, P p);

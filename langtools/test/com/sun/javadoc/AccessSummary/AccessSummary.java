@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,30 +34,27 @@
 
 public class AccessSummary extends JavadocTester {
 
-    private static final String BUG_ID = "4637604-4775148";
-    private static final String OUTPUT_DIR1 = "docs1-" + BUG_ID + FS;
-
     /**
      * Assign value for [ fileToSearch, stringToFind ]
      */
     private static final String[][] TESTARRAY1 = {
 
         // Test that the summary attribute appears
-        { OUTPUT_DIR1 + "overview-summary.html",
+        { "overview-summary.html",
                  "summary=\"Packages table, listing packages, and an explanation\"" },
 
         // Test that the summary attribute appears
-        { OUTPUT_DIR1 + "p1" + FS + "C1.html",
+        { "p1/C1.html",
                  "summary=\"Constructor Summary table, listing constructors, and an explanation\"" },
 
         // Test that the summary attribute appears
-        { OUTPUT_DIR1 + "constant-values.html",
+        { "constant-values.html",
                  "summary=\"Constant Field Values table, listing constant fields, and values\"" }
     };
 
     // First test with -header only
     private static final String[] JAVADOC_ARGS = new String[] {
-            "-d", OUTPUT_DIR1,
+            "-d", OUTPUT_DIR,
             "-sourcepath", SRC_DIR,
             "p1", "p2"};
 
@@ -67,21 +64,7 @@ public class AccessSummary extends JavadocTester {
      */
     public static void main(String[] args) {
         JavadocTester tester = new AccessSummary();
-        run(tester, JAVADOC_ARGS,  TESTARRAY1, new String[][] {});
+        tester.run(JAVADOC_ARGS,  TESTARRAY1, new String[][] {});
         tester.printSummary();       // Necessary for string search
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -300,6 +300,7 @@ public:
   JVMState* clone_shallow(Compile* C) const; // retains uncloned caller
   void      set_map_deep(SafePointNode *map);// reset map for all callers
   void      adapt_position(int delta);       // Adapt offsets in in-array after adding an edge.
+  int       interpreter_frame_size() const;
 
 #ifndef PRODUCT
   void      format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) const;

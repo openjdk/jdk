@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,19 +33,16 @@
 
 public class TestDeprecatedDocs extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4927552";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     private static final String TARGET_FILE  =
-        BUG_ID + FS + "deprecated-list.html";
+        "deprecated-list.html";
 
     private static final String TARGET_FILE2  =
-        BUG_ID + FS + "pkg" + FS + "DeprecatedClassByAnnotation.html";
+        "pkg/DeprecatedClassByAnnotation.html";
 
     //Input for string search tests.
     private static final String[][] TEST = {
@@ -75,24 +72,22 @@ public class TestDeprecatedDocs extends JavadocTester {
         {TARGET_FILE, "pkg.DeprecatedClassByAnnotation.method()"},
         {TARGET_FILE, "pkg.DeprecatedClassByAnnotation.field"},
 
-        {TARGET_FILE2, "<pre>@Deprecated" + NL +
-                 "public class <span class=\"typeNameLabel\">DeprecatedClassByAnnotation</span>" + NL +
+        {TARGET_FILE2, "<pre>@Deprecated\n" +
+                 "public class <span class=\"typeNameLabel\">DeprecatedClassByAnnotation</span>\n" +
                  "extends java.lang.Object</pre>"},
 
-        {TARGET_FILE2, "<pre>@Deprecated" + NL +
-                 "public&nbsp;int field</pre>" + NL +
+        {TARGET_FILE2, "<pre>@Deprecated\n" +
+                 "public&nbsp;int field</pre>\n" +
                  "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
 
-        {TARGET_FILE2, "<pre>@Deprecated" + NL +
-                 "public&nbsp;DeprecatedClassByAnnotation()</pre>" + NL +
+        {TARGET_FILE2, "<pre>@Deprecated\n" +
+                 "public&nbsp;DeprecatedClassByAnnotation()</pre>\n" +
                  "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
 
-        {TARGET_FILE2, "<pre>@Deprecated" + NL +
-                 "public&nbsp;void&nbsp;method()</pre>" + NL +
+        {TARGET_FILE2, "<pre>@Deprecated\n" +
+                 "public&nbsp;void&nbsp;method()</pre>\n" +
                  "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
     };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -100,21 +95,7 @@ public class TestDeprecatedDocs extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDeprecatedDocs tester = new TestDeprecatedDocs();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

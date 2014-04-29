@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3040,6 +3040,7 @@ public final class Locale implements Cloneable, Serializable {
          *     2616</a>
          * @param map a map containing information to customize language ranges
          * @return a Language Priority List with customization. The list is
+         *     modifiable.
          * @throws NullPointerException if {@code ranges} is null
          * @throws IllegalArgumentException if a language range or a weight
          *     found in the given {@code ranges} is ill-formed

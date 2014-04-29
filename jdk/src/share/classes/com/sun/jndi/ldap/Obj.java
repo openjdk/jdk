@@ -38,12 +38,10 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.InputStream;
 
+import java.util.Base64;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.StringTokenizer;
-
-import sun.misc.BASE64Encoder;
-import sun.misc.BASE64Decoder;
 
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Modifier;
@@ -324,7 +322,7 @@ final class Obj {
 
             Attribute refAttr = new BasicAttribute(JAVA_ATTRIBUTES[REF_ADDR]);
             RefAddr refAddr;
-            BASE64Encoder encoder = null;
+            Base64.Encoder encoder = null;
 
             for (int i = 0; i < count; i++) {
                 refAddr = ref.get(i);
@@ -335,12 +333,12 @@ final class Obj {
                         separator + refAddr.getContent());
                 } else {
                     if (encoder == null)
-                        encoder = new BASE64Encoder();
+                        encoder = Base64.getMimeEncoder();
 
                     refAttr.add(""+ separator + i +
                         separator + refAddr.getType() +
                         separator + separator +
-                        encoder.encodeBuffer(serializeObject(refAddr)));
+                        encoder.encodeToString(serializeObject(refAddr)));
                 }
             }
             attrs.put(refAttr);
@@ -403,7 +401,7 @@ final class Obj {
             String val, posnStr, type;
             char separator;
             int start, sep, posn;
-            BASE64Decoder decoder = null;
+            Base64.Decoder decoder = null;
 
             ClassLoader cl = helper.getURLClassLoader(codebases);
 
@@ -472,11 +470,11 @@ final class Obj {
                     // %%% RL: exception if empty after double separator
 
                     if (decoder == null)
-                        decoder = new BASE64Decoder();
+                        decoder = Base64.getMimeDecoder();
 
                     RefAddr ra = (RefAddr)
                         deserializeObject(
-                            decoder.decodeBuffer(val.substring(start)),
+                            decoder.decode(val.substring(start).getBytes()),
                             cl);
 
                     refAddrList.setElementAt(ra, posn);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,9 @@
 
 public class TestDupParamWarn extends JavadocTester {
 
-    private static final String BUG_ID = "4745855";
     private static final String[] ARGS =
-        new String[] {"-d", BUG_ID, "-sourcepath",
-                SRC_DIR + FS, "pkg"};
+        new String[] {"-d", OUTPUT_DIR, "-sourcepath",
+                SRC_DIR + "/", "pkg"};
     private static final String[][] NEGATED_TEST =
         new String[][] {{WARNING_OUTPUT,
             "Parameter \"a\" is documented more than once."}};
@@ -48,20 +47,8 @@ public class TestDupParamWarn extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
-        run(new TestDupParamWarn(), ARGS, NO_TEST, NEGATED_TEST);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        JavadocTester tester = new TestDupParamWarn();
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
+        tester.printSummary();
     }
 }

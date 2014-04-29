@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,36 +36,34 @@
 
 public class TestParamTaglet extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4802275-4967243";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
         //Regular param tags.
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<span class=\"paramLabel\">Parameters:</span></dt>" + NL + "<dd><code>param1</code> - testing 1 2 3.</dd>" +
-                NL + "<dd><code>param2</code> - testing 1 2 3."
+        { "pkg/C.html",
+            "<span class=\"paramLabel\">Parameters:</span></dt>\n" +
+            "<dd><code>param1</code> - testing 1 2 3.</dd>\n" +
+                "<dd><code>param2</code> - testing 1 2 3."
         },
         //Param tags that don't match with any real parameters.
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<span class=\"paramLabel\">Parameters:</span></dt>" + NL + "<dd><code><I>p1</I></code> - testing 1 2 3.</dd>" +
-                NL + "<dd><code><I>p2</I></code> - testing 1 2 3."
+        { "pkg/C.html",
+            "<span class=\"paramLabel\">Parameters:</span></dt>\n" +
+            "<dd><code><I>p1</I></code> - testing 1 2 3.</dd>\n" +
+                "<dd><code><I>p2</I></code> - testing 1 2 3."
         },
         //{@inherit} doc misuse does not cause doclet to throw exception.
         // Param is printed with nothing inherited.
         //XXX: in the future when Configuration is available during doc inheritence,
         //print a warning for this mistake.
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        { "pkg/C.html",
             "<code><I>inheritBug</I></code> -"
         },
 
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -73,21 +71,7 @@ public class TestParamTaglet extends JavadocTester {
      */
     public static void main(String[] args) {
         TestParamTaglet tester = new TestParamTaglet();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }
