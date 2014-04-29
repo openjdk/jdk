@@ -2637,7 +2637,7 @@ oop java_lang_invoke_DirectMethodHandle::member(oop dmh) {
 
 void java_lang_invoke_DirectMethodHandle::compute_offsets() {
   Klass* klass_oop = SystemDictionary::DirectMethodHandle_klass();
-  if (klass_oop != NULL && EnableInvokeDynamic) {
+  if (klass_oop != NULL) {
     compute_offset(_member_offset, klass_oop, vmSymbols::member_name(), vmSymbols::java_lang_invoke_MemberName_signature());
   }
 }
@@ -2659,18 +2659,15 @@ int java_lang_invoke_LambdaForm::_vmentry_offset;
 
 void java_lang_invoke_MethodHandle::compute_offsets() {
   Klass* klass_oop = SystemDictionary::MethodHandle_klass();
-  if (klass_oop != NULL && EnableInvokeDynamic) {
+  if (klass_oop != NULL) {
     compute_offset(_type_offset, klass_oop, vmSymbols::type_name(), vmSymbols::java_lang_invoke_MethodType_signature());
-    compute_optional_offset(_form_offset, klass_oop, vmSymbols::form_name(), vmSymbols::java_lang_invoke_LambdaForm_signature());
-    if (_form_offset == 0) {
-      EnableInvokeDynamic = false;
-    }
+    compute_offset(_form_offset, klass_oop, vmSymbols::form_name(), vmSymbols::java_lang_invoke_LambdaForm_signature());
   }
 }
 
 void java_lang_invoke_MemberName::compute_offsets() {
   Klass* klass_oop = SystemDictionary::MemberName_klass();
-  if (klass_oop != NULL && EnableInvokeDynamic) {
+  if (klass_oop != NULL) {
     compute_offset(_clazz_offset,     klass_oop, vmSymbols::clazz_name(),     vmSymbols::class_signature());
     compute_offset(_name_offset,      klass_oop, vmSymbols::name_name(),      vmSymbols::string_signature());
     compute_offset(_type_offset,      klass_oop, vmSymbols::type_name(),      vmSymbols::object_signature());
@@ -2681,7 +2678,7 @@ void java_lang_invoke_MemberName::compute_offsets() {
 
 void java_lang_invoke_LambdaForm::compute_offsets() {
   Klass* klass_oop = SystemDictionary::LambdaForm_klass();
-  if (klass_oop != NULL && EnableInvokeDynamic) {
+  if (klass_oop != NULL) {
     compute_offset(_vmentry_offset, klass_oop, vmSymbols::vmentry_name(), vmSymbols::java_lang_invoke_MemberName_signature());
   }
 }
@@ -2896,7 +2893,6 @@ int java_lang_invoke_MethodType::rtype_slot_count(oop mt) {
 int java_lang_invoke_CallSite::_target_offset;
 
 void java_lang_invoke_CallSite::compute_offsets() {
-  if (!EnableInvokeDynamic)  return;
   Klass* k = SystemDictionary::CallSite_klass();
   if (k != NULL) {
     compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_lang_invoke_MethodHandle_signature());
@@ -3287,14 +3283,12 @@ void JavaClasses::compute_offsets() {
   java_lang_ClassLoader::compute_offsets();
   java_lang_Thread::compute_offsets();
   java_lang_ThreadGroup::compute_offsets();
-  if (EnableInvokeDynamic) {
-    java_lang_invoke_MethodHandle::compute_offsets();
-    java_lang_invoke_DirectMethodHandle::compute_offsets();
-    java_lang_invoke_MemberName::compute_offsets();
-    java_lang_invoke_LambdaForm::compute_offsets();
-    java_lang_invoke_MethodType::compute_offsets();
-    java_lang_invoke_CallSite::compute_offsets();
-  }
+  java_lang_invoke_MethodHandle::compute_offsets();
+  java_lang_invoke_DirectMethodHandle::compute_offsets();
+  java_lang_invoke_MemberName::compute_offsets();
+  java_lang_invoke_LambdaForm::compute_offsets();
+  java_lang_invoke_MethodType::compute_offsets();
+  java_lang_invoke_CallSite::compute_offsets();
   java_security_AccessControlContext::compute_offsets();
   // Initialize reflection classes. The layouts of these classes
   // changed with the new reflection implementation in JDK 1.4, and
