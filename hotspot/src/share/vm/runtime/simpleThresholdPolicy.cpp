@@ -192,6 +192,10 @@ nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
       thread->is_interp_only_mode()) {
     return NULL;
   }
+  if (CompileTheWorld || ReplayCompiles) {
+    // Don't trigger other compiles in testing mode
+    return NULL;
+  }
   nmethod *osr_nm = NULL;
 
   handle_counter_overflow(method());
