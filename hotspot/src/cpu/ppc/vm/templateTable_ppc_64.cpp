@@ -3453,16 +3453,6 @@ void TemplateTable::invokedynamic(int byte_no) {
                  Rscratch1 = R11_scratch1,
                  Rscratch2 = R12_scratch2;
 
-  if (!EnableInvokeDynamic) {
-    // We should not encounter this bytecode if !EnableInvokeDynamic.
-    // The verifier will stop it. However, if we get past the verifier,
-    // this will stop the thread in a reasonable way, without crashing the JVM.
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeError));
-    // The call_VM checks for exception, so we should never return here.
-    __ should_not_reach_here();
-    return;
-  }
-
   prepare_invoke(byte_no, Rmethod, Rret_addr, Rscratch1, noreg, Rflags, Rscratch2);
 
   // Profile this call.
@@ -3485,12 +3475,6 @@ void TemplateTable::invokehandle(int byte_no) {
                  Rmethod   = R22_tmp2,
                  Rscratch1 = R11_scratch1,
                  Rscratch2 = R12_scratch2;
-
-  if (!EnableInvokeDynamic) {
-    // Rewriter does not generate this bytecode.
-    __ should_not_reach_here();
-    return;
-  }
 
   prepare_invoke(byte_no, Rmethod, Rret_addr, Rscratch1, Rrecv, Rflags, Rscratch2);
   __ verify_method_ptr(Rmethod);

@@ -543,7 +543,6 @@ const char* Klass::external_name() const {
   if (oop_is_instance()) {
     InstanceKlass* ik = (InstanceKlass*) this;
     if (ik->is_anonymous()) {
-      assert(EnableInvokeDynamic, "");
       intptr_t hash = 0;
       if (ik->java_mirror() != NULL) {
         // java_mirror might not be created yet, return 0 as hash.

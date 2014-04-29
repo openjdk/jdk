@@ -1848,7 +1848,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
           JavaThread::popframe_inactive);
 
 #if INCLUDE_JVMTI
-  if (EnableInvokeDynamic) {
+  {
     Label L_done;
     const Register local0 = r14;
 
