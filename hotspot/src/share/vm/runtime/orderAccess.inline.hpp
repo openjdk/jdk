@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +23,52 @@
  *
  */
 
-#ifndef OS_LINUX_VM_THREAD_LINUX_INLINE_HPP
-#define OS_LINUX_VM_THREAD_LINUX_INLINE_HPP
+#ifndef SHARE_VM_RUNTIME_ORDERACCESS_INLINE_HPP
+#define SHARE_VM_RUNTIME_ORDERACCESS_INLINE_HPP
 
-#ifndef SHARE_VM_RUNTIME_THREAD_INLINE_HPP_SCOPE
-#error "This file should only be included from thread.inline.hpp"
-#endif
+#include "runtime/orderAccess.hpp"
 
-#include "runtime/prefetch.hpp"
-#include "runtime/thread.hpp"
-#include "runtime/threadLocalStorage.hpp"
+// Linux
 #ifdef TARGET_OS_ARCH_linux_x86
-# include "prefetch_linux_x86.inline.hpp"
+# include "orderAccess_linux_x86.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_sparc
-# include "prefetch_linux_sparc.inline.hpp"
+# include "orderAccess_linux_sparc.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_zero
-# include "prefetch_linux_zero.inline.hpp"
+# include "orderAccess_linux_zero.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_arm
-# include "prefetch_linux_arm.inline.hpp"
+# include "orderAccess_linux_arm.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_ppc
-# include "prefetch_linux_ppc.inline.hpp"
+# include "orderAccess_linux_ppc.inline.hpp"
 #endif
 
-// Contains inlined functions for class Thread and ThreadLocalStorage
+// Solaris
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "orderAccess_solaris_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "orderAccess_solaris_sparc.inline.hpp"
+#endif
 
-inline void ThreadLocalStorage::pd_invalidate_all() {} // nothing to do
+// Windows
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "orderAccess_windows_x86.inline.hpp"
+#endif
 
-#endif // OS_LINUX_VM_THREAD_LINUX_INLINE_HPP
+// AIX
+#ifdef TARGET_OS_ARCH_aix_ppc
+# include "orderAccess_aix_ppc.inline.hpp"
+#endif
+
+// BSD
+#ifdef TARGET_OS_ARCH_bsd_x86
+# include "orderAccess_bsd_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_zero
+# include "orderAccess_bsd_zero.inline.hpp"
+#endif
+
+#endif // SHARE_VM_RUNTIME_ORDERACCESS_INLINE_HPP
