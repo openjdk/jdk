@@ -30,11 +30,9 @@
  *
  * @author  Mandy Chung
  *
- * @build LowMemoryTest MemoryUtil
- * @run main/othervm/timeout=600 LowMemoryTest
- * @run main/othervm/timeout=600 -XX:+UseConcMarkSweepGC LowMemoryTest
- * @run main/othervm/timeout=600 -XX:+UseParallelGC LowMemoryTest
- * @run main/othervm/timeout=600 -XX:+UseSerialGC LowMemoryTest
+ * @library /lib/testlibrary/
+ * @build LowMemoryTest MemoryUtil RunUtil
+ * @run main/timeout=600 LowMemoryTest
  */
 
 import java.lang.management.*;
@@ -53,6 +51,20 @@ public class LowMemoryTest {
     private static final int NUM_TRIGGERS = 5;
     private static final int NUM_CHUNKS = 2;
     private static long chunkSize;
+
+    /**
+     * Run the test multiple times with different GC versions.
+     * First with default command line specified by the framework.
+     * Then with GC versions specified by the test.
+     */
+    public static void main(String a[]) throws Throwable {
+        final String main = "LowMemoryTest$TestMain";
+        RunUtil.runTestKeepGcOpts(main);
+        RunUtil.runTestClearGcOpts(main, "-XX:+UseSerialGC");
+        RunUtil.runTestClearGcOpts(main, "-XX:+UseParallelGC");
+        RunUtil.runTestClearGcOpts(main, "-XX:+UseG1GC");
+        RunUtil.runTestClearGcOpts(main, "-XX:+UseConcMarkSweepGC");
+    }
 
     private static volatile boolean listenerInvoked = false;
     static class SensorListener implements NotificationListener {
@@ -107,77 +119,80 @@ public class LowMemoryTest {
     }
 
     private static long newThreshold;
-    public static void main(String args[]) throws Exception {
-        if (args.length > 0 && args[0].equals("trace")) {
-            trace = true;
-        }
 
-        // Find the Old generation which supports low memory detection
-        ListIterator iter = pools.listIterator();
-        while (iter.hasNext()) {
-            MemoryPoolMXBean p = (MemoryPoolMXBean) iter.next();
-            if (p.getType() == MemoryType.HEAP &&
-                    p.isUsageThresholdSupported()) {
-                mpool = p;
-                if (trace) {
-                    System.out.println("Selected memory pool for low memory " +
-                        "detection.");
-                    MemoryUtil.printMemoryPool(mpool);
-                }
-                break;
+    private static class TestMain {
+        public static void main(String args[]) throws Exception {
+            if (args.length > 0 && args[0].equals("trace")) {
+                trace = true;
             }
-        }
 
-        TestListener listener = new TestListener();
-        SensorListener l2 = new SensorListener();
-        NotificationEmitter emitter = (NotificationEmitter) mm;
-        emitter.addNotificationListener(listener, null, null);
-        emitter.addNotificationListener(l2, null, null);
+            // Find the Old generation which supports low memory detection
+            ListIterator iter = pools.listIterator();
+            while (iter.hasNext()) {
+                MemoryPoolMXBean p = (MemoryPoolMXBean) iter.next();
+                if (p.getType() == MemoryType.HEAP &&
+                    p.isUsageThresholdSupported()) {
+                    mpool = p;
+                    if (trace) {
+                        System.out.println("Selected memory pool for low memory " +
+                            "detection.");
+                        MemoryUtil.printMemoryPool(mpool);
+                    }
+                    break;
+                }
+            }
 
-        Thread allocator = new AllocatorThread();
-        Thread sweeper = new SweeperThread();
+            TestListener listener = new TestListener();
+            SensorListener l2 = new SensorListener();
+            NotificationEmitter emitter = (NotificationEmitter) mm;
+            emitter.addNotificationListener(listener, null, null);
+            emitter.addNotificationListener(l2, null, null);
 
-        // Now set threshold
-        MemoryUsage mu = mpool.getUsage();
-        chunkSize = (mu.getMax() - mu.getUsed()) / 20;
-        newThreshold = mu.getUsed() + (chunkSize * NUM_CHUNKS);
+            Thread allocator = new AllocatorThread();
+            Thread sweeper = new SweeperThread();
 
-        System.out.println("Setting threshold for " + mpool.getName() +
-            " from " + mpool.getUsageThreshold() + " to " + newThreshold +
-            ".  Current used = " + mu.getUsed());
-        mpool.setUsageThreshold(newThreshold);
+            // Now set threshold
+            MemoryUsage mu = mpool.getUsage();
+            chunkSize = (mu.getMax() - mu.getUsed()) / 20;
+            newThreshold = mu.getUsed() + (chunkSize * NUM_CHUNKS);
 
-        if (mpool.getUsageThreshold() != newThreshold) {
-            throw new RuntimeException("TEST FAILED: " +
+            System.out.println("Setting threshold for " + mpool.getName() +
+                " from " + mpool.getUsageThreshold() + " to " + newThreshold +
+                ".  Current used = " + mu.getUsed());
+            mpool.setUsageThreshold(newThreshold);
+
+            if (mpool.getUsageThreshold() != newThreshold) {
+                throw new RuntimeException("TEST FAILED: " +
                 "Threshold for Memory pool " + mpool.getName() +
                 "is " + mpool.getUsageThreshold() + " but expected to be" +
                 newThreshold);
-        }
+            }
 
 
-        allocator.start();
-        // Force Allocator start first
-        phaser.arriveAndAwaitAdvance();
-        sweeper.start();
-
-
-        try {
-            allocator.join();
-            // Wait until AllocatorThread's done
+            allocator.start();
+            // Force Allocator start first
             phaser.arriveAndAwaitAdvance();
-            sweeper.join();
-        } catch (InterruptedException e) {
-            System.out.println("Unexpected exception:" + e);
-            testFailed = true;
+            sweeper.start();
+
+
+            try {
+                allocator.join();
+                // Wait until AllocatorThread's done
+                phaser.arriveAndAwaitAdvance();
+                sweeper.join();
+            } catch (InterruptedException e) {
+                System.out.println("Unexpected exception:" + e);
+                testFailed = true;
+            }
+
+            listener.checkResult();
+
+            if (testFailed)
+                throw new RuntimeException("TEST FAILED.");
+
+            System.out.println(RunUtil.successMessage);
+
         }
-
-        listener.checkResult();
-
-        if (testFailed)
-            throw new RuntimeException("TEST FAILED.");
-
-        System.out.println("Test passed.");
-
     }
 
     private static void goSleep(long ms) {

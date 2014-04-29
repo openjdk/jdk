@@ -94,6 +94,10 @@ SUNWprivate_1.1 {
 		Java_sun_net_sdp_SdpSupport_create0;
 		Java_sun_net_spi_DefaultProxySelector_init;
 		Java_sun_net_spi_DefaultProxySelector_getSystemProxy;
+		Java_sun_net_ExtendedOptionsImpl_init;
+		Java_sun_net_ExtendedOptionsImpl_setFlowOption;
+		Java_sun_net_ExtendedOptionsImpl_getFlowOption;
+		Java_sun_net_ExtendedOptionsImpl_flowSupported;
 		NET_AllocSockaddr;
 		NET_SockaddrToInetAddress;
                 NET_SockaddrEqualsInetAddress;

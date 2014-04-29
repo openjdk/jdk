@@ -76,7 +76,7 @@ int addAudioDevice(char* path, AudioDevicePath* adPath, int* count) {
             adPath[*count].st_ino = statBuf.st_ino;
             adPath[*count].st_dev = statBuf.st_dev;
             strncpy(adPath[*count].path, path, MAX_NAME_LENGTH);
-            adPath[*count].path[MAX_NAME_LENGTH] = 0;
+            adPath[*count].path[MAX_NAME_LENGTH - 1] = 0;
             (*count)++;
             TRACE1("Added audio device %s\n", path);
         }

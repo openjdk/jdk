@@ -89,6 +89,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         */
         TOPLEVEL,
 
+        /** Package level definitions.
+         */
+        PACKAGEDEF,
+
         /** Import clauses, of type Import.
          */
         IMPORT,
@@ -478,9 +482,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * Everything in one source file is kept in a {@linkplain JCCompilationUnit} structure.
      */
     public static class JCCompilationUnit extends JCTree implements CompilationUnitTree {
-        public List<JCAnnotation> packageAnnotations;
-        /** The tree representing the package clause. */
-        public JCExpression pid;
         /** All definitions in this file (ClassDef, Import, and Skip) */
         public List<JCTree> defs;
         /* The source file name. */
@@ -499,39 +500,39 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /* An object encapsulating ending positions of source ranges indexed by
          * the tree nodes they belong to. Defined only if option -Xjcov is set. */
         public EndPosTable endPositions = null;
-        protected JCCompilationUnit(List<JCAnnotation> packageAnnotations,
-                        JCExpression pid,
-                        List<JCTree> defs,
-                        JavaFileObject sourcefile,
-                        PackageSymbol packge,
-                        ImportScope namedImportScope,
-                        StarImportScope starImportScope) {
-            this.packageAnnotations = packageAnnotations;
-            this.pid = pid;
+        protected JCCompilationUnit(List<JCTree> defs) {
             this.defs = defs;
-            this.sourcefile = sourcefile;
-            this.packge = packge;
-            this.namedImportScope = namedImportScope;
-            this.starImportScope = starImportScope;
         }
         @Override
         public void accept(Visitor v) { v.visitTopLevel(this); }
 
         public Kind getKind() { return Kind.COMPILATION_UNIT; }
-        public List<JCAnnotation> getPackageAnnotations() {
-            return packageAnnotations;
+
+        public JCPackageDecl getPackage() {
+            // PackageDecl must be the first entry if it exists
+            if (!defs.isEmpty() && defs.head.hasTag(PACKAGEDEF))
+                return (JCPackageDecl)defs.head;
+            return null;
         }
+        public List<JCAnnotation> getPackageAnnotations() {
+            JCPackageDecl pd = getPackage();
+            return pd != null ? pd.getAnnotations() : List.<JCAnnotation>nil();
+        }
+        public ExpressionTree getPackageName() {
+            JCPackageDecl pd = getPackage();
+            return pd != null ? pd.getPackageName() : null;
+        }
+
         public List<JCImport> getImports() {
             ListBuffer<JCImport> imports = new ListBuffer<>();
             for (JCTree tree : defs) {
                 if (tree.hasTag(IMPORT))
                     imports.append((JCImport)tree);
-                else if (!tree.hasTag(SKIP))
+                else if (!tree.hasTag(PACKAGEDEF) && !tree.hasTag(SKIP))
                     break;
             }
             return imports.toList();
         }
-        public JCExpression getPackageName() { return pid; }
         public JavaFileObject getSourceFile() {
             return sourcefile;
         }
@@ -541,7 +542,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCTree> getTypeDecls() {
             List<JCTree> typeDefs;
             for (typeDefs = defs; !typeDefs.isEmpty(); typeDefs = typeDefs.tail)
-                if (!typeDefs.head.hasTag(IMPORT))
+                if (!typeDefs.head.hasTag(PACKAGEDEF) && !typeDefs.head.hasTag(IMPORT))
                     break;
             return typeDefs;
         }
@@ -553,6 +554,39 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return TOPLEVEL;
+        }
+    }
+
+    /**
+     * Package definition.
+     */
+    public static class JCPackageDecl extends JCTree implements PackageTree {
+        public List<JCAnnotation> annotations;
+        /** The tree representing the package clause. */
+        public JCExpression pid;
+        public PackageSymbol packge;
+        public JCPackageDecl(List<JCAnnotation> annotations, JCExpression pid) {
+            this.annotations = annotations;
+            this.pid = pid;
+        }
+        @Override
+        public void accept(Visitor v) { v.visitPackageDef(this); }
+        public Kind getKind() {
+            return Kind.PACKAGE;
+        }
+        public List<JCAnnotation> getAnnotations() {
+            return annotations;
+        }
+        public JCExpression getPackageName() {
+            return pid;
+        }
+        @Override
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitPackage(this, d);
+        }
+        @Override
+        public Tag getTag() {
+            return PACKAGEDEF;
         }
     }
 
@@ -2438,9 +2472,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /** An interface for tree factories
      */
     public interface Factory {
-        JCCompilationUnit TopLevel(List<JCAnnotation> packageAnnotations,
-                                   JCExpression pid,
-                                   List<JCTree> defs);
+        JCCompilationUnit TopLevel(List<JCTree> defs);
+        JCPackageDecl PackageDecl(List<JCAnnotation> annotations,
+                                  JCExpression pid);
         JCImport Import(JCTree qualid, boolean staticImport);
         JCClassDecl ClassDef(JCModifiers mods,
                           Name name,
@@ -2528,6 +2562,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static abstract class Visitor {
         public void visitTopLevel(JCCompilationUnit that)    { visitTree(that); }
+        public void visitPackageDef(JCPackageDecl that)      { visitTree(that); }
         public void visitImport(JCImport that)               { visitTree(that); }
         public void visitClassDef(JCClassDecl that)          { visitTree(that); }
         public void visitMethodDef(JCMethodDecl that)        { visitTree(that); }

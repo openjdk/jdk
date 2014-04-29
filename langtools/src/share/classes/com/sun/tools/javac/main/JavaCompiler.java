@@ -601,8 +601,7 @@ public class JavaCompiler {
      */
     protected JCCompilationUnit parse(JavaFileObject filename, CharSequence content) {
         long msec = now();
-        JCCompilationUnit tree = make.TopLevel(List.<JCTree.JCAnnotation>nil(),
-                                      null, List.<JCTree>nil());
+        JCCompilationUnit tree = make.TopLevel(List.<JCTree>nil());
         if (content != null) {
             if (verbose) {
                 log.printVerbose("parsing.started", filename);
@@ -689,7 +688,7 @@ public class JavaCompiler {
                                       : make.Select(tree, names.fromString(s));
             }
             JCCompilationUnit toplevel =
-                make.TopLevel(List.<JCTree.JCAnnotation>nil(), null, List.<JCTree>nil());
+                make.TopLevel(List.<JCTree>nil());
             toplevel.packge = syms.unnamedPackage;
             return attr.attribIdent(tree, toplevel);
         } finally {
@@ -768,7 +767,7 @@ public class JavaCompiler {
                 tree = parse(filename, filename.getCharContent(false));
             } catch (IOException e) {
                 log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
-                tree = make.TopLevel(List.<JCTree.JCAnnotation>nil(), null, List.<JCTree>nil());
+                tree = make.TopLevel(List.<JCTree>nil());
             } finally {
                 log.useSource(prev);
             }
@@ -1440,7 +1439,7 @@ public class JavaCompiler {
             make.at(Position.FIRSTPOS);
             TreeMaker localMake = make.forToplevel(env.toplevel);
 
-            if (env.tree instanceof JCCompilationUnit) {
+            if (env.tree.hasTag(JCTree.Tag.PACKAGEDEF)) {
                 if (!(stubOutput || sourceOutput || printFlat)) {
                     if (shouldStop(CompileState.LOWER))
                         return;

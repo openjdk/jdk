@@ -123,6 +123,10 @@ void ciSymbol::print_symbol_on(outputStream *st) {
   GUARDED_VM_ENTRY(get_symbol()->print_symbol_on(st);)
 }
 
+const char* ciSymbol::as_klass_external_name() const {
+  GUARDED_VM_ENTRY(return get_symbol()->as_klass_external_name(););
+}
+
 // ------------------------------------------------------------------
 // ciSymbol::make_impl
 //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,38 +37,45 @@
 
 public class TestClassTree extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4632553-4973607";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "package-tree.html",
-            "<ul>" + NL + "<li type=\"circle\">pkg.<a href=\"../pkg/ParentClass.html\" " +
+        { "pkg/package-tree.html",
+            "<ul>\n" +
+            "<li type=\"circle\">pkg.<a href=\"../pkg/ParentClass.html\" " +
             "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a>"},
 
-        {BUG_ID + FS + "pkg" + FS + "package-tree.html",
-            "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>" + NL +
-            "<ul>" + NL + "<li type=\"circle\">pkg.<a href=\"../pkg/AnnotationType.html\" " +
+        { "pkg/package-tree.html",
+            "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>\n" +
+            "<ul>\n" +
+            "<li type=\"circle\">pkg.<a href=\"../pkg/AnnotationType.html\" " +
             "title=\"annotation in pkg\"><span class=\"typeNameLink\">AnnotationType</span></a> " +
-            "(implements java.lang.annotation.Annotation)</li>" + NL + "</ul>"},
+            "(implements java.lang.annotation.Annotation)</li>\n" +
+            "</ul>"},
 
-        {BUG_ID + FS + "pkg" + FS + "package-tree.html",
-            "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>" + NL + "<ul>" + NL +
-            "<li type=\"circle\">java.lang.Object" + NL + "<ul>" + NL +
+        { "pkg/package-tree.html",
+            "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>\n" +
+            "<ul>\n" +
+            "<li type=\"circle\">java.lang.Object\n" +
+            "<ul>\n" +
             "<li type=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang." +
-            "Comparable&lt;T&gt;, java.io.Serializable)" + NL + "<ul>" + NL +
+            "Comparable&lt;T&gt;, java.io.Serializable)\n" +
+            "<ul>\n" +
             "<li type=\"circle\">pkg.<a href=\"../pkg/Coin.html\" " +
-            "title=\"enum in pkg\"><span class=\"typeNameLink\">Coin</span></a></li>" + NL +
-            "</ul>" + NL + "</li>" + NL + "</ul>" + NL + "</li>" + NL + "</ul>"
+            "title=\"enum in pkg\"><span class=\"typeNameLink\">Coin</span></a></li>\n" +
+            "</ul>\n" +
+            "</li>\n" +
+            "</ul>\n" +
+            "</li>\n" +
+            "</ul>"
         },
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg" + FS + "package-tree.html",
+        { "pkg/package-tree.html",
             "<li type=\"circle\">class pkg.<a href=\"../pkg/ParentClass.html\" " +
             "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a></li>"}
         };
@@ -79,21 +86,7 @@ public class TestClassTree extends JavadocTester {
      */
     public static void main(String[] args) {
         TestClassTree tester = new TestClassTree();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

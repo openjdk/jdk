@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,12 @@ import java.io.*;
  */
 public class AccessH1 {
 
+    protected static final String NL = System.getProperty("line.separator");
+
     private static final String BUGID = "4636667-7052425";
     private static final String BUGNAME = "AccessH1";
-    private static final String FS = System.getProperty("file.separator");
-    private static final String PS = System.getProperty("path.separator");
-    private static final String LS = System.getProperty("line.separator");
-    private static final String TMPDEST_DIR1 = "." + FS + "docs1" + FS;
-    private static final String TMPDEST_DIR2 = "." + FS + "docs2" + FS;
+    private static final String TMPDEST_DIR1 = "./docs1/";
+    private static final String TMPDEST_DIR2 = "./docs2/";
 
     // Subtest number.  Needed because runResultsOnHTML is run twice,
     // and subtestNum should increment across subtest runs.
@@ -85,7 +84,8 @@ public class AccessH1 {
     private static final String[][] testArray = {
         // Test the style sheet
         {
-            "h1 {" + LS + "    font-size:20px;" + LS +
+            "h1 {\n" +
+            "    font-size:20px;\n" +
             "}",
             TMPDEST_DIR1 + "stylesheet.css"
         },
@@ -161,6 +161,6 @@ public class AccessH1 {
     }
 
     public static int findString(String fileString, String stringToFind) {
-        return fileString.indexOf(stringToFind);
+        return fileString.replace(NL, "\n").indexOf(stringToFind);
     }
 }

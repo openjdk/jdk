@@ -154,7 +154,6 @@ cmsIOHANDLER*  CMSEXPORT cmsOpenIOhandlerFromNULL(cmsContext ContextID)
     return iohandler;
 
 Error:
-    if (fm) _cmsFree(ContextID, fm);
     if (iohandler) _cmsFree(ContextID, iohandler);
     return NULL;
 
@@ -223,11 +222,16 @@ cmsUInt32Number MemoryTell(struct _cms_io_handler* iohandler)
 
 // Writes data to memory, also keeps used space for further reference.
 static
-cmsBool  MemoryWrite(struct _cms_io_handler* iohandler, cmsUInt32Number size, const void *Ptr)
+cmsBool MemoryWrite(struct _cms_io_handler* iohandler, cmsUInt32Number size, const void *Ptr)
 {
     FILEMEM* ResData = (FILEMEM*) iohandler ->stream;
 
     if (ResData == NULL) return FALSE; // Housekeeping
+
+    // Check for available space. Clip.
+    if (iohandler ->UsedSpace + size > ResData->Size) {
+        size = ResData ->Size - iohandler ->UsedSpace;
+    }
 
     if (size == 0) return TRUE;     // Write zero bytes is ok, but does nothing
 
@@ -350,7 +354,7 @@ cmsUInt32Number FileRead(cmsIOHANDLER* iohandler, void *Buffer, cmsUInt32Number 
     return nReaded;
 }
 
-// Position file pointer in the file
+// Postion file pointer in the file
 static
 cmsBool  FileSeek(cmsIOHANDLER* iohandler, cmsUInt32Number offset)
 {
@@ -389,12 +393,14 @@ cmsBool  FileClose(cmsIOHANDLER* iohandler)
     return TRUE;
 }
 
-// Create a iohandler for disk based files. if FileName is NULL, then 'stream' member is also set
-// to NULL and no real writting is performed. This only happens in writting access mode
+// Create a iohandler for disk based files.
 cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromFile(cmsContext ContextID, const char* FileName, const char* AccessMode)
 {
     cmsIOHANDLER* iohandler = NULL;
     FILE* fm = NULL;
+
+    _cmsAssert(FileName != NULL);
+    _cmsAssert(AccessMode != NULL);
 
     iohandler = (cmsIOHANDLER*) _cmsMallocZero(ContextID, sizeof(cmsIOHANDLER));
     if (iohandler == NULL) return NULL;
@@ -432,11 +438,8 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromFile(cmsContext ContextID, const cha
     iohandler ->UsedSpace = 0;
 
     // Keep track of the original file
-    if (FileName != NULL)  {
-
-        strncpy(iohandler -> PhysicalFile, FileName, sizeof(iohandler -> PhysicalFile)-1);
-        iohandler -> PhysicalFile[sizeof(iohandler -> PhysicalFile)-1] = 0;
-    }
+    strncpy(iohandler -> PhysicalFile, FileName, sizeof(iohandler -> PhysicalFile)-1);
+    iohandler -> PhysicalFile[sizeof(iohandler -> PhysicalFile)-1] = 0;
 
     iohandler ->Read    = FileRead;
     iohandler ->Seek    = FileSeek;
@@ -616,6 +619,31 @@ cmsBool CMSEXPORT cmsIsTag(cmsHPROFILE hProfile, cmsTagSignature sig)
        return _cmsSearchTag(Icc, sig, FALSE) >= 0;
 }
 
+/*
+ * Enforces that the profile version is per. spec.
+ * Operates on the big endian bytes from the profile.
+ * Called before converting to platform endianness.
+ * Byte 0 is BCD major version, so max 9.
+ * Byte 1 is 2 BCD digits, one per nibble.
+ * Reserved bytes 2 & 3 must be 0.
+ */
+static cmsUInt32Number _validatedVersion(cmsUInt32Number DWord)
+{
+    cmsUInt8Number* pByte = (cmsUInt8Number*)&DWord;
+    cmsUInt8Number temp1;
+    cmsUInt8Number temp2;
+
+    if (*pByte > 0x09) *pByte = (cmsUInt8Number)9;
+    temp1 = *(pByte+1) & 0xf0;
+    temp2 = *(pByte+1) & 0x0f;
+    if (temp1 > 0x90) temp1 = 0x90;
+    if (temp2 > 9) temp2 = 0x09;
+    *(pByte+1) = (cmsUInt8Number)(temp1 | temp2);
+    *(pByte+2) = (cmsUInt8Number)0;
+    *(pByte+3) = (cmsUInt8Number)0;
+
+    return DWord;
+}
 
 // Read profile header and validate it
 cmsBool _cmsReadHeader(_cmsICCPROFILE* Icc)
@@ -643,12 +671,15 @@ cmsBool _cmsReadHeader(_cmsICCPROFILE* Icc)
     Icc -> DeviceClass     = (cmsProfileClassSignature) _cmsAdjustEndianess32(Header.deviceClass);
     Icc -> ColorSpace      = (cmsColorSpaceSignature)   _cmsAdjustEndianess32(Header.colorSpace);
     Icc -> PCS             = (cmsColorSpaceSignature)   _cmsAdjustEndianess32(Header.pcs);
+
     Icc -> RenderingIntent = _cmsAdjustEndianess32(Header.renderingIntent);
     Icc -> flags           = _cmsAdjustEndianess32(Header.flags);
     Icc -> manufacturer    = _cmsAdjustEndianess32(Header.manufacturer);
     Icc -> model           = _cmsAdjustEndianess32(Header.model);
+    Icc -> creator         = _cmsAdjustEndianess32(Header.creator);
+
     _cmsAdjustEndianess64(&Icc -> attributes, &Header.attributes);
-    Icc -> Version         = _cmsAdjustEndianess32(Header.version);
+    Icc -> Version         = _cmsAdjustEndianess32(_validatedVersion(Header.version));
 
     // Get size as reported in header
     HeaderSize = _cmsAdjustEndianess32(Header.size);
@@ -815,27 +846,32 @@ void CMSEXPORT cmsSetHeaderFlags(cmsHPROFILE hProfile, cmsUInt32Number Flags)
 cmsUInt32Number CMSEXPORT cmsGetHeaderManufacturer(cmsHPROFILE hProfile)
 {
     _cmsICCPROFILE*  Icc = (_cmsICCPROFILE*) hProfile;
-    return (cmsUInt32Number) Icc ->manufacturer;
+    return Icc ->manufacturer;
 }
 
 void CMSEXPORT cmsSetHeaderManufacturer(cmsHPROFILE hProfile, cmsUInt32Number manufacturer)
 {
     _cmsICCPROFILE*  Icc = (_cmsICCPROFILE*) hProfile;
-    Icc -> manufacturer = (cmsUInt32Number) manufacturer;
+    Icc -> manufacturer = manufacturer;
+}
+
+cmsUInt32Number CMSEXPORT cmsGetHeaderCreator(cmsHPROFILE hProfile)
+{
+    _cmsICCPROFILE*  Icc = (_cmsICCPROFILE*) hProfile;
+    return Icc ->creator;
 }
 
 cmsUInt32Number CMSEXPORT cmsGetHeaderModel(cmsHPROFILE hProfile)
 {
     _cmsICCPROFILE*  Icc = (_cmsICCPROFILE*) hProfile;
-    return (cmsUInt32Number) Icc ->model;
+    return Icc ->model;
 }
 
 void CMSEXPORT cmsSetHeaderModel(cmsHPROFILE hProfile, cmsUInt32Number model)
 {
     _cmsICCPROFILE*  Icc = (_cmsICCPROFILE*) hProfile;
-    Icc -> model = (cmsUInt32Number) model;
+    Icc -> model = model;
 }
-
 
 void CMSEXPORT cmsGetHeaderAttributes(cmsHPROFILE hProfile, cmsUInt64Number* Flags)
 {
@@ -1073,7 +1109,6 @@ cmsHPROFILE CMSEXPORT cmsOpenProfileFromMem(const void* MemPtr, cmsUInt32Number 
     return cmsOpenProfileFromMemTHR(NULL, MemPtr, dwSize);
 }
 
-
 static
 cmsBool SanityCheck(_cmsICCPROFILE* profile)
 {
@@ -1112,10 +1147,12 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
     cmsIOHANDLER* io = Icc ->IOhandler;
     cmsTagDescriptor* TagDescriptor;
     cmsTagTypeSignature TypeBase;
+    cmsTagTypeSignature Type;
     cmsTagTypeHandler* TypeHandler;
+    cmsFloat64Number   Version = cmsGetProfileVersion((cmsHPROFILE) Icc);
+    cmsTagTypeHandler LocalTypeHandler;
 
     for (i=0; i < Icc -> TagCount; i++) {
-
 
         if (Icc ->TagNames[i] == 0) continue;
 
@@ -1168,7 +1205,16 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
             TagDescriptor = _cmsGetTagDescriptor(Icc -> TagNames[i]);
             if (TagDescriptor == NULL) continue;                        // Unsupported, ignore it
 
-            TypeHandler = Icc ->TagTypeHandlers[i];
+            if (TagDescriptor ->DecideType != NULL) {
+
+                Type = TagDescriptor ->DecideType(Version, Data);
+            }
+            else {
+
+                Type = TagDescriptor ->SupportedTypes[0];
+            }
+
+            TypeHandler =  _cmsGetTagTypeHandler(Type);
 
             if (TypeHandler == NULL) {
                 cmsSignalError(Icc ->ContextID, cmsERROR_INTERNAL, "(Internal) no handler for tag %x", Icc -> TagNames[i]);
@@ -1179,9 +1225,10 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
             if (!_cmsWriteTypeBase(io, TypeBase))
                 return FALSE;
 
-            TypeHandler ->ContextID  = Icc ->ContextID;
-            TypeHandler ->ICCVersion = Icc ->Version;
-            if (!TypeHandler ->WritePtr(TypeHandler, io, Data, TagDescriptor ->ElemCount)) {
+            LocalTypeHandler = *TypeHandler;
+            LocalTypeHandler.ContextID  = Icc ->ContextID;
+            LocalTypeHandler.ICCVersion = Icc ->Version;
+            if (!LocalTypeHandler.WritePtr(&LocalTypeHandler, io, Data, TagDescriptor ->ElemCount)) {
 
                 char String[5];
 
@@ -1318,8 +1365,8 @@ cmsBool CMSEXPORT cmsSaveProfileToMem(cmsHPROFILE hProfile, void *MemPtr, cmsUIn
     // Should we just calculate the needed space?
     if (MemPtr == NULL) {
 
-        *BytesNeeded = cmsSaveProfileToIOhandler(hProfile, NULL);
-        return (*BytesNeeded == 0 ? FALSE : TRUE);
+           *BytesNeeded =  cmsSaveProfileToIOhandler(hProfile, NULL);
+            return (*BytesNeeded == 0 ? FALSE : TRUE);
     }
 
     // That is a real write operation
@@ -1357,10 +1404,11 @@ cmsBool  CMSEXPORT cmsCloseProfile(cmsHPROFILE hProfile)
             cmsTagTypeHandler* TypeHandler = Icc ->TagTypeHandlers[i];
 
             if (TypeHandler != NULL) {
+                cmsTagTypeHandler LocalTypeHandler = *TypeHandler;
 
-                TypeHandler ->ContextID = Icc ->ContextID;              // As an additional parameters
-                TypeHandler ->ICCVersion = Icc ->Version;
-                TypeHandler ->FreePtr(TypeHandler, Icc -> TagPtrs[i]);
+                LocalTypeHandler.ContextID = Icc ->ContextID;              // As an additional parameters
+                LocalTypeHandler.ICCVersion = Icc ->Version;
+                LocalTypeHandler.FreePtr(&LocalTypeHandler, Icc -> TagPtrs[i]);
             }
             else
                 _cmsFree(Icc ->ContextID, Icc ->TagPtrs[i]);
@@ -1404,6 +1452,7 @@ void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
     _cmsICCPROFILE* Icc = (_cmsICCPROFILE*) hProfile;
     cmsIOHANDLER* io = Icc ->IOhandler;
     cmsTagTypeHandler* TypeHandler;
+    cmsTagTypeHandler LocalTypeHandler;
     cmsTagDescriptor*  TagDescriptor;
     cmsTagTypeSignature BaseType;
     cmsUInt32Number Offset, TagSize;
@@ -1427,7 +1476,7 @@ void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
 
     // Seek to its location
     if (!io -> Seek(io, Offset))
-            return NULL;
+        return NULL;
 
     // Search for support on this tag
     TagDescriptor = _cmsGetTagDescriptor(sig);
@@ -1444,14 +1493,15 @@ void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
     // Get type handler
     TypeHandler = _cmsGetTagTypeHandler(BaseType);
     if (TypeHandler == NULL) return NULL;
+    LocalTypeHandler = *TypeHandler;
 
 
     // Read the tag
     Icc -> TagTypeHandlers[n] = TypeHandler;
 
-    TypeHandler ->ContextID = Icc ->ContextID;
-    TypeHandler ->ICCVersion = Icc ->Version;
-    Icc -> TagPtrs[n] = TypeHandler ->ReadPtr(TypeHandler, io, &ElemCount, TagSize);
+    LocalTypeHandler.ContextID = Icc ->ContextID;
+    LocalTypeHandler.ICCVersion = Icc ->Version;
+    Icc -> TagPtrs[n] = LocalTypeHandler.ReadPtr(&LocalTypeHandler, io, &ElemCount, TagSize);
 
     // The tag type is supported, but something wrong happend and we cannot read the tag.
     // let know the user about this (although it is just a warning)
@@ -1472,7 +1522,7 @@ void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
 
         _cmsTagSignature2String(String, sig);
         cmsSignalError(Icc ->ContextID, cmsERROR_CORRUPTION_DETECTED, "'%s' Inconsistent number of items: expected %d, got %d",
-                                                             String, TagDescriptor ->ElemCount, ElemCount);
+            String, TagDescriptor ->ElemCount, ElemCount);
     }
 
 
@@ -1504,6 +1554,7 @@ cmsBool CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const v
 {
     _cmsICCPROFILE* Icc = (_cmsICCPROFILE*) hProfile;
     cmsTagTypeHandler* TypeHandler = NULL;
+    cmsTagTypeHandler LocalTypeHandler;
     cmsTagDescriptor* TagDescriptor = NULL;
     cmsTagTypeSignature Type;
     int i;
@@ -1534,9 +1585,10 @@ cmsBool CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const v
 
                 if (TypeHandler != NULL) {
 
-                    TypeHandler ->ContextID = Icc ->ContextID;              // As an additional parameter
-                    TypeHandler ->ICCVersion = Icc ->Version;
-                    TypeHandler->FreePtr(TypeHandler, Icc -> TagPtrs[i]);
+                    LocalTypeHandler = *TypeHandler;
+                    LocalTypeHandler.ContextID = Icc ->ContextID;              // As an additional parameter
+                    LocalTypeHandler.ICCVersion = Icc ->Version;
+                    LocalTypeHandler.FreePtr(&LocalTypeHandler, Icc -> TagPtrs[i]);
                 }
             }
         }
@@ -1575,7 +1627,7 @@ cmsBool CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const v
         // Let the tag descriptor to decide the type base on depending on
         // the data. This is useful for example on parametric curves, where
         // curves specified by a table cannot be saved as parametric and needs
-        // to be revented to single v2-curves, even on v4 profiles.
+        // to be casted to single v2-curves, even on v4 profiles.
 
         Type = TagDescriptor ->DecideType(Version, data);
     }
@@ -1613,9 +1665,10 @@ cmsBool CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const v
     Icc ->TagSizes[i]         = 0;
     Icc ->TagOffsets[i]       = 0;
 
-    TypeHandler ->ContextID  = Icc ->ContextID;
-    TypeHandler ->ICCVersion = Icc ->Version;
-    Icc ->TagPtrs[i]         = TypeHandler ->DupPtr(TypeHandler, data, TagDescriptor ->ElemCount);
+    LocalTypeHandler = *TypeHandler;
+    LocalTypeHandler.ContextID  = Icc ->ContextID;
+    LocalTypeHandler.ICCVersion = Icc ->Version;
+    Icc ->TagPtrs[i]         = LocalTypeHandler.DupPtr(&LocalTypeHandler, data, TagDescriptor ->ElemCount);
 
     if (Icc ->TagPtrs[i] == NULL)  {
 
@@ -1642,6 +1695,7 @@ cmsInt32Number CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig
     int i;
     cmsIOHANDLER* MemIO;
     cmsTagTypeHandler* TypeHandler = NULL;
+    cmsTagTypeHandler LocalTypeHandler;
     cmsTagDescriptor* TagDescriptor = NULL;
     cmsUInt32Number rc;
     cmsUInt32Number Offset, TagSize;
@@ -1657,15 +1711,16 @@ cmsInt32Number CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig
         Offset   = Icc ->TagOffsets[i];
         TagSize  = Icc ->TagSizes[i];
 
-
         // read the data directly, don't keep copy
         if (data != NULL) {
 
             if (BufferSize < TagSize)
-                 TagSize = BufferSize;
+                TagSize = BufferSize;
 
             if (!Icc ->IOhandler ->Seek(Icc ->IOhandler, Offset)) return 0;
             if (!Icc ->IOhandler ->Read(Icc ->IOhandler, data, 1, TagSize)) return 0;
+
+            return TagSize;
         }
 
         return Icc ->TagSizes[i];
@@ -1679,9 +1734,11 @@ cmsInt32Number CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig
 
             TagSize  = Icc ->TagSizes[i];
             if (BufferSize < TagSize)
-                       TagSize = BufferSize;
+                TagSize = BufferSize;
 
             memmove(data, Icc ->TagPtrs[i], TagSize);
+
+            return TagSize;
         }
 
         return Icc ->TagSizes[i];
@@ -1697,7 +1754,7 @@ cmsInt32Number CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig
     if (data == NULL) {
         MemIO = cmsOpenIOhandlerFromNULL(cmsGetProfileContextID(hProfile));
     } else{
-      MemIO = cmsOpenIOhandlerFromMem(cmsGetProfileContextID(hProfile), data, BufferSize, "w");
+        MemIO = cmsOpenIOhandlerFromMem(cmsGetProfileContextID(hProfile), data, BufferSize, "w");
     }
     if (MemIO == NULL) return 0;
 
@@ -1705,20 +1762,22 @@ cmsInt32Number CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig
     TypeHandler = Icc ->TagTypeHandlers[i];
     TagDescriptor = _cmsGetTagDescriptor(sig);
     if (TagDescriptor == NULL) {
-         cmsCloseIOhandler(MemIO);
-         return 0;
+        cmsCloseIOhandler(MemIO);
+        return 0;
     }
 
+    // FIXME: No handling for TypeHandler == NULL here?
     // Serialize
-    TypeHandler ->ContextID  = Icc ->ContextID;
-    TypeHandler ->ICCVersion = Icc ->Version;
+    LocalTypeHandler = *TypeHandler;
+    LocalTypeHandler.ContextID  = Icc ->ContextID;
+    LocalTypeHandler.ICCVersion = Icc ->Version;
 
     if (!_cmsWriteTypeBase(MemIO, TypeHandler ->Signature)) {
         cmsCloseIOhandler(MemIO);
         return 0;
     }
 
-    if (!TypeHandler ->WritePtr(TypeHandler, MemIO, Object, TagDescriptor ->ElemCount)) {
+    if (!LocalTypeHandler.WritePtr(&LocalTypeHandler, MemIO, Object, TagDescriptor ->ElemCount)) {
         cmsCloseIOhandler(MemIO);
         return 0;
     }
@@ -1756,7 +1815,7 @@ cmsBool CMSEXPORT cmsWriteRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, cons
 // Using this function you can collapse several tag entries to the same block in the profile
 cmsBool CMSEXPORT cmsLinkTag(cmsHPROFILE hProfile, cmsTagSignature sig, cmsTagSignature dest)
 {
-     _cmsICCPROFILE* Icc = (_cmsICCPROFILE*) hProfile;
+    _cmsICCPROFILE* Icc = (_cmsICCPROFILE*) hProfile;
     int i;
 
     if (!_cmsNewTag(Icc, sig, &i)) return FALSE;

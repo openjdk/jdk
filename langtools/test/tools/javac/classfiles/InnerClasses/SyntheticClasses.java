@@ -41,7 +41,7 @@ public class SyntheticClasses {
 
     private void run() throws IOException, ConstantPoolException {
         File testClasses = new File(System.getProperty("test.classes"));
-        for (File classFile : testClasses.listFiles()) {
+        for (File classFile : testClasses.listFiles(f -> f.getName().endsWith(".class"))) {
             ClassFile cf = ClassFile.read(classFile);
             if (cf.getName().matches(".*\\$[0-9]+")) {
                 EnclosingMethod_attribute encl =

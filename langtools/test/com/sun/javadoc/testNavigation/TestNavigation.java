@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,36 +34,34 @@
 
 public class TestNavigation extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4131628-4664607";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "A.html", "<li>Prev&nbsp;Class</li>"},
-        {BUG_ID + FS + "pkg" + FS + "A.html",
+        { "pkg/A.html", "<li>Prev&nbsp;Class</li>"},
+        { "pkg/A.html",
             "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/A.html\" title=\"annotation in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
+        { "pkg/C.html",
             "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>"},
-        {BUG_ID + FS + "pkg" + FS + "E.html",
+        { "pkg/E.html",
             "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>"},
-        {BUG_ID + FS + "pkg" + FS + "E.html",
+        { "pkg/E.html",
             "<a href=\"../pkg/I.html\" title=\"interface in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>"},
-        {BUG_ID + FS + "pkg" + FS + "I.html",
+        { "pkg/I.html",
             "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>"},
-        {BUG_ID + FS + "pkg" + FS + "I.html", "<li>Next&nbsp;Class</li>"},
+        { "pkg/I.html", "<li>Next&nbsp;Class</li>"},
         // Test for 4664607
-        {BUG_ID + FS + "pkg" + FS + "I.html",
-            "<div class=\"skipNav\"><a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a></div>" + NL + "<a name=\"navbar.top.firstrow\">" + NL +
-            "<!--   -->" + NL + "</a>"}
+        { "pkg/I.html",
+            "<div class=\"skipNav\"><a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a></div>\n" +
+            "<a name=\"navbar.top.firstrow\">\n" +
+            "<!--   -->\n" +
+            "</a>"}
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -71,21 +69,7 @@ public class TestNavigation extends JavadocTester {
      */
     public static void main(String[] args) {
         TestNavigation tester = new TestNavigation();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

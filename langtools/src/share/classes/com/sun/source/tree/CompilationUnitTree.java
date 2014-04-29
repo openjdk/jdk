@@ -41,6 +41,12 @@ import javax.tools.JavaFileObject;
 public interface CompilationUnitTree extends Tree {
     List<? extends AnnotationTree> getPackageAnnotations();
     ExpressionTree getPackageName();
+
+    /**
+     * Return the PackageTree associated with this compilation unit.
+     * @since 1.9
+     */
+    PackageTree getPackage();
     List<? extends ImportTree> getImports();
     List<? extends Tree> getTypeDecls();
     JavaFileObject getSourceFile();

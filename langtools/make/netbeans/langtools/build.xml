@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -136,10 +136,31 @@
         </antcall>
     </target>
 
-    <target name="-show-jtreg" if="netbeans.home" unless="jtreg.passed">
-        <nbbrowse file="${jtreg.report}/report.html"/>
+    <target name="-show-jtreg-single-detect" if="netbeans.home" unless="jtreg.passed">
+        <dirname property="netbeans.jtreg.tests.dir.temp" file="${jtreg.report}/../work/${jtreg.tests}"/>
+        <basename property="netbeans.jtreg.tests.basename.temp" file="${jtreg.tests}" suffix=".java"/>
+        <property name="netbeans.jtreg.single.jtr" value="${netbeans.jtreg.tests.dir.temp}/${netbeans.jtreg.tests.basename.temp}.jtr"/>
+        <condition property="netbeans.jtreg.single">
+            <available file="${netbeans.jtreg.single.jtr}" />
+        </condition>
+        <condition property="netbeans.jtreg.multiple">
+            <not>
+                <available file="${netbeans.jtreg.single.jtr}" />
+            </not>
+        </condition>
+    </target>
+
+    <target name="-show-jtreg-single" if="netbeans.jtreg.single" depends="-show-jtreg-single-detect">
+        <nbbrowse file="${netbeans.jtreg.single.jtr}"/>
         <fail>Some tests failed; see report for details.</fail>
     </target>
+
+    <target name="-show-jtreg-multiple" if="netbeans.jtreg.multiple" depends="-show-jtreg-single-detect">
+        <nbbrowse url="file://${jtreg.report}/html/report.html#Results"/>
+        <fail>Some tests failed; see report for details.</fail>
+    </target>
+
+    <target name="-show-jtreg" depends="-show-jtreg-single-detect,-show-jtreg-single,-show-jtreg-multiple" />
 
     <!-- Debug tool in NetBeans. -->
 

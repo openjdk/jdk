@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -622,7 +622,7 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
   // this check for all access permissions.
   InstanceKlass *sk = InstanceKlass::cast(super);
   if (sk->has_miranda_methods()) {
-    if (sk->lookup_method_in_all_interfaces(name, signature, false) != NULL) {
+    if (sk->lookup_method_in_all_interfaces(name, signature, Klass::normal) != NULL) {
       return false;  // found a matching miranda; we do not need a new entry
     }
   }
@@ -698,7 +698,7 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
              && mo->method_holder() != NULL
              && mo->method_holder()->super() != NULL)
       {
-         mo = mo->method_holder()->super()->uncached_lookup_method(name, signature);
+         mo = mo->method_holder()->super()->uncached_lookup_method(name, signature, Klass::normal);
       }
       if (mo == NULL || mo->access_flags().is_private() ) {
         // super class hierarchy does not implement it or protection is different
@@ -743,7 +743,7 @@ void klassVtable::add_new_mirandas_to_lists(
       if (is_miranda(im, class_methods, default_methods, super)) { // is it a miranda at all?
         InstanceKlass *sk = InstanceKlass::cast(super);
         // check if it is a duplicate of a super's miranda
-        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), false) == NULL) {
+        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::normal) == NULL) {
           new_mirandas->append(im);
         }
         if (all_mirandas != NULL) {

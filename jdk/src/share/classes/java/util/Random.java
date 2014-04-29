@@ -874,7 +874,7 @@ class Random implements java.io.Serializable {
      * (inclusive) and one (exclusive).
      *
      * <p>A pseudorandom {@code double} value is generated as if it's the result
-     * of calling the method {@link #nextDouble()}}.
+     * of calling the method {@link #nextDouble()}.
      *
      * @param streamSize the number of values to generate
      * @return a stream of {@code double} values
@@ -897,7 +897,7 @@ class Random implements java.io.Serializable {
      * (exclusive).
      *
      * <p>A pseudorandom {@code double} value is generated as if it's the result
-     * of calling the method {@link #nextDouble()}}.
+     * of calling the method {@link #nextDouble()}.
      *
      * @implNote This method is implemented to be equivalent to {@code
      * doubles(Long.MAX_VALUE)}.

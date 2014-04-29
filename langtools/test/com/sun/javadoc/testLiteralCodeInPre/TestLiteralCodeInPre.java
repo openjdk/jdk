@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,6 @@
 
 public class TestLiteralCodeInPre extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8002387-8014636";
-    private static final String OUTPUT_DIR = BUG_ID;
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
         "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-Xdoclint:none", "pkg"
@@ -43,53 +39,51 @@ public class TestLiteralCodeInPre extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        { BUG_ID + FS + "pkg" + FS + "Test.html",
-            "no_pre()</pre>" + NL +
+        { "pkg/Test.html",
+            "no_pre()</pre>\n" +
             "<div class=\"block\">abc<code>def</code>ghi</div>" },
-        { BUG_ID + FS + "pkg" + FS + "Test.html",
-            "no_pre_extra_whitespace()</pre>" + NL +
+        { "pkg/Test.html",
+            "no_pre_extra_whitespace()</pre>\n" +
             "<div class=\"block\">abc<code>def  </code>ghi</div>" },
-        { BUG_ID + FS + "pkg" + FS + "Test.html",
-            "in_pre()</pre>" + NL +
+        { "pkg/Test.html",
+            "in_pre()</pre>\n" +
             "<div class=\"block\"><pre> abc<code>  def  </code>ghi</pre></div>" },
-        { BUG_ID + FS + "pkg" + FS + "Test.html",
-            "pre_after_text()</pre>" + NL +
+        { "pkg/Test.html",
+            "pre_after_text()</pre>\n" +
             "<div class=\"block\">xyz <pre> abc<code>  def  </code>ghi</pre></div>" },
-        { BUG_ID + FS + "pkg" + FS + "Test.html",
-            "after_pre()</pre>" + NL +
+        { "pkg/Test.html",
+            "after_pre()</pre>\n" +
             "<div class=\"block\">xyz <pre> pqr </pre> abc<code>def  </code>ghi</div>" },
-        { BUG_ID + FS + "pkg" + FS + "Test.html",
-            "back_in_pre()</pre>" + NL +
+        { "pkg/Test.html",
+            "back_in_pre()</pre>\n" +
             "<div class=\"block\">xyz <pre> pqr </pre> mno <pre> abc<code>  def  </code>ghi</pre></div>" },
-        { BUG_ID + FS + "pkg" + FS + "Test.html",
-            "typical_usage_code()</pre>" + NL +
-            "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit." + NL +
-            " Example:  <pre><code>" + NL +
-            "   line 1 &lt;T&gt; void m(T t) {" + NL +
-            "   line 2     // do something with T" + NL +
-            "   line 3 }" + NL +
-            " </code></pre>" + NL +
+        { "pkg/Test.html",
+            "typical_usage_code()</pre>\n" +
+            "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n" +
+            " Example:  <pre><code>\n" +
+            "   line 1 &lt;T&gt; void m(T t) {\n" +
+            "   line 2     // do something with T\n" +
+            "   line 3 }\n" +
+            " </code></pre>\n" +
             " and so it goes.</div>" },
-        { BUG_ID + FS + "pkg" + FS + "Test.html",
-            "typical_usage_literal()</pre>" + NL +
-            "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit." + NL +
-            " Example:  <pre>" + NL +
-            "   line 1 &lt;T&gt; void m(T t) {" + NL +
-            "   line 2     // do something with T" + NL +
-            "   line 3 }" + NL +
-            " </pre>" + NL +
+        { "pkg/Test.html",
+            "typical_usage_literal()</pre>\n" +
+            "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n" +
+            " Example:  <pre>\n" +
+            "   line 1 &lt;T&gt; void m(T t) {\n" +
+            "   line 2     // do something with T\n" +
+            "   line 3 }\n" +
+            " </pre>\n" +
             " and so it goes.</div>" },
-        { BUG_ID + FS + "pkg" + FS + "Test.html",
-            "recommended_usage_literal()</pre>" + NL +
-            "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit." + NL +
-            " Example:  <pre>" + NL +
-            "   line 1 &lt;T&gt; void m(T t) {" + NL +
-            "   line 2     // do something with T" + NL +
-            "   line 3 } </pre>" + NL +
+        { "pkg/Test.html",
+            "recommended_usage_literal()</pre>\n" +
+            "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n" +
+            " Example:  <pre>\n" +
+            "   line 1 &lt;T&gt; void m(T t) {\n" +
+            "   line 2     // do something with T\n" +
+            "   line 3 } </pre>\n" +
             " and so it goes.</div>" }
     };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -97,21 +91,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
      */
     public static void main(String[] args) {
         TestLiteralCodeInPre tester = new TestLiteralCodeInPre();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }
