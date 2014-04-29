@@ -416,6 +416,7 @@ class Compile : public Phase {
     void set_cg(CallGenerator* cg) { _cg = cg; }
   };
 
+  stringStream* _print_inlining_stream;
   GrowableArray<PrintInliningBuffer>* _print_inlining_list;
   int _print_inlining_idx;
 
@@ -433,39 +434,36 @@ class Compile : public Phase {
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
+  void print_inlining_init();
+  void print_inlining_reinit();
+  void print_inlining_commit();
+  void print_inlining_push();
+  PrintInliningBuffer& print_inlining_current();
+
+  void log_late_inline_failure(CallGenerator* cg, const char* msg);
+
  public:
 
   outputStream* print_inlining_stream() const {
-    return _print_inlining_list->adr_at(_print_inlining_idx)->ss();
+    assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
+    return _print_inlining_stream;
   }
 
-  void print_inlining_skip(CallGenerator* cg) {
-    if (_print_inlining) {
-      _print_inlining_list->adr_at(_print_inlining_idx)->set_cg(cg);
-      _print_inlining_idx++;
-      _print_inlining_list->insert_before(_print_inlining_idx, PrintInliningBuffer());
-    }
-  }
-
-  void print_inlining_insert(CallGenerator* cg) {
-    if (_print_inlining) {
-      for (int i = 0; i < _print_inlining_list->length(); i++) {
-        if (_print_inlining_list->adr_at(i)->cg() == cg) {
-          _print_inlining_list->insert_before(i+1, PrintInliningBuffer());
-          _print_inlining_idx = i+1;
-          _print_inlining_list->adr_at(i)->set_cg(NULL);
-          return;
-        }
-      }
-      ShouldNotReachHere();
-    }
-  }
+  void print_inlining_update(CallGenerator* cg);
+  void print_inlining_update_delayed(CallGenerator* cg);
+  void print_inlining_move_to(CallGenerator* cg);
+  void print_inlining_assert_ready();
+  void print_inlining_reset();
 
   void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
     stringStream ss;
     CompileTask::print_inlining(&ss, method, inline_level, bci, msg);
     print_inlining_stream()->print(ss.as_string());
   }
+
+  void log_late_inline(CallGenerator* cg);
+  void log_inline_id(CallGenerator* cg);
+  void log_inline_failure(const char* msg);
 
   void* replay_inline_data() const { return _replay_inline_data; }
 
@@ -486,6 +484,7 @@ class Compile : public Phase {
   RegMask               _FIRST_STACK_mask;      // All stack slots usable for spills (depends on frame layout)
   Arena*                _indexSet_arena;        // control IndexSet allocation within PhaseChaitin
   void*                 _indexSet_free_block_list; // free list of IndexSet bit blocks
+  int                   _interpreter_frame_size;
 
   uint                  _node_bundling_limit;
   Bundle*               _node_bundling_base;    // Information for instruction bundling
@@ -943,6 +942,7 @@ class Compile : public Phase {
   PhaseRegAlloc*    regalloc()                  { return _regalloc; }
   int               frame_slots() const         { return _frame_slots; }
   int               frame_size_in_words() const; // frame_slots in units of the polymorphic 'words'
+  int               frame_size_in_bytes() const { return _frame_slots << LogBytesPerInt; }
   RegMask&          FIRST_STACK_mask()          { return _FIRST_STACK_mask; }
   Arena*            indexSet_arena()            { return _indexSet_arena; }
   void*             indexSet_free_block_list()  { return _indexSet_free_block_list; }
@@ -953,6 +953,13 @@ class Compile : public Phase {
   bool          starts_bundle(const Node *n) const;
   bool          need_stack_bang(int frame_size_in_bytes) const;
   bool          need_register_stack_bang() const;
+
+  void  update_interpreter_frame_size(int size) {
+    if (_interpreter_frame_size < size) {
+      _interpreter_frame_size = size;
+    }
+  }
+  int           bang_size_in_bytes() const;
 
   void          set_matcher(Matcher* m)                 { _matcher = m; }
 //void          set_regalloc(PhaseRegAlloc* ra)           { _regalloc = ra; }

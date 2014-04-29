@@ -743,6 +743,13 @@ public class DocEnv {
         return p;
     }
 
+    TreePath getTreePath(JCCompilationUnit toplevel, JCPackageDecl tree) {
+        TreePath p = treePaths.get(tree);
+        if (p == null)
+            treePaths.put(tree, p = new TreePath(getTreePath(toplevel), tree));
+        return p;
+    }
+
     TreePath getTreePath(JCCompilationUnit toplevel, JCClassDecl tree) {
         TreePath p = treePaths.get(tree);
         if (p == null)

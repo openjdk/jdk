@@ -52,9 +52,6 @@ inline void* os::dll_lookup(void *lib, const char *name) {
   return (void*)::GetProcAddress((HMODULE)lib, name);
 }
 
-// Used to improve time-sharing on some systems
-inline void os::loop_breaker(int attempts) {}
-
 inline bool os::obsolete_option(const JavaVMOption *option) {
   return false;
 }

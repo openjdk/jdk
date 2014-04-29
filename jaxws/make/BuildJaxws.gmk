@@ -35,21 +35,21 @@ DISABLE_JAXWS_WARNINGS := -Xlint:all,-varargs,-rawtypes,-deprecation,-unchecked,
 # The generate new bytecode uses the new compiler for to generate bytecode
 # for the new jdk that is being built. The code compiled by this setup
 # cannot necessarily be run with the boot jdk.
-$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
+$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE, \
     JVM := $(JAVA), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -XDignore.symbol.file=true $(DISABLE_JAXWS_WARNINGS) -g, \
+    FLAGS := -XDignore.symbol.file=true $(DISABLE_JAXWS_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
 $(eval $(call SetupJavaCompilation,BUILD_JAF, \
-    SETUP := GENERATE_NEWBYTECODE_DEBUG, \
+    SETUP := GENERATE_NEWBYTECODE, \
     SRC := $(JAXWS_TOPDIR)/src/share/jaf_classes, \
     CLEAN := .properties, \
     BIN := $(JAXWS_OUTPUTDIR)/jaf_classes))
 
 $(eval $(call SetupJavaCompilation,BUILD_JAXWS, \
-    SETUP := GENERATE_NEWBYTECODE_DEBUG, \
+    SETUP := GENERATE_NEWBYTECODE, \
     SRC := $(JAXWS_TOPDIR)/src/share/jaxws_classes, \
     BIN := $(JAXWS_OUTPUTDIR)/jaxws_classes, \
     COPY := .xsd, \

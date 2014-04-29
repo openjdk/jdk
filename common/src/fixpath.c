@@ -109,7 +109,7 @@ char *replace_cygdrive_cygwin(char const *in)
 
 void append(char **b, size_t *bl, size_t *u, char *add, size_t addlen)
 {
-  while ( (addlen+*u+1) > *bl) {
+  while ((addlen+*u+1) > *bl) {
     *bl *= 2;
     *b = (char*) realloc(*b, *bl);
   }
@@ -118,7 +118,7 @@ void append(char **b, size_t *bl, size_t *u, char *add, size_t addlen)
 }
 
 /*
- * Creates a new string from in where the first occurance of sub is
+ * Creates a new string from in where the first occurrence of sub is
  * replaced by rep.
  */
 char *replace_substring(char *in, char *sub, char *rep)
@@ -246,7 +246,7 @@ char *fix_at_file(char const *in)
   }
 
   buffer = (char*) malloc(buflen);
-  while((blocklen = fread(block,1,sizeof(block),atin)) > 0) {
+  while ((blocklen = fread(block, 1, sizeof(block), atin)) > 0) {
     append(&buffer, &buflen, &used, block, blocklen);
   }
   buffer[used] = 0;
@@ -280,16 +280,21 @@ char * quote_arg(char const * in_arg) {
   char *current = quoted;
   int pass;
 
-  if(strpbrk(in_arg, " \t\n\v\r\\\"") == NULL) {
+  if (strlen(in_arg) == 0) {
+     // empty string? explicitly quote it.
+     return _strdup("\"\"");
+  }
+
+  if (strpbrk(in_arg, " \t\n\v\r\\\"") == NULL) {
      return _strdup(in_arg);
   }
 
   // process the arg twice. Once to calculate the size and then to copy it.
-  for(pass=1; pass<=2; pass++) {
+  for (pass=1; pass<=2; pass++) {
     char const *arg = in_arg;
 
     // initial "
-    if(pass == 2) {
+    if (pass == 2) {
       *current = '\"';
     }
     current++;
@@ -328,7 +333,7 @@ char * quote_arg(char const * in_arg) {
         *current = *arg;
       }
       current++;
-    } while( *arg++ != '\0');
+    } while (*arg++ != '\0');
 
     // allocate the buffer
     if (pass == 1) {
@@ -362,7 +367,7 @@ int main(int argc, char const ** argv)
 
     if (getenv("DEBUG_FIXPATH") != NULL) {
       char const * cmdline = GetCommandLine();
-      fprintf(stderr, "fixpath input line >%s<\n", strstr( cmdline , argv[1]));
+      fprintf(stderr, "fixpath input line >%s<\n", strstr(cmdline, argv[1]));
     }
 
     if (argv[1][1] == 'c' && argv[1][2] == '\0') {
@@ -399,7 +404,7 @@ int main(int argc, char const ** argv)
         }
 
         rc = SetEnvironmentVariable(var, val);
-        if(!rc) {
+        if (!rc) {
           // Could not set var for some reason.  Try to report why.
           const int msg_len = 80 + var_len + strlen(val);
           char * msg = (char *) alloca(msg_len);
@@ -422,7 +427,7 @@ int main(int argc, char const ** argv)
     // handle command and it's args.
     while (i < argc) {
       char const *replaced = replace_cygdrive(argv[i]);
-      if(replaced[0] == '@') {
+      if (replaced[0] == '@') {
         // Found at-file! Fix it!
         replaced = fix_at_file(replaced);
       }
@@ -433,7 +438,7 @@ int main(int argc, char const ** argv)
     // determine the length of the line
     line = NULL;
     // args
-    for(i = cmd; i < argc; i++) {
+    for (i = cmd; i < argc; i++) {
       line += (ptrdiff_t) strlen(argv[i]);
     }
     // spaces and null
@@ -443,7 +448,7 @@ int main(int argc, char const ** argv)
 
     // copy in args.
     current = line;
-    for(i = cmd; i < argc; i++) {
+    for (i = cmd; i < argc; i++) {
       ptrdiff_t len = strlen(argv[i]);
       if (i != cmd) {
         *current++ = ' ';
@@ -457,16 +462,16 @@ int main(int argc, char const ** argv)
       fprintf(stderr, "fixpath converted line >%s<\n", line);
     }
 
-    if(cmd == argc) {
+    if (cmd == argc) {
        if (getenv("DEBUG_FIXPATH") != NULL) {
          fprintf(stderr, "fixpath no command provided!\n");
        }
        exit(0);
     }
 
-    ZeroMemory(&si,sizeof(si));
+    ZeroMemory(&si, sizeof(si));
     si.cb=sizeof(si);
-    ZeroMemory(&pi,sizeof(pi));
+    ZeroMemory(&pi, sizeof(pi));
 
     fflush(stderr);
     fflush(stdout);
@@ -481,14 +486,14 @@ int main(int argc, char const ** argv)
                        NULL,
                        &si,
                        &pi);
-    if(!rc) {
+    if (!rc) {
       // Could not start process for some reason.  Try to report why:
       report_error("Could not start process!");
       exit(126);
     }
 
-    WaitForSingleObject(pi.hProcess,INFINITE);
-    GetExitCodeProcess(pi.hProcess,&exitCode);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    GetExitCodeProcess(pi.hProcess, &exitCode);
 
     if (getenv("DEBUG_FIXPATH") != NULL) {
       for (i=0; i<num_files_to_delete; ++i) {

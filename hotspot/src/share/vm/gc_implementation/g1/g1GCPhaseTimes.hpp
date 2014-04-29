@@ -161,7 +161,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   // Helper methods for detailed logging
   void print_stats(int level, const char* str, double value);
-  void print_stats(int level, const char* str, double value, int workers);
+  void print_stats(int level, const char* str, double value, uint workers);
 
  public:
   G1GCPhaseTimes(uint max_gc_threads);

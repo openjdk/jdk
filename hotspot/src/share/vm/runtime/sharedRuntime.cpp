@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,10 +775,13 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
         // going to be unwound. Dispatch to a shared runtime stub
         // which will cause the StackOverflowError to be fabricated
         // and processed.
-        // For stack overflow in deoptimization blob, cleanup thread.
-        if (thread->deopt_mark() != NULL) {
-          Deoptimization::cleanup_deopt_info(thread, NULL);
-        }
+        // Stack overflow should never occur during deoptimization:
+        // the compiled method bangs the stack by as much as the
+        // interpreter would need in case of a deoptimization. The
+        // deoptimization blob and uncommon trap blob bang the stack
+        // in a debug VM to verify the correctness of the compiled
+        // method stack banging.
+        assert(thread->deopt_mark() == NULL, "no stack overflow from deopt blob/uncommon trap");
         Events::log_exception(thread, "StackOverflowError at " INTPTR_FORMAT, pc);
         return StubRoutines::throw_StackOverflowError_entry();
       }
@@ -924,12 +927,6 @@ JRT_ENTRY(intptr_t, SharedRuntime::trace_bytecode(JavaThread* thread, intptr_t p
 JRT_END
 #endif // !PRODUCT
 
-
-JRT_ENTRY(void, SharedRuntime::yield_all(JavaThread* thread, int attempts))
-  os::yield_all(attempts);
-JRT_END
-
-
 JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* thread, oopDesc* obj))
   assert(obj->is_oop(), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
@@ -952,14 +949,13 @@ jlong SharedRuntime::get_java_tid(Thread* thread) {
  * it gets turned into a tail-call on sparc, which runs into dtrace bug
  * 6254741.  Once that is fixed we can remove the dummy return value.
  */
-int SharedRuntime::dtrace_object_alloc(oopDesc* o) {
-  return dtrace_object_alloc_base(Thread::current(), o);
+int SharedRuntime::dtrace_object_alloc(oopDesc* o, int size) {
+  return dtrace_object_alloc_base(Thread::current(), o, size);
 }
 
-int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
+int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->klass();
-  int size = o->size();
   Symbol* name = klass->name();
   HOTSPOT_OBJECT_ALLOC(
                    get_java_tid(thread),
@@ -1268,8 +1264,6 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
       }
 #endif
       if (is_virtual) {
-        nmethod* nm = callee_nm;
-        if (nm == NULL) CodeCache::find_blob(caller_frame.pc());
         CompiledIC* inline_cache = CompiledIC_before(caller_nm, caller_frame.pc());
         if (inline_cache->is_clean()) {
           inline_cache->set_to_monomorphic(virtual_call_info);

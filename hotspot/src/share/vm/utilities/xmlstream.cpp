@@ -396,10 +396,10 @@ void xmlStream::method(methodHandle method) {
 }
 
 void xmlStream::method_text(methodHandle method) {
+  ResourceMark rm;
   assert_if_no_error(inside_attrs(), "printing attributes");
   if (method.is_null())  return;
-  //method->print_short_name(text());
-  method->method_holder()->name()->print_symbol_on(text());
+  text()->print(method->method_holder()->external_name());
   print_raw(" ");  // " " is easier for tools to parse than "::"
   method->name()->print_symbol_on(text());
   print_raw(" ");  // separator

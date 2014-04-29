@@ -34,8 +34,6 @@ import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.Codec;
 import com.sun.xml.internal.ws.api.pipe.ContentType;
 import com.sun.xml.internal.ws.developer.StreamingAttachmentFeature;
-import javax.activation.CommandMap;
-import javax.activation.MailcapCommandMap;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,33 +60,6 @@ import java.util.UUID;
  * @author Kohsuke Kawaguchi
  */
 abstract class MimeCodec implements Codec {
-
-    static {
-        // DataHandler.writeTo() may search for DCH. So adding some default ones.
-        try {
-            CommandMap map = CommandMap.getDefaultCommandMap();
-            if (map instanceof MailcapCommandMap) {
-                MailcapCommandMap mailMap = (MailcapCommandMap) map;
-                String hndlrStr = ";;x-java-content-handler=";
-                // registering our DCH since javamail's DCH doesn't handle
-                // Source
-                mailMap.addMailcap(
-                    "text/xml" + hndlrStr + XmlDataContentHandler.class.getName());
-                mailMap.addMailcap(
-                    "application/xml" + hndlrStr + XmlDataContentHandler.class.getName());
-                if (map.createDataContentHandler("image/*") == null) {
-                    mailMap.addMailcap(
-                        "image/*" + hndlrStr + ImageDataContentHandler.class.getName());
-                }
-                if (map.createDataContentHandler("text/plain") == null) {
-                    mailMap.addMailcap(
-                        "text/plain" + hndlrStr + StringDataContentHandler.class.getName());
-                }
-            }
-        } catch (Throwable t) {
-            // ignore the exception.
-        }
-    }
 
     public static final String MULTIPART_RELATED_MIME_TYPE = "multipart/related";
 

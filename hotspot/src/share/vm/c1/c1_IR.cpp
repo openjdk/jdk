@@ -227,8 +227,38 @@ void CodeEmitInfo::add_register_oop(LIR_Opr opr) {
   _oop_map->set_oop(name);
 }
 
+// Mirror the stack size calculation in the deopt code
+// How much stack space would we need at this point in the program in
+// case of deoptimization?
+int CodeEmitInfo::interpreter_frame_size() const {
+  ValueStack* state = _stack;
+  int size = 0;
+  int callee_parameters = 0;
+  int callee_locals = 0;
+  int extra_args = state->scope()->method()->max_stack() - state->stack_size();
 
+  while (state != NULL) {
+    int locks = state->locks_size();
+    int temps = state->stack_size();
+    bool is_top_frame = (state == _stack);
+    ciMethod* method = state->scope()->method();
 
+    int frame_size = BytesPerWord * Interpreter::size_activation(method->max_stack(),
+                                                                 temps + callee_parameters,
+                                                                 extra_args,
+                                                                 locks,
+                                                                 callee_parameters,
+                                                                 callee_locals,
+                                                                 is_top_frame);
+    size += frame_size;
+
+    callee_parameters = method->size_of_parameters();
+    callee_locals = method->max_locals();
+    extra_args = 0;
+    state = state->caller_state();
+  }
+  return size + Deoptimization::last_frame_adjust(0, callee_locals) * BytesPerWord;
+}
 
 // Implementation of IR
 

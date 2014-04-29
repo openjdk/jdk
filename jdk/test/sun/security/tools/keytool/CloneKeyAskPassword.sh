@@ -82,7 +82,7 @@ cp ${TESTSRC}${FILESEP}CloneKeyAskPassword.jks .
 chmod 644 CloneKeyAskPassword.jks
 
 # run the test: attempt to clone the private key
-${TESTJAVA}${FILESEP}bin${FILESEP}keytool \
+${TESTJAVA}${FILESEP}bin${FILESEP}keytool ${TESTTOOLVMOPTS} \
         -keyclone \
         -alias mykey \
         -dest myclone \

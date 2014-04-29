@@ -445,8 +445,8 @@ define SetupJavaCompilation
   # Now we have a list of all java files to compile: $$($1_SRCS)
 
   # Create the corresponding smart javac wrapper command line.
-  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix .*,$$(subst /,.,$$($1_EXCLUDES)))) \
-      $$(addprefix -i ,$$(addsuffix .*,$$(subst /,.,$$($1_INCLUDES)))) \
+  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix /*,$$($1_EXCLUDES))) \
+      $$(addprefix -i ,$$(addsuffix /*,$$($1_INCLUDES))) \
       $$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES))) \
       $$(addprefix -if *,$$(strip $$($1_INCLUDE_FILES))) \
       -src "$$(subst $$(SPACE),$$(PATH_SEP),$$(strip $$($1_SRC)))"

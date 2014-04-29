@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,15 @@
 
 public class TestXOption extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8007687";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-X",
-            SRC_DIR + FS + "TestXOption.java"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-X",
+            SRC_DIR + "/TestXOption.java"
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            SRC_DIR + FS + "TestXOption.java"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
+            SRC_DIR + "/TestXOption.java"
     };
 
     private static final String[][] TEST = {
@@ -53,7 +50,6 @@ public class TestXOption extends JavadocTester {
         {STANDARD_OUTPUT, "-Xdoclint "},
         {STANDARD_OUTPUT, "-Xdoclint:"},
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     //The help option should not crash the doclet.
     private static final int EXPECTED_EXIT_CODE = 0;
@@ -64,22 +60,8 @@ public class TestXOption extends JavadocTester {
      */
     public static void main(String[] args) {
         TestXOption tester = new TestXOption();
-        int actualExitCode = run(tester, ARGS, TEST, NEGATED_TEST);
+        int actualExitCode = tester.run(ARGS, TEST, NO_TEST);
         tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

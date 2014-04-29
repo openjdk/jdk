@@ -1531,9 +1531,35 @@ void MethodData::clean_extra_data_helper(DataLayout* dp, int shift, bool reset) 
   }
 }
 
-// Remove SpeculativeTrapData entries that reference an unloaded
-// method
-void MethodData::clean_extra_data(BoolObjectClosure* is_alive) {
+class CleanExtraDataClosure : public StackObj {
+public:
+  virtual bool is_live(Method* m) = 0;
+};
+
+// Check for entries that reference an unloaded method
+class CleanExtraDataKlassClosure : public CleanExtraDataClosure {
+private:
+  BoolObjectClosure* _is_alive;
+public:
+  CleanExtraDataKlassClosure(BoolObjectClosure* is_alive) : _is_alive(is_alive) {}
+  bool is_live(Method* m) {
+    return m->method_holder()->is_loader_alive(_is_alive);
+  }
+};
+
+// Check for entries that reference a redefined method
+class CleanExtraDataMethodClosure : public CleanExtraDataClosure {
+public:
+  CleanExtraDataMethodClosure() {}
+  bool is_live(Method* m) {
+    return m->on_stack();
+  }
+};
+
+
+// Remove SpeculativeTrapData entries that reference an unloaded or
+// redefined method
+void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
   DataLayout* dp  = extra_data_base();
   DataLayout* end = extra_data_limit();
 
@@ -1544,7 +1570,7 @@ void MethodData::clean_extra_data(BoolObjectClosure* is_alive) {
       SpeculativeTrapData* data = new SpeculativeTrapData(dp);
       Method* m = data->method();
       assert(m != NULL, "should have a method");
-      if (!m->method_holder()->is_loader_alive(is_alive)) {
+      if (!cl->is_live(m)) {
         // "shift" accumulates the number of cells for dead
         // SpeculativeTrapData entries that have been seen so
         // far. Following entries must be shifted left by that many
@@ -1575,9 +1601,9 @@ void MethodData::clean_extra_data(BoolObjectClosure* is_alive) {
   }
 }
 
-// Verify there's no unloaded method referenced by a
+// Verify there's no unloaded or redefined method referenced by a
 // SpeculativeTrapData entry
-void MethodData::verify_extra_data_clean(BoolObjectClosure* is_alive) {
+void MethodData::verify_extra_data_clean(CleanExtraDataClosure* cl) {
 #ifdef ASSERT
   DataLayout* dp  = extra_data_base();
   DataLayout* end = extra_data_limit();
@@ -1587,7 +1613,7 @@ void MethodData::verify_extra_data_clean(BoolObjectClosure* is_alive) {
     case DataLayout::speculative_trap_data_tag: {
       SpeculativeTrapData* data = new SpeculativeTrapData(dp);
       Method* m = data->method();
-      assert(m != NULL && m->method_holder()->is_loader_alive(is_alive), "Method should exist");
+      assert(m != NULL && cl->is_live(m), "Method should exist");
       break;
     }
     case DataLayout::bit_data_tag:
@@ -1613,6 +1639,19 @@ void MethodData::clean_method_data(BoolObjectClosure* is_alive) {
     parameters->clean_weak_klass_links(is_alive);
   }
 
-  clean_extra_data(is_alive);
-  verify_extra_data_clean(is_alive);
+  CleanExtraDataKlassClosure cl(is_alive);
+  clean_extra_data(&cl);
+  verify_extra_data_clean(&cl);
+}
+
+void MethodData::clean_weak_method_links() {
+  for (ProfileData* data = first_data();
+       is_valid(data);
+       data = next_data(data)) {
+    data->clean_weak_method_links();
+  }
+
+  CleanExtraDataMethodClosure cl;
+  clean_extra_data(&cl);
+  verify_extra_data_clean(&cl);
 }
