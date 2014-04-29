@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   inline static void post_allocation_setup_no_klass_install(KlassHandle klass,
                                                             HeapWord* objPtr);
 
-  inline static void post_allocation_setup_obj(KlassHandle klass, HeapWord* obj);
+  inline static void post_allocation_setup_obj(KlassHandle klass, HeapWord* obj, int size);
 
   inline static void post_allocation_setup_array(KlassHandle klass,
                                                  HeapWord* obj, int length);
@@ -311,9 +311,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // May be overridden to set additional parallelism.
   virtual void set_par_threads(uint t) { _n_par_threads = t; };
-
-  // Allocate and initialize instances of Class
-  static oop Class_obj_allocate(KlassHandle klass, int size, KlassHandle real_klass, TRAPS);
 
   // General obj/array allocation facilities.
   inline static oop obj_allocate(KlassHandle klass, int size, TRAPS);

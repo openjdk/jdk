@@ -515,6 +515,32 @@ public class Infer {
     /** max number of incorporation rounds */
         static final int MAX_INCORPORATION_STEPS = 100;
 
+    /* If for two types t and s there is a least upper bound that is a
+     * parameterized type G, then there exists a supertype of 't' of the form
+     * G<T1, ..., Tn> and a supertype of 's' of the form G<S1, ..., Sn>
+     * which will be returned by this method. If no such supertypes exists then
+     * null is returned.
+     *
+     * As an example for the following input:
+     *
+     * t = java.util.ArrayList<java.lang.String>
+     * s = java.util.List<T>
+     *
+     * we get this ouput:
+     *
+     * Pair[java.util.List<java.lang.String>,java.util.List<T>]
+     */
+    private Pair<Type, Type> getParameterizedSupers(Type t, Type s) {
+        Type lubResult = types.lub(t, s);
+        if (lubResult == syms.errType || lubResult == syms.botType ||
+                !lubResult.isParameterized()) {
+            return null;
+        }
+        Type asSuperOfT = types.asSuper(t, lubResult.tsym);
+        Type asSuperOfS = types.asSuper(s, lubResult.tsym);
+        return new Pair<>(asSuperOfT, asSuperOfS);
+    }
+
     /**
      * This enumeration defines an entry point for doing inference variable
      * bound incorporation - it can be used to inject custom incorporation
@@ -679,6 +705,53 @@ public class Infer {
                 return !uv.isCaptured() &&
                         uv.getBounds(InferenceBound.EQ).nonEmpty() &&
                         uv.getBounds(InferenceBound.LOWER).nonEmpty();
+            }
+        },
+        /**
+         * Given a bound set containing {@code alpha <: P<T>} and
+         * {@code alpha <: P<S>} where P is a parameterized type,
+         * perform {@code T = S} (which could lead to new bounds).
+         */
+        CROSS_UPPER_UPPER() {
+            @Override
+            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
+                Infer infer = inferenceContext.infer();
+                List<Type> boundList = uv.getBounds(InferenceBound.UPPER);
+                List<Type> boundListTail = boundList.tail;
+                while (boundList.nonEmpty()) {
+                    List<Type> tmpTail = boundListTail;
+                    while (tmpTail.nonEmpty()) {
+                        Type b1 = boundList.head;
+                        Type b2 = tmpTail.head;
+                        if (b1 != b2) {
+                            Pair<Type, Type> commonSupers = infer.getParameterizedSupers(b1, b2);
+                            if (commonSupers != null) {
+                                List<Type> allParamsSuperBound1 = commonSupers.fst.allparams();
+                                List<Type> allParamsSuperBound2 = commonSupers.snd.allparams();
+                                while (allParamsSuperBound1.nonEmpty() && allParamsSuperBound2.nonEmpty()) {
+                                    //traverse the list of all params comparing them
+                                    if (!allParamsSuperBound1.head.hasTag(WILDCARD) &&
+                                        !allParamsSuperBound2.head.hasTag(WILDCARD)) {
+                                        isSameType(inferenceContext.asUndetVar(allParamsSuperBound1.head),
+                                            inferenceContext.asUndetVar(allParamsSuperBound2.head), infer);
+                                    }
+                                    allParamsSuperBound1 = allParamsSuperBound1.tail;
+                                    allParamsSuperBound2 = allParamsSuperBound2.tail;
+                                }
+                                Assert.check(allParamsSuperBound1.isEmpty() && allParamsSuperBound2.isEmpty());
+                            }
+                        }
+                        tmpTail = tmpTail.tail;
+                    }
+                    boundList = boundList.tail;
+                    boundListTail = boundList.tail;
+                }
+            }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() &&
+                        uv.getBounds(InferenceBound.UPPER).nonEmpty();
             }
         },
         /**

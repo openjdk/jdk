@@ -1778,12 +1778,12 @@ public:
   void set_done_attaching_via_jni() { _jni_attach_state = _attached_via_jni; OrderAccess::fence(); }
 private:
   // This field is used to determine if a thread has claimed
-  // a par_id: it is -1 if the thread has not claimed a par_id;
+  // a par_id: it is UINT_MAX if the thread has not claimed a par_id;
   // otherwise its value is the par_id that has been claimed.
-  int _claimed_par_id;
+  uint _claimed_par_id;
 public:
-  int get_claimed_par_id() { return _claimed_par_id; }
-  void set_claimed_par_id(int id) { _claimed_par_id = id;}
+  uint get_claimed_par_id() { return _claimed_par_id; }
+  void set_claimed_par_id(uint id) { _claimed_par_id = id;}
 };
 
 // Inline implementation of JavaThread::current

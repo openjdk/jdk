@@ -75,7 +75,7 @@ final public class AlgorithmChecker extends PKIXCertPathChecker {
     private PublicKey prevPubKey;
 
     private final static Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
-                                    EnumSet.of(CryptoPrimitive.SIGNATURE);
+        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
     private final static DisabledAlgorithmConstraints
         certPathDefaultConstraints = new DisabledAlgorithmConstraints(

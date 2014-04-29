@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,27 +33,26 @@
 
 public class TestCustomTag extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8006248";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-tagletpath", SRC_DIR,
+        "-Xdoclint:none", "-d", OUTPUT_DIR, "-tagletpath", SRC_DIR,
         "-taglet", "taglets.CustomTag", "-sourcepath",
-        SRC_DIR, SRC_DIR + FS + "TagTestClass.java"
+        SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
 
     private static final String[] ARGS1 = new String[] {
-        "-d", BUG_ID + "-1", "-tagletpath", SRC_DIR, "-taglet", "taglets.CustomTag",
-        "-sourcepath", SRC_DIR, SRC_DIR + FS + "TagTestClass.java"
+        "-d", OUTPUT_DIR + "-1", "-tagletpath",
+        SRC_DIR, "-taglet", "taglets.CustomTag",
+        "-sourcepath", SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
     private static final String[] ARGS2 = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID + "-2", "-sourcepath",
-        SRC_DIR, SRC_DIR + FS + "TagTestClass.java"
+        "-Xdoclint:none", "-d", OUTPUT_DIR + "-2", "-sourcepath",
+        SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
 
     private static final String[] ARGS3 = new String[] {
-        "-d", BUG_ID + "-3", "-sourcepath", SRC_DIR, SRC_DIR + FS + "TagTestClass.java"
+        "-d", OUTPUT_DIR + "-3", "-sourcepath",
+        SRC_DIR, SRC_DIR + "/TagTestClass.java"
     };
 
     //Input for string search tests.
@@ -86,24 +85,10 @@ public class TestCustomTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestCustomTag tester = new TestCustomTag();
-        run(tester, ARGS, TEST, NO_TEST);
-        run(tester, ARGS1, TEST1, NO_TEST);
-        run(tester, ARGS2, TEST2, NO_TEST);
-        run(tester, ARGS3, TEST3, NO_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
+        tester.run(ARGS1, TEST1, NO_TEST);
+        tester.run(ARGS2, TEST2, NO_TEST);
+        tester.run(ARGS3, TEST3, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

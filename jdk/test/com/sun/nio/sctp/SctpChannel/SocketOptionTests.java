@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,13 @@ import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.SctpSocketOption;
 import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
+import java.security.PrivilegedAction;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 import static java.lang.System.out;
 
 public class SocketOptionTests {
     final String osName = AccessController.doPrivileged(
-                    new GetPropertyAction("os.name"));
+                    (PrivilegedAction<String>)() -> System.getProperty("os.name"));
 
     <T> void checkOption(SctpChannel sc, SctpSocketOption<T> name,
             T expectedValue) throws IOException {

@@ -53,7 +53,8 @@ void AdvancedThresholdPolicy::initialize() {
   }
 
   set_c1_count(MAX2(count / 3, 1));
-  set_c2_count(MAX2(count - count / 3, 1));
+  set_c2_count(MAX2(count - c1_count(), 1));
+  FLAG_SET_ERGO(intx, CICompilerCount, c1_count() + c2_count());
 
   // Some inlining tuning
 #ifdef X86

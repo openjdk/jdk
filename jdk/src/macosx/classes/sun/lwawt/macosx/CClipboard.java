@@ -58,7 +58,7 @@ final class CClipboard extends SunClipboard {
 
     @Override
     protected void setContentsNative(Transferable contents) {
-
+        FlavorTable flavorMap = getDefaultFlavorTable();
         // Don't use delayed Clipboard rendering for the Transferable's data.
         // If we did that, we would call Transferable.getTransferData on
         // the Toolkit thread, which is a security hole.

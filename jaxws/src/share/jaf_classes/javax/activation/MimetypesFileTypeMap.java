@@ -69,11 +69,7 @@ import com.sun.activation.registries.LogSupport;
 public class MimetypesFileTypeMap extends FileTypeMap {
     /*
      * We manage a collection of databases, searched in order.
-     * The default database is shared between all instances
-     * of this class.
-     * XXX - Can we safely share more databases between instances?
      */
-    private static MimeTypeFile defDB = null;
     private MimeTypeFile[] DB;
     private static final int PROG = 0;  // programmatically added entries
 
@@ -114,14 +110,10 @@ public class MimetypesFileTypeMap extends FileTypeMap {
         loadAllResources(dbv, "META-INF/mime.types");
 
         LogSupport.log("MimetypesFileTypeMap: load DEF");
-        synchronized (MimetypesFileTypeMap.class) {
-            // see if another instance has created this yet.
-            if (defDB == null)
-                defDB = loadResource("/META-INF/mimetypes.default");
-        }
+        mf = loadResource("/META-INF/mimetypes.default");
 
-        if (defDB != null)
-            dbv.addElement(defDB);
+        if (mf != null)
+            dbv.addElement(mf);
 
         DB = new MimeTypeFile[dbv.size()];
         dbv.copyInto(DB);

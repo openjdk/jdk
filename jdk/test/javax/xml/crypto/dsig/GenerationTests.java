@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4635230 6283345 6303830 6824440 6867348 7094155
+ * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
@@ -135,6 +135,7 @@ public class GenerationTests {
         test_create_signature_enveloping_sha512_rsa_sha512();
         test_create_signature_reference_dependency();
         test_create_signature_with_attr_in_no_namespace();
+        test_create_signature_with_empty_id();
     }
 
     private static void setup() throws Exception {
@@ -507,6 +508,30 @@ public class GenerationTests {
         }
 
         System.out.println();
+    }
+
+    static void test_create_signature_with_empty_id() throws Exception {
+        System.out.println("* Generating signature-with-empty-id.xml");
+
+        // create references
+        List<Reference> refs = Collections.singletonList
+            (fac.newReference("#", sha1));
+
+        // create SignedInfo
+        SignedInfo si = fac.newSignedInfo(withoutComments, rsaSha1, refs);
+
+        // create object with empty id
+        Document doc = db.newDocument();
+        XMLObject obj = fac.newXMLObject(Collections.singletonList
+            (new DOMStructure(doc.createTextNode("I am the text."))),
+            "", "text/plain", null);
+
+        // create XMLSignature
+        XMLSignature sig = fac.newXMLSignature(si, rsa,
+                                               Collections.singletonList(obj),
+                                               "signature", null);
+        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA"), doc);
+        sig.sign(dsc);
     }
 
     static void test_create_signature() throws Exception {

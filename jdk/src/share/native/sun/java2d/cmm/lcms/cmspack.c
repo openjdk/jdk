@@ -317,6 +317,23 @@ cmsUInt8Number* Unroll3BytesSkip1Swap(register _cmsTRANSFORM* info,
 }
 
 static
+cmsUInt8Number* Unroll3BytesSkip1SwapSwapFirst(register _cmsTRANSFORM* info,
+                                              register cmsUInt16Number wIn[],
+                                              register cmsUInt8Number* accum,
+                                              register cmsUInt32Number Stride)
+{
+    wIn[2] = FROM_8_TO_16(*accum); accum++; // B
+    wIn[1] = FROM_8_TO_16(*accum); accum++; // G
+    wIn[0] = FROM_8_TO_16(*accum); accum++; // R
+    accum++; // A
+
+    return accum;
+
+    cmsUNUSED_PARAMETER(info);
+    cmsUNUSED_PARAMETER(Stride);
+}
+
+static
 cmsUInt8Number* Unroll3BytesSkip1SwapFirst(register _cmsTRANSFORM* info,
                                            register cmsUInt16Number wIn[],
                                            register cmsUInt8Number* accum,
@@ -2901,6 +2918,9 @@ static cmsFormatters16 InputFormatters16[] = {
     { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|DOSWAP_SH(1),     ANYSPACE,  Unroll3BytesSkip1Swap},
     { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|SWAPFIRST_SH(1),  ANYSPACE,  Unroll3BytesSkip1SwapFirst},
 
+    { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1),
+                                                               ANYSPACE,  Unroll3BytesSkip1SwapSwapFirst},
+
     { CHANNELS_SH(4)|BYTES_SH(1),                              ANYSPACE,  Unroll4Bytes},
     { CHANNELS_SH(4)|BYTES_SH(1)|FLAVOR_SH(1),                 ANYSPACE,  Unroll4BytesReverse},
     { CHANNELS_SH(4)|BYTES_SH(1)|SWAPFIRST_SH(1),              ANYSPACE,  Unroll4BytesSwapFirst},
@@ -3166,7 +3186,7 @@ static cmsFormattersFactoryList* FactoryList = NULL;
 
 
 // Formatters management
-cmsBool  _cmsRegisterFormattersPlugin(cmsPluginBase* Data)
+cmsBool  _cmsRegisterFormattersPlugin(cmsContext id, cmsPluginBase* Data)
 {
     cmsPluginFormatters* Plugin = (cmsPluginFormatters*) Data;
     cmsFormattersFactoryList* fl ;
@@ -3178,7 +3198,7 @@ cmsBool  _cmsRegisterFormattersPlugin(cmsPluginBase* Data)
           return TRUE;
     }
 
-    fl = (cmsFormattersFactoryList*) _cmsPluginMalloc(sizeof(cmsFormattersFactoryList));
+    fl = (cmsFormattersFactoryList*) _cmsPluginMalloc(id, sizeof(cmsFormattersFactoryList));
     if (fl == NULL) return FALSE;
 
     fl ->Factory    = Plugin ->FormattersFactory;

@@ -261,6 +261,7 @@ BOOT_JDK_SOURCETARGET:=@BOOT_JDK_SOURCETARGET@
 
 # Information about the build system
 NUM_CORES:=@NUM_CORES@
+MEMORY_SIZE:=@MEMORY_SIZE@
 # Enable sjavac support = use a javac server,
 # multi core javac compilation and dependency tracking.
 ENABLE_SJAVAC:=@ENABLE_SJAVAC@
