@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,20 +38,19 @@
 
 public class TestDocEncoding extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8000743";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-docencoding", "Cp930",
-        "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR,
+        "-docencoding", "Cp930",
+        "-sourcepath", SRC_DIR,
+        "-notimestamp",
+        "pkg"
     };
 
-    private static final String[][] TEST = NO_TEST;
-
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "stylesheet.css",
-            "body {" + NL + "    background-color:#ffffff;"}
+        { "stylesheet.css",
+            "body {\n" +
+            "    background-color:#ffffff;"}
     };
 
     /**
@@ -60,22 +59,8 @@ public class TestDocEncoding extends JavadocTester {
      */
     public static void main(String[] args) {
         TestDocEncoding tester = new TestDocEncoding();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }
 

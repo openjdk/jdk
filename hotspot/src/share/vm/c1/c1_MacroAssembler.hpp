@@ -39,7 +39,7 @@ class C1_MacroAssembler: public MacroAssembler {
   void explicit_null_check(Register base);
 
   void inline_cache_check(Register receiver, Register iCache);
-  void build_frame(int frame_size_in_bytes);
+  void build_frame(int frame_size_in_bytes, int bang_size_in_bytes);
   void remove_frame(int frame_size_in_bytes);
 
   void unverified_entry(Register receiver, Register ic_klass);

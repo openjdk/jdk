@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,42 +34,39 @@
 
 public class TestTopOption extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "6227616";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-overview", "SRC_DIR + FS + overview.html", "-use", "-top", "TOP TEXT", "-d", BUG_ID, "-sourcepath",
+        "-overview", "SRC_DIR + '/' + overview.html", "-use", "-top",
+        "TOP TEXT", "-d", OUTPUT_DIR, "-sourcepath",
         SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
+        { "pkg/AnnotationType.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-            "TOP TEXT"},
-
-        {BUG_ID + FS + "pkg" + FS + "Cl.html",
-            "TOP TEXT"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "Cl.html",
+        { "pkg/class-use/AnnotationType.html",
             "TOP TEXT"},
 
-        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
+        { "pkg/Cl.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "pkg" + FS + "package-use.html",
+        { "pkg/class-use/Cl.html",
+            "TOP TEXT"},
+
+        { "pkg/package-summary.html",
+            "TOP TEXT"},
+        { "pkg/package-use.html",
            "TOP TEXT"},
 
-        {BUG_ID + FS + "overview-summary.html",
+        { "overview-summary.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "overview-tree.html",
+        { "overview-tree.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "constant-values.html",
+        { "constant-values.html",
             "TOP TEXT"},
-        {BUG_ID + FS + "help-doc.html",
+        { "help-doc.html",
             "TOP TEXT"},
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
      * The entry point of the test.
@@ -77,21 +74,7 @@ public class TestTopOption extends JavadocTester {
      */
     public static void main(String[] args) {
         TestTopOption tester = new TestTopOption();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

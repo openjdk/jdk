@@ -810,11 +810,11 @@ void StringTable::buckets_oops_do(OopClosure* f, int start_idx, int end_idx) {
   const int limit = the_table()->table_size();
 
   assert(0 <= start_idx && start_idx <= limit,
-         err_msg("start_idx (" INT32_FORMAT ") is out of bounds", start_idx));
+         err_msg("start_idx (%d) is out of bounds", start_idx));
   assert(0 <= end_idx && end_idx <= limit,
-         err_msg("end_idx (" INT32_FORMAT ") is out of bounds", end_idx));
+         err_msg("end_idx (%d) is out of bounds", end_idx));
   assert(start_idx <= end_idx,
-         err_msg("Index ordering: start_idx=" INT32_FORMAT", end_idx=" INT32_FORMAT,
+         err_msg("Index ordering: start_idx=%d, end_idx=%d",
                  start_idx, end_idx));
 
   for (int i = start_idx; i < end_idx; i += 1) {
@@ -833,11 +833,11 @@ void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClos
   const int limit = the_table()->table_size();
 
   assert(0 <= start_idx && start_idx <= limit,
-         err_msg("start_idx (" INT32_FORMAT ") is out of bounds", start_idx));
+         err_msg("start_idx (%d) is out of bounds", start_idx));
   assert(0 <= end_idx && end_idx <= limit,
-         err_msg("end_idx (" INT32_FORMAT ") is out of bounds", end_idx));
+         err_msg("end_idx (%d) is out of bounds", end_idx));
   assert(start_idx <= end_idx,
-         err_msg("Index ordering: start_idx=" INT32_FORMAT", end_idx=" INT32_FORMAT,
+         err_msg("Index ordering: start_idx=%d, end_idx=%d",
                  start_idx, end_idx));
 
   for (int i = start_idx; i < end_idx; ++i) {

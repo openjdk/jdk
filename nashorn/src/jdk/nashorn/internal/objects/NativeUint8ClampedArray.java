@@ -89,6 +89,15 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
         }
 
         @Override
+        protected void setImpl(final int index, final long value) {
+            if (JSType.isRepresentableAsInt(value)) {
+                setImpl(index, (int)value);
+            } else {
+                buffer.getByteArray()[byteIndex(index)] = value > 0 ? (byte)0xff : 0;
+            }
+        }
+
+        @Override
         protected void setImpl(final int key, final double value) {
             setImpl(key, (int)Math.rint(value));
         }

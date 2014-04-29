@@ -440,6 +440,17 @@ public:
   // and dominator info to a fixed point.
   void optimize();
 
+#ifndef PRODUCT
+  void trace_PhaseIterGVN(Node* n, Node* nn, const Type* old_type);
+  void init_verifyPhaseIterGVN();
+  void verify_PhaseIterGVN();
+#endif
+
+#ifdef ASSERT
+  void dump_infinite_loop_info(Node* n);
+  void trace_PhaseIterGVN_verbose(Node* n, int num_processed);
+#endif
+
   // Register a new node with the iter GVN pass without transforming it.
   // Used when we need to restructure a Region/Phi area and all the Regions
   // and Phis need to complete this one big transform before any other

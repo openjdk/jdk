@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,19 +31,10 @@
  */
 public class T6735320 extends JavadocTester {
 
-    private static final String BUG_ID = "6735320";
     private static final String[] ARGS = new String[]{
-        "-d", BUG_ID + ".out",
-        SRC_DIR + FS + "SerialFieldTest.java"
+        "-d", OUTPUT_DIR + ".out",
+        SRC_DIR + "/SerialFieldTest.java"
     };
-
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    public String getBugName() {
-        return getClass().getName();
-    }
 
     public static void main(String... args) {
         T6735320 tester = new T6735320();

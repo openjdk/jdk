@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,16 @@ import com.sun.tools.doclets.formats.html.markup.*;
  */
 public class TestHtmlDocument {
 
+    protected static final String NL = System.getProperty("line.separator");
+
     private static final String BUGID = "6851834";
     private static final String BUGNAME = "TestHtmlDocument";
-    private static final String FS = System.getProperty("file.separator");
-    private static final String LS = System.getProperty("line.separator");
     private static String srcdir = System.getProperty("test.src", ".");
 
     // Entry point
     public static void main(String[] args) throws IOException {
         // Check whether the generated markup is same as the existing markup.
-        if (generateHtmlTree().equals(readFileToString(srcdir + FS + "testMarkup.html"))) {
+        if (generateHtmlTree().equals(readFileToString(srcdir + "/testMarkup.html"))) {
             System.out.println("\nTest passed for bug " + BUGID + " (" + BUGNAME + ")\n");
         } else {
             throw new Error("\nTest failed for bug " + BUGID + " (" + BUGNAME + ")\n");
@@ -150,7 +150,7 @@ public class TestHtmlDocument {
             String line;
             while ((line = in.readLine()) != null) {
                 fileString.append(line);
-                fileString.append(LS);
+                fileString.append(NL);
             }
         } finally {
             in.close();

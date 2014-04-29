@@ -46,7 +46,7 @@ case "$OS" in
 esac
 
 PWD="xxxxxx"
-KEYTOOL="${TESTJAVA}/bin/keytool -storetype KeychainStore -keystore NONE -storepass $PWD"
+KEYTOOL="${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} -storetype KeychainStore -keystore NONE -storepass $PWD"
 TEMPORARY_P12="$TESTCLASSES/7133495.p12"
 TEMPORARY_KC="$TESTCLASSES/7133495.keychain"
 CLEANUP_P12="rm -f $TEMPORARY_P12"
@@ -67,7 +67,7 @@ RESULT=`$CLEANUP_P12`
 
 for i in X Y Z
 do
-    ${TESTJAVA}/bin/keytool -genkeypair \
+    ${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} -genkeypair \
         -storetype PKCS12 \
         -keystore $TEMPORARY_P12 \
         -storepass $PWD \

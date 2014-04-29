@@ -25,6 +25,7 @@
 package com.sun.hotspot.tools.compiler;
 
 import java.io.PrintStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +41,7 @@ public class CallSite {
     private int endNodes;
     private int endLiveNodes;
     private double timeStamp;
+    private long inlineId;
 
     CallSite() {
     }
@@ -94,7 +96,7 @@ public class CallSite {
 
     public void print(PrintStream stream, int indent) {
         emit(stream, indent);
-        String m = getMethod().getHolder().replace('/', '.') + "::" + getMethod().getName();
+        String m = getMethod().getHolder() + "::" + getMethod().getName();
         if (getReason() == null) {
             stream.print("  @ " + getBci() + " " + m + " (" + getMethod().getBytes() + " bytes)");
 
@@ -214,4 +216,45 @@ public class CallSite {
         return timeStamp;
     }
 
+    private boolean matches(CallSite other) {
+        // Every late inline call site has a unique inline id. If the
+        // call site we're looking for has one then use it other rely
+        // on method name and bci.
+        if (other.inlineId != 0) {
+            return inlineId == other.inlineId;
+        }
+        return method.equals(other.method) && bci == other.bci;
+    }
+
+    public CallSite findCallSite(ArrayDeque<CallSite> sites) {
+        // Locate a late inline call site. Multiple chains of
+        // identical call sites with the same method name/bci are
+        // possible so we have to try them all until we find the late
+        // inline call site that has a matching inline id.
+        CallSite site = sites.pop();
+        for (CallSite c : calls) {
+            if (c.matches(site)) {
+                if (!sites.isEmpty()) {
+                    CallSite res = c.findCallSite(sites);
+                    if (res != null) {
+                        sites.push(site);
+                        return res;
+                    }
+                } else {
+                    sites.push(site);
+                    return c;
+                }
+            }
+        }
+        sites.push(site);
+        return null;
+    }
+
+    public long getInlineId() {
+        return inlineId;
+    }
+
+    public void setInlineId(long inlineId) {
+        this.inlineId = inlineId;
+    }
 }
