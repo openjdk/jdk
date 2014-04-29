@@ -657,17 +657,34 @@ endif
 
 ##########################################################################################
 
+LIBLCMS_DIR := $(JDK_TOPDIR)/src/share/native/sun/java2d/cmm/lcms
+
+ifeq ($(USE_EXTERNAL_LCMS), true)
+  # If we're using an external library, we'll just need the wrapper part.
+  # By including it explicitely, all other files will be excluded.
+  BUILD_LIBLCMS_INCLUDE_FILES := LCMS.c
+  BUILD_LIBLCMS_HEADERS :=
+else
+  BUILD_LIBLCMS_INCLUDE_FILES :=
+  # If we're using the bundled library, we'll need to include it in the
+  # include path explicitly. Otherwise the system headers will be used.
+  BUILD_LIBLCMS_HEADERS := -I$(LIBLCMS_DIR)
+endif
+
 # TODO: Update awt lib path when awt is converted
 $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
     LIBRARY := lcms, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/share/native/sun/java2d/cmm/lcms, \
+    SRC := $(LIBLCMS_DIR), \
+    INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \
     LANG := C, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(filter-out -xc99=%none, $(CFLAGS_JDKLIB)) \
         $(SHARED_LIBRARY_FLAGS) \
         -I$(JDK_TOPDIR)/src/share/native/sun/java2d \
-        -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug, \
+        -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
+        $(BUILD_LIBLCMS_HEADERS) \
+        $(LCMS_CFLAGS), \
     CFLAGS_solaris := -xc99=no_lib, \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/liblcms/mapfile-vers, \
@@ -675,10 +692,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_solaris := /usr/lib$(OPENJDK_TARGET_CPU_ISADIR)/libm.so.2, \
     LDFLAGS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
-    LDFLAGS_SUFFIX_solaris := -lawt -ljava -ljvm -lc, \
-    LDFLAGS_SUFFIX_macosx := $(LIBM) -lawt -ljava -ljvm, \
-    LDFLAGS_SUFFIX_linux := -lm -lawt -ljava -ljvm, \
-    LDFLAGS_SUFFIX_aix := -lm -lawt -ljava -ljvm,\
+    LDFLAGS_SUFFIX_solaris := -lawt -ljava -ljvm -lc $(LCMS_LIBS), \
+    LDFLAGS_SUFFIX_macosx := $(LIBM) -lawt -ljava -ljvm $(LCMS_LIBS), \
+    LDFLAGS_SUFFIX_linux := -lm -lawt -ljava -ljvm $(LCMS_LIBS), \
+    LDFLAGS_SUFFIX_aix := -lm -lawt -ljava -ljvm $(LCMS_LIBS),\
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=lcms.dll" \
