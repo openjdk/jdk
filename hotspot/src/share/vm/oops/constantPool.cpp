@@ -1827,9 +1827,7 @@ void ConstantPool::set_on_stack(const bool value) {
 // We can't do this during classfile parsing, which is how the other indexes are
 // patched.  The other patches are applied early for some error checking
 // so only defer the pseudo_strings.
-void ConstantPool::patch_resolved_references(
-                                            GrowableArray<Handle>* cp_patches) {
-  assert(EnableInvokeDynamic, "");
+void ConstantPool::patch_resolved_references(GrowableArray<Handle>* cp_patches) {
   for (int index = 1; index < cp_patches->length(); index++) { // Index 0 is unused
     Handle patch = cp_patches->at(index);
     if (patch.not_null()) {

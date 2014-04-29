@@ -3638,19 +3638,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 #endif // PRODUCT
 
-  // JSR 292 is not supported before 1.7
-  if (!JDK_Version::is_gte_jdk17x_version()) {
-    if (EnableInvokeDynamic) {
-      if (!FLAG_IS_DEFAULT(EnableInvokeDynamic)) {
-        warning("JSR 292 is not supported before 1.7.  Disabling support.");
-      }
-      EnableInvokeDynamic = false;
-    }
-  }
-
-  if (EnableInvokeDynamic && ScavengeRootsInCode == 0) {
+  if (ScavengeRootsInCode == 0) {
     if (!FLAG_IS_DEFAULT(ScavengeRootsInCode)) {
-      warning("forcing ScavengeRootsInCode non-zero because EnableInvokeDynamic is true");
+      warning("forcing ScavengeRootsInCode non-zero");
     }
     ScavengeRootsInCode = 1;
   }

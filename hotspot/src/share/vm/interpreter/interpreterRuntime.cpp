@@ -769,7 +769,6 @@ IRT_END
 
 // First time execution:  Resolve symbols, create a permanent MethodType object.
 IRT_ENTRY(void, InterpreterRuntime::resolve_invokehandle(JavaThread* thread)) {
-  assert(EnableInvokeDynamic, "");
   const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
 
   // resolve method
@@ -789,7 +788,6 @@ IRT_END
 
 // First time execution:  Resolve symbols, create a permanent CallSite object.
 IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
-  assert(EnableInvokeDynamic, "");
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
 
   //TO DO: consider passing BCI to Java.
