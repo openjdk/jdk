@@ -138,6 +138,16 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
     boolean isAbstract();
 
     /**
+     * Determine if this method is a default method
+     *
+     * @return <code>true</code> if the method is declared default;
+     * false otherwise
+     *
+     * @since 1.8
+     */
+    boolean isDefault();
+
+    /**
      * Determine if this method is synchronized.
      *
      * @return <code>true</code> if the method is declared synchronized;
