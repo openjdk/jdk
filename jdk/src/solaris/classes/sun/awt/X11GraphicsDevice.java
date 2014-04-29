@@ -56,7 +56,7 @@ public class X11GraphicsDevice
     implements DisplayChangedListener
 {
     int screen;
-    HashMap x11ProxyKeyMap = new HashMap();
+    HashMap<SurfaceType, Object> x11ProxyKeyMap = new HashMap<>();
 
     private static AWTPermission fullScreenExclusivePermission;
     private static Boolean xrandrExtSupported;
@@ -127,7 +127,7 @@ public class X11GraphicsDevice
 
     GraphicsConfiguration[] configs;
     GraphicsConfiguration defaultConfig;
-    HashSet doubleBufferVisuals;
+    HashSet<Integer> doubleBufferVisuals;
 
     /**
      * Returns all of the graphics
@@ -159,7 +159,7 @@ public class X11GraphicsDevice
 
             boolean dbeSupported = isDBESupported();
             if (dbeSupported && doubleBufferVisuals == null) {
-                doubleBufferVisuals = new HashSet();
+                doubleBufferVisuals = new HashSet<>();
                 getDoubleBufferVisuals(screen);
             }
             for ( ; i < num; i++) {
@@ -249,7 +249,7 @@ public class X11GraphicsDevice
                 int depth = getConfigDepth(0, screen);
                 boolean doubleBuffer = false;
                 if (isDBESupported() && doubleBufferVisuals == null) {
-                    doubleBufferVisuals = new HashSet();
+                    doubleBufferVisuals = new HashSet<>();
                     getDoubleBufferVisuals(screen);
                     doubleBuffer =
                         doubleBufferVisuals.contains(Integer.valueOf(visNum));

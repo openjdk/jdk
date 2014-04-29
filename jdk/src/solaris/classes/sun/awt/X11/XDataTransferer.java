@@ -49,6 +49,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriter;
 import javax.imageio.spi.ImageWriterSpi;
@@ -333,7 +334,7 @@ public class XDataTransferer extends DataTransferer {
         // flavors to enable dynamic text native-to-flavor mapping generation.
         // See SystemFlavorMap.getFlavorsForNative() for details.
         if ("image".equals(primaryType)) {
-            Iterator readers = ImageIO.getImageReadersByMIMEType(baseType);
+            Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(baseType);
             if (readers.hasNext()) {
                 flavors.add(DataFlavor.imageFlavor);
             }

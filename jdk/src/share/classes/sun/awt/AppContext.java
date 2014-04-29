@@ -890,6 +890,7 @@ public final class AppContext {
             Supplier<T> supplier) {
 
         final AppContext appContext = AppContext.getAppContext();
+        @SuppressWarnings("unchecked")
         SoftReference<T> ref = (SoftReference<T>) appContext.get(key);
         if (ref != null) {
             final T object = ref.get();

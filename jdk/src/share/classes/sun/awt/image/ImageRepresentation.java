@@ -185,7 +185,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
     protected BufferedImage createImage(ColorModel cm,
                                         WritableRaster raster,
                                         boolean isRasterPremultiplied,
-                                        Hashtable properties)
+                                        Hashtable<?,?> properties)
     {
         BufferedImage bi =
             new BufferedImage(cm, raster, isRasterPremultiplied, null);

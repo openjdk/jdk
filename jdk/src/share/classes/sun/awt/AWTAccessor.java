@@ -621,7 +621,7 @@ public final class AWTAccessor {
         /**
          * Returns menus
          */
-        Vector getMenus(MenuBar menuBar);
+        Vector<Menu> getMenus(MenuBar menuBar);
     }
 
     /**
@@ -663,7 +663,7 @@ public final class AWTAccessor {
         /**
          * Returns vector of the items that are part of the Menu
          */
-        Vector getItems(Menu menu);
+        Vector<MenuItem> getItems(Menu menu);
     }
 
     /**
