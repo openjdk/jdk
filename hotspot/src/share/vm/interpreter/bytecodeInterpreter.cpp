@@ -507,25 +507,8 @@ BytecodeInterpreter::run(interpreterState istate) {
 
 #ifdef ASSERT
   if (istate->_msg != initialize) {
-    // We have a problem here if we are running with a pre-hsx24 JDK (for example during bootstrap)
-    // because in that case, EnableInvokeDynamic is true by default but will be later switched off
-    // if java_lang_invoke_MethodHandle::compute_offsets() detects that the JDK only has the classes
-    // for the old JSR292 implementation.
-    // This leads to a situation where 'istate->_stack_limit' always accounts for
-    // methodOopDesc::extra_stack_entries() because it is computed in
-    // CppInterpreterGenerator::generate_compute_interpreter_state() which was generated while
-    // EnableInvokeDynamic was still true. On the other hand, istate->_method->max_stack() doesn't
-    // account for extra_stack_entries() anymore because at the time when it is called
-    // EnableInvokeDynamic was already set to false.
-    // So we have a second version of the assertion which handles the case where EnableInvokeDynamic was
-    // switched off because of the wrong classes.
-    if (EnableInvokeDynamic || FLAG_IS_CMDLINE(EnableInvokeDynamic)) {
-      assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-    } else {
-      const int extra_stack_entries = Method::extra_stack_entries_for_jsr292;
-      assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + extra_stack_entries
-                                                                                               + 1), "bad stack limit");
-    }
+    assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
+  }
 #ifndef SHARK
     IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
 #endif // !SHARK
@@ -2458,15 +2441,6 @@ run:
 
       CASE(_invokedynamic): {
 
-        if (!EnableInvokeDynamic) {
-          // We should not encounter this bytecode if !EnableInvokeDynamic.
-          // The verifier will stop it.  However, if we get past the verifier,
-          // this will stop the thread in a reasonable way, without crashing the JVM.
-          CALL_VM(InterpreterRuntime::throw_IncompatibleClassChangeError(THREAD),
-                  handle_exception);
-          ShouldNotReachHere();
-        }
-
         u4 index = Bytes::get_native_u4(pc+1);
         ConstantPoolCacheEntry* cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);
 
@@ -2500,10 +2474,6 @@ run:
       }
 
       CASE(_invokehandle): {
-
-        if (!EnableInvokeDynamic) {
-          ShouldNotReachHere();
-        }
 
         u2 index = Bytes::get_native_u2(pc+1);
         ConstantPoolCacheEntry* cache = cp->entry_at(index);

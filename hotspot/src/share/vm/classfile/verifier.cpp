@@ -2361,12 +2361,9 @@ void ClassVerifier::verify_invoke_instructions(
   // Get referenced class type
   VerificationType ref_class_type;
   if (opcode == Bytecodes::_invokedynamic) {
-    if (!EnableInvokeDynamic ||
-        _klass->major_version() < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+    if (_klass->major_version() < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
       class_format_error(
-        (!EnableInvokeDynamic ?
-         "invokedynamic instructions not enabled in this JVM" :
-         "invokedynamic instructions not supported by this class file version"),
+        "invokedynamic instructions not supported by this class file version",
         _klass->external_name());
       return;
     }

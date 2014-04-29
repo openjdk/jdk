@@ -181,9 +181,8 @@ bool ciObject::should_be_constant() {
     if (klass() == env->String_klass() || klass() == env->Class_klass()) {
       return true;
     }
-  if (EnableInvokeDynamic &&
-      (klass()->is_subclass_of(env->MethodHandle_klass()) ||
-       klass()->is_subclass_of(env->CallSite_klass()))) {
+  if (klass()->is_subclass_of(env->MethodHandle_klass()) ||
+      klass()->is_subclass_of(env->CallSite_klass())) {
     assert(ScavengeRootsInCode >= 1, "must be");
     // We want to treat these aggressively.
     return true;

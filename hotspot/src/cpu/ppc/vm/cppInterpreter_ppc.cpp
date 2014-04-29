@@ -419,10 +419,8 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(Label& stack_ov
   // TODO: PPC port: assert(2 == ConstMethod::sz_max_stack(), "unexpected field size");
   __ lhz(max_stack, in_bytes(ConstMethod::max_stack_offset()), max_stack);
 
-  if (EnableInvokeDynamic) {
-    // Take into account 'extra_stack_entries' needed by method handles (see method.hpp).
+  // Take into account 'extra_stack_entries' needed by method handles (see method.hpp).
     __ addi(max_stack, max_stack, Method::extra_stack_entries());
-  }
 
   // mem_stack_limit = thread->stack_limit();
   __ ld(mem_stack_limit, thread_(stack_overflow_limit));

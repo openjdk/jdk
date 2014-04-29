@@ -3602,9 +3602,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // It is done after compilers are initialized, because otherwise compilations of
   // signature polymorphic MH intrinsics can be missed
   // (see SystemDictionary::find_method_handle_intrinsic).
-  if (EnableInvokeDynamic) {
-    initialize_jsr292_core_classes(CHECK_JNI_ERR);
-  }
+  initialize_jsr292_core_classes(CHECK_JNI_ERR);
 
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
