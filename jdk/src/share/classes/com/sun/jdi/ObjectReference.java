@@ -194,10 +194,10 @@ public interface ObjectReference extends Value {
      * {@link #INVOKE_NONVIRTUAL} bit flag in the <code>options</code>
      * argument. If this flag is set, the specified method is invoked
      * whether or not it is overridden for this object's runtime type.
-     * The method, in this case, must have an implementation, either in a class
-     * or an interface. This option is useful for performing method invocations
-     * like those done with the <code>super</code> keyword in the Java programming
-     * language.
+     * The method, in this case, must not belong to an interface and
+     * must not be abstract. This option is useful for performing method
+     * invocations like those done with the <code>super</code> keyword in
+     * the Java programming language.
      * <p>
      * By default, all threads in the target VM are resumed while
      * the method is being invoked if they were previously
@@ -246,10 +246,10 @@ public interface ObjectReference extends Value {
      * @return a {@link Value} mirror of the invoked method's return value.
      * @throws java.lang.IllegalArgumentException if the method is not
      * a member of this object's class, if the size of the argument list
-     * does not match the number of declared arguments for the method,
+     * does not match the number of declared arguemnts for the method,
      * if the method is a constructor or static intializer, or
      * if {@link #INVOKE_NONVIRTUAL} is specified and the method is
-     * either abstract or a non-default interface member.
+     * either abstract or an interface member.
      * @throws {@link InvalidTypeException} if any argument in the
      * argument list is not assignable to the corresponding method argument
      * type.
