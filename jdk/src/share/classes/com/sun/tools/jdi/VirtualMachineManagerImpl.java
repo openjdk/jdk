@@ -48,7 +48,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
     private ResourceBundle messages = null;
     private int vmSequenceNumber = 0;
     private static final int majorVersion = 1;
-    private static final int minorVersion = 8;
+    private static final int minorVersion = 6;
 
     private static final Object lock = new Object();
     private static VirtualMachineManagerImpl vmm;
