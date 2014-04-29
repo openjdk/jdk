@@ -450,8 +450,8 @@ class os: AllStatic {
     // yield that can be used in lieu of blocking.
   } ;
   static YieldResult NakedYield () ;
-  static void yield_all(int attempts = 0); // Yields to all other threads including lower priority
-  static void loop_breaker(int attempts);  // called from within tight loops to possibly influence time-sharing
+  static void yield_all(); // Yields to all other threads including lower priority
+                           // (for the default scheduling policy)
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
 

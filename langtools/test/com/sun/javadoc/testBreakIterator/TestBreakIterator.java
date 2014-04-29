@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,12 @@
 
 public class TestBreakIterator extends JavadocTester {
 
-    private static final String BUG_ID = "4165985";
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "BreakIteratorTest.html",
+        { "pkg/BreakIteratorTest.html",
             "The class is empty (i.e. it has no members)."}};
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             "-breakiterator", "pkg"};
 
     /**
@@ -53,21 +51,7 @@ public class TestBreakIterator extends JavadocTester {
      */
     public static void main(String[] args) {
         TestBreakIterator tester = new TestBreakIterator();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

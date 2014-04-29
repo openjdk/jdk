@@ -346,10 +346,15 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 
     public JCTree visitCompilationUnit(CompilationUnitTree node, P p) {
         JCCompilationUnit t = (JCCompilationUnit) node;
-        List<JCAnnotation> packageAnnotations = copy(t.packageAnnotations, p);
-        JCExpression pid = copy(t.pid, p);
         List<JCTree> defs = copy(t.defs, p);
-        return M.at(t.pos).TopLevel(packageAnnotations, pid, defs);
+        return M.at(t.pos).TopLevel(defs);
+    }
+
+    public JCTree visitPackage(PackageTree node, P p) {
+        JCPackageDecl t = (JCPackageDecl) node;
+        List<JCAnnotation> annotations = copy(t.annotations, p);
+        JCExpression pid = copy(t.pid, p);
+        return M.at(t.pos).PackageDecl(annotations, pid);
     }
 
     public JCTree visitTry(TryTree node, P p) {

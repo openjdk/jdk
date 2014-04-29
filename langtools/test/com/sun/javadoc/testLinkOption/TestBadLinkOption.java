@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,9 @@
 
 public class TestBadLinkOption extends JavadocTester {
 
-    private static final String BUG_ID = "4720957";
-
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-        "-link", BUG_ID, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
+        "-link", OUTPUT_DIR, "pkg"
     };
 
     private static final String[][] TEST = {
@@ -55,21 +53,7 @@ public class TestBadLinkOption extends JavadocTester {
      */
     public static void main(String[] args) {
         TestBadLinkOption tester = new TestBadLinkOption();
-        run(tester, ARGS, TEST, NEG_TEST);
+        tester.run(ARGS, TEST, NEG_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,14 @@
  */
 
 /*
-@test
-@bug 8004970
-@summary Lambda serialization in the presence of class loaders
-@author Peter Levart
-*/
+ * @test
+ * @bug 8004970
+ * @summary Lambda serialization in the presence of class loaders
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.IOUtils
+ * @run main LambdaClassLoaderSerialization
+ * @author Peter Levart
+ */
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +39,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Arrays;
+
+import jdk.testlibrary.IOUtils;
 
 public class LambdaClassLoaderSerialization {
 
@@ -125,7 +130,7 @@ public class LambdaClassLoaderSerialization {
             String path = name.replace('.', '/').concat(".class");
             try (InputStream is = getResourceAsStream(path)) {
                 if (is != null) {
-                    byte[] bytes = readFully(is);
+                    byte[] bytes = IOUtils.readFully(is);
                     return defineClass(name, bytes, 0, bytes.length);
                 } else {
                     throw new ClassNotFoundException(name);
@@ -134,31 +139,6 @@ public class LambdaClassLoaderSerialization {
             catch (IOException e) {
                 throw new ClassNotFoundException(name, e);
             }
-        }
-
-        static byte[] readFully(InputStream is) throws IOException {
-            byte[] output = {};
-            int pos = 0;
-            while (true) {
-                int bytesToRead;
-                if (pos >= output.length) { // Only expand when there's no room
-                    bytesToRead = output.length + 1024;
-                    if (output.length < pos + bytesToRead) {
-                        output = Arrays.copyOf(output, pos + bytesToRead);
-                    }
-                } else {
-                    bytesToRead = output.length - pos;
-                }
-                int cc = is.read(output, pos, bytesToRead);
-                if (cc < 0) {
-                    if (output.length != pos) {
-                        output = Arrays.copyOf(output, pos);
-                    }
-                    break;
-                }
-                pos += cc;
-            }
-            return output;
         }
     }
 }

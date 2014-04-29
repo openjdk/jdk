@@ -190,6 +190,13 @@ address LIR_Assembler::pc() const {
   return _masm->pc();
 }
 
+// To bang the stack of this compiled method we use the stack size
+// that the interpreter would need in case of a deoptimization. This
+// removes the need to bang the stack in the deoptimization blob which
+// in turn simplifies stack overflow handling.
+int LIR_Assembler::bang_size_in_bytes() const {
+  return MAX2(initial_frame_size_in_bytes(), _compilation->interpreter_frame_size());
+}
 
 void LIR_Assembler::emit_exception_entries(ExceptionInfoList* info_list) {
   for (int i = 0; i < info_list->length(); i++) {
@@ -797,7 +804,7 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
 
 
 void LIR_Assembler::build_frame() {
-  _masm->build_frame(initial_frame_size_in_bytes());
+  _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 }
 
 

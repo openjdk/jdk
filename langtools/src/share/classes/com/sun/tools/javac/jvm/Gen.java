@@ -1647,7 +1647,7 @@ public class Gen extends JCTree.Visitor {
                         if (subCatch.type.isAnnotated()) {
                             for (Attribute.TypeCompound tc :
                                      subCatch.type.getAnnotationMirrors()) {
-                                tc.position.type_index = catchType;
+                                tc.position.setCatchType(catchType);
                             }
                         }
                     }
@@ -1664,7 +1664,7 @@ public class Gen extends JCTree.Visitor {
                         if (subCatch.type.isAnnotated()) {
                             for (Attribute.TypeCompound tc :
                                      subCatch.type.getAnnotationMirrors()) {
-                                tc.position.type_index = catchType;
+                                tc.position.setCatchType(catchType);
                             }
                         }
                     }

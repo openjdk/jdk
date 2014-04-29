@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,20 +33,17 @@
 
 public class TestMethodTypes extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8002304";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"
     };
 
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "A.html",
+        { "pkg1/A.html",
             "var methods = {"
         },
 
-        {BUG_ID + FS + "pkg1" + FS + "A.html",
+        { "pkg1/A.html",
             "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All " +
             "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "<span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">" +
@@ -60,11 +57,11 @@ public class TestMethodTypes extends JavadocTester {
             "</caption>"
         },
 
-        {BUG_ID + FS + "pkg1" + FS + "A.html",
+        { "pkg1/A.html",
             "<tr id=\"i0\" class=\"altColor\">"
         },
 
-        {BUG_ID + FS + "pkg1" + FS + "B.html",
+        { "pkg1/B.html",
             "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All " +
             "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">" +
@@ -74,11 +71,11 @@ public class TestMethodTypes extends JavadocTester {
             "</caption>"
         },
 
-        {BUG_ID + FS + "pkg1" + FS + "D.html",
+        { "pkg1/D.html",
             "var methods = {"
         },
 
-        {BUG_ID + FS + "pkg1" + FS + "D.html",
+        { "pkg1/D.html",
             "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All " +
             "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">" +
@@ -92,22 +89,22 @@ public class TestMethodTypes extends JavadocTester {
             "</caption>"
         },
 
-        {BUG_ID + FS + "pkg1" + FS + "D.html",
+        { "pkg1/D.html",
             "<tr id=\"i0\" class=\"altColor\">"
         },
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "A.html",
+        { "pkg1/A.html",
             "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>" +
             "</caption>"
         },
 
-        {BUG_ID + FS + "pkg1" + FS + "B.html",
+        { "pkg1/B.html",
             "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>" +
             "</caption>"
         },
 
-        {BUG_ID + FS + "pkg1" + FS + "D.html",
+        { "pkg1/D.html",
             "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>" +
             "</caption>"
         },
@@ -119,21 +116,7 @@ public class TestMethodTypes extends JavadocTester {
      */
     public static void main(String[] args) {
         TestMethodTypes tester = new TestMethodTypes();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

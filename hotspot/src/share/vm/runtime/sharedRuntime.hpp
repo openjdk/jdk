@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,16 +253,13 @@ class SharedRuntime: AllStatic {
   // bytecode tracing is only used by the TraceBytecodes
   static intptr_t trace_bytecode(JavaThread* thread, intptr_t preserve_this_value, intptr_t tos, intptr_t tos2) PRODUCT_RETURN0;
 
-  // Used to back off a spin lock that is under heavy contention
-  static void yield_all(JavaThread* thread, int attempts = 0);
-
   static oop retrieve_receiver( Symbol* sig, frame caller );
 
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
   // dtrace notifications
-  static int dtrace_object_alloc(oopDesc* o);
-  static int dtrace_object_alloc_base(Thread* thread, oopDesc* o);
+  static int dtrace_object_alloc(oopDesc* o, int size);
+  static int dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size);
   static int dtrace_method_entry(JavaThread* thread, Method* m);
   static int dtrace_method_exit(JavaThread* thread, Method* m);
 
