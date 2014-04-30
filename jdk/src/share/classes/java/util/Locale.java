@@ -951,7 +951,6 @@ public final class Locale implements Cloneable, Serializable {
      * functionality, this method should only be used if the caller is
      * prepared to reinitialize locale-sensitive code running within the
      * same Java Virtual Machine.
-     * <p>
      *
      * @param category - the specified category to set the default locale
      * @param newLocale - the new default locale
