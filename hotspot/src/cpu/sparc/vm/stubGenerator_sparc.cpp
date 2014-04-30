@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3305,9 +3305,12 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_aescrypt_encryptBlock() {
+    // required since we read expanded key 'int' array starting first element without alignment considerations
+    assert((arrayOopDesc::base_offset_in_bytes(T_INT) & 7) == 0,
+           "the following code assumes that first element of an int array is aligned to 8 bytes");
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "aesencryptBlock");
-    Label L_doLast128bit, L_storeOutput;
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
+    Label L_load_misaligned_input, L_load_expanded_key, L_doLast128bit, L_storeOutput, L_store_misaligned_output;
     address start = __ pc();
     Register from = O0; // source byte array
     Register to = O1;   // destination byte array
@@ -3317,15 +3320,33 @@ class StubGenerator: public StubCodeGenerator {
     // read expanded key length
     __ ldsw(Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)), keylen, 0);
 
-    // load input into F54-F56; F30-F31 used as temp
-    __ ldf(FloatRegisterImpl::S, from, 0, F30);
-    __ ldf(FloatRegisterImpl::S, from, 4, F31);
-    __ fmov(FloatRegisterImpl::D, F30, F54);
-    __ ldf(FloatRegisterImpl::S, from, 8, F30);
-    __ ldf(FloatRegisterImpl::S, from, 12, F31);
-    __ fmov(FloatRegisterImpl::D, F30, F56);
+    // Method to address arbitrary alignment for load instructions:
+    // Check last 3 bits of 'from' address to see if it is aligned to 8-byte boundary
+    // If zero/aligned then continue with double FP load instructions
+    // If not zero/mis-aligned then alignaddr will set GSR.align with number of bytes to skip during faligndata
+    // alignaddr will also convert arbitrary aligned 'from' address to nearest 8-byte aligned address
+    // load 3 * 8-byte components (to read 16 bytes input) in 3 different FP regs starting at this aligned address
+    // faligndata will then extract (based on GSR.align value) the appropriate 8 bytes from the 2 source regs
 
-    // load expanded key
+    // check for 8-byte alignment since source byte array may have an arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_load_misaligned_input);
+    __ delayed()->alignaddr(from, G0, from);
+
+    // aligned case: load input into F54-F56
+    __ ldf(FloatRegisterImpl::D, from, 0, F54);
+    __ ldf(FloatRegisterImpl::D, from, 8, F56);
+    __ ba_short(L_load_expanded_key);
+
+    __ BIND(L_load_misaligned_input);
+    __ ldf(FloatRegisterImpl::D, from, 0, F54);
+    __ ldf(FloatRegisterImpl::D, from, 8, F56);
+    __ ldf(FloatRegisterImpl::D, from, 16, F58);
+    __ faligndata(F54, F56, F54);
+    __ faligndata(F56, F58, F56);
+
+    __ BIND(L_load_expanded_key);
+    // Since we load expanded key buffers starting first element, 8-byte alignment is guaranteed
     for ( int i = 0;  i <= 38; i += 2 ) {
       __ ldf(FloatRegisterImpl::D, key, i*4, as_FloatRegister(i));
     }
@@ -3365,8 +3386,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ldf(FloatRegisterImpl::D, key, 232, F50);
     __ aes_eround01(F52, F54, F56, F58); //round 13
     __ aes_eround23(F46, F54, F56, F60);
-    __ br(Assembler::always, false, Assembler::pt, L_storeOutput);
-    __ delayed()->nop();
+    __ ba_short(L_storeOutput);
 
     __ BIND(L_doLast128bit);
     __ ldf(FloatRegisterImpl::D, key, 160, F48);
@@ -3377,23 +3397,62 @@ class StubGenerator: public StubCodeGenerator {
     __ aes_eround01_l(F48, F58, F60, F54); //last round
     __ aes_eround23_l(F50, F58, F60, F56);
 
-    // store output into the destination array, F0-F1 used as temp
-    __ fmov(FloatRegisterImpl::D, F54, F0);
-    __ stf(FloatRegisterImpl::S, F0, to, 0);
-    __ stf(FloatRegisterImpl::S, F1, to, 4);
-    __ fmov(FloatRegisterImpl::D, F56, F0);
-    __ stf(FloatRegisterImpl::S, F0, to, 8);
+    // Method to address arbitrary alignment for store instructions:
+    // Check last 3 bits of 'dest' address to see if it is aligned to 8-byte boundary
+    // If zero/aligned then continue with double FP store instructions
+    // If not zero/mis-aligned then edge8n will generate edge mask in result reg (O3 in below case)
+    // Example: If dest address is 0x07 and nearest 8-byte aligned address is 0x00 then edge mask will be 00000001
+    // Compute (8-n) where n is # of bytes skipped by partial store(stpartialf) inst from edge mask, n=7 in this case
+    // We get the value of n from the andcc that checks 'dest' alignment. n is available in O5 in below case.
+    // Set GSR.align to (8-n) using alignaddr
+    // Circular byte shift store values by n places so that the original bytes are at correct position for stpartialf
+    // Set the arbitrarily aligned 'dest' address to nearest 8-byte aligned address
+    // Store (partial) the original first (8-n) bytes starting at the original 'dest' address
+    // Negate the edge mask so that the subsequent stpartialf can store the original (8-n-1)th through 8th bytes at appropriate address
+    // We need to execute this process for both the 8-byte result values
+
+    // check for 8-byte alignment since dest byte array may have arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(to, 7, O5);
+    __ br(Assembler::notZero, true, Assembler::pn, L_store_misaligned_output);
+    __ delayed()->edge8n(to, G0, O3);
+
+    // aligned case: store output into the destination array
+    __ stf(FloatRegisterImpl::D, F54, to, 0);
     __ retl();
-    __ delayed()->stf(FloatRegisterImpl::S, F1, to, 12);
+    __ delayed()->stf(FloatRegisterImpl::D, F56, to, 8);
+
+    __ BIND(L_store_misaligned_output);
+    __ add(to, 8, O4);
+    __ mov(8, O2);
+    __ sub(O2, O5, O2);
+    __ alignaddr(O2, G0, O2);
+    __ faligndata(F54, F54, F54);
+    __ faligndata(F56, F56, F56);
+    __ and3(to, -8, to);
+    __ and3(O4, -8, O4);
+    __ stpartialf(to, O3, F54, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(O4, O3, F56, Assembler::ASI_PST8_PRIMARY);
+    __ add(to, 8, to);
+    __ add(O4, 8, O4);
+    __ orn(G0, O3, O3);
+    __ stpartialf(to, O3, F54, Assembler::ASI_PST8_PRIMARY);
+    __ retl();
+    __ delayed()->stpartialf(O4, O3, F56, Assembler::ASI_PST8_PRIMARY);
 
     return start;
   }
 
   address generate_aescrypt_decryptBlock() {
+    assert((arrayOopDesc::base_offset_in_bytes(T_INT) & 7) == 0,
+           "the following code assumes that first element of an int array is aligned to 8 bytes");
+    // required since we read original key 'byte' array as well in the decryption stubs
+    assert((arrayOopDesc::base_offset_in_bytes(T_BYTE) & 7) == 0,
+           "the following code assumes that first element of a byte array is aligned to 8 bytes");
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "aesdecryptBlock");
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
     address start = __ pc();
-    Label L_expand192bit, L_expand256bit, L_common_transform;
+    Label L_load_misaligned_input, L_load_original_key, L_expand192bit, L_expand256bit, L_reload_misaligned_input;
+    Label L_256bit_transform, L_common_transform, L_store_misaligned_output;
     Register from = O0; // source byte array
     Register to = O1;   // destination byte array
     Register key = O2;  // expanded key array
@@ -3403,15 +3462,29 @@ class StubGenerator: public StubCodeGenerator {
     // read expanded key array length
     __ ldsw(Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)), keylen, 0);
 
-    // load input into F52-F54; F30,F31 used as temp
-    __ ldf(FloatRegisterImpl::S, from, 0, F30);
-    __ ldf(FloatRegisterImpl::S, from, 4, F31);
-    __ fmov(FloatRegisterImpl::D, F30, F52);
-    __ ldf(FloatRegisterImpl::S, from, 8, F30);
-    __ ldf(FloatRegisterImpl::S, from, 12, F31);
-    __ fmov(FloatRegisterImpl::D, F30, F54);
+    // save 'from' since we may need to recheck alignment in case of 256-bit decryption
+    __ mov(from, G1);
 
+    // check for 8-byte alignment since source byte array may have an arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_load_misaligned_input);
+    __ delayed()->alignaddr(from, G0, from);
+
+    // aligned case: load input into F52-F54
+    __ ldf(FloatRegisterImpl::D, from, 0, F52);
+    __ ldf(FloatRegisterImpl::D, from, 8, F54);
+    __ ba_short(L_load_original_key);
+
+    __ BIND(L_load_misaligned_input);
+    __ ldf(FloatRegisterImpl::D, from, 0, F52);
+    __ ldf(FloatRegisterImpl::D, from, 8, F54);
+    __ ldf(FloatRegisterImpl::D, from, 16, F56);
+    __ faligndata(F52, F54, F52);
+    __ faligndata(F54, F56, F54);
+
+    __ BIND(L_load_original_key);
     // load original key from SunJCE expanded decryption key
+    // Since we load original key buffer starting first element, 8-byte alignment is guaranteed
     for ( int i = 0;  i <= 3; i++ ) {
       __ ldf(FloatRegisterImpl::S, original_key, i*4, as_FloatRegister(i));
     }
@@ -3432,8 +3505,7 @@ class StubGenerator: public StubCodeGenerator {
     // perform 128-bit key specific inverse cipher transformation
     __ fxor(FloatRegisterImpl::D, F42, F54, F54);
     __ fxor(FloatRegisterImpl::D, F40, F52, F52);
-    __ br(Assembler::always, false, Assembler::pt, L_common_transform);
-    __ delayed()->nop();
+    __ ba_short(L_common_transform);
 
     __ BIND(L_expand192bit);
 
@@ -3457,8 +3529,7 @@ class StubGenerator: public StubCodeGenerator {
     __ aes_dround01(F44, F52, F54, F56);
     __ aes_dround23(F42, F56, F58, F54);
     __ aes_dround01(F40, F56, F58, F52);
-    __ br(Assembler::always, false, Assembler::pt, L_common_transform);
-    __ delayed()->nop();
+    __ ba_short(L_common_transform);
 
     __ BIND(L_expand256bit);
 
@@ -3478,14 +3549,31 @@ class StubGenerator: public StubCodeGenerator {
     __ aes_kexpand2(F50, F56, F58);
 
     for ( int i = 0;  i <= 6; i += 2 ) {
-      __ fmov(FloatRegisterImpl::D, as_FloatRegister(58-i), as_FloatRegister(i));
+      __ fsrc2(FloatRegisterImpl::D, as_FloatRegister(58-i), as_FloatRegister(i));
     }
 
-    // load input into F52-F54
+    // reload original 'from' address
+    __ mov(G1, from);
+
+    // re-check 8-byte alignment
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_reload_misaligned_input);
+    __ delayed()->alignaddr(from, G0, from);
+
+    // aligned case: load input into F52-F54
     __ ldf(FloatRegisterImpl::D, from, 0, F52);
     __ ldf(FloatRegisterImpl::D, from, 8, F54);
+    __ ba_short(L_256bit_transform);
+
+    __ BIND(L_reload_misaligned_input);
+    __ ldf(FloatRegisterImpl::D, from, 0, F52);
+    __ ldf(FloatRegisterImpl::D, from, 8, F54);
+    __ ldf(FloatRegisterImpl::D, from, 16, F56);
+    __ faligndata(F52, F54, F52);
+    __ faligndata(F54, F56, F54);
 
     // perform 256-bit key specific inverse cipher transformation
+    __ BIND(L_256bit_transform);
     __ fxor(FloatRegisterImpl::D, F0, F54, F54);
     __ fxor(FloatRegisterImpl::D, F2, F52, F52);
     __ aes_dround23(F4, F52, F54, F58);
@@ -3515,43 +3603,71 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    // store output to destination array, F0-F1 used as temp
-    __ fmov(FloatRegisterImpl::D, F52, F0);
-    __ stf(FloatRegisterImpl::S, F0, to, 0);
-    __ stf(FloatRegisterImpl::S, F1, to, 4);
-    __ fmov(FloatRegisterImpl::D, F54, F0);
-    __ stf(FloatRegisterImpl::S, F0, to, 8);
+    // check for 8-byte alignment since dest byte array may have arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(to, 7, O5);
+    __ br(Assembler::notZero, true, Assembler::pn, L_store_misaligned_output);
+    __ delayed()->edge8n(to, G0, O3);
+
+    // aligned case: store output into the destination array
+    __ stf(FloatRegisterImpl::D, F52, to, 0);
     __ retl();
-    __ delayed()->stf(FloatRegisterImpl::S, F1, to, 12);
+    __ delayed()->stf(FloatRegisterImpl::D, F54, to, 8);
+
+    __ BIND(L_store_misaligned_output);
+    __ add(to, 8, O4);
+    __ mov(8, O2);
+    __ sub(O2, O5, O2);
+    __ alignaddr(O2, G0, O2);
+    __ faligndata(F52, F52, F52);
+    __ faligndata(F54, F54, F54);
+    __ and3(to, -8, to);
+    __ and3(O4, -8, O4);
+    __ stpartialf(to, O3, F52, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(O4, O3, F54, Assembler::ASI_PST8_PRIMARY);
+    __ add(to, 8, to);
+    __ add(O4, 8, O4);
+    __ orn(G0, O3, O3);
+    __ stpartialf(to, O3, F52, Assembler::ASI_PST8_PRIMARY);
+    __ retl();
+    __ delayed()->stpartialf(O4, O3, F54, Assembler::ASI_PST8_PRIMARY);
 
     return start;
   }
 
   address generate_cipherBlockChaining_encryptAESCrypt() {
+    assert((arrayOopDesc::base_offset_in_bytes(T_INT) & 7) == 0,
+           "the following code assumes that first element of an int array is aligned to 8 bytes");
+    assert((arrayOopDesc::base_offset_in_bytes(T_BYTE) & 7) == 0,
+           "the following code assumes that first element of a byte array is aligned to 8 bytes");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_encryptAESCrypt");
-    Label L_cbcenc128, L_cbcenc192, L_cbcenc256;
+    Label L_cbcenc128, L_load_misaligned_input_128bit, L_128bit_transform, L_store_misaligned_output_128bit;
+    Label L_check_loop_end_128bit, L_cbcenc192, L_load_misaligned_input_192bit, L_192bit_transform;
+    Label L_store_misaligned_output_192bit, L_check_loop_end_192bit, L_cbcenc256, L_load_misaligned_input_256bit;
+    Label L_256bit_transform, L_store_misaligned_output_256bit, L_check_loop_end_256bit;
     address start = __ pc();
-    Register from = O0; // source byte array
-    Register to = O1;   // destination byte array
-    Register key = O2;  // expanded key array
-    Register rvec = O3; // init vector
-    const Register len_reg = O4; // cipher length
-    const Register keylen = O5;  // reg for storing expanded key array length
+    Register from = I0; // source byte array
+    Register to = I1;   // destination byte array
+    Register key = I2;  // expanded key array
+    Register rvec = I3; // init vector
+    const Register len_reg = I4; // cipher length
+    const Register keylen = I5;  // reg for storing expanded key array length
 
-    // save cipher len to return in the end
-    __ mov(len_reg, L1);
+    // save cipher len before save_frame, to return in the end
+    __ mov(O4, L0);
+    __ save_frame(0);
 
     // read expanded key length
     __ ldsw(Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)), keylen, 0);
 
-    // load init vector
+    // load initial vector, 8-byte alignment is guranteed
     __ ldf(FloatRegisterImpl::D, rvec, 0, F60);
     __ ldf(FloatRegisterImpl::D, rvec, 8, F62);
+    // load key, 8-byte alignment is guranteed
     __ ldx(key,0,G1);
-    __ ldx(key,8,G2);
+    __ ldx(key,8,G5);
 
-    // start loading expanded key
+    // start loading expanded key, 8-byte alignment is guranteed
     for ( int i = 0, j = 16;  i <= 38; i += 2, j += 8 ) {
       __ ldf(FloatRegisterImpl::D, key, j, as_FloatRegister(i));
     }
@@ -3571,15 +3687,35 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // 256-bit original key size
-    __ br(Assembler::always, false, Assembler::pt, L_cbcenc256);
-    __ delayed()->nop();
+    __ ba_short(L_cbcenc256);
 
     __ align(OptoLoopAlignment);
     __ BIND(L_cbcenc128);
+    // check for 8-byte alignment since source byte array may have an arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_load_misaligned_input_128bit);
+    __ delayed()->mov(from, L1); // save original 'from' address before alignaddr
+
+    // aligned case: load input into G3 and G4
     __ ldx(from,0,G3);
     __ ldx(from,8,G4);
+    __ ba_short(L_128bit_transform);
+
+    __ BIND(L_load_misaligned_input_128bit);
+    // can clobber F48, F50 and F52 as they are not used in 128 and 192-bit key encryption
+    __ alignaddr(from, G0, from);
+    __ ldf(FloatRegisterImpl::D, from, 0, F48);
+    __ ldf(FloatRegisterImpl::D, from, 8, F50);
+    __ ldf(FloatRegisterImpl::D, from, 16, F52);
+    __ faligndata(F48, F50, F48);
+    __ faligndata(F50, F52, F50);
+    __ movdtox(F48, G3);
+    __ movdtox(F50, G4);
+    __ mov(L1, from);
+
+    __ BIND(L_128bit_transform);
     __ xor3(G1,G3,G3);
-    __ xor3(G2,G4,G4);
+    __ xor3(G5,G4,G4);
     __ movxtod(G3,F56);
     __ movxtod(G4,F58);
     __ fxor(FloatRegisterImpl::D, F60, F56, F60);
@@ -3598,24 +3734,81 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
+    // check for 8-byte alignment since dest byte array may have arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(to, 7, L1);
+    __ br(Assembler::notZero, true, Assembler::pn, L_store_misaligned_output_128bit);
+    __ delayed()->edge8n(to, G0, L2);
+
+    // aligned case: store output into the destination array
     __ stf(FloatRegisterImpl::D, F60, to, 0);
     __ stf(FloatRegisterImpl::D, F62, to, 8);
+    __ ba_short(L_check_loop_end_128bit);
+
+    __ BIND(L_store_misaligned_output_128bit);
+    __ add(to, 8, L3);
+    __ mov(8, L4);
+    __ sub(L4, L1, L4);
+    __ alignaddr(L4, G0, L4);
+    // save cipher text before circular right shift
+    // as it needs to be stored as iv for next block (see code before next retl)
+    __ movdtox(F60, L6);
+    __ movdtox(F62, L7);
+    __ faligndata(F60, F60, F60);
+    __ faligndata(F62, F62, F62);
+    __ mov(to, L5);
+    __ and3(to, -8, to);
+    __ and3(L3, -8, L3);
+    __ stpartialf(to, L2, F60, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(L3, L2, F62, Assembler::ASI_PST8_PRIMARY);
+    __ add(to, 8, to);
+    __ add(L3, 8, L3);
+    __ orn(G0, L2, L2);
+    __ stpartialf(to, L2, F60, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(L3, L2, F62, Assembler::ASI_PST8_PRIMARY);
+    __ mov(L5, to);
+    __ movxtod(L6, F60);
+    __ movxtod(L7, F62);
+
+    __ BIND(L_check_loop_end_128bit);
     __ add(from, 16, from);
     __ add(to, 16, to);
     __ subcc(len_reg, 16, len_reg);
     __ br(Assembler::notEqual, false, Assembler::pt, L_cbcenc128);
     __ delayed()->nop();
+    // re-init intial vector for next block, 8-byte alignment is guaranteed
     __ stf(FloatRegisterImpl::D, F60, rvec, 0);
     __ stf(FloatRegisterImpl::D, F62, rvec, 8);
+    __ restore();
     __ retl();
-    __ delayed()->mov(L1, O0);
+    __ delayed()->mov(L0, O0);
 
     __ align(OptoLoopAlignment);
     __ BIND(L_cbcenc192);
+    // check for 8-byte alignment since source byte array may have an arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_load_misaligned_input_192bit);
+    __ delayed()->mov(from, L1); // save original 'from' address before alignaddr
+
+    // aligned case: load input into G3 and G4
     __ ldx(from,0,G3);
     __ ldx(from,8,G4);
+    __ ba_short(L_192bit_transform);
+
+    __ BIND(L_load_misaligned_input_192bit);
+    // can clobber F48, F50 and F52 as they are not used in 128 and 192-bit key encryption
+    __ alignaddr(from, G0, from);
+    __ ldf(FloatRegisterImpl::D, from, 0, F48);
+    __ ldf(FloatRegisterImpl::D, from, 8, F50);
+    __ ldf(FloatRegisterImpl::D, from, 16, F52);
+    __ faligndata(F48, F50, F48);
+    __ faligndata(F50, F52, F50);
+    __ movdtox(F48, G3);
+    __ movdtox(F50, G4);
+    __ mov(L1, from);
+
+    __ BIND(L_192bit_transform);
     __ xor3(G1,G3,G3);
-    __ xor3(G2,G4,G4);
+    __ xor3(G5,G4,G4);
     __ movxtod(G3,F56);
     __ movxtod(G4,F58);
     __ fxor(FloatRegisterImpl::D, F60, F56, F60);
@@ -3634,24 +3827,81 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
+    // check for 8-byte alignment since dest byte array may have arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(to, 7, L1);
+    __ br(Assembler::notZero, true, Assembler::pn, L_store_misaligned_output_192bit);
+    __ delayed()->edge8n(to, G0, L2);
+
+    // aligned case: store output into the destination array
     __ stf(FloatRegisterImpl::D, F60, to, 0);
     __ stf(FloatRegisterImpl::D, F62, to, 8);
+    __ ba_short(L_check_loop_end_192bit);
+
+    __ BIND(L_store_misaligned_output_192bit);
+    __ add(to, 8, L3);
+    __ mov(8, L4);
+    __ sub(L4, L1, L4);
+    __ alignaddr(L4, G0, L4);
+    __ movdtox(F60, L6);
+    __ movdtox(F62, L7);
+    __ faligndata(F60, F60, F60);
+    __ faligndata(F62, F62, F62);
+    __ mov(to, L5);
+    __ and3(to, -8, to);
+    __ and3(L3, -8, L3);
+    __ stpartialf(to, L2, F60, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(L3, L2, F62, Assembler::ASI_PST8_PRIMARY);
+    __ add(to, 8, to);
+    __ add(L3, 8, L3);
+    __ orn(G0, L2, L2);
+    __ stpartialf(to, L2, F60, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(L3, L2, F62, Assembler::ASI_PST8_PRIMARY);
+    __ mov(L5, to);
+    __ movxtod(L6, F60);
+    __ movxtod(L7, F62);
+
+    __ BIND(L_check_loop_end_192bit);
     __ add(from, 16, from);
     __ subcc(len_reg, 16, len_reg);
     __ add(to, 16, to);
     __ br(Assembler::notEqual, false, Assembler::pt, L_cbcenc192);
     __ delayed()->nop();
+    // re-init intial vector for next block, 8-byte alignment is guaranteed
     __ stf(FloatRegisterImpl::D, F60, rvec, 0);
     __ stf(FloatRegisterImpl::D, F62, rvec, 8);
+    __ restore();
     __ retl();
-    __ delayed()->mov(L1, O0);
+    __ delayed()->mov(L0, O0);
 
     __ align(OptoLoopAlignment);
     __ BIND(L_cbcenc256);
+    // check for 8-byte alignment since source byte array may have an arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_load_misaligned_input_256bit);
+    __ delayed()->mov(from, L1); // save original 'from' address before alignaddr
+
+    // aligned case: load input into G3 and G4
     __ ldx(from,0,G3);
     __ ldx(from,8,G4);
+    __ ba_short(L_256bit_transform);
+
+    __ BIND(L_load_misaligned_input_256bit);
+    // cannot clobber F48, F50 and F52. F56, F58 can be used though
+    __ alignaddr(from, G0, from);
+    __ movdtox(F60, L2); // save F60 before overwriting
+    __ ldf(FloatRegisterImpl::D, from, 0, F56);
+    __ ldf(FloatRegisterImpl::D, from, 8, F58);
+    __ ldf(FloatRegisterImpl::D, from, 16, F60);
+    __ faligndata(F56, F58, F56);
+    __ faligndata(F58, F60, F58);
+    __ movdtox(F56, G3);
+    __ movdtox(F58, G4);
+    __ mov(L1, from);
+    __ movxtod(L2, F60);
+
+    __ BIND(L_256bit_transform);
     __ xor3(G1,G3,G3);
-    __ xor3(G2,G4,G4);
+    __ xor3(G5,G4,G4);
     __ movxtod(G3,F56);
     __ movxtod(G4,F58);
     __ fxor(FloatRegisterImpl::D, F60, F56, F60);
@@ -3670,26 +3920,69 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
+    // check for 8-byte alignment since dest byte array may have arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(to, 7, L1);
+    __ br(Assembler::notZero, true, Assembler::pn, L_store_misaligned_output_256bit);
+    __ delayed()->edge8n(to, G0, L2);
+
+    // aligned case: store output into the destination array
     __ stf(FloatRegisterImpl::D, F60, to, 0);
     __ stf(FloatRegisterImpl::D, F62, to, 8);
+    __ ba_short(L_check_loop_end_256bit);
+
+    __ BIND(L_store_misaligned_output_256bit);
+    __ add(to, 8, L3);
+    __ mov(8, L4);
+    __ sub(L4, L1, L4);
+    __ alignaddr(L4, G0, L4);
+    __ movdtox(F60, L6);
+    __ movdtox(F62, L7);
+    __ faligndata(F60, F60, F60);
+    __ faligndata(F62, F62, F62);
+    __ mov(to, L5);
+    __ and3(to, -8, to);
+    __ and3(L3, -8, L3);
+    __ stpartialf(to, L2, F60, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(L3, L2, F62, Assembler::ASI_PST8_PRIMARY);
+    __ add(to, 8, to);
+    __ add(L3, 8, L3);
+    __ orn(G0, L2, L2);
+    __ stpartialf(to, L2, F60, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(L3, L2, F62, Assembler::ASI_PST8_PRIMARY);
+    __ mov(L5, to);
+    __ movxtod(L6, F60);
+    __ movxtod(L7, F62);
+
+    __ BIND(L_check_loop_end_256bit);
     __ add(from, 16, from);
     __ subcc(len_reg, 16, len_reg);
     __ add(to, 16, to);
     __ br(Assembler::notEqual, false, Assembler::pt, L_cbcenc256);
     __ delayed()->nop();
+    // re-init intial vector for next block, 8-byte alignment is guaranteed
     __ stf(FloatRegisterImpl::D, F60, rvec, 0);
     __ stf(FloatRegisterImpl::D, F62, rvec, 8);
+    __ restore();
     __ retl();
-    __ delayed()->mov(L1, O0);
+    __ delayed()->mov(L0, O0);
 
     return start;
   }
 
   address generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
+    assert((arrayOopDesc::base_offset_in_bytes(T_INT) & 7) == 0,
+           "the following code assumes that first element of an int array is aligned to 8 bytes");
+    assert((arrayOopDesc::base_offset_in_bytes(T_BYTE) & 7) == 0,
+           "the following code assumes that first element of a byte array is aligned to 8 bytes");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
     Label L_cbcdec_end, L_expand192bit, L_expand256bit, L_dec_first_block_start;
     Label L_dec_first_block128, L_dec_first_block192, L_dec_next2_blocks128, L_dec_next2_blocks192, L_dec_next2_blocks256;
+    Label L_load_misaligned_input_first_block, L_transform_first_block, L_load_misaligned_next2_blocks128, L_transform_next2_blocks128;
+    Label L_load_misaligned_next2_blocks192, L_transform_next2_blocks192, L_load_misaligned_next2_blocks256, L_transform_next2_blocks256;
+    Label L_store_misaligned_output_first_block, L_check_decrypt_end, L_store_misaligned_output_next2_blocks128;
+    Label L_check_decrypt_loop_end128, L_store_misaligned_output_next2_blocks192, L_check_decrypt_loop_end192;
+    Label L_store_misaligned_output_next2_blocks256, L_check_decrypt_loop_end256;
     address start = __ pc();
     Register from = I0; // source byte array
     Register to = I1;   // destination byte array
@@ -3704,11 +3997,12 @@ class StubGenerator: public StubCodeGenerator {
     __ save_frame(0); //args are read from I* registers since we save the frame in the beginning
 
     // load original key from SunJCE expanded decryption key
+    // Since we load original key buffer starting first element, 8-byte alignment is guaranteed
     for ( int i = 0;  i <= 3; i++ ) {
       __ ldf(FloatRegisterImpl::S, original_key, i*4, as_FloatRegister(i));
     }
 
-    // load initial vector
+    // load initial vector, 8-byte alignment is guaranteed
     __ ldx(rvec,0,L0);
     __ ldx(rvec,8,L1);
 
@@ -3733,11 +4027,10 @@ class StubGenerator: public StubCodeGenerator {
     __ movdtox(F42,L3);
 
     __ and3(len_reg, 16, L4);
-    __ br_null(L4, false, Assembler::pt, L_dec_next2_blocks128);
-    __ delayed()->nop();
+    __ br_null_short(L4, Assembler::pt, L_dec_next2_blocks128);
+    __ nop();
 
-    __ br(Assembler::always, false, Assembler::pt, L_dec_first_block_start);
-    __ delayed()->nop();
+    __ ba_short(L_dec_first_block_start);
 
     __ BIND(L_expand192bit);
     // load rest of the 192-bit key
@@ -3758,11 +4051,10 @@ class StubGenerator: public StubCodeGenerator {
     __ movdtox(F50,L3);
 
     __ and3(len_reg, 16, L4);
-    __ br_null(L4, false, Assembler::pt, L_dec_next2_blocks192);
-    __ delayed()->nop();
+    __ br_null_short(L4, Assembler::pt, L_dec_next2_blocks192);
+    __ nop();
 
-    __ br(Assembler::always, false, Assembler::pt, L_dec_first_block_start);
-    __ delayed()->nop();
+    __ ba_short(L_dec_first_block_start);
 
     __ BIND(L_expand256bit);
     // load rest of the 256-bit key
@@ -3785,12 +4077,32 @@ class StubGenerator: public StubCodeGenerator {
     __ movdtox(F58,L3);
 
     __ and3(len_reg, 16, L4);
-    __ br_null(L4, false, Assembler::pt, L_dec_next2_blocks256);
-    __ delayed()->nop();
+    __ br_null_short(L4, Assembler::pt, L_dec_next2_blocks256);
 
     __ BIND(L_dec_first_block_start);
+    // check for 8-byte alignment since source byte array may have an arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_load_misaligned_input_first_block);
+    __ delayed()->mov(from, G1); // save original 'from' address before alignaddr
+
+    // aligned case: load input into L4 and L5
     __ ldx(from,0,L4);
     __ ldx(from,8,L5);
+    __ ba_short(L_transform_first_block);
+
+    __ BIND(L_load_misaligned_input_first_block);
+    __ alignaddr(from, G0, from);
+    // F58, F60, F62 can be clobbered
+    __ ldf(FloatRegisterImpl::D, from, 0, F58);
+    __ ldf(FloatRegisterImpl::D, from, 8, F60);
+    __ ldf(FloatRegisterImpl::D, from, 16, F62);
+    __ faligndata(F58, F60, F58);
+    __ faligndata(F60, F62, F60);
+    __ movdtox(F58, L4);
+    __ movdtox(F60, L5);
+    __ mov(G1, from);
+
+    __ BIND(L_transform_first_block);
     __ xor3(L2,L4,G1);
     __ movxtod(G1,F60);
     __ xor3(L3,L5,G1);
@@ -3833,9 +4145,36 @@ class StubGenerator: public StubCodeGenerator {
     __ fxor(FloatRegisterImpl::D, F56, F60, F60);
     __ fxor(FloatRegisterImpl::D, F58, F62, F62);
 
+    // check for 8-byte alignment since dest byte array may have arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(to, 7, G1);
+    __ br(Assembler::notZero, true, Assembler::pn, L_store_misaligned_output_first_block);
+    __ delayed()->edge8n(to, G0, G2);
+
+    // aligned case: store output into the destination array
     __ stf(FloatRegisterImpl::D, F60, to, 0);
     __ stf(FloatRegisterImpl::D, F62, to, 8);
+    __ ba_short(L_check_decrypt_end);
 
+    __ BIND(L_store_misaligned_output_first_block);
+    __ add(to, 8, G3);
+    __ mov(8, G4);
+    __ sub(G4, G1, G4);
+    __ alignaddr(G4, G0, G4);
+    __ faligndata(F60, F60, F60);
+    __ faligndata(F62, F62, F62);
+    __ mov(to, G1);
+    __ and3(to, -8, to);
+    __ and3(G3, -8, G3);
+    __ stpartialf(to, G2, F60, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(G3, G2, F62, Assembler::ASI_PST8_PRIMARY);
+    __ add(to, 8, to);
+    __ add(G3, 8, G3);
+    __ orn(G0, G2, G2);
+    __ stpartialf(to, G2, F60, Assembler::ASI_PST8_PRIMARY);
+    __ stpartialf(G3, G2, F62, Assembler::ASI_PST8_PRIMARY);
+    __ mov(G1, to);
+
+    __ BIND(L_check_decrypt_end);
     __ add(from, 16, from);
     __ add(to, 16, to);
     __ subcc(len_reg, 16, len_reg);
@@ -3852,17 +4191,44 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_dec_next2_blocks128);
     __ nop();
 
-    // F40:F42 used for first 16-bytes
+    // check for 8-byte alignment since source byte array may have an arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_load_misaligned_next2_blocks128);
+    __ delayed()->mov(from, G1); // save original 'from' address before alignaddr
+
+    // aligned case: load input into G4, G5, L4 and L5
     __ ldx(from,0,G4);
     __ ldx(from,8,G5);
+    __ ldx(from,16,L4);
+    __ ldx(from,24,L5);
+    __ ba_short(L_transform_next2_blocks128);
+
+    __ BIND(L_load_misaligned_next2_blocks128);
+    __ alignaddr(from, G0, from);
+    // F40, F42, F58, F60, F62 can be clobbered
+    __ ldf(FloatRegisterImpl::D, from, 0, F40);
+    __ ldf(FloatRegisterImpl::D, from, 8, F42);
+    __ ldf(FloatRegisterImpl::D, from, 16, F60);
+    __ ldf(FloatRegisterImpl::D, from, 24, F62);
+    __ ldf(FloatRegisterImpl::D, from, 32, F58);
+    __ faligndata(F40, F42, F40);
+    __ faligndata(F42, F60, F42);
+    __ faligndata(F60, F62, F60);
+    __ faligndata(F62, F58, F62);
+    __ movdtox(F40, G4);
+    __ movdtox(F42, G5);
+    __ movdtox(F60, L4);
+    __ movdtox(F62, L5);
+    __ mov(G1, from);
+
+    __ BIND(L_transform_next2_blocks128);
+    // F40:F42 used for first 16-bytes
     __ xor3(L2,G4,G1);
     __ movxtod(G1,F40);
     __ xor3(L3,G5,G1);
     __ movxtod(G1,F42);
 
     // F60:F62 used for next 16-bytes
-    __ ldx(from,16,L4);
-    __ ldx(from,24,L5);
     __ xor3(L2,L4,G1);
     __ movxtod(G1,F60);
     __ xor3(L3,L5,G1);
@@ -3891,9 +4257,6 @@ class StubGenerator: public StubCodeGenerator {
     __ fxor(FloatRegisterImpl::D, F46, F40, F40);
     __ fxor(FloatRegisterImpl::D, F44, F42, F42);
 
-    __ stf(FloatRegisterImpl::D, F40, to, 0);
-    __ stf(FloatRegisterImpl::D, F42, to, 8);
-
     __ movxtod(G4,F56);
     __ movxtod(G5,F58);
     __ mov(L4,L0);
@@ -3901,32 +4264,93 @@ class StubGenerator: public StubCodeGenerator {
     __ fxor(FloatRegisterImpl::D, F56, F60, F60);
     __ fxor(FloatRegisterImpl::D, F58, F62, F62);
 
+    // For mis-aligned store of 32 bytes of result we can do:
+    // Circular right-shift all 4 FP registers so that 'head' and 'tail'
+    // parts that need to be stored starting at mis-aligned address are in a FP reg
+    // the other 3 FP regs can thus be stored using regular store
+    // we then use the edge + partial-store mechanism to store the 'head' and 'tail' parts
+
+    // check for 8-byte alignment since dest byte array may have arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(to, 7, G1);
+    __ br(Assembler::notZero, true, Assembler::pn, L_store_misaligned_output_next2_blocks128);
+    __ delayed()->edge8n(to, G0, G2);
+
+    // aligned case: store output into the destination array
+    __ stf(FloatRegisterImpl::D, F40, to, 0);
+    __ stf(FloatRegisterImpl::D, F42, to, 8);
     __ stf(FloatRegisterImpl::D, F60, to, 16);
     __ stf(FloatRegisterImpl::D, F62, to, 24);
+    __ ba_short(L_check_decrypt_loop_end128);
 
+    __ BIND(L_store_misaligned_output_next2_blocks128);
+    __ mov(8, G4);
+    __ sub(G4, G1, G4);
+    __ alignaddr(G4, G0, G4);
+    __ faligndata(F40, F42, F56); // F56 can be clobbered
+    __ faligndata(F42, F60, F42);
+    __ faligndata(F60, F62, F60);
+    __ faligndata(F62, F40, F40);
+    __ mov(to, G1);
+    __ and3(to, -8, to);
+    __ stpartialf(to, G2, F40, Assembler::ASI_PST8_PRIMARY);
+    __ stf(FloatRegisterImpl::D, F56, to, 8);
+    __ stf(FloatRegisterImpl::D, F42, to, 16);
+    __ stf(FloatRegisterImpl::D, F60, to, 24);
+    __ add(to, 32, to);
+    __ orn(G0, G2, G2);
+    __ stpartialf(to, G2, F40, Assembler::ASI_PST8_PRIMARY);
+    __ mov(G1, to);
+
+    __ BIND(L_check_decrypt_loop_end128);
     __ add(from, 32, from);
     __ add(to, 32, to);
     __ subcc(len_reg, 32, len_reg);
     __ br(Assembler::notEqual, false, Assembler::pt, L_dec_next2_blocks128);
     __ delayed()->nop();
-    __ br(Assembler::always, false, Assembler::pt, L_cbcdec_end);
-    __ delayed()->nop();
+    __ ba_short(L_cbcdec_end);
 
     __ align(OptoLoopAlignment);
     __ BIND(L_dec_next2_blocks192);
     __ nop();
 
-    // F48:F50 used for first 16-bytes
+    // check for 8-byte alignment since source byte array may have an arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_load_misaligned_next2_blocks192);
+    __ delayed()->mov(from, G1); // save original 'from' address before alignaddr
+
+    // aligned case: load input into G4, G5, L4 and L5
     __ ldx(from,0,G4);
     __ ldx(from,8,G5);
+    __ ldx(from,16,L4);
+    __ ldx(from,24,L5);
+    __ ba_short(L_transform_next2_blocks192);
+
+    __ BIND(L_load_misaligned_next2_blocks192);
+    __ alignaddr(from, G0, from);
+    // F48, F50, F52, F60, F62 can be clobbered
+    __ ldf(FloatRegisterImpl::D, from, 0, F48);
+    __ ldf(FloatRegisterImpl::D, from, 8, F50);
+    __ ldf(FloatRegisterImpl::D, from, 16, F60);
+    __ ldf(FloatRegisterImpl::D, from, 24, F62);
+    __ ldf(FloatRegisterImpl::D, from, 32, F52);
+    __ faligndata(F48, F50, F48);
+    __ faligndata(F50, F60, F50);
+    __ faligndata(F60, F62, F60);
+    __ faligndata(F62, F52, F62);
+    __ movdtox(F48, G4);
+    __ movdtox(F50, G5);
+    __ movdtox(F60, L4);
+    __ movdtox(F62, L5);
+    __ mov(G1, from);
+
+    __ BIND(L_transform_next2_blocks192);
+    // F48:F50 used for first 16-bytes
     __ xor3(L2,G4,G1);
     __ movxtod(G1,F48);
     __ xor3(L3,G5,G1);
     __ movxtod(G1,F50);
 
     // F60:F62 used for next 16-bytes
-    __ ldx(from,16,L4);
-    __ ldx(from,24,L5);
     __ xor3(L2,L4,G1);
     __ movxtod(G1,F60);
     __ xor3(L3,L5,G1);
@@ -3955,9 +4379,6 @@ class StubGenerator: public StubCodeGenerator {
     __ fxor(FloatRegisterImpl::D, F54, F48, F48);
     __ fxor(FloatRegisterImpl::D, F52, F50, F50);
 
-    __ stf(FloatRegisterImpl::D, F48, to, 0);
-    __ stf(FloatRegisterImpl::D, F50, to, 8);
-
     __ movxtod(G4,F56);
     __ movxtod(G5,F58);
     __ mov(L4,L0);
@@ -3965,32 +4386,87 @@ class StubGenerator: public StubCodeGenerator {
     __ fxor(FloatRegisterImpl::D, F56, F60, F60);
     __ fxor(FloatRegisterImpl::D, F58, F62, F62);
 
+    // check for 8-byte alignment since dest byte array may have arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(to, 7, G1);
+    __ br(Assembler::notZero, true, Assembler::pn, L_store_misaligned_output_next2_blocks192);
+    __ delayed()->edge8n(to, G0, G2);
+
+    // aligned case: store output into the destination array
+    __ stf(FloatRegisterImpl::D, F48, to, 0);
+    __ stf(FloatRegisterImpl::D, F50, to, 8);
     __ stf(FloatRegisterImpl::D, F60, to, 16);
     __ stf(FloatRegisterImpl::D, F62, to, 24);
+    __ ba_short(L_check_decrypt_loop_end192);
 
+    __ BIND(L_store_misaligned_output_next2_blocks192);
+    __ mov(8, G4);
+    __ sub(G4, G1, G4);
+    __ alignaddr(G4, G0, G4);
+    __ faligndata(F48, F50, F56); // F56 can be clobbered
+    __ faligndata(F50, F60, F50);
+    __ faligndata(F60, F62, F60);
+    __ faligndata(F62, F48, F48);
+    __ mov(to, G1);
+    __ and3(to, -8, to);
+    __ stpartialf(to, G2, F48, Assembler::ASI_PST8_PRIMARY);
+    __ stf(FloatRegisterImpl::D, F56, to, 8);
+    __ stf(FloatRegisterImpl::D, F50, to, 16);
+    __ stf(FloatRegisterImpl::D, F60, to, 24);
+    __ add(to, 32, to);
+    __ orn(G0, G2, G2);
+    __ stpartialf(to, G2, F48, Assembler::ASI_PST8_PRIMARY);
+    __ mov(G1, to);
+
+    __ BIND(L_check_decrypt_loop_end192);
     __ add(from, 32, from);
     __ add(to, 32, to);
     __ subcc(len_reg, 32, len_reg);
     __ br(Assembler::notEqual, false, Assembler::pt, L_dec_next2_blocks192);
     __ delayed()->nop();
-    __ br(Assembler::always, false, Assembler::pt, L_cbcdec_end);
-    __ delayed()->nop();
+    __ ba_short(L_cbcdec_end);
 
     __ align(OptoLoopAlignment);
     __ BIND(L_dec_next2_blocks256);
     __ nop();
 
-    // F0:F2 used for first 16-bytes
+    // check for 8-byte alignment since source byte array may have an arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(from, 7, G0);
+    __ br(Assembler::notZero, true, Assembler::pn, L_load_misaligned_next2_blocks256);
+    __ delayed()->mov(from, G1); // save original 'from' address before alignaddr
+
+    // aligned case: load input into G4, G5, L4 and L5
     __ ldx(from,0,G4);
     __ ldx(from,8,G5);
+    __ ldx(from,16,L4);
+    __ ldx(from,24,L5);
+    __ ba_short(L_transform_next2_blocks256);
+
+    __ BIND(L_load_misaligned_next2_blocks256);
+    __ alignaddr(from, G0, from);
+    // F0, F2, F4, F60, F62 can be clobbered
+    __ ldf(FloatRegisterImpl::D, from, 0, F0);
+    __ ldf(FloatRegisterImpl::D, from, 8, F2);
+    __ ldf(FloatRegisterImpl::D, from, 16, F60);
+    __ ldf(FloatRegisterImpl::D, from, 24, F62);
+    __ ldf(FloatRegisterImpl::D, from, 32, F4);
+    __ faligndata(F0, F2, F0);
+    __ faligndata(F2, F60, F2);
+    __ faligndata(F60, F62, F60);
+    __ faligndata(F62, F4, F62);
+    __ movdtox(F0, G4);
+    __ movdtox(F2, G5);
+    __ movdtox(F60, L4);
+    __ movdtox(F62, L5);
+    __ mov(G1, from);
+
+    __ BIND(L_transform_next2_blocks256);
+    // F0:F2 used for first 16-bytes
     __ xor3(L2,G4,G1);
     __ movxtod(G1,F0);
     __ xor3(L3,G5,G1);
     __ movxtod(G1,F2);
 
     // F60:F62 used for next 16-bytes
-    __ ldx(from,16,L4);
-    __ ldx(from,24,L5);
     __ xor3(L2,L4,G1);
     __ movxtod(G1,F60);
     __ xor3(L3,L5,G1);
@@ -4043,9 +4519,6 @@ class StubGenerator: public StubCodeGenerator {
     __ fxor(FloatRegisterImpl::D, F6, F0, F0);
     __ fxor(FloatRegisterImpl::D, F4, F2, F2);
 
-    __ stf(FloatRegisterImpl::D, F0, to, 0);
-    __ stf(FloatRegisterImpl::D, F2, to, 8);
-
     __ movxtod(G4,F56);
     __ movxtod(G5,F58);
     __ mov(L4,L0);
@@ -4053,9 +4526,38 @@ class StubGenerator: public StubCodeGenerator {
     __ fxor(FloatRegisterImpl::D, F56, F60, F60);
     __ fxor(FloatRegisterImpl::D, F58, F62, F62);
 
+    // check for 8-byte alignment since dest byte array may have arbitrary alignment if offset mod 8 is non-zero
+    __ andcc(to, 7, G1);
+    __ br(Assembler::notZero, true, Assembler::pn, L_store_misaligned_output_next2_blocks256);
+    __ delayed()->edge8n(to, G0, G2);
+
+    // aligned case: store output into the destination array
+    __ stf(FloatRegisterImpl::D, F0, to, 0);
+    __ stf(FloatRegisterImpl::D, F2, to, 8);
     __ stf(FloatRegisterImpl::D, F60, to, 16);
     __ stf(FloatRegisterImpl::D, F62, to, 24);
+    __ ba_short(L_check_decrypt_loop_end256);
 
+    __ BIND(L_store_misaligned_output_next2_blocks256);
+    __ mov(8, G4);
+    __ sub(G4, G1, G4);
+    __ alignaddr(G4, G0, G4);
+    __ faligndata(F0, F2, F56); // F56 can be clobbered
+    __ faligndata(F2, F60, F2);
+    __ faligndata(F60, F62, F60);
+    __ faligndata(F62, F0, F0);
+    __ mov(to, G1);
+    __ and3(to, -8, to);
+    __ stpartialf(to, G2, F0, Assembler::ASI_PST8_PRIMARY);
+    __ stf(FloatRegisterImpl::D, F56, to, 8);
+    __ stf(FloatRegisterImpl::D, F2, to, 16);
+    __ stf(FloatRegisterImpl::D, F60, to, 24);
+    __ add(to, 32, to);
+    __ orn(G0, G2, G2);
+    __ stpartialf(to, G2, F0, Assembler::ASI_PST8_PRIMARY);
+    __ mov(G1, to);
+
+    __ BIND(L_check_decrypt_loop_end256);
     __ add(from, 32, from);
     __ add(to, 32, to);
     __ subcc(len_reg, 32, len_reg);
@@ -4063,6 +4565,7 @@ class StubGenerator: public StubCodeGenerator {
     __ delayed()->nop();
 
     __ BIND(L_cbcdec_end);
+    // re-init intial vector for next block, 8-byte alignment is guaranteed
     __ stx(L0, rvec, 0);
     __ stx(L1, rvec, 8);
     __ restore();
