@@ -559,6 +559,9 @@ abstract class LValue {
             } else if (refType instanceof ClassType) {
                 ClassType clazz = (ClassType)refType;
                 return jdiValue = clazz.invokeMethod(thread, matchingMethod, methodArguments, 0);
+            } else if (refType instanceof InterfaceType) {
+                InterfaceType iface = (InterfaceType)refType;
+                return jdiValue = iface.invokeMethod(thread, matchingMethod, methodArguments, 0);
             } else {
                 throw new InvalidTypeException("Cannot invoke static method on " +
                                          refType.name());
