@@ -851,7 +851,7 @@ public class ToolBox {
      * This method is intended for simple files and uses regular expressions,
      * so comments matching the pattern can make the method fail.
      */
-    private static String getJavaFileNameFromSource(String source) {
+    static String getJavaFileNameFromSource(String source) {
         String className = null;
         Matcher matcher = publicClassPattern.matcher(source);
         if (matcher.find()) {
