@@ -611,19 +611,20 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     /**
-     * Kicks an event over to the appropriate eventqueue and waits for it to
+     * Kicks an event over to the appropriate event queue and waits for it to
      * finish To avoid deadlocking, we manually run the NSRunLoop while waiting
      * Any selector invoked using ThreadUtilities performOnMainThread will be
      * processed in doAWTRunLoop The InvocationEvent will call
      * LWCToolkit.stopAWTRunLoop() when finished, which will stop our manual
-     * runloop Does not dispatch native events while in the loop
+     * run loop. Does not dispatch native events while in the loop
      */
     public static void invokeAndWait(Runnable runnable, Component component)
             throws InvocationTargetException {
-        final long mediator = createAWTRunLoopMediator();
+        Objects.requireNonNull(component, "Null component provided to invokeAndWait");
 
+        long mediator = createAWTRunLoopMediator();
         InvocationEvent invocationEvent =
-                new InvocationEvent(component != null ? component : Toolkit.getDefaultToolkit(),
+                new InvocationEvent(component,
                         runnable,
                         () -> {
                             if (mediator != 0) {
@@ -632,49 +633,42 @@ public final class LWCToolkit extends LWToolkit {
                         },
                         true);
 
-        if (component != null) {
-            AppContext appContext = SunToolkit.targetToAppContext(component);
-            SunToolkit.postEvent(appContext, invocationEvent);
-
-            // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
-            SunToolkit.flushPendingEvents(appContext);
-        } else {
-            // This should be the equivalent to EventQueue.invokeAndWait
-            ((LWCToolkit)Toolkit.getDefaultToolkit()).getSystemEventQueueForInvokeAndWait().postEvent(invocationEvent);
-        }
-
+        AppContext appContext = SunToolkit.targetToAppContext(component);
+        SunToolkit.postEvent(appContext, invocationEvent);
+        // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
+        SunToolkit.flushPendingEvents(appContext);
         doAWTRunLoop(mediator, false);
 
-        Throwable eventException = invocationEvent.getException();
-        if (eventException != null) {
-            if (eventException instanceof UndeclaredThrowableException) {
-                eventException = ((UndeclaredThrowableException)eventException).getUndeclaredThrowable();
-            }
-            throw new InvocationTargetException(eventException);
-        }
+        checkException(invocationEvent);
     }
 
     public static void invokeLater(Runnable event, Component component)
             throws InvocationTargetException {
-        final InvocationEvent invocationEvent =
-                new InvocationEvent(component != null ? component : Toolkit.getDefaultToolkit(), event);
+        Objects.requireNonNull(component, "Null component provided to invokeLater");
 
-        if (component != null) {
-            final AppContext appContext = SunToolkit.targetToAppContext(component);
-            SunToolkit.postEvent(appContext, invocationEvent);
+        InvocationEvent invocationEvent = new InvocationEvent(component, event);
 
-            // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
-            SunToolkit.flushPendingEvents(appContext);
-        } else {
-            // This should be the equivalent to EventQueue.invokeAndWait
-            ((LWCToolkit)Toolkit.getDefaultToolkit()).getSystemEventQueueForInvokeAndWait().postEvent(invocationEvent);
-        }
+        AppContext appContext = SunToolkit.targetToAppContext(component);
+        SunToolkit.postEvent(SunToolkit.targetToAppContext(component), invocationEvent);
+        // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
+        SunToolkit.flushPendingEvents(appContext);
 
-        final Throwable eventException = invocationEvent.getException();
+        checkException(invocationEvent);
+    }
+
+    /**
+     * Checks if exception occurred while {@code InvocationEvent} was processed and rethrows it as
+     * an {@code InvocationTargetException}
+     *
+     * @param event the event to check for an exception
+     * @throws InvocationTargetException if exception occurred when event was processed
+     */
+    private static void checkException(InvocationEvent event) throws InvocationTargetException {
+        Throwable eventException = event.getException();
         if (eventException == null) return;
 
         if (eventException instanceof UndeclaredThrowableException) {
-            throw new InvocationTargetException(((UndeclaredThrowableException)eventException).getUndeclaredThrowable());
+            eventException = ((UndeclaredThrowableException)eventException).getUndeclaredThrowable();
         }
         throw new InvocationTargetException(eventException);
     }
@@ -685,11 +679,6 @@ public final class LWCToolkit extends LWToolkit {
      * @param delay a delay in milliseconds
      */
     native static void performOnMainThreadAfterDelay(Runnable r, long delay);
-
-    // This exists purely to get around permissions issues with getSystemEventQueueImpl
-    EventQueue getSystemEventQueueForInvokeAndWait() {
-        return getSystemEventQueueImpl();
-    }
 
 // DnD support
 
