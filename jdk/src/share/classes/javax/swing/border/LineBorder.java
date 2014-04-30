@@ -134,8 +134,8 @@ public class LineBorder extends AbstractBorder
             int offs = this.thickness;
             int size = offs + offs;
             if (this.roundedCorners) {
-                int arc = offs + size;
-                outer = new RoundRectangle2D.Float(x, y, width, height, arc, arc);
+                float arc = .2f * offs;
+                outer = new RoundRectangle2D.Float(x, y, width, height, offs, offs);
                 inner = new RoundRectangle2D.Float(x + offs, y + offs, width - size, height - size, arc, arc);
             }
             else {
