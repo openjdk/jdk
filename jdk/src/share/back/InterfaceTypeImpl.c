@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,17 @@
  * questions.
  */
 
-#import <AppKit/AppKit.h>
-#import "jni.h"
+#include "util.h"
+#include "InterfaceTypeImpl.h"
+#include "inStream.h"
+#include "outStream.h"
 
-@interface CClipboard : NSObject {
-    jobject fClipboardOwner;
-
-    // Track pasteboard changes. Initialized once at the start, and then updated
-    // on an application resume event.  If it's different than the last time we claimed
-    // the clipboard that means we lost the clipboard to someone else.
-    NSInteger fChangeCount;
+static jboolean
+invokeStatic(PacketInputStream *in, PacketOutputStream *out)
+{
+    return sharedInvoke(in, out);
 }
 
-+ (CClipboard *) sharedClipboard;
-
-- (void) javaDeclareTypes:(NSArray *)inTypes withOwner:(jobject)inClipboard jniEnv:(JNIEnv *)inEnv;
-- (void) javaSetData:(NSData *)inData forType:(NSString *) inFormat;
-
-- (NSArray *) javaGetTypes;
-- (NSData *) javaGetDataForType:(NSString *)inFormat;
-
-@end
+void *InterfaceType_Cmds[] = { (void *)0x1
+    , (void *)invokeStatic
+};

@@ -272,6 +272,16 @@ public final class AWTAccessor {
          * bypasses disabled Components during the search.
          */
         Component findComponentAt(Container cont, int x, int y, boolean ignoreEnabled);
+
+        /**
+         * Starts LW Modal.
+         */
+        void startLWModal(Container cont);
+
+        /**
+         * Starts LW Modal.
+         */
+        void stopLWModal(Container cont);
     }
 
     /*

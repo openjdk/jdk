@@ -49,7 +49,7 @@ case "$OS" in
     ;;
 esac
 
-KEYTOOL="${TESTJAVA}${FS}bin${FS}keytool -keystore importreadall.jks -storepass changeit -keypass changeit -keyalg rsa"
+KEYTOOL="${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -keystore importreadall.jks -storepass changeit -keypass changeit -keyalg rsa"
 
 # In case the test is run twice in the same directory
 

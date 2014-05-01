@@ -379,7 +379,7 @@ JNF_COCOA_ENTER(env);
         return getOrder(size1.width <= size2.width && size1.height <= size2.height);
     }];
 
-    NSMutableArray *sortedPixelSizes = [[NSMutableArray alloc] init];
+    NSMutableArray *sortedPixelSizes = [[[NSMutableArray alloc] init] autorelease];
     NSSize lastSize = [[sortedImageRepresentations lastObject] size];
     
     NSUInteger i = [sortedImageRepresentations indexOfObjectPassingTest:
