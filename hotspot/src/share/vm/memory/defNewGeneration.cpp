@@ -44,6 +44,7 @@
 #include "runtime/java.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
 //
@@ -131,7 +132,7 @@ void KlassScanClosure::do_klass(Klass* klass) {
 #ifndef PRODUCT
   if (TraceScavenge) {
     ResourceMark rm;
-    gclog_or_tty->print_cr("KlassScanClosure::do_klass %p, %s, dirty: %s",
+    gclog_or_tty->print_cr("KlassScanClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
                            klass,
                            klass->external_name(),
                            klass->has_modified_oops() ? "true" : "false");
@@ -511,7 +512,7 @@ void DefNewGeneration::space_iterate(SpaceClosure* blk,
 HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
   HeapWord* result = NULL;
   if (Verbose && PrintGCDetails) {
-    gclog_or_tty->print("DefNewGeneration::allocate_from_space(%u):"
+    gclog_or_tty->print("DefNewGeneration::allocate_from_space(" SIZE_FORMAT "):"
                         "  will_fail: %s"
                         "  heap_lock: %s"
                         "  free: " SIZE_FORMAT,
@@ -756,7 +757,7 @@ void DefNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
   if (PrintPromotionFailure && !_promotion_failed) {
-    gclog_or_tty->print(" (promotion failure size = " SIZE_FORMAT ") ",
+    gclog_or_tty->print(" (promotion failure size = %d) ",
                         old->size());
   }
   _promotion_failed = true;
