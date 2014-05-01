@@ -437,13 +437,9 @@ public class LambdaToMethod extends TreeTranslator {
     public void visitVarDef(JCVariableDecl tree) {
         LambdaTranslationContext lambdaContext = (LambdaTranslationContext)context;
         if (context != null && lambdaContext.getSymbolMap(LOCAL_VAR).containsKey(tree.sym)) {
-            JCExpression init = translate(tree.init);
-            int prevPos = make.pos;
-            try {
-                result = make.at(tree).VarDef((VarSymbol)lambdaContext.getSymbolMap(LOCAL_VAR).get(tree.sym), init);
-            } finally {
-                make.at(prevPos);
-            }
+            tree.init = translate(tree.init);
+            tree.sym = (VarSymbol) lambdaContext.getSymbolMap(LOCAL_VAR).get(tree.sym);
+            result = tree;
         } else if (context != null && lambdaContext.getSymbolMap(TYPE_VAR).containsKey(tree.sym)) {
             JCExpression init = translate(tree.init);
             VarSymbol xsym = (VarSymbol)lambdaContext.getSymbolMap(TYPE_VAR).get(tree.sym);
@@ -1893,7 +1889,7 @@ public class LambdaToMethod extends TreeTranslator {
                         };
                         break;
                     case LOCAL_VAR:
-                        ret = new VarSymbol(sym.flags() & FINAL, name, types.erasure(sym.type), translatedSym);
+                        ret = new VarSymbol(sym.flags() & FINAL, name, sym.type, translatedSym);
                         ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
                         break;
                     case PARAM:
