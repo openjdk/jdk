@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.xml.internal.org.jvnet.staxex.util;
+package com.sun.xml.internal.messaging.saaj.util.stax;
 
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -42,6 +42,7 @@ import com.sun.xml.internal.org.jvnet.staxex.MtomEnabled;
 import com.sun.xml.internal.org.jvnet.staxex.NamespaceContextEx;
 import com.sun.xml.internal.org.jvnet.staxex.StreamingDataHandler;
 import com.sun.xml.internal.org.jvnet.staxex.XMLStreamWriterEx;
+import com.sun.xml.internal.org.jvnet.staxex.util.MtomStreamWriter;
 //
 //import com.sun.xml.internal.ws.api.message.saaj.SaajStaxWriter;
 //import com.sun.xml.internal.ws.developer.StreamingDataHandler;
