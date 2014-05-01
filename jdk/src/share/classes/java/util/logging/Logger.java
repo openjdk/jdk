@@ -338,7 +338,7 @@ public class Logger {
      * suitable per-Logger granularity. Developers also need to keep a
      * strong reference to their Logger objects to prevent them from
      * being garbage collected.
-     * <p>
+     *
      * @deprecated Initialization of this field is prone to deadlocks.
      * The field must be initialized by the Logger class initialization
      * which may cause deadlocks with the LogManager class initialization.
@@ -526,7 +526,7 @@ public class Logger {
      * name is used.  If the named Logger already exists and has
      * a different resource bundle name then an IllegalArgumentException
      * is thrown.
-     * <p>
+     *
      * @param   name    A name for the logger.  This should
      *                          be a dot-separated name and should normally
      *                          be based on the package name or class name
@@ -595,7 +595,6 @@ public class Logger {
      * from the root logger. Changing its parent via the
      * {@link #setParent(java.util.logging.Logger) setParent} method
      * will still require the security permission specified by that method.
-     * <p>
      *
      * @return a newly created private Logger
      */
@@ -621,7 +620,7 @@ public class Logger {
      * from the root logger.  Changing its parent via the
      * {@link #setParent(java.util.logging.Logger) setParent} method
      * will still require the security permission specified by that method.
-     * <p>
+     *
      * @param   resourceBundleName  name of ResourceBundle to be used for localizing
      *                          messages for this logger.
      *          May be null if none of the messages require localization.
@@ -776,7 +775,7 @@ public class Logger {
      * If the logger is currently enabled for the given message
      * level then the given message is forwarded to all the
      * registered output Handler objects.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   msg     The string message (or a key in the message catalog)
      */
@@ -796,7 +795,7 @@ public class Logger {
      * level then the message is constructed by invoking the provided
      * supplier function and forwarded to all the registered output
      * Handler objects.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   msgSupplier   A function, which when called, produces the
      *                        desired log message
@@ -815,7 +814,7 @@ public class Logger {
      * If the logger is currently enabled for the given message
      * level then a corresponding LogRecord is created and forwarded
      * to all the registered output Handler objects.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   msg     The string message (or a key in the message catalog)
      * @param   param1  parameter to the message
@@ -836,7 +835,7 @@ public class Logger {
      * If the logger is currently enabled for the given message
      * level then a corresponding LogRecord is created and forwarded
      * to all the registered output Handler objects.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   msg     The string message (or a key in the message catalog)
      * @param   params  array of parameters to the message
@@ -861,7 +860,7 @@ public class Logger {
      * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   msg     The string message (or a key in the message catalog)
      * @param   thrown  Throwable associated with log message.
@@ -887,7 +886,7 @@ public class Logger {
      * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   thrown  Throwable associated with log message.
      * @param   msgSupplier   A function, which when called, produces the
@@ -914,7 +913,7 @@ public class Logger {
      * If the logger is currently enabled for the given message
      * level then the given message is forwarded to all the
      * registered output Handler objects.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -938,7 +937,7 @@ public class Logger {
      * level then the message is constructed by invoking the provided
      * supplier function and forwarded to all the registered output
      * Handler objects.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -964,7 +963,7 @@ public class Logger {
      * If the logger is currently enabled for the given message
      * level then a corresponding LogRecord is created and forwarded
      * to all the registered output Handler objects.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -991,7 +990,7 @@ public class Logger {
      * If the logger is currently enabled for the given message
      * level then a corresponding LogRecord is created and forwarded
      * to all the registered output Handler objects.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -1022,7 +1021,7 @@ public class Logger {
      * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -1054,7 +1053,7 @@ public class Logger {
      * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -1113,7 +1112,7 @@ public class Logger {
      * The msg string is localized using the named resource bundle.  If the
      * resource bundle name is null, or an empty String or invalid
      * then the msg string is not localized.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -1147,7 +1146,7 @@ public class Logger {
      * The msg string is localized using the named resource bundle.  If the
      * resource bundle name is null, or an empty String or invalid
      * then the msg string is not localized.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -1184,7 +1183,7 @@ public class Logger {
      * The msg string is localized using the named resource bundle.  If the
      * resource bundle name is null, or an empty String or invalid
      * then the msg string is not localized.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -1220,7 +1219,7 @@ public class Logger {
      * The {@code msg} string is localized using the given resource bundle.
      * If the resource bundle is {@code null}, then the {@code msg} string is not
      * localized.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    Name of the class that issued the logging request
      * @param   sourceMethod   Name of the method that issued the logging request
@@ -1260,7 +1259,7 @@ public class Logger {
      * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that issued the logging request
@@ -1301,7 +1300,7 @@ public class Logger {
      * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., SEVERE
      * @param   sourceClass    Name of the class that issued the logging request
      * @param   sourceMethod   Name of the method that issued the logging request
@@ -1333,7 +1332,7 @@ public class Logger {
      * This is a convenience method that can be used to log entry
      * to a method.  A LogRecord with message "ENTRY", log level
      * FINER, and the given sourceMethod and sourceClass is logged.
-     * <p>
+     *
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that is being entered
      */
@@ -1348,7 +1347,7 @@ public class Logger {
      * to a method.  A LogRecord with message "ENTRY {0}", log level
      * FINER, and the given sourceMethod, sourceClass, and parameter
      * is logged.
-     * <p>
+     *
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that is being entered
      * @param   param1         parameter to the method being entered
@@ -1365,7 +1364,7 @@ public class Logger {
      * format {N} indicator for each entry in the parameter array),
      * log level FINER, and the given sourceMethod, sourceClass, and
      * parameters is logged.
-     * <p>
+     *
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of method that is being entered
      * @param   params         array of parameters to the method being entered
@@ -1389,7 +1388,7 @@ public class Logger {
      * This is a convenience method that can be used to log returning
      * from a method.  A LogRecord with message "RETURN", log level
      * FINER, and the given sourceMethod and sourceClass is logged.
-     * <p>
+     *
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of the method
      */
@@ -1405,7 +1404,7 @@ public class Logger {
      * from a method.  A LogRecord with message "RETURN {0}", log level
      * FINER, and the gives sourceMethod, sourceClass, and result
      * object is logged.
-     * <p>
+     *
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod   name of the method
      * @param   result  Object that is being returned
@@ -1430,7 +1429,7 @@ public class Logger {
      * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
-     * <p>
+     *
      * @param   sourceClass    name of class that issued the logging request
      * @param   sourceMethod  name of the method.
      * @param   thrown  The Throwable that is being thrown.
@@ -1456,7 +1455,7 @@ public class Logger {
      * If the logger is currently enabled for the SEVERE message
      * level then the given message is forwarded to all the
      * registered output Handler objects.
-     * <p>
+     *
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void severe(String msg) {
@@ -1469,7 +1468,7 @@ public class Logger {
      * If the logger is currently enabled for the WARNING message
      * level then the given message is forwarded to all the
      * registered output Handler objects.
-     * <p>
+     *
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void warning(String msg) {
@@ -1482,7 +1481,7 @@ public class Logger {
      * If the logger is currently enabled for the INFO message
      * level then the given message is forwarded to all the
      * registered output Handler objects.
-     * <p>
+     *
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void info(String msg) {
@@ -1495,7 +1494,7 @@ public class Logger {
      * If the logger is currently enabled for the CONFIG message
      * level then the given message is forwarded to all the
      * registered output Handler objects.
-     * <p>
+     *
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void config(String msg) {
@@ -1508,7 +1507,7 @@ public class Logger {
      * If the logger is currently enabled for the FINE message
      * level then the given message is forwarded to all the
      * registered output Handler objects.
-     * <p>
+     *
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void fine(String msg) {
@@ -1521,7 +1520,7 @@ public class Logger {
      * If the logger is currently enabled for the FINER message
      * level then the given message is forwarded to all the
      * registered output Handler objects.
-     * <p>
+     *
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void finer(String msg) {
@@ -1534,7 +1533,7 @@ public class Logger {
      * If the logger is currently enabled for the FINEST message
      * level then the given message is forwarded to all the
      * registered output Handler objects.
-     * <p>
+     *
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void finest(String msg) {
@@ -1554,7 +1553,7 @@ public class Logger {
      * level then the message is constructed by invoking the provided
      * supplier function and forwarded to all the registered output
      * Handler objects.
-     * <p>
+     *
      * @param   msgSupplier   A function, which when called, produces the
      *                        desired log message
      * @since   1.8
@@ -1571,7 +1570,7 @@ public class Logger {
      * level then the message is constructed by invoking the provided
      * supplier function and forwarded to all the registered output
      * Handler objects.
-     * <p>
+     *
      * @param   msgSupplier   A function, which when called, produces the
      *                        desired log message
      * @since   1.8
@@ -1588,7 +1587,7 @@ public class Logger {
      * level then the message is constructed by invoking the provided
      * supplier function and forwarded to all the registered output
      * Handler objects.
-     * <p>
+     *
      * @param   msgSupplier   A function, which when called, produces the
      *                        desired log message
      * @since   1.8
@@ -1605,7 +1604,7 @@ public class Logger {
      * level then the message is constructed by invoking the provided
      * supplier function and forwarded to all the registered output
      * Handler objects.
-     * <p>
+     *
      * @param   msgSupplier   A function, which when called, produces the
      *                        desired log message
      * @since   1.8
@@ -1622,7 +1621,7 @@ public class Logger {
      * level then the message is constructed by invoking the provided
      * supplier function and forwarded to all the registered output
      * Handler objects.
-     * <p>
+     *
      * @param   msgSupplier   A function, which when called, produces the
      *                        desired log message
      * @since   1.8
@@ -1639,7 +1638,7 @@ public class Logger {
      * level then the message is constructed by invoking the provided
      * supplier function and forwarded to all the registered output
      * Handler objects.
-     * <p>
+     *
      * @param   msgSupplier   A function, which when called, produces the
      *                        desired log message
      * @since   1.8
@@ -1656,7 +1655,7 @@ public class Logger {
      * level then the message is constructed by invoking the provided
      * supplier function and forwarded to all the registered output
      * Handler objects.
-     * <p>
+     *
      * @param   msgSupplier   A function, which when called, produces the
      *                        desired log message
      * @since   1.8
@@ -1769,7 +1768,7 @@ public class Logger {
 
     /**
      * Get the Handlers associated with this logger.
-     * <p>
+     *
      * @return  an array of all registered Handlers
      */
     public Handler[] getHandlers() {
@@ -2015,7 +2014,7 @@ public class Logger {
      * the LogManager to update a Logger when the namespace changes.
      * <p>
      * It should not be called from application code.
-     * <p>
+     *
      * @param  parent   the new parent logger
      * @throws  SecurityException  if a security manager exists and if
      *          the caller does not have LoggingPermission("control").

@@ -538,9 +538,7 @@ gboolean gtk2_show_uri_load(JNIEnv *env) {
              fprintf(stderr, "dlsym(gtk_show_uri) returned NULL\n");
 #endif /* INTERNAL_BUILD */
         } else {
-#ifdef __solaris__
             update_supported_actions(env);
-#endif
             success = TRUE;
         }
      }

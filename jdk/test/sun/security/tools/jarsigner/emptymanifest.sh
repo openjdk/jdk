@@ -47,11 +47,11 @@ esac
 KS=emptymanifest.jks
 JFILE=em.jar
 
-KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore $KS"
-JAR=$TESTJAVA${FS}bin${FS}jar
-JAVA=$TESTJAVA${FS}bin${FS}java
-JAVAC=$TESTJAVA${FS}bin${FS}javac
-JARSIGNER=$TESTJAVA${FS}bin${FS}jarsigner
+KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keystore $KS"
+JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
+JAVA="$TESTJAVA${FS}bin${FS}java ${TESTVMOPTS}"
+JAVAC="$TESTJAVA${FS}bin${FS}javac ${TESTTOOLVMOPTS} ${TESTJAVACOPTS}"
+JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS}"
 
 rm $KS $JFILE
 echo A > A
@@ -65,7 +65,7 @@ class CrLf {
 }
 EOF
 $JAVAC CrLf.java
-$JAVA ${TESTVMOPTS} CrLf > META-INF${FS}MANIFEST.MF
+$JAVA CrLf > META-INF${FS}MANIFEST.MF
 zip $JFILE META-INF${FS}MANIFEST.MF A B
 
 $KT -alias a -dname CN=a -keyalg rsa -genkey -validity 300

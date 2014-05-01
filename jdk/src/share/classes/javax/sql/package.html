@@ -2,7 +2,7 @@
 <html>
 <head>
 <!--
-Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,9 @@ Provides the API for server side data source access and processing from
 the Java<sup><font size=-2>TM</font></sup> programming language.
 This package supplements the <code>java.sql</code>
 package and, as of the version 1.4 release, is included in the 
-Java Platform, Standard Edition
-(Java SE<sup><font size=-2>TM</sup></font>).
+Java Platform, Standard Edition (Java SE&trade;).
 It remains an essential part of the Java Platform, Enterprise Edition
-(Java EE<sup><font size=-2>TM</sup></font>).
+(Java EE&trade;).
 <P>
 The <code>javax.sql</code> package provides for the following:
 <OL>
@@ -145,7 +144,6 @@ object with the new <code>PooledConnection</code> object.  When the
 <code>PreparedStatement</code> is closed or there is an error, the connection 
 pool manager (being a listener)
 gets a notification that includes a <code>StatementEvent</code> object.
-<p>
 
 <H2>Distributed Transactions</H2>
 
@@ -203,14 +201,12 @@ When the <code>RowSet</code> object changes one of its rows, changes all of
 it rows, or moves its cursor, it also notifies each listener that is registered 
 with it.  The listener reacts by carrying out its implementation of the 
 notification method called on it.
-<P>
   <LI><code>RowSetEvent</code><br>
 As part of its internal notification process, a <code>RowSet</code> object
 creates an instance of <code>RowSetEvent</code> and passes it to the listener.
 The listener can use this <code>RowSetEvent</code> object to find out which rowset
 had the event.
 </UL>
-<P>
 <LI>Metadata 
 <UL>
   <LI><code>RowSetMetaData</code><br>
@@ -226,7 +222,6 @@ normally use these methods.  When an application calls the <code>RowSet</code>
 method <code>execute</code>, the <code>RowSet</code> object will contain
 a new set of rows, and its <code>RowSetMetaData</code> object will have been
 internally updated to contain information about the new columns.
-<P>
 </UL>
 <LI>The Reader/Writer Facility<br>
 A <code>RowSet</code> object that implements the <code>RowSetInternal</code>
@@ -248,7 +243,7 @@ also keeps track of (1) the parameters that have been set for its command and
 (2) the connection that was passed to it, if any.  A rowset uses the 
 <code>RowSetInternal</code> methods behind the scenes to get access to
 this information.  An application does not normally invoke these methods directly.
-<P>
+
   <LI><code>RowSetReader</code><br>
 A disconnected <code>RowSet</code> object that has implemented the 
 <code>RowSetInternal</code> interface can call on its reader (the 
@@ -269,7 +264,6 @@ A disconnected <code>RowSet</code> object that has implemented the
 back to the underlying data source.  Implementations may vary widely, but
 generally, a writer will do the following:
 
-<P>
 <UL>
   <LI>Make a connection to the data source 
   <LI>Check to see whether there is a conflict, that is, whether
@@ -291,7 +285,6 @@ to use their imaginations in coming up with new ways to use rowsets.
 JDBC technology driver that implements the JDBC 4.0 API.
 You must check your driver documentation to be sure that it implements
 the particular features you want to use.
-<P>
 
 <h2>Package Specification</h2>
 
@@ -307,7 +300,7 @@ package:
 
 <ul>
   <li><a href="http://www.oracle.com/technetwork/java/index-142838.html">
-          <i>JDBC&#0153;API Tutorial and Reference, Third Edition</i></a>
+          <i>JDBC&#8482;API Tutorial and Reference, Third Edition</i></a>
 </ul>
 </body>
 </html>
