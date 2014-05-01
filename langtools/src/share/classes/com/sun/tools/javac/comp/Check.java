@@ -515,6 +515,11 @@ public class Check {
         public DeferredAttrContext deferredAttrContext() {
             return deferredAttr.emptyDeferredAttrContext;
         }
+
+        @Override
+        public String toString() {
+            return "CheckContext: basicHandler";
+        }
     };
 
     /** Check that a given type is assignable to a given proto-type.
