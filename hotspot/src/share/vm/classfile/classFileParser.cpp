@@ -2831,7 +2831,6 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(u4 attribute_b
     }
   }
 
-  assert(operand_fill_index == operands->length(), "exact fill");
   assert(ConstantPool::operand_array_length(operands) == attribute_array_length, "correct decode");
 
   u1* current_end = cfs->current();

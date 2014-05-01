@@ -137,7 +137,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), mdp);
     } else {
       assert(MethodData::profile_return(), "either profile call args or call ret");
-      update_mdp_by_constant(mdp, in_bytes(ReturnTypeEntry::size()));
+      update_mdp_by_constant(mdp, in_bytes(TypeEntriesAtCall::return_only_size()));
     }
 
     // mdp points right after the end of the

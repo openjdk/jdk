@@ -168,9 +168,9 @@ int AdaptiveSizePolicy::calc_default_active_workers(uintx total_workers,
 
   if (TraceDynamicGCThreads) {
      gclog_or_tty->print_cr("GCTaskManager::calc_default_active_workers() : "
-       "active_workers(): %d  new_active_workers: %d  "
-       "prev_active_workers: %d\n"
-       " active_workers_by_JT: %d  active_workers_by_heap_size: %d",
+       "active_workers(): " UINTX_FORMAT "  new_active_workers: " UINTX_FORMAT "  "
+       "prev_active_workers: " UINTX_FORMAT "\n"
+       " active_workers_by_JT: " UINTX_FORMAT "  active_workers_by_heap_size: " UINTX_FORMAT,
        active_workers, new_active_workers, prev_active_workers,
        active_workers_by_JT, active_workers_by_heap_size);
   }
@@ -545,12 +545,12 @@ void AdaptiveSizePolicy::check_gc_overhead_limit(
   if (UseGCOverheadLimit && PrintGCDetails && Verbose) {
     if (gc_overhead_limit_exceeded()) {
       gclog_or_tty->print_cr("      GC is exceeding overhead limit "
-        "of %d%%", GCTimeLimit);
+        "of " UINTX_FORMAT "%%", GCTimeLimit);
       reset_gc_overhead_limit_count();
     } else if (print_gc_overhead_limit_would_be_exceeded) {
       assert(gc_overhead_limit_count() > 0, "Should not be printing");
       gclog_or_tty->print_cr("      GC would exceed overhead limit "
-        "of %d%% %d consecutive time(s)",
+        "of " UINTX_FORMAT "%% %d consecutive time(s)",
         GCTimeLimit, gc_overhead_limit_count());
     }
   }
