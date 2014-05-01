@@ -109,6 +109,11 @@ public class DeferredAttr extends JCTree.Visitor {
                 void complete() {
                     Assert.error("Empty deferred context!");
                 }
+
+                @Override
+                public String toString() {
+                    return "Empty deferred context!";
+                }
             };
     }
 
