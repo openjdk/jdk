@@ -23,20 +23,18 @@
  * questions.
  */
 
-package com.sun.xml.internal.org.jvnet.staxex.util;
-
-import java.util.Iterator;
-
-import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPException;
-import javax.xml.stream.XMLStreamException;
+package com.sun.xml.internal.messaging.saaj.util.stax;
 
 import com.sun.xml.internal.org.jvnet.staxex.Base64Data;
-import com.sun.xml.internal.org.jvnet.staxex.XMLStreamReaderEx;
 import com.sun.xml.internal.org.jvnet.staxex.BinaryText;
-
+import com.sun.xml.internal.org.jvnet.staxex.XMLStreamReaderEx;
+import com.sun.xml.internal.org.jvnet.staxex.util.DOMStreamReader;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
+
+import javax.xml.soap.SOAPElement;
+import javax.xml.stream.XMLStreamException;
+import java.util.Iterator;
 
 /**
  * SaajStaxReaderEx
@@ -63,12 +61,8 @@ public class SaajStaxReaderEx extends DOMStreamReader implements XMLStreamReader
                 if (_current instanceof BinaryText) {
                     binaryText = (BinaryText) _current;
                     base64AttData = new Base64Data();
-                    try {
-                        base64AttData.set(binaryText.getDataHandler());
+                    base64AttData.set(binaryText.getDataHandler());
 //System.out.println("--------------- debug SaajStaxReaderEx binaryText " + binaryText);
-                    } catch (SOAPException e) {
-                        throw new XMLStreamException(e);
-                    }
                 } else {
                     // if we are currently at text node, make sure that this is a meaningful text node.
                     Node prev = _current.getPreviousSibling();
