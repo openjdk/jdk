@@ -58,7 +58,7 @@ public class TestGeneratedBy extends JavadocTester {
     private static final String[] NO_TIMESTAMP_ARGS =
         new String[] {
             "-notimestamp",
-            "-d", OUTPUT_DIR,
+            "-d", OUTPUT_DIR + "-1",
             "-sourcepath", SRC_DIR,
             "pkg"
         };

@@ -35,11 +35,11 @@ public class TestSinceTag extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS1 = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"
+        "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg1"
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-nosince", "pkg1"
+        "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR, "-nosince", "pkg1"
     };
 
     //Input for string search tests.
