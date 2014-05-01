@@ -196,6 +196,7 @@ public class Flow {
     private final boolean allowImprovedRethrowAnalysis;
     private final boolean allowImprovedCatchAnalysis;
     private final boolean allowEffectivelyFinalInInnerClasses;
+    private final boolean enforceThisDotInit;
 
     public static Flow instance(Context context) {
         Flow instance = context.get(flowKey);
@@ -206,7 +207,7 @@ public class Flow {
 
     public void analyzeTree(Env<AttrContext> env, TreeMaker make) {
         new AliveAnalyzer().analyzeTree(env, make);
-        new AssignAnalyzer(log, syms, lint, names).analyzeTree(env);
+        new AssignAnalyzer(log, syms, lint, names, enforceThisDotInit).analyzeTree(env);
         new FlowAnalyzer().analyzeTree(env, make);
         new CaptureAnalyzer().analyzeTree(env, make);
     }
@@ -238,7 +239,7 @@ public class Flow {
         //related errors, which will allow for more errors to be detected
         Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
-            new AssignAnalyzer(log, syms, lint, names).analyzeTree(env);
+            new AssignAnalyzer(log, syms, lint, names, enforceThisDotInit).analyzeTree(env);
             LambdaFlowAnalyzer flowAnalyzer = new LambdaFlowAnalyzer();
             flowAnalyzer.analyzeTree(env, that, make);
             return flowAnalyzer.inferredThrownTypes;
@@ -288,6 +289,7 @@ public class Flow {
         allowImprovedRethrowAnalysis = source.allowImprovedRethrowAnalysis();
         allowImprovedCatchAnalysis = source.allowImprovedCatchAnalysis();
         allowEffectivelyFinalInInnerClasses = source.allowEffectivelyFinalInInnerClasses();
+        enforceThisDotInit = source.enforceThisDotInit();
     }
 
     /**
@@ -1422,6 +1424,8 @@ public class Flow {
 
         protected Names names;
 
+        final boolean enforceThisDotInit;
+
         public static class AbstractAssignPendingExit extends BaseAnalyzer.PendingExit {
 
             final Bits inits;
@@ -1444,7 +1448,7 @@ public class Flow {
             }
         }
 
-        public AbstractAssignAnalyzer(Bits inits, Symtab syms, Names names) {
+        public AbstractAssignAnalyzer(Bits inits, Symtab syms, Names names, boolean enforceThisDotInit) {
             this.inits = inits;
             uninits = new Bits();
             uninitsTry = new Bits();
@@ -1454,6 +1458,7 @@ public class Flow {
             uninitsWhenFalse = new Bits(true);
             this.syms = syms;
             this.names = names;
+            this.enforceThisDotInit = enforceThisDotInit;
         }
 
         private boolean isInitialConstructor = false;
@@ -2275,11 +2280,33 @@ public class Flow {
 
         public void visitAssign(JCAssign tree) {
             JCTree lhs = TreeInfo.skipParens(tree.lhs);
-            if (!(lhs instanceof JCIdent)) {
+            if (!isIdentOrThisDotIdent(lhs))
                 scanExpr(lhs);
-            }
             scanExpr(tree.rhs);
             letInit(lhs);
+        }
+        private boolean isIdentOrThisDotIdent(JCTree lhs) {
+            if (lhs.hasTag(IDENT))
+                return true;
+            if (!lhs.hasTag(SELECT))
+                return false;
+
+            JCFieldAccess fa = (JCFieldAccess)lhs;
+            return fa.selected.hasTag(IDENT) &&
+                   ((JCIdent)fa.selected).name == names._this;
+        }
+
+        // check fields accessed through this.<field> are definitely
+        // assigned before reading their value
+        public void visitSelect(JCFieldAccess tree) {
+            super.visitSelect(tree);
+            if (enforceThisDotInit &&
+                tree.selected.hasTag(IDENT) &&
+                ((JCIdent)tree.selected).name == names._this &&
+                tree.sym.kind == VAR)
+            {
+                checkInit(tree.pos(), (VarSymbol)tree.sym);
+            }
         }
 
         public void visitAssignop(JCAssignOp tree) {
@@ -2410,8 +2437,8 @@ public class Flow {
             }
         }
 
-        public AssignAnalyzer(Log log, Symtab syms, Lint lint, Names names) {
-            super(new Bits(), syms, names);
+        public AssignAnalyzer(Log log, Symtab syms, Lint lint, Names names, boolean enforceThisDotInit) {
+            super(new Bits(), syms, names, enforceThisDotInit);
             this.log = log;
             this.lint = lint;
         }

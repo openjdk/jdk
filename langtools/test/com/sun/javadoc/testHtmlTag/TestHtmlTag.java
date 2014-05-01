@@ -58,13 +58,13 @@ public class TestHtmlTag extends JavadocTester {
 
     private static final String[] ARGS1 =
         new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"};
+            "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg1"};
     private static final String[] ARGS2 =
         new String[] {
-            "-locale", "ja", "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg2"};
+            "-locale", "ja", "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR, "pkg2"};
     private static final String[] ARGS3 =
         new String[] {
-            "-locale", "en_US", "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"};
+            "-locale", "en_US", "-d", OUTPUT_DIR + "-3", "-sourcepath", SRC_DIR, "pkg1"};
 
     /**
      * The entry point of the test.

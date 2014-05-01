@@ -40,127 +40,134 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     // Optional Element should print properly nested definition list tags
     // for default value.
     private static final String[][] TEST_ALL = {
-        { "pkg1/C1.html", "<pre>public class " +
-                 "<span class=\"typeNameLabel\">C1</span>\n" +
-                 "extends java.lang.Object\n" +
-                 "implements java.io.Serializable</pre>"},
-        { "pkg1/C4.html", "<dl>\n" +
-                 "<dt>Default:</dt>\n" +
-                 "<dd>true</dd>\n" +
-                 "</dl>"}};
+        { "pkg1/C1.html",
+                "<pre>public class <span class=\"typeNameLabel\">C1</span>\n" +
+                "extends java.lang.Object\n" +
+                "implements java.io.Serializable</pre>"},
+        { "pkg1/C4.html",
+                "<dl>\n" +
+                "<dt>Default:</dt>\n" +
+                "<dd>true</dd>\n" +
+                "</dl>"}};
 
     // Test for normal run of javadoc in which various ClassDocs and
     // serialized form should have properly nested definition list tags
     // enclosing comments, tags and deprecated information.
     private static final String[][] TEST_CMNT_DEPR = {
-        { "pkg1/package-summary.html", "<dl>\n" +
-                 "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-                 "<dd>JDK1.0</dd>\n" +
-                 "</dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-        "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-                 "<dd>JDK1.0</dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
-                 "<dd><a href=\"../pkg1/C2.html\" title=\"class in pkg1\"><code>" +
-                 "C2</code></a>, \n" +
-                 "<a href=\"../serialized-form.html#pkg1.C1\">" +
-                 "Serialized Form</a></dd>\n" +
-                 "</dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-        "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-                 "<dd>1.4</dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
-                 "<dd>" +
-                 "<a href=\"../pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a></dd>\n" +
-                 "</dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-                 "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n" +
-                 "<dd><code>title" +
-                 "</code> - the title</dd>\n" +
-                 "<dd><code>test</code> - boolean value" +
-                 "</dd>\n" +
-                 "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n" +
-                 "<dd><code>java.lang.IllegalArgumentException</code> - if the " +
-                 "<code>owner</code>'s\n" +
-                 "     <code>GraphicsConfiguration</code> is not from a screen " +
-                 "device</dd>\n" +
-                 "<dd><code>HeadlessException</code></dd>\n" +
-                 "</dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-        "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n" +
-        "<dd><code>undecorated" +
-                 "</code> - <code>true</code> if no decorations are\n" +
-                 "         to be enabled;\n" +
-                 "         <code>false</code> " +
-                 "if decorations are to be enabled.</dd>\n" +
-                 "<dt><span class=\"simpleTagLabel\">Since:" +
-                 "</span></dt>\n" +
-                 "<dd>1.4</dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
-                 "<dd>" +
-                 "<a href=\"../pkg1/C1.html#readObject--\"><code>readObject()" +
-                 "</code></a></dd>\n" +
-                 "</dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-        "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n" +
-                 "<dd><code>java.io.IOException</code></dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:" +
-                 "</span></dt>\n" +
-                 "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a></dd>\n" +
-                 "</dl>"},
-        { "pkg1/C2.html", "<dl>\n" +
-        "<dt><span class=\"paramLabel\">Parameters:" +
-                 "</span></dt>\n" +
-                 "<dd><code>set</code> - boolean</dd>\n" +
-                 "<dt><span class=\"simpleTagLabel\">" +
-                 "Since:</span></dt>\n" +
-                 "<dd>1.4</dd>\n" +
-                 "</dl>"},
-        { "serialized-form.html", "<dl>\n" +
-        "<dt><span class=\"throwsLabel\">Throws:</span>" +
-                 "</dt>\n" +
-                 "<dd><code>" +
-                 "java.io.IOException</code></dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span>" +
-                 "</dt>\n" +
-                 "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
-                 "</dl>"},
+        { "pkg1/package-summary.html",
+                "<dl>\n" +
+                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dd>JDK1.0</dd>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dd>JDK1.0</dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
+                "<dd><a href=\"../pkg1/C2.html\" title=\"class in pkg1\"><code>" +
+                "C2</code></a>, \n" +
+                "<a href=\"../serialized-form.html#pkg1.C1\">" +
+                "Serialized Form</a></dd>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dd>1.4</dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
+                "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>setUndecorated(boolean)</code></a></dd>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n" +
+                "<dd><code>title</code> - the title</dd>\n" +
+                "<dd><code>test</code> - boolean value" +
+                "</dd>\n" +
+                "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n" +
+                "<dd><code>java.lang.IllegalArgumentException</code> - if the " +
+                "<code>owner</code>'s\n" +
+                "     <code>GraphicsConfiguration</code> is not from a screen " +
+                "device</dd>\n" +
+                "<dd><code>HeadlessException</code></dd>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n" +
+                "<dd><code>undecorated" +
+                "</code> - <code>true</code> if no decorations are\n" +
+                "         to be enabled;\n" +
+                "         <code>false</code> " +
+                "if decorations are to be enabled.</dd>\n" +
+                "<dt><span class=\"simpleTagLabel\">Since:" +
+                "</span></dt>\n" +
+                "<dd>1.4</dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
+                "<dd>" +
+                "<a href=\"../pkg1/C1.html#readObject--\"><code>readObject()" +
+                "</code></a></dd>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n" +
+                "<dd><code>java.io.IOException</code></dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:" +
+                "</span></dt>\n" +
+                "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>setUndecorated(boolean)</code></a></dd>\n" +
+                "</dl>"},
+        { "pkg1/C2.html",
+                "<dl>\n" +
+                "<dt><span class=\"paramLabel\">Parameters:" +
+                "</span></dt>\n" +
+                "<dd><code>set</code> - boolean</dd>\n" +
+                "<dt><span class=\"simpleTagLabel\">" +
+                "Since:</span></dt>\n" +
+                "<dd>1.4</dd>\n" +
+                "</dl>"},
         { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">Deprecated.</span>" +
-                 "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "<div class=\"block\">This field indicates whether the C1 is " +
-                 "undecorated.</div>\n" +
-                 "&nbsp;\n" +
-                 "<dl>\n" +
-                 "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-                 "<dd>1.4</dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span>" +
-                 "</dt>\n" +
-                 "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
-                 "</dl>"},
+                "<dl>\n" +
+                "<dt><span class=\"throwsLabel\">Throws:</span>" +
+                "</dt>\n" +
+                "<dd><code>" +
+                "java.io.IOException</code></dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:</span>" +
+                "</dt>\n" +
+                "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
+                "</dl>"},
         { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">Deprecated.</span>" +
-                 "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "<div class=\"block\">Reads the object stream.</div>\n" +
-                 "<dl>\n" +
-                 "<dt><span class=\"throwsLabel\">Throws:" +
-                 "</span></dt>\n" +
-                 "<dd><code><code>" +
-                 "IOException</code></code></dd>\n" +
-                 "<dd><code>java.io.IOException</code></dd>\n" +
-                 "</dl>"},
+                "<span class=\"deprecatedLabel\">Deprecated.</span>" +
+                "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
+                " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
+                "<div class=\"block\">This field indicates whether the C1 is " +
+                "undecorated.</div>\n" +
+                "&nbsp;\n" +
+                "<dl>\n" +
+                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dd>1.4</dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:</span>" +
+                "</dt>\n" +
+                "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
+                "</dl>"},
         { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">Deprecated.</span>" +
-                 "&nbsp;</div>\n" +
-                 "<div class=\"block\">The name for this class.</div>"}};
+                "<span class=\"deprecatedLabel\">Deprecated.</span>" +
+                "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
+                " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
+                "<div class=\"block\">Reads the object stream.</div>\n" +
+                "<dl>\n" +
+                "<dt><span class=\"throwsLabel\">Throws:" +
+                "</span></dt>\n" +
+                "<dd><code><code>" +
+                "IOException</code></code></dd>\n" +
+                "<dd><code>java.io.IOException</code></dd>\n" +
+                "</dl>"},
+        { "serialized-form.html",
+                "<span class=\"deprecatedLabel\">Deprecated.</span>" +
+                "&nbsp;</div>\n" +
+                "<div class=\"block\">The name for this class.</div>"}};
 
     // Test with -nodeprecated option. The ClassDocs should have properly nested
     // definition list tags enclosing comments and tags. The ClassDocs should not
@@ -168,183 +175,210 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     // should display properly nested definition list tags for comments, tags
     // and deprecated information.
     private static final String[][] TEST_NODEPR = {
-        { "pkg1/package-summary.html", "<dl>\n" +
-                 "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-                 "<dd>JDK1.0</dd>\n" +
-                 "</dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-        "<dt><span class=\"simpleTagLabel\">Since:</span>" +
-                 "</dt>\n" +
-                 "<dd>JDK1.0</dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:" +
-                 "</span></dt>\n" +
-                 "<dd><a href=\"../pkg1/C2.html\" title=\"class in pkg1\">" +
-                 "<code>C2</code></a>, \n" +
-                 "<a href=\"../serialized-form.html#pkg1.C1\">" +
-                 "Serialized Form</a></dd>\n" +
-                 "</dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-        "<dt><span class=\"paramLabel\">Parameters:" +
-                 "</span></dt>\n" +
-                 "<dd><code>title</code> - the title</dd>\n" +
-                 "<dd><code>" +
-                 "test</code> - boolean value</dd>\n" +
-                 "<dt><span class=\"throwsLabel\">Throws:" +
-                 "</span></dt>\n" +
-                 "<dd><code>java.lang.IllegalArgumentException" +
-                 "</code> - if the <code>owner</code>'s\n" +
-                 "     <code>GraphicsConfiguration" +
-                 "</code> is not from a screen device</dd>\n" +
-                 "<dd><code>" +
-                 "HeadlessException</code></dd>\n" +
-                 "</dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-        "<dt><span class=\"paramLabel\">Parameters:" +
-                 "</span></dt>\n" +
-                 "<dd><code>undecorated</code> - <code>true</code>" +
-                 " if no decorations are\n" +
-                 "         to be enabled;\n" +
-                 "         <code>false</code> if decorations are to be enabled." +
-                 "</dd>\n" +
-                 "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-                 "<dd>1.4</dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
-                 "<dd><a href=\"../pkg1/C1.html#readObject--\">" +
-                 "<code>readObject()</code></a></dd>\n" +
-                 "</dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-        "<dt><span class=\"throwsLabel\">Throws:</span>" +
-                 "</dt>\n" +
-                 "<dd><code>java.io.IOException</code></dd>\n" +
-                 "<dt>" +
-                 "<span class=\"seeLabel\">See Also:</span></dt>\n" +
-                 "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a></dd>\n" +
-                 "</dl>"},
-        { "serialized-form.html", "<dl>\n" +
-        "<dt><span class=\"throwsLabel\">Throws:</span>" +
-                 "</dt>\n" +
-                 "<dd><code>" +
-                 "java.io.IOException</code></dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span>" +
-                 "</dt>\n" +
-                 "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
-                 "</dl>"},
+        { "pkg1/package-summary.html",
+                "<dl>\n" +
+                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dd>JDK1.0</dd>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "<dt><span class=\"simpleTagLabel\">Since:</span>" +
+                "</dt>\n" +
+                "<dd>JDK1.0</dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:" +
+                "</span></dt>\n" +
+                "<dd><a href=\"../pkg1/C2.html\" title=\"class in pkg1\">" +
+                "<code>C2</code></a>, \n" +
+                "<a href=\"../serialized-form.html#pkg1.C1\">" +
+                "Serialized Form</a></dd>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "<dt><span class=\"paramLabel\">Parameters:" +
+                "</span></dt>\n" +
+                "<dd><code>title</code> - the title</dd>\n" +
+                "<dd><code>" +
+                "test</code> - boolean value</dd>\n" +
+                "<dt><span class=\"throwsLabel\">Throws:" +
+                "</span></dt>\n" +
+                "<dd><code>java.lang.IllegalArgumentException" +
+                "</code> - if the <code>owner</code>'s\n" +
+                "     <code>GraphicsConfiguration" +
+                "</code> is not from a screen device</dd>\n" +
+                "<dd><code>" +
+                "HeadlessException</code></dd>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "<dt><span class=\"paramLabel\">Parameters:" +
+                "</span></dt>\n" +
+                "<dd><code>undecorated</code> - <code>true</code>" +
+                " if no decorations are\n" +
+                "         to be enabled;\n" +
+                "         <code>false</code> if decorations are to be enabled." +
+                "</dd>\n" +
+                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dd>1.4</dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n" +
+                "<dd><a href=\"../pkg1/C1.html#readObject--\">" +
+                "<code>readObject()</code></a></dd>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "<dt><span class=\"throwsLabel\">Throws:</span>" +
+                "</dt>\n" +
+                "<dd><code>java.io.IOException</code></dd>\n" +
+                "<dt>" +
+                "<span class=\"seeLabel\">See Also:</span></dt>\n" +
+                "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>setUndecorated(boolean)</code></a></dd>\n" +
+                "</dl>"},
         { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">Deprecated.</span>" +
-                 "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "<div class=\"block\">This field indicates whether the C1 is " +
-                 "undecorated.</div>\n" +
-                 "&nbsp;\n" +
-                 "<dl>\n" +
-                 "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-                 "<dd>1.4</dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span>" +
-                 "</dt>\n" +
-                 "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
-                 "</dl>"},
+                "<dl>\n" +
+                "<dt><span class=\"throwsLabel\">Throws:</span>" +
+                "</dt>\n" +
+                "<dd><code>" +
+                "java.io.IOException</code></dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:</span>" +
+                "</dt>\n" +
+                "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
+                "</dl>"},
         { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">Deprecated.</span>" +
-                 "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "<div class=\"block\">Reads the object stream.</div>\n" +
-                 "<dl>\n" +
-                 "<dt><span class=\"throwsLabel\">Throws:" +
-                 "</span></dt>\n" +
-                 "<dd><code><code>" +
-                 "IOException</code></code></dd>\n" +
-                 "<dd><code>java.io.IOException</code></dd>\n" +
-                 "</dl>"},
+                "<span class=\"deprecatedLabel\">Deprecated.</span>" +
+                "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
+                " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
+                "<div class=\"block\">This field indicates whether the C1 is " +
+                "undecorated.</div>\n" +
+                "&nbsp;\n" +
+                "<dl>\n" +
+                "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                "<dd>1.4</dd>\n" +
+                "<dt><span class=\"seeLabel\">See Also:</span>" +
+                "</dt>\n" +
+                "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
+                "</dl>"},
         { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">Deprecated.</span>" +
-                 "&nbsp;</div>\n" +
-                 "<div class=\"block\">" +
-                 "The name for this class.</div>"}};
+                "<span class=\"deprecatedLabel\">Deprecated.</span>" +
+                "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
+                " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
+                "<div class=\"block\">Reads the object stream.</div>\n" +
+                "<dl>\n" +
+                "<dt><span class=\"throwsLabel\">Throws:" +
+                "</span></dt>\n" +
+                "<dd><code><code>" +
+                "IOException</code></code></dd>\n" +
+                "<dd><code>java.io.IOException</code></dd>\n" +
+                "</dl>"},
+        { "serialized-form.html",
+                "<span class=\"deprecatedLabel\">Deprecated.</span>" +
+                "&nbsp;</div>\n" +
+                "<div class=\"block\">" +
+                "The name for this class.</div>"}};
 
     // Test with -nocomment and -nodeprecated options. The ClassDocs whould
     // not display definition lists for any member details.
     private static final String[][] TEST_NOCMNT_NODEPR = {
         { "pkg1/C1.html",
-                 "<pre>public&nbsp;void&nbsp;readObject()\n" +
-                 "                throws java.io.IOException</pre>\n" +
-                 "</li>"},
+                "<pre>public&nbsp;void&nbsp;readObject()\n" +
+                "                throws java.io.IOException</pre>\n" +
+                "</li>"},
         { "pkg1/C2.html", "<pre>public&nbsp;C2()</pre>\n" +
-                 "</li>"},
+                "</li>"},
         { "pkg1/C1.ModalExclusionType.html", "<pre>public " +
-                 "static final&nbsp;<a href=\"../pkg1/C1.ModalExclusionType.html\" " +
-                 "title=\"enum in pkg1\">C1.ModalExclusionType</a> " +
-                 "APPLICATION_EXCLUDE</pre>\n" +
-                 "</li>"},
+                "static final&nbsp;<a href=\"../pkg1/C1.ModalExclusionType.html\" " +
+                "title=\"enum in pkg1\">C1.ModalExclusionType</a> " +
+                "APPLICATION_EXCLUDE</pre>\n" +
+                "</li>"},
         { "serialized-form.html", "<pre>boolean " +
-                 "undecorated</pre>\n" +
-                 "<div class=\"block\"><span class=\"deprecatedLabel\">" +
-                 "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>" +
-                 "setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "</li>"},
+                "undecorated</pre>\n" +
+                "<div class=\"block\"><span class=\"deprecatedLabel\">" +
+                "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
+                " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>" +
+                "setUndecorated(boolean)</code></a>.</span></div>\n" +
+                "</li>"},
         { "serialized-form.html", "<span class=\"deprecatedLabel\">" +
-                 "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version" +
-                 " 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "</li>"}};
+                "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version" +
+                " 1.5, replaced by\n" +
+                " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
+                "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
+                "</li>"}};
 
     // Test for valid HTML generation which should not comprise of empty
     // definition list tags.
-    private static final String[][] NEGATED_TEST = {
-        { "pkg1/package-summary.html", "<dl></dl>"},
-        { "pkg1/package-summary.html", "<dl>\n" +
-        "</dl>"},
-        { "pkg1/C1.html", "<dl></dl>"},
-        { "pkg1/C1.html", "<dl>\n" +
-        "</dl>"},
-        { "pkg1/C1.ModalExclusionType.html", "<dl></dl>"},
-        { "pkg1/C1.ModalExclusionType.html", "<dl>\n" +
-        "</dl>"},
-        { "pkg1/C2.html", "<dl></dl>"},
-        { "pkg1/C2.html", "<dl>\n" +
-        "</dl>"},
-        { "pkg1/C2.ModalType.html", "<dl></dl>"},
-        { "pkg1/C2.ModalType.html", "<dl>\n" +
-        "</dl>"},
-        { "pkg1/C3.html", "<dl></dl>"},
-        { "pkg1/C3.html", "<dl>\n" +
-        "</dl>"},
-        { "pkg1/C4.html", "<dl></dl>"},
-        { "pkg1/C4.html", "<dl>\n" +
-        "</dl>"},
-        { "pkg1/C5.html", "<dl></dl>"},
-        { "pkg1/C5.html", "<dl>\n" +
-        "</dl>"},
-        { "overview-tree.html", "<dl></dl>"},
-        { "overview-tree.html", "<dl>\n" +
-        "</dl>"},
-        { "serialized-form.html", "<dl></dl>"},
-        { "serialized-form.html", "<dl>\n" +
-        "</dl>"}};
+    private static final String[][] NEGATED_TEST_NO_C5 = {
+        { "pkg1/package-summary.html",
+                "<dl></dl>"},
+        { "pkg1/package-summary.html",
+                "<dl>\n" +
+                "</dl>"},
+        { "pkg1/C1.html",
+                "<dl></dl>"},
+        { "pkg1/C1.html",
+                "<dl>\n" +
+                "</dl>"},
+        { "pkg1/C1.ModalExclusionType.html",
+                "<dl></dl>"},
+        { "pkg1/C1.ModalExclusionType.html",
+                "<dl>\n" +
+                "</dl>"},
+        { "pkg1/C2.html",
+                "<dl></dl>"},
+        { "pkg1/C2.html",
+                "<dl>\n" +
+                "</dl>"},
+        { "pkg1/C2.ModalType.html",
+                "<dl></dl>"},
+        { "pkg1/C2.ModalType.html",
+                "<dl>\n" +
+                "</dl>"},
+        { "pkg1/C3.html",
+                "<dl></dl>"},
+        { "pkg1/C3.html",
+                "<dl>\n" +
+                "</dl>"},
+        { "pkg1/C4.html",
+                "<dl></dl>"},
+        { "pkg1/C4.html",
+                "<dl>\n" +
+                "</dl>"},
+        { "overview-tree.html",
+                "<dl></dl>"},
+        { "overview-tree.html",
+                "<dl>\n" +
+                "</dl>"},
+        { "serialized-form.html",
+                "<dl></dl>"},
+        { "serialized-form.html",
+                "<dl>\n" +
+                "</dl>"}};
+    private static final String[][] NEGATED_TEST_C5 = {
+        { "pkg1/C5.html",
+                "<dl></dl>"},
+        { "pkg1/C5.html",
+                "<dl>\n" +
+                "</dl>"}};
 
     private static final String[] ARGS1 =
         new String[] {
-            "-Xdoclint:none", "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"};
+            "-Xdoclint:none", "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS2 =
         new String[] {
-            "-Xdoclint:none", "-d", OUTPUT_DIR, "-nocomment", "-sourcepath",
+            "-Xdoclint:none", "-d", OUTPUT_DIR + "-2", "-nocomment", "-sourcepath",
             SRC_DIR, "pkg1"};
 
     private static final String[] ARGS3 =
         new String[] {
-            "-Xdoclint:none", "-d", OUTPUT_DIR, "-nodeprecated", "-sourcepath",
+            "-Xdoclint:none", "-d", OUTPUT_DIR + "-3", "-nodeprecated", "-sourcepath",
             SRC_DIR, "pkg1"};
 
     private static final String[] ARGS4 =
         new String[] {
-            "-Xdoclint:none", "-d", OUTPUT_DIR, "-nocomment", "-nodeprecated",
+            "-Xdoclint:none", "-d", OUTPUT_DIR + "-4", "-nocomment", "-nodeprecated",
             "-sourcepath", SRC_DIR, "pkg1"};
 
     /**
@@ -353,14 +387,20 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHtmlDefinitionListTag tester = new TestHtmlDefinitionListTag();
-        tester.run(ARGS1, TEST_ALL, NEGATED_TEST);
-        tester.run(ARGS1, TEST_CMNT_DEPR, NEGATED_TEST);
-        tester.run(ARGS2, TEST_ALL, NEGATED_TEST);
-        tester.run(ARGS2, NO_TEST, TEST_CMNT_DEPR);
-        tester.run(ARGS3, TEST_ALL, NEGATED_TEST);
-        tester.run(ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
-        tester.run(ARGS4, TEST_ALL, NEGATED_TEST);
-        tester.run(ARGS4, TEST_NOCMNT_NODEPR, TEST_CMNT_DEPR);
+        tester.run(ARGS1, TEST_ALL, NEGATED_TEST_NO_C5);
+        tester.runTestsOnHTML(NO_TEST,  NEGATED_TEST_C5);
+        tester.runTestsOnHTML(TEST_CMNT_DEPR, NO_TEST);
+
+        tester.run(ARGS2, TEST_ALL, NEGATED_TEST_NO_C5);
+        tester.runTestsOnHTML(NO_TEST,  NEGATED_TEST_C5);
+        tester.runTestsOnHTML(NO_TEST, TEST_CMNT_DEPR);
+
+        tester.run(ARGS3, TEST_ALL, NEGATED_TEST_NO_C5);
+        tester.runTestsOnHTML(TEST_NODEPR, TEST_NOCMNT_NODEPR);
+
+        tester.run(ARGS4, TEST_ALL, NEGATED_TEST_NO_C5);
+        tester.runTestsOnHTML(TEST_NOCMNT_NODEPR, TEST_CMNT_DEPR);
+
         tester.printSummary();
     }
 }

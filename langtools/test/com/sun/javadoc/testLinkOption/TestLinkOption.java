@@ -79,8 +79,8 @@ public class TestLinkOption extends JavadocTester {
 
     private static final String[][] TEST2 = {
         { "pkg2/C2.html",
-            "This is a link to <a href=\"../../" + OUTPUT_DIR +
-            "-1/pkg/C.html?is-external=true\" " +
+            "This is a link to <a href=\"../../" +
+            OUTPUT_DIR + "-1/pkg/C.html?is-external=true\" " +
             "title=\"class or interface in pkg\"><code>Class C</code></a>."
         }
     };
@@ -118,7 +118,6 @@ public class TestLinkOption extends JavadocTester {
      */
     public static void main(String[] args) {
         TestLinkOption tester = new TestLinkOption();
-        tester.run(ARGS1, TEST1, NEGATED_TEST1);
         tester.run(ARGS1, TEST1, NEGATED_TEST1);
         tester.run(ARGS2, TEST2, NO_TEST);
         tester.runJavadoc(createArguments(true));  // with trailing slash
