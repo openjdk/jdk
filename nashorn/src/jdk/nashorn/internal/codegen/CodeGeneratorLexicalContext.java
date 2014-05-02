@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
+
 import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Block;
@@ -75,14 +76,20 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
     /** size of next free slot vector */
     private int nextFreeSlotsSize;
 
+    private boolean isWithBoundary(final LexicalContextNode node) {
+        return node instanceof Block && !isEmpty() && peek() instanceof WithNode;
+    }
+
     @Override
     public <T extends LexicalContextNode> T push(final T node) {
-        if (isDynamicScopeBoundary(node)) {
-            ++dynamicScopeCount;
-        }
-        if(node instanceof FunctionNode) {
+        if (isWithBoundary(node)) {
+            dynamicScopeCount++;
+        } else if (node instanceof FunctionNode) {
+            if (((FunctionNode)node).inDynamicContext()) {
+                dynamicScopeCount++;
+            }
             splitNodes.push(0);
-        } else if(node instanceof SplitNode) {
+        } else if (node instanceof SplitNode) {
             enterSplitNode();
         }
         return super.push(node);
@@ -99,30 +106,20 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
     @Override
     public <T extends LexicalContextNode> T pop(final T node) {
         final T popped = super.pop(node);
-        if (isDynamicScopeBoundary(popped)) {
-            --dynamicScopeCount;
-        }
-        if(node instanceof FunctionNode) {
+        if (isWithBoundary(node)) {
+            dynamicScopeCount--;
+            assert dynamicScopeCount >= 0;
+        } else if (node instanceof FunctionNode) {
+            if (((FunctionNode)node).inDynamicContext()) {
+                dynamicScopeCount--;
+                assert dynamicScopeCount >= 0;
+            }
             assert splitNodes.peek() == 0;
             splitNodes.pop();
-        } else if(node instanceof SplitNode) {
+        } else if (node instanceof SplitNode) {
             exitSplitNode();
         }
         return popped;
-    }
-
-    private boolean isDynamicScopeBoundary(final LexicalContextNode node) {
-        if (node instanceof Block) {
-            // Block's immediate parent is a with node. Note we aren't testing for a WithNode, as that'd capture
-            // processing of WithNode.expression too, but it should be unaffected.
-            return !isEmpty() && peek() instanceof WithNode;
-        } else if (node instanceof FunctionNode) {
-            // Function has a direct eval in it (so a top-level "var ..." in the eval code can introduce a new
-            // variable into the function's scope), and it isn't strict (as evals in strict functions get an
-            // isolated scope).
-            return isFunctionDynamicScope((FunctionNode)node);
-        }
-        return false;
     }
 
     boolean inDynamicScope() {
@@ -131,10 +128,6 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
 
     boolean inSplitNode() {
         return !splitNodes.isEmpty() && splitNodes.peek() > 0;
-    }
-
-    static boolean isFunctionDynamicScope(FunctionNode fn) {
-        return fn.hasEval() && !fn.isStrict();
     }
 
     MethodEmitter pushMethodEmitter(final MethodEmitter newMethod) {
@@ -230,7 +223,7 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
         return nextFreeSlots[nextFreeSlotsSize - 1];
     }
 
-    void releaseBlockSlots(boolean optimistic) {
+    void releaseBlockSlots(final boolean optimistic) {
         --nextFreeSlotsSize;
         if(optimistic) {
             slotTypesDescriptors.peek().setLength(nextFreeSlots[nextFreeSlotsSize]);

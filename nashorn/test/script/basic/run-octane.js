@@ -25,7 +25,13 @@
  * @subtest
  */
 
-var read = readFully;
+var read;
+try {
+    read = readFully;
+} catch (e) {
+    print("ABORTING: Cannot find 'readFully'. You must have scripting enabled to use this test harness. (-scripting)");
+    throw e;
+}
 
 function initZlib() {
     zlib = new BenchmarkSuite('zlib', [152815148], [
