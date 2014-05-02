@@ -2399,7 +2399,7 @@ bool Arguments::check_vm_args_consistency() {
   status &= verify_interval(CodeCacheSegmentSize, 1, 1024, "CodeCacheSegmentSize");
 
   // TieredCompilation needs at least 2 compiler threads.
-  const int num_min_compiler_threads = (TieredCompilation && (TieredStopAtLevel >= CompLevel_full_optimization)) ? 2 : 1;
+  const int num_min_compiler_threads = (TieredCompilation && (TieredStopAtLevel >= CompLevel_full_optimization)) ? 2 : CI_COMPILER_COUNT;
   status &=verify_min_value(CICompilerCount, num_min_compiler_threads, "CICompilerCount");
 
   if (!FLAG_IS_DEFAULT(CICompilerCount) && !FLAG_IS_DEFAULT(CICompilerCountPerCPU) && CICompilerCountPerCPU) {
