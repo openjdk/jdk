@@ -409,7 +409,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
                 previousWasBlock = true;
             } else {
-                if (node instanceof WithNode && previousWasBlock || node instanceof FunctionNode && CodeGeneratorLexicalContext.isFunctionDynamicScope((FunctionNode)node)) {
+                if (node instanceof WithNode && previousWasBlock || node instanceof FunctionNode && ((FunctionNode)node).needsDynamicScope()) {
                     // If we hit a scope that can have symbols introduced into it at run time before finding the defining
                     // block, the symbol can't be fast scoped. A WithNode only counts if we've immediately seen a block
                     // before - its block. Otherwise, we are currently processing the WithNode's expression, and that's

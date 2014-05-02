@@ -631,7 +631,7 @@ public class AccessorProperty extends Property {
                  mh = ObjectClassGenerator.createGuardBoxedPrimitiveSetter(ct, generateSetter(ct, ct), mh);
             }
         } else {
-            mh = generateSetter(forType, type);
+            mh = generateSetter(!forType.isPrimitive() ? Object.class : forType, type);
         }
 
         /**
@@ -681,7 +681,7 @@ public class AccessorProperty extends Property {
     @Override
     public final void setCurrentType(final Class<?> currentType) {
         assert currentType != boolean.class : "no boolean storage support yet - fix this";
-        this.currentType = currentType;
+        this.currentType = currentType == null ? null : currentType.isPrimitive() ? currentType : Object.class;
     }
 
     @Override

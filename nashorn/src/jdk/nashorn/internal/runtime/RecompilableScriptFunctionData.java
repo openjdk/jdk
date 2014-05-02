@@ -269,6 +269,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return functionName;
     }
 
+    @Override
+    public boolean inDynamicContext() {
+        return (flags & IN_DYNAMIC_CONTEXT) != 0;
+    }
+
     private static String functionName(final FunctionNode fn) {
         if (fn.isAnonymous()) {
             return "";
@@ -303,6 +308,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         }
         if (functionNode.isVarArg()) {
             flags |= IS_VARIABLE_ARITY;
+        }
+        if (functionNode.inDynamicContext()) {
+            flags |= IN_DYNAMIC_CONTEXT;
         }
         return flags;
     }
@@ -346,6 +354,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         if (isAnonymous) {
             parser.setFunctionName(functionName);
         }
+
         final FunctionNode program = parser.parse(scriptName, descPosition, Token.descLength(token), true);
         // Parser generates a program AST even if we're recompiling a single function, so when we are only recompiling a
         // single function, extract it from the program.
@@ -373,7 +382,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return sb.toString();
     }
 
-    FunctionNodeTransform getNopTransform() {
+    private FunctionNodeTransform getNopTransform() {
         return new FunctionNodeTransform() {
             @Override
             FunctionNode apply(final FunctionNode functionNode) {

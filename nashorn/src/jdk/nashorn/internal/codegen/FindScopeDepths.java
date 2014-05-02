@@ -27,6 +27,7 @@ package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getClassName;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getPaddedFieldCount;
+import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,6 +38,7 @@ import java.util.Set;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
@@ -63,8 +65,11 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
     private final Map<Integer, Map<Integer, RecompilableScriptFunctionData>> fnIdToNestedFunctions = new HashMap<>();
     private final Map<Integer, Map<String, Integer>> externalSymbolDepths = new HashMap<>();
     private final Map<Integer, Set<String>> internalSymbols = new HashMap<>();
+    private final Set<Block> withBodies = new HashSet<>();
 
     private final DebugLogger log;
+
+    private int dynamicScopeCount;
 
     FindScopeDepths(final Compiler compiler) {
         super(new LexicalContext());
@@ -151,10 +156,22 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         return globalBlock;
     }
 
+    private static boolean isDynamicScopeBoundary(final FunctionNode fn) {
+        return fn.needsDynamicScope();
+    }
+
+    private boolean isDynamicScopeBoundary(final Block block) {
+        return withBodies.contains(block);
+    }
+
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
         if (env.isOnDemandCompilation()) {
             return true;
+        }
+
+        if (isDynamicScopeBoundary(functionNode)) {
+            increaseDynamicScopeCount(functionNode);
         }
 
         final int fnId = functionNode.getId();
@@ -170,11 +187,22 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
     //external symbols hold the scope depth of sc11 from global at the start of the method
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
-        final FunctionNode newFunctionNode = functionNode.setState(lc, CompilationState.SCOPE_DEPTHS_COMPUTED);
+        final String name = functionNode.getName();
+        FunctionNode newFunctionNode = functionNode.setState(lc, CompilationState.SCOPE_DEPTHS_COMPUTED);
+
         if (env.isOnDemandCompilation()) {
             final RecompilableScriptFunctionData data = env.getScriptFunctionData(newFunctionNode.getId());
             assert data != null : newFunctionNode.getName() + " lacks data";
+            if (data.inDynamicContext()) {
+                log.fine("Reviving scriptfunction ", quote(name), " as defined in previous (now lost) dynamic scope.");
+                newFunctionNode = newFunctionNode.setInDynamicContext(lc);
+            }
             return newFunctionNode;
+        }
+
+        if (inDynamicScope()) {
+            log.fine("Tagging ", quote(name), " as defined in dynamic scope");
+            newFunctionNode = newFunctionNode.setInDynamicContext(lc);
         }
 
         //create recompilable scriptfunctiondata
@@ -207,13 +235,47 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
             env.setData(data);
         }
 
+        if (isDynamicScopeBoundary(functionNode)) {
+            decreaseDynamicScopeCount(functionNode);
+        }
+
         return newFunctionNode;
+    }
+
+    private boolean inDynamicScope() {
+        return dynamicScopeCount > 0;
+    }
+
+    private void increaseDynamicScopeCount(final Node node) {
+        assert dynamicScopeCount >= 0;
+        ++dynamicScopeCount;
+        if (log.isEnabled()) {
+            log.finest(quote(lc.getCurrentFunction().getName()), " ++dynamicScopeCount = ", dynamicScopeCount, " at: ", node, node.getClass());
+        }
+    }
+
+    private void decreaseDynamicScopeCount(final Node node) {
+        --dynamicScopeCount;
+        assert dynamicScopeCount >= 0;
+        if (log.isEnabled()) {
+            log.finest(quote(lc.getCurrentFunction().getName()), " --dynamicScopeCount = ", dynamicScopeCount, " at: ", node, node.getClass());
+        }
+    }
+
+    @Override
+    public boolean enterWithNode(final WithNode node) {
+        withBodies.add(node.getBody());
+        return true;
     }
 
     @Override
     public boolean enterBlock(final Block block) {
         if (env.isOnDemandCompilation()) {
             return true;
+        }
+
+        if (isDynamicScopeBoundary(block)) {
+            increaseDynamicScopeCount(block);
         }
 
         if (!lc.isFunctionBody()) {
@@ -288,6 +350,17 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         return true;
     }
 
+    @Override
+    public Node leaveBlock(final Block block) {
+        if (env.isOnDemandCompilation()) {
+            return block;
+        }
+        if (isDynamicScopeBoundary(block)) {
+            decreaseDynamicScopeCount(block);
+        }
+        return block;
+    }
+
     private void addInternalSymbols(final FunctionNode functionNode, final Set<String> symbols) {
         final int fnId = functionNode.getId();
         assert internalSymbols.get(fnId) == null || internalSymbols.get(fnId).equals(symbols); //e.g. cloned finally block
@@ -303,4 +376,5 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         }
         depths.put(symbol.getName(), depthAtStart);
     }
+
 }

@@ -85,6 +85,8 @@ public abstract class ScriptFunctionData {
     public static final int USES_THIS      = 1 << 4;
     /** Is this a variable arity function? */
     public static final int IS_VARIABLE_ARITY = 1 << 5;
+    /** Is this declared in a dynamic context */
+    public static final int IN_DYNAMIC_CONTEXT = 1 << 6;
 
     /** Flag for strict or built-in functions */
     public static final int IS_STRICT_OR_BUILTIN = IS_STRICT | IS_BUILTIN;
@@ -746,6 +748,14 @@ public abstract class ScriptFunctionData {
 
     static boolean isVarArg(final MethodType type) {
         return type.parameterType(type.parameterCount() - 1).isArray();
+    }
+
+    /**
+     * Is this ScriptFunction declared in a dynamic context
+     * @return true if in dynamic context, false if not or irrelevant
+     */
+    public boolean inDynamicContext() {
+        return false;
     }
 
     @SuppressWarnings("unused")

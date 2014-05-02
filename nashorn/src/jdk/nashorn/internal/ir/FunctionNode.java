@@ -209,7 +209,10 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     public static final int IS_PROGRAM = 1 << 15;
 
     /** Does this function use the "this" keyword? */
-    public static final int USES_THIS                   = 1 << 16;
+    public static final int USES_THIS = 1 << 16;
+
+    /** Is this declared in a dynamic context */
+    public static final int IN_DYNAMIC_CONTEXT = 1 << 17;
 
     /** Does this function or any nested functions contain an eval? */
     private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
@@ -646,6 +649,36 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      */
     public boolean isVarArg() {
         return needsArguments() || parameters.size() > LinkerCallSite.ARGLIMIT;
+    }
+
+    /**
+     * Was this function declared in a dynamic context, i.e. in a with or eval style
+     * chain
+     * @return true if in dynamic context
+     */
+    public boolean inDynamicContext() {
+        return getFlag(IN_DYNAMIC_CONTEXT);
+    }
+
+    /**
+     * Check whether a function would need dynamic scope, which is does if it has
+     * evals and isn't strict.
+     * @return true if dynamic scope is needed
+     */
+    public boolean needsDynamicScope() {
+        // Function has a direct eval in it (so a top-level "var ..." in the eval code can introduce a new
+        // variable into the function's scope), and it isn't strict (as evals in strict functions get an
+        // isolated scope).
+        return hasEval() && !isStrict();
+    }
+
+    /**
+     * Flag this function as declared in a dynamic context
+     * @param lc lexical context
+     * @return new function node, or same if unmodified
+     */
+    public FunctionNode setInDynamicContext(final LexicalContext lc) {
+        return setFlag(lc, IN_DYNAMIC_CONTEXT);
     }
 
     /**
