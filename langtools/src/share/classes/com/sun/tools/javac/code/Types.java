@@ -3929,8 +3929,13 @@ public class Types {
                     Si.lower = Ti.getSuperBound();
                     break;
                 }
-                if (Si.bound == Si.lower)
+                Type tmpBound = Si.bound.hasTag(UNDETVAR) ? ((UndetVar)Si.bound).qtype : Si.bound;
+                Type tmpLower = Si.lower.hasTag(UNDETVAR) ? ((UndetVar)Si.lower).qtype : Si.lower;
+                if (!Si.bound.hasTag(ERROR) &&
+                    !Si.lower.hasTag(ERROR) &&
+                    isSameType(tmpBound, tmpLower, false)) {
                     currentS.head = Si.bound;
+                }
             }
             currentA = currentA.tail;
             currentT = currentT.tail;
