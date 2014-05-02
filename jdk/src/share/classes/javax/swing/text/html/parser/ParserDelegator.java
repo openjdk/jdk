@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing.text.html.parser;
 
 import sun.awt.AppContext;
@@ -35,6 +34,8 @@ import java.io.DataInputStream;
 import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.io.Serializable;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Responsible for starting up a new DocumentParser
@@ -110,14 +111,13 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
      *  ParserDelegator class.
      * @returns a stream representing the resource
      */
-    static InputStream getResourceAsStream(String name) {
-        try {
-            return ResourceLoader.getResourceAsStream(name);
-        } catch (Throwable e) {
-            // If the class doesn't exist or we have some other
-            // problem we just try to call getResourceAsStream directly.
-            return ParserDelegator.class.getResourceAsStream(name);
-        }
+    static InputStream getResourceAsStream(final String name) {
+        return AccessController.doPrivileged(
+                new PrivilegedAction<InputStream>() {
+                    public InputStream run() {
+                        return ParserDelegator.class.getResourceAsStream(name);
+                    }
+                });
     }
 
     private void readObject(ObjectInputStream s)

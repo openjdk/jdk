@@ -191,7 +191,7 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
         if (!inited || (getClosedIcon() instanceof UIResource)) {
             setClosedIcon(DefaultLookup.getIcon(this, ui, "Tree.closedIcon"));
         }
-        if (!inited || (getOpenIcon() instanceof UIManager)) {
+        if (!inited || (getOpenIcon() instanceof UIResource)) {
             setOpenIcon(DefaultLookup.getIcon(this, ui, "Tree.openIcon"));
         }
         if (!inited || (getTextSelectionColor() instanceof UIResource)) {

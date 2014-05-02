@@ -564,7 +564,7 @@ public class Resolve {
                                     tvars,
                                     (MethodType)mt,
                                     resultInfo,
-                                    m,
+                                    (MethodSymbol)m,
                                     argtypes,
                                     allowBoxing,
                                     useVarargs,
@@ -772,6 +772,7 @@ public class Resolve {
         public MethodCheck mostSpecificCheck(List<Type> actuals, boolean strict) {
             return nilMethodCheck;
         }
+
     }
 
     /**
@@ -782,6 +783,11 @@ public class Resolve {
         @Override
         void checkArg(DiagnosticPosition pos, boolean varargs, Type actual, Type formal, DeferredAttrContext deferredAttrContext, Warner warn) {
             //do nothing - actual always compatible to formals
+        }
+
+        @Override
+        public String toString() {
+            return "arityMethodCheck";
         }
     };
 
@@ -868,6 +874,11 @@ public class Resolve {
         public MethodCheck mostSpecificCheck(List<Type> actuals, boolean strict) {
             return new MostSpecificCheck(strict, actuals);
         }
+
+        @Override
+        public String toString() {
+            return "resolveMethodCheck";
+        }
     };
 
     /**
@@ -899,7 +910,9 @@ public class Resolve {
                 @Override
                 public boolean compatible(Type found, Type req, Warner warn) {
                     found = pendingInferenceContext.asUndetVar(found);
-                    req = infer.returnConstraintTarget(found, req);
+                    if (found.hasTag(UNDETVAR) && req.isPrimitive()) {
+                        req = types.boxedClass(req).type;
+                    }
                     return super.compatible(found, req, warn);
                 }
 
@@ -914,6 +927,11 @@ public class Resolve {
         @Override
         public MethodCheck mostSpecificCheck(List<Type> actuals, boolean strict) {
             return new MostSpecificCheck(strict, actuals);
+        }
+
+        @Override
+        public String toString() {
+            return "MethodReferenceCheck";
         }
     }
 
@@ -954,6 +972,11 @@ public class Resolve {
         public DeferredAttrContext deferredAttrContext() {
             return deferredAttrContext;
         }
+
+        @Override
+        public String toString() {
+            return "MethodCheckContext";
+        }
     }
 
     /**
@@ -972,7 +995,12 @@ public class Resolve {
                 DeferredType dt = (DeferredType)found;
                 return dt.check(this);
             } else {
-                return super.check(pos, chk.checkNonVoid(pos, types.capture(U(found.baseType()))));
+                Type uResult = U(found.baseType());
+                Type capturedType = pos == null || pos.getTree() == null ?
+                        types.capture(uResult) :
+                        checkContext.inferenceContext()
+                            .cachedCapture(pos.getTree(), uResult, true);
+                return super.check(pos, chk.checkNonVoid(pos, capturedType));
             }
         }
 

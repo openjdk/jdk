@@ -493,10 +493,26 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             return;
         }
 
+        DiagnosticPosition prevLintPos = deferredLintHandler.immediate();
+        Lint prevLint = chk.setLint(lint);
+
+        try {
+            // Import-on-demand java.lang.
+            importAll(tree.pos, syms.enterPackage(names.java_lang), env);
+
+            // Process the package def and all import clauses.
+            memberEnter(tree.defs, env);
+        } finally {
+            chk.setLint(prevLint);
+            deferredLintHandler.setPos(prevLintPos);
+        }
+    }
+
+    public void visitPackageDef(JCPackageDecl tree) {
         // check that no class exists with same fully qualified name as
         // toplevel package
         if (checkClash && tree.pid != null) {
-            Symbol p = tree.packge;
+            Symbol p = env.toplevel.packge;
             while (p.owner != syms.rootPackage) {
                 p.owner.complete(); // enter all class members of p
                 if (syms.classes.get(p.getQualifiedName()) != null) {
@@ -507,23 +523,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 p = p.owner;
             }
         }
-
         // process package annotations
-        annotate.annotateLater(tree.packageAnnotations, env, tree.packge, null);
-
-        DiagnosticPosition prevLintPos = deferredLintHandler.immediate();
-        Lint prevLint = chk.setLint(lint);
-
-        try {
-            // Import-on-demand java.lang.
-            importAll(tree.pos, syms.enterPackage(names.java_lang), env);
-
-            // Process all import clauses.
-            memberEnter(tree.defs, env);
-        } finally {
-            chk.setLint(prevLint);
-            deferredLintHandler.setPos(prevLintPos);
-        }
+        annotate.annotateLater(tree.annotations, env, env.toplevel.packge, null);
     }
 
     // process the non-static imports and the static imports of types.

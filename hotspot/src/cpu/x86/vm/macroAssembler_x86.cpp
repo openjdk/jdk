@@ -1051,7 +1051,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 1; i <= StackShadowPages; i++) {
+  for (int i = 1; i < StackShadowPages; i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     movptr(Address(tmp, (-i*os::vm_page_size())), size );
@@ -1488,11 +1488,10 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
     movl(retry_on_abort_count_Reg, RTMRetryCount); // Retry on abort
     bind(L_rtm_retry);
   }
-  if (!UseRTMXendForLockBusy) {
-    movptr(tmpReg, Address(objReg, 0));
-    testptr(tmpReg, markOopDesc::monitor_value);  // inflated vs stack-locked|neutral|biased
-    jcc(Assembler::notZero, IsInflated);
-  }
+  movptr(tmpReg, Address(objReg, 0));
+  testptr(tmpReg, markOopDesc::monitor_value);  // inflated vs stack-locked|neutral|biased
+  jcc(Assembler::notZero, IsInflated);
+
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
@@ -1512,10 +1511,7 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
   Register abort_status_Reg = tmpReg; // status of abort is stored in RAX
   if (UseRTMXendForLockBusy) {
     xend();
-    movptr(tmpReg, Address(objReg, 0));
-    testptr(tmpReg, markOopDesc::monitor_value);  // inflated vs stack-locked|neutral|biased
-    jcc(Assembler::notZero, IsInflated);
-    movptr(abort_status_Reg, 0x1);                // Set the abort status to 1 (as xabort does)
+    movptr(abort_status_Reg, 0x2);   // Set the abort status to 2 (so we can retry)
     jmp(L_decrement_retry);
   }
   else {
@@ -6097,7 +6093,7 @@ void MacroAssembler::reinit_heapbase() {
 
 
 // C2 compiled method's prolog code.
-void MacroAssembler::verified_entry(int framesize, bool stack_bang, bool fp_mode_24b) {
+void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b) {
 
   // WARNING: Initial instruction MUST be 5 bytes or longer so that
   // NativeJump::patch_verified_entry will be able to patch out the entry
@@ -6105,18 +6101,20 @@ void MacroAssembler::verified_entry(int framesize, bool stack_bang, bool fp_mode
   // the frame allocation can be either 3 or 6 bytes. So if we don't do
   // stack bang then we must use the 6 byte frame allocation even if
   // we have no frame. :-(
+  assert(stack_bang_size >= framesize || stack_bang_size <= 0, "stack bang size incorrect");
 
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove word for return addr
   framesize -= wordSize;
+  stack_bang_size -= wordSize;
 
   // Calls to C2R adapters often do not accept exceptional returns.
   // We require that their callers must bang for them.  But be careful, because
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (stack_bang) {
-    generate_stack_overflow_check(framesize);
+  if (stack_bang_size > 0) {
+    generate_stack_overflow_check(stack_bang_size);
 
     // We always push rbp, so that on return to interpreter rbp, will be
     // restored correctly and we can correct the stack.

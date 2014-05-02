@@ -185,7 +185,7 @@ Declares a structure type that can be used in other events.
     </event>
 
     <struct id="MetaspaceSizes">
-      <value type="BYTES64" field="capacity" label="Capacity" description="Total available memory to allocate in" />
+      <value type="BYTES64" field="committed" label="Committed" description="Committed memory for this space" />
       <value type="BYTES64" field="used" label="Used" description="Bytes allocated by objects in the space" />
       <value type="BYTES64" field="reserved" label="Reserved" description="Reserved memory for this space" />
     </struct>

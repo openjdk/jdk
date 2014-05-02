@@ -311,6 +311,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      *
      * @since 1.9
      */
+    @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {
         if (name == StandardSocketOptions.SO_SNDBUF) {
             return (T) getOption(SocketOptions.SO_SNDBUF);

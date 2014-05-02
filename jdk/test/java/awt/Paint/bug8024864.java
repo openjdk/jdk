@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8024864
+ * @bug 8024864 8031422
  * @summary [macosx] Problems with rendering of controls
  * @author Petr Pchelko
  * @library ../regtesthelpers
@@ -65,7 +65,7 @@ public class bug8024864
                 Util.waitForIdle(r);
 
                 Dimension frameSize = frame.getSize();
-                Point loc = new Point(frameSize.width - 5, frameSize.height - 5);
+                Point loc = new Point(frameSize.width - 15, frameSize.height - 15);
                 SwingUtilities.convertPointToScreen(loc, frame);
                 Color c = r.getPixelColor(loc.x, loc.y);
 

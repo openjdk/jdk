@@ -44,6 +44,11 @@ void G1StringDedup::initialize() {
   }
 }
 
+void G1StringDedup::stop() {
+  assert(is_enabled(), "String deduplication not enabled");
+  G1StringDedupThread::stop();
+}
+
 bool G1StringDedup::is_candidate_from_mark(oop obj) {
   if (java_lang_String::is_instance(obj)) {
     bool from_young = G1CollectedHeap::heap()->heap_region_containing_raw(obj)->is_young();

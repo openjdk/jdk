@@ -152,7 +152,7 @@ LIR_Opr LIR_Assembler::osrBufferPointer() {
 }
 
 
-int LIR_Assembler::initial_frame_size_in_bytes() {
+int LIR_Assembler::initial_frame_size_in_bytes() const {
   return in_bytes(frame_map()->framesize_in_bytes());
 }
 
@@ -182,7 +182,7 @@ void LIR_Assembler::osr_entry() {
   int number_of_locks = entry_state->locks_size();
 
   // Create a frame for the compiled activation.
-  __ build_frame(initial_frame_size_in_bytes());
+  __ build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 
   // OSR buffer is
   //

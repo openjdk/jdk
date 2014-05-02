@@ -408,6 +408,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @since 1.9
      */
+    @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {
         if (name == StandardSocketOptions.SO_KEEPALIVE) {
             return (T)getOption(SocketOptions.SO_KEEPALIVE);

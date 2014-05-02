@@ -145,7 +145,7 @@
                 root repository:
                 <blockquote>
                     <code>
-                        hg clone http://hg.openjdk.java.net/jdk8/jdk8 
+                        hg clone http://hg.openjdk.java.net/jdk9/jdk9
                         <i>YourOpenJDK</i>
                         <br>
                         cd <i>YourOpenJDK</i>
@@ -373,18 +373,17 @@
                         particular update level.
                         <br>&nbsp;<br>
 
-                        <b><i>Building JDK 8 requires use of a version
-                        of JDK 7 that is at Update 7 or newer. JDK 8
-                        developers should not use JDK 8 as the boot
-                        JDK, to ensure that JDK 8 dependencies are
+                        <b><i>Building JDK 9 requires JDK 8. JDK 9
+                        developers should not use JDK 9 as the boot
+                        JDK, to ensure that JDK 9 dependencies are
                         not introduced into the parts of the system
-                        that are built with JDK 7.</i></b>
+                        that are built with JDK 8.</i></b>
 
                         <br>&nbsp;<br>
-                        The JDK 7 binaries can be downloaded from Oracle's 
+                        The JDK 8 binaries can be downloaded from Oracle's 
                         <a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html"
-                           target="_blank">JDK 7 download site</a>.
-                        For build performance reasons
+                           target="_blank">JDK 8 download site</a>.
+                        For build performance reasons it
                         is very important that this bootstrap JDK be made available 
                         on the local disk of the machine doing the build.
                         You should add its <code>bin</code> directory
@@ -1454,9 +1453,7 @@
                 <p>One of the top goals of the new build system is to improve the
                     build performance and decrease the time needed to build. This will
                     soon also apply to the java compilation when the Smart Javac wrapper
-                    is making its way into jdk8. It can be tried in the build-infra
-                    repository already. You are likely to find that the new build system
-                    is faster than the old one even without this feature.</p>
+                    is fully supported.</p>
 
                 <p>At the end of a successful execution of <code>configure</code>, 
                     you will get a performance summary, 

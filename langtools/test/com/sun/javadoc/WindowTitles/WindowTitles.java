@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,8 @@ public class WindowTitles
 {
     private static final String BUGID = "4530730";
     private static final String BUGNAME = "WindowTitles";
-    private static final String FS = System.getProperty("file.separator");
-    private static final String PS = System.getProperty("path.separator");
-    private static final String LS = System.getProperty("line.separator");
-    private static final String TMPDIR_STRING1 = "." + FS + "docs1" + FS;
-    private static final String TMPDIR_STRING2 = "." + FS + "docs2" + FS;
+    private static final String TMPDIR_STRING1 = "./docs1/";
+    private static final String TMPDIR_STRING2 = "./docs2/";
 
     // Subtest number.  Needed because runResultsOnHTML is run twice, and subtestNum
     // should increment across subtest runs.
@@ -90,7 +87,7 @@ public class WindowTitles
 
     /**
      * Assign value for [ stringToFind, filename ]
-     * NOTE: The standard doclet uses platform-specific line separators (LS)
+     * NOTE: The standard doclet uses platform-specific line separators ("\n")
      */
     private static final String[][] testArray = {
 
@@ -104,19 +101,19 @@ public class WindowTitles
                     TMPDIR_STRING1 + "overview-frame.html"                    },
 
             { "<title>p1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "package-summary.html"       },
+                    TMPDIR_STRING1 + "p1/package-summary.html"       },
 
             { "<title>p1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "package-frame.html"         },
+                    TMPDIR_STRING1 + "p1/package-frame.html"         },
 
             { "<title>p1 Class Hierarchy</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "package-tree.html"          },
+                    TMPDIR_STRING1 + "p1/package-tree.html"          },
 
             { "<title>Uses of Package p1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "package-use.html"           },
+                    TMPDIR_STRING1 + "p1/package-use.html"           },
 
             { "<title>C1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "C1.html"                    },
+                    TMPDIR_STRING1 + "p1/C1.html"                    },
 
             { "<title>All Classes</title>",
                     TMPDIR_STRING1 + "allclasses-frame.html"                  },
@@ -140,7 +137,7 @@ public class WindowTitles
                     TMPDIR_STRING1 + "index-all.html"                         },
 
             { "<title>Uses of Class p1.C1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "class-use" + FS + "C1.html" },
+                    TMPDIR_STRING1 + "p1/class-use/C1.html" },
         };
 
     /**
@@ -148,7 +145,7 @@ public class WindowTitles
      */
     private static final String[][] testSplitIndexArray = {
             { "<title>C-Index</title>",
-                    TMPDIR_STRING2 + "index-files" + FS + "index-1.html"       },
+                    TMPDIR_STRING2 + "index-files/index-1.html"       },
         };
 
     public static void runTestsOnHTML(String[][] testArray) {

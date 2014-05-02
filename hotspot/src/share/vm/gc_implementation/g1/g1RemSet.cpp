@@ -36,6 +36,7 @@
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/intHisto.hpp"
 
 #define CARD_REPEAT_HISTO 0
@@ -113,14 +114,14 @@ class ScanRSClosure : public HeapRegionClosure {
   G1SATBCardTableModRefBS *_ct_bs;
 
   double _strong_code_root_scan_time_sec;
-  int    _worker_i;
+  uint   _worker_i;
   int    _block_size;
   bool   _try_claimed;
 
 public:
   ScanRSClosure(OopsInHeapRegionClosure* oc,
                 CodeBlobToOopClosure* code_root_cl,
-                int worker_i) :
+                uint worker_i) :
     _oc(oc),
     _code_root_cl(code_root_cl),
     _strong_code_root_scan_time_sec(0.0),
@@ -162,8 +163,8 @@ public:
 
   void printCard(HeapRegion* card_region, size_t card_index,
                  HeapWord* card_start) {
-    gclog_or_tty->print_cr("T %d Region [" PTR_FORMAT ", " PTR_FORMAT ") "
-                           "RS names card %p: "
+    gclog_or_tty->print_cr("T %u Region [" PTR_FORMAT ", " PTR_FORMAT ") "
+                           "RS names card " SIZE_FORMAT_HEX ": "
                            "[" PTR_FORMAT ", " PTR_FORMAT ")",
                            _worker_i,
                            card_region->bottom(), card_region->end(),
@@ -209,7 +210,6 @@ public:
 #endif
 
       HeapRegion* card_region = _g1h->heap_region_containing(card_start);
-      assert(card_region != NULL, "Yielding cards not in the heap?");
       _cards++;
 
       if (!card_region->is_on_dirty_cards_region_list()) {
@@ -241,7 +241,7 @@ public:
 
 void G1RemSet::scanRS(OopsInHeapRegionClosure* oc,
                       CodeBlobToOopClosure* code_root_cl,
-                      int worker_i) {
+                      uint worker_i) {
   double rs_time_start = os::elapsedTime();
   HeapRegion *startRegion = _g1->start_cset_region_for_worker(worker_i);
 
@@ -274,13 +274,13 @@ public:
                                               DirtyCardQueue* into_cset_dcq) :
     _g1rs(g1h->g1_rem_set()), _into_cset_dcq(into_cset_dcq)
   {}
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     // The only time we care about recording cards that
     // contain references that point into the collection set
     // is during RSet updating within an evacuation pause.
     // In this case worker_i should be the id of a GC worker thread.
     assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
-    assert(worker_i < (int) (ParallelGCThreads == 0 ? 1 : ParallelGCThreads), "should be a GC worker");
+    assert(worker_i < (ParallelGCThreads == 0 ? 1 : ParallelGCThreads), "should be a GC worker");
 
     if (_g1rs->refine_card(card_ptr, worker_i, true)) {
       // 'card_ptr' contains references that point into the collection
@@ -295,7 +295,7 @@ public:
   }
 };
 
-void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, int worker_i) {
+void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, uint worker_i) {
   double start = os::elapsedTime();
   // Apply the given closure to all remaining log entries.
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq);
@@ -320,14 +320,14 @@ void G1RemSet::cleanupHRRS() {
 
 void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
                                            CodeBlobToOopClosure* code_root_cl,
-                                           int worker_i) {
+                                           uint worker_i) {
 #if CARD_REPEAT_HISTO
   ct_freq_update_histo_and_reset();
 #endif
 
   // We cache the value of 'oc' closure into the appropriate slot in the
   // _cset_rs_update_cl for this worker
-  assert(worker_i < (int)n_workers(), "sanity");
+  assert(worker_i < n_workers(), "sanity");
   _cset_rs_update_cl[worker_i] = oc;
 
   // A DirtyCardQueue that is used to hold cards containing references
@@ -399,12 +399,11 @@ public:
     _g1(g1), _ct_bs(bs)
   { }
 
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     // Construct the region representing the card.
     HeapWord* start = _ct_bs->addr_for(card_ptr);
     // And find the region containing it.
     HeapRegion* r = _g1->heap_region_containing(start);
-    assert(r != NULL, "unexpected null");
 
     // Scan oops in the card looking for references into the collection set
     // Don't use addr_for(card_ptr + 1) which can ask for
@@ -543,7 +542,7 @@ G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
                               G1RemSet* rs,
                               OopsInHeapRegionClosure* push_ref_cl,
                               bool record_refs_into_cset,
-                              int worker_i) :
+                              uint worker_i) :
   _g1(g1h), _g1_rem_set(rs), _from(NULL),
   _record_refs_into_cset(record_refs_into_cset),
   _push_ref_cl(push_ref_cl), _worker_i(worker_i) { }
@@ -552,7 +551,7 @@ G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
 // into the collection set, if we're checking for such references;
 // false otherwise.
 
-bool G1RemSet::refine_card(jbyte* card_ptr, int worker_i,
+bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
                            bool check_for_refs_into_cset) {
 
   // If the card is no longer dirty, nothing to do.
@@ -566,11 +565,6 @@ bool G1RemSet::refine_card(jbyte* card_ptr, int worker_i,
   HeapWord* start = _ct_bs->addr_for(card_ptr);
   // And find the region containing it.
   HeapRegion* r = _g1->heap_region_containing(start);
-  if (r == NULL) {
-    // Again no need to return that this card contains refs that
-    // point into the collection set.
-    return false;  // Not in the G1 heap (might be in perm, for example.)
-  }
 
   // Why do we have to check here whether a card is on a young region,
   // given that we dirty young regions and, as a result, the
@@ -623,10 +617,6 @@ bool G1RemSet::refine_card(jbyte* card_ptr, int worker_i,
 
     start = _ct_bs->addr_for(card_ptr);
     r = _g1->heap_region_containing(start);
-    if (r == NULL) {
-      // Not in the G1 heap
-      return false;
-    }
 
     // Checking whether the region we got back from the cache
     // is young here is inappropriate. The region could have been

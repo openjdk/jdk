@@ -75,7 +75,7 @@ ${CP} ${TESTSRC}${FS}AlgOptions.jar ${TESTCLASSES}${FS}AlgOptionsTmp.jar
 
 failed=0
 # test missing signature algorithm arg
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -sigalg \
@@ -89,7 +89,7 @@ else
 fi
 
 # test missing digest algorithm arg
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -digestalg \
@@ -103,7 +103,7 @@ else
 fi
 
 # test BOGUS signature algorithm
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -sigalg BOGUS \
@@ -117,7 +117,7 @@ else
 fi
 
 # test BOGUS digest algorithm
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -digestalg BOGUS \
@@ -131,7 +131,7 @@ else
 fi
 
 # test incompatible signature algorithm
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -sigalg SHA1withDSA \
@@ -145,7 +145,7 @@ else
 fi
 
 # test compatible signature algorithm
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -sigalg SHA512withRSA \
@@ -159,7 +159,7 @@ else
 fi
 
 # verify it
-${TESTJAVA}${FS}bin${FS}jarsigner -verify ${TESTCLASSES}${FS}AlgOptionsTmp.jar
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} -verify ${TESTCLASSES}${FS}AlgOptionsTmp.jar
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 7 passed"
@@ -169,7 +169,7 @@ else
 fi
 
 # test non-default digest algorithm
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -digestalg SHA-256 \
@@ -183,7 +183,7 @@ else
 fi
 
 # verify it
-${TESTJAVA}${FS}bin${FS}jarsigner -verify ${TESTCLASSES}${FS}AlgOptionsTmp.jar
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} -verify ${TESTCLASSES}${FS}AlgOptionsTmp.jar
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 9 passed"
@@ -193,7 +193,7 @@ else
 fi
 
 # test SHA-512 digest algorithm (creates long lines)
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -digestalg SHA-512 \
@@ -208,7 +208,7 @@ else
 fi
 
 # verify it
-${TESTJAVA}${FS}bin${FS}jarsigner -verify ${TESTCLASSES}${FS}AlgOptionsTmp.jar
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} -verify ${TESTCLASSES}${FS}AlgOptionsTmp.jar
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 11 passed"

@@ -25,7 +25,17 @@
  * @test
  * @bug 4749938
  * @summary Bug in the parsing IPv4 literal addresses
+ * @compile -XDignore.symbol.file=true DummyNameService.java DummyNameServiceDescriptor.java
+ * @run main/othervm -Dsun.net.spi.nameservice.provider.1=dummy,oracle textToNumericFormat
 */
+
+/**
+ * We use a dummy name service which throws UHE any time it is called.
+ * We do this because the "good" tests here should parse correctly
+ * without needing to call the name service, and the bad tests will
+ * not parse and then invoke the name service, where we expect
+ * the exception.
+ */
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -34,19 +44,25 @@ import java.util.*;
 public class textToNumericFormat {
 
     public static void main(String[] args) throws UnknownHostException {
-        List goodList = new ArrayList();
-        List badList = new ArrayList();
+        List<String> goodList = new ArrayList<>();
+        List<String> badList = new ArrayList<>();
         String goodAddrs[] = {
                            "224.0.1.0",
                            "238.255.255.255",
-                           "239.255.255.255" };
+                           "239.255.255.255",
+                           "239.255.65535",
+                           "239.16777215",
+                           "4294967295" };
 
         String badAddrs[] = {
                            "238.255.255.2550",
                            "256.255.255.255",
                            "238.255.2550.255",
                            "238.2550.255.255",
-                           "2380.255.255.255"};
+                           "2380.255.255.255",
+                           "239.255.65536",
+                           "239.16777216",
+                           "4294967296" };
 
         for (int i=0; i<goodAddrs.length; i++) {
             try {

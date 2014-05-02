@@ -351,7 +351,8 @@ endef
 # 3. Delete all lines starting with #.
 # 4. Delete empty lines.
 # 5. Append lines ending with \ with the next line.
-# 6. Remove leading and trailing white space.
+# 6. Remove leading and trailing white space. Note that tabs must be explicit
+#    as sed on macosx does not understand '\t'.
 # 7. Replace the first \= with just =.
 # 8. Finally it's all sorted to create a stable output.
 # 
@@ -370,7 +371,7 @@ define add_file_to_clean
 	    | $(SED) -f "$(SRC_ROOT)/make/common/support/unicode2x.sed" \
 	    | $(SED) -e '/^#/d' -e '/^$$$$/d' \
 	        -e :a -e '/\\$$$$/N; s/\\\n//; ta' \
-	        -e 's/^[ \t]*//;s/[ \t]*$$$$//' \
+	        -e 's/^[ 	]*//;s/[ 	]*$$$$//' \
 	        -e 's/\\=/=/' | LC_ALL=C $(SORT) > $$@
 	$(CHMOD) -f ug+w $$@
 
@@ -445,8 +446,8 @@ define SetupJavaCompilation
   # Now we have a list of all java files to compile: $$($1_SRCS)
 
   # Create the corresponding smart javac wrapper command line.
-  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix .*,$$(subst /,.,$$($1_EXCLUDES)))) \
-      $$(addprefix -i ,$$(addsuffix .*,$$(subst /,.,$$($1_INCLUDES)))) \
+  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix /*,$$($1_EXCLUDES))) \
+      $$(addprefix -i ,$$(addsuffix /*,$$($1_INCLUDES))) \
       $$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES))) \
       $$(addprefix -if *,$$(strip $$($1_INCLUDE_FILES))) \
       -src "$$(subst $$(SPACE),$$(PATH_SEP),$$(strip $$($1_SRC)))"

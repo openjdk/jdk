@@ -21,9 +21,6 @@
  * questions.
  */
 
-import java.lang.*;
-import java.io.*;
-
 /*
  * @test
  * @bug 4341304 4485668 4966728 8032066
@@ -41,82 +38,83 @@ import java.io.*;
  * @run main TestSerializedForm
  */
 
+import java.lang.*;
+import java.io.*;
+
 public class TestSerializedForm extends JavadocTester implements Serializable {
 
-    private static final String BUG_ID = "4341304-4485668-4966728";
-
     private static final String[][] TEST = {
-        {BUG_ID + FS + "serialized-form.html",
+        { "serialized-form.html",
             "protected&nbsp;java.lang.Object&nbsp;readResolve()"},
-        {BUG_ID + FS + "serialized-form.html",
+        { "serialized-form.html",
             "protected&nbsp;java.lang.Object&nbsp;writeReplace()"},
-        {BUG_ID + FS + "serialized-form.html",
+        { "serialized-form.html",
             "protected&nbsp;java.lang.Object&nbsp;readObjectNoData()"},
-        {BUG_ID + FS + "serialized-form.html",
+        { "serialized-form.html",
             "See Also"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass " +
             "extends java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class pkg1.PrivateIncludeInnerClass.PriInnerClass extends " +
             "java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class pkg1.ProtectedInnerClass.ProInnerClass extends " +
             "java.lang.Object implements Serializable</h3>"}
     };
 
     private static final String[][] TEST_PRIVATE = {
-        {BUG_ID + "-1/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class <a href=\"pkg1/NestedInnerClass.InnerClass.ProNestedInnerClass.html\" " +
             "title=\"class in pkg1\">pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass</a> " +
             "extends java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "-1/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class <a href=\"pkg1/PrivateIncludeInnerClass.PriInnerClass.html\" title=\"class in pkg1\">" +
             "pkg1.PrivateIncludeInnerClass.PriInnerClass</a> extends java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "-1/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class <a href=\"pkg1/ProtectedInnerClass.ProInnerClass.html\" title=\"class in pkg1\">" +
             "pkg1.ProtectedInnerClass.ProInnerClass</a> extends java.lang.Object implements Serializable</h3>"}
     };
 
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class <a href=\"pkg1/NestedInnerClass.InnerClass.ProNestedInnerClass.html\" " +
             "title=\"class in pkg1\">pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass</a> " +
             "extends java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class <a href=\"pkg1/PrivateInnerClass.PriInnerClass.html\" title=\"class in pkg1\">" +
             "pkg1.PrivateInnerClass.PriInnerClass</a> extends java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class <a href=\"pkg1/ProtectedInnerClass.ProInnerClass.html\" title=\"class in pkg1\">" +
             "pkg1.ProtectedInnerClass.ProInnerClass</a> extends java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class pkg1.PublicExcludeInnerClass.PubInnerClass extends java.lang.Object implements " +
             "Serializable</h3>"}
     };
 
     private static final String[][] NEGATED_TEST_PRIVATE = {
-        {BUG_ID + "-1/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass " +
             "extends java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "-1/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class pkg1.PrivateInnerClass.PriInnerClass extends " +
             "java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "-1/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class pkg1.ProtectedInnerClass.ProInnerClass extends " +
             "java.lang.Object implements Serializable</h3>"},
-        {BUG_ID + "-1/serialized-form.html",
+        { "serialized-form.html",
             "<h3>Class <a href=\"pkg1/PublicExcludeInnerClass.PubInnerClass.html\" " +
             "title=\"class in pkg1\">pkg1.PublicExcludeInnerClass.PubInnerClass</a> " +
             "extends java.lang.Object implements Serializable</h3>"}
     };
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
         SRC_DIR + "/TestSerializedForm.java", "pkg1"
     };
 
     private static final String[] ARGS_PRIVATE = new String[] {
-        "-private", "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR,
+        "-private", "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR,
         SRC_DIR + "/TestSerializedForm.java", "pkg1"
     };
 
@@ -132,23 +130,9 @@ public class TestSerializedForm extends JavadocTester implements Serializable {
      */
     public static void main(String[] args) {
         TestSerializedForm tester = new TestSerializedForm();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        run(tester, ARGS_PRIVATE, TEST_PRIVATE, NEGATED_TEST_PRIVATE);
+        tester.run(ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS_PRIVATE, TEST_PRIVATE, NEGATED_TEST_PRIVATE);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 
     /**

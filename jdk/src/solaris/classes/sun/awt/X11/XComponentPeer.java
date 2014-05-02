@@ -548,6 +548,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
+    @SuppressWarnings("fallthrough")
     public void handleEvent(java.awt.AWTEvent e) {
         if ((e instanceof InputEvent) && !((InputEvent)e).isConsumed() && target.isEnabled())  {
             if (e instanceof MouseEvent) {

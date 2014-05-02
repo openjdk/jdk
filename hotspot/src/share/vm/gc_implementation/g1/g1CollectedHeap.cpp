@@ -57,6 +57,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
@@ -92,56 +93,54 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // Local to this file.
 
 class RefineCardTableEntryClosure: public CardTableEntryClosure {
-  SuspendibleThreadSet* _sts;
-  G1RemSet* _g1rs;
-  ConcurrentG1Refine* _cg1r;
   bool _concurrent;
 public:
-  RefineCardTableEntryClosure(SuspendibleThreadSet* sts,
-                              G1RemSet* g1rs,
-                              ConcurrentG1Refine* cg1r) :
-    _sts(sts), _g1rs(g1rs), _cg1r(cg1r), _concurrent(true)
-  {}
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    bool oops_into_cset = _g1rs->refine_card(card_ptr, worker_i, false);
+  RefineCardTableEntryClosure() : _concurrent(true) { }
+
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+    bool oops_into_cset = G1CollectedHeap::heap()->g1_rem_set()->refine_card(card_ptr, worker_i, false);
     // This path is executed by the concurrent refine or mutator threads,
     // concurrently, and so we do not care if card_ptr contains references
     // that point into the collection set.
     assert(!oops_into_cset, "should be");
 
-    if (_concurrent && _sts->should_yield()) {
+    if (_concurrent && SuspendibleThreadSet::should_yield()) {
       // Caller will actually yield.
       return false;
     }
     // Otherwise, we finished successfully; return true.
     return true;
   }
+
   void set_concurrent(bool b) { _concurrent = b; }
 };
 
 
 class ClearLoggedCardTableEntryClosure: public CardTableEntryClosure {
-  int _calls;
-  G1CollectedHeap* _g1h;
+  size_t _num_processed;
   CardTableModRefBS* _ctbs;
   int _histo[256];
-public:
+
+ public:
   ClearLoggedCardTableEntryClosure() :
-    _calls(0), _g1h(G1CollectedHeap::heap()), _ctbs(_g1h->g1_barrier_set())
+    _num_processed(0), _ctbs(G1CollectedHeap::heap()->g1_barrier_set())
   {
     for (int i = 0; i < 256; i++) _histo[i] = 0;
   }
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    if (_g1h->is_in_reserved(_ctbs->addr_for(card_ptr))) {
-      _calls++;
-      unsigned char* ujb = (unsigned char*)card_ptr;
-      int ind = (int)(*ujb);
-      _histo[ind]++;
-      *card_ptr = -1;
-    }
+
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+    unsigned char* ujb = (unsigned char*)card_ptr;
+    int ind = (int)(*ujb);
+    _histo[ind]++;
+
+    *card_ptr = (jbyte)CardTableModRefBS::clean_card_val();
+    _num_processed++;
+
     return true;
   }
-  int calls() { return _calls; }
+
+  size_t num_processed() { return _num_processed; }
+
   void print_histo() {
     gclog_or_tty->print_cr("Card table value histogram:");
     for (int i = 0; i < 256; i++) {
@@ -152,22 +151,20 @@ public:
   }
 };
 
-class RedirtyLoggedCardTableEntryClosure: public CardTableEntryClosure {
-  int _calls;
-  G1CollectedHeap* _g1h;
-  CardTableModRefBS* _ctbs;
-public:
-  RedirtyLoggedCardTableEntryClosure() :
-    _calls(0), _g1h(G1CollectedHeap::heap()), _ctbs(_g1h->g1_barrier_set()) {}
+class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
+ private:
+  size_t _num_processed;
 
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    if (_g1h->is_in_reserved(_ctbs->addr_for(card_ptr))) {
-      _calls++;
-      *card_ptr = 0;
-    }
+ public:
+  RedirtyLoggedCardTableEntryClosure() : CardTableEntryClosure(), _num_processed(0) { }
+
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+    *card_ptr = CardTableModRefBS::dirty_card_val();
+    _num_processed++;
     return true;
   }
-  int calls() { return _calls; }
+
+  size_t num_processed() const { return _num_processed; }
 };
 
 YoungList::YoungList(G1CollectedHeap* g1h) :
@@ -431,6 +428,9 @@ HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
 void G1CollectedHeap::stop_conc_gc_threads() {
   _cg1r->stop();
   _cmThread->stop();
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::stop();
+  }
 }
 
 #ifdef ASSERT
@@ -445,24 +445,18 @@ void G1CollectedHeap::stop_conc_gc_threads() {
 // implementation of is_scavengable() for G1 will indicate that
 // all nmethods must be scanned during a partial collection.
 bool G1CollectedHeap::is_in_partial_collection(const void* p) {
-  HeapRegion* hr = heap_region_containing(p);
-  return hr != NULL && hr->in_collection_set();
+  if (p == NULL) {
+    return false;
+  }
+  return heap_region_containing(p)->in_collection_set();
 }
 #endif
 
 // Returns true if the reference points to an object that
 // can move in an incremental collection.
 bool G1CollectedHeap::is_scavengable(const void* p) {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
   HeapRegion* hr = heap_region_containing(p);
-  if (hr == NULL) {
-     // null
-     assert(p == NULL, err_msg("Not NULL " PTR_FORMAT ,p));
-     return false;
-  } else {
-    return !hr->isHumongous();
-  }
+  return !hr->isHumongous();
 }
 
 void G1CollectedHeap::check_ct_logs_at_safepoint() {
@@ -476,9 +470,8 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
 
   // First clear the logged cards.
   ClearLoggedCardTableEntryClosure clear;
-  dcqs.set_closure(&clear);
-  dcqs.apply_closure_to_all_completed_buffers();
-  dcqs.iterate_closure_all_threads(false);
+  dcqs.apply_closure_to_all_completed_buffers(&clear);
+  dcqs.iterate_closure_all_threads(&clear, false);
   clear.print_histo();
 
   // Now ensure that there's no dirty cards.
@@ -491,13 +484,13 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
   guarantee(count2.n() == 0, "Card table should be clean.");
 
   RedirtyLoggedCardTableEntryClosure redirty;
-  JavaThread::dirty_card_queue_set().set_closure(&redirty);
-  dcqs.apply_closure_to_all_completed_buffers();
-  dcqs.iterate_closure_all_threads(false);
+  dcqs.apply_closure_to_all_completed_buffers(&redirty);
+  dcqs.iterate_closure_all_threads(&redirty, false);
   gclog_or_tty->print_cr("Log entries = %d, dirty cards = %d.",
-                         clear.calls(), orig_count);
-  guarantee(redirty.calls() == clear.calls(),
-            "Or else mechanism is broken.");
+                         clear.num_processed(), orig_count);
+  guarantee(redirty.num_processed() == clear.num_processed(),
+            err_msg("Redirtied "SIZE_FORMAT" cards, bug cleared "SIZE_FORMAT,
+                    redirty.num_processed(), clear.num_processed()));
 
   CountNonCleanMemRegionClosure count3(this);
   ct_bs->mod_card_iterate(&count3);
@@ -506,8 +499,6 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
                            orig_count, count3.n());
     guarantee(count3.n() >= orig_count, "Should have restored them all.");
   }
-
-  JavaThread::dirty_card_queue_set().set_closure(_refine_cte_cl);
 }
 
 // Private class members.
@@ -1288,7 +1279,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   print_heap_before_gc();
   trace_heap_before_gc(gc_tracer);
 
-  size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
+  size_t metadata_prev_used = MetaspaceAux::used_bytes();
 
   verify_region_sets_optional();
 
@@ -1512,9 +1503,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       assert(g1_policy()->collection_set() == NULL, "must be");
       g1_policy()->start_incremental_cset_building();
 
-      // Clear the _cset_fast_test bitmap in anticipation of adding
-      // regions to the incremental collection set for the next
-      // evacuation pause.
       clear_cset_fast_test();
 
       init_mutator_alloc_region();
@@ -1934,8 +1922,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
   _concurrent_cycle_started(false),
-  _in_cset_fast_test(NULL),
-  _in_cset_fast_test_base(NULL),
+  _in_cset_fast_test(),
   _dirty_cards_region_list(NULL),
   _worker_cset_start_region(NULL),
   _worker_cset_start_region_time_stamp(NULL),
@@ -2005,7 +1992,9 @@ jint G1CollectedHeap::initialize() {
   Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, heap_alignment, "g1 heap");
 
-  _cg1r = new ConcurrentG1Refine(this);
+  _refine_cte_cl = new RefineCardTableEntryClosure();
+
+  _cg1r = new ConcurrentG1Refine(this, _refine_cte_cl);
 
   // Reserve the maximum.
 
@@ -2077,20 +2066,7 @@ jint G1CollectedHeap::initialize() {
 
   _g1h = this;
 
-  _in_cset_fast_test_length = max_regions();
-  _in_cset_fast_test_base =
-                   NEW_C_HEAP_ARRAY(bool, (size_t) _in_cset_fast_test_length, mtGC);
-
-  // We're biasing _in_cset_fast_test to avoid subtracting the
-  // beginning of the heap every time we want to index; basically
-  // it's the same with what we do with the card table.
-  _in_cset_fast_test = _in_cset_fast_test_base -
-               ((uintx) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
-
-  // Clear the _cset_fast_test bitmap in anticipation of adding
-  // regions to the incremental collection set for the first
-  // evacuation pause.
-  clear_cset_fast_test();
+  _in_cset_fast_test.initialize(_g1_reserved.start(), _g1_reserved.end(), HeapRegion::GrainBytes);
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
@@ -2113,25 +2089,21 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init();
 
-  _refine_cte_cl =
-    new RefineCardTableEntryClosure(ConcurrentG1RefineThread::sts(),
-                                    g1_rem_set(),
-                                    concurrent_g1_refine());
-  JavaThread::dirty_card_queue_set().set_closure(_refine_cte_cl);
-
   JavaThread::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
                                                SATB_Q_FL_lock,
                                                G1SATBProcessCompletedThreshold,
                                                Shared_SATB_Q_lock);
 
-  JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+  JavaThread::dirty_card_queue_set().initialize(_refine_cte_cl,
+                                                DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
                                                 concurrent_g1_refine()->yellow_zone(),
                                                 concurrent_g1_refine()->red_zone(),
                                                 Shared_DirtyCardQ_lock);
 
   if (G1DeferredRSUpdate) {
-    dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+    dirty_card_queue_set().initialize(NULL, // Should never be called by the Java code
+                                      DirtyCardQ_CBL_mon,
                                       DirtyCardQ_FL_lock,
                                       -1, // never trigger processing
                                       -1, // no limit on length
@@ -2141,7 +2113,8 @@ jint G1CollectedHeap::initialize() {
 
   // Initialize the card queue set used to hold cards containing
   // references into the collection set.
-  _into_cset_dirty_card_queue_set.initialize(DirtyCardQ_CBL_mon,
+  _into_cset_dirty_card_queue_set.initialize(NULL, // Should never be called by the Java code
+                                             DirtyCardQ_CBL_mon,
                                              DirtyCardQ_FL_lock,
                                              -1, // never trigger processing
                                              -1, // no limit on length
@@ -2176,6 +2149,23 @@ jint G1CollectedHeap::initialize() {
   G1StringDedup::initialize();
 
   return JNI_OK;
+}
+
+void G1CollectedHeap::stop() {
+#if 0
+  // Stopping concurrent worker threads is currently disabled until
+  // some bugs in concurrent mark has been resolve. Without fixing
+  // those bugs first we risk haning during VM exit when trying to
+  // stop these threads.
+
+  // Abort any ongoing concurrent root region scanning and stop all
+  // concurrent threads. We do this to make sure these threads do
+  // not continue to execute and access resources (e.g. gclog_or_tty)
+  // that are destroyed during shutdown.
+  _cm->root_regions()->abort();
+  _cm->root_regions()->wait_until_scan_finished();
+  stop_conc_gc_threads();
+#endif
 }
 
 size_t G1CollectedHeap::conservative_max_heap_alignment() {
@@ -2314,7 +2304,7 @@ void G1CollectedHeap::check_gc_time_stamps() {
 void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
                                                  DirtyCardQueue* into_cset_dcq,
                                                  bool concurrent,
-                                                 int worker_i) {
+                                                 uint worker_i) {
   // Clean cards in the hot card cache
   G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
   hot_card_cache->drain(worker_i, g1_rem_set(), into_cset_dcq);
@@ -2843,7 +2833,7 @@ void G1CollectedHeap::clear_cset_start_regions() {
 
 // Given the id of a worker, obtain or calculate a suitable
 // starting region for iterating over the current collection set.
-HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
+HeapRegion* G1CollectedHeap::start_cset_region_for_worker(uint worker_i) {
   assert(get_gc_time_stamp() > 0, "should have been updated by now");
 
   HeapRegion* result = NULL;
@@ -2963,21 +2953,16 @@ CompactibleSpace* G1CollectedHeap::first_compactible_space() {
 
 
 Space* G1CollectedHeap::space_containing(const void* addr) const {
-  Space* res = heap_region_containing(addr);
-  return res;
+  return heap_region_containing(addr);
 }
 
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
   Space* sp = space_containing(addr);
-  if (sp != NULL) {
-    return sp->block_start(addr);
-  }
-  return NULL;
+  return sp->block_start(addr);
 }
 
 size_t G1CollectedHeap::block_size(const HeapWord* addr) const {
   Space* sp = space_containing(addr);
-  assert(sp != NULL, "block_size of address outside of heap");
   return sp->block_size(addr);
 }
 
@@ -3212,7 +3197,7 @@ class VerifyKlassClosure: public KlassClosure {
     _young_ref_counter_closure.reset_count();
     k->oops_do(&_young_ref_counter_closure);
     if (_young_ref_counter_closure.count() > 0) {
-      guarantee(k->has_modified_oops(), err_msg("Klass %p, has young refs but is not dirty.", k));
+      guarantee(k->has_modified_oops(), err_msg("Klass " PTR_FORMAT ", has young refs but is not dirty.", k));
     }
   }
 };
@@ -3296,7 +3281,7 @@ public:
       int *val;
       for (cur = start; cur < end; cur++) {
         val = (int *) cur;
-        gclog_or_tty->print("\t "PTR_FORMAT":"PTR_FORMAT"\n", val, *val);
+        gclog_or_tty->print("\t "PTR_FORMAT":%d\n", val, *val);
       }
     }
   }
@@ -4125,9 +4110,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // Start a new incremental collection set for the next pause.
         g1_policy()->start_incremental_cset_building();
 
-        // Clear the _cset_fast_test bitmap in anticipation of adding
-        // regions to the incremental collection set for the next
-        // evacuation pause.
         clear_cset_fast_test();
 
         _young_list->reset_sampled_info();
@@ -4304,7 +4286,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     // this point does not assume that we are the only GC thread
     // running. Note: of course, the actual marking work will
     // not start until the safepoint itself is released in
-    // ConcurrentGCThread::safepoint_desynchronize().
+    // SuspendibleThreadSet::desynchronize().
     doConcurrentMark();
   }
 
@@ -4571,7 +4553,7 @@ HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
 }
 
 G1ParGCAllocBuffer::G1ParGCAllocBuffer(size_t gclab_word_size) :
-  ParGCAllocBuffer(gclab_word_size), _retired(false) { }
+  ParGCAllocBuffer(gclab_word_size), _retired(true) { }
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp)
   : _g1h(g1h),
@@ -4694,30 +4676,19 @@ G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1,
   _worker_id(par_scan_state->queue_num()) { }
 
 void G1ParCopyHelper::mark_object(oop obj) {
-#ifdef ASSERT
-  HeapRegion* hr = _g1->heap_region_containing(obj);
-  assert(hr != NULL, "sanity");
-  assert(!hr->in_collection_set(), "should not mark objects in the CSet");
-#endif // ASSERT
+  assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // We know that the object is not moving so it's safe to read its size.
   _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
 }
 
 void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
-#ifdef ASSERT
   assert(from_obj->is_forwarded(), "from obj should be forwarded");
   assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
   assert(from_obj != to_obj, "should not be self-forwarded");
 
-  HeapRegion* from_hr = _g1->heap_region_containing(from_obj);
-  assert(from_hr != NULL, "sanity");
-  assert(from_hr->in_collection_set(), "from obj should be in the CSet");
-
-  HeapRegion* to_hr = _g1->heap_region_containing(to_obj);
-  assert(to_hr != NULL, "sanity");
-  assert(!to_hr->in_collection_set(), "should not mark objects in the CSet");
-#endif // ASSERT
+  assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
+  assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // The object might be in the process of being copied by another
   // worker so we cannot trust that its to-space image is
@@ -4935,8 +4906,6 @@ void G1ParEvacuateFollowersClosure::do_void() {
       pss->trim_queue();
     }
   } while (!offer_termination());
-
-  pss->retire_alloc_buffers();
 }
 
 class G1KlassScanClosure : public KlassClosure {
@@ -5103,7 +5072,7 @@ g1_process_strong_roots(bool is_scavenging,
                         OopClosure* scan_non_heap_roots,
                         OopsInHeapRegionClosure* scan_rs,
                         G1KlassScanClosure* scan_klasses,
-                        int worker_i) {
+                        uint worker_i) {
 
   // First scan the strong roots
   double ext_roots_start = os::elapsedTime();
@@ -5207,10 +5176,10 @@ public:
 
   ~G1StringSymbolTableUnlinkTask() {
     guarantee(!_process_strings || !_do_in_parallel || StringTable::parallel_claimed_index() >= _initial_string_table_size,
-              err_msg("claim value "INT32_FORMAT" after unlink less than initial string table size "INT32_FORMAT,
+              err_msg("claim value %d after unlink less than initial string table size %d",
                       StringTable::parallel_claimed_index(), _initial_string_table_size));
     guarantee(!_process_symbols || !_do_in_parallel || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
-              err_msg("claim value "INT32_FORMAT" after unlink less than initial symbol table size "INT32_FORMAT,
+              err_msg("claim value %d after unlink less than initial symbol table size %d",
                       SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
   }
 
@@ -5273,11 +5242,25 @@ void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive
   }
 }
 
-class RedirtyLoggedCardTableEntryFastClosure : public CardTableEntryClosure {
-public:
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    *card_ptr = CardTableModRefBS::dirty_card_val();
-    return true;
+class G1RedirtyLoggedCardsTask : public AbstractGangTask {
+ private:
+  DirtyCardQueueSet* _queue;
+ public:
+  G1RedirtyLoggedCardsTask(DirtyCardQueueSet* queue) : AbstractGangTask("Redirty Cards"), _queue(queue) { }
+
+  virtual void work(uint worker_id) {
+    double start_time = os::elapsedTime();
+
+    RedirtyLoggedCardTableEntryClosure cl;
+    if (G1CollectedHeap::heap()->use_parallel_gc_threads()) {
+      _queue->par_apply_closure_to_all_completed_buffers(&cl);
+    } else {
+      _queue->apply_closure_to_all_completed_buffers(&cl);
+    }
+
+    G1GCPhaseTimes* timer = G1CollectedHeap::heap()->g1_policy()->phase_times();
+    timer->record_redirty_logged_cards_time_ms(worker_id, (os::elapsedTime() - start_time) * 1000.0);
+    timer->record_redirty_logged_cards_processed_cards(worker_id, cl.num_processed());
   }
 };
 
@@ -5285,9 +5268,18 @@ void G1CollectedHeap::redirty_logged_cards() {
   guarantee(G1DeferredRSUpdate, "Must only be called when using deferred RS updates.");
   double redirty_logged_cards_start = os::elapsedTime();
 
-  RedirtyLoggedCardTableEntryFastClosure redirty;
-  dirty_card_queue_set().set_closure(&redirty);
-  dirty_card_queue_set().apply_closure_to_all_completed_buffers();
+  uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
+                   _g1h->workers()->active_workers() : 1);
+
+  G1RedirtyLoggedCardsTask redirty_task(&dirty_card_queue_set());
+  dirty_card_queue_set().reset_for_par_iteration();
+  if (use_parallel_gc_threads()) {
+    set_par_threads(n_workers);
+    workers()->run_task(&redirty_task);
+    set_par_threads(0);
+  } else {
+    redirty_task.work(0);
+  }
 
   DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
   dcq.merge_bufferlists(&dirty_card_queue_set());
@@ -5762,10 +5754,8 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   }
 
   _gc_tracer_stw->report_gc_reference_stats(stats);
-  // We have completed copying any necessary live referent objects
-  // (that were not copied during the actual pause) so we can
-  // retire any active alloc buffers
-  pss.retire_alloc_buffers();
+
+  // We have completed copying any necessary live referent objects.
   assert(pss.refs()->is_empty(), "both queue and overflow should be empty");
 
   double ref_proc_time = os::elapsedTime() - ref_proc_start;
@@ -6456,11 +6446,7 @@ void G1CollectedHeap::set_refine_cte_cl_concurrency(bool concurrent) {
 
 bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
   HeapRegion* hr = heap_region_containing(p);
-  if (hr == NULL) {
-    return false;
-  } else {
-    return hr->is_in(p);
-  }
+  return hr->is_in(p);
 }
 
 // Methods for the mutator alloc region

@@ -127,22 +127,22 @@ size_t ASPSOldGen::available_for_contraction() {
   size_t result_aligned = align_size_down(result, gen_alignment);
   if (PrintAdaptiveSizePolicy && Verbose) {
     gclog_or_tty->print_cr("\nASPSOldGen::available_for_contraction:"
-      " %d K / 0x%x", result_aligned/K, result_aligned);
-    gclog_or_tty->print_cr(" reserved().byte_size() %d K / 0x%x ",
+      " " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, result_aligned/K, result_aligned);
+    gclog_or_tty->print_cr(" reserved().byte_size() " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
       reserved().byte_size()/K, reserved().byte_size());
     size_t working_promoted = (size_t) policy->avg_promoted()->padded_average();
-    gclog_or_tty->print_cr(" padded promoted %d K / 0x%x",
+    gclog_or_tty->print_cr(" padded promoted " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
       working_promoted/K, working_promoted);
-    gclog_or_tty->print_cr(" used %d K / 0x%x",
+    gclog_or_tty->print_cr(" used " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
       used_in_bytes()/K, used_in_bytes());
-    gclog_or_tty->print_cr(" min_gen_size() %d K / 0x%x",
+    gclog_or_tty->print_cr(" min_gen_size() " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
       min_gen_size()/K, min_gen_size());
-    gclog_or_tty->print_cr(" max_contraction %d K / 0x%x",
+    gclog_or_tty->print_cr(" max_contraction " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
       max_contraction/K, max_contraction);
-    gclog_or_tty->print_cr("    without alignment %d K / 0x%x",
+    gclog_or_tty->print_cr("    without alignment " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
       policy->promo_increment(max_contraction)/K,
       policy->promo_increment(max_contraction));
-    gclog_or_tty->print_cr(" alignment 0x%x", gen_alignment);
+    gclog_or_tty->print_cr(" alignment " SIZE_FORMAT_HEX, gen_alignment);
   }
   assert(result_aligned <= max_contraction, "arithmetic is wrong");
   return result_aligned;

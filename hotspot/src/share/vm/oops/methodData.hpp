@@ -251,6 +251,9 @@ public:
 
   // GC support
   void clean_weak_klass_links(BoolObjectClosure* cl);
+
+  // Redefinition support
+  void clean_weak_method_links();
 };
 
 
@@ -505,6 +508,9 @@ public:
 
   // GC support
   virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {}
+
+  // Redefinition support
+  virtual void clean_weak_method_links() {}
 
   // CI translation: ProfileData can represent both MethodDataOop data
   // as well as CIMethodData data. This function is provided for translating
@@ -1006,6 +1012,11 @@ public:
   static ByteSize argument_type_offset(int i) {
     return in_ByteSize(argument_type_local_offset(i) * DataLayout::cell_size);
   }
+
+  static ByteSize return_only_size() {
+    return ReturnTypeEntry::size() + in_ByteSize(header_cell_count() * DataLayout::cell_size);
+  }
+
 };
 
 // CallTypeData
@@ -1989,6 +2000,7 @@ public:
 //
 
 CC_INTERP_ONLY(class BytecodeInterpreter;)
+class CleanExtraDataClosure;
 
 class MethodData : public Metadata {
   friend class VMStructs;
@@ -2136,7 +2148,6 @@ private:
 
   static bool profile_jsr292(methodHandle m, int bci);
   static int profile_arguments_flag();
-  static bool profile_arguments_jsr292_only();
   static bool profile_all_arguments();
   static bool profile_arguments_for_invoke(methodHandle m, int bci);
   static int profile_return_flag();
@@ -2146,9 +2157,9 @@ private:
   static bool profile_parameters_jsr292_only();
   static bool profile_all_parameters();
 
-  void clean_extra_data(BoolObjectClosure* is_alive);
+  void clean_extra_data(CleanExtraDataClosure* cl);
   void clean_extra_data_helper(DataLayout* dp, int shift, bool reset = false);
-  void verify_extra_data_clean(BoolObjectClosure* is_alive);
+  void verify_extra_data_clean(CleanExtraDataClosure* cl);
 
 public:
   static int header_size() {
@@ -2435,11 +2446,14 @@ public:
 
   static bool profile_parameters_for_method(methodHandle m);
   static bool profile_arguments();
+  static bool profile_arguments_jsr292_only();
   static bool profile_return();
   static bool profile_parameters();
   static bool profile_return_jsr292_only();
 
   void clean_method_data(BoolObjectClosure* is_alive);
+
+  void clean_weak_method_links();
 };
 
 #endif // SHARE_VM_OOPS_METHODDATAOOP_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,37 +54,35 @@ public class TestNestedInlineTag extends JavadocTester {
      */
     public void method(){}
 
-    private static final String BUG_ID = "no-bug-id";
     private static final String[][] TEST = {
         //Test nested inline tag in class description.
-        {BUG_ID + FS + "TestNestedInlineTag.html",
+        { "TestNestedInlineTag.html",
          "This should be green, underlined and bold (Class): <u><b><font color=\"green\">My test</font></b></u>"
         },
 
         //Test nested inline tag in field description.
-        {BUG_ID + FS + "TestNestedInlineTag.html",
+        { "TestNestedInlineTag.html",
          "This should be green, underlined and bold (Field): <u><b><font color=\"green\">My test</font></b></u>"
         },
 
         //Test nested inline tag in constructor description.
-        {BUG_ID + FS + "TestNestedInlineTag.html",
+        { "TestNestedInlineTag.html",
          "This should be green, underlined and bold (Constructor): <u><b><font color=\"green\">My test</font></b></u>"
         },
 
         //Test nested inline tag in method description.
-        {BUG_ID + FS + "TestNestedInlineTag.html",
+        { "TestNestedInlineTag.html",
          "This should be green, underlined and bold (Method): <u><b><font color=\"green\">My test</font></b></u>"
         }
     };
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
             "-taglet", "testtaglets.UnderlineTaglet",
             "-taglet", "testtaglets.BoldTaglet",
             "-taglet", "testtaglets.GreenTaglet",
-            SRC_DIR + FS + "TestNestedInlineTag.java"
+            SRC_DIR + "/TestNestedInlineTag.java"
         };
 
     /**
@@ -93,21 +91,7 @@ public class TestNestedInlineTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestNestedInlineTag tester = new TestNestedInlineTag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NO_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

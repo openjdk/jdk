@@ -125,6 +125,8 @@ public:
   virtual ciKlass* exact_klass() = 0;
 
   void print_name_on(outputStream* st);
+
+  const char* external_name() const;
 };
 
 #endif // SHARE_VM_CI_CIKLASS_HPP

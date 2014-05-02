@@ -1931,6 +1931,10 @@ class CommandLineFlags {
           "not just one of the generations (e.g., G1). A value of 0 "       \
           "denotes 'do constant GC cycles'.")                               \
                                                                             \
+  manageable(intx, CMSTriggerInterval, -1,                                  \
+          "Commence a CMS collection cycle (at least) every so many "       \
+          "milliseconds (0 permanently, -1 disabled)")                      \
+                                                                            \
   product(bool, UseCMSInitiatingOccupancyOnly, false,                       \
           "Only use occupancy as a criterion for starting a CMS collection")\
                                                                             \

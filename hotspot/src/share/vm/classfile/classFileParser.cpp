@@ -2777,6 +2777,11 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(u4 attribute_b
                      "Short length on BootstrapMethods in class file %s",
                      CHECK);
 
+  guarantee_property(attribute_byte_length > sizeof(u2),
+                     "Invalid BootstrapMethods attribute length %u in class file %s",
+                     attribute_byte_length,
+                     CHECK);
+
   // The attribute contains a counted array of counted tuples of shorts,
   // represending bootstrap specifiers:
   //    length*{bootstrap_method_index, argument_count*{argument_index}}
@@ -2826,7 +2831,6 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(u4 attribute_b
     }
   }
 
-  assert(operand_fill_index == operands->length(), "exact fill");
   assert(ConstantPool::operand_array_length(operands) == attribute_array_length, "correct decode");
 
   u1* current_end = cfs->current();
@@ -4180,8 +4184,12 @@ ClassFileParser::~ClassFileParser() {
 
   clear_class_metadata();
 
-  // deallocate the klass if already created.
-  MetadataFactory::free_metadata(_loader_data, _klass);
+  // deallocate the klass if already created.  Don't directly deallocate, but add
+  // to the deallocate list so that the klass is removed from the CLD::_klasses list
+  // at a safepoint.
+  if (_klass != NULL) {
+    _loader_data->add_to_deallocate_list(_klass);
+  }
   _klass = NULL;
 }
 

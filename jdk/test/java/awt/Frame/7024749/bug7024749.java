@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7024749
+ * @bug 7024749 8019990
  * @summary JDK7 b131---a crash in: Java_sun_awt_windows_ThemeReader_isGetThemeTransitionDurationDefined+0x75
  * @library ../../regtesthelpers
  * @build Util
