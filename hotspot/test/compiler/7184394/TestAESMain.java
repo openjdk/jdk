@@ -33,14 +33,14 @@
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DdecOutputOffset=1 TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencInputOffset=1 -DencOutputOffset=1 TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DpaddingStr=NoPadding TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DpaddingStr=NoPadding -DmsgSize=640 TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencInputOffset=1 TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencOutputOffset=1 TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DdecOutputOffset=1 TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencInputOffset=1 -DencOutputOffset=1 TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DpaddingStr=NoPadding TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DpaddingStr=NoPadding -DmsgSize=640 TestAESMain
  *
  * @author Tom Deneau
  */
