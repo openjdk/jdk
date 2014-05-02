@@ -62,6 +62,9 @@ public final class ScriptEnvironment {
     /** Only compile script, do not run it or generate other ScriptObjects */
     public final boolean _compile_only;
 
+    /** Accept "const" keyword and treat it as variable. Interim feature */
+    public final boolean _const_as_var;
+
     /** Accumulated callsite flags that will be used when bootstrapping script callsites */
     public final int     _callsite_flags;
 
@@ -200,6 +203,7 @@ public final class ScriptEnvironment {
 
         _class_cache_size     = options.getInteger("class.cache.size");
         _compile_only         = options.getBoolean("compile.only");
+        _const_as_var         = options.getBoolean("const.as.var");
         _debug_lines          = options.getBoolean("debug.lines");
         _dest_dir             = options.getString("d");
         _dump_on_error        = options.getBoolean("doe");
