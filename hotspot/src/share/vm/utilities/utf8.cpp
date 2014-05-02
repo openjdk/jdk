@@ -329,23 +329,19 @@ int UNICODE::utf8_length(jchar* base, int length) {
 
 char* UNICODE::as_utf8(jchar* base, int length) {
   int utf8_len = utf8_length(base, length);
-  u_char* result = NEW_RESOURCE_ARRAY(u_char, utf8_len + 1);
-  u_char* p = result;
-  for (int index = 0; index < length; index++) {
-    p = utf8_write(p, base[index]);
-  }
-  *p = '\0';
-  assert(p == &result[utf8_len], "length prediction must be correct");
-  return (char*) result;
+  u_char* buf = NEW_RESOURCE_ARRAY(u_char, utf8_len + 1);
+  char* result = as_utf8(base, length, (char*) buf, utf8_len + 1);
+  assert((int) strlen(result) == utf8_len, "length prediction must be correct");
+  return result;
 }
 
 char* UNICODE::as_utf8(jchar* base, int length, char* buf, int buflen) {
   u_char* p = (u_char*)buf;
-  u_char* end = (u_char*)buf + buflen;
   for (int index = 0; index < length; index++) {
     jchar c = base[index];
-    if (p + utf8_size(c) >= end) break;      // string is truncated
-    p = utf8_write(p, base[index]);
+    buflen -= utf8_size(c);
+    if (buflen <= 0) break; // string is truncated
+    p = utf8_write(p, c);
   }
   *p = '\0';
   return buf;
@@ -389,3 +385,29 @@ void UNICODE::as_quoted_ascii(const jchar* base, int length, char* buf, int bufl
   }
   *p = '\0';
 }
+
+#ifndef PRODUCT
+void TestAsUtf8() {
+  char res[60];
+  jchar str[20];
+
+  for (int i = 0; i < 20; i++) {
+    str[i] = 0x0800; // char that is 2B in UTF-16 but 3B in UTF-8
+  }
+  str[19] = (jchar)'\0';
+
+  // The resulting string in UTF-8 is 3*19 bytes long, but should be truncated
+  UNICODE::as_utf8(str, 19, res, 10);
+  assert(strlen(res) == 9, "string should be truncated here");
+
+  UNICODE::as_utf8(str, 19, res, 18);
+  assert(strlen(res) == 15, "string should be truncated here");
+
+  UNICODE::as_utf8(str, 19, res, 20);
+  assert(strlen(res) == 18, "string should be truncated here");
+
+  // Test with an "unbounded" buffer
+  UNICODE::as_utf8(str, 19, res, INT_MAX);
+  assert(strlen(res) == 3*19, "string should end here");
+}
+#endif
