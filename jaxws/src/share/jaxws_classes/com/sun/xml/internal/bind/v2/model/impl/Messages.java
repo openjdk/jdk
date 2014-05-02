@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ enum Messages {
     PROPERTY_ORDER_CONTAINS_UNUSED_ENTRY, // 2 args
 
     INVALID_XML_ENUM_VALUE, // 2 arg
-    FAILED_TO_INITIALE_DATATYPE_FACTORY, // 0 args
     NO_IMAGE_WRITER, // 1 arg
 
     ILLEGAL_MIME_TYPE, // 2 args

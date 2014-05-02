@@ -43,6 +43,7 @@ import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.jvm.ClassReader;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
@@ -304,8 +305,8 @@ public class Types {
     }
 
     /**
-     * Is t a subtype of or convertiable via boxing/unboxing
-     * convertions to s?
+     * Is t a subtype of or convertible via boxing/unboxing
+     * conversions to s?
      */
     public boolean isConvertible(Type t, Type s) {
         return isConvertible(t, s, noWarnings);
@@ -1933,6 +1934,17 @@ public class Types {
      * @param sym a symbol
      */
     public Type asSuper(Type t, Symbol sym) {
+        /* Some examples:
+         *
+         * (Enum<E>, Comparable) => Comparable<E>
+         * (c.s.s.d.AttributeTree.ValueKind, Enum) => Enum<c.s.s.d.AttributeTree.ValueKind>
+         * (c.s.s.t.ExpressionTree, c.s.s.t.Tree) => c.s.s.t.Tree
+         * (j.u.List<capture#160 of ? extends c.s.s.d.DocTree>, Iterable) =>
+         *     Iterable<capture#160 of ? extends c.s.s.d.DocTree>
+         */
+        if (sym.type == syms.objectType) { //optimization
+            return syms.objectType;
+        }
         return asSuper.visit(t, sym);
     }
     // where
@@ -3867,9 +3879,11 @@ public class Types {
         }
         return buf.reverse();
     }
+
     public Type capture(Type t) {
-        if (!t.hasTag(CLASS))
+        if (!t.hasTag(CLASS)) {
             return t;
+        }
         if (t.getEnclosingType() != Type.noType) {
             Type capturedEncl = capture(t.getEnclosingType());
             if (capturedEncl != t.getEnclosingType()) {

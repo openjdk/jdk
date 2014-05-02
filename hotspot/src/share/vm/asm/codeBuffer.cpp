@@ -968,6 +968,7 @@ void CodeBuffer::verify_section_allocation() {
 
 void CodeBuffer::log_section_sizes(const char* name) {
   if (xtty != NULL) {
+    ttyLocker ttyl;
     // log info about buffer usage
     xtty->print_cr("<blob name='%s' size='%d'>", name, _total_size);
     for (int n = (int) CodeBuffer::SECT_FIRST; n < (int) CodeBuffer::SECT_LIMIT; n++) {

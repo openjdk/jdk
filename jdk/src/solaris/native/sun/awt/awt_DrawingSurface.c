@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,8 @@ JNIEXPORT jint JNICALL awt_DrawingSurface_Lock(JAWT_DrawingSurface* ds)
 
     /* Make sure the target is a java.awt.Component */
     componentClass = (*env)->FindClass(env, "java/awt/Component");
+    CHECK_NULL_RETURN(componentClass, (jint)JAWT_LOCK_ERROR);
+
     if (!(*env)->IsInstanceOf(env, target, componentClass)) {
 #ifdef DEBUG
             fprintf(stderr, "Target is not a component\n");
@@ -126,6 +128,8 @@ JNIEXPORT int32_t JNICALL
 
     /* Make sure the target is a java.awt.Component */
     componentClass = (*env)->FindClass(env, "java/awt/Component");
+    CHECK_NULL_RETURN(componentClass, (int32_t) 0);
+
     if (!(*env)->IsInstanceOf(env, target, componentClass)) {
 #ifdef DEBUG
         fprintf(stderr, "DrawingSurface target must be a component\n");
@@ -195,6 +199,8 @@ awt_DrawingSurface_GetDrawingSurfaceInfo(JAWT_DrawingSurface* ds)
 
     /* Make sure the target is a java.awt.Component */
     componentClass = (*env)->FindClass(env, "java/awt/Component");
+    CHECK_NULL_RETURN(componentClass, NULL);
+
     if (!(*env)->IsInstanceOf(env, target, componentClass)) {
 #ifdef DEBUG
         fprintf(stderr, "DrawingSurface target must be a component\n");
@@ -292,6 +298,8 @@ JNIEXPORT JAWT_DrawingSurface* JNICALL
 
     /* Make sure the target component is a java.awt.Component */
     componentClass = (*env)->FindClass(env, "java/awt/Component");
+    CHECK_NULL_RETURN(componentClass, NULL);
+
     if (!(*env)->IsInstanceOf(env, target, componentClass)) {
 #ifdef DEBUG
         fprintf(stderr,
@@ -354,6 +362,10 @@ JNIEXPORT jobject JNICALL
     if (window != None) {
         peer = JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XToolkit",
             "windowToXWindow", "(J)Lsun/awt/X11/XBaseWindow;", (jlong)window).l;
+        if ((*env)->ExceptionCheck(env)) {
+            AWT_UNLOCK();
+            return (jobject)NULL;
+        }
     }
     if ((peer != NULL) &&
         (JNU_IsInstanceOfByName(env, peer, "sun/awt/X11/XWindow") == 1)) {
@@ -361,6 +373,7 @@ JNIEXPORT jobject JNICALL
     }
 
     if (target == NULL) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowNullPointerException(env, "NullPointerException");
         AWT_UNLOCK();
         return (jobject)NULL;

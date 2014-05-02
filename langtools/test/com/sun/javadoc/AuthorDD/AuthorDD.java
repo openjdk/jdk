@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,11 @@ import java.io.*;
  */
 public class AuthorDD
 {
+
+    protected static final String NL = System.getProperty("line.separator");
+
     private static final String BUGID = "4651598";
     private static final String BUGNAME = "AuthorDD";
-    private static final String FS = System.getProperty("file.separator");
-    private static final String PS = System.getProperty("path.separator");
-    private static final String NL = System.getProperty("line.separator");
 
     // Subtest number.  Needed because runResultsOnHTML is run twice, and subtestNum
     // should increment across subtest runs.
@@ -86,13 +86,15 @@ public class AuthorDD
 
              // Test single @since tag:
 
-            { "<dt><span class=\"simpleTagLabel\">Since:</span></dt>"+NL+"<dd>JDK 1.0</dd>",
-                                  BUGID + FS + "p1" + FS + "C1.html" },
+            { "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
+                                  "<dd>JDK 1.0</dd>",
+                                  BUGID + "/p1/C1.html" },
 
             // Test multiple @author tags:
 
-            { "<dt><span class=\"simpleTagLabel\">Author:</span></dt>"+NL+"<dd>Doug Kramer, Jamie, Neal</dd>",
-                                  BUGID + FS + "p1" + FS + "C1.html" },
+            { "<dt><span class=\"simpleTagLabel\">Author:</span></dt>\n" +
+                                  "<dd>Doug Kramer, Jamie, Neal</dd>",
+                                  BUGID + "/p1/C1.html" },
 
         };
 
@@ -161,6 +163,6 @@ public class AuthorDD
     }
 
     public static int findString(String fileString, String stringToFind) {
-        return fileString.indexOf(stringToFind);
+        return fileString.replace(NL, "\n").indexOf(stringToFind);
     }
 }

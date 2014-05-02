@@ -82,8 +82,10 @@ public class FSInfo {
             for (StringTokenizer st = new StringTokenizer(path);
                  st.hasMoreTokens(); ) {
                 String elt = st.nextToken();
-                File f = (parent == null ? new File(elt) : new File(parent, elt));
-                list.add(f);
+                try {
+                    File f = parent == null ? new File(elt): new File(file.toURI().resolve(elt));
+                    list.add(f);
+                } catch (IllegalArgumentException ex) {}
             }
 
             return list;

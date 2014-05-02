@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,8 +152,11 @@ Java_sun_awt_X11GraphicsConfig_initIDs (JNIEnv *env, jclass cls)
     x11GraphicsConfigIDs.screen = NULL;
 
     x11GraphicsConfigIDs.aData = (*env)->GetFieldID (env, cls, "aData", "J");
+    CHECK_NULL(x11GraphicsConfigIDs.aData);
     x11GraphicsConfigIDs.bitsPerPixel = (*env)->GetFieldID (env, cls, "bitsPerPixel", "I");
+    CHECK_NULL(x11GraphicsConfigIDs.bitsPerPixel);
     x11GraphicsConfigIDs.screen = (*env)->GetFieldID (env, cls, "screen", "Lsun/awt/X11GraphicsDevice;");
+    CHECK_NULL(x11GraphicsConfigIDs.screen);
 
     if (x11GraphicsConfigIDs.aData == NULL ||
             x11GraphicsConfigIDs.bitsPerPixel == NULL ||
@@ -1346,7 +1349,6 @@ JNIEnv *env, jobject this)
 
     /* Make Color Model object for this GraphicsConfiguration */
     colorModel = awtJNI_GetColorModel (env, adata);
-
     AWT_UNLOCK ();
 
     return colorModel;
@@ -1374,6 +1376,7 @@ Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen
         JNU_GetLongFieldAsPtr(env, this, x11GraphicsConfigIDs.aData);
 
     clazz = (*env)->FindClass(env, "java/awt/Rectangle");
+    CHECK_NULL_RETURN(clazz, NULL);
     mid = (*env)->GetMethodID(env, clazz, "<init>", "(IIII)V");
     if (mid != NULL) {
         if (usingXinerama) {
@@ -1543,7 +1546,7 @@ Java_sun_awt_X11GraphicsDevice_getDoubleBufferVisuals(JNIEnv *env,
     clazz = (*env)->GetObjectClass(env, this);
     midAddVisual = (*env)->GetMethodID(env, clazz, "addDoubleBufferVisual",
         "(I)V");
-
+    CHECK_NULL(midAddVisual);
     AWT_LOCK();
     rootWindow = RootWindow(awt_display, xinawareScreen);
     visScreenInfo = XdbeGetVisualInfo(awt_display, &rootWindow, &n);
@@ -1739,6 +1742,7 @@ X11GD_CreateDisplayMode(JNIEnv *env, jint width, jint height,
     jint validRefreshRate = refreshRate;
 
     displayModeClass = (*env)->FindClass(env, "java/awt/DisplayMode");
+    CHECK_NULL_RETURN(displayModeClass, NULL);
     if (JNU_IsNull(env, displayModeClass)) {
         JNU_ThrowInternalError(env,
                                "Could not get display mode class");
@@ -1746,6 +1750,7 @@ X11GD_CreateDisplayMode(JNIEnv *env, jint width, jint height,
     }
 
     cid = (*env)->GetMethodID(env, displayModeClass, "<init>", "(IIII)V");
+    CHECK_NULL_RETURN(cid, NULL);
     if (cid == NULL) {
         JNU_ThrowInternalError(env,
                                "Could not get display mode constructor");
@@ -1779,6 +1784,7 @@ X11GD_AddDisplayMode(JNIEnv *env, jobject arrayList,
         }
         mid = (*env)->GetMethodID(env, arrayListClass, "add",
                                   "(Ljava/lang/Object;)Z");
+        CHECK_NULL(mid);
         if (mid == NULL) {
             JNU_ThrowInternalError(env,
                 "Could not get method java.util.ArrayList.add()");
@@ -1955,6 +1961,9 @@ Java_sun_awt_X11GraphicsDevice_enumDisplayModes
                                          size.height,
                                          BIT_DEPTH_MULTI,
                                          rates[j]);
+                    if ((*env)->ExceptionCheck(env)) {
+                        break;
+                    }
                 }
             }
         }

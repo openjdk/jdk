@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,20 +215,28 @@ public class XmlUtil {
         }
     }
 
-    static final TransformerFactory transformerFactory = newTransformerFactory();
+    static final ContextClassloaderLocal<TransformerFactory> transformerFactory = new ContextClassloaderLocal<TransformerFactory>() {
+        @Override
+        protected TransformerFactory initialValue() throws Exception {
+            return TransformerFactory.newInstance();
+        }
+    };
 
-    static final SAXParserFactory saxParserFactory = newSAXParserFactory(true);
-
-    static {
-        saxParserFactory.setNamespaceAware(true);
-    }
+    static final ContextClassloaderLocal<SAXParserFactory> saxParserFactory = new ContextClassloaderLocal<SAXParserFactory>() {
+        @Override
+        protected SAXParserFactory initialValue() throws Exception {
+            SAXParserFactory factory = SAXParserFactory.newInstance();
+            factory.setNamespaceAware(true);
+            return factory;
+        }
+    };
 
     /**
      * Creates a new identity transformer.
      */
     public static Transformer newTransformer() {
         try {
-            return transformerFactory.newTransformer();
+            return transformerFactory.get().newTransformer();
         } catch (TransformerConfigurationException tex) {
             throw new IllegalStateException("Unable to create a JAXP transformer");
         }
@@ -243,9 +251,9 @@ public class XmlUtil {
             // work around a bug in JAXP in JDK6u4 and earlier where the namespace processing
             // is not turned on by default
             StreamSource ssrc = (StreamSource) src;
-            TransformerHandler th = ((SAXTransformerFactory) transformerFactory).newTransformerHandler();
+            TransformerHandler th = ((SAXTransformerFactory) transformerFactory.get()).newTransformerHandler();
             th.setResult(result);
-            XMLReader reader = saxParserFactory.newSAXParser().getXMLReader();
+            XMLReader reader = saxParserFactory.get().newSAXParser().getXMLReader();
             reader.setContentHandler(th);
             reader.setProperty(LEXICAL_HANDLER_PROPERTY, th);
             reader.parse(toInputSource(ssrc));

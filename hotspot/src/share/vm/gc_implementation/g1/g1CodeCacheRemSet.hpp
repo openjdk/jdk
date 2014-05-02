@@ -128,19 +128,45 @@ class G1CodeRootChunk : public CHeapObj<mtGC> {
   }
 };
 
+// Manages free chunks.
+class G1CodeRootChunkManager VALUE_OBJ_CLASS_SPEC {
+ private:
+  // Global free chunk list management
+  FreeList<G1CodeRootChunk> _free_list;
+  // Total number of chunks handed out
+  size_t _num_chunks_handed_out;
+
+ public:
+  G1CodeRootChunkManager();
+
+  G1CodeRootChunk* new_chunk();
+  void free_chunk(G1CodeRootChunk* chunk);
+  // Free all elements of the given list.
+  void free_all_chunks(FreeList<G1CodeRootChunk>* list);
+
+  void initialize();
+  void purge_chunks(size_t keep_ratio);
+
+  static size_t static_mem_size();
+  size_t fl_mem_size();
+
+#ifndef PRODUCT
+  size_t num_chunks_handed_out() const;
+  size_t num_free_chunks() const;
+#endif
+};
+
 // Implements storage for a set of code roots.
 // All methods that modify the set are not thread-safe except if otherwise noted.
 class G1CodeRootSet VALUE_OBJ_CLASS_SPEC {
  private:
-  // Global free chunk list management
-  static FreeList<G1CodeRootChunk> _free_list;
-  // Total number of chunks handed out
-  static size_t _num_chunks_handed_out;
+  // Global default free chunk manager instance.
+  static G1CodeRootChunkManager _default_chunk_manager;
 
-  static G1CodeRootChunk* new_chunk();
-  static void free_chunk(G1CodeRootChunk* chunk);
+  G1CodeRootChunk* new_chunk() { return _manager->new_chunk(); }
+  void free_chunk(G1CodeRootChunk* chunk) { _manager->free_chunk(chunk); }
   // Free all elements of the given list.
-  static void free_all_chunks(FreeList<G1CodeRootChunk>* list);
+  void free_all_chunks(FreeList<G1CodeRootChunk>* list) { _manager->free_all_chunks(list); }
 
   // Return the chunk that contains the given nmethod, NULL otherwise.
   // Scans the list of chunks backwards, as this method is used to add new
@@ -150,16 +176,18 @@ class G1CodeRootSet VALUE_OBJ_CLASS_SPEC {
 
   size_t _length;
   FreeList<G1CodeRootChunk> _list;
+  G1CodeRootChunkManager* _manager;
 
  public:
-  G1CodeRootSet();
+  // If an instance is initialized with a chunk manager of NULL, use the global
+  // default one.
+  G1CodeRootSet(G1CodeRootChunkManager* manager = NULL);
   ~G1CodeRootSet();
 
-  static void initialize();
   static void purge_chunks(size_t keep_ratio);
 
-  static size_t static_mem_size();
-  static size_t fl_mem_size();
+  static size_t free_chunks_static_mem_size();
+  static size_t free_chunks_mem_size();
 
   // Search for the code blob from the recently allocated ones to find duplicates more quickly, as this
   // method is likely to be repeatedly called with the same nmethod.
@@ -179,6 +207,8 @@ class G1CodeRootSet VALUE_OBJ_CLASS_SPEC {
   // Length in elements
   size_t length() const { return _length; }
 
+  // Static data memory size in bytes of this set.
+  static size_t static_mem_size();
   // Memory size in bytes taken by this set.
   size_t mem_size();
 

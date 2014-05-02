@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "awt_Component.h"
 #include "awt_MenuComponent.h"
 #include "awt_Font.h"
+#include "awt_util.h"
 
 #include "sun_awt_X11_XToolkit.h"
 #include "java_awt_SystemColor.h"
@@ -76,6 +77,8 @@ struct MenuComponentIDs menuComponentIDs;
 #ifndef HEADLESS
 
 extern Display* awt_init_Display(JNIEnv *env, jobject this);
+extern void freeNativeStringArray(char **array, long length);
+extern char** stringArrayToNative(JNIEnv *env, jobjectArray array, jsize * ret_length);
 
 struct XFontPeerIDs xFontPeerIDs;
 
@@ -103,9 +106,11 @@ Java_sun_awt_X11_XToolkit_initIDs
   (JNIEnv *env, jclass clazz)
 {
     jfieldID fid = (*env)->GetStaticFieldID(env, clazz, "numLockMask", "I");
+    CHECK_NULL(fid);
     awt_NumLockMask = (*env)->GetStaticIntField(env, clazz, fid);
     DTRACE_PRINTLN1("awt_NumLockMask = %u", awt_NumLockMask);
     fid = (*env)->GetStaticFieldID(env, clazz, "modLockIsShiftLock", "I");
+    CHECK_NULL(fid);
     awt_ModLockIsShiftLock = (*env)->GetStaticIntField(env, clazz, fid) != 0 ? True : False;
 }
 
@@ -173,21 +178,31 @@ Java_java_awt_Component_initIDs
 
 
     componentIDs.x = (*env)->GetFieldID(env, cls, "x", "I");
+    CHECK_NULL(componentIDs.x);
     componentIDs.y = (*env)->GetFieldID(env, cls, "y", "I");
+    CHECK_NULL(componentIDs.y);
     componentIDs.width = (*env)->GetFieldID(env, cls, "width", "I");
+    CHECK_NULL(componentIDs.width);
     componentIDs.height = (*env)->GetFieldID(env, cls, "height", "I");
+    CHECK_NULL(componentIDs.height);
     componentIDs.isPacked = (*env)->GetFieldID(env, cls, "isPacked", "Z");
+    CHECK_NULL(componentIDs.isPacked);
     componentIDs.peer =
       (*env)->GetFieldID(env, cls, "peer", "Ljava/awt/peer/ComponentPeer;");
+    CHECK_NULL(componentIDs.peer);
     componentIDs.background =
       (*env)->GetFieldID(env, cls, "background", "Ljava/awt/Color;");
+    CHECK_NULL(componentIDs.background);
     componentIDs.foreground =
       (*env)->GetFieldID(env, cls, "foreground", "Ljava/awt/Color;");
+    CHECK_NULL(componentIDs.foreground);
     componentIDs.graphicsConfig =
         (*env)->GetFieldID(env, cls, "graphicsConfig",
                            "Ljava/awt/GraphicsConfiguration;");
+    CHECK_NULL(componentIDs.graphicsConfig);
     componentIDs.name =
       (*env)->GetFieldID(env, cls, "name", "Ljava/lang/String;");
+    CHECK_NULL(componentIDs.name);
 
     /* Use _NoClientCode() methods for trusted methods, so that we
      *  know that we are not invoking client code on trusted threads
@@ -195,19 +210,20 @@ Java_java_awt_Component_initIDs
     componentIDs.getParent =
       (*env)->GetMethodID(env, cls, "getParent_NoClientCode",
                          "()Ljava/awt/Container;");
+    CHECK_NULL(componentIDs.getParent);
 
     componentIDs.getLocationOnScreen =
       (*env)->GetMethodID(env, cls, "getLocationOnScreen_NoTreeLock",
                          "()Ljava/awt/Point;");
+    CHECK_NULL(componentIDs.getLocationOnScreen);
 
     keyclass = (*env)->FindClass(env, "java/awt/event/KeyEvent");
-    if (JNU_IsNull(env, keyclass)) {
-        return;
-    }
+    CHECK_NULL(keyclass);
 
     componentIDs.isProxyActive =
         (*env)->GetFieldID(env, keyclass, "isProxyActive",
                            "Z");
+    CHECK_NULL(componentIDs.isProxyActive);
 
     componentIDs.appContext =
         (*env)->GetFieldID(env, cls, "appContext",
@@ -339,7 +355,7 @@ JNIEXPORT void JNICALL Java_java_awt_Dialog_initIDs (JNIEnv *env, jclass cls)
 static void     waitForEvents(JNIEnv *, jlong);
 static void     awt_pipe_init();
 static void     processOneEvent(XtInputMask iMask);
-static void     performPoll(JNIEnv *, jlong);
+static Boolean  performPoll(JNIEnv *, jlong);
 static void     wakeUp();
 static void     update_poll_timeout(int timeout_control);
 static uint32_t get_poll_timeout(jlong nextTaskTime);
@@ -608,11 +624,13 @@ static uint32_t get_poll_timeout(jlong nextTaskTime)
  */
 void
 waitForEvents(JNIEnv *env, jlong nextTaskTime) {
-    performPoll(env, nextTaskTime);
-    if ((awt_next_flush_time > 0) && (awtJNI_TimeMillis() >= awt_next_flush_time)) {
-        XFlush(awt_display);
-        awt_last_flush_time = awt_next_flush_time;
-        awt_next_flush_time = 0LL;
+    if (performPoll(env, nextTaskTime)
+          && (awt_next_flush_time > 0)
+          && (awtJNI_TimeMillis() >= awt_next_flush_time)) {
+
+                XFlush(awt_display);
+                awt_last_flush_time = awt_next_flush_time;
+                awt_next_flush_time = 0LL;
     }
 } /* waitForEvents() */
 
@@ -646,7 +664,7 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XToolkit_wakeup_1poll (JNIEnv *env, jcla
  *
  * The fdAWTPipe will be empty when this returns.
  */
-static void
+static Boolean
 performPoll(JNIEnv *env, jlong nextTaskTime) {
     static Bool pollFdsInited = False;
     static char read_buf[AWT_POLL_BUFSIZE + 1];    /* dummy buf to empty pipe */
@@ -673,7 +691,9 @@ performPoll(JNIEnv *env, jlong nextTaskTime) {
     /* ACTUALLY DO THE POLL() */
     if (timeout == 0) {
         // be sure other threads get a chance
-        awtJNI_ThreadYield(env);
+        if (!awtJNI_ThreadYield(env)) {
+            return FALSE;
+        }
     }
 
     if (tracing) poll_sleep_time = awtJNI_TimeMillis();
@@ -701,7 +721,7 @@ performPoll(JNIEnv *env, jlong nextTaskTime) {
         update_poll_timeout(TIMEOUT_EVENTS);
         PRINT2("performPoll(): TIMEOUT_EVENTS curPollTimeout = %d \n", curPollTimeout);
     }
-    return;
+    return TRUE;
 
 } /* performPoll() */
 
@@ -856,23 +876,25 @@ Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
     xawt_root_window = get_xawt_root_shell(env);
 
     if ( xawt_root_window == None ) {
-        JNU_ThrowNullPointerException(env, "AWT root shell is unrealized");
         AWT_UNLOCK();
+        JNU_ThrowNullPointerException(env, "AWT root shell is unrealized");
         return;
     }
 
     command = (char *) JNU_GetStringPlatformChars(env, jcommand, NULL);
-    c[0] = (char *)command;
-    status = XmbTextListToTextProperty(awt_display, c, 1,
-                                       XStdICCTextStyle, &text_prop);
+    if (command != NULL) {
+        c[0] = (char *)command;
+        status = XmbTextListToTextProperty(awt_display, c, 1,
+                                           XStdICCTextStyle, &text_prop);
 
-    if (status == Success || status > 0) {
-        XSetTextProperty(awt_display, xawt_root_window,
-                         &text_prop, XA_WM_COMMAND);
-        if (text_prop.value != NULL)
-            XFree(text_prop.value);
+        if (status == Success || status > 0) {
+            XSetTextProperty(awt_display, xawt_root_window,
+                             &text_prop, XA_WM_COMMAND);
+            if (text_prop.value != NULL)
+                XFree(text_prop.value);
+        }
+        JNU_ReleaseStringPlatformChars(env, jcommand, command);
     }
-    JNU_ReleaseStringPlatformChars(env, jcommand, command);
     AWT_UNLOCK();
 }
 
@@ -886,96 +908,56 @@ Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
  * name.  It's not!  It's just a plain function.
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jargv)
+Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jarray)
 {
-    static const char empty[] = "";
-
-    int argc;
-    const char **cargv;
+    jsize length;
+    char ** array;
     XTextProperty text_prop;
     int status;
-    int i;
     Window xawt_root_window;
 
     AWT_LOCK();
     xawt_root_window = get_xawt_root_shell(env);
 
     if (xawt_root_window == None) {
-      JNU_ThrowNullPointerException(env, "AWT root shell is unrealized");
       AWT_UNLOCK();
+      JNU_ThrowNullPointerException(env, "AWT root shell is unrealized");
       return;
     }
 
-    argc = (int)(*env)->GetArrayLength(env, jargv);
-    if (argc == 0) {
-        AWT_UNLOCK();
-        return;
-    }
+    array = stringArrayToNative(env, jarray, &length);
 
-    /* array of C strings */
-    cargv = (const char **)calloc(argc, sizeof(char *));
-    if (cargv == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "Unable to allocate cargv");
-        AWT_UNLOCK();
-        return;
-    }
-
-    /* fill C array with platform chars of java strings */
-      for (i = 0; i < argc; ++i) {
-        jstring js;
-        const char *cs;
-
-        cs = NULL;
-        js = (*env)->GetObjectArrayElement(env, jargv, i);
-        if (js != NULL) {
-            cs = JNU_GetStringPlatformChars(env, js, NULL);
+    if (array != NULL) {
+        status = XmbTextListToTextProperty(awt_display, array, length,
+                                           XStdICCTextStyle, &text_prop);
+        if (status < 0) {
+            switch (status) {
+            case XNoMemory:
+                JNU_ThrowOutOfMemoryError(env,
+                    "XmbTextListToTextProperty: XNoMemory");
+                break;
+            case XLocaleNotSupported:
+                JNU_ThrowInternalError(env,
+                    "XmbTextListToTextProperty: XLocaleNotSupported");
+                break;
+            case XConverterNotFound:
+                JNU_ThrowNullPointerException(env,
+                    "XmbTextListToTextProperty: XConverterNotFound");
+                break;
+            default:
+                JNU_ThrowInternalError(env,
+                    "XmbTextListToTextProperty: unknown error");
+            }
+        } else {
+            XSetTextProperty(awt_display, xawt_root_window,
+                                 &text_prop, XA_WM_COMMAND);
         }
-        if (cs == NULL) {
-            cs = empty;
-        }
-        cargv[i] = cs;
-        (*env)->DeleteLocalRef(env, js);
+
+        if (text_prop.value != NULL)
+            XFree(text_prop.value);
+
+        freeNativeStringArray(array, length);
     }
-
-    /* grr, X prototype doesn't declare cargv as const, thought it really is */
-    status = XmbTextListToTextProperty(awt_display, (char **)cargv, argc,
-                                       XStdICCTextStyle, &text_prop);
-    if (status < 0) {
-        switch (status) {
-        case XNoMemory:
-            JNU_ThrowOutOfMemoryError(env,
-                "XmbTextListToTextProperty: XNoMemory");
-            break;
-        case XLocaleNotSupported:
-            JNU_ThrowInternalError(env,
-                "XmbTextListToTextProperty: XLocaleNotSupported");
-            break;
-        case XConverterNotFound:
-            JNU_ThrowNullPointerException(env,
-                "XmbTextListToTextProperty: XConverterNotFound");
-            break;
-        default:
-            JNU_ThrowInternalError(env,
-                "XmbTextListToTextProperty: unknown error");
-        }
-    } else {
-
-    XSetTextProperty(awt_display, xawt_root_window,
-                         &text_prop, XA_WM_COMMAND);
-    }
-
-    for (i = 0; i < argc; ++i) {
-        jstring js;
-
-        if (cargv[i] == empty)
-            continue;
-
-        js = (*env)->GetObjectArrayElement(env, jargv, i);
-        JNU_ReleaseStringPlatformChars(env, js, cargv[i]);
-        (*env)->DeleteLocalRef(env, js);
-    }
-    if (text_prop.value != NULL)
-        XFree(text_prop.value);
     AWT_UNLOCK();
 }
 

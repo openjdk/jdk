@@ -56,7 +56,7 @@ case "$OS" in
     #  execute test program - rely on it to exit if platform unsupported
 
         echo "Creating the alias '246810' in the Windows-My store..."
-        ${TESTJAVA}/bin/keytool \
+        ${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} \
 	    -import \
 	    -storetype Windows-My \
 	    -file ${TESTSRC}/246810.cer \
@@ -68,13 +68,13 @@ case "$OS" in
 	fi
 
 	echo "Removing the alias '13579', if it is already present..."
-        ${TESTJAVA}/bin/keytool \
+        ${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} \
 	    -list \
             -storetype Windows-My \
 	    -alias 13579 > /dev/null 2>&1
 
 	if [ $? ] ; then
-            ${TESTJAVA}/bin/keytool \
+            ${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} \
 		-delete \
 		-storetype Windows-My \
 		-alias 13579 \
@@ -82,12 +82,12 @@ case "$OS" in
 	fi
 
 	echo "Counting the entries in the store..."
-	count=`${TESTJAVA}/bin/keytool -list -storetype Windows-My | wc -l`
+	count=`${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} -list -storetype Windows-My | wc -l`
 	before=$count
 
 	echo "Changing the alias name from '246810' to '13579'..."
 
-        ${TESTJAVA}/bin/keytool \
+        ${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} \
 	    -changealias \
 	    -storetype Windows-My \
 	    -alias 246810 \
@@ -98,7 +98,7 @@ case "$OS" in
 	fi
 
 	echo "Re-counting the entries in the store..."
-	count=`${TESTJAVA}/bin/keytool -list -storetype Windows-My | wc -l`
+	count=`${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} -list -storetype Windows-My | wc -l`
 	after=$count
 
 	if [ ! $before = $after ]; then
@@ -107,7 +107,7 @@ case "$OS" in
 	fi
 
 	echo "Confirming that the new alias is present..."
-        ${TESTJAVA}/bin/keytool \
+        ${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} \
 	    -list \
             -storetype Windows-My \
 	    -alias 13579 > /dev/null 2>&1
@@ -118,7 +118,7 @@ case "$OS" in
 	fi
 
 	echo "Removing the new alias '13579'..."
-        ${TESTJAVA}/bin/keytool \
+        ${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} \
 	    -delete \
             -storetype Windows-My \
 	    -alias 13579 > /dev/null 2>&1

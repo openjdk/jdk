@@ -35,6 +35,7 @@ const size_t        G1StringDedupQueue::_max_cache_size = 0; // Max cache size p
 
 G1StringDedupQueue::G1StringDedupQueue() :
   _cursor(0),
+  _cancel(false),
   _empty(true),
   _dropped(0) {
   _nqueues = MAX2(ParallelGCThreads, (size_t)1);
@@ -55,9 +56,15 @@ void G1StringDedupQueue::create() {
 
 void G1StringDedupQueue::wait() {
   MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
-  while (_queue->_empty) {
+  while (_queue->_empty && !_queue->_cancel) {
     ml.wait(Mutex::_no_safepoint_check_flag);
   }
+}
+
+void G1StringDedupQueue::cancel_wait() {
+  MonitorLockerEx ml(StringDedupQueue_lock, Mutex::_no_safepoint_check_flag);
+  _queue->_cancel = true;
+  ml.notify();
 }
 
 void G1StringDedupQueue::push(uint worker_id, oop java_string) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import java.io.*;
+import java.io.IOException;
+import java.util.List;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.sym.Profiles;
@@ -92,7 +93,7 @@ public class ProfilePackageIndexFrameWriter extends AbstractProfileIndexWriter {
         Content div = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(packagesLabel);
-        PackageDoc[] packages = configuration.profilePackages.get(profileName);
+        List<PackageDoc> packages = configuration.profilePackages.get(profileName);
         for (PackageDoc packageDoc : packages) {
             if ((!(configuration.nodeprecated && Util.isDeprecated(packageDoc)))) {
                 ul.addContent(getPackage(packageDoc, profileName));

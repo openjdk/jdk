@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,15 @@
 
 public class TestEncoding extends JavadocTester {
 
-    private static final String BUG_ID = "4661481";
-    private static final String[][] TEST = NO_TEST;
 
     //If ??? is found in the output, the source file was not read with the correct encoding setting.
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "EncodeTest.html", "??"}
+        { "EncodeTest.html", "??"}
     };
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            "-encoding", "iso-8859-1", SRC_DIR + FS + "EncodeTest.java"
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
+            "-encoding", "iso-8859-1", SRC_DIR + "/EncodeTest.java"
         };
 
     /**
@@ -54,21 +52,7 @@ public class TestEncoding extends JavadocTester {
      */
     public static void main(String[] args) {
         TestEncoding tester = new TestEncoding();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, NO_TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

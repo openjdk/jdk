@@ -26,7 +26,6 @@ package javax.swing.text.html;
 
 import sun.awt.AppContext;
 
-import java.lang.reflect.Method;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -34,12 +33,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import javax.swing.text.*;
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.event.*;
 import javax.swing.plaf.TextUI;
 import java.util.*;
 import javax.accessibility.*;
 import java.lang.ref.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * The Swing JEditorPane text component supports different kinds
@@ -415,14 +415,13 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *  HTMLEditorKit class
      * @return a stream representing the resource
      */
-    static InputStream getResourceAsStream(String name) {
-        try {
-            return ResourceLoader.getResourceAsStream(name);
-        } catch (Throwable e) {
-            // If the class doesn't exist or we have some other
-            // problem we just try to call getResourceAsStream directly.
-            return HTMLEditorKit.class.getResourceAsStream(name);
-        }
+    static InputStream getResourceAsStream(final String name) {
+        return AccessController.doPrivileged(
+                new PrivilegedAction<InputStream>() {
+                    public InputStream run() {
+                        return HTMLEditorKit.class.getResourceAsStream(name);
+                    }
+                });
     }
 
     /**

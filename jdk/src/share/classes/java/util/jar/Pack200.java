@@ -224,7 +224,7 @@ public abstract class Pack200 {
      * Note: Unless otherwise noted, passing a <tt>null</tt> argument to a
      * constructor or method in this class will cause a {@link NullPointerException}
      * to be thrown.
-     * <p>
+     *
      * @since 1.5
      */
     public interface Packer {

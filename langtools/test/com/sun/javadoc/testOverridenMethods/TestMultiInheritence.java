@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,29 +35,26 @@
 
 public class TestMultiInheritence extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4933335";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg3"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg3"
     };
 
     //Method foo() is inherited from BOTH I2 and I3
     private static final String[][] TEST = {
-       {BUG_ID + FS + "pkg3" + FS + "I1.html",
+       { "pkg3/I1.html",
         "Methods inherited from interface&nbsp;pkg3." +
                 "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">" +
                 "I2</a>"},
-        {BUG_ID + FS + "pkg3" + FS +"I1.html",
+        { "pkg3/I1.html",
         "Methods inherited from interface&nbsp;pkg3." +
                  "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">" +
                  "I3</a>"},
-        {BUG_ID + FS + "pkg3" + FS + "I0.html",
+        { "pkg3/I0.html",
         "Methods inherited from interface&nbsp;pkg3." +
                  "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">" +
                  "I2</a>"},
-        {BUG_ID + FS + "pkg3" + FS +"I0.html",
+        { "pkg3/I0.html",
         "Methods inherited from interface&nbsp;pkg3." +
                  "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">" +
                  "I3</a>"},
@@ -66,11 +63,11 @@ public class TestMultiInheritence extends JavadocTester {
     //Method foo() is NOT inherited from I4 because it is overriden by
     //I3.
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg3" + FS + "I1.html",
+        { "pkg3/I1.html",
         "Methods inherited from interface&nbsp;pkg3." +
                  "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">" +
                  "I4</a>"},
-        {BUG_ID + FS + "pkg3" + FS + "I0.html",
+        { "pkg3/I0.html",
         "Methods inherited from interface&nbsp;pkg3." +
                  "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">" +
                  "I4</a>"},
@@ -82,21 +79,7 @@ public class TestMultiInheritence extends JavadocTester {
      */
     public static void main(String[] args) {
         TestMultiInheritence tester = new TestMultiInheritence();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import java.io.*;
+import java.io.IOException;
+import java.util.SortedSet;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
@@ -51,7 +52,7 @@ public class TreeWriter extends AbstractTreeWriter {
     /**
      * Packages in this run.
      */
-    private PackageDoc[] packages;
+    SortedSet<PackageDoc> packages;
 
     /**
      * True if there are no packages specified on the command line,
@@ -67,11 +68,10 @@ public class TreeWriter extends AbstractTreeWriter {
      * @param classtree the tree being built.
      */
     public TreeWriter(ConfigurationImpl configuration,
-            DocPath filename, ClassTree classtree)
-    throws IOException {
+            DocPath filename, ClassTree classtree) throws IOException {
         super(configuration, filename, classtree);
         packages = configuration.packages;
-    classesonly = packages.length == 0;
+        classesonly = packages.isEmpty();
     }
 
     /**
@@ -127,7 +127,7 @@ public class TreeWriter extends AbstractTreeWriter {
      */
     protected void addPackageTreeLinks(Content contentTree) {
         //Do nothing if only unnamed package is used
-        if (packages.length == 1 && packages[0].name().length() == 0) {
+        if (isUnnamedPackage()) {
             return;
         }
         if (!classesonly) {
@@ -136,21 +136,24 @@ public class TreeWriter extends AbstractTreeWriter {
             contentTree.addContent(span);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             ul.addStyle(HtmlStyle.horizontal);
-            for (int i = 0; i < packages.length; i++) {
+            int i = 0;
+            for (PackageDoc pkg : packages) {
                 // If the package name length is 0 or if -nodeprecated option
                 // is set and the package is marked as deprecated, do not include
                 // the page in the list of package hierarchies.
-                if (packages[i].name().length() == 0 ||
-                        (configuration.nodeprecated && Util.isDeprecated(packages[i]))) {
+                if (pkg.name().isEmpty() ||
+                        (configuration.nodeprecated && Util.isDeprecated(pkg))) {
+                    i++;
                     continue;
                 }
-                DocPath link = pathString(packages[i], DocPaths.PACKAGE_TREE);
+                DocPath link = pathString(pkg, DocPaths.PACKAGE_TREE);
                 Content li = HtmlTree.LI(getHyperLink(
-                        link, new StringContent(packages[i].name())));
-                if (i < packages.length - 1) {
+                        link, new StringContent(pkg.name())));
+                if (i < packages.size() - 1) {
                     li.addContent(", ");
                 }
                 ul.addContent(li);
+                i++;
             }
             contentTree.addContent(ul);
         }
@@ -167,5 +170,9 @@ public class TreeWriter extends AbstractTreeWriter {
         addTop(bodyTree);
         addNavLinks(true, bodyTree);
         return bodyTree;
+    }
+
+    private boolean isUnnamedPackage() {
+        return packages.size() == 1 && packages.first().name().isEmpty();
     }
 }

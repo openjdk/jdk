@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,18 +37,15 @@ import java.io.*;
 
 public class TestSourceTab extends JavadocTester {
 
-    private static final String BUG_ID = "4510979";
     private static final String TMP_SRC_DIR = "tmpSrc";
-    private static final String OUTPUT_DIR1 = BUG_ID + "-tabLengthEight";
-    private static final String OUTPUT_DIR2 = BUG_ID + "-tabLengthFour";
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = NO_TEST;
+    private static final String OUTPUT_DIR1 = OUTPUT_DIR + "-tabLengthEight";
+    private static final String OUTPUT_DIR2 = OUTPUT_DIR + "-tabLengthFour";
 
     //Run Javadoc on a source file with that is indented with a single tab per line
     private static final String[] ARGS1 =
         new String[] {
             "-d", OUTPUT_DIR1, "-sourcepath", TMP_SRC_DIR,
-            "-notimestamp", "-linksource", TMP_SRC_DIR + FS + "SingleTab" + FS + "C.java"
+            "-notimestamp", "-linksource", TMP_SRC_DIR + "/SingleTab/C.java"
         };
 
     //Run Javadoc on a source file with that is indented with a two tab per line
@@ -57,18 +54,13 @@ public class TestSourceTab extends JavadocTester {
     private static final String[] ARGS2 =
         new String[] {
             "-d", OUTPUT_DIR2, "-sourcepath", TMP_SRC_DIR,
-            "-notimestamp", "-sourcetab", "4", TMP_SRC_DIR + FS + "DoubleTab" + FS + "C.java"
+            "-notimestamp", "-sourcetab", "4", TMP_SRC_DIR + "/DoubleTab/C.java"
         };
 
     //Files to diff
-    private static final String[][] FILES_TO_DIFF = {
-        {OUTPUT_DIR1 + FS + "src-html" + FS + "C.html",
-         OUTPUT_DIR2 + FS + "src-html" + FS + "C.html"
-        },
-        {OUTPUT_DIR1 + FS + "C.html",
-         OUTPUT_DIR2 + FS + "C.html"
-        }
-
+    private static final String[] FILES_TO_DIFF = {
+        "src-html/C.html",
+        "C.html"
     };
 
     /**
@@ -77,9 +69,9 @@ public class TestSourceTab extends JavadocTester {
      */
     public static void main(String[] args) throws IOException {
         TestSourceTab tester = new TestSourceTab();
-        run(tester, ARGS1, TEST, NEGATED_TEST);
-        run(tester, ARGS2, TEST, NEGATED_TEST);
-        tester.runDiffs(FILES_TO_DIFF);
+        tester.run(ARGS1, NO_TEST, NO_TEST);
+        tester.run(ARGS2, NO_TEST, NO_TEST);
+        tester.runDiffs(OUTPUT_DIR1, OUTPUT_DIR2, FILES_TO_DIFF);
     }
 
     TestSourceTab() throws IOException {
@@ -120,19 +112,5 @@ public class TestSourceTab extends JavadocTester {
         } finally {
             out.close();
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

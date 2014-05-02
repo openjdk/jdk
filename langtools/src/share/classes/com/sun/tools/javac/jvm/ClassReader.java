@@ -475,14 +475,14 @@ public class ClassReader {
             break;
         case CONSTANT_Fieldref: {
             ClassSymbol owner = readClassSymbol(getChar(index + 1));
-            NameAndType nt = (NameAndType)readPool(getChar(index + 3));
+            NameAndType nt = readNameAndType(getChar(index + 3));
             poolObj[i] = new VarSymbol(0, nt.name, nt.uniqueType.type, owner);
             break;
         }
         case CONSTANT_Methodref:
         case CONSTANT_InterfaceMethodref: {
             ClassSymbol owner = readClassSymbol(getChar(index + 1));
-            NameAndType nt = (NameAndType)readPool(getChar(index + 3));
+            NameAndType nt = readNameAndType(getChar(index + 3));
             poolObj[i] = new MethodSymbol(0, nt.name, nt.uniqueType.type, owner);
             break;
         }
@@ -551,13 +551,34 @@ public class ClassReader {
     /** Read class entry.
      */
     ClassSymbol readClassSymbol(int i) {
-        return (ClassSymbol) (readPool(i));
+        Object obj = readPool(i);
+        if (obj != null && !(obj instanceof ClassSymbol))
+            throw badClassFile("bad.const.pool.entry",
+                               currentClassFile.toString(),
+                               "CONSTANT_Class_info", i);
+        return (ClassSymbol)obj;
     }
 
     /** Read name.
      */
     Name readName(int i) {
-        return (Name) (readPool(i));
+        Object obj = readPool(i);
+        if (obj != null && !(obj instanceof Name))
+            throw badClassFile("bad.const.pool.entry",
+                               currentClassFile.toString(),
+                               "CONSTANT_Utf8_info or CONSTANT_String_info", i);
+        return (Name)obj;
+    }
+
+    /** Read name and type.
+     */
+    NameAndType readNameAndType(int i) {
+        Object obj = readPool(i);
+        if (obj != null && !(obj instanceof NameAndType))
+            throw badClassFile("bad.const.pool.entry",
+                               currentClassFile.toString(),
+                               "CONSTANT_NameAndType_info", i);
+        return (NameAndType)obj;
     }
 
 /************************************************************************
@@ -1209,7 +1230,7 @@ public class ClassReader {
         sym.owner.members().remove(sym);
         ClassSymbol self = (ClassSymbol)sym;
         ClassSymbol c = readClassSymbol(nextChar());
-        NameAndType nt = (NameAndType)readPool(nextChar());
+        NameAndType nt = readNameAndType(nextChar());
 
         if (c.members_field == null)
             throw badClassFile("bad.enclosing.class", self, c);
@@ -1542,7 +1563,7 @@ public class ClassReader {
             final int exception_index = nextChar();
             final TypeAnnotationPosition position =
                 TypeAnnotationPosition.exceptionParameter(readTypePath());
-            position.exception_index = exception_index;
+            position.setExceptionIndex(exception_index);
             return position;
         }
         // method receiver

@@ -136,7 +136,13 @@ abstract class FacetIntrospector {
         final Field[] fields = clazz.getFields();
         final Collection<Field> cfields = new ArrayList<>(fields.length);
         for(Field field: fields) {
-            if(instance != Modifier.isStatic(field.getModifiers()) && isAccessible(field)) {
+            final boolean isStatic = Modifier.isStatic(field.getModifiers());
+            if(isStatic && clazz != field.getDeclaringClass()) {
+                // ignore inherited static fields
+                continue;
+            }
+
+            if(instance != isStatic && isAccessible(field)) {
                 cfields.add(field);
             }
         }

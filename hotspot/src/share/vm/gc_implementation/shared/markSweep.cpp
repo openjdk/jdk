@@ -131,7 +131,7 @@ void MarkSweep::restore_marks() {
   assert(_preserved_oop_stack.size() == _preserved_mark_stack.size(),
          "inconsistent preserved oop stacks");
   if (PrintGC && Verbose) {
-    gclog_or_tty->print_cr("Restoring %d marks",
+    gclog_or_tty->print_cr("Restoring " SIZE_FORMAT " marks",
                            _preserved_count + _preserved_oop_stack.size());
   }
 

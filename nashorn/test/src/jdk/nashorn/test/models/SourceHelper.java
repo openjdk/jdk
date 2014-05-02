@@ -46,7 +46,7 @@ public final class SourceHelper {
     }
 
     public static String readFully(final URL url) throws IOException {
-        return new Source(url.toString(), url).getString();
+        return Source.sourceFor(url.toString(), url).getString();
     }
 
     public static String readFully(final Reader reader) throws IOException {

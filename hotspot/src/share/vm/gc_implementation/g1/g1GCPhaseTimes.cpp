@@ -147,7 +147,7 @@ template <class T>
 void WorkerDataArray<T>::verify() {
   for (uint i = 0; i < _length; i++) {
     assert(_data[i] != _uninitialized,
-        err_msg("Invalid data for worker " UINT32_FORMAT ", data: %lf, uninitialized: %lf",
+        err_msg("Invalid data for worker %u, data: %lf, uninitialized: %lf",
             i, (double)_data[i], (double)_uninitialized));
   }
 }
@@ -170,6 +170,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _last_gc_worker_end_times_ms(_max_gc_threads, "%.1lf", false),
   _last_gc_worker_times_ms(_max_gc_threads, "%.1lf"),
   _last_gc_worker_other_times_ms(_max_gc_threads, "%.1lf"),
+  _last_redirty_logged_cards_time_ms(_max_gc_threads, "%.1lf"),
+  _last_redirty_logged_cards_processed_cards(_max_gc_threads, SIZE_FORMAT),
   _cur_string_dedup_queue_fixup_worker_times_ms(_max_gc_threads, "%.1lf"),
   _cur_string_dedup_table_fixup_worker_times_ms(_max_gc_threads, "%.1lf")
 {
@@ -195,6 +197,10 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
   _last_gc_worker_end_times_ms.reset();
   _last_gc_worker_times_ms.reset();
   _last_gc_worker_other_times_ms.reset();
+
+  _last_redirty_logged_cards_time_ms.reset();
+  _last_redirty_logged_cards_processed_cards.reset();
+
 }
 
 void G1GCPhaseTimes::note_gc_end() {
@@ -230,6 +236,9 @@ void G1GCPhaseTimes::note_gc_end() {
 
   _last_gc_worker_times_ms.verify();
   _last_gc_worker_other_times_ms.verify();
+
+  _last_redirty_logged_cards_time_ms.verify();
+  _last_redirty_logged_cards_processed_cards.verify();
 }
 
 void G1GCPhaseTimes::note_string_dedup_fixup_start() {
@@ -246,8 +255,8 @@ void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
   LineBuffer(level).append_and_print_cr("[%s: %.1lf ms]", str, value);
 }
 
-void G1GCPhaseTimes::print_stats(int level, const char* str, double value, int workers) {
-  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %d]", str, value, workers);
+void G1GCPhaseTimes::print_stats(int level, const char* str, double value, uint workers) {
+  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %u]", str, value, workers);
 }
 
 double G1GCPhaseTimes::accounted_time_ms() {
@@ -349,6 +358,10 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   print_stats(2, "Ref Enq", _cur_ref_enq_time_ms);
   if (G1DeferredRSUpdate) {
     print_stats(2, "Redirty Cards", _recorded_redirty_logged_cards_time_ms);
+    if (G1Log::finest()) {
+      _last_redirty_logged_cards_time_ms.print(3, "Parallel Redirty");
+      _last_redirty_logged_cards_processed_cards.print(3, "Redirtied Cards");
+    }
   }
   print_stats(2, "Free CSet",
     (_recorded_young_free_cset_time_ms +

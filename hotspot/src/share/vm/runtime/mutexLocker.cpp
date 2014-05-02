@@ -69,7 +69,7 @@ Monitor* Safepoint_lock               = NULL;
 Monitor* SerializePage_lock           = NULL;
 Monitor* Threads_lock                 = NULL;
 Monitor* CGC_lock                     = NULL;
-Mutex*   STS_init_lock                = NULL;
+Monitor* STS_lock                     = NULL;
 Monitor* SLT_lock                     = NULL;
 Monitor* iCMS_lock                    = NULL;
 Monitor* FullGCCount_lock             = NULL;
@@ -173,7 +173,7 @@ void mutex_init() {
   def(tty_lock                     , Mutex  , event,       true ); // allow to lock in VM
 
   def(CGC_lock                   , Monitor, special,     true ); // coordinate between fore- and background GC
-  def(STS_init_lock              , Mutex,   leaf,        true );
+  def(STS_lock                   , Monitor, leaf,        true );
   if (UseConcMarkSweepGC) {
     def(iCMS_lock                  , Monitor, special,     true ); // CMS incremental mode start/stop notification
   }
