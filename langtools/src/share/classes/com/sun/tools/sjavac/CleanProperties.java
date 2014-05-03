@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,13 @@ import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+
+import com.sun.tools.sjavac.options.Options;
 
 /**
  * The clean properties transform should not be necessary.
@@ -51,7 +52,7 @@ public class CleanProperties implements Transformer
         // Any extra information is ignored for clean properties.
     }
 
-    public void setExtra(String[] a) {
+    public void setExtra(Options a) {
         // Any extra information is ignored for clean properties.
     }
 

@@ -133,7 +133,7 @@ class UnixFileAttributeViews {
         private static final String OWNER_NAME = "owner";
         private static final String GROUP_NAME = "group";
 
-        // the names of the posix attributes (incudes basic)
+        // the names of the posix attributes (includes basic)
         static final Set<String> posixAttributeNames =
             Util.newSet(basicAttributeNames, PERMISSIONS_NAME, OWNER_NAME, GROUP_NAME);
 

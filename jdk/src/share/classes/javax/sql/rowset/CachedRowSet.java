@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -998,7 +998,6 @@ public interface CachedRowSet extends RowSet, Joinable {
     * available within the internal <code>RowSet</code> tabular structure by
     * virtue of a key already set either on the <code>RowSet</code> object
     * itself or on the underlying SQL data.
-    * <P>
     *
     * @return a <code>Collection</code> object that contains the values in
     * each row in this <code>CachedRowSet</code> object

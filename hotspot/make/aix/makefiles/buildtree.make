@@ -37,7 +37,7 @@
 # GAMMADIR	- top of workspace
 # OS_FAMILY	- operating system
 # VARIANT	- core, compiler1, compiler2, or tiered
-# HOTSPOT_RELEASE_VERSION - <major>.<minor>-b<nn> (11.0-b07)
+# HOTSPOT_RELEASE_VERSION - <major_ver>.<minor_ver>.<micro_ver>[-<identifier>][-<debug_target>][-b<nn>]
 # HOTSPOT_BUILD_VERSION   - internal, internal-$(USER_RELEASE_SUFFIX) or empty
 # JRE_RELEASE_VERSION     - <major>.<minor>.<micro> (1.7.0)
 #

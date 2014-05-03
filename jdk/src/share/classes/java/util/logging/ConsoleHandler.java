@@ -62,7 +62,7 @@ package java.util.logging;
  * <li>   com.foo.MyHandler.level=INFO </li>
  * <li>   com.foo.MyHandler.formatter=java.util.logging.SimpleFormatter </li>
  * </ul>
- * <p>
+ *
  * @since 1.4
  */
 public class ConsoleHandler extends StreamHandler {
@@ -86,7 +86,7 @@ public class ConsoleHandler extends StreamHandler {
      * <p>
      * The logging request was made initially to a <tt>Logger</tt> object,
      * which initialized the <tt>LogRecord</tt> and forwarded it here.
-     * <p>
+     *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,13 @@ import java.nio.ByteBuffer;
 import java.lang.annotation.Native;
 
 public final class JRSUIConstants {
+
+    /**
+     * There is no way to get width of focus border, so it is hardcoded here.
+     * All components, which can be focused should take care about it.
+     */
+    public static final int FOCUS_SIZE = 4;
+
     private static native long getPtrForConstant(final int constant);
 
     static class Key {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ static inline jint doPaintImage
     CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
     CGContextRef cgRef = CGBitmapContextCreate(rawPixelData, imgW, imgH, 8, imgW * 4, colorspace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Host);
     CGColorSpaceRelease(colorspace);
-    CGContextScaleCTM(cgRef, imgW/w , imgH/h);
+    CGContextScaleCTM(cgRef, imgW/(w + x + x) , imgH/(h + y + y));
 
     jint status = doPaintCGContext(cgRef, controlPtr, oldProperties, newProperties, x, y, w, h);
     CGContextRelease(cgRef);

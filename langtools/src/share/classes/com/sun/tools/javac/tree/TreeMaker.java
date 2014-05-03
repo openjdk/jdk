@@ -116,22 +116,28 @@ public class TreeMaker implements JCTree.Factory {
 
     /**
      * Create given tree node at current position.
-     * @param defs a list of ClassDef, Import, and Skip
+     * @param defs a list of PackageDef, ClassDef, Import, and Skip
      */
-    public JCCompilationUnit TopLevel(List<JCAnnotation> packageAnnotations,
-                                      JCExpression pid,
-                                      List<JCTree> defs) {
-        Assert.checkNonNull(packageAnnotations);
+    public JCCompilationUnit TopLevel(List<JCTree> defs) {
         for (JCTree node : defs)
             Assert.check(node instanceof JCClassDecl
+                || node instanceof JCPackageDecl
                 || node instanceof JCImport
                 || node instanceof JCSkip
                 || node instanceof JCErroneous
                 || (node instanceof JCExpressionStatement
                     && ((JCExpressionStatement)node).expr instanceof JCErroneous),
                 node.getClass().getSimpleName());
-        JCCompilationUnit tree = new JCCompilationUnit(packageAnnotations, pid, defs,
-                                     null, null, null, null);
+        JCCompilationUnit tree = new JCCompilationUnit(defs);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCPackageDecl PackageDecl(List<JCAnnotation> annotations,
+                                     JCExpression pid) {
+        Assert.checkNonNull(annotations);
+        Assert.checkNonNull(pid);
+        JCPackageDecl tree = new JCPackageDecl(annotations, pid);
         tree.pos = pos;
         return tree;
     }

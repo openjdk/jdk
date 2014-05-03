@@ -367,16 +367,13 @@ public class Pretty extends JCTree.Visitor {
     public void printUnit(JCCompilationUnit tree, JCClassDecl cdef) throws IOException {
         docComments = tree.docComments;
         printDocComment(tree);
-        if (tree.pid != null) {
-            print("package ");
-            printExpr(tree.pid);
-            print(";");
-            println();
-        }
+
         boolean firstImport = true;
         for (List<JCTree> l = tree.defs;
-        l.nonEmpty() && (cdef == null || l.head.hasTag(IMPORT));
-        l = l.tail) {
+             l.nonEmpty() &&
+                 (cdef == null ||
+                  l.head.hasTag(IMPORT) || l.head.hasTag(PACKAGEDEF));
+             l = l.tail) {
             if (l.head.hasTag(IMPORT)) {
                 JCImport imp = (JCImport)l.head;
                 Name name = TreeInfo.name(imp.qualid);
@@ -421,6 +418,21 @@ public class Pretty extends JCTree.Visitor {
     public void visitTopLevel(JCCompilationUnit tree) {
         try {
             printUnit(tree, null);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitPackageDef(JCPackageDecl tree) {
+        try {
+            printDocComment(tree);
+            printAnnotations(tree.annotations);
+            if (tree.pid != null) {
+                print("package ");
+                printExpr(tree.pid);
+                print(";");
+                println();
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

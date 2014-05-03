@@ -25,6 +25,18 @@
 include $(SPEC)
 include MakeBase.gmk
 
+#################################################################
+#
+# CORE_PKGS environment variable has been moved to the following file
+#
+include CORE_PKGS.gmk
+#
+# Load environment variables for API package names that are not part of
+# the Java SE platform
+#
+include NON_CORE_PKGS.gmk
+
+
 .SUFFIXES: # Delete the default suffixes
 .SUFFIXES: .java
 
@@ -72,6 +84,7 @@ TRACING_FIRST_COPYRIGHT_YEAR = 2008
 TREEAPI_FIRST_COPYRIGHT_YEAR = 2005
 JNLP_FIRST_COPYRIGHT_YEAR = 1998
 PLUGIN2_FIRST_COPYRIGHT_YEAR = 2007
+JDKNET_FIRST_COPYRIGHT_YEAR = 2014
 
 # Oracle name
 FULL_COMPANY_NAME = Oracle and/or its affiliates
@@ -164,20 +177,9 @@ define prep-javadoc
 	$(MKDIR) -p $(@D)
 endef
 
-# A cache of the directories in ALL_SOURCE_DIRS
-DIRECTORY_CACHE = $(DOCSTMPDIR)/directory.cache
-
-# Given a list of packages, return a list of files or dirs to be dependent on
-# (Currently only returning a list of directories)
-define PackageDependencies # packages
-  $(shell \
-      if [ "$1" != "" -a -f $(DIRECTORY_CACHE) ] ; then \
-        for p in $1 ; do \
-          pd=`$(ECHO) $${p} | $(SED) -e 's@[.]@/@g'`; \
-          $(CAT) $(DIRECTORY_CACHE) | $(GREP) "/$${pd}/" ; \
-        done; \
-      fi \
-  )
+$(eval $(call FillCacheFind, $(ALL_SOURCE_DIRS)))
+define PackageDependencies
+  $(call CacheFind, $(foreach p, $(subst .,/,$1), $(addsuffix /$p, $(ALL_SOURCE_DIRS))))
 endef
 
 # Given a list of packages, add packages that exist to $@, print summary
@@ -202,9 +204,9 @@ endef
 
 # Print out a summary of the javadoc command about to be run
 define JavadocSummary # optionsfile packagesfile
-	@$(ECHO) "# Summary for $@"; \
-	$(ECHO) "# Options (`$(BASENAME) $1`):"; $(SED) -e 's@^@#   @' $1; \
-	$(ECHO) "# Packages (`$(BASENAME) $2`):";$(SED) -e 's@^@#   @' $2
+	@$(ECHO) "# Running javadoc for $(patsubst $(OUTPUT_ROOT)/%,%,$@)" $(LOG_WARN)
+	@($(ECHO) "# Options (`$(BASENAME) $1`):"; $(SED) -e 's@^@#   @' $1) $(LOG_DEBUG)
+	@($(ECHO) "# Packages (`$(BASENAME) $2`):";$(SED) -e 's@^@#   @' $2) $(LOG_DEBUG)
 endef
 
 #
@@ -295,19 +297,6 @@ evaluation. \
 </div> </div>
 
 endif
-
-#################################################################
-
-#
-# CORE_PKGS environment variable has been moved to the following file
-#
-include CORE_PKGS.gmk
-
-#
-# Load environment variables for API package names that are not part of
-# the Java SE platform
-#
-include NON_CORE_PKGS.gmk
 
 #################################################################
 
@@ -414,7 +403,7 @@ $(COREAPI_OPTIONS_FILE): $(COREAPI_OVERVIEW)
         endif
 
 # Create a file with the package names in it
-$(COREAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(CORE_PKGS))
+$(COREAPI_PACKAGES_FILE): $(call PackageDependencies,$(CORE_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(CORE_PKGS))
 
@@ -446,7 +435,7 @@ docletapidocs: $(DOCLETAPI_INDEX_FILE)
 $(DOCLETAPI_INDEX_FILE): GET2DOCSDIR=$(DOCLETAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(DOCLETAPI_INDEX_FILE): $(DOCLETAPI_OPTIONS_FILE) $(DOCLETAPI_PACKAGES_FILE) coredocs
+$(DOCLETAPI_INDEX_FILE): $(DOCLETAPI_OPTIONS_FILE) $(DOCLETAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(DOCLETAPI_OPTIONS_FILE),$(DOCLETAPI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -469,7 +458,7 @@ $(DOCLETAPI_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(DOCLETAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(DOCLETAPI_PKGS))
+$(DOCLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(DOCLETAPI_PKGS)) 
 	$(prep-target)
 	$(call PackageFilter,$(DOCLETAPI_PKGS))
 
@@ -488,7 +477,7 @@ TAGLETAPI_BOTTOM := $(call CommonTrademarkBottom,$(TAGLETAPI_FIRST_COPYRIGHT_YEA
 TAGLETAPI_TEMPDIR = $(DOCSTMPDIR)/taglets_temp
 
 # The index.html, options, and packages files
-TAGLETAPI_INDEX_FILE = $(TAGLETAPI_DOCDIR)/index.html
+TAGLETAPI_INDEX_FILE = $(TAGLETAPI_DOCDIR)/com/sun/tools/doclets/Taglet.html
 TAGLETAPI_OPTIONS_FILE = $(DOCSTMPDIR)/tagletapi.options
 TAGLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/tagletapi.packages
 
@@ -498,15 +487,15 @@ tagletapidocs: $(TAGLETAPI_INDEX_FILE)
 $(TAGLETAPI_INDEX_FILE): GET2DOCSDIR=$(TAGLETAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(TAGLETAPI_INDEX_FILE): $(TAGLETAPI_OPTIONS_FILE) $(TAGLETAPI_PACKAGES_FILE) coredocs
+$(TAGLETAPI_INDEX_FILE): $(TAGLETAPI_OPTIONS_FILE) $(TAGLETAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(RM) -r $(TAGLETAPI_TEMPDIR)
 	$(MKDIR) -p $(TAGLETAPI_TEMPDIR)
 	$(call JavadocSummary,$(TAGLETAPI_OPTIONS_FILE),$(TAGLETAPI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(TAGLETAPI_TEMPDIR) \
 	    @$(TAGLETAPI_OPTIONS_FILE) @$(TAGLETAPI_PACKAGES_FILE)
-	cp -r $(TAGLETAPI_TEMPDIR)/com $(@D)
-	cp $(TAGLETAPI_TEMPDIR)/stylesheet.css $(@D)
+	cp -r $(TAGLETAPI_TEMPDIR)/com $(TAGLETAPI_DOCDIR)
+	cp $(TAGLETAPI_TEMPDIR)/stylesheet.css $(TAGLETAPI_DOCDIR)
 	$(RM) -r $(TAGLETAPI_TEMPDIR)
 
 # Create file with javadoc options in it
@@ -523,7 +512,7 @@ $(TAGLETAPI_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(TAGLETAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(TAGLETAPI_PKGS))
+$(TAGLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(TAGLETAPI_PKGS))
 	$(prep-target)
 	@($(ECHO) "$(JDK_IMPSRC)/$(TAGLETAPI_FILE)" ) > $@
 
@@ -555,7 +544,7 @@ domapidocs: $(DOMAPI_INDEX_FILE)
 $(DOMAPI_INDEX_FILE): GET2DOCSDIR=$(DOMAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(DOMAPI_INDEX_FILE): $(DOMAPI_OPTIONS_FILE) $(DOMAPI_PACKAGES_FILE) coredocs
+$(DOMAPI_INDEX_FILE): $(DOMAPI_OPTIONS_FILE) $(DOMAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(DOMAPI_OPTIONS_FILE),$(DOMAPI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -578,7 +567,7 @@ $(DOMAPI_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(DOMAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(DOMAPI_PKGS))
+$(DOMAPI_PACKAGES_FILE): $(call PackageDependencies,$(DOMAPI_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(DOMAPI_PKGS))
 
@@ -618,7 +607,7 @@ jdidocs: $(JDI_INDEX_FILE)
 $(JDI_INDEX_FILE): GET2DOCSDIR=$(JDI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(JDI_INDEX_FILE): $(JDI_OPTIONS_FILE) $(JDI_PACKAGES_FILE) coredocs
+$(JDI_INDEX_FILE): $(JDI_OPTIONS_FILE) $(JDI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(JDI_OPTIONS_FILE),$(JDI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -640,7 +629,7 @@ $(JDI_OPTIONS_FILE): $(JDI_OVERVIEW)
 	) >> $@
 
 # Create a file with the package names in it
-$(JDI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(JDI_PKGS))
+$(JDI_PACKAGES_FILE): $(call PackageDependencies,$(JDI_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(JDI_PKGS))
 
@@ -673,7 +662,6 @@ jvmtidocs: $(JVMTI_DOCDIR)/jvmti.html
 $(JVMTI_DOCDIR)/jvmti.html:
 	@$(prep-javadoc)
 	@if [ -f $(JVMTI_HTML) ] ; then \
-	  $(ECHO) "$(CP) $(JVMTI_HTML) $@"; \
 	  $(CP) $(JVMTI_HTML) $@; \
 	else \
 	  $(ECHO) "WARNING: Generated file does not exist: $(JVMTI_HTML)"; \
@@ -706,7 +694,7 @@ jaasdocs: $(JAAS_INDEX_FILE)
 $(JAAS_INDEX_FILE): GET2DOCSDIR=$(JAAS2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(JAAS_INDEX_FILE): $(JAAS_OPTIONS_FILE) $(JAAS_PACKAGES_FILE) coredocs
+$(JAAS_INDEX_FILE): $(JAAS_OPTIONS_FILE) $(JAAS_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(JAAS_OPTIONS_FILE),$(JAAS_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -728,7 +716,7 @@ $(JAAS_OPTIONS_FILE): $(JAAS_OVERVIEW)
 	) >> $@
 
 # Create a file with the package names in it
-$(JAAS_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(JAAS_PKGS))
+$(JAAS_PACKAGES_FILE): $(call PackageDependencies,$(JAAS_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(JAAS_PKGS))
 
@@ -759,7 +747,7 @@ jgssdocs: $(JGSS_INDEX_FILE)
 $(JGSS_INDEX_FILE): GET2DOCSDIR=$(JGSS2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(JGSS_INDEX_FILE): $(JGSS_OPTIONS_FILE) $(JGSS_PACKAGES_FILE) coredocs
+$(JGSS_INDEX_FILE): $(JGSS_OPTIONS_FILE) $(JGSS_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(JGSS_OPTIONS_FILE),$(JGSS_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -782,7 +770,7 @@ $(JGSS_OPTIONS_FILE): $(JGSS_OVERVIEW)
 	) >> $@
 
 # Create a file with the package names in it
-$(JGSS_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(JGSS_PKGS))
+$(JGSS_PACKAGES_FILE): $(call PackageDependencies,$(JGSS_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(JGSS_PKGS))
 
@@ -812,7 +800,7 @@ smartcardiodocs: $(SMARTCARDIO_INDEX_FILE)
 $(SMARTCARDIO_INDEX_FILE): GET2DOCSDIR=$(SMARTCARDIO2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(SMARTCARDIO_INDEX_FILE): $(SMARTCARDIO_OPTIONS_FILE) $(SMARTCARDIO_PACKAGES_FILE) coredocs
+$(SMARTCARDIO_INDEX_FILE): $(SMARTCARDIO_OPTIONS_FILE) $(SMARTCARDIO_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(SMARTCARDIO_OPTIONS_FILE),$(SMARTCARDIO_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -834,7 +822,7 @@ $(SMARTCARDIO_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(SMARTCARDIO_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(SMARTCARDIO_PKGS))
+$(SMARTCARDIO_PACKAGES_FILE): $(call PackageDependencies,$(SMARTCARDIO_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(SMARTCARDIO_PKGS))
 
@@ -863,7 +851,7 @@ httpserverdocs: $(HTTPSERVER_INDEX_HTML)
 $(HTTPSERVER_INDEX_HTML): GET2DOCSDIR=$(HTTPSERVER2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(HTTPSERVER_INDEX_HTML): $(HTTPSERVER_OPTIONS_FILE) $(HTTPSERVER_PACKAGES_FILE) coredocs
+$(HTTPSERVER_INDEX_HTML): $(HTTPSERVER_OPTIONS_FILE) $(HTTPSERVER_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(HTTPSERVER_OPTIONS_FILE),$(HTTPSERVER_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -885,7 +873,7 @@ $(HTTPSERVER_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(HTTPSERVER_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(HTTPSERVER_PKGS))
+$(HTTPSERVER_PACKAGES_FILE): $(call PackageDependencies,$(HTTPSERVER_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(HTTPSERVER_PKGS))
 
@@ -918,10 +906,9 @@ mgmtdocs: $(MGMT_INDEX_FILE)
 $(MGMT_INDEX_FILE): GET2DOCSDIR=$(MGMT2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(MGMT_INDEX_FILE): $(MGMT_OPTIONS_FILE) $(MGMT_PACKAGES_FILE) coredocs
+$(MGMT_INDEX_FILE): $(MGMT_OPTIONS_FILE) $(MGMT_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	@if [ -f $(JVM_MIB_SRC) ] ; then \
-	  $(ECHO) "$(CP) $(JVM_MIB_SRC) $(@D)/.."; \
 	  $(CP) $(JVM_MIB_SRC) $(@D)/.. ; \
 	else \
 	  $(ECHO) "WARNING: File $(JVM_MIB_NAME) not available."; \
@@ -947,7 +934,7 @@ $(MGMT_OPTIONS_FILE): $(MGMT_OVERVIEW)
 	) >> $@
 
 # Create a file with the package names in it
-$(MGMT_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(MGMT_PKGS))
+$(MGMT_PACKAGES_FILE): $(call PackageDependencies,$(MGMT_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(MGMT_PKGS))
 
@@ -976,7 +963,7 @@ attachdocs: $(ATTACH_INDEX_HTML)
 $(ATTACH_INDEX_HTML): GET2DOCSDIR=$(ATTACH2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(ATTACH_INDEX_HTML): $(ATTACH_OPTIONS_FILE) $(ATTACH_PACKAGES_FILE) coredocs
+$(ATTACH_INDEX_HTML): $(ATTACH_OPTIONS_FILE) $(ATTACH_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(ATTACH_OPTIONS_FILE),$(ATTACH_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -998,7 +985,7 @@ $(ATTACH_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(ATTACH_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(ATTACH_PKGS))
+$(ATTACH_PACKAGES_FILE): $(call PackageDependencies,$(ATTACH_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(ATTACH_PKGS))
 
@@ -1027,7 +1014,7 @@ jconsoledocs: $(JCONSOLE_INDEX_HTML)
 $(JCONSOLE_INDEX_HTML): GET2DOCSDIR=$(JCONSOLE2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(JCONSOLE_INDEX_HTML): $(JCONSOLE_OPTIONS_FILE) $(JCONSOLE_PACKAGES_FILE) coredocs
+$(JCONSOLE_INDEX_HTML): $(JCONSOLE_OPTIONS_FILE) $(JCONSOLE_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(JCONSOLE_OPTIONS_FILE),$(JCONSOLE_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -1049,7 +1036,7 @@ $(JCONSOLE_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(JCONSOLE_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(JCONSOLE_PKGS))
+$(JCONSOLE_PACKAGES_FILE): $(call PackageDependencies,$(JCONSOLE_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(JCONSOLE_PKGS))
 
@@ -1080,7 +1067,7 @@ treeapidocs: $(TREEAPI_INDEX_HTML)
 $(TREEAPI_INDEX_HTML): GET2DOCSDIR=$(TREEAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(TREEAPI_INDEX_HTML): $(TREEAPI_OPTIONS_FILE) $(TREEAPI_PACKAGES_FILE) coredocs
+$(TREEAPI_INDEX_HTML): $(TREEAPI_OPTIONS_FILE) $(TREEAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(TREEAPI_OPTIONS_FILE),$(TREEAPI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -1103,7 +1090,7 @@ $(TREEAPI_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(TREEAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(TREEAPI_PKGS))
+$(TREEAPI_PACKAGES_FILE): $(call PackageDependencies,$(TREEAPI_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(TREEAPI_PKGS))
 
@@ -1132,7 +1119,7 @@ sctpdocs: $(SCTPAPI_INDEX_HTML)
 $(SCTPAPI_INDEX_HTML): GET2DOCSDIR=$(SCTPAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(SCTPAPI_INDEX_HTML): $(SCTPAPI_OPTIONS_FILE) $(SCTPAPI_PACKAGES_FILE) coredocs
+$(SCTPAPI_INDEX_HTML): $(SCTPAPI_OPTIONS_FILE) $(SCTPAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
 	$(prep-javadoc)
 	$(call JavadocSummary,$(SCTPAPI_OPTIONS_FILE),$(SCTPAPI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -1154,20 +1141,60 @@ $(SCTPAPI_OPTIONS_FILE):
 	) >> $@
 
 # Create a file with the package names in it
-$(SCTPAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(SCTPAPI_PKGS))
+$(SCTPAPI_PACKAGES_FILE): $(call PackageDependencies,$(SCTPAPI_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(SCTPAPI_PKGS))
 
 #############################################################
 #
-# Get a cache of all the directories
+# jdk.net docs
+#
 
-$(DIRECTORY_CACHE): $(ALL_EXISTING_SOURCE_DIRS)
+ALL_OTHER_TARGETS += jdknetdocs
+
+JDKNET_DOCDIR := $(JRE_API_DOCSDIR)/net/socketoptions/spec
+JDKNET2COREAPI := ../../../$(JDKJRE2COREAPI)
+JDKNET_DOCTITLE := jdk.net API
+JDKNET_WINDOWTITLE := jdk.net API
+JDKNET_HEADER := <strong>jdk.net API</strong>
+JDKNET_BOTTOM := $(call CommonBottom,$(JDKNET_FIRST_COPYRIGHT_YEAR))
+JDKNET_PKGS := jdk.net
+
+JDKNET_INDEX_HTML = $(JDKNET_DOCDIR)/index.html
+JDKNET_OPTIONS_FILE = $(DOCSTMPDIR)/jdknet.options
+JDKNET_PACKAGES_FILE = $(DOCSTMPDIR)/jdknet.packages
+
+jdknetdocs: $(JDKNET_INDEX_HTML)
+
+# Set relative location to core api document root
+$(JDKNET_INDEX_HTML): GET2DOCSDIR=$(JDKNET2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(JDKNET_INDEX_HTML): $(JDKNET_OPTIONS_FILE) $(JDKNET_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(JDKNET_OPTIONS_FILE),$(JDKNET_PACKAGES_FILE))
+	$(JAVADOC_CMD) -d $(@D) \
+	    @$(JDKNET_OPTIONS_FILE) @$(JDKNET_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(JDKNET_OPTIONS_FILE):
 	$(prep-target)
-	@for cp in $(ALL_EXISTING_SOURCE_DIRS) ; do \
-	  $(ECHO) "$(FIND) $${cp} -type f >> $@"; \
-	  $(FIND) $${cp} -type f >> $@; \
-	done
+	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
+	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+	  $(call OptionPair,-encoding,ascii) ; \
+	  $(call OptionOnly,-nodeprecatedlist) ; \
+	  $(call OptionPair,-doctitle,$(JDKNET_DOCTITLE)) ; \
+	  $(call OptionPair,-windowtitle,$(JDKNET_WINDOWTITLE) $(DRAFT_WINTITLE)); \
+	  $(call OptionPair,-header,$(JDKNET_HEADER)$(DRAFT_HEADER)); \
+	  $(call OptionPair,-bottom,$(JDKNET_BOTTOM)$(DRAFT_BOTTOM)); \
+	  $(call OptionTrip,-linkoffline,$(JDKNET2COREAPI),$(COREAPI_DOCSDIR)/); \
+	) >> $@
+
+# Create a file with the package names in it
+$(JDKNET_PACKAGES_FILE): $(call PackageDependencies,$(JDKNET_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(JDKNET_PKGS))
 
 #############################################################
 #release version of core packages ########

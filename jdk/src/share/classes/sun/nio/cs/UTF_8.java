@@ -111,12 +111,18 @@ class UTF_8 extends Unicode
                    (b4 & 0xc0) != 0x80;
         }
 
-        // only used when there is less than 4 bytes left in src buffer
+        // only used when there is less than 4 bytes left in src buffer.
+        // both b1 and b2 should be "& 0xff" before passed in.
         private static boolean isMalformed4_2(int b1, int b2) {
-            return (b1 == 0xf0 && b2 == 0x90) ||
+            return (b1 == 0xf0 && (b2  < 0x90 || b2 > 0xbf)) ||
+                   (b1 == 0xf4 && (b2 & 0xf0) != 0x80) ||
                    (b2 & 0xc0) != 0x80;
         }
 
+        // tests if b1 and b2 are malformed as the first 2 bytes of a
+        // legal`4-byte utf-8 byte sequence.
+        // only used when there is less than 4 bytes left in src buffer,
+        // after isMalformed4_2 has been invoked.
         private static boolean isMalformed4_3(int b3) {
             return (b3 & 0xc0) != 0x80;
         }
@@ -280,7 +286,9 @@ class UTF_8 extends Unicode
                     // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
                     int srcRemaining = sl - sp;
                     if (srcRemaining < 4 || dl - dp < 2) {
-                        if (srcRemaining > 1 && isMalformed4_2(b1, sa[sp + 1]))
+                        b1 &= 0xff;
+                        if (b1 > 0xf4 ||
+                            srcRemaining > 1 && isMalformed4_2(b1, sa[sp + 1] & 0xff))
                             return malformedForLength(src, sp, dst, dp, 1);
                         if (srcRemaining > 2 && isMalformed4_3(sa[sp + 2]))
                             return malformedForLength(src, sp, dst, dp, 2);
@@ -363,7 +371,9 @@ class UTF_8 extends Unicode
                     // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
                     int srcRemaining = limit - mark;
                     if (srcRemaining < 4 || dst.remaining() < 2) {
-                        if (srcRemaining > 1 && isMalformed4_2(b1, src.get()))
+                        b1 &= 0xff;
+                        if (b1 > 0xf4 ||
+                            srcRemaining > 1 && isMalformed4_2(b1, src.get() & 0xff))
                             return malformedForLength(src, mark, 1);
                         if (srcRemaining > 2 && isMalformed4_3(src.get()))
                             return malformedForLength(src, mark, 2);
@@ -518,8 +528,9 @@ class UTF_8 extends Unicode
                     }
                     if (malformedInputAction() != CodingErrorAction.REPLACE)
                         return -1;
-
-                    if (sp  < sl && isMalformed4_2(b1, sa[sp])) {
+                    b1 &= 0xff;
+                    if (b1 > 0xf4 ||
+                        sp  < sl && isMalformed4_2(b1, sa[sp] & 0xff)) {
                         da[dp++] = replacement().charAt(0);
                         continue;
                     }

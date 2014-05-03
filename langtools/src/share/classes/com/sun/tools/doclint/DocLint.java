@@ -42,6 +42,7 @@ import javax.tools.StandardLocation;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.PackageTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
@@ -346,13 +347,10 @@ public class DocLint implements Plugin {
         abstract void visitDecl(Tree tree, Name name);
 
         @Override
-        public Void visitCompilationUnit(CompilationUnitTree tree, Void ignore) {
-            if (tree.getPackageName() != null) {
-                visitDecl(tree, null);
-            }
-            return super.visitCompilationUnit(tree, ignore);
+        public Void visitPackage(PackageTree tree, Void ignore) {
+            visitDecl(tree, null);
+            return super.visitPackage(tree, ignore);
         }
-
         @Override
         public Void visitClass(ClassTree tree, Void ignore) {
             visitDecl(tree, tree.getSimpleName());

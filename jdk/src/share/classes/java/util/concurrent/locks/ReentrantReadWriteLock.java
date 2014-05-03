@@ -80,7 +80,6 @@ import java.util.Collection;
  * {@link ReadLock#tryLock()} and {@link WriteLock#tryLock()} methods
  * do not honor this fair setting and will immediately acquire the lock
  * if it is possible, regardless of waiting threads.)
- * <p>
  * </dl>
  *
  * <li><b>Reentrancy</b>

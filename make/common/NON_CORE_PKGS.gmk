@@ -94,7 +94,8 @@ ifeq ($(PLATFORM), macosx)
       com.apple.eio
 endif
 
-JDK_PKGS = jdk
+JDK_PKGS = jdk \
+      jdk.net
 
 # non-core packages in rt.jar
 NON_CORE_PKGS = $(DOMAPI_PKGS) \

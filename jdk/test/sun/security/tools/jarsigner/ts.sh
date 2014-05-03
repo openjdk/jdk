@@ -50,10 +50,10 @@ if [ "${TESTJAVA}" = "" ] ; then
   TESTJAVA=`dirname $JAVAC_CMD`/..
 fi
 
-JAR="${TESTJAVA}${FS}bin${FS}jar"
-JAVA="${TESTJAVA}${FS}bin${FS}java"
-JAVAC="${TESTJAVA}${FS}bin${FS}javac"
-KT="${TESTJAVA}${FS}bin${FS}keytool -keystore tsks -storepass changeit -keypass changeit -keyalg rsa -validity 200"
+JAR="${TESTJAVA}${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
+JAVA="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS}"
+JAVAC="${TESTJAVA}${FS}bin${FS}javac ${TESTTOOLVMOPTS} ${TESTJAVACOPTS}"
+KT="${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -keystore tsks -storepass changeit -keypass changeit -keyalg rsa -validity 200"
 
 rm tsks
 echo Nothing > A
@@ -87,5 +87,5 @@ $KT -alias tsbad3 -certreq | \
         $KT -alias tsbad3 -importcert
 
 $JAVAC -d . ${TESTSRC}/TimestampCheck.java
-$JAVA ${TESTVMOPTS} TimestampCheck
+$JAVA ${TESTVMOPTS} "-Dtest.tool.vm.opts=${TESTTOOLVMOPTS}" TimestampCheck
 

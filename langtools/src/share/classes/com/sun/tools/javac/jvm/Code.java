@@ -2148,27 +2148,18 @@ public class Code {
 
             for (Attribute.TypeCompound ta : lv.sym.getRawTypeAttributes()) {
                 TypeAnnotationPosition p = ta.position;
-                // At this point p.type_index contains the catch type index.
-                // Use that index to determine the exception table index.
-                // We can afterwards discard the type_index.
-                // A TA position is shared for all type annotations in the
-                // same location; updating one is enough.
-                // Use -666 as a marker that the exception_index was already updated.
-                if (p.type_index != -666) {
-                    p.exception_index = findExceptionIndex(p.type_index);
-                    p.type_index = -666;
+                if (p.hasCatchType()) {
+                    final int idx = findExceptionIndex(p.getCatchType());
+                    if (idx == -1)
+                        Assert.error("Could not find exception index for type annotation " +
+                                     ta + " on exception parameter");
+                    p.setExceptionIndex(idx);
                 }
             }
         }
     }
 
     private int findExceptionIndex(int catchType) {
-        if (catchType == Integer.MIN_VALUE) {
-            // We didn't set the catch type index correctly.
-            // This shouldn't happen.
-            // TODO: issue error?
-            return -1;
-        }
         List<char[]> iter = catchInfo.toList();
         int len = catchInfo.length();
         for (int i = 0; i < len; ++i) {

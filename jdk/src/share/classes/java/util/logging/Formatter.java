@@ -105,7 +105,6 @@ public abstract class Formatter {
      *     java.text.MessageFormat  is used to format the string.
      * <li>Otherwise no formatting is performed.
      * </ul>
-     * <p>
      *
      * @param  record  the log record containing the raw message
      * @return   a localized and formatted message

@@ -46,10 +46,10 @@ F=abcde
 KS=jvindex.jks
 JFILE=jvindex.jar
 
-KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit \
+KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit \
         -keystore $KS -keyalg rsa"
-JAR=$TESTJAVA${FS}bin${FS}jar
-JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner -keystore $KS -storepass changeit"
+JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
+JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} -keystore $KS -storepass changeit"
 
 rm $F $KS $JFILE 2> /dev/null
 
