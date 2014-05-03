@@ -45,9 +45,9 @@ import java.util.function.UnaryOperator;
  * capacity of a vector before inserting a large number of
  * components; this reduces the amount of incremental reallocation.
  *
- * <p><a name="fail-fast">
+ * <p id="fail-fast">
  * The iterators returned by this class's {@link #iterator() iterator} and
- * {@link #listIterator(int) listIterator} methods are <em>fail-fast</em></a>:
+ * {@link #listIterator(int) listIterator} methods are <em>fail-fast</em>:
  * if the vector is structurally modified at any time after the iterator is
  * created, in any way except through the iterator's own
  * {@link ListIterator#remove() remove} or

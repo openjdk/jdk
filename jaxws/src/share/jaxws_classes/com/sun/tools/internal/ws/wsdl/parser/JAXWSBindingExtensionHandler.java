@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,14 @@ import java.util.Map;
 public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
     // xml security enabled always, xpath used for parsing "part" attribute
-    private static final XPathFactory xpf = XmlUtil.newXPathFactory(true);
-    private final XPath xpath = xpf.newXPath();
+    private static final ContextClassloaderLocal<XPathFactory> xpf = new ContextClassloaderLocal<XPathFactory>() {
+        @Override
+        protected XPathFactory initialValue() throws Exception {
+            return XPathFactory.newInstance();
+        }
+    };
+
+    private final XPath xpath = xpf.get().newXPath();
 
     public JAXWSBindingExtensionHandler(Map<String, AbstractExtensionHandler> extensionHandlerMap) {
         super(extensionHandlerMap);

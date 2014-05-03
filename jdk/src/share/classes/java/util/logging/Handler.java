@@ -158,7 +158,7 @@ public abstract class Handler {
      * <p>
      * Some <tt>Handlers</tt> may not use <tt>Formatters</tt>, in
      * which case the <tt>Formatter</tt> will be remembered, but not used.
-     * <p>
+     *
      * @param newFormatter the <tt>Formatter</tt> to use (may not be null)
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
@@ -329,7 +329,7 @@ public abstract class Handler {
      * may make other <tt>Handler</tt> specific checks that might prevent a
      * handler from logging the <tt>LogRecord</tt>. It will return false if
      * the <tt>LogRecord</tt> is null.
-     * <p>
+     *
      * @param record  a <tt>LogRecord</tt>
      * @return true if the <tt>LogRecord</tt> would be logged.
      *

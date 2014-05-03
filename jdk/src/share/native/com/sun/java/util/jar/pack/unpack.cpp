@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5166,39 +5166,7 @@ void unpacker::redirect_stdio() {
   } else if (log_file[0] != '\0' && (errstrm = fopen(log_file,"a+")) != NULL) {
     return;
   } else {
-    char log_file_name[PATH_MAX+100];
-    char tmpdir[PATH_MAX];
-#ifdef WIN32
-    int n = GetTempPath(PATH_MAX,tmpdir); //API returns with trailing '\'
-    if (n < 1 || n > PATH_MAX) {
-      sprintf(tmpdir,"C:\\");
-    }
-    sprintf(log_file_name, "%sunpack.log", tmpdir);
-#else
-    sprintf(tmpdir,"/tmp");
-    sprintf(log_file_name, "/tmp/unpack.log");
-#endif
-    if ((errstrm = fopen(log_file_name, "a+")) != NULL) {
-      log_file = errstrm_name = saveStr(log_file_name);
-      return ;
-    }
-
-    char *tname = tempnam(tmpdir,"#upkg");
-    if (tname == NULL) return;
-    sprintf(log_file_name, "%s", tname);
-    ::free(tname);
-    if ((errstrm = fopen(log_file_name, "a+")) != NULL) {
-      log_file = errstrm_name = saveStr(log_file_name);
-      return ;
-    }
-#ifndef WIN32
-    sprintf(log_file_name, "/dev/null");
-    // On windows most likely it will fail.
-    if ( (errstrm = fopen(log_file_name, "a+")) != NULL) {
-      log_file = errstrm_name = saveStr(log_file_name);
-      return ;
-    }
-#endif
+    fprintf(stderr, "Can not open log file %s\n", log_file);
     // Last resort
     // (Do not use stdout, since it might be jarout->jarfp.)
     errstrm = stderr;

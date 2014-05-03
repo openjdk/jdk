@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,27 +35,25 @@
 
 public class TestOverridenPrivateMethodsWithPackageFlag extends JavadocTester {
 
-    private static final String BUG_ID = "4634891";
-
     private static final String[][] TEST = {
         //The public method should be overriden
-        {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+        { "pkg1/SubClass.html",
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod--\">" +
                  "publicMethod</a></code>&nbsp;in class&nbsp;<code>" +
                  "<a href=\"../pkg1/BaseClass.html\" title=\"class in pkg1\">BaseClass</a></code></dd>"},
 
         //The public method in different package should be overriden
-        {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+        { "pkg2/SubClass.html",
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod--\">" +
                  "publicMethod</a></code>&nbsp;in class&nbsp;<code>" +
                  "<a href=\"../pkg1/BaseClass.html\" title=\"class in pkg1\">BaseClass</a></code></dd>"},
 
         //The package private method should be overriden since the base and sub class are in the same
         //package.
-        {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+        { "pkg1/SubClass.html",
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod--\">" +
                  "packagePrivateMethod</a></code>&nbsp;in class&nbsp;<code>" +
                  "<a href=\"../pkg1/BaseClass.html\" title=\"class in pkg1\">BaseClass</a></code></dd>"}
@@ -64,25 +62,25 @@ public class TestOverridenPrivateMethodsWithPackageFlag extends JavadocTester {
     private static final String[][] NEGATED_TEST = {
 
         //The private method in should not be overriden
-        {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+        { "pkg1/SubClass.html",
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod()\">"},
 
         //The private method in different package should not be overriden
-        {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+        { "pkg2/SubClass.html",
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod()\">"},
 
         //The package private method should not be overriden since the base and sub class are in
         //different packages.
-        {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+        { "pkg2/SubClass.html",
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod()\">"},
     };
 
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "-package", "pkg1", "pkg2"};
+            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-package", "pkg1", "pkg2"};
 
     /**
      * The entry point of the test.
@@ -90,21 +88,7 @@ public class TestOverridenPrivateMethodsWithPackageFlag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestOverridenPrivateMethodsWithPackageFlag tester = new TestOverridenPrivateMethodsWithPackageFlag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

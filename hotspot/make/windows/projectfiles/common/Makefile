@@ -78,24 +78,23 @@ HS_INTERNAL_NAME=jvm
 
 default:: $(AdditionalTargets) $(JvmtiGeneratedFiles) $(TraceGeneratedFiles)
 
-!include $(HOTSPOTWORKSPACE)/make/hotspot_version
+!include $(HOTSPOTWORKSPACE)/make/jdk_version
 
 !if "$(USER_RELEASE_SUFFIX)" != ""
 HOTSPOT_BUILD_VERSION = internal-$(USER_RELEASE_SUFFIX)
 !else
 HOTSPOT_BUILD_VERSION = internal
 !endif
-!if "$(HOTSPOT_RELEASE_VERSION)" != ""
-HOTSPOT_RELEASE_VERSION="\\\"$(HOTSPOT_RELEASE_VERSION)\\\""
-!else
-HOTSPOT_RELEASE_VERSION="\\\"$(HS_MAJOR_VER).$(HS_MINOR_VER)-b$(HS_BUILD_NUMBER)-$(HOTSPOT_BUILD_VERSION)\\\""
-!endif
 !if "$(JRE_RELEASE_VERSION)" != ""
 JRE_RELEASE_VERSION="\\\"$(JRE_RELEASE_VERSION)\\\""
 !else
 JRE_RELEASE_VERSION="\\\"$(JDK_MAJOR_VER).$(JDK_MINOR_VER).$(JDK_MICRO_VER)\\\""
 !endif
-
+!if "$(HOTSPOT_RELEASE_VERSION)" != ""
+HOTSPOT_RELEASE_VERSION="\\\"$(HOTSPOT_RELEASE_VERSION)\\\""
+!else
+HOTSPOT_RELEASE_VERSION="\\\"$(JRE_RELEASE_VERSION)\\\""
+!endif
 # Define HOTSPOT_VM_DISTRO if HOTSPOT_VM_DISTRO is set,
 # and if it is not see if we have the src/closed directory
 !if "$(HOTSPOT_VM_DISTRO)" != ""

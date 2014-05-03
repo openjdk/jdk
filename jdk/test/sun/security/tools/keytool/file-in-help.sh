@@ -43,8 +43,8 @@ case "$OS" in
 esac
 
 LANG=C
-$TESTJAVA${FS}bin${FS}keytool -printcertreq -help 2> h1 || exit 1
-$TESTJAVA${FS}bin${FS}keytool -exportcert -help 2> h2 || exit 2
+$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -printcertreq -help 2> h1 || exit 1
+$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -exportcert -help 2> h2 || exit 2
 
 grep "input file" h1 || exit 3
 grep "output file" h2 || exit 4

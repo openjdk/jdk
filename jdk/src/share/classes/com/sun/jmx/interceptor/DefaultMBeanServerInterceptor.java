@@ -1220,7 +1220,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             throw new RuntimeOperationsException(new
                 IllegalArgumentException(listener.getCanonicalName()),
                 "The MBean " + listener.getCanonicalName() +
-                "does not implement the NotificationListener interface") ;
+                " does not implement the NotificationListener interface") ;
         }
 
         // ----------------

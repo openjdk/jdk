@@ -68,7 +68,7 @@ public class BuilderFactory {
         this.configuration = configuration;
         this.writerFactory = configuration.getWriterFactory();
 
-        Set<String> containingPackagesSeen = new HashSet<>();
+        Set<PackageDoc> containingPackagesSeen = new HashSet<>();
         context = new AbstractBuilder.Context(configuration, containingPackagesSeen,
                 LayoutParser.getInstance(configuration));
     }

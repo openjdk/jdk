@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,105 +33,116 @@
 
 public class TestStylesheet extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4494033-7028815-7052425-8007338";
-
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "stylesheet.css",
+        { "stylesheet.css",
             "/* Javadoc style sheet */"},
-        {BUG_ID + FS + "stylesheet.css",
-            "/*" + NL + "Overall document style" + NL + "*/"},
-        {BUG_ID + FS + "stylesheet.css",
-            "/*" + NL + "Heading styles" + NL + "*/"},
-        {BUG_ID + FS + "stylesheet.css",
-            "/*" + NL + "Navigation bar styles" + NL + "*/"},
-        {BUG_ID + FS + "stylesheet.css",
-            "body {" + NL + "    background-color:#ffffff;" + NL +
-            "    color:#353833;" + NL +
-            "    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;" + NL +
-            "    font-size:14px;" + NL + "    margin:0;" + NL + "}"},
-        {BUG_ID + FS + "stylesheet.css",
-            "ul {" + NL + "    list-style-type:disc;" + NL + "}"},
-        {BUG_ID + FS + "stylesheet.css",
-            ".overviewSummary caption, .memberSummary caption, .typeSummary caption," + NL +
-            ".useSummary caption, .constantsSummary caption, .deprecatedSummary caption {" + NL +
-            "    position:relative;" + NL +
-            "    text-align:left;" + NL +
-            "    background-repeat:no-repeat;" + NL +
-            "    color:#253441;" + NL +
-            "    font-weight:bold;" + NL +
-            "    clear:none;" + NL +
-            "    overflow:hidden;" + NL +
-            "    padding:0px;" + NL +
-            "    padding-top:10px;" + NL +
-            "    padding-left:1px;" + NL +
-            "    margin:0px;" + NL +
-            "    white-space:pre;" + NL +
+        { "stylesheet.css",
+            "/*\n" +
+            "Overall document style\n" +
+            "*/"},
+        { "stylesheet.css",
+            "/*\n" +
+            "Heading styles\n" +
+            "*/"},
+        { "stylesheet.css",
+            "/*\n" +
+            "Navigation bar styles\n" +
+            "*/"},
+        { "stylesheet.css",
+            "body {\n" +
+            "    background-color:#ffffff;\n" +
+            "    color:#353833;\n" +
+            "    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;\n" +
+            "    font-size:14px;\n" +
+            "    margin:0;\n" +
             "}"},
-        {BUG_ID + FS + "stylesheet.css",
-            ".overviewSummary caption span, .memberSummary caption span, .typeSummary caption span," + NL +
-            ".useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span {" + NL +
-            "    white-space:nowrap;" + NL +
-            "    padding-top:5px;" + NL +
-            "    padding-left:12px;" + NL +
-            "    padding-right:12px;" + NL +
-            "    padding-bottom:7px;" + NL +
-            "    display:inline-block;" + NL +
-            "    float:left;" + NL +
-            "    background-color:#F8981D;" + NL +
-            "    border: none;" + NL +
-            "    height:16px;" + NL +
+        { "stylesheet.css",
+            "ul {\n" +
+            "    list-style-type:disc;\n" +
             "}"},
-        {BUG_ID + FS + "stylesheet.css",
-            ".memberSummary caption span.activeTableTab span {" + NL +
-            "    white-space:nowrap;" + NL +
-            "    padding-top:5px;" + NL +
-            "    padding-left:12px;" + NL +
-            "    padding-right:12px;" + NL +
-            "    margin-right:3px;" + NL +
-            "    display:inline-block;" + NL +
-            "    float:left;" + NL +
-            "    background-color:#F8981D;" + NL +
-            "    height:16px;" + NL +
+        { "stylesheet.css",
+            ".overviewSummary caption, .memberSummary caption, .typeSummary caption,\n" +
+            ".useSummary caption, .constantsSummary caption, .deprecatedSummary caption {\n" +
+            "    position:relative;\n" +
+            "    text-align:left;\n" +
+            "    background-repeat:no-repeat;\n" +
+            "    color:#253441;\n" +
+            "    font-weight:bold;\n" +
+            "    clear:none;\n" +
+            "    overflow:hidden;\n" +
+            "    padding:0px;\n" +
+            "    padding-top:10px;\n" +
+            "    padding-left:1px;\n" +
+            "    margin:0px;\n" +
+            "    white-space:pre;\n" +
             "}"},
-        {BUG_ID + FS + "stylesheet.css",
-            ".memberSummary caption span.tableTab span {" + NL +
-            "    white-space:nowrap;" + NL +
-            "    padding-top:5px;" + NL +
-            "    padding-left:12px;" + NL +
-            "    padding-right:12px;" + NL +
-            "    margin-right:3px;" + NL +
-            "    display:inline-block;" + NL +
-            "    float:left;" + NL +
-            "    background-color:#4D7A97;" + NL +
-            "    height:16px;" + NL +
+        { "stylesheet.css",
+            ".overviewSummary caption span, .memberSummary caption span, .typeSummary caption span,\n" +
+            ".useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span {\n" +
+            "    white-space:nowrap;\n" +
+            "    padding-top:5px;\n" +
+            "    padding-left:12px;\n" +
+            "    padding-right:12px;\n" +
+            "    padding-bottom:7px;\n" +
+            "    display:inline-block;\n" +
+            "    float:left;\n" +
+            "    background-color:#F8981D;\n" +
+            "    border: none;\n" +
+            "    height:16px;\n" +
             "}"},
-        {BUG_ID + FS + "stylesheet.css",
-            ".memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab {" + NL +
-            "    padding-top:0px;" + NL +
-            "    padding-left:0px;" + NL +
-            "    padding-right:0px;" + NL +
-            "    background-image:none;" + NL +
-            "    float:none;" + NL +
-            "    display:inline;" + NL +
+        { "stylesheet.css",
+            ".memberSummary caption span.activeTableTab span {\n" +
+            "    white-space:nowrap;\n" +
+            "    padding-top:5px;\n" +
+            "    padding-left:12px;\n" +
+            "    padding-right:12px;\n" +
+            "    margin-right:3px;\n" +
+            "    display:inline-block;\n" +
+            "    float:left;\n" +
+            "    background-color:#F8981D;\n" +
+            "    height:16px;\n" +
             "}"},
-        {BUG_ID + FS + "stylesheet.css",
+        { "stylesheet.css",
+            ".memberSummary caption span.tableTab span {\n" +
+            "    white-space:nowrap;\n" +
+            "    padding-top:5px;\n" +
+            "    padding-left:12px;\n" +
+            "    padding-right:12px;\n" +
+            "    margin-right:3px;\n" +
+            "    display:inline-block;\n" +
+            "    float:left;\n" +
+            "    background-color:#4D7A97;\n" +
+            "    height:16px;\n" +
+            "}"},
+        { "stylesheet.css",
+            ".memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab {\n" +
+            "    padding-top:0px;\n" +
+            "    padding-left:0px;\n" +
+            "    padding-right:0px;\n" +
+            "    background-image:none;\n" +
+            "    float:none;\n" +
+            "    display:inline;\n" +
+            "}"},
+        { "stylesheet.css",
             "@import url('resources/fonts/dejavu.css');"},
         // Test whether a link to the stylesheet file is inserted properly
         // in the class documentation.
-        {BUG_ID + FS + "pkg" + FS + "A.html",
+        { "pkg/A.html",
             "<link rel=\"stylesheet\" type=\"text/css\" " +
             "href=\"../stylesheet.css\" title=\"Style\">"}
     };
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "stylesheet.css",
-            "* {" + NL + "    margin:0;" + NL + "    padding:0;" + NL + "}"}
+        { "stylesheet.css",
+            "* {\n" +
+            "    margin:0;\n" +
+            "    padding:0;\n" +
+            "}"}
     };
 
     /**
@@ -140,21 +151,7 @@ public class TestStylesheet extends JavadocTester {
      */
     public static void main(String[] args) {
         TestStylesheet tester = new TestStylesheet();
-        run(tester, ARGS, TEST, NEGATED_TEST);
+        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
     }
 }

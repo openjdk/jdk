@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,11 @@ public class SamConversionComboTest {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         DiagnosticChecker dc = new DiagnosticChecker();
         JavacTask ct = (JavacTask)tool.getTask(null, null, dc, null, null, Arrays.asList(samSourceFile, clientSourceFile));
-        ct.analyze();
+        try {
+            ct.analyze();
+        } catch (Exception e) {
+            throw new AssertionError("failing SAM source file \n" + samSourceFile + "\n\n" + "failing client source file \n"+ clientSourceFile);
+        }
         if (dc.errorFound == checkSamConversion()) {
             throw new AssertionError(samSourceFile + "\n\n" + clientSourceFile);
         }

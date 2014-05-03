@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ public class ConfigurationImpl extends Configuration {
             } else if (opt.equals("-doctitle")) {
                 doctitle = os[1];
             } else if (opt.equals("-windowtitle")) {
-                windowtitle = os[1];
+                windowtitle = os[1].replaceAll("\\<.*?>", "");
             } else if (opt.equals("-top")) {
                 top = os[1];
             } else if (opt.equals("-bottom")) {
@@ -495,15 +495,15 @@ public class ConfigurationImpl extends Configuration {
         if (createoverview) {
             topFile = DocPaths.OVERVIEW_SUMMARY;
         } else {
-            if (packages.length == 1 && packages[0].name().equals("")) {
+            if (packages.size() == 1 && packages.first().name().equals("")) {
                 if (root.classes().length > 0) {
                     ClassDoc[] classarr = root.classes();
                     Arrays.sort(classarr);
                     ClassDoc cd = getValidClass(classarr);
                     topFile = DocPath.forClass(cd);
                 }
-            } else {
-                topFile = DocPath.forPackage(packages[0]).resolve(DocPaths.PACKAGE_SUMMARY);
+            } else if (!packages.isEmpty()) {
+                topFile = DocPath.forPackage(packages.first()).resolve(DocPaths.PACKAGE_SUMMARY);
             }
         }
     }
@@ -534,7 +534,7 @@ public class ConfigurationImpl extends Configuration {
      * packages is more than one. Sets {@link #createoverview} field to true.
      */
     protected void setCreateOverview() {
-        if ((overview || packages.length > 1) && !nooverview) {
+        if ((overview || packages.size() > 1) && !nooverview) {
             createoverview = true;
         }
     }

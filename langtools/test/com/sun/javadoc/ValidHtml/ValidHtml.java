@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,12 @@ import java.io.*;
  */
 public class ValidHtml {
 
+    protected static final String NL = System.getProperty("line.separator");
+
     private static final String BUGID = "4275630";
     private static final String BUGNAME = "ValidHtml";
-    private static final String FS = System.getProperty("file.separator");
-    private static final String PS = System.getProperty("path.separator");
-    private static final String LS = System.getProperty("line.separator");
-    private static final String TMPDEST_DIR1 = "." + FS + "docs1" + FS;
-    private static final String TMPDEST_DIR2 = "." + FS + "docs2" + FS;
+    private static final String TMPDEST_DIR1 = "./docs1/";
+    private static final String TMPDEST_DIR2 = "./docs2/";
 
     // Subtest number.  Needed because runResultsOnHTML is run twice,
     // and subtestNum should increment across subtest runs.
@@ -68,7 +67,7 @@ public class ValidHtml {
                     "-doctitle", "Document Title",
                     "-windowtitle", "Window Title",
                     "-use",
-                    "-overview", (srcdir + FS + "overview.html"),
+                    "-overview", (srcdir + "/overview.html"),
                     "-sourcepath", srcdir,
                     "p1", "p2"
                 });
@@ -102,12 +101,12 @@ public class ValidHtml {
         // Test the proper DOCTYPE element is present:
         {
             "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-            TMPDEST_DIR1 + "p1" + FS + "package-summary.html"
+            TMPDEST_DIR1 + "p1/package-summary.html"
         },
         // Test the proper DOCTYPE element is present:
         {
             "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-            TMPDEST_DIR1 + "p1" + FS + "C.html"
+            TMPDEST_DIR1 + "p1/C.html"
         },
         // Test the proper DOCTYPE element is present:
         {
@@ -122,17 +121,19 @@ public class ValidHtml {
         // Test the proper DOCTYPE element is present:
         {
             "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-            TMPDEST_DIR1 + "p1" + FS + "package-frame.html"
+            TMPDEST_DIR1 + "p1/package-frame.html"
         },
         // Test that <NOFRAMES> is inside <FRAMESET> element:
         {
-            "</noframes>" + LS + "</frameset>",
+            "</noframes>\n" +
+            "</frameset>",
             TMPDEST_DIR1 + "index.html"
         },
         // Test the table elements are in the correct order:
         {
-            "</td>" + LS + "</tr>",
-            TMPDEST_DIR1 + FS + "p1" + FS + "package-use.html"
+            "</td>\n" +
+            "</tr>",
+            TMPDEST_DIR1 + "/p1/package-use.html"
         }
     };
 
@@ -197,6 +198,6 @@ public class ValidHtml {
     }
 
     public static int findString(String fileString, String stringToFind) {
-        return fileString.indexOf(stringToFind);
+        return fileString.replace(NL, "\n").indexOf(stringToFind);
     }
 }

@@ -144,6 +144,18 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_LWCToolkit_nativeSyncQueue
     return JNI_FALSE;
 }
 
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    flushNativeSelectors
+ * Signature: ()J
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_flushNativeSelectors
+(JNIEnv *env, jclass clz)
+{
+JNF_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThreadWaiting:YES block:^(){}];
+JNF_COCOA_EXIT(env);
+}
 
 static JNF_CLASS_CACHE(jc_Component, "java/awt/Component");
 static JNF_MEMBER_CACHE(jf_Component_appContext, jc_Component, "appContext", "Lsun/awt/AppContext;");
@@ -221,15 +233,16 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_LWCToolkit_initIDs
 (JNIEnv *env, jclass klass) {
     // set thread names
-    dispatch_async(dispatch_get_main_queue(), ^(void){
-        [[NSThread currentThread] setName:@"AppKit Thread"];
-
-        JNIEnv *env = [ThreadUtilities getJNIEnv];
-        static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
-        static JNF_STATIC_MEMBER_CACHE(jsm_installToolkitThreadNameInJava, jc_LWCToolkit, "installToolkitThreadNameInJava", "()V");
-        JNFCallStaticVoidMethod(env, jsm_installToolkitThreadNameInJava);
-    });
-
+    if (![ThreadUtilities isAWTEmbedded]) {
+        dispatch_async(dispatch_get_main_queue(), ^(void){
+            [[NSThread currentThread] setName:@"AppKit Thread"];
+            JNIEnv *env = [ThreadUtilities getJNIEnv];
+            static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
+            static JNF_STATIC_MEMBER_CACHE(jsm_installToolkitThreadInJava, jc_LWCToolkit, "installToolkitThreadInJava", "()V");
+            JNFCallStaticVoidMethod(env, jsm_installToolkitThreadInJava);
+        });
+    }
+    
     gNumberOfButtons = sun_lwawt_macosx_LWCToolkit_BUTTONS;
 
     jclass inputEventClazz = (*env)->FindClass(env, "java/awt/event/InputEvent");
