@@ -69,6 +69,14 @@ import java.util.jar.Manifest;
 
 public enum LauncherHelper {
     INSTANCE;
+
+    // used to identify JavaFX applications
+    private static final String JAVAFX_APPLICATION_MARKER =
+            "JavaFX-Application-Class";
+    private static final String JAVAFX_APPLICATION_CLASS_NAME =
+            "javafx.application.Application";
+    private static final String JAVAFX_FXHELPER_CLASS_NAME_SUFFIX =
+            "sun.launcher.LauncherHelper$FXHelper";
     private static final String MAIN_CLASS = "Main-Class";
 
     private static StringBuilder outBuf = new StringBuilder();
@@ -418,7 +426,8 @@ public enum LauncherHelper {
              * exists to enforce compliance with the jar specification
              */
             if (mainAttrs.containsKey(
-                    new Attributes.Name(FXHelper.JAVAFX_APPLICATION_MARKER))) {
+                    new Attributes.Name(JAVAFX_APPLICATION_MARKER))) {
+                FXHelper.setFXLaunchParameters(jarname, LM_JAR);
                 return FXHelper.class.getName();
             }
 
@@ -516,9 +525,9 @@ public enum LauncherHelper {
          * the main class may or may not have a main method, so do this before
          * validating the main class.
          */
-        if (mainClass.equals(FXHelper.class) ||
-                FXHelper.doesExtendFXApplication(mainClass)) {
-            // Will abort() if there are problems with the FX runtime
+        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
+            doesExtendFXApplication(mainClass)) {
+            // Will abort() if there are problems with FX runtime
             FXHelper.setFXLaunchParameters(what, mode);
             return FXHelper.class;
         }
@@ -537,6 +546,21 @@ public enum LauncherHelper {
         return appClass;
     }
 
+    /*
+     * Check if the given class is a JavaFX Application class. This is done
+     * in a way that does not cause the Application class to load or throw
+     * ClassNotFoundException if the JavaFX runtime is not available.
+     */
+    private static boolean doesExtendFXApplication(Class<?> mainClass) {
+        for (Class<?> sc = mainClass.getSuperclass(); sc != null;
+                sc = sc.getSuperclass()) {
+            if (sc.getName().equals(JAVAFX_APPLICATION_CLASS_NAME)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Check the existence and signature of main and abort if incorrect
     static void validateMainClass(Class<?> mainClass) {
         Method mainMethod;
@@ -545,7 +569,7 @@ public enum LauncherHelper {
         } catch (NoSuchMethodException nsme) {
             // invalid main or not FX application, abort with an error
             abort(null, "java.launcher.cls.error4", mainClass.getName(),
-                  FXHelper.JAVAFX_APPLICATION_CLASS_NAME);
+                  JAVAFX_APPLICATION_CLASS_NAME);
             return; // Avoid compiler issues
         }
 
@@ -668,11 +692,7 @@ public enum LauncherHelper {
     }
 
     static final class FXHelper {
-        // Marker entry in jar manifest that designates a JavaFX application jar
-        private static final String JAVAFX_APPLICATION_MARKER =
-                "JavaFX-Application-Class";
-        private static final String JAVAFX_APPLICATION_CLASS_NAME =
-                "javafx.application.Application";
+
         private static final String JAVAFX_LAUNCHER_CLASS_NAME =
                 "com.sun.javafx.application.LauncherImpl";
 
@@ -740,21 +760,6 @@ public enum LauncherHelper {
                     // should not have gotten this far...
                     throw new InternalError(mode + ": Unknown launch mode");
             }
-        }
-
-        /*
-         * Check if the given class is a JavaFX Application class. This is done
-         * in a way that does not cause the Application class to load or throw
-         * ClassNotFoundException if the JavaFX runtime is not available.
-         */
-        private static boolean doesExtendFXApplication(Class<?> mainClass) {
-            for (Class<?> sc = mainClass.getSuperclass(); sc != null;
-                    sc = sc.getSuperclass()) {
-                if (sc.getName().equals(JAVAFX_APPLICATION_CLASS_NAME)) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         public static void main(String... args) throws Exception {
