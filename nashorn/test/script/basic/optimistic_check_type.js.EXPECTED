@@ -1,20 +1,30 @@
-undefined value multiplication by undefined value: double
-undefined value division by undefined value: double
-int multiplication by int: int
-int division by int without remainder: int
-int division by int with remainder: double
-int modulus by int: int
-int plus int: int
-max value multiplication by max value: double
-infinity multiplication by infinity: double
--1 division by infinity: double
-infinity division by zero: double
-infinity division by String: double
+ternary operator: int
+ternary operator: int
+ternary operator: double
+ternary operator: int
+ternary operator: undefined
+ternary operator: boolean
+ternary operator: undefined
+ternary operator: int
+global double toFixed(): object
+global double toPrecision() divided by 1: double
+global double toExponential(): object
+member object: object
+member undefined: undefined
+conditional on array member: double
+conditional on array member: int
+conditional on array member: object
+conditional on array member: int
 outer local variable: int
 global variable: int
-outer local variable multiplication by outer local variable: int
-global variable multiplication by global variable undefined: double
-c: undefined
-a+b: double
-d: double
-d: undefined
+outer local int multiplication by outer local int: int
+global int multiplication by global undefined: double
+local undefined: undefined
+local undefined addition local undefined: double
+local undefined multiplication by undefined: double
+local undefined AND local undefined: undefined
+global true OR local undefined: boolean
+outer local true addition local int: double
+global int addition outer local true: double
+outer local true multiplication by outer local int: double
+outer local int multiplication by global undefined: double
