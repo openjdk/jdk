@@ -47,6 +47,8 @@ private:
 
 public:
   static void create();
+  static void stop();
+
   static G1StringDedupThread* thread();
 
   virtual void run();

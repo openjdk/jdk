@@ -149,7 +149,7 @@ void
 handle_bad_alloc(void) {
     if (jvm != NULL) {
         JNIEnv* env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        if (env != NULL) {
+        if (env != NULL && !env->ExceptionCheck()) {
             JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
         }
     }

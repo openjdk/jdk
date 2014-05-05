@@ -5,7 +5,7 @@
   <meta http-equiv="Content-Type"
  content="text/html; charset=iso-8859-1">
 <!--
-Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ object, that is, it
 technology-enabled driver ("JDBC driver"). In addition, a <code>JdbcRowSet</code>
 object provides a fully updatable and scrollable tabular 
 data structure as defined in the JDBC 3.0 specification.
-<p>
+
 <li><a href="CachedRowSet.html">
 <b><code>CachedRowSet</code>&trade;</b></a>
  - A <tt>CachedRowSet</tt> object is a JavaBeans&trade;
@@ -92,7 +92,7 @@ driver to obtain connectivity to a particular data source.
 Further details on this mechanism are discussed in the <a
 href="spi/package-summary.html"><code>javax.sql.rowset.spi</code></a> package
 specification.
-<p>
+
 <li><a href="WebRowSet.html"><b><code>WebRowSet</code></b></a> - A 
 <code>WebRowSet</code> object is an extension of <tt>CachedRowSet</tt>
 that can read and write a <code>RowSet</code> object in a well formed XML format.
@@ -108,7 +108,7 @@ implementations. In order to ensure well formed XML usage, a standard generic XM
 Schema is defined and published at
 <a href="http://java.sun.com/xml/ns/jdbc/webrowset.xsd">
 <code>http://java.sun.com/xml/ns/jdbc/webrowset.xsd</code></a>.
-<p>   
+
 <li><a href="FilteredRowSet.html"><b><code>FilteredRowSet</code></b></a> - A
 <tt>FilteredRowSet</tt> object provides filtering functionality in a programmatic
 and extensible way. There are many instances when a <tt>RowSet</tt> <code>object</code>
@@ -124,7 +124,7 @@ inbound and outbound read and write operations. That is, all filters can be
 considered as bi-directional. No standard filters are defined;
 however, sufficient mechanics are specified to permit any required filter to be
 implemented.
-<p>
+
 <li><a href="JoinRowSet.html"><b><code>JoinRowSet</code></b></a> - The <tt>JoinRowSet</tt>
 interface  describes a mechanism by which relationships can be established between 
 two or more standard <code>RowSet</code> implementations. Any number of <tt>RowSet</tt>
@@ -146,7 +146,7 @@ implementers of the standard JDBC <code>RowSet</code> definitions. Implementers
 should also consult the <i>Implementer's Guide</i> in the <a
 href="spi/package-summary.html">javax.sql.rowset.spi</a> package for guidelines
 on <a href="spi/SyncProvider.html"><code>SyncProvider</code></a> implementations.
-<p>
+
 <ul>
 <li><b>3.1 Constructor</b>
 <p>
@@ -215,11 +215,10 @@ by  compliant implementations.<br>
   in addition to providing a set of constants for stream type designation.<br>
               </td>
             </tr>
-                               
-      </tbody>                    
+      </tbody>
     </table>
     </blockquote>
-<p>
+
 <li><b>3.3 Connected RowSet Requirements</b>
 <p>
 The <code>JdbcRowSet</code> describes a <code>RowSet</code> object that <b>must</b> always
@@ -231,7 +230,6 @@ do not use the <code>SyncFactory</code> to obtain a <code>RowSetReader</code> ob
 or a <code>RowSetWriter</code> object. They can safely rely on the JDBC driver to
 supply their needs by virtue of the presence of an underlying updatable and scrollable
 <code>ResultSet</code> implementation.
-<p>
 
 <li>
 <b>3.4 Disconnected RowSet Requirements</b>
@@ -248,7 +246,7 @@ maintained in order to re-establish a connection to the data source when a
 synchronization is required. A disconnected <code>RowSet</code> object should 
 therefore ensure that no 
 extraneous references remain on the <code>Connection</code> object.
-<p>
+
 <li><b>3.5 Role of RowSetMetaDataImpl</b>
 <p>
 The <code>RowsetMetaDataImpl</code> class is a utility class that provides an implementation of the
@@ -256,7 +254,7 @@ The <code>RowsetMetaDataImpl</code> class is a utility class that provides an im
 method implementations for metadata for both connected and disconnected 
 <code>RowSet</code> objects. All implementations are free to use this standard
 implementation but are not required to do so.
-<p>
+
 <li><b>3.6 RowSetWarning Class</b>
 <p>
 The <code>RowSetWarning</code> class provides warnings that can be set
@@ -273,8 +271,6 @@ After a warning has been retrieved with one of the
 be chained on it.  If a warning is returned, <code>getNextWarning</code> can be called
 on it, and so on until there are no more warnings.
 
-
-<P>
 <li><b>3.7 The Joinable Interface</b>
 <P>
 The <code>Joinable</code> interface provides both connected and disconnected 

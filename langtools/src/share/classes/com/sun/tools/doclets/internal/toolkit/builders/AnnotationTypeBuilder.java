@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,14 +133,13 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      private void copyDocFiles() {
         PackageDoc containingPackage = annotationTypeDoc.containingPackage();
         if((configuration.packages == null ||
-                Arrays.binarySearch(configuration.packages,
-                                    containingPackage) < 0) &&
-           ! containingPackagesSeen.contains(containingPackage.name())){
+            !configuration.packages.contains(containingPackage) &&
+            !containingPackagesSeen.contains(containingPackage))){
             //Only copy doc files dir if the containing package is not
             //documented AND if we have not documented a class from the same
             //package already. Otherwise, we are making duplicate copies.
             Util.copyDocFiles(configuration, containingPackage);
-            containingPackagesSeen.add(containingPackage.name());
+            containingPackagesSeen.add(containingPackage);
         }
      }
 

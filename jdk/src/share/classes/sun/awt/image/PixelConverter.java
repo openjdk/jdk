@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ public class PixelConverter {
 
     protected PixelConverter() {}
 
+    @SuppressWarnings("fallthrough")
     public int rgbToPixel(int rgb, ColorModel cm) {
         Object obj = cm.getDataElements(rgb, null);
         switch (cm.getTransferType()) {

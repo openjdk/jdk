@@ -39,11 +39,11 @@ public class TestTypeParameters extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS1 = new String[]{
-        "-d", OUTPUT_DIR, "-use", "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR + "-1", "-use", "-sourcepath", SRC_DIR,
         "pkg"
     };
     private static final String[] ARGS2 = new String[]{
-        "-d", OUTPUT_DIR, "-linksource", "-sourcepath", SRC_DIR,
+        "-d", OUTPUT_DIR + "-2", "-linksource", "-sourcepath", SRC_DIR,
         "pkg"
     };
 

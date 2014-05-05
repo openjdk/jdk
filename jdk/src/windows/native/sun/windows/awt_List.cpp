@@ -614,7 +614,8 @@ void AwtList::_AddItems(void *param)
             {
                 LPTSTR itemPtr = NULL;
                 jstring item = (jstring)env->GetObjectArrayElement(items, i);
-                JNI_CHECK_NULL_GOTO(item, "null item", next_item);
+                if (env->ExceptionCheck()) goto ret;
+                if (item == NULL) goto next_item;
                 itemPtr = (LPTSTR)JNU_GetStringPlatformChars(env, item, 0);
                 if (itemPtr == NULL)
                 {
@@ -1017,8 +1018,8 @@ Java_sun_awt_windows_WListPeer_isSelected(JNIEnv *env, jobject self,
     ses->list = env->NewGlobalRef(self);
     ses->index = index;
 
-    return (jboolean)AwtToolkit::GetInstance().SyncCall(
-        (void *(*)(void *))AwtList::_IsSelected, ses);
+    return JNI_IS_TRUE(AwtToolkit::GetInstance().SyncCall(
+                       (void *(*)(void *))AwtList::_IsSelected, ses));
     // global ref and ses are deleted in _IsSelected
 
     CATCH_BAD_ALLOC_RET(FALSE);

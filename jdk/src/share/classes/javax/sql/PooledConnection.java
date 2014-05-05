@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,6 @@ import java.sql.SQLException;
  * <code>ConnectionPool</code> method <code>addStatementEventListener</code>.
  *  Thus, when an application closes its  <code>PreparedStatement</code>,
  * the underlying prepared statement is recycled rather than being closed.
- * <P>
  *
  * @since 1.4
  */
@@ -154,10 +153,10 @@ public interface PooledConnection {
          * wish to be notified when  <code>PreparedStatement</code>s created by the
          * connection are closed or are detected to be invalid may use this method
          * to register a <code>StatementEventListener</code> with this <code>PooledConnection</code> object.
-         * <p>
+         *
          * @param listener      an component which implements the <code>StatementEventListener</code>
          *                                      interface that is to be registered with this <code>PooledConnection</code> object
-         * <p>
+         *
          * @since 1.6
          */
         public void addStatementEventListener(StatementEventListener listener);
@@ -166,11 +165,11 @@ public interface PooledConnection {
          * Removes the specified <code>StatementEventListener</code> from the list of
          * components that will be notified when the driver detects that a
          * <code>PreparedStatement</code> has been closed or is invalid.
-         * <p>
+         *
          * @param listener      the component which implements the
          *                                      <code>StatementEventListener</code> interface that was previously
          *                                      registered with this <code>PooledConnection</code> object
-         * <p>
+         *
          * @since 1.6
          */
         public void removeStatementEventListener(StatementEventListener listener);

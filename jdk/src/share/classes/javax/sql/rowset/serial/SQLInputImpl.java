@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ public class SQLInputImpl implements SQLInput {
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code>
      * implementation.
-     * <p>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *     if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -182,7 +182,7 @@ public class SQLInputImpl implements SQLInput {
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code>
      * implementation.
-     * <p>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *     if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -201,7 +201,7 @@ public class SQLInputImpl implements SQLInput {
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code>
      * implementation.
-     * <p>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *     if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -219,7 +219,7 @@ public class SQLInputImpl implements SQLInput {
      * This method does not perform type-safe checking to determine if the
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code> implementation.
-     * <P>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *       if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -237,7 +237,7 @@ public class SQLInputImpl implements SQLInput {
      * This method does not perform type-safe checking to determine if the
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code> implementation.
-     * <P>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *       if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -255,7 +255,7 @@ public class SQLInputImpl implements SQLInput {
      * This method does not perform type-safe checking to determine if the
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code> implementation.
-     * <P>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *       if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -273,7 +273,7 @@ public class SQLInputImpl implements SQLInput {
      * This method does not perform type-safe checking to determine if the
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code> implementation.
-     * <P>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *       if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -291,7 +291,7 @@ public class SQLInputImpl implements SQLInput {
      * This method does not perform type-safe checking to determine if the
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code> implementation.
-     * <P>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *       if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -309,7 +309,7 @@ public class SQLInputImpl implements SQLInput {
      * This method does not perform type-safe checking to determine if the
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code> implementation.
-     * <P>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *       if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -326,7 +326,7 @@ public class SQLInputImpl implements SQLInput {
      * This method does not perform type-safe checking to determine if the
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code> implementation.
-     * <P>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *       if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid
@@ -343,7 +343,7 @@ public class SQLInputImpl implements SQLInput {
      * This method does not perform type-safe checking to determine if the
      * returned type is the expected type; this responsibility is delegated
      * to the UDT mapping as defined by a <code>SQLData</code> implementation.
-     * <P>
+     *
      * @return the next attribute in this <code>SQLInputImpl</code> object;
      *       if the value is <code>SQL NULL</code>, return <code>null</code>
      * @throws SQLException if the read position is located at an invalid

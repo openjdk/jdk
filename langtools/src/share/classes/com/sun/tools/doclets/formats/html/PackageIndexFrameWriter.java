@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import java.io.*;
+import java.io.IOException;
+import java.util.Collection;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
@@ -78,7 +79,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     /**
      * {@inheritDoc}
      */
-    protected void addPackagesList(PackageDoc[] packages, String text,
+    protected void addPackagesList(Collection<PackageDoc> packages, String text,
             String tableSummary, Content body) {
         Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
                 packagesLabel);
@@ -106,7 +107,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     protected Content getPackage(PackageDoc pd) {
         Content packageLinkContent;
         Content packageLabel;
-        if (pd.name().length() > 0) {
+        if (!pd.name().isEmpty()) {
             packageLabel = getPackageLabel(pd.name());
             packageLinkContent = getHyperLink(pathString(pd,
                      DocPaths.PACKAGE_FRAME), packageLabel, "",

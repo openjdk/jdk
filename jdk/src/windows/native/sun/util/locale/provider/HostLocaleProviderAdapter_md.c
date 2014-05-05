@@ -235,7 +235,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
 
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
 
-    return (*env)->NewString(env, pattern, wcslen(pattern));
+    return (*env)->NewString(env, pattern, (jsize)wcslen(pattern));
 }
 
 /*
@@ -263,6 +263,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
   (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray ampms) {
     WCHAR buf[BUFLEN];
     const jchar *langtag;
+    jstring tmp_string;
 
     // AM
     int got;
@@ -270,13 +271,21 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
     CHECK_NULL_RETURN(langtag, NULL);
     got = getLocaleInfoWrapper(langtag, LOCALE_S1159, buf, BUFLEN);
     if (got) {
-        (*env)->SetObjectArrayElement(env, ampms, 0, (*env)->NewString(env, buf, wcslen(buf)));
+        tmp_string = (*env)->NewString(env, buf, (jsize)wcslen(buf));
+        if (tmp_string != NULL) {
+            (*env)->SetObjectArrayElement(env, ampms, 0, tmp_string);
+        }
     }
 
-    // PM
-    got = getLocaleInfoWrapper(langtag, LOCALE_S2359, buf, BUFLEN);
-    if (got) {
-        (*env)->SetObjectArrayElement(env, ampms, 1, (*env)->NewString(env, buf, wcslen(buf)));
+    if (!(*env)->ExceptionCheck(env)){
+        // PM
+        got = getLocaleInfoWrapper(langtag, LOCALE_S2359, buf, BUFLEN);
+        if (got) {
+            tmp_string = (*env)->NewString(env, buf, (jsize)wcslen(buf));
+            if (tmp_string != NULL) {
+                (*env)->SetObjectArrayElement(env, ampms, 1, tmp_string);
+            }
+        }
     }
 
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
@@ -293,13 +302,17 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
   (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray eras) {
     WCHAR ad[BUFLEN];
     const jchar *langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
+    jstring tmp_string;
     CHECK_NULL_RETURN(langtag, eras);
 
     getCalendarInfoWrapper(langtag, getCalendarID(langtag), NULL,
                       CAL_SERASTRING, ad, BUFLEN, NULL);
 
     // Windows does not provide B.C. era.
-    (*env)->SetObjectArrayElement(env, eras, 1, (*env)->NewString(env, ad, wcslen(ad)));
+    tmp_string = (*env)->NewString(env, ad, (jsize)wcslen(ad));
+    if (tmp_string != NULL) {
+        (*env)->SetObjectArrayElement(env, eras, 1, tmp_string);
+    }
 
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
 
@@ -371,7 +384,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
     CHECK_NULL_RETURN(pattern, NULL);
 
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
-    ret = (*env)->NewString(env, pattern, wcslen(pattern));
+    ret = (*env)->NewString(env, pattern, (jsize)wcslen(pattern));
     free(pattern);
 
     return ret;
@@ -411,7 +424,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
 
     if (got) {
-        return (*env)->NewString(env, buf, wcslen(buf));
+        return (*env)->NewString(env, buf, (jsize)wcslen(buf));
     } else {
         return currencySymbol;
     }
@@ -474,7 +487,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
 
     if (got) {
-        return (*env)->NewString(env, buf, wcslen(buf));
+        return (*env)->NewString(env, buf, (jsize)wcslen(buf));
     } else {
         return infinity;
     }
@@ -495,7 +508,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
 
     if (got) {
-        return (*env)->NewString(env, buf, wcslen(buf));
+        return (*env)->NewString(env, buf, (jsize)wcslen(buf));
     } else {
         return internationalCurrencySymbol;
     }
@@ -558,7 +571,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
 
     if (got) {
-        return (*env)->NewString(env, buf, wcslen(buf));
+        return (*env)->NewString(env, buf, (jsize)wcslen(buf));
     } else {
         return nan;
     }
@@ -701,7 +714,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
     (*env)->ReleaseStringChars(env, jStr, pjChar);
 
     if (got) {
-        return (*env)->NewString(env, buf, wcslen(buf));
+        return (*env)->NewString(env, buf, (jsize)wcslen(buf));
     } else {
         return NULL;
     }
@@ -754,9 +767,10 @@ jint getCalendarID(const jchar *langtag) {
 
 void replaceCalendarArrayElems(JNIEnv *env, jstring jlangtag, jobjectArray jarray, CALTYPE* pCalTypes, int offset, int length) {
     WCHAR name[BUFLEN];
-    const jchar *langtag;
+    const jchar *langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
     int calid;
-    langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
+    jstring tmp_string;
+
     CHECK_NULL(langtag);
     calid = getCalendarID(langtag);
 
@@ -765,8 +779,10 @@ void replaceCalendarArrayElems(JNIEnv *env, jstring jlangtag, jobjectArray jarra
         for (i = 0; i < length; i++) {
             getCalendarInfoWrapper(langtag, calid, NULL,
                               pCalTypes[i], name, BUFLEN, NULL);
-            (*env)->SetObjectArrayElement(env, jarray, i + offset,
-                          (*env)->NewString(env, name, wcslen(name)));
+            tmp_string = (*env)->NewString(env, name, (jsize)wcslen(name));
+            if (tmp_string != NULL) {
+                (*env)->SetObjectArrayElement(env, jarray, i + offset, tmp_string);
+            }
         }
     }
 

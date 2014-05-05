@@ -170,6 +170,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _last_gc_worker_end_times_ms(_max_gc_threads, "%.1lf", false),
   _last_gc_worker_times_ms(_max_gc_threads, "%.1lf"),
   _last_gc_worker_other_times_ms(_max_gc_threads, "%.1lf"),
+  _last_redirty_logged_cards_time_ms(_max_gc_threads, "%.1lf"),
+  _last_redirty_logged_cards_processed_cards(_max_gc_threads, SIZE_FORMAT),
   _cur_string_dedup_queue_fixup_worker_times_ms(_max_gc_threads, "%.1lf"),
   _cur_string_dedup_table_fixup_worker_times_ms(_max_gc_threads, "%.1lf")
 {
@@ -195,6 +197,10 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
   _last_gc_worker_end_times_ms.reset();
   _last_gc_worker_times_ms.reset();
   _last_gc_worker_other_times_ms.reset();
+
+  _last_redirty_logged_cards_time_ms.reset();
+  _last_redirty_logged_cards_processed_cards.reset();
+
 }
 
 void G1GCPhaseTimes::note_gc_end() {
@@ -230,6 +236,9 @@ void G1GCPhaseTimes::note_gc_end() {
 
   _last_gc_worker_times_ms.verify();
   _last_gc_worker_other_times_ms.verify();
+
+  _last_redirty_logged_cards_time_ms.verify();
+  _last_redirty_logged_cards_processed_cards.verify();
 }
 
 void G1GCPhaseTimes::note_string_dedup_fixup_start() {
@@ -349,6 +358,10 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   print_stats(2, "Ref Enq", _cur_ref_enq_time_ms);
   if (G1DeferredRSUpdate) {
     print_stats(2, "Redirty Cards", _recorded_redirty_logged_cards_time_ms);
+    if (G1Log::finest()) {
+      _last_redirty_logged_cards_time_ms.print(3, "Parallel Redirty");
+      _last_redirty_logged_cards_processed_cards.print(3, "Redirtied Cards");
+    }
   }
   print_stats(2, "Free CSet",
     (_recorded_young_free_cset_time_ms +

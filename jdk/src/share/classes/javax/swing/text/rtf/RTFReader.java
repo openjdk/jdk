@@ -27,9 +27,9 @@ package javax.swing.text.rtf;
 import java.lang.*;
 import java.util.*;
 import java.io.*;
-import java.awt.Font;
 import java.awt.Color;
-
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import javax.swing.text.*;
 
 /**
@@ -558,16 +558,14 @@ getCharacterSet(final String name)
 {
     char[] set = characterSets.get(name);
     if (set == null) {
-      InputStream charsetStream;
-      charsetStream = java.security.AccessController.
-              doPrivileged(new java.security.PrivilegedAction<InputStream>() {
-          public InputStream run() {
-              return RTFReader.class.getResourceAsStream
-                                     ("charsets/" + name + ".txt");
-          }
-      });
-      set = readCharset(charsetStream);
-      defineCharacterSet(name, set);
+        InputStream charsetStream = AccessController.doPrivileged(
+                new PrivilegedAction<InputStream>() {
+                    public InputStream run() {
+                        return RTFReader.class.getResourceAsStream("charsets/" + name + ".txt");
+                    }
+                });
+        set = readCharset(charsetStream);
+        defineCharacterSet(name, set);
     }
     return set;
 }

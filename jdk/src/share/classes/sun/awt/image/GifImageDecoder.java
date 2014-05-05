@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ public class GifImageDecoder extends ImageDecoder {
     /**
      * produce an image from the stream.
      */
+    @SuppressWarnings("fallthrough")
     public void produceImage() throws IOException, ImageFormatException {
         try {
             readHeader();
@@ -238,7 +239,7 @@ public class GifImageDecoder extends ImageDecoder {
                     if (frameno == 0) {
                         return;
                     }
-                    // NOBREAK
+                    // Fall through
 
                   case TERMINATOR:
                     if (nloops == 0 || nloops-- >= 0) {

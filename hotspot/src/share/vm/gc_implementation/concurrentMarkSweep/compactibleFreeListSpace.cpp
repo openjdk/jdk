@@ -564,11 +564,11 @@ void CompactibleFreeListSpace::reportIndexedFreeListStatistics() const {
                       "--------------------------------\n");
   size_t total_size = totalSizeInIndexedFreeLists();
   size_t   free_blocks = numFreeBlocksInIndexedFreeLists();
-  gclog_or_tty->print("Total Free Space: %d\n", total_size);
-  gclog_or_tty->print("Max   Chunk Size: %d\n", maxChunkSizeInIndexedFreeLists());
-  gclog_or_tty->print("Number of Blocks: %d\n", free_blocks);
+  gclog_or_tty->print("Total Free Space: " SIZE_FORMAT "\n", total_size);
+  gclog_or_tty->print("Max   Chunk Size: " SIZE_FORMAT "\n", maxChunkSizeInIndexedFreeLists());
+  gclog_or_tty->print("Number of Blocks: " SIZE_FORMAT "\n", free_blocks);
   if (free_blocks != 0) {
-    gclog_or_tty->print("Av.  Block  Size: %d\n", total_size/free_blocks);
+    gclog_or_tty->print("Av.  Block  Size: " SIZE_FORMAT "\n", total_size/free_blocks);
   }
 }
 
@@ -2152,7 +2152,7 @@ void CompactibleFreeListSpace::beginSweepFLCensus(
   for (i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
     AdaptiveFreeList<FreeChunk>* fl    = &_indexedFreeList[i];
     if (PrintFLSStatistics > 1) {
-      gclog_or_tty->print("size[%d] : ", i);
+      gclog_or_tty->print("size[" SIZE_FORMAT "] : ", i);
     }
     fl->compute_desired(inter_sweep_current, inter_sweep_estimate, intra_sweep_estimate);
     fl->set_coal_desired((ssize_t)((double)fl->desired() * CMSSmallCoalSurplusPercent));
@@ -2683,7 +2683,8 @@ void CFLS_LAB::compute_desired_plab_size() {
       _global_num_workers[i] = 0;
       _global_num_blocks[i] = 0;
       if (PrintOldPLAB) {
-        gclog_or_tty->print_cr("[%d]: %d", i, (size_t)_blocks_to_claim[i].average());
+        gclog_or_tty->print_cr("[" SIZE_FORMAT "]: " SIZE_FORMAT,
+                               i, (size_t)_blocks_to_claim[i].average());
       }
     }
   }
@@ -2722,7 +2723,7 @@ void CFLS_LAB::retire(int tid) {
         }
       }
       if (PrintOldPLAB) {
-        gclog_or_tty->print_cr("%d[%d]: %d/%d/%d",
+        gclog_or_tty->print_cr("%d[" SIZE_FORMAT "]: " SIZE_FORMAT "/" SIZE_FORMAT "/" SIZE_FORMAT,
                                tid, i, num_retire, _num_blocks[i], (size_t)_blocks_to_claim[i].average());
       }
       // Reset stats for next round

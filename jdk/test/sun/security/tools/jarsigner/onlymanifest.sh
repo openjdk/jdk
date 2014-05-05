@@ -45,10 +45,10 @@ esac
 KS=onlymanifest.jks
 JFILE=onlymanifest.jar
 
-KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit \
+KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit \
         -keystore $KS -keyalg rsa"
-JAR=$TESTJAVA${FS}bin${FS}jar
-JARSIGNER=$TESTJAVA${FS}bin${FS}jarsigner
+JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
+JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS}"
 
 rm $KS $JFILE 2> /dev/null
 
