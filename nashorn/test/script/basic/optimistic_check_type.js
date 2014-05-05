@@ -22,72 +22,78 @@
  */
 
 /**
- * JDK-8036987 : Implement tests that checks static types in the compiled code
  * @test
+ * @bug 8036987, 8037572 
+ * @summary Implement tests that checks static types in the compiled code 
  * @run
  */
 
 var inspect = Java.type("jdk.nashorn.test.tools.StaticTypeInspector").inspect
-var a=3,b,c,z,y;
+var a=3, b=2.3, c=true, d;
+var x = { a: 2, b:0, c:undefined}
+var trees = new Array("redwood", "bay", "cedar", "oak");
 
-// Testing arithmetic operators
-print(inspect(y*z, "undefined value multiplication by undefined value"))
-print(inspect(y/z, "undefined value division by undefined value"))
+// Testing conditional operator         
+print(inspect("" ? b : x.a, "ternary operator"))
+print(inspect(x.b ? b : x.a, "ternary operator"))
+print(inspect(c ? b : a, "ternary operator"))                      
+print(inspect(!c ? b : a, "ternary operator"))
+print(inspect(d ? b : x.c, "ternary operator"))
+print(inspect(x.c ? a : c, "ternary operator"))
+print(inspect(c ? d : a, "ternary operator"))
+print(inspect(c ? +a : b, "ternary operator"))  
 
-var x = { a: 2, b:1 }
-print(inspect(x.a*x.b, "int multiplication by int"))
-print(inspect(x.a/x.b, "int division by int without remainder"))
+// Testing format methods                    
+print(inspect(b.toFixed(2), "global double toFixed()"))
+print(inspect(b.toPrecision(2)/1, "global double toPrecision() divided by 1"))
+print(inspect(b.toExponential(2), "global double toExponential()"))
 
-x.a = 7;
-x.b = 2;
-print(inspect(x.a/x.b, "int division by int with remainder"))
-print(inspect(x.a%x.b, "int modulus by int"))
-print(inspect(x.a+x.b, "int plus int"))
-
-x.a = Number.MAX_VALUE;
-x.b = Number.MAX_VALUE;
-print(inspect(x.a*x.b, "max value multiplication by max value"))
-
-x.a = Number.POSITIVE_INFINITY;
-x.b = Number.POSITIVE_INFINITY;
-print(inspect(x.a*x.b, "infinity multiplication by infinity"))
-
-x.a = -1;
-x.b = Number.POSITIVE_INFINITY;
-print(inspect(x.a/x.b, "-1 division by infinity"))
-
-x.a = Number.POSITIVE_INFINITY;
-x.b = 0;
-print(inspect(x.a/x.b, "infinity division by zero"))
-
-x.a = Number.POSITIVE_INFINITY;
-x.b = 'Hello';
-print(inspect(x.a/x.b, "infinity division by String"))
+// Testing arrays
+print(inspect(trees[1], "member object"))
+trees[1] = undefined; 
+print(inspect(trees[1], "member undefined"))
+print(inspect(1 in trees ? b : a, "conditional on array member"))
+delete trees[2]
+print(inspect(2 in trees ? b : a, "conditional on array member"))
+print(inspect(3 in trees ? trees[2]="bay" : a, "conditional on array member"))
+print(inspect("oak" in trees ? b : a, "conditional on array member"))
 
 // Testing nested functions and return value 
-function f() {
+function f1() {
     var x = 2, y = 1;
     function g() {
         print(inspect(x, "outer local variable"));
         print(inspect(a, "global variable"));
-        print(inspect(x*y, "outer local variable multiplication by outer local variable"));
-        print(inspect(a*b, "global variable multiplication by global variable undefined"));
+        print(inspect(x*y, "outer local int multiplication by outer local int"));
+        print(inspect(a*d, "global int multiplication by global undefined"));
     }
     g()
 }
-f()
-
-function f1(a,b,c) {
-    d = (a+b) * c;
-    print(inspect(c, "c"));
-    print(inspect(a+b, "a+b"));
-    print(inspect(d, "d"));
-}
 f1()
 
-
-function f2(a,b) {
-    d = a && b;
-    print(inspect(d, "d"));
+function f2(a,b,c) {
+    g = (a+b) * c;
+    print(inspect(c, "local undefined"));
+    print(inspect(a+b, "local undefined addition local undefined"));
+    print(inspect(g, "local undefined multiplication by undefined"));
 }
 f2()
+
+function f3(a,b) {
+    g = a && b;
+    print(inspect(g, "local undefined AND local undefined"));
+    print(inspect(c||g, "global true OR local undefined"));
+}
+f3()
+
+function f4() {
+    var x = true, y = 0;
+    function g() {
+        print(inspect(x+y, "outer local true addition local int"));
+        print(inspect(a+x, "global int addition outer local true"));
+        print(inspect(x*y, "outer local true multiplication by outer local int"));
+        print(inspect(y*d, "outer local int multiplication by global undefined"));
+    }
+    g()
+}
+f4()

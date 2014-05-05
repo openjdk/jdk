@@ -1,0 +1,28 @@
+object AND object: object
+true AND non-falsey global int: int
+non-falsey global int AND true: boolean
+non-falsey object AND true: boolean
+true AND non-falsey object: object
+object OR object: object
+true OR non-falsey global int: boolean
+non-falsey global int OR true: int
+non-falsey object OR true: object
+true OR non-falsey object: boolean
+false OR true: boolean
+falsey global int AND true: int
+falsey global int OR undefined: undefined
+logical not falsey global int OR undefined: boolean
+false OR undefined: undefined
+false OR falsey global int: int
+logical not falsey global int OR falsey global int: boolean
+local undefined AND non-falsey global int: undefined
+true AND local undefined: undefined
+local undefined AND non-falsey local int: undefined
+local undefined OR true: boolean
+true OR local undefined: boolean
+non-falsey local int AND true: boolean
+true AND non-falsey local int: int
+true AND double logical not non-falsey local int : boolean
+false AND non-falsey local int: boolean
+non-falsey local int OR true: int
+false OR true: boolean
