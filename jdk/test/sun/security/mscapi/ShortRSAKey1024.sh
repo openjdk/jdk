@@ -63,14 +63,14 @@ case "$OS" in
     Windows* | CYGWIN* )
 
         echo "Removing the keypair if it already exists (for unknown reason)..."
-        ${TESTJAVA}${FS}bin${FS}keytool \
+        ${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} \
             -delete \
             -storetype Windows-My \
             -debug \
             -alias 7106773.$BITS
 
         echo "Creating a temporary RSA keypair in the Windows-My store..."
-        ${TESTJAVA}${FS}bin${FS}keytool \
+        ${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} \
             -genkeypair \
             -storetype Windows-My \
             -keyalg RSA \
@@ -87,7 +87,7 @@ case "$OS" in
 
         echo
         echo "Running the test..."
-        ${TESTJAVA}${FS}bin${FS}javac -d . \
+        ${TESTJAVA}${FS}bin${FS}javac ${TESTTOOLVMOPTS} ${TESTJAVACOPTS} -d . \
             ${TESTSRC}${FS}ShortRSAKeyWithinTLS.java
         ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ShortRSAKeyWithinTLS 7106773.$BITS $BITS \
             TLSv1.2 TLS_DHE_RSA_WITH_AES_128_CBC_SHA
@@ -96,7 +96,7 @@ case "$OS" in
 
         echo
         echo "Removing the temporary RSA keypair from the Windows-My store..."
-        ${TESTJAVA}${FS}bin${FS}keytool \
+        ${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} \
             -delete \
             -storetype Windows-My \
             -debug \

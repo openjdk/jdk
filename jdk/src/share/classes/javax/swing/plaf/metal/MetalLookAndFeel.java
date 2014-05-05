@@ -34,13 +34,10 @@ import javax.swing.plaf.basic.*;
 import javax.swing.text.DefaultEditorKit;
 
 import java.awt.Color;
-import java.awt.event.KeyEvent;
-import java.lang.reflect.*;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import sun.awt.*;
 import sun.security.action.GetPropertyAction;
@@ -460,11 +457,9 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         LazyValue textFieldBorder =
             t -> MetalBorders.getTextFieldBorder();
 
-        Object dialogBorder = new MetalLazyValue(
-                          "javax.swing.plaf.metal.MetalBorders$DialogBorder");
+        LazyValue dialogBorder = t -> new MetalBorders.DialogBorder();
 
-        Object questionDialogBorder = new MetalLazyValue(
-                  "javax.swing.plaf.metal.MetalBorders$QuestionDialogBorder");
+        LazyValue questionDialogBorder = t -> new MetalBorders.QuestionDialogBorder();
 
         Object fieldInputMap = new UIDefaults.LazyInputMap(new Object[] {
                            "ctrl C", DefaultEditorKit.copyAction,
@@ -1470,12 +1465,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "ToolBar.floatingBackground", menuBackground,
             "ToolBar.dockingForeground", primaryControlDarkShadow,
             "ToolBar.floatingForeground", primaryControl,
-            "ToolBar.rolloverBorder", new MetalLazyValue(
-                         "javax.swing.plaf.metal.MetalBorders",
-                         "getToolBarRolloverBorder"),
-            "ToolBar.nonrolloverBorder", new MetalLazyValue(
-                         "javax.swing.plaf.metal.MetalBorders",
-                         "getToolBarNonrolloverBorder"),
+            "ToolBar.rolloverBorder", (LazyValue) t -> MetalBorders.getToolBarRolloverBorder(),
+            "ToolBar.nonrolloverBorder", (LazyValue) t -> MetalBorders.getToolBarNonrolloverBorder(),
             "ToolBar.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
                         "UP", "navigateUp",
@@ -1489,17 +1480,14 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                  }),
 
             // RootPane
-            "RootPane.frameBorder", new MetalLazyValue(
-                      "javax.swing.plaf.metal.MetalBorders$FrameBorder"),
+            "RootPane.frameBorder", (LazyValue) t -> new MetalBorders.FrameBorder(),
             "RootPane.plainDialogBorder", dialogBorder,
             "RootPane.informationDialogBorder", dialogBorder,
-            "RootPane.errorDialogBorder", new MetalLazyValue(
-                      "javax.swing.plaf.metal.MetalBorders$ErrorDialogBorder"),
+            "RootPane.errorDialogBorder", (LazyValue) t -> new MetalBorders.ErrorDialogBorder(),
             "RootPane.colorChooserDialogBorder", questionDialogBorder,
             "RootPane.fileChooserDialogBorder", questionDialogBorder,
             "RootPane.questionDialogBorder", questionDialogBorder,
-            "RootPane.warningDialogBorder", new MetalLazyValue(
-                    "javax.swing.plaf.metal.MetalBorders$WarningDialogBorder"),
+            "RootPane.warningDialogBorder", (LazyValue) t -> new MetalBorders.WarningDialogBorder(),
             // These bindings are only enabled when there is a default
             // button set on the rootpane.
             "RootPane.defaultButtonWindowKeyBindings", new Object[] {
@@ -2147,61 +2135,6 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      */
     public LayoutStyle getLayoutStyle() {
         return MetalLayoutStyle.INSTANCE;
-    }
-
-
-    /**
-     * MetalLazyValue is a slimmed down version of <code>ProxyLaxyValue</code>.
-     * The code is duplicate so that it can get at the package private
-     * classes in metal.
-     */
-    private static class MetalLazyValue implements UIDefaults.LazyValue {
-        /**
-         * Name of the class to create.
-         */
-        private String className;
-        private String methodName;
-
-        MetalLazyValue(String name) {
-            this.className = name;
-        }
-
-        MetalLazyValue(String name, String methodName) {
-            this(name);
-            this.methodName = methodName;
-        }
-
-        public Object createValue(UIDefaults table) {
-            try {
-                final Class c = Class.forName(className);
-
-                if (methodName == null) {
-                    return c.newInstance();
-                }
-                Method method = AccessController.doPrivileged(
-                    new PrivilegedAction<Method>() {
-                    public Method run() {
-                        Method[] methods = c.getDeclaredMethods();
-                        for (int counter = methods.length - 1; counter >= 0;
-                             counter--) {
-                            if (methods[counter].getName().equals(methodName)){
-                                methods[counter].setAccessible(true);
-                                return methods[counter];
-                            }
-                        }
-                        return null;
-                    }
-                });
-                if (method != null) {
-                    return method.invoke(null, (Object[])null);
-                }
-            } catch (ClassNotFoundException cnfe) {
-            } catch (InstantiationException ie) {
-            } catch (IllegalAccessException iae) {
-            } catch (InvocationTargetException ite) {
-            }
-            return null;
-        }
     }
 
 

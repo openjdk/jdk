@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,8 @@ Java_sun_print_CUPSPrinter_getMedia(JNIEnv *env,
 
     name = (*env)->GetStringUTFChars(env, printer, NULL);
     if (name == NULL) {
+        (*env)->ExceptionClear(env);
+        JNU_ThrowOutOfMemoryError(env, "Could not create printer name");
         return NULL;
     }
 
@@ -220,12 +222,10 @@ Java_sun_print_CUPSPrinter_getMedia(JNIEnv *env,
     // unlink() must be caled to remove the file when finished using it.
     filename = j2d_cupsGetPPD(name);
     (*env)->ReleaseStringUTFChars(env, printer, name);
+    CHECK_NULL_RETURN(filename, NULL);
 
     cls = (*env)->FindClass(env, "java/lang/String");
-
-    if (filename == NULL) {
-        return NULL;
-    }
+    CHECK_NULL_RETURN(cls, NULL);
 
     if ((ppd = j2d_ppdOpenFile(filename)) == NULL) {
         unlink(filename);
@@ -249,6 +249,7 @@ Java_sun_print_CUPSPrinter_getMedia(JNIEnv *env,
             unlink(filename);
             j2d_ppdClose(ppd);
             DPRINTF("CUPSfuncs::bad alloc new array\n", "")
+            (*env)->ExceptionClear(env);
             JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
             return NULL;
         }
@@ -323,6 +324,11 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
     ppd_size_t *size;
 
     const char *name = (*env)->GetStringUTFChars(env, printer, NULL);
+    if (name == NULL) {
+        (*env)->ExceptionClear(env);
+        JNU_ThrowOutOfMemoryError(env, "Could not create printer name");
+        return NULL;
+    }
     const char *filename;
     int i;
     jobjectArray sizeArray = NULL;
@@ -332,9 +338,7 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
     // unlink() must be called to remove the file after using it.
     filename = j2d_cupsGetPPD(name);
     (*env)->ReleaseStringUTFChars(env, printer, name);
-    if (filename == NULL) {
-        return NULL;
-    }
+    CHECK_NULL_RETURN(filename, NULL);
     if ((ppd = j2d_ppdOpenFile(filename)) == NULL) {
         unlink(filename);
         DPRINTF("unable to open PPD  %s\n", filename)
@@ -350,11 +354,19 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
             unlink(filename);
             j2d_ppdClose(ppd);
             DPRINTF("CUPSfuncs::bad alloc new float array\n", "")
+            (*env)->ExceptionClear(env);
             JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
             return NULL;
         }
 
         dims = (*env)->GetFloatArrayElements(env, sizeArray, NULL);
+        if (dims == NULL) {
+            unlink(filename);
+            j2d_ppdClose(ppd);
+            (*env)->ExceptionClear(env);
+            JNU_ThrowOutOfMemoryError(env, "Could not create printer name");
+            return NULL;
+        }
         for (i = 0; i<option->num_choices; i++) {
             choice = (option->choices)+i;
             size = j2d_ppdPageSize(ppd, choice->choice);

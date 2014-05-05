@@ -83,11 +83,11 @@ if [ -e $HOME/.java.policy ]; then
     exit 1
 fi
 
-${TESTJAVA}${FS}bin${FS}keytool -genkeypair -alias hello -dname CN=Hello \
+${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -genkeypair -alias hello -dname CN=Hello \
         -storepass changeit -keypass changeit -keystore ks
 echo changeit > good
 echo badpass > bad
-${TESTJAVA}${FS}bin${FS}policytool
+${TESTJAVA}${FS}bin${FS}policytool ${TESTTOOLVMOPTS}
 
 exit $?
 

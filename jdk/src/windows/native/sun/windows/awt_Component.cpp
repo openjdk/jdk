@@ -1729,9 +1729,11 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       case WM_IME_SETCONTEXT:
           // lParam is passed as pointer and it can be modified.
           mr = WmImeSetContext(static_cast<BOOL>(wParam), &lParam);
+          CallProxyDefWindowProc(message, wParam, lParam, retValue, mr);
           break;
       case WM_IME_NOTIFY:
           mr = WmImeNotify(wParam, lParam);
+          CallProxyDefWindowProc(message, wParam, lParam, retValue, mr);
           break;
       case WM_IME_STARTCOMPOSITION:
           mr = WmImeStartComposition();
@@ -4085,7 +4087,7 @@ void AwtComponent::CallProxyDefWindowProc(UINT message, WPARAM wParam,
 {
     if (mr != mrConsume)  {
         HWND proxy = GetProxyFocusOwner();
-        if (proxy != NULL) {
+        if (proxy != NULL && ::IsWindowEnabled(proxy)) {
             retVal = ComCtl32Util::GetInstance().DefWindowProc(NULL, proxy, message, wParam, lParam);
             mr = mrConsume;
         }
@@ -6112,7 +6114,7 @@ jboolean AwtComponent::_NativeHandlesWheelScrolling(void *param)
     c = (AwtComponent *)pData;
     if (::IsWindow(c->GetHWnd()))
     {
-        result = (jboolean)c->InheritsNativeMouseWheelBehavior();
+        result = JNI_IS_TRUE(c->InheritsNativeMouseWheelBehavior());
     }
 ret:
     env->DeleteGlobalRef(self);
@@ -6928,9 +6930,9 @@ Java_sun_awt_windows_WComponentPeer_nativeHandlesWheelScrolling (JNIEnv* env,
 {
     TRY;
 
-    return (jboolean)AwtToolkit::GetInstance().SyncCall(
+    return JNI_IS_TRUE(AwtToolkit::GetInstance().SyncCall(
         (void *(*)(void *))AwtComponent::_NativeHandlesWheelScrolling,
-        env->NewGlobalRef(self));
+        env->NewGlobalRef(self)));
     // global ref is deleted in _NativeHandlesWheelScrolling
 
     CATCH_BAD_ALLOC_RET(NULL);
@@ -6949,9 +6951,9 @@ Java_sun_awt_windows_WComponentPeer_isObscured(JNIEnv* env,
 
     jobject selfGlobalRef = env->NewGlobalRef(self);
 
-    return (jboolean)AwtToolkit::GetInstance().SyncCall(
+    return JNI_IS_TRUE(AwtToolkit::GetInstance().SyncCall(
         (void*(*)(void*))AwtComponent::_IsObscured,
-        (void *)selfGlobalRef);
+        (void *)selfGlobalRef));
     // selfGlobalRef is deleted in _IsObscured
 
     CATCH_BAD_ALLOC_RET(NULL);

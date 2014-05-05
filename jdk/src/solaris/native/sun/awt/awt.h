@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,22 @@ extern void awt_output_flush();
 
 #define AWT_LOCK_IMPL() \
     (*env)->CallStaticVoidMethod(env, tkClass, awtLockMID)
+
 #define AWT_NOFLUSH_UNLOCK_IMPL() \
-    (*env)->CallStaticVoidMethod(env, tkClass, awtUnlockMID)
+    do { \
+      jthrowable pendingException; \
+      if ((pendingException = (*env)->ExceptionOccurred(env)) != NULL) { \
+         (*env)->ExceptionClear(env); \
+      } \
+      (*env)->CallStaticVoidMethod(env, tkClass, awtUnlockMID); \
+      if (pendingException) { \
+         if ((*env)->ExceptionCheck(env)) { \
+            (*env)->ExceptionDescribe(env); \
+            (*env)->ExceptionClear(env); \
+         } \
+         (*env)->Throw(env, pendingException); \
+      } \
+    } while (0)
 #define AWT_WAIT_IMPL(tm) \
     (*env)->CallStaticVoidMethod(env, tkClass, awtWaitMID, (jlong)(tm))
 #define AWT_NOTIFY_IMPL() \

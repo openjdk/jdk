@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
 
 package com.sun.java.swing.plaf.motif;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Rectangle;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-
+import javax.swing.JComponent;
+import javax.swing.JSlider;
+import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicSliderUI;
+
+import static sun.swing.SwingUtilities2.drawHLine;
+import static sun.swing.SwingUtilities2.drawVLine;
 
 /**
  * Motif Slider
@@ -123,15 +126,15 @@ public class MotifSliderUI extends BasicSliderUI {
 
             // highlight
             g.setColor(getHighlightColor());
-            g.drawLine(0, 1, w - 1, 1);             // top
-            g.drawLine(0, 1, 0, h);                     // left
-            g.drawLine(w/2, 2, w/2, h-1);       // center
+            drawHLine(g, 0, w - 1, 1);      // top
+            drawVLine(g, 0, 1, h);          // left
+            drawVLine(g, w / 2, 2, h - 1);  // center
 
             // shadow
             g.setColor(getShadowColor());
-            g.drawLine(0, h, w - 1, h);         // bottom
-            g.drawLine(w - 1, 1, w - 1, h);     // right
-            g.drawLine(w/2 - 1, 2, w/2 - 1, h); // center
+            drawHLine(g, 0, w - 1, h);      // bottom
+            drawVLine(g, w - 1, 1, h);      // right
+            drawVLine(g, w / 2 - 1, 2, h);  // center
 
             g.translate(-x, -(knobBounds.y-1));
         }
@@ -143,15 +146,15 @@ public class MotifSliderUI extends BasicSliderUI {
 
             // highlight
             g.setColor(getHighlightColor());
-            g.drawLine(1, y, w, y);                     // top
-            g.drawLine(1, y+1, 1, y+h-1);               // left
-            g.drawLine(2, y+h/2, w-1, y+h/2);           // center
+            drawHLine(g, 1, w, y);             // top
+            drawVLine(g, 1, y + 1, y + h - 1); // left
+            drawHLine(g, 2, w - 1, y + h / 2); // center
 
             // shadow
             g.setColor(getShadowColor());
-            g.drawLine(2, y+h-1, w, y+h-1);             // bottom
-            g.drawLine(w, y+h-1, w, y);                 // right
-            g.drawLine(2, y+h/2-1, w-1, y+h/2-1);       // center
+            drawHLine(g, 2, w, y + h - 1);        // bottom
+            drawVLine(g, w, y + h - 1, y);        // right
+            drawHLine(g, 2, w - 1, y + h / 2 - 1);// center
 
             g.translate(-(knobBounds.x-1), 0);
         }

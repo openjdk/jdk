@@ -47,9 +47,9 @@ esac
 KS=samename.jks
 JFILE=em.jar
 
-KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore $KS -keyalg rsa"
-JAR=$TESTJAVA${FS}bin${FS}jar
-JARSIGNER=$TESTJAVA${FS}bin${FS}jarsigner
+KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keystore $KS -keyalg rsa"
+JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
+JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS}"
 
 rm $KS $JFILE $SIGNEDJAR
 echo A > A

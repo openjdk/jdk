@@ -591,6 +591,8 @@ sharedInvoke(PacketInputStream *in, PacketOutputStream *out)
         invokeType = INVOKE_CONSTRUCTOR;
     } else if (inStream_command(in) == JDWP_COMMAND(ClassType, InvokeMethod)) {
         invokeType = INVOKE_STATIC;
+    } else if (inStream_command(in) == JDWP_COMMAND(InterfaceType, InvokeMethod)) {
+        invokeType = INVOKE_STATIC;
     } else if (inStream_command(in) == JDWP_COMMAND(ObjectReference, InvokeMethod)) {
         invokeType = INVOKE_INSTANCE;
     } else {

@@ -524,9 +524,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (configuration.createoverview) {
                 navList.addContent(getNavLinkContents());
             }
-            if (configuration.packages.length == 1) {
-                navList.addContent(getNavLinkPackage(configuration.packages[0]));
-            } else if (configuration.packages.length > 1) {
+            if (configuration.packages.size() == 1) {
+                navList.addContent(getNavLinkPackage(configuration.packages.first()));
+            } else if (configuration.packages.size() > 1) {
                 navList.addContent(getNavLinkPackage());
             }
             navList.addContent(getNavLinkClass());
@@ -916,7 +916,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return package name content
      */
     public Content getPackageName(PackageDoc packageDoc) {
-        return packageDoc == null || packageDoc.name().length() == 0 ?
+        return packageDoc == null || packageDoc.name().isEmpty() ?
             defaultPackageLabel :
             getPackageLabel(packageDoc.name());
     }

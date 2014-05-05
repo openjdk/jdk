@@ -40,7 +40,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -49,7 +49,6 @@ import java.io.IOException;
 import sun.awt.AppContext;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
-import sun.awt.EventListenerAggregate;
 
 
 /**
@@ -107,11 +106,7 @@ public abstract class SunClipboard extends Clipboard
             setContentsNative(contents);
         } finally {
             if (oldOwner != null && oldOwner != owner) {
-                EventQueue.invokeLater(new Runnable() {
-                    public void run() {
-                        oldOwner.lostOwnership(SunClipboard.this, oldContents);
-                    }
-                });
+                EventQueue.invokeLater(() -> oldOwner.lostOwnership(SunClipboard.this, oldContents));
             }
         }
     }
@@ -355,13 +350,12 @@ public abstract class SunClipboard extends Clipboard
             return;
         }
         AppContext appContext = AppContext.getAppContext();
-        EventListenerAggregate contextFlavorListeners = (EventListenerAggregate)
-                appContext.get(CLIPBOARD_FLAVOR_LISTENER_KEY);
-        if (contextFlavorListeners == null) {
-            contextFlavorListeners = new EventListenerAggregate(FlavorListener.class);
-            appContext.put(CLIPBOARD_FLAVOR_LISTENER_KEY, contextFlavorListeners);
+        Set<FlavorListener> flavorListeners = getFlavorListeners(appContext);
+        if (flavorListeners == null) {
+            flavorListeners = new HashSet<>();
+            appContext.put(CLIPBOARD_FLAVOR_LISTENER_KEY, flavorListeners);
         }
-        contextFlavorListeners.add(listener);
+        flavorListeners.add(listener);
 
         if (numberOfFlavorListeners++ == 0) {
             long[] currentFormats = null;
@@ -382,25 +376,26 @@ public abstract class SunClipboard extends Clipboard
         if (listener == null) {
             return;
         }
-        AppContext appContext = AppContext.getAppContext();
-        EventListenerAggregate contextFlavorListeners = (EventListenerAggregate)
-                appContext.get(CLIPBOARD_FLAVOR_LISTENER_KEY);
-        if (contextFlavorListeners == null){
+        Set<FlavorListener> flavorListeners = getFlavorListeners(AppContext.getAppContext());
+        if (flavorListeners == null){
             //else we throw NullPointerException, but it is forbidden
             return;
         }
-        if (contextFlavorListeners.remove(listener) &&
-                --numberOfFlavorListeners == 0) {
+        if (flavorListeners.remove(listener) && --numberOfFlavorListeners == 0) {
             unregisterClipboardViewerChecked();
             currentDataFlavors = null;
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private Set<FlavorListener> getFlavorListeners(AppContext appContext) {
+        return (Set<FlavorListener>)appContext.get(CLIPBOARD_FLAVOR_LISTENER_KEY);
+    }
+
     public synchronized FlavorListener[] getFlavorListeners() {
-        EventListenerAggregate contextFlavorListeners = (EventListenerAggregate)
-                AppContext.getAppContext().get(CLIPBOARD_FLAVOR_LISTENER_KEY);
-        return contextFlavorListeners == null ? new FlavorListener[0] :
-                (FlavorListener[])contextFlavorListeners.getListenersCopy();
+        Set<FlavorListener> flavorListeners = getFlavorListeners(AppContext.getAppContext());
+        return flavorListeners == null ? new FlavorListener[0]
+                : flavorListeners.toArray(new FlavorListener[flavorListeners.size()]);
     }
 
     public boolean areFlavorListenersRegistered() {
@@ -425,42 +420,26 @@ public abstract class SunClipboard extends Clipboard
         Set prevDataFlavors = currentDataFlavors;
         currentDataFlavors = formatArrayAsDataFlavorSet(formats);
 
-        if ((prevDataFlavors != null) && (currentDataFlavors != null) &&
-                prevDataFlavors.equals(currentDataFlavors)) {
+        if (Objects.equals(prevDataFlavors, currentDataFlavors)) {
             // we've been able to successfully get available on the clipboard
             // DataFlavors this and previous time and they are coincident;
             // don't notify
             return;
         }
 
-        class SunFlavorChangeNotifier implements Runnable {
-            private final FlavorListener flavorListener;
-
-            SunFlavorChangeNotifier(FlavorListener flavorListener) {
-                this.flavorListener = flavorListener;
-            }
-
-            public void run() {
-                if (flavorListener != null) {
-                    flavorListener.flavorsChanged(new FlavorEvent(SunClipboard.this));
-                }
-            }
-        };
-
-        for (Iterator it = AppContext.getAppContexts().iterator(); it.hasNext();) {
-            AppContext appContext = (AppContext)it.next();
+        for (AppContext appContext : AppContext.getAppContexts()) {
             if (appContext == null || appContext.isDisposed()) {
                 continue;
             }
-            EventListenerAggregate flavorListeners = (EventListenerAggregate)
-                    appContext.get(CLIPBOARD_FLAVOR_LISTENER_KEY);
+            Set<FlavorListener> flavorListeners = getFlavorListeners(appContext);
             if (flavorListeners != null) {
-                FlavorListener[] flavorListenerArray =
-                        (FlavorListener[])flavorListeners.getListenersInternal();
-                for (int i = 0; i < flavorListenerArray.length; i++) {
-                    SunToolkit.postEvent(appContext, new PeerEvent(this,
-                            new SunFlavorChangeNotifier(flavorListenerArray[i]),
-                            PeerEvent.PRIORITY_EVENT));
+                for (FlavorListener listener : flavorListeners) {
+                    if (listener != null) {
+                        PeerEvent peerEvent = new PeerEvent(this,
+                                () -> listener.flavorsChanged(new FlavorEvent(SunClipboard.this)),
+                                PeerEvent.PRIORITY_EVENT);
+                        SunToolkit.postEvent(appContext, peerEvent);
+                    }
                 }
             }
         }

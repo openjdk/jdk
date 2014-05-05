@@ -44,6 +44,7 @@ import java.net.MalformedURLException;
 
 import sun.awt.*;
 import sun.awt.datatransfer.DataTransferer;
+import sun.java2d.opengl.OGLRenderQueue;
 import sun.lwawt.*;
 import sun.lwawt.LWWindowPeer.PeerType;
 import sun.security.action.GetBooleanAction;
@@ -410,7 +411,11 @@ public final class LWCToolkit extends LWToolkit {
 
     @Override
     public void sync() {
-        // TODO Auto-generated method stub
+        // flush the OGL pipeline (this is a no-op if OGL is not enabled)
+        OGLRenderQueue.sync();
+        // setNeedsDisplay() selector was sent to the appropriate CALayer so now
+        // we have to flush the native selectors queue.
+        flushNativeSelectors();
     }
 
     @Override
@@ -812,6 +817,11 @@ public final class LWCToolkit extends LWToolkit {
     static native void stopAWTRunLoop(long mediator);
 
     private native boolean nativeSyncQueue(long timeout);
+
+    /**
+     * Just spin a single empty block synchronously.
+     */
+    private static native void flushNativeSelectors();
 
     @Override
     public Clipboard createPlatformClipboard() {

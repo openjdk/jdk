@@ -29,7 +29,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
- * @bug 8031971
+ * @bug 8031971 8039750
  * @author Alexander Scherbatiy
  * @summary Use only public methods in the SwingLazyValue
  * @run main bug8031971

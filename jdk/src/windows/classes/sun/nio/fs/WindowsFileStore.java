@@ -86,12 +86,26 @@ class WindowsFileStore
                 WindowsFileAttributes.get(file, true);
                 target = file.getPathForWin32Calls();
             }
-            String root = GetVolumePathName(target);
-            return new WindowsFileStore(root);
+            try {
+                return createFromPath(target);
+            } catch (WindowsException e) {
+                if (e.lastError() != ERROR_DIR_NOT_ROOT)
+                    throw e;
+                target = WindowsLinkSupport.getFinalPath(file);
+                if (target == null)
+                    throw new FileSystemException(file.getPathForExceptionMessage(),
+                            null, "Couldn't resolve path");
+                return createFromPath(target);
+            }
         } catch (WindowsException x) {
             x.rethrowAsIOException(file);
             return null; // keep compiler happy
         }
+    }
+
+    private static WindowsFileStore createFromPath(String target) throws WindowsException {
+        String root = GetVolumePathName(target);
+        return new WindowsFileStore(root);
     }
 
     VolumeInformation volumeInformation() {

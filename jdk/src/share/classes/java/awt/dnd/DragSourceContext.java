@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,7 +472,7 @@ public class DragSourceContext
      *               <code>ENTER</code>, <code>OVER</code>,
      *               <code>CHANGED</code>
      */
-
+    @SuppressWarnings("fallthrough")
     protected synchronized void updateCurrentCursor(int sourceAct, int targetAct, int status) {
 
         // if the cursor has been previously set then don't do any defaults
@@ -576,9 +576,9 @@ public class DragSourceContext
             throw new InvalidObjectException("Null trigger component");
         }
 
-        int DGRActions = newTrigger.getSourceAsDragGestureRecognizer().getSourceActions()
+        int newSourceActions = f.get("sourceActions", 0)
                 & (DnDConstants.ACTION_COPY_OR_MOVE | DnDConstants.ACTION_LINK);
-        if (DGRActions == DnDConstants.ACTION_NONE) {
+        if (newSourceActions == DnDConstants.ACTION_NONE) {
             throw new InvalidObjectException("Invalid source actions");
         }
         int triggerActions = newTrigger.getDragAction();
@@ -591,8 +591,7 @@ public class DragSourceContext
 
         cursor = (Cursor)f.get("cursor", null);
         useCustomCursor = f.get("useCustomCursor", false);
-        sourceActions = f.get("sourceActions", 0)
-                & (DnDConstants.ACTION_COPY_OR_MOVE | DnDConstants.ACTION_LINK);
+        sourceActions = newSourceActions;
 
         transferable = (Transferable)s.readObject();
         listener = (DragSourceListener)s.readObject();
