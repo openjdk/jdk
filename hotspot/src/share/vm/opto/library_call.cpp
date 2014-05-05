@@ -1733,7 +1733,7 @@ Node* LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeF
       result_region->init_req(2, control());
       result_val->init_req(2, value);
       set_control(_gvn.transform(result_region));
-      return result_val;
+      return _gvn.transform(result_val);
     } else {
       return result;
     }
@@ -1928,7 +1928,7 @@ bool LibraryCallKit::inline_pow() {
   // control from finish_pow_exp is now input to the region node
   region_node->set_req(2, control());
   // the result from finish_pow_exp is now input to the phi node
-  phi_node->init_req(2, _gvn.transform(result));
+  phi_node->init_req(2, result);
   set_control(_gvn.transform(region_node));
   record_for_igvn(region_node);
   set_result(_gvn.transform(phi_node));
