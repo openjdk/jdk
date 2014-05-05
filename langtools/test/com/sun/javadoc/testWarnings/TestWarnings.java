@@ -40,11 +40,11 @@ public class TestWarnings extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
+        "-Xdoclint:none", "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg"
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR, "-private", "-sourcepath", SRC_DIR,
+        "-Xdoclint:none", "-d", OUTPUT_DIR + "-2", "-private", "-sourcepath", SRC_DIR,
         "pkg"
     };
 
@@ -77,7 +77,6 @@ public class TestWarnings extends JavadocTester {
      */
     public static void main(String[] args) {
         TestWarnings tester = new TestWarnings();
-        tester.run(ARGS, TEST, NEGATED_TEST);
         tester.run(ARGS, TEST, NEGATED_TEST);
         tester.run(ARGS2, TEST2, NO_TEST);
         tester.printSummary();

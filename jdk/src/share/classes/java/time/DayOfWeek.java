@@ -201,7 +201,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * Gets the day-of-week {@code int} value.
      * <p>
      * The values are numbered following the ISO-8601 standard, from 1 (Monday) to 7 (Sunday).
-     * See {@link WeekFields#dayOfWeek} for localized week-numbering.
+     * See {@link java.time.temporal.WeekFields#dayOfWeek()} for localized week-numbering.
      *
      * @return the day-of-week, from 1 (Monday) to 7 (Sunday)
      */
@@ -288,7 +288,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
     /**
      * Gets the value of the specified field from this day-of-week as an {@code int}.
      * <p>
-     * This queries this day-of-week for the value for the specified field.
+     * This queries this day-of-week for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -321,7 +321,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
     /**
      * Gets the value of the specified field from this day-of-week as a {@code long}.
      * <p>
-     * This queries this day-of-week for the value for the specified field.
+     * This queries this day-of-week for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -419,7 +419,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * The adjustment is equivalent to using {@link Temporal#with(TemporalField, long)}
      * passing {@link ChronoField#DAY_OF_WEEK} as the field.
      * Note that this adjusts forwards or backwards within a Monday to Sunday week.
-     * See {@link WeekFields#dayOfWeek} for localized week start days.
+     * See {@link java.time.temporal.WeekFields#dayOfWeek()} for localized week start days.
      * See {@code TemporalAdjuster} for other adjusters with more control,
      * such as {@code next(MONDAY)}.
      * <p>

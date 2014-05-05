@@ -103,7 +103,7 @@ public interface ClassType extends ReferenceType {
      * <p>
      * Object values must be assignment compatible with the field type
      * (This implies that the field type must be loaded through the
-     * enclosing class's class loader). Primitive values must be
+     * enclosing class' class loader). Primitive values must be
      * either assignment compatible with the field type or must be
      * convertible to the field type without loss of information.
      * See JLS section 5.2 for more information on assignment
@@ -153,7 +153,7 @@ public interface ClassType extends ReferenceType {
      * <p>
      * Object arguments must be assignment compatible with the argument type
      * (This implies that the argument type must be loaded through the
-     * enclosing class's class loader). Primitive arguments must be
+     * enclosing class' class loader). Primitive arguments must be
      * either assignment compatible with the argument type or must be
      * convertible to the argument type without loss of information.
      * If the method being called accepts a variable number of arguments,
@@ -216,7 +216,7 @@ public interface ClassType extends ReferenceType {
      * @return a {@link Value} mirror of the invoked method's return value.
      * @throws java.lang.IllegalArgumentException if the method is not
      * a member of this class or a superclass, if the size of the argument list
-     * does not match the number of declared arguemnts for the method, or
+     * does not match the number of declared arguments for the method, or
      * if the method is an initializer, constructor or static intializer.
      * @throws {@link InvalidTypeException} if any argument in the
      * argument list is not assignable to the corresponding method argument
@@ -230,7 +230,7 @@ public interface ClassType extends ReferenceType {
      * @throws InvalidTypeException If the arguments do not meet this requirement --
      *         Object arguments must be assignment compatible with the argument
      *         type.  This implies that the argument type must be
-     *         loaded through the enclosing class's class loader.
+     *         loaded through the enclosing class' class loader.
      *         Primitive arguments must be either assignment compatible with the
      *         argument type or must be convertible to the argument type without loss
      *         of information. See JLS section 5.2 for more information on assignment
@@ -267,7 +267,7 @@ public interface ClassType extends ReferenceType {
      * <p>
      * Object arguments must be assignment compatible with the argument type
      * (This implies that the argument type must be loaded through the
-     * enclosing class's class loader). Primitive arguments must be
+     * enclosing class' class loader). Primitive arguments must be
      * either assignment compatible with the argument type or must be
      * convertible to the argument type without loss of information.
      * If the method being called accepts a variable number of arguments,
@@ -335,7 +335,7 @@ public interface ClassType extends ReferenceType {
      * @throws InvalidTypeException If the arguments do not meet this requirement --
      *         Object arguments must be assignment compatible with the argument
      *         type.  This implies that the argument type must be
-     *         loaded through the enclosing class's class loader.
+     *         loaded through the enclosing class' class loader.
      *         Primitive arguments must be either assignment compatible with the
      *         argument type or must be convertible to the argument type without loss
      *         of information. See JLS section 5.2 for more information on assignment

@@ -84,7 +84,7 @@ void SpaceMangler::mangle_region(MemRegion mr) {
   assert(ZapUnusedHeapArea, "Mangling should not be in use");
 #ifdef ASSERT
   if(TraceZapUnusedHeapArea) {
-    gclog_or_tty->print("Mangling [0x%x to 0x%x)", mr.start(), mr.end());
+    gclog_or_tty->print("Mangling [" PTR_FORMAT " to " PTR_FORMAT ")", mr.start(), mr.end());
   }
   Copy::fill_to_words(mr.start(), mr.word_size(), badHeapWord);
   if(TraceZapUnusedHeapArea) {

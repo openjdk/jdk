@@ -370,7 +370,7 @@ bool RSHashTable::contains_card(RegionIdx_t region_index, CardIdx_t card_index) 
 }
 
 size_t RSHashTable::mem_size() const {
-  return sizeof(this) +
+  return sizeof(RSHashTable) +
     capacity() * (SparsePRTEntry::size() + sizeof(int));
 }
 
@@ -472,7 +472,7 @@ SparsePRT::~SparsePRT() {
 size_t SparsePRT::mem_size() const {
   // We ignore "_cur" here, because it either = _next, or else it is
   // on the deleted list.
-  return sizeof(this) + _next->mem_size();
+  return sizeof(SparsePRT) + _next->mem_size();
 }
 
 bool SparsePRT::add_card(RegionIdx_t region_id, CardIdx_t card_index) {

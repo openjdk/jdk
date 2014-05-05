@@ -116,8 +116,8 @@ public final class JavaAdapterServices {
      * static initializers.
      * @return the thread-local JS object used to define methods for the class being initialized.
      */
-    public static ScriptObject getClassOverrides() {
-        final ScriptObject overrides = classOverrides.get();
+    public static Object getClassOverrides() {
+        final Object overrides = classOverrides.get();
         assert overrides != null;
         return overrides;
     }
@@ -132,6 +132,22 @@ public final class JavaAdapterServices {
      */
     public static void invokeNoPermissions(final MethodHandle method, final Object arg) throws Throwable {
         NO_PERMISSIONS_INVOKER.invokeExact(method, arg);
+    }
+
+    /**
+     * Set the current global scope
+     * @param global the global scope
+     */
+    public static void setGlobal(final Object global) {
+        Context.setGlobal((ScriptObject)global);
+    }
+
+    /**
+     * Get the current global scope
+     * @return the current global scope
+     */
+    public static Object getGlobal() {
+        return Context.getGlobal();
     }
 
     static void setClassOverrides(ScriptObject overrides) {

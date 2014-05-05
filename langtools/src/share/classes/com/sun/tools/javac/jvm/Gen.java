@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2812,7 +2812,7 @@ public class Gen extends JCTree.Visitor {
         }
 
         private LVTAssignAnalyzer(LVTRanges lvtRanges, Symtab syms, Names names) {
-            super(new LVTBits(), syms, names);
+            super(new LVTBits(), syms, names, false);
             lvtInits = (LVTBits)inits;
             this.lvtRanges = lvtRanges;
         }

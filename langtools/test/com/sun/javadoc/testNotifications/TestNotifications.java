@@ -67,7 +67,9 @@ public class TestNotifications extends JavadocTester {
         tester.run(ARGS, TEST, NO_TEST);
         // No need to notify that the destination must be created because
         // it already exists.
+        tester.setCheckOutputDirectoryCheck(DirectoryCheck.NONE);
         tester.run(ARGS, NO_TEST, NEGATED_TEST);
+        tester.setCheckOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
         //Make sure classname is not include in javadoc usage message.
         tester.run(ARGS2, NO_TEST, NEGATED_TEST2);
         tester.printSummary();
