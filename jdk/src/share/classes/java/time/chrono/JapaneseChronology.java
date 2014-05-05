@@ -150,7 +150,7 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
      * Gets the ID of the chronology - 'Japanese'.
      * <p>
      * The ID uniquely identifies the {@code Chronology}.
-     * It can be used to lookup the {@code Chronology} using {@link #of(String)}.
+     * It can be used to lookup the {@code Chronology} using {@link Chronology#of(String)}.
      *
      * @return the chronology ID - 'Japanese'
      * @see #getCalendarType()
@@ -165,7 +165,7 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
      * <p>
      * The calendar type is an identifier defined by the
      * <em>Unicode Locale Data Markup Language (LDML)</em> specification.
-     * It can be used to lookup the {@code Chronology} using {@link #of(String)}.
+     * It can be used to lookup the {@code Chronology} using {@link Chronology#of(String)}.
      * It can also be used as part of a locale, accessible via
      * {@link Locale#getUnicodeLocaleType(String)} with the key 'ca'.
      *

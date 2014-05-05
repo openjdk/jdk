@@ -115,19 +115,19 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
 
     private static final String[] ARGS1 =
         new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"};
+            "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS2 =
         new String[] {
-            "-d", OUTPUT_DIR, "-nocomment", "-sourcepath", SRC_DIR, "pkg1"};
+            "-d", OUTPUT_DIR + "-2", "-nocomment", "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS3 =
         new String[] {
-            "-d", OUTPUT_DIR, "-nodeprecated", "-sourcepath", SRC_DIR, "pkg1"};
+            "-d", OUTPUT_DIR + "-3", "-nodeprecated", "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS4 =
         new String[] {
-            "-d", OUTPUT_DIR, "-nocomment", "-nodeprecated", "-sourcepath",
+            "-d", OUTPUT_DIR + "-4", "-nocomment", "-nodeprecated", "-sourcepath",
             SRC_DIR, "pkg1"};
 
     /**

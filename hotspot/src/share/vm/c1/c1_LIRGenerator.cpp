@@ -3188,8 +3188,8 @@ void LIRGenerator::profile_arguments(ProfileCall* x) {
 #ifdef ASSERT
       Bytecodes::Code code = x->method()->raw_code_at_bci(x->bci_of_invoke());
       int n = x->nb_profiled_args();
-      assert(MethodData::profile_parameters() && x->inlined() &&
-             ((code == Bytecodes::_invokedynamic && n <= 1) || (code == Bytecodes::_invokehandle && n <= 2)),
+      assert(MethodData::profile_parameters() && (MethodData::profile_arguments_jsr292_only() ||
+                                                  (x->inlined() && ((code == Bytecodes::_invokedynamic && n <= 1) || (code == Bytecodes::_invokehandle && n <= 2)))),
              "only at JSR292 bytecodes");
 #endif
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package com.sun.tools.doclets.internal.toolkit.builders;
 
-import java.io.*;
+import java.io.IOException;
+import java.util.List;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.jvm.Profile;
@@ -165,7 +166,7 @@ public class ProfileSummaryBuilder extends AbstractBuilder {
      *                           be added
      */
     public void buildPackageSummary(XMLNode node, Content summaryContentTree) {
-        PackageDoc[] packages = configuration.profilePackages.get(profile.name);
+        List<PackageDoc> packages = configuration.profilePackages.get(profile.name);
         for (PackageDoc aPackage : packages) {
             this.pkg = aPackage;
             Content packageSummaryContentTree = profileWriter.getPackageSummaryHeader(this.pkg);

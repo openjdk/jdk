@@ -546,7 +546,7 @@ public final class Duration
      * They are returned in the order seconds, nanos.
      * <p>
      * This set can be used in conjunction with {@link #get(TemporalUnit)}
-     * to access the entire state of the period.
+     * to access the entire state of the duration.
      *
      * @return a list containing the seconds and nanos units, not null
      */
@@ -686,8 +686,8 @@ public final class Duration
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param amountToAdd  the amount of the period, measured in terms of the unit, positive or negative
-     * @param unit  the unit that the period is measured in, must have an exact duration, not null
+     * @param amountToAdd  the amount to add, measured in terms of the unit, positive or negative
+     * @param unit  the unit that the amount is measured in, must have an exact duration, not null
      * @return a {@code Duration} based on this duration with the specified duration added, not null
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
@@ -848,8 +848,8 @@ public final class Duration
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param amountToSubtract  the amount of the period, measured in terms of the unit, positive or negative
-     * @param unit  the unit that the period is measured in, must have an exact duration, not null
+     * @param amountToSubtract  the amount to subtract, measured in terms of the unit, positive or negative
+     * @param unit  the unit that the amount is measured in, must have an exact duration, not null
      * @return a {@code Duration} based on this duration with the specified duration subtracted, not null
      * @throws ArithmeticException if numeric overflow occurs
      */

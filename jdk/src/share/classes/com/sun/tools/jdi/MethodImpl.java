@@ -187,6 +187,13 @@ public abstract class MethodImpl extends TypeComponentImpl
         return isModifierSet(VMModifiers.ABSTRACT);
     }
 
+    public boolean isDefault() {
+        return !isModifierSet(VMModifiers.ABSTRACT) &&
+               !isModifierSet(VMModifiers.STATIC) &&
+               !isModifierSet(VMModifiers.PRIVATE) &&
+               declaringType() instanceof InterfaceType;
+    }
+
     public boolean isSynchronized() {
         return isModifierSet(VMModifiers.SYNCHRONIZED);
     }

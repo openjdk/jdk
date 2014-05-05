@@ -33,8 +33,10 @@
 
 ConcurrentG1RefineThread::
 ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *next,
+                         CardTableEntryClosure* refine_closure,
                          uint worker_id_offset, uint worker_id) :
   ConcurrentGCThread(),
+  _refine_closure(refine_closure),
   _worker_id_offset(worker_id_offset),
   _worker_id(worker_id),
   _active(false),
@@ -71,6 +73,7 @@ void ConcurrentG1RefineThread::initialize() {
 }
 
 void ConcurrentG1RefineThread::sample_young_list_rs_lengths() {
+  SuspendibleThreadSetJoiner sts;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   G1CollectorPolicy* g1p = g1h->g1_policy();
   if (g1p->adaptive_young_list_length()) {
@@ -82,8 +85,8 @@ void ConcurrentG1RefineThread::sample_young_list_rs_lengths() {
 
       // we try to yield every time we visit 10 regions
       if (regions_visited == 10) {
-        if (_sts.should_yield()) {
-          _sts.yield("G1 refine");
+        if (sts.should_yield()) {
+          sts.yield();
           // we just abandon the iteration
           break;
         }
@@ -99,9 +102,7 @@ void ConcurrentG1RefineThread::run_young_rs_sampling() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   _vtime_start = os::elapsedVTime();
   while(!_should_terminate) {
-    _sts.join();
     sample_young_list_rs_lengths();
-    _sts.leave();
 
     if (os::supports_vtime()) {
       _vtime_accum = (os::elapsedVTime() - _vtime_start);
@@ -182,36 +183,36 @@ void ConcurrentG1RefineThread::run() {
       break;
     }
 
-    _sts.join();
+    {
+      SuspendibleThreadSetJoiner sts;
 
-    do {
-      int curr_buffer_num = (int)dcqs.completed_buffers_num();
-      // If the number of the buffers falls down into the yellow zone,
-      // that means that the transition period after the evacuation pause has ended.
-      if (dcqs.completed_queue_padding() > 0 && curr_buffer_num <= cg1r()->yellow_zone()) {
-        dcqs.set_completed_queue_padding(0);
-      }
+      do {
+        int curr_buffer_num = (int)dcqs.completed_buffers_num();
+        // If the number of the buffers falls down into the yellow zone,
+        // that means that the transition period after the evacuation pause has ended.
+        if (dcqs.completed_queue_padding() > 0 && curr_buffer_num <= cg1r()->yellow_zone()) {
+          dcqs.set_completed_queue_padding(0);
+        }
 
-      if (_worker_id > 0 && curr_buffer_num <= _deactivation_threshold) {
-        // If the number of the buffer has fallen below our threshold
-        // we should deactivate. The predecessor will reactivate this
-        // thread should the number of the buffers cross the threshold again.
+        if (_worker_id > 0 && curr_buffer_num <= _deactivation_threshold) {
+          // If the number of the buffer has fallen below our threshold
+          // we should deactivate. The predecessor will reactivate this
+          // thread should the number of the buffers cross the threshold again.
+          deactivate();
+          break;
+        }
+
+        // Check if we need to activate the next thread.
+        if (_next != NULL && !_next->is_active() && curr_buffer_num > _next->_threshold) {
+          _next->activate();
+        }
+      } while (dcqs.apply_closure_to_completed_buffer(_refine_closure, _worker_id + _worker_id_offset, cg1r()->green_zone()));
+
+      // We can exit the loop above while being active if there was a yield request.
+      if (is_active()) {
         deactivate();
-        break;
       }
-
-      // Check if we need to activate the next thread.
-      if (_next != NULL && !_next->is_active() && curr_buffer_num > _next->_threshold) {
-        _next->activate();
-      }
-    } while (dcqs.apply_closure_to_completed_buffer(_worker_id + _worker_id_offset, cg1r()->green_zone()));
-
-    // We can exit the loop above while being active if there was a yield request.
-    if (is_active()) {
-      deactivate();
     }
-
-    _sts.leave();
 
     if (os::supports_vtime()) {
       _vtime_accum = (os::elapsedVTime() - _vtime_start);
@@ -221,17 +222,6 @@ void ConcurrentG1RefineThread::run() {
   }
   assert(_should_terminate, "just checking");
   terminate();
-}
-
-
-void ConcurrentG1RefineThread::yield() {
-  if (G1TraceConcRefinement) {
-    gclog_or_tty->print_cr("G1-Refine-yield");
-  }
-  _sts.yield("G1 refine");
-  if (G1TraceConcRefinement) {
-    gclog_or_tty->print_cr("G1-Refine-yield-end");
-  }
 }
 
 void ConcurrentG1RefineThread::stop() {

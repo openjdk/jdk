@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ import com.sun.tools.doclets.internal.toolkit.util.DocPath;
 public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
 
     /**
-     * Array of Packages to be documented.
+     * A Set of Packages to be documented.
      */
-    protected PackageDoc[] packages;
+    protected SortedSet<PackageDoc> packages;
 
     /**
      * Constructor. Also initializes the packages variable.
@@ -89,12 +89,12 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     /**
      * Adds the packages list to the documentation tree.
      *
-     * @param packages an array of packagedoc objects
+     * @param packages a collection of packagedoc objects
      * @param text caption for the table
      * @param tableSummary summary for the table
      * @param body the document tree to which the packages list will be added
      */
-    protected abstract void addPackagesList(PackageDoc[] packages, String text,
+    protected abstract void addPackagesList(Collection<PackageDoc> packages, String text,
             String tableSummary, Content body);
 
     /**
@@ -141,15 +141,14 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * Adds package index contents. Call appropriate methods from
      * the sub-classes. Adds it to the body HtmlTree
      *
-     * @param packages array of packages to be documented
+     * @param packages a collection of packages to be documented
      * @param text string which will be used as the heading
      * @param tableSummary summary for the table
      * @param body the document tree to which the index contents will be added
      */
-    protected void addIndexContents(PackageDoc[] packages, String text,
+    protected void addIndexContents(Collection<PackageDoc> packages, String text,
             String tableSummary, Content body) {
-        if (packages.length > 0) {
-            Arrays.sort(packages);
+        if (!packages.isEmpty()) {
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             div.addStyle(HtmlStyle.indexHeader);
             addAllClassesLink(div);

@@ -26,55 +26,8 @@
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_CONCURRENTGCTHREAD_HPP
 
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
+#include "gc_implementation/shared/suspendibleThreadSet.hpp"
 #include "runtime/thread.hpp"
-#endif // INCLUDE_ALL_GCS
-
-class VoidClosure;
-
-// A SuspendibleThreadSet is (obviously) a set of threads that can be
-// suspended.  A thread can join and later leave the set, and periodically
-// yield.  If some thread (not in the set) requests, via suspend_all, that
-// the threads be suspended, then the requesting thread is blocked until
-// all the threads in the set have yielded or left the set.  (Threads may
-// not enter the set when an attempted suspension is in progress.)  The
-// suspending thread later calls resume_all, allowing the suspended threads
-// to continue.
-
-class SuspendibleThreadSet {
-  Monitor* _m;
-  int      _async;
-  bool     _async_stop;
-  int      _async_stopped;
-  bool     _initialized;
-  double   _suspend_all_start;
-
-  void initialize_work();
-
- public:
-  SuspendibleThreadSet() : _initialized(false) {}
-
-  // Add the current thread to the set.  May block if a suspension
-  // is in progress.
-  void join();
-  // Removes the current thread from the set.
-  void leave();
-  // Returns "true" iff an suspension is in progress.
-  bool should_yield() { return _async_stop; }
-  // Suspends the current thread if a suspension is in progress (for
-  // the duration of the suspension.)
-  void yield(const char* id);
-  // Return when all threads in the set are suspended.
-  void suspend_all();
-  // Allow suspended threads to resume.
-  void resume_all();
-  // Redundant initializations okay.
-  void initialize() {
-    // Double-check dirty read idiom.
-    if (!_initialized) initialize_work();
-  }
-};
-
 
 class ConcurrentGCThread: public NamedThread {
   friend class VMStructs;
@@ -95,9 +48,6 @@ protected:
   static bool CGC_flag_is_set(int b)       { return (_CGC_flag & b) != 0; }
   static int set_CGC_flag(int b)           { return _CGC_flag |= b; }
   static int reset_CGC_flag(int b)         { return _CGC_flag &= ~b; }
-
-  // All instances share this one set.
-  static SuspendibleThreadSet _sts;
 
   // Create and start the thread (setting it's priority high.)
   void create_and_start();
@@ -121,25 +71,6 @@ public:
 
   // Tester
   bool is_ConcurrentGC_thread() const          { return true;       }
-
-  static void safepoint_synchronize();
-  static void safepoint_desynchronize();
-
-  // All overridings should probably do _sts::yield, but we allow
-  // overriding for distinguished debugging messages.  Default is to do
-  // nothing.
-  virtual void yield() {}
-
-  bool should_yield() { return _sts.should_yield(); }
-
-  // they are prefixed by sts since there are already yield() and
-  // should_yield() (non-static) methods in this class and it was an
-  // easy way to differentiate them.
-  static void stsYield(const char* id);
-  static bool stsShouldYield();
-  static void stsJoin();
-  static void stsLeave();
-
 };
 
 // The SurrogateLockerThread is used by concurrent GC threads for

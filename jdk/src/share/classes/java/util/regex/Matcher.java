@@ -830,7 +830,7 @@ public final class Matcher implements MatchResult {
      *
      * <p> The replacement string may contain references to subsequences
      * captured during the previous match: Each occurrence of
-     * <tt>$</tt><i>g</i><tt></tt> will be replaced by the result of
+     * <tt>$</tt><i>g</i> will be replaced by the result of
      * evaluating {@link #group(int) group}<tt>(</tt><i>g</i><tt>)</tt>.
      * The first number after the <tt>$</tt> is always treated as part of
      * the group reference. Subsequent numbers are incorporated into g if

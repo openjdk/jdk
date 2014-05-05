@@ -45,9 +45,9 @@ import java.util.function.UnaryOperator;
  * capacity of a vector before inserting a large number of
  * components; this reduces the amount of incremental reallocation.
  *
- * <p><a name="fail-fast">
+ * <p id="fail-fast">
  * The iterators returned by this class's {@link #iterator() iterator} and
- * {@link #listIterator(int) listIterator} methods are <em>fail-fast</em></a>:
+ * {@link #listIterator(int) listIterator} methods are <em>fail-fast</em>:
  * if the vector is structurally modified at any time after the iterator is
  * created, in any way except through the iterator's own
  * {@link ListIterator#remove() remove} or
@@ -56,7 +56,9 @@ import java.util.function.UnaryOperator;
  * concurrent modification, the iterator fails quickly and cleanly, rather
  * than risking arbitrary, non-deterministic behavior at an undetermined
  * time in the future.  The {@link Enumeration Enumerations} returned by
- * the {@link #elements() elements} method are <em>not</em> fail-fast.
+ * the {@link #elements() elements} method are <em>not</em> fail-fast; if the
+ * Vector is structurally modified at any time after the enumeration is
+ * created then the results of enumerating are undefined.
  *
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
@@ -73,6 +75,8 @@ import java.util.function.UnaryOperator;
  * implementations, {@code Vector} is synchronized.  If a thread-safe
  * implementation is not needed, it is recommended to use {@link
  * ArrayList} in place of {@code Vector}.
+ *
+ * @param <E> Type of component elements
  *
  * @author  Lee Boynton
  * @author  Jonathan Payne
@@ -330,7 +334,9 @@ public class Vector<E>
      * Returns an enumeration of the components of this vector. The
      * returned {@code Enumeration} object will generate all items in
      * this vector. The first item generated is the item at index {@code 0},
-     * then the item at index {@code 1}, and so on.
+     * then the item at index {@code 1}, and so on. If the vector is
+     * structurally modified while enumerating over the elements then the
+     * results of enumerating are undefined.
      *
      * @return  an enumeration of the components of this vector
      * @see     Iterator
@@ -553,7 +559,6 @@ public class Vector<E>
      *         ({@code index < 0 || index >= size()})
      */
     public synchronized void removeElementAt(int index) {
-        modCount++;
         if (index >= elementCount) {
             throw new ArrayIndexOutOfBoundsException(index + " >= " +
                                                      elementCount);
@@ -565,6 +570,7 @@ public class Vector<E>
         if (j > 0) {
             System.arraycopy(elementData, index + 1, elementData, index, j);
         }
+        modCount++;
         elementCount--;
         elementData[elementCount] = null; /* to let gc do its work */
     }
@@ -593,7 +599,6 @@ public class Vector<E>
      *         ({@code index < 0 || index > size()})
      */
     public synchronized void insertElementAt(E obj, int index) {
-        modCount++;
         if (index > elementCount) {
             throw new ArrayIndexOutOfBoundsException(index
                                                      + " > " + elementCount);
@@ -601,6 +606,7 @@ public class Vector<E>
         ensureCapacityHelper(elementCount + 1);
         System.arraycopy(elementData, index, elementData, index + 1, elementCount - index);
         elementData[index] = obj;
+        modCount++;
         elementCount++;
     }
 
@@ -616,8 +622,8 @@ public class Vector<E>
      * @param   obj   the component to be added
      */
     public synchronized void addElement(E obj) {
-        modCount++;
         ensureCapacityHelper(elementCount + 1);
+        modCount++;
         elementData[elementCount++] = obj;
     }
 
@@ -653,11 +659,11 @@ public class Vector<E>
      * method (which is part of the {@link List} interface).
      */
     public synchronized void removeAllElements() {
-        modCount++;
         // Let gc do its work
         for (int i = 0; i < elementCount; i++)
             elementData[i] = null;
 
+        modCount++;
         elementCount = 0;
     }
 
@@ -705,12 +711,15 @@ public class Vector<E>
      * of the Vector <em>only</em> if the caller knows that the Vector
      * does not contain any null elements.)
      *
+     * @param <T> type of array elements. The same type as {@code <E>} or a
+     * supertype of {@code <E>}.
      * @param a the array into which the elements of the Vector are to
      *          be stored, if it is big enough; otherwise, a new array of the
      *          same runtime type is allocated for this purpose.
      * @return an array containing the elements of the Vector
-     * @throws ArrayStoreException if the runtime type of a is not a supertype
-     * of the runtime type of every element in this Vector
+     * @throws ArrayStoreException if the runtime type of a, {@code <T>}, is not
+     * a supertype of the runtime type, {@code <E>}, of every element in this
+     * Vector
      * @throws NullPointerException if the given array is null
      * @since 1.2
      */
@@ -778,8 +787,8 @@ public class Vector<E>
      * @since 1.2
      */
     public synchronized boolean add(E e) {
-        modCount++;
         ensureCapacityHelper(elementCount + 1);
+        modCount++;
         elementData[elementCount++] = e;
         return true;
     }
@@ -879,14 +888,18 @@ public class Vector<E>
      * @throws NullPointerException if the specified collection is null
      * @since 1.2
      */
-    public synchronized boolean addAll(Collection<? extends E> c) {
-        modCount++;
+    public boolean addAll(Collection<? extends E> c) {
         Object[] a = c.toArray();
         int numNew = a.length;
-        ensureCapacityHelper(elementCount + numNew);
-        System.arraycopy(a, 0, elementData, elementCount, numNew);
-        elementCount += numNew;
-        return numNew != 0;
+        if (numNew > 0) {
+            synchronized (this) {
+                ensureCapacityHelper(elementCount + numNew);
+                System.arraycopy(a, 0, elementData, elementCount, numNew);
+                modCount++;
+                elementCount += numNew;
+            }
+        }
+        return numNew > 0;
     }
 
     /**
@@ -951,22 +964,25 @@ public class Vector<E>
      * @since 1.2
      */
     public synchronized boolean addAll(int index, Collection<? extends E> c) {
-        modCount++;
         if (index < 0 || index > elementCount)
             throw new ArrayIndexOutOfBoundsException(index);
 
         Object[] a = c.toArray();
         int numNew = a.length;
-        ensureCapacityHelper(elementCount + numNew);
 
-        int numMoved = elementCount - index;
-        if (numMoved > 0)
-            System.arraycopy(elementData, index, elementData, index + numNew,
-                             numMoved);
+        if (numNew > 0) {
+            ensureCapacityHelper(elementCount + numNew);
 
-        System.arraycopy(a, 0, elementData, index, numNew);
-        elementCount += numNew;
-        return numNew != 0;
+            int numMoved = elementCount - index;
+            if (numMoved > 0)
+                System.arraycopy(elementData, index, elementData,
+                        index + numNew, numMoved);
+
+             System.arraycopy(a, 0, elementData, index, numNew);
+             elementCount += numNew;
+             modCount++;
+        }
+        return numNew > 0;
     }
 
     /**
@@ -1047,12 +1063,12 @@ public class Vector<E>
      * (If {@code toIndex==fromIndex}, this operation has no effect.)
      */
     protected synchronized void removeRange(int fromIndex, int toIndex) {
-        modCount++;
         int numMoved = elementCount - toIndex;
         System.arraycopy(elementData, toIndex, elementData, fromIndex,
                          numMoved);
 
         // Let gc do its work
+        modCount++;
         int newElementCount = elementCount - (toIndex-fromIndex);
         while (elementCount != newElementCount)
             elementData[--elementCount] = null;
@@ -1420,7 +1436,7 @@ public class Vector<E>
         }
 
         public long estimateSize() {
-            return (long) (getFence() - index);
+            return getFence() - index;
         }
 
         public int characteristics() {

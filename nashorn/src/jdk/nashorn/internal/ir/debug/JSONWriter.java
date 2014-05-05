@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.ir.debug;
 
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
@@ -88,7 +90,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
      * @return JSON string representation of AST of the supplied code
      */
     public static String parse(final ScriptEnvironment env, final String code, final String name, final boolean includeLoc) {
-        final Parser       parser     = new Parser(env, new Source(name, code), new Context.ThrowErrorManager(), env._strict);
+        final Parser       parser     = new Parser(env, sourceFor(name, code), new Context.ThrowErrorManager(), env._strict);
         final JSONWriter   jsonWriter = new JSONWriter(includeLoc);
         try {
             final FunctionNode functionNode = parser.parse(CompilerConstants.RUN_SCRIPT.symbolName());

@@ -36,6 +36,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicMethodSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
@@ -50,8 +51,10 @@ import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static com.sun.tools.javac.comp.LambdaToMethod.LambdaSymbolKind.*;
 import static com.sun.tools.javac.code.Flags.*;
@@ -437,13 +440,9 @@ public class LambdaToMethod extends TreeTranslator {
     public void visitVarDef(JCVariableDecl tree) {
         LambdaTranslationContext lambdaContext = (LambdaTranslationContext)context;
         if (context != null && lambdaContext.getSymbolMap(LOCAL_VAR).containsKey(tree.sym)) {
-            JCExpression init = translate(tree.init);
-            int prevPos = make.pos;
-            try {
-                result = make.at(tree).VarDef((VarSymbol)lambdaContext.getSymbolMap(LOCAL_VAR).get(tree.sym), init);
-            } finally {
-                make.at(prevPos);
-            }
+            tree.init = translate(tree.init);
+            tree.sym = (VarSymbol) lambdaContext.getSymbolMap(LOCAL_VAR).get(tree.sym);
+            result = tree;
         } else if (context != null && lambdaContext.getSymbolMap(TYPE_VAR).containsKey(tree.sym)) {
             JCExpression init = translate(tree.init);
             VarSymbol xsym = (VarSymbol)lambdaContext.getSymbolMap(TYPE_VAR).get(tree.sym);
@@ -1284,7 +1283,10 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public void visitNewClass(JCNewClass tree) {
-            if (lambdaNewClassFilter(context(), tree)) {
+            TypeSymbol def = tree.type.tsym;
+            boolean inReferencedClass = currentlyInClass(def);
+            boolean isLocal = def.isLocal();
+            if ((inReferencedClass && isLocal || lambdaNewClassFilter(context(), tree))) {
                 TranslationContext<?> localContext = context();
                 while (localContext != null) {
                     if (localContext.tree.getTag() == LAMBDA) {
@@ -1294,16 +1296,16 @@ public class LambdaToMethod extends TreeTranslator {
                     localContext = localContext.prev;
                 }
             }
-            if (context() != null && tree.type.tsym.owner.kind == MTH) {
+            if (context() != null && !inReferencedClass && isLocal) {
                 LambdaTranslationContext lambdaContext = (LambdaTranslationContext)context();
-                captureLocalClassDefs(tree.type.tsym, lambdaContext);
+                captureLocalClassDefs(def, lambdaContext);
             }
             super.visitNewClass(tree);
         }
         //where
             void captureLocalClassDefs(Symbol csym, final LambdaTranslationContext lambdaContext) {
                 JCClassDecl localCDef = localClassDefs.get(csym);
-                if (localCDef != null && localCDef.pos < lambdaContext.tree.pos) {
+                if (localCDef != null && lambdaContext.freeVarProcessedLocalClasses.add(csym)) {
                     BasicFreeVarCollector fvc = lower.new BasicFreeVarCollector() {
                         @Override
                         void addFreeVars(ClassSymbol c) {
@@ -1328,6 +1330,18 @@ public class LambdaToMethod extends TreeTranslator {
                     };
                     fvc.scan(localCDef);
                 }
+        }
+        //where
+        boolean currentlyInClass(Symbol csym) {
+            for (Frame frame : frameStack) {
+                if (frame.tree.hasTag(JCTree.Tag.CLASSDEF)) {
+                    JCClassDecl cdef = (JCClassDecl) frame.tree;
+                    if (cdef.sym == csym) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         /**
@@ -1754,6 +1768,11 @@ public class LambdaToMethod extends TreeTranslator {
 
             List<JCVariableDecl> syntheticParams;
 
+            /**
+             * to prevent recursion, track local classes processed
+             */
+            final Set<Symbol> freeVarProcessedLocalClasses;
+
             LambdaTranslationContext(JCLambda tree) {
                 super(tree);
                 Frame frame = frameStack.head;
@@ -1783,6 +1802,8 @@ public class LambdaToMethod extends TreeTranslator {
                 translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<Symbol, Symbol>());
                 translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<Symbol, Symbol>());
                 translatedSymbols.put(TYPE_VAR, new LinkedHashMap<Symbol, Symbol>());
+
+                freeVarProcessedLocalClasses = new HashSet<>();
             }
 
              /**
@@ -1893,7 +1914,7 @@ public class LambdaToMethod extends TreeTranslator {
                         };
                         break;
                     case LOCAL_VAR:
-                        ret = new VarSymbol(sym.flags() & FINAL, name, types.erasure(sym.type), translatedSym);
+                        ret = new VarSymbol(sym.flags() & FINAL, name, sym.type, translatedSym);
                         ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
                         break;
                     case PARAM:

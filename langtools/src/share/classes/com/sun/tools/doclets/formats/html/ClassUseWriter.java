@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Map<String,List<ProgramElementDoc>> map = new HashMap<>();
         List<? extends ProgramElementDoc> list= classMap.get(classdoc.qualifiedName());
         if (list != null) {
-            Collections.sort(list);
+            list.sort(Util.makeComparatorForClassUse());
             for (ProgramElementDoc doc : list) {
                 PackageDoc pkg = doc.containingPackage();
                 pkgSet.add(pkg);
@@ -245,7 +245,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void addClassUse(Content contentTree) throws IOException {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addStyle(HtmlStyle.blockList);
-        if (configuration.packages.length > 1) {
+        if (configuration.packages.size() > 1) {
             addPackageList(ul);
             addPackageAnnotationList(ul);
         }
