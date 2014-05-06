@@ -227,7 +227,7 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this date with the specified period in years added.
+     * Returns a copy of this date with the specified number of years added.
      * <p>
      * This adds the specified period in years to the date.
      * In some cases, adding years can cause the resulting date to become invalid.
@@ -243,7 +243,7 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     abstract D plusYears(long yearsToAdd);
 
     /**
-     * Returns a copy of this date with the specified period in months added.
+     * Returns a copy of this date with the specified number of months added.
      * <p>
      * This adds the specified period in months to the date.
      * In some cases, adding months can cause the resulting date to become invalid.
@@ -259,7 +259,7 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     abstract D plusMonths(long monthsToAdd);
 
     /**
-     * Returns a copy of this date with the specified period in weeks added.
+     * Returns a copy of this date with the specified number of weeks added.
      * <p>
      * This adds the specified period in weeks to the date.
      * In some cases, adding weeks can cause the resulting date to become invalid.
@@ -292,7 +292,7 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this date with the specified period in years subtracted.
+     * Returns a copy of this date with the specified number of years subtracted.
      * <p>
      * This subtracts the specified period in years to the date.
      * In some cases, subtracting years can cause the resulting date to become invalid.
@@ -313,7 +313,7 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     }
 
     /**
-     * Returns a copy of this date with the specified period in months subtracted.
+     * Returns a copy of this date with the specified number of months subtracted.
      * <p>
      * This subtracts the specified period in months to the date.
      * In some cases, subtracting months can cause the resulting date to become invalid.
@@ -334,7 +334,7 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     }
 
     /**
-     * Returns a copy of this date with the specified period in weeks subtracted.
+     * Returns a copy of this date with the specified number of weeks subtracted.
      * <p>
      * This subtracts the specified period in weeks to the date.
      * In some cases, subtracting weeks can cause the resulting date to become invalid.

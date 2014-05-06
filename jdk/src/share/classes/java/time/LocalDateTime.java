@@ -428,7 +428,7 @@ public final class LocalDateTime
     /**
      * Obtains an instance of {@code LocalDateTime} from a temporal object.
      * <p>
-     * This obtains an offset time based on the specified temporal.
+     * This obtains a local date-time based on the specified temporal.
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code LocalDateTime}.
      * <p>
@@ -656,7 +656,7 @@ public final class LocalDateTime
     /**
      * Gets the value of the specified field from this date-time as an {@code int}.
      * <p>
-     * This queries this date-time for the value for the specified field.
+     * This queries this date-time for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -665,7 +665,7 @@ public final class LocalDateTime
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time, except {@code NANO_OF_DAY}, {@code MICRO_OF_DAY},
      * {@code EPOCH_DAY} and {@code PROLEPTIC_MONTH} which are too large to fit in
-     * an {@code int} and throw a {@code DateTimeException}.
+     * an {@code int} and throw a {@code UnsupportedTemporalTypeException}.
      * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
@@ -693,7 +693,7 @@ public final class LocalDateTime
     /**
      * Gets the value of the specified field from this date-time as a {@code long}.
      * <p>
-     * This queries this date-time for the value for the specified field.
+     * This queries this date-time for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -878,7 +878,9 @@ public final class LocalDateTime
      * <p>
      * A simple adjuster might simply set the one of the fields, such as the year field.
      * A more complex adjuster might set the date to the last day of the month.
-     * A selection of common adjustments is provided in {@link TemporalAdjuster}.
+     * <p>
+     * A selection of common adjustments is provided in
+     * {@link java.time.temporal.TemporalAdjusters TemporalAdjusters}.
      * These include finding the "last day of the month" and "next Wednesday".
      * Key date-time classes also implement the {@code TemporalAdjuster} interface,
      * such as {@link Month} and {@link java.time.MonthDay MonthDay}.
@@ -888,7 +890,7 @@ public final class LocalDateTime
      * For example this code returns a date on the last day of July:
      * <pre>
      *  import static java.time.Month.*;
-     *  import static java.time.temporal.Adjusters.*;
+     *  import static java.time.temporal.TemporalAdjusters.*;
      *
      *  result = localDateTime.with(JULY).with(lastDayOfMonth());
      * </pre>
@@ -974,6 +976,7 @@ public final class LocalDateTime
     //-----------------------------------------------------------------------
     /**
      * Returns a copy of this {@code LocalDateTime} with the year altered.
+     * <p>
      * The time does not affect the calculation and will be the same in the result.
      * If the day-of-month is invalid for the year, it will be changed to the last valid day of the month.
      * <p>
@@ -989,6 +992,7 @@ public final class LocalDateTime
 
     /**
      * Returns a copy of this {@code LocalDateTime} with the month-of-year altered.
+     * <p>
      * The time does not affect the calculation and will be the same in the result.
      * If the day-of-month is invalid for the year, it will be changed to the last valid day of the month.
      * <p>
@@ -1004,7 +1008,8 @@ public final class LocalDateTime
 
     /**
      * Returns a copy of this {@code LocalDateTime} with the day-of-month altered.
-     * If the resulting {@code LocalDateTime} is invalid, an exception is thrown.
+     * <p>
+     * If the resulting date-time is invalid, an exception is thrown.
      * The time does not affect the calculation and will be the same in the result.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1020,7 +1025,8 @@ public final class LocalDateTime
 
     /**
      * Returns a copy of this {@code LocalDateTime} with the day-of-year altered.
-     * If the resulting {@code LocalDateTime} is invalid, an exception is thrown.
+     * <p>
+     * If the resulting date-time is invalid, an exception is thrown.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1035,7 +1041,7 @@ public final class LocalDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalDateTime} with the hour-of-day value altered.
+     * Returns a copy of this {@code LocalDateTime} with the hour-of-day altered.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1049,7 +1055,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the minute-of-hour value altered.
+     * Returns a copy of this {@code LocalDateTime} with the minute-of-hour altered.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1063,7 +1069,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the second-of-minute value altered.
+     * Returns a copy of this {@code LocalDateTime} with the second-of-minute altered.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1077,7 +1083,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the nano-of-second value altered.
+     * Returns a copy of this {@code LocalDateTime} with the nano-of-second altered.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1109,7 +1115,7 @@ public final class LocalDateTime
      * @param unit  the unit to truncate to, not null
      * @return a {@code LocalDateTime} based on this date-time with the time truncated, not null
      * @throws DateTimeException if unable to truncate
-     * @throws UnsupportedTemporalTypeException if the field is not supported
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
     public LocalDateTime truncatedTo(TemporalUnit unit) {
         return with(date, time.truncatedTo(unit));
@@ -1192,7 +1198,7 @@ public final class LocalDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in years added.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of years added.
      * <p>
      * This method adds the specified amount to the years field in three steps:
      * <ol>
@@ -1217,7 +1223,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in months added.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of months added.
      * <p>
      * This method adds the specified amount to the months field in three steps:
      * <ol>
@@ -1242,7 +1248,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in weeks added.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of weeks added.
      * <p>
      * This method adds the specified amount in weeks to the days field incrementing
      * the month and year fields as necessary to ensure the result remains valid.
@@ -1262,7 +1268,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in days added.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of days added.
      * <p>
      * This method adds the specified amount to the days field incrementing the
      * month and year fields as necessary to ensure the result remains valid.
@@ -1283,7 +1289,7 @@ public final class LocalDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in hours added.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of hours added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1296,7 +1302,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in minutes added.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of minutes added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1309,7 +1315,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in seconds added.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of seconds added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1322,7 +1328,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in nanoseconds added.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of nanoseconds added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1391,7 +1397,7 @@ public final class LocalDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in years subtracted.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of years subtracted.
      * <p>
      * This method subtracts the specified amount from the years field in three steps:
      * <ol>
@@ -1415,7 +1421,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in months subtracted.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of months subtracted.
      * <p>
      * This method subtracts the specified amount from the months field in three steps:
      * <ol>
@@ -1439,7 +1445,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in weeks subtracted.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of weeks subtracted.
      * <p>
      * This method subtracts the specified amount in weeks from the days field decrementing
      * the month and year fields as necessary to ensure the result remains valid.
@@ -1458,9 +1464,9 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in days subtracted.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of days subtracted.
      * <p>
-     * This method subtracts the specified amount from the days field incrementing the
+     * This method subtracts the specified amount from the days field decrementing the
      * month and year fields as necessary to ensure the result remains valid.
      * The result is only invalid if the maximum/minimum year is exceeded.
      * <p>
@@ -1478,7 +1484,7 @@ public final class LocalDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in hours subtracted.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of hours subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1491,7 +1497,7 @@ public final class LocalDateTime
    }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in minutes subtracted.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of minutes subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1504,7 +1510,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in seconds subtracted.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of seconds subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1517,7 +1523,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Returns a copy of this {@code LocalDateTime} with the specified period in nanoseconds subtracted.
+     * Returns a copy of this {@code LocalDateTime} with the specified number of nanoseconds subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1575,7 +1581,7 @@ public final class LocalDateTime
      * what the result of this method will be.
      * <p>
      * The result of this method is obtained by invoking the
-     * {@link java.time.temporal.TemporalQuery#queryFrom(TemporalAccessor)} method on the
+     * {@link TemporalQuery#queryFrom(TemporalAccessor)} method on the
      * specified query passing {@code this} as the argument.
      *
      * @param <R> the type of the result
