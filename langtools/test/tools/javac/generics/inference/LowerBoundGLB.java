@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,27 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 7086586 8033718
- *
- * @summary Inference producing null type argument; inference ignores capture
- *          variable as upper bound
+ * @bug 8033718
+ * @author dlsmith
+ * @summary GLB for two capture variables with lower bounds
+ * @compile LowerBoundGLB.java
  */
-import java.util.List;
 
-public class T7086586b {
+public class LowerBoundGLB {
 
-    int assertionCount = 0;
-
-    void assertTrue(boolean cond) {
-        if (!cond) {
-            throw new AssertionError();
-        }
-        assertionCount++;
+    interface Box<T> {
+        T get();
+        void set(T arg);
     }
 
-    <T> void m(List<? super T> dummy) { assertTrue(true); }
-    <T> void m(Object dummy) { assertTrue(false); }
-
-    void test(List<?> l) {
-        m(l);
-        assertTrue(assertionCount == 1);
+    <T> T doGLB(Box<? super T> b1, Box<? super T> b2) {
+        return null;
     }
 
-    public static void main(String[] args) {
-        new T7086586b().test(null);
+    void test(Box<? super String> l1, Box<? super CharSequence> l2) {
+        doGLB(l1, l2).substring(3);
     }
+
 }
