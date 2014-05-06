@@ -606,7 +606,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
         debug_mem.c \
         debug_trace.c \
         debug_util.c \
-        awt_Plugin.c \
         gnome_interface.c \
         gtk2_interface.c \
         swing_GTKEngine.c \
