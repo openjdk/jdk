@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,11 +87,11 @@ public class RenderableImageOp implements RenderableImage {
         return getRenderableSources();
     }
 
-    private Vector getRenderableSources() {
-        Vector sources = null;
+    private Vector<RenderableImage> getRenderableSources() {
+        Vector<RenderableImage> sources = null;
 
         if (paramBlock.getNumSources() > 0) {
-            sources = new Vector();
+            sources = new Vector<>();
             int i = 0;
             while (i < paramBlock.getNumSources()) {
                 Object o = paramBlock.getSource(i);
@@ -314,19 +314,19 @@ public class RenderableImageOp implements RenderableImage {
         // contains RenderableImage sources, they will be replaced by
         // RenderedImages.
         ParameterBlock renderedParamBlock = (ParameterBlock)paramBlock.clone();
-        Vector sources = getRenderableSources();
+        Vector<? extends Object> sources = getRenderableSources();
 
         try {
             // This assumes that if there is no renderable source, that there
             // is a rendered source in paramBlock
 
             if (sources != null) {
-                Vector renderedSources = new Vector();
+                Vector<Object> renderedSources = new Vector<>();
                 for (int i = 0; i < sources.size(); i++) {
                     rcOut = myCRIF.mapRenderContext(i, renderContext,
                                                     paramBlock, this);
                     RenderedImage rdrdImage =
-                       ((RenderableImage)sources.elementAt(i)).createRendering(rcOut);
+                        ((RenderableImage)sources.elementAt(i)).createRendering(rcOut);
                     if (rdrdImage == null) {
                         return null;
                     }
