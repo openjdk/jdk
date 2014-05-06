@@ -32,10 +32,6 @@ var obj = {};
 
 obj.__proto__ = null;
 
-if (obj.__proto__ !== null || typeof(obj.__proto__) != 'object') {
-    fail("obj.__proto__ is expected to be null");
-}
-
 var p = Object.getPrototypeOf(obj);
 if (p !== null || typeof(p) != 'object') {
     fail("Object.getPrototypeOf(obj) is expected to be null");

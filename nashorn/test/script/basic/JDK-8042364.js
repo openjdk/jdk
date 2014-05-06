@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,44 @@
  */
 
 /**
- * JDK-8024174: Setting __proto__ property in Object literal should be supported *
+ * JDK-8042364: Make __proto__ ES6 draft compliant
+ * 
  * @test
  * @run
  */
 
-var p = { foo: function() { print("p.foo"); } };
+// check for Object.prototype.__proto__ accessor property
+print("Object.prototype has __proto__?",
+    Object.prototype.hasOwnProperty("__proto__"))
 
+var desc = Object.getOwnPropertyDescriptor(Object.prototype, "__proto__")
+print("descriptor");
+print(JSON.stringify(desc))
+print("getter", desc.get)
+print("setter", desc.set)
+
+// no computed "__proto__" name, only identifier!
+var p = {}
 var obj = {
-    __proto__ : p,
-    bar: 44
-};
-
-if (obj.__proto__ !== p || Object.getPrototypeOf(obj) !== p) {
-    fail("obj.__proto__ was not set inside literal");
+    "__proto__" : p
 }
 
-if (typeof(obj.foo) !== 'function' || obj.foo !== p.foo) {
-    fail("'obj' failed to inherit 'foo' from 'p'");
+if (Object.getPrototypeOf(obj) === p) {
+    fail("obj has wrong __proto__, allows computed __proto__!")
+}
+
+if (obj.__proto__ !== p) {
+    fail("__proto__ not created as normal property!")
+}
+
+if (Object.getPrototypeOf(obj) !== Object.prototype) {
+    fail("obj has wrong __proto__")
 }
 
 var obj2 = {
-    __proto__: null
-};
+    __proto__: p
+}
 
-if (Object.getPrototypeOf(obj2) !== null) {
-    fail("obj2.__proto__ was not set to null inside literal");
+if (Object.getPrototypeOf(obj2) !== p) {
+    fail("can't set __proto__ in object literal")
 }
