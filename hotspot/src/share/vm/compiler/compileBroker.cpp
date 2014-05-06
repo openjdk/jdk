@@ -625,17 +625,27 @@ void CompileQueue::add(CompileTask* task) {
   lock()->notify_all();
 }
 
+/**
+ * Empties compilation queue by putting all compilation tasks onto
+ * a freelist. Furthermore, the method wakes up all threads that are
+ * waiting on a compilation task to finish. This can happen if background
+ * compilation is disabled.
+ */
 void CompileQueue::free_all() {
   MutexLocker mu(lock());
-  if (_first != NULL) {
-    for (CompileTask* task = _first; task != NULL; task = task->next()) {
-      // Wake up thread that blocks on the compile task.
-      task->lock()->notify();
-      // Puts task back on the freelist.
-      CompileTask::free(task);
-    }
-    _first = NULL;
+  CompileTask* next = _first;
+
+  // Iterate over all tasks in the compile queue
+  while (next != NULL) {
+    CompileTask* current = next;
+    next = current->next();
+    // Wake up thread that blocks on the compile task.
+    current->lock()->notify();
+    // Put the task back on the freelist.
+    CompileTask::free(current);
   }
+  _first = NULL;
+
   // Wake up all threads that block on the queue.
   lock()->notify_all();
 }
