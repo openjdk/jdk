@@ -1552,7 +1552,7 @@ public class Resolve {
             currentResolutionContext.methodCheck =
                     prevResolutionContext.methodCheck.mostSpecificCheck(actuals, !allowBoxing);
             Type mst = instantiate(env, site, m2, null,
-                    adjustArgs(types.lowerBounds(types.memberType(site, m1).getParameterTypes()), m1, maxLength, useVarargs), null,
+                    adjustArgs(types.cvarLowerBounds(types.memberType(site, m1).getParameterTypes()), m1, maxLength, useVarargs), null,
                     allowBoxing, useVarargs, noteWarner);
             return mst != null &&
                     !noteWarner.hasLint(Lint.LintCategory.UNCHECKED);
