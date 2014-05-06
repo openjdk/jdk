@@ -938,6 +938,10 @@ LoadLNode* LoadLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, c
   return new (C) LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, require_atomic);
 }
 
+LoadDNode* LoadDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
+  bool require_atomic = true;
+  return new (C) LoadDNode(ctl, mem, adr, adr_type, rt, mo, require_atomic);
+}
 
 
 
@@ -2378,6 +2382,11 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
 StoreLNode* StoreLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
   bool require_atomic = true;
   return new (C) StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
+}
+
+StoreDNode* StoreDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
+  bool require_atomic = true;
+  return new (C) StoreDNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
 }
 
 
