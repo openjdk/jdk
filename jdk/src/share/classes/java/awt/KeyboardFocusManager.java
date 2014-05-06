@@ -348,6 +348,7 @@ public abstract class KeyboardFocusManager
      * Component of those Windows that has no such array of its own explicitly
      * set.
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private Set<AWTKeyStroke>[] defaultFocusTraversalKeys = new Set[4];
 
     /**
@@ -422,7 +423,7 @@ public abstract class KeyboardFocusManager
             targetSet.add(AWTKeyStroke.getAWTKeyStroke(tokens.nextToken()));
         }
         return (targetSet.isEmpty())
-            ? Collections.EMPTY_SET
+            ? Collections.emptySet()
             : Collections.unmodifiableSet(targetSet);
     }
 
@@ -436,7 +437,7 @@ public abstract class KeyboardFocusManager
                 work_set.add(defaultFocusTraversalKeyStrokes[i][j]);
             }
             defaultFocusTraversalKeys[i] = (work_set.isEmpty())
-                ? Collections.EMPTY_SET
+                ? Collections.emptySet()
                 : Collections.unmodifiableSet(work_set);
         }
         initPeer();
@@ -1750,11 +1751,12 @@ public abstract class KeyboardFocusManager
      * @see #addKeyEventDispatcher
      * @see #removeKeyEventDispatcher
      */
+    @SuppressWarnings("unchecked") // Cast of result of clone
     protected synchronized java.util.List<KeyEventDispatcher>
         getKeyEventDispatchers()
     {
         return (keyEventDispatchers != null)
-            ? (java.util.List)keyEventDispatchers.clone()
+            ? (java.util.List<KeyEventDispatcher>)keyEventDispatchers.clone()
             : null;
     }
 
@@ -1841,11 +1843,12 @@ public abstract class KeyboardFocusManager
      * @see #addKeyEventPostProcessor
      * @see #removeKeyEventPostProcessor
      */
+    @SuppressWarnings("unchecked") // Cast of result of clone
     protected java.util.List<KeyEventPostProcessor>
         getKeyEventPostProcessors()
     {
         return (keyEventPostProcessors != null)
-            ? (java.util.List)keyEventPostProcessors.clone()
+            ? (java.util.List<KeyEventPostProcessor>)keyEventPostProcessors.clone()
             : null;
     }
 
@@ -1907,8 +1910,7 @@ public abstract class KeyboardFocusManager
      * javax.swing.JComponent.runInputVerifier() using reflection.
      */
     static synchronized Component getMostRecentFocusOwner(Window window) {
-        WeakReference<Component> weakValue =
-            (WeakReference)mostRecentFocusOwners.get(window);
+        WeakReference<Component> weakValue = mostRecentFocusOwners.get(window);
         return weakValue == null ? null : weakValue.get();
     }
 
