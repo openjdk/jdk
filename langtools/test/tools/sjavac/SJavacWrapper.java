@@ -26,6 +26,7 @@
  * @summary Test all aspects of sjavac.
  *
  * @bug 8004658
+ * @bug 8042441
  * @bug 8042699
  * @summary Add internal smart javac wrapper to solve JEP 139
  *
