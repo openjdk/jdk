@@ -64,6 +64,13 @@ oop ArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   return NULL;
 }
 
+// find field according to JVM spec 5.4.3.2, returns the klass in which the field is defined
+Klass* ArrayKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
+  // There are no fields in an array klass but look to the super class (Object)
+  assert(super(), "super klass must be present");
+  return super()->find_field(name, sig, fd);
+}
+
 Method* ArrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const {
   // There are no methods in an array klass but the super class (Object) has some
   assert(super(), "super klass must be present");
