@@ -100,8 +100,6 @@ abstract class AbstractPoller implements Runnable {
         // validate arguments before request to poller
         if (dir == null)
             throw new NullPointerException();
-        if (events.length == 0)
-            throw new IllegalArgumentException("No events to register");
         Set<WatchEvent.Kind<?>> eventSet = new HashSet<>(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
@@ -114,17 +112,16 @@ abstract class AbstractPoller implements Runnable {
             }
 
             // OVERFLOW is ignored
-            if (event == StandardWatchEventKinds.OVERFLOW) {
-                if (events.length == 1)
-                    throw new IllegalArgumentException("No events to register");
+            if (event == StandardWatchEventKinds.OVERFLOW)
                 continue;
-            }
 
             // null/unsupported
             if (event == null)
                 throw new NullPointerException("An element in event set is 'null'");
             throw new UnsupportedOperationException(event.name());
         }
+        if (eventSet.isEmpty())
+            throw new IllegalArgumentException("No events to register");
         return (WatchKey)invoke(RequestType.REGISTER, dir, eventSet, modifiers);
     }
 
