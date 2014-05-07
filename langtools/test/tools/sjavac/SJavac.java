@@ -83,6 +83,7 @@ class SJavac {
         compileWithInvisibleSources();
         compileCircularSources();
         compileExcludingDependency();
+        incrementalCompileTestFullyQualifiedRef();
 
         delete(gensrc);
         delete(gensrc2);
@@ -408,6 +409,43 @@ class SJavac {
         verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
                                      "bin/alfa/omega/A.class",
                                      "bin/javac_state");
+    }
+
+    void incrementalCompileTestFullyQualifiedRef() throws Exception {
+        System.out.println("Verify that \"alfa.omega.A a;\" does create a proper dependency.");
+        System.out.println("----------------------------------------------------------------");
+
+        populate(gensrc,
+                 "alfa/omega/A.java",
+                 "package alfa.omega; public class A { "+
+                 "  public final static int DEFINITION = 18; "+
+                 "  public void hello() { }"+
+                 "}",
+                 "beta/B.java",
+                 "package beta; public class B { "+
+                 "  public void world() { alfa.omega.A a; }"+
+                 "}");
+
+        compile("gensrc", "-d", "bin", "-j", "1",
+                "--server:portfile=testserver,background=false", "--log=debug");
+        Map<String,Long> previous_bin_state = collectState(bin);
+
+        // Change pubapi of A, this should trigger a recompile of B.
+        populate(gensrc,
+                 "alfa/omega/A.java",
+                 "package alfa.omega; public class A { "+
+                 "  public final static int DEFINITION = 19; "+
+                 "  public void hello() { }"+
+                 "}");
+
+        compile("gensrc", "-d", "bin", "-j", "1",
+                "--server:portfile=testserver,background=false", "--log=debug");
+        Map<String,Long> new_bin_state = collectState(bin);
+
+        verifyNewerFiles(previous_bin_state, new_bin_state,
+                         "bin/alfa/omega/A.class",
+                         "bin/beta/B.class",
+                         "bin/javac_state");
     }
 
     void removeFrom(Path dir, String... args) throws IOException {
