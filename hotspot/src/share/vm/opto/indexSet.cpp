@@ -51,7 +51,7 @@ int IndexSet::_serial_count = 1;
 #endif
 
 // What is the first set bit in a 5 bit integer?
-const byte IndexSetIterator::_first_bit[32] = {
+const uint8_t IndexSetIterator::_first_bit[32] = {
   0, 0, 1, 0,
   2, 0, 1, 0,
   3, 0, 1, 0,
@@ -63,7 +63,7 @@ const byte IndexSetIterator::_first_bit[32] = {
 };
 
 // What is the second set bit in a 5 bit integer?
-const byte IndexSetIterator::_second_bit[32] = {
+const uint8_t IndexSetIterator::_second_bit[32] = {
   5, 5, 5, 1,
   5, 2, 2, 1,
   5, 3, 3, 1,
@@ -298,7 +298,7 @@ IndexSet::IndexSet (IndexSet *set) {
       set_block(i, &_empty_block);
     } else {
       BitBlock *new_block = alloc_block();
-      memcpy(new_block->words(), block->words(), sizeof(uint32) * words_per_block);
+      memcpy(new_block->words(), block->words(), sizeof(uint32_t) * words_per_block);
       set_block(i, new_block);
     }
   }

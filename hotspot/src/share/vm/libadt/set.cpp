@@ -28,19 +28,10 @@
 
 // Sets - An Abstract Data Type
 
-// %%%%% includes not needed with AVM framework - Ungar
-// #include "port.hpp"
-//IMPLEMENTATION
-// #include "set.hpp"
-
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-
-// Not needed and it causes terouble for gcc.
-//
-// #include <iostream.h>
 
 //-------------------------Virtual Functions-----------------------------------
 // These functions MUST be implemented by the inheriting class.

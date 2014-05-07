@@ -397,8 +397,9 @@ void PhaseIdealLoop::Dominators() {
     ntarjan[i]._control = NULL;
 
   // Store the DFS order for the main loop
+  const uint fill_value = max_juint;
   uint *dfsorder = NEW_RESOURCE_ARRAY(uint,C->unique()+1);
-  memset(dfsorder, max_uint, (C->unique()+1) * sizeof(uint));
+  memset(dfsorder, fill_value, (C->unique()+1) * sizeof(uint));
 
   // Tarjan's algorithm, almost verbatim:
   // Step 1:
@@ -419,7 +420,7 @@ void PhaseIdealLoop::Dominators() {
       if( whead->in(j) == NULL || !whead->in(j)->is_CFG() )
         continue;                            // Only process control nodes
       uint b = dfsorder[whead->in(j)->_idx];
-      if(b == max_uint) continue;
+      if(b == fill_value) continue;
       NTarjan *vx = &ntarjan[b];
       NTarjan *u = vx->EVAL();
       if( u->_semi < w->_semi )
