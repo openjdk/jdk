@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 7017446
+ * @bug 4313887 6838333 7017446 8011537
  * @summary Unit test for java.nio.file.WatchService
  * @library ..
  * @run main Basic
@@ -468,6 +468,28 @@ public class Basic {
         }
     }
 
+    /**
+     * Test that thread interruped status is preserved upon a call
+     * to register()
+     */
+    static void testThreadInterrupt(Path dir) throws IOException {
+        System.out.println("-- Thread interrupted status test --");
+
+        FileSystem fs = FileSystems.getDefault();
+        Thread curr = Thread.currentThread();
+        try (WatchService watcher = fs.newWatchService()) {
+            System.out.println("interrupting current thread");
+            curr.interrupt();
+            dir.register(watcher, ENTRY_CREATE);
+            if (!curr.isInterrupted())
+                throw new RuntimeException("thread should remain interrupted");
+            System.out.println("current thread is still interrupted");
+            System.out.println("OKAY");
+        } finally {
+            curr.interrupted();
+        }
+    }
+
     public static void main(String[] args) throws IOException {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
@@ -478,6 +500,7 @@ public class Basic {
             testWakeup(dir);
             testExceptions(dir);
             testTwoWatchers(dir);
+            testThreadInterrupt(dir);
 
         } finally {
             TestUtil.removeAll(dir);
