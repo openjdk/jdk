@@ -29,28 +29,58 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// Usage: jjs uniq.js
-// or: jjs uniq.js -- <file>
+// Usage: jjs list_mapreduce.js
 
-// omit repeated lines and print unique lines
+// Many Array.prototype functions such as map, 
+// filter, reduce, reduceRight, every, some are generic.
+// These functions accept ECMAScript array as well as 
+// many array-like objects including java.util.ArrayLists.
+// So, you can do map/filter/reduce with Java streams or
+// you can also use Array.prototype functions as below.
+// See also http://en.wikipedia.org/wiki/MapReduce
 
-var BufferedReader = Java.type("java.io.BufferedReader");
-var FileReader = Java.type("java.io.FileReader");
-var InputStreamReader = Java.type("java.io.InputStreamReader");
-var System = Java.type("java.lang.System");
+var ArrayList = Java.type("java.util.ArrayList");
+var list = new ArrayList();
+list.add("nashorn");
+list.add("ecmascript");
+list.add("javascript");
+list.add("js");
+list.add("scheme");
 
-// use object as set - but insertion order preserved
-var uniqueLines = {};
-var reader = arguments.length > 0 ?
-    new FileReader(arguments[0])  :
-    new InputStreamReader(System.in);
-reader = new BufferedReader(reader);
+var map = Array.prototype.map;
+var filter = Array.prototype.filter;
+var reduce = Array.prototype.reduce;
 
-// add unique lines
-reader.lines().forEach(function(line) {
-    uniqueLines[line] = true;
-})
+// sum of word lengths
+print("Sum word length:",
+    reduce.call(
+        map.call(list, function(x) x.length),
+        function(x, y) x + y)
+);
 
-for (line in uniqueLines) {
-    print(line);
-}
+// filter use to filter out "j*" and concatenate rest with ":"
+// after uppercasing all strings
+print(
+    reduce.call(
+        map.call(
+            filter.call(list, function(x) !x.startsWith("j")),
+            function(x) x.toUpperCase()),
+        function(x, y) x + ":" + y)
+);
+
+// another list example involving numbers
+list.clear();
+// make random list of numbers
+for (var i = 0; i < 10; i++)
+    list.add(Math.random());
+
+var forEach = Array.prototype.forEach;
+// print numbers in the list
+forEach.call(list, function(x) print(x));
+
+// print sum of squares of the random numbers
+print("Square sum:",
+    reduce.call(
+        map.call(list, function(x) x*x), 
+        function(x, y) x + y)
+);
