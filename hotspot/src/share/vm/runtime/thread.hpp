@@ -566,7 +566,7 @@ public:
   void    set_lgrp_id(int value) { _lgrp_id = value; }
 
   // Printing
-  void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
 
@@ -700,6 +700,7 @@ class NamedThread: public Thread {
   virtual char* name() const { return _name == NULL ? (char*)"Unknown Thread" : _name; }
   JavaThread *processed_thread() { return _processed_thread; }
   void set_processed_thread(JavaThread *thread) { _processed_thread = thread; }
+  virtual void print_on(outputStream* st) const;
 };
 
 // Worker threads are named and have an id of an assigned work.
@@ -746,7 +747,6 @@ class WatcherThread: public Thread {
   // Printing
   char* name() const { return (char*)"VM Periodic Task Thread"; }
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
   void unpark();
 
   // Returns the single instance of WatcherThread
@@ -1459,7 +1459,6 @@ class JavaThread: public Thread {
   // Misc. operations
   char* name() const { return (char*)get_thread_name(); }
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
   void print_value();
   void print_thread_state_on(outputStream* ) const      PRODUCT_RETURN;
   void print_thread_state() const                       PRODUCT_RETURN;
