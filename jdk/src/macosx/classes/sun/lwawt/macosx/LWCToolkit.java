@@ -701,7 +701,14 @@ public final class LWCToolkit extends LWToolkit {
         return (T)dgr;
     }
 
-// InputMethodSupport Method
+    @Override
+    protected PlatformDropTarget createDropTarget(DropTarget dropTarget,
+                                                  Component component,
+                                                  LWComponentPeer<?, ?> peer) {
+        return new CDropTarget(dropTarget, component, peer);
+    }
+
+    // InputMethodSupport Method
     /**
      * Returns the default keyboard locale of the underlying operating system
      */
