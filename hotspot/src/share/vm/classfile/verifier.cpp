@@ -2311,6 +2311,11 @@ void ClassVerifier::verify_invoke_init(
         vmSymbols::object_initializer_name(),
         cp->signature_ref_at(bcs->get_index_u2()),
         Klass::normal);
+      if (m == NULL) {
+        verify_error(ErrorContext::bad_code(bci),
+            "Call to missing <init> method");
+        return;
+      }
       instanceKlassHandle mh(THREAD, m->method_holder());
       if (m->is_protected() && !mh->is_same_class_package(_klass())) {
         bool assignable = current_type().is_assignable_from(
