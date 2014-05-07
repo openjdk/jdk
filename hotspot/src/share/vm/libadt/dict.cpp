@@ -24,29 +24,17 @@
 
 #include "precompiled.hpp"
 #include "libadt/dict.hpp"
-#include "memory/allocation.inline.hpp"
-#include "memory/resourceArea.hpp"
-#include "runtime/thread.hpp"
 
 // Dictionaries - An Abstract Data Type
 
 // %%%%% includes not needed with AVM framework - Ungar
 
-// #include "port.hpp"
-//IMPLEMENTATION
-// #include "dict.hpp"
-
 #include <assert.h>
-
-// The iostream is not needed and it gets confused for gcc by the
-// define of bool.
-//
-// #include <iostream.h>
 
 //------------------------------data-----------------------------------------
 // String hash tables
 #define MAXID 20
-static byte initflag = 0;       // True after 1st initialization
+static uint8_t initflag = 0;       // True after 1st initialization
 static const char shft[MAXID] = {1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3,4,5,6};
 static short xsum[MAXID];
 
@@ -281,7 +269,7 @@ void *Dict::operator [](const void *key) const {
 // CmpDict compares two dictionaries; they must have the same keys (their
 // keys must match using CmpKey) and they must have the same values (pointer
 // comparison).  If so 1 is returned, if not 0 is returned.
-int32 Dict::operator ==(const Dict &d2) const {
+int32_t Dict::operator ==(const Dict &d2) const {
   if( _cnt != d2._cnt ) return 0;
   if( _hash != d2._hash ) return 0;
   if( _cmp != d2._cmp ) return 0;
@@ -318,7 +306,7 @@ void Dict::print() {
 // C text shows excellent spreading of values for any size hash table.
 int hashstr(const void *t) {
   register char c, k = 0;
-  register int32 sum = 0;
+  register int32_t sum = 0;
   register const char *s = (const char *)t;
 
   while( ((c = *s++) != '\0') && (k < MAXID-1) ) { // Get characters till null or MAXID-1
@@ -332,11 +320,7 @@ int hashstr(const void *t) {
 // Slimey cheap hash function; no guaranteed performance.  Better than the
 // default for pointers, especially on MS-DOS machines.
 int hashptr(const void *key) {
-#ifdef __TURBOC__
-    return ((intptr_t)key >> 16);
-#else  // __TURBOC__
-    return ((intptr_t)key >> 2);
-#endif
+  return ((intptr_t)key >> 2);
 }
 
 // Slimey cheap hash function; no guaranteed performance.
@@ -345,12 +329,12 @@ int hashkey(const void *key) {
 }
 
 //------------------------------Key Comparator Functions---------------------
-int32 cmpstr(const void *k1, const void *k2) {
+int32_t cmpstr(const void *k1, const void *k2) {
   return strcmp((const char *)k1,(const char *)k2);
 }
 
 // Cheap key comparator.
-int32 cmpkey(const void *key1, const void *key2) {
+int32_t cmpkey(const void *key1, const void *key2) {
   if (key1 == key2) return 0;
   intptr_t delta = (intptr_t)key1 - (intptr_t)key2;
   if (delta > 0) return 1;
