@@ -28,6 +28,7 @@ package sun.lwawt;
 import java.awt.*;
 import java.awt.List;
 import java.awt.datatransfer.*;
+import java.awt.dnd.DropTarget;
 import java.awt.image.*;
 import java.awt.peer.*;
 import java.security.*;
@@ -439,6 +440,10 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     protected abstract PlatformComponent createLwPlatformComponent();
 
     protected abstract FileDialogPeer createFileDialogPeer(FileDialog target);
+
+    protected abstract PlatformDropTarget createDropTarget(DropTarget dropTarget,
+                                                           Component component,
+                                                           LWComponentPeer<?, ?> peer);
 
     // ---- UTILITY METHODS ---- //
 
