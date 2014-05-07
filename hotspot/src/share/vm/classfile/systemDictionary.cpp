@@ -29,6 +29,7 @@
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/resolutionErrors.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"

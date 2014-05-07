@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
