@@ -172,12 +172,14 @@ Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader
   if (HAS_PENDING_EXCEPTION || klass == NULL) {
     KlassHandle k_h(THREAD, klass);
     // can return a null klass
-    klass = handle_resolution_exception(class_name, class_loader, protection_domain, throw_error, k_h, THREAD);
+    klass = handle_resolution_exception(class_name, throw_error, k_h, THREAD);
   }
   return klass;
 }
 
-Klass* SystemDictionary::handle_resolution_exception(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, KlassHandle klass_h, TRAPS) {
+Klass* SystemDictionary::handle_resolution_exception(Symbol* class_name,
+                                                     bool throw_error,
+                                                     KlassHandle klass_h, TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     // If we have a pending exception we forward it to the caller, unless throw_error is true,
     // in which case we have to check whether the pending exception is a ClassNotFoundException,
@@ -385,7 +387,7 @@ Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
   }
   if (HAS_PENDING_EXCEPTION || superk_h() == NULL) {
     // can null superk
-    superk_h = KlassHandle(THREAD, handle_resolution_exception(class_name, class_loader, protection_domain, true, superk_h, THREAD));
+    superk_h = KlassHandle(THREAD, handle_resolution_exception(class_name, true, superk_h, THREAD));
   }
 
   return superk_h();
@@ -2111,12 +2113,13 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
 
 // Add entry to resolution error table to record the error when the first
 // attempt to resolve a reference to a class has failed.
-void SystemDictionary::add_resolution_error(constantPoolHandle pool, int which, Symbol* error) {
+void SystemDictionary::add_resolution_error(constantPoolHandle pool, int which,
+                                            Symbol* error, Symbol* message) {
   unsigned int hash = resolution_errors()->compute_hash(pool, which);
   int index = resolution_errors()->hash_to_index(hash);
   {
     MutexLocker ml(SystemDictionary_lock, Thread::current());
-    resolution_errors()->add_entry(index, hash, pool, which, error);
+    resolution_errors()->add_entry(index, hash, pool, which, error, message);
   }
 }
 
@@ -2126,13 +2129,19 @@ void SystemDictionary::delete_resolution_error(ConstantPool* pool) {
 }
 
 // Lookup resolution error table. Returns error if found, otherwise NULL.
-Symbol* SystemDictionary::find_resolution_error(constantPoolHandle pool, int which) {
+Symbol* SystemDictionary::find_resolution_error(constantPoolHandle pool, int which,
+                                                Symbol** message) {
   unsigned int hash = resolution_errors()->compute_hash(pool, which);
   int index = resolution_errors()->hash_to_index(hash);
   {
     MutexLocker ml(SystemDictionary_lock, Thread::current());
     ResolutionErrorEntry* entry = resolution_errors()->find_entry(index, hash, pool, which);
-    return (entry != NULL) ? entry->error() : (Symbol*)NULL;
+    if (entry != NULL) {
+      *message = entry->message();
+      return entry->error();
+    } else {
+      return NULL;
+    }
   }
 }
 
