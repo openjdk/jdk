@@ -1062,15 +1062,16 @@ void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler
 
 /**
  * Set the methods on the stack as on_stack so that redefine classes doesn't
- * reclaim them
+ * reclaim them. This method is executed at a safepoint.
  */
 void CompileBroker::mark_on_stack() {
+  assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
+  // Since we are at a safepoint, we do not need a lock to access
+  // the compile queues.
   if (_c2_compile_queue != NULL) {
-    MutexLocker locker(_c2_compile_queue->lock());
     _c2_compile_queue->mark_on_stack();
   }
   if (_c1_compile_queue != NULL) {
-    MutexLocker locker(_c1_compile_queue->lock());
     _c1_compile_queue->mark_on_stack();
   }
 }
