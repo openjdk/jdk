@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,14 +192,17 @@ abstract class AbstractPoller implements Runnable {
          * the request.
          */
         Object awaitResult() {
+            boolean interrupted = false;
             synchronized (this) {
                 while (!completed) {
                     try {
                         wait();
                     } catch (InterruptedException x) {
-                        // ignore
+                        interrupted = true;
                     }
                 }
+                if (interrupted)
+                    Thread.currentThread().interrupt();
                 return result;
             }
         }
