@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
