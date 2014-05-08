@@ -931,13 +931,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
      * Windows doesn't always send WM_SETTINGCHANGE when it should.
      */
     private void windowsSettingChange() {
-        if (AppContext.getAppContext() == null) {
-            // No AppContext, so we can update properties on the current thread,
-            // DesktopPropertyChangeSupport will only post events.
-            updateProperties();
-        } else {
-            EventQueue.invokeLater(this::updateProperties);
-        }
+        EventQueue.invokeLater(this::updateProperties);
     }
 
     private synchronized void updateProperties() {
