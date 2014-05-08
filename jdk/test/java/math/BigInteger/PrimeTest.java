@@ -31,14 +31,14 @@
  */
 import java.math.BigInteger;
 import java.util.BitSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableSet;
+import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.TreeSet;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class PrimeTest {
 
@@ -77,7 +77,10 @@ public class PrimeTest {
         boolean nonPrimeTest = checkNonPrime(primes, certainty);
         System.out.println("Non-prime test result: " + (nonPrimeTest ? "SUCCESS" : "FAILURE"));
 
-        if (!primeTest || !nonPrimeTest) {
+        boolean mersennePrimeTest = checkMersennePrimes(certainty);
+        System.out.println("Mersenne test result: " + (mersennePrimeTest ? "SUCCESS" : "FAILURE"));
+
+        if (!primeTest || !nonPrimeTest || !mersennePrimeTest) {
             throw new Exception("PrimeTest FAILED!");
         }
 
@@ -133,7 +136,7 @@ public class PrimeTest {
      *
      * @return true if and only if the test succeeds
      */
-    private static boolean checkPrime(NavigableSet<BigInteger> primes,
+    private static boolean checkPrime(Set<BigInteger> primes,
             int certainty,
             boolean parallel) {
         long probablePrimes = (parallel ? primes.parallelStream() : primes.stream())
@@ -152,7 +155,7 @@ public class PrimeTest {
         BigInteger right = t.multiply(fourToTheCMinusOne);
 
         if (left.compareTo(right) < 0) {
-            System.err.println("Probable prime certainty test failed.");
+            System.err.println("Probable prime certainty test failed");
         }
 
         return left.compareTo(right) >= 0;
@@ -192,5 +195,36 @@ public class PrimeTest {
         }
 
         return !failed;
+    }
+
+    /**
+     * Verifies whether a specified subset of Mersenne primes are correctly
+     * identified as being prime. See
+     * <a href="https://en.wikipedia.org/wiki/Mersenne_prime">Mersenne prime</a>
+     * for more information.
+     *
+     * @return true if and only if the test succeeds
+     */
+    private static boolean checkMersennePrimes(int certainty) {
+        int[] MERSENNE_EXPONENTS = {
+            2, 3, 5, 7, 13, 17, 19, 31, 61, 89, 107, 127, 521, 607, 1279, 2203,
+            2281, 3217, 4253, // uncomment remaining array elements to make this test run a long time
+            /* 4423, 9689, 9941, 11213, 19937, 21701, 23209, 44497,
+            86243, 110503, 132049, 216091, 756839, 859433, 1257787, 1398269,
+            2976221, 3021377, 6972593, 13466917, 20996011, 24036583, 25964951,
+            30402457, 32582657, 37156667, 42643801, 43112609, 57885161 */
+        };
+        System.out.println("Checking first "+MERSENNE_EXPONENTS.length+" Mersenne primes");
+
+        boolean result = true;
+        for (int n : MERSENNE_EXPONENTS) {
+            BigInteger mp = BigInteger.ONE.shiftLeft(n).subtract(BigInteger.ONE);
+            if (!mp.isProbablePrime(certainty)) {
+                System.err.println("Mp with p = "+n+" not classified as prime");
+                result = false;
+            }
+        }
+
+        return result;
     }
 }
