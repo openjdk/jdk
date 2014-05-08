@@ -125,6 +125,8 @@ public class HTMLFrameHyperlinkEvent extends HyperlinkEvent {
 
     /**
      * returns the target for the link.
+     *
+     * @return the target for the link
      */
     public String getTarget() {
         return targetFrame;
