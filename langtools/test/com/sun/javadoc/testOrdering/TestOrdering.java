@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8039410
+ * @bug 8039410 8042601
  * @summary test to determine if members are ordered correctly
  * @author ksrini
  * @library ../lib/
@@ -108,19 +108,28 @@ public class TestOrdering extends JavadocTester {
 
     static void checkIndexPathOrdering(String indexPage) {
         String[] OrderedExpectedStrings = {
-            "pkg1/UsedClass.html#add-java.lang.Double",
-            "pkg1/ZZTop.html#add-double",
-            "pkg1/ZZTop.html#add-java.lang.Double",
-            "pkg1/UsedClass.html#add-float",
-            "pkg1/ZZTop.html#add-float",
-            "pkg1/UsedClass.html#add-int",
-            "pkg1/ZZTop.html#add-int",
-            "pkg1/UsedClass.html#add-java.lang.Integer",
-            "pkg1/ZZTop.html#add-java.lang.Integer",
-            "pkg1/UsedClass.html#add-double-double",
-            "pkg1/UsedClass.html#add-double-java.lang.Double",
-            "pkg1/ZZTop.html#add-double-double",
-            "pkg1/ZZTop.html#add-double-java.lang.Double"
+            "pkg1/UsedClass.html#add--",
+            "pkg1/ZZTop.html#add--",
+            "pkg1/UsedClass.html#add-double-",
+            "pkg1/UsedClass.html#add-java.lang.Double-",
+            "pkg1/ZZTop.html#add-double-",
+            "pkg1/ZZTop.html#add-java.lang.Double-",
+            "pkg1/UsedClass.html#add-double-byte-",
+            "pkg1/ZZTop.html#add-double-byte-",
+            "pkg1/UsedClass.html#add-double-double-",
+            "pkg1/UsedClass.html#add-double-java.lang.Double-",
+            "pkg1/ZZTop.html#add-double-double-",
+            "pkg1/ZZTop.html#add-double-java.lang.Double-",
+            "pkg1/UsedClass.html#add-float-",
+            "pkg1/ZZTop.html#add-float-",
+            "pkg1/UsedClass.html#add-float-int-",
+            "pkg1/ZZTop.html#add-float-int-",
+            "pkg1/UsedClass.html#add-int-",
+            "pkg1/ZZTop.html#add-int-",
+            "pkg1/UsedClass.html#add-int-float-",
+            "pkg1/ZZTop.html#add-int-float-",
+            "pkg1/UsedClass.html#add-java.lang.Integer-",
+            "pkg1/ZZTop.html#add-java.lang.Integer-"
         };
         int lastidx = 0;
         for (String x : OrderedExpectedStrings) {
