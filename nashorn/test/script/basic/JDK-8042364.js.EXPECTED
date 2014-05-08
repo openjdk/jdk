@@ -1,0 +1,5 @@
+Object.prototype has __proto__? true
+descriptor
+{"configurable":true,"enumerable":false}
+getter function getProto() { [native code] }
+setter function setProto() { [native code] }
