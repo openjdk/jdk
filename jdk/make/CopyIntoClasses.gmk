@@ -118,10 +118,8 @@ endif
 SRC_SERVICES_FILES := $(wildcard $(addsuffix /services/*, $(ALL_META-INF_DIRS)))
 
 ifdef OPENJDK
-  SRC_SERVICES_FILES := $(filter-out %sun/dc/META-INF/services/sun.java2d.pipe.RenderingEngine, $(SRC_SERVICES_FILES))
   SRC_SERVICES_FILES := $(filter-out %sun/java2d/cmm/kcms/META-INF/services/sun.java2d.cmm.CMMServiceProvider, $(SRC_SERVICES_FILES))
 else
-  SRC_SERVICES_FILES := $(filter-out %sun/java2d/pisces/META-INF/services/sun.java2d.pipe.RenderingEngine, $(SRC_SERVICES_FILES))
   SRC_SERVICES_FILES := $(filter-out %sun/java2d/cmm/lcms/META-INF/services/sun.java2d.cmm.CMMServiceProvider, $(SRC_SERVICES_FILES))
 endif
 
