@@ -822,8 +822,12 @@ class ConstantPool : public Metadata {
   static void resolve_string_constants_impl(constantPoolHandle this_cp, TRAPS);
 
   static oop resolve_constant_at_impl(constantPoolHandle this_cp, int index, int cache_index, TRAPS);
-  static void save_and_throw_exception(constantPoolHandle this_cp, int which, int tag_value, TRAPS);
   static oop resolve_bootstrap_specifier_at_impl(constantPoolHandle this_cp, int index, TRAPS);
+
+  // Exception handling
+  static void throw_resolution_error(constantPoolHandle this_cp, int which, TRAPS);
+  static Symbol* exception_message(constantPoolHandle this_cp, int which, constantTag tag, oop pending_exception);
+  static void save_and_throw_exception(constantPoolHandle this_cp, int which, constantTag tag, TRAPS);
 
  public:
   // Merging ConstantPool* support:

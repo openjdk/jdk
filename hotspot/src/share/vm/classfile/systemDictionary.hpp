@@ -227,7 +227,7 @@ class SystemDictionary : AllStatic {
   static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS);
 private:
   // handle error translation for resolve_or_null results
-  static Klass* handle_resolution_exception(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, KlassHandle klass_h, TRAPS);
+  static Klass* handle_resolution_exception(Symbol* class_name, bool throw_error, KlassHandle klass_h, TRAPS);
 
 public:
 
@@ -529,9 +529,11 @@ public:
 
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
-  static void add_resolution_error(constantPoolHandle pool, int which, Symbol* error);
+  static void add_resolution_error(constantPoolHandle pool, int which, Symbol* error,
+                                   Symbol* message);
   static void delete_resolution_error(ConstantPool* pool);
-  static Symbol* find_resolution_error(constantPoolHandle pool, int which);
+  static Symbol* find_resolution_error(constantPoolHandle pool, int which,
+                                       Symbol** message);
 
  private:
 
