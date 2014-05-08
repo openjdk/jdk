@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,16 @@
 
 /*
  * @test
- * @bug 7086586 8033718
- *
- * @summary Inference producing null type argument; inference ignores capture
- *          variable as upper bound
+ * @bug 8033437
+ * @summary inconsistent generic types behaviour when compiling together vs. separate
+ * @compile RefQueue.java
+ * @compile RefQueueBug.java
  */
-import java.util.List;
 
-public class T7086586b {
-
-    int assertionCount = 0;
-
-    void assertTrue(boolean cond) {
-        if (!cond) {
-            throw new AssertionError();
-        }
-        assertionCount++;
-    }
-
-    <T> void m(List<? super T> dummy) { assertTrue(true); }
-    <T> void m(Object dummy) { assertTrue(false); }
-
-    void test(List<?> l) {
-        m(l);
-        assertTrue(assertionCount == 1);
-    }
-
+public class RefQueueBug<T> {
+    final RefQueue<? super T> queue = new RefQueue<>();
     public static void main(String[] args) {
-        new T7086586b().test(null);
+        RefQueueBug<Object> r = new RefQueueBug<>();
+        RefQueue<Object> q = r.queue;
     }
 }

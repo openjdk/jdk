@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,18 @@
 
 /*
  * @test
- * @bug 7086586 8033718
- *
- * @summary Inference producing null type argument; inference ignores capture
- *          variable as upper bound
+ * @summary sourcefile attribute test for inner class.
+ * @bug 8040129
+ * @library /tools/javac/lib ../lib
+ * @build SourceFileTestBase TestBase InMemoryFileManager ToolBox
+ * @run main InnerClassTest
  */
-import java.util.List;
 
-public class T7086586b {
-
-    int assertionCount = 0;
-
-    void assertTrue(boolean cond) {
-        if (!cond) {
-            throw new AssertionError();
-        }
-        assertionCount++;
+public class InnerClassTest extends SourceFileTestBase {
+    public static void main(String[] args) throws Exception {
+        new InnerClassTest().test(Inner.class, "InnerClassTest.java");
     }
 
-    <T> void m(List<? super T> dummy) { assertTrue(true); }
-    <T> void m(Object dummy) { assertTrue(false); }
-
-    void test(List<?> l) {
-        m(l);
-        assertTrue(assertionCount == 1);
-    }
-
-    public static void main(String[] args) {
-        new T7086586b().test(null);
+    class Inner {
     }
 }
