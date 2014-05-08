@@ -220,4 +220,19 @@ public class TrustedScriptEngineTest {
         // bar should be visible in default context
         assertTrue(e.eval("typeof bar").equals("function"));
     }
+
+
+    @Test public void nashornSwallowsConstKeyword() throws Exception {
+        final NashornScriptEngineFactory f = new NashornScriptEngineFactory();
+        final String[] args = new String[] { "--const-as-var" };
+        final ScriptEngine engine = f.getScriptEngine(args);
+
+        final Object ret = engine.eval(""
+            + "(function() {\n"
+            + "  const x = 10;\n"
+            + "  return x;\n"
+            + "})();"
+        );
+        assertEquals(ret, 10, "Parsed and executed OK");
+    }
 }

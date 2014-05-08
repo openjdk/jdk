@@ -131,12 +131,13 @@ public final class Regex implements RegexState {
         this.warnings = null;
     }
 
-    public void compile() {
+    public synchronized MatcherFactory compile() {
         if (factory == null && analyser != null) {
-            Compiler compiler = new ArrayCompiler(analyser);
+            new ArrayCompiler(analyser).compile();
             analyser = null; // only do this once
-            compiler.compile();
         }
+        assert factory != null;
+        return factory;
     }
 
     public Matcher matcher(char[] chars) {
@@ -144,8 +145,11 @@ public final class Regex implements RegexState {
     }
 
     public Matcher matcher(char[] chars, int p, int end) {
-        compile();
-        return factory.create(this, chars, p, end);
+        MatcherFactory matcherFactory = factory;
+        if (matcherFactory == null) {
+            matcherFactory = compile();
+        }
+        return matcherFactory.create(this, chars, p, end);
     }
 
     public WarnCallback getWarnings() {
