@@ -39,6 +39,8 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.util.*;
+
+import com.sun.security.auth.module.UnixSystem;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.internal.APReq;
 import sun.security.krb5.internal.rcache.AuthTime;
@@ -59,7 +61,7 @@ public class ReplayCacheTestProc {
                 System.getProperty("user.dir");
 
 
-    private static int uid;
+    private static long uid;
 
     public static void main0(String[] args) throws Exception {
         System.setProperty("java.security.krb5.conf", OneKDC.KRB5_CONF);
@@ -78,11 +80,10 @@ public class ReplayCacheTestProc {
             }
 
             try {
-                Class<?> clazz = Class.forName(
-                        "com.sun.security.auth.module.UnixSystem");
-                uid = (int)(long)(Long)
-                        clazz.getMethod("getUid").invoke(clazz.newInstance());
-            } catch (Exception e) {
+                UnixSystem us = new com.sun.security.auth.module.UnixSystem();
+                uid = us.getUid();
+            } catch (Throwable e) {
+                // Cannot be only Exception, might be UnsatisfiedLinkError
                 uid = -1;
             }
 
