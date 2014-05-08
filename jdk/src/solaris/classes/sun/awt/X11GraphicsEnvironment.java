@@ -277,8 +277,9 @@ public class X11GraphicsEnvironment
                 for (; interfaces.hasMoreElements();) {
                     locals = interfaces.nextElement().getInetAddresses();
                     for (; locals.hasMoreElements();) {
+                        final InetAddress localAddr = locals.nextElement();
                         for (int i = 0; i < remAddr.length; i++) {
-                            if (locals.nextElement().equals(remAddr[i])) {
+                            if (localAddr.equals(remAddr[i])) {
                                 return Boolean.TRUE;
                             }
                         }
