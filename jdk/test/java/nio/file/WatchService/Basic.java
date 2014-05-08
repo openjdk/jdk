@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 7017446
+ * @bug 4313887 6838333 7017446 8011537 8042470
  * @summary Unit test for java.nio.file.WatchService
  * @library ..
  * @run main Basic
@@ -295,24 +295,31 @@ public class Basic {
             // IllegalArgumentException
             System.out.println("IllegalArgumentException tests...");
             try {
-                dir.register(watcher, new WatchEvent.Kind<?>[]{ } );
+                dir.register(watcher /*empty event list*/);
                 throw new RuntimeException("IllegalArgumentException not thrown");
             } catch (IllegalArgumentException x) {
             }
             try {
                 // OVERFLOW is ignored so this is equivalent to the empty set
-                dir.register(watcher, new WatchEvent.Kind<?>[]{ OVERFLOW });
+                dir.register(watcher, OVERFLOW);
+                throw new RuntimeException("IllegalArgumentException not thrown");
+            } catch (IllegalArgumentException x) {
+            }
+            try {
+                // OVERFLOW is ignored even if specified multiple times
+                dir.register(watcher, OVERFLOW, OVERFLOW);
                 throw new RuntimeException("IllegalArgumentException not thrown");
             } catch (IllegalArgumentException x) {
             }
 
             // UnsupportedOperationException
             try {
-                dir.register(watcher, new WatchEvent.Kind<?>[]{
+                dir.register(watcher,
                              new WatchEvent.Kind<Object>() {
                                 @Override public String name() { return "custom"; }
                                 @Override public Class<Object> type() { return Object.class; }
-                             }});
+                             });
+                throw new RuntimeException("UnsupportedOperationException not thrown");
             } catch (UnsupportedOperationException x) {
             }
             try {
@@ -328,7 +335,7 @@ public class Basic {
             // NullPointerException
             System.out.println("NullPointerException tests...");
             try {
-                dir.register(null, new WatchEvent.Kind<?>[]{ ENTRY_CREATE });
+                dir.register(null, ENTRY_CREATE);
                 throw new RuntimeException("NullPointerException not thrown");
             } catch (NullPointerException x) {
             }
@@ -380,7 +387,7 @@ public class Basic {
 
         try {
             dir.register(watcher, new WatchEvent.Kind<?>[]{ ENTRY_CREATE });
-             throw new RuntimeException("ClosedWatchServiceException not thrown");
+            throw new RuntimeException("ClosedWatchServiceException not thrown");
         } catch (ClosedWatchServiceException  x) {
         }
 
@@ -468,6 +475,28 @@ public class Basic {
         }
     }
 
+    /**
+     * Test that thread interruped status is preserved upon a call
+     * to register()
+     */
+    static void testThreadInterrupt(Path dir) throws IOException {
+        System.out.println("-- Thread interrupted status test --");
+
+        FileSystem fs = FileSystems.getDefault();
+        Thread curr = Thread.currentThread();
+        try (WatchService watcher = fs.newWatchService()) {
+            System.out.println("interrupting current thread");
+            curr.interrupt();
+            dir.register(watcher, ENTRY_CREATE);
+            if (!curr.isInterrupted())
+                throw new RuntimeException("thread should remain interrupted");
+            System.out.println("current thread is still interrupted");
+            System.out.println("OKAY");
+        } finally {
+            curr.interrupted();
+        }
+    }
+
     public static void main(String[] args) throws IOException {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
@@ -478,6 +507,7 @@ public class Basic {
             testWakeup(dir);
             testExceptions(dir);
             testTwoWatchers(dir);
+            testThreadInterrupt(dir);
 
         } finally {
             TestUtil.removeAll(dir);
