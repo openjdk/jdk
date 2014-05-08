@@ -45,6 +45,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
 
 // Concurrent marking bit map wrapper

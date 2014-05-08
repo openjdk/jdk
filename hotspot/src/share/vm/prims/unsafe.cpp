@@ -33,6 +33,7 @@
 #include "prims/jvm.h"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/prefetch.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
