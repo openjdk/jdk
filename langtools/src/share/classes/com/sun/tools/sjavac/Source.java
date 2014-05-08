@@ -313,7 +313,7 @@ public class Source implements Comparable<Source> {
             int sp = fn.lastIndexOf(File.separatorChar);
             String pkg = "";
             if (sp != -1) {
-                pkg = fn.substring(0,sp);
+                pkg = fn.substring(0,sp).replace('/','.');
             }
             // Is this a module-info.java file?
             if (fn.endsWith("module-info.java")) {

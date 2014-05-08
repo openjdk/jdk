@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,28 @@
 
 /*
  * @test
- * @bug 7086586 8033718
- *
- * @summary Inference producing null type argument; inference ignores capture
- *          variable as upper bound
+ * @summary sourcefile attribute test for file compiled without debug information.
+ * @library /tools/javac/lib ../lib
+ * @build SourceFileTestBase TestBase InMemoryFileManager ToolBox
+ * @compile -g:none NoSourceFileAttribute.java
+ * @run main  NoSourceFileAttribute
  */
-import java.util.List;
 
-public class T7086586b {
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ConstantPoolException;
 
-    int assertionCount = 0;
+import java.io.IOException;
 
-    void assertTrue(boolean cond) {
-        if (!cond) {
-            throw new AssertionError();
-        }
-        assertionCount++;
+
+public class NoSourceFileAttribute extends TestBase {
+    public static void main(String[] args) throws Exception {
+        new NoSourceFileAttribute().test();
     }
 
-    <T> void m(List<? super T> dummy) { assertTrue(true); }
-    <T> void m(Object dummy) { assertTrue(false); }
-
-    void test(List<?> l) {
-        m(l);
-        assertTrue(assertionCount == 1);
-    }
-
-    public static void main(String[] args) {
-        new T7086586b().test(null);
+    public void test() throws IOException, ConstantPoolException {
+        assertNull(
+                ClassFile.read(getClassFile(NoSourceFileAttribute.class)).getAttribute(Attribute.SourceFile),
+                "Classfile should have no SourceFile attribute when compiled without debug information.");
     }
 }
