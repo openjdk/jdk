@@ -33,6 +33,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/space.inline.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"

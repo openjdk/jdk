@@ -199,6 +199,7 @@
 # include "runtime/perfData.hpp"
 # include "runtime/perfMemory.hpp"
 # include "runtime/prefetch.hpp"
+# include "runtime/prefetch.inline.hpp"
 # include "runtime/reflection.hpp"
 # include "runtime/reflectionUtils.hpp"
 # include "runtime/registerMap.hpp"
