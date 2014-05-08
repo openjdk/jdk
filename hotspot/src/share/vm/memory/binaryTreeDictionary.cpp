@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >::get_better_list(
   // chunk.
 
   TreeList<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* curTL = this;
-  if (surplus() <= 0) {
+  if (curTL->surplus() <= 0) {
     /* Use the hint to find a size with a surplus, and reset the hint. */
     TreeList<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* hintTL = this;
     while (hintTL->hint() != 0) {

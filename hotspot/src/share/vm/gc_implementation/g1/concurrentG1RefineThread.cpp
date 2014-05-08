@@ -58,6 +58,9 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
   }
   initialize();
   create_and_start();
+
+  // set name
+  set_name("G1 Concurrent Refinement Thread#%d", worker_id);
 }
 
 void ConcurrentG1RefineThread::initialize() {
@@ -247,12 +250,3 @@ void ConcurrentG1RefineThread::stop() {
   }
 }
 
-void ConcurrentG1RefineThread::print() const {
-  print_on(tty);
-}
-
-void ConcurrentG1RefineThread::print_on(outputStream* st) const {
-  st->print("\"G1 Concurrent Refinement Thread#%d\" ", _worker_id);
-  Thread::print_on(st);
-  st->cr();
-}
