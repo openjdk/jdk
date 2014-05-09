@@ -31,7 +31,7 @@
  * @author  Mandy Chung
  *
  * @library /lib/testlibrary/
- * @build CollectionUsageThreshold MemoryUtil RunUtil
+ * @build jdk.testlibrary.* CollectionUsageThreshold MemoryUtil RunUtil
  * @run main/timeout=300 CollectionUsageThreshold
  */
 
