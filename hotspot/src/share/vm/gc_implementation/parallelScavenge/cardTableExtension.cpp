@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,23 +478,23 @@ void CardTableExtension::resize_covered_region_by_end(int changed_region,
     gclog_or_tty->print_cr("  "
                   "  _covered[%d].start(): " INTPTR_FORMAT
                   "  _covered[%d].last(): " INTPTR_FORMAT,
-                  ind, _covered[ind].start(),
-                  ind, _covered[ind].last());
+                  ind, p2i(_covered[ind].start()),
+                  ind, p2i(_covered[ind].last()));
     gclog_or_tty->print_cr("  "
                   "  _committed[%d].start(): " INTPTR_FORMAT
                   "  _committed[%d].last(): " INTPTR_FORMAT,
-                  ind, _committed[ind].start(),
-                  ind, _committed[ind].last());
+                  ind, p2i(_committed[ind].start()),
+                  ind, p2i(_committed[ind].last()));
     gclog_or_tty->print_cr("  "
                   "  byte_for(start): " INTPTR_FORMAT
                   "  byte_for(last): " INTPTR_FORMAT,
-                  byte_for(_covered[ind].start()),
-                  byte_for(_covered[ind].last()));
+                  p2i(byte_for(_covered[ind].start())),
+                  p2i(byte_for(_covered[ind].last())));
     gclog_or_tty->print_cr("  "
                   "  addr_for(start): " INTPTR_FORMAT
                   "  addr_for(last): " INTPTR_FORMAT,
-                  addr_for((jbyte*) _committed[ind].start()),
-                  addr_for((jbyte*) _committed[ind].last()));
+                  p2i(addr_for((jbyte*) _committed[ind].start())),
+                  p2i(addr_for((jbyte*) _committed[ind].last())));
   }
   debug_only(verify_guard();)
 }

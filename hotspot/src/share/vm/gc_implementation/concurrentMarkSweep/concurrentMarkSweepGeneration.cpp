@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,8 @@
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // statics
 CMSCollector* ConcurrentMarkSweepGeneration::_collector = NULL;
@@ -1182,7 +1184,7 @@ void CMSCollector::icms_update_allocation_limits()
     gclog_or_tty->print(" icms alloc limits:  "
                            PTR_FORMAT "," PTR_FORMAT
                            " (" SIZE_FORMAT "%%," SIZE_FORMAT "%%) ",
-                           _icms_start_limit, _icms_stop_limit,
+                           p2i(_icms_start_limit), p2i(_icms_stop_limit),
                            percent_of_space(eden, _icms_start_limit),
                            percent_of_space(eden, _icms_stop_limit));
     if (Verbose) {
@@ -1210,7 +1212,7 @@ CMSCollector::allocation_limit_reached(Space* space, HeapWord* top,
         gclog_or_tty->print_cr(" start limit top=" PTR_FORMAT
                                ", new limit=" PTR_FORMAT
                                " (" SIZE_FORMAT "%%)",
-                               top, _icms_stop_limit,
+                               p2i(top), p2i(_icms_stop_limit),
                                percent_of_space(space, _icms_stop_limit));
       }
       ConcurrentMarkSweepThread::start_icms();
@@ -1227,7 +1229,7 @@ CMSCollector::allocation_limit_reached(Space* space, HeapWord* top,
         gclog_or_tty->print_cr(" +stop limit top=" PTR_FORMAT
                                ", new limit=" PTR_FORMAT
                                " (" SIZE_FORMAT "%%)",
-                               top, space->end(),
+                               p2i(top), p2i(space->end()),
                                percent_of_space(space, space->end()));
       }
       ConcurrentMarkSweepThread::stop_icms();
@@ -1502,7 +1504,7 @@ bool CMSCollector::shouldConcurrentCollect() {
   if (PrintCMSInitiationStatistics && stats().valid()) {
     gclog_or_tty->print("CMSCollector shouldConcurrentCollect: ");
     gclog_or_tty->stamp();
-    gclog_or_tty->print_cr("");
+    gclog_or_tty->cr();
     stats().print_on(gclog_or_tty);
     gclog_or_tty->print_cr("time_until_cms_gen_full %3.7f",
       stats().time_until_cms_gen_full());
@@ -3588,7 +3590,7 @@ CMSPhaseAccounting::~CMSPhaseAccounting() {
                  _collector->cmsGen()->short_name(),
                  _phase, _collector->timerValue(), _wallclock.seconds());
     if (_print_cr) {
-      gclog_or_tty->print_cr("");
+      gclog_or_tty->cr();
     }
     if (PrintCMSStatistics != 0) {
       gclog_or_tty->print_cr(" (CMS-concurrent-%s yielded %d times)", _phase,

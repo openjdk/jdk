@@ -436,7 +436,7 @@ class MethodFamily : public ResourceObj {
       _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();
       if (TraceDefaultMethods) {
         _exception_message->print_value_on(tty);
-        tty->print_cr("");
+        tty->cr();
       }
     }
   }
@@ -463,7 +463,7 @@ class MethodFamily : public ResourceObj {
       if (_members.at(i).second == DISQUALIFIED) {
         str->print(" (disqualified)");
       }
-      str->print_cr("");
+      str->cr();
     }
 
     if (_selected_target != NULL) {
@@ -480,7 +480,7 @@ class MethodFamily : public ResourceObj {
     if (!method_holder->is_interface()) {
       tty->print(" : in superclass");
     }
-    str->print_cr("");
+    str->cr();
   }
 
   void print_exception(outputStream* str, int indent) {
@@ -688,7 +688,7 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
     for (int i = 0; i < slots->length(); ++i) {
       tty->indent();
       slots->at(i)->print_on(tty);
-      tty->print_cr("");
+      tty->cr();
     }
   }
 #endif // ndef PRODUCT
@@ -828,7 +828,7 @@ void DefaultMethods::generate_default_methods(
       streamIndentor si(tty, 2);
       tty->indent().print("Looking for default methods for slot ");
       slot->print_on(tty);
-      tty->print_cr("");
+      tty->cr();
     }
 #endif // ndef PRODUCT
 
@@ -946,7 +946,7 @@ static void create_defaults_and_exceptions(
       if (TraceDefaultMethods) {
         tty->print("for slot: ");
         slot->print_on(tty);
-        tty->print_cr("");
+        tty->cr();
         if (method->has_target()) {
           method->print_selected(tty, 1);
         } else if (method->throws_exception()) {

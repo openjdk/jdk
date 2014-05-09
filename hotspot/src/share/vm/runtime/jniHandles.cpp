@@ -30,6 +30,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 JNIHandleBlock* JNIHandles::_global_handles       = NULL;
 JNIHandleBlock* JNIHandles::_weak_global_handles  = NULL;

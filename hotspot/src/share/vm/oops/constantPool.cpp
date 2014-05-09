@@ -42,6 +42,8 @@
 #include "runtime/signature.hpp"
 #include "runtime/vframe.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
   // Tags are RW but comment below applies to tags also.
   Array<u1>* tags = MetadataFactory::new_writeable_array<u1>(loader_data, length, 0, CHECK_NULL);
@@ -1892,7 +1894,7 @@ void ConstantPool::preload_and_initialize_all_classes(ConstantPool* obj, TRAPS) 
 
 void ConstantPool::print_on(outputStream* st) const {
   assert(is_constantPool(), "must be constantPool");
-  st->print_cr(internal_name());
+  st->print_cr("%s", internal_name());
   if (flags() != 0) {
     st->print(" - flags: 0x%x", flags());
     if (has_preresolution()) st->print(" has_preresolution");
