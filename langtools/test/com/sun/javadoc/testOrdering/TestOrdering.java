@@ -28,86 +28,89 @@
  * @author ksrini
  * @library ../lib/
  * @build JavadocTester
- * @build TestOrdering
  * @run main TestOrdering
  */
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class TestOrdering extends JavadocTester {
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
+
     public static void main(String[] args) throws Exception {
         TestOrdering tester = new TestOrdering();
-        // test unnamed packages
-        String[] ARGS = {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-use",
-             SRC_DIR + "/C.java", SRC_DIR + "/UsedInC.java"
-        };
-        tester.runJavadoc(ARGS);
-        checkExecutableMemberOrdering(tester.readFileToString("class-use/UsedInC.html"));
-
-        // next test using packages
-        String[] ARGS1 = {
-            "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "-use",
-            "pkg1"
-        };
-        tester.runJavadoc(ARGS1);
-        checkClassUseOrdering(tester.readFileToString("pkg1/class-use/UsedClass.html"));
-        checkIndexPathOrdering(tester.readFileToString("index-all.html"));
+        tester.runTests();
     }
 
-    static void checkExecutableMemberOrdering(String usePage) {
+    @Test
+    void testUnnamedPackages() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-use",
+                testSrc("C.java"), testSrc("UsedInC.java"));
+        checkExit(Exit.OK);
+        checkExecutableMemberOrdering("class-use/UsedInC.html");
+    }
+
+    @Test
+    void testNamedPackages() {
+        javadoc("-d", "out-1",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg1");
+        checkExit(Exit.OK);
+        checkClassUseOrdering("pkg1/class-use/UsedClass.html");
+        checkIndexPathOrdering("index-all.html");
+    }
+
+    void checkExecutableMemberOrdering(String usePage) {
+        String contents = readFile(usePage);
         // check constructors
-        int idx1 = usePage.indexOf("C.html#C-UsedInC");
-        int idx2 = usePage.indexOf("C.html#C-UsedInC-int");
-        int idx3 = usePage.indexOf("C.html#C-UsedInC-java.lang.String");
+        checking("constructors");
+        int idx1 = contents.indexOf("C.html#C-UsedInC");
+        int idx2 = contents.indexOf("C.html#C-UsedInC-int");
+        int idx3 = contents.indexOf("C.html#C-UsedInC-java.lang.String");
         if (idx1 == -1 || idx2 == -1 || idx3 == -1) {
-            throw new Error("ctor strings not found");
-        }
-        if (idx1 > idx2 || idx2 > idx3 || idx1 > idx3) {
-            throw new Error("ctor strings are out of order");
-        }
+            failed("ctor strings not found");
+        } else if (idx1 > idx2 || idx2 > idx3 || idx1 > idx3) {
+            failed("ctor strings are out of order");
+        } else
+            passed("ctor strings are in order");
 
         // check methods
-        idx1 = usePage.indexOf("C.html#ymethod-int");
-        idx2 = usePage.indexOf("C.html#ymethod-java.lang.String");
+        checking("methods");
+        idx1 = contents.indexOf("C.html#ymethod-int");
+        idx2 = contents.indexOf("C.html#ymethod-java.lang.String");
         if (idx1 == -1 || idx2 == -1) {
-            throw new Error("#ymethod strings not found");
-        }
-        if (idx1 > idx2) {
-            throw new Error("#ymethod strings are out of order");
-        }
-        System.out.println("Executable Member Ordering: OK");
+            failed("#ymethod strings not found");
+        } else if (idx1 > idx2) {
+            failed("#ymethod strings are out of order");
+        } else
+            passed("Executable Member Ordering: OK");
     }
 
-    static void checkClassUseOrdering(String usePage) {
+    void checkClassUseOrdering(String usePage) {
         checkClassUseOrdering(usePage, "pkg1/C#ITERATION#.html#zfield");
         checkClassUseOrdering(usePage, "pkg1/C#ITERATION#.html#fieldInC#ITERATION#");
         checkClassUseOrdering(usePage, "pkg1/C#ITERATION#.html#zmethod-pkg1.UsedClass");
         checkClassUseOrdering(usePage, "pkg1/C#ITERATION#.html#methodInC#ITERATION#");
     }
 
-    static void checkClassUseOrdering(String usePage, String searchString) {
+    void checkClassUseOrdering(String usePage, String searchString) {
+        String contents = readFile(usePage);
         int lastidx = 0;
         System.out.println("testing for " + searchString);
         for (int i = 1; i < 5; i++) {
             String s = searchString.replaceAll("#ITERATION#", Integer.toString(i));
-            System.out.println(s);
-            int idx = usePage.indexOf(s);
+            checking(s);
+            int idx = contents.indexOf(s);
             if (idx < lastidx) {
-                throw new Error(s + ", member ordering error, last:" + lastidx + ", got:" + idx);
+                failed(s + ", member ordering error, last:" + lastidx + ", got:" + idx);
+            } else {
+                passed("\tlast: " + lastidx + " got:" + idx);
             }
-            System.out.println("\tlast: " + lastidx + " got:" + idx);
             lastidx = idx;
         }
     }
 
-    static void checkIndexPathOrdering(String indexPage) {
-        String[] OrderedExpectedStrings = {
+    void checkIndexPathOrdering(String indexPage) {
+        checkOrder(indexPage,
             "pkg1/UsedClass.html#add--",
             "pkg1/ZZTop.html#add--",
             "pkg1/UsedClass.html#add-double-",
@@ -129,16 +132,6 @@ public class TestOrdering extends JavadocTester {
             "pkg1/UsedClass.html#add-int-float-",
             "pkg1/ZZTop.html#add-int-float-",
             "pkg1/UsedClass.html#add-java.lang.Integer-",
-            "pkg1/ZZTop.html#add-java.lang.Integer-"
-        };
-        int lastidx = 0;
-        for (String x : OrderedExpectedStrings) {
-            int idx = indexPage.indexOf(x);
-            if (idx < lastidx) {
-                throw new Error(x + ", index is out of order, last:" + lastidx + ", got:" + idx);
-            }
-            System.out.println(x + ": OK");
-            lastidx = idx;
-        }
+            "pkg1/ZZTop.html#add-java.lang.Integer-");
     }
 }

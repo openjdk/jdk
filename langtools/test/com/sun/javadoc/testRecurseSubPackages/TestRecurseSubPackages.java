@@ -26,35 +26,33 @@
  * @bug 4074234
  * @summary Make Javadoc capable of traversing/recursing all of given subpackages.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestRecurseSubPackages
  * @run main TestRecurseSubPackages
  */
 
 public class TestRecurseSubPackages extends JavadocTester {
 
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            "-subpackages", "pkg1", "-exclude", "pkg1.pkg2.packageToExclude"
-        };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        String[][] tests = new String[6][2];
-        for (int i = 0; i < tests.length; i++) {
-            tests[i][0] = "allclasses-frame.html";
-            tests[i][1] = "C" + (i+1) + ".html";
-        }
-        String[][] negatedTests = new String[][] {
-            { "allclasses-frame.html", "DummyClass.html"}
-        };
+    public static void main(String... args) throws Exception {
         TestRecurseSubPackages tester = new TestRecurseSubPackages();
-        tester.run(ARGS, tests, negatedTests);
-        tester.printSummary();
+        tester.runTests();
     }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-subpackages", "pkg1",
+                "-exclude", "pkg1.pkg2.packageToExclude");
+        checkExit(Exit.OK);
+
+        for (int i = 1; i <= 6; i++) {
+            checkOutput("allclasses-frame.html", true,
+                    "C" + i + ".html");
+        }
+
+        checkOutput("allclasses-frame.html", false,
+                "DummyClass.html");
+    }
+
 }

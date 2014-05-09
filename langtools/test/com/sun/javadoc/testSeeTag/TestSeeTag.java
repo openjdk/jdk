@@ -26,37 +26,29 @@
  * @bug      8017191
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
  * @author   jjg
- * @library  ../lib/
- * @build    JavadocTester TestSeeTag
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestSeeTag
  */
 
 public class TestSeeTag extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/Test.html",
-          "<code>List</code>"
-        }
-    };
-    private static final String[][] NEGATED_TEST = {
-        { "pkg/Test.html",
-          "&lt;code&gt;List&lt;/code&gt;"
-        }
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSeeTag tester = new TestSeeTag();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/Test.html", true,
+          "<code>List</code>");
+
+        checkOutput("pkg/Test.html", false,
+          "&lt;code&gt;List&lt;/code&gt;");
     }
 }

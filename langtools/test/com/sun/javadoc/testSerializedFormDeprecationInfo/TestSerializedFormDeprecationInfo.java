@@ -28,118 +28,142 @@
  * @bug 6802694 8025633 8026567
  * @summary This test verifies deprecation info in serialized-form.html.
  * @author Bhavesh Patel
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestSerializedFormDeprecationInfo
  * @run main TestSerializedFormDeprecationInfo
  */
 
 public class TestSerializedFormDeprecationInfo extends JavadocTester {
 
+    public static void main(String... args) throws Exception {
+        TestSerializedFormDeprecationInfo tester = new TestSerializedFormDeprecationInfo();
+        tester.runTests();
+    }
+
+    @Test
+    void testDefault() {
+        javadoc("-d", "out-default",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.FAILED); // TODO: should be OK
+
+        checkCommentDeprecated(true);
+        checkNoComment(false);
+    }
+
+    @Test
+    void testNoComment() {
+        javadoc("-d", "out-nocmnt",
+                "-nocomment",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.FAILED); // TODO: should be OK
+
+        checkNoComment(true);
+        checkCommentDeprecated(false);
+    }
+
+    @Test
+    void testNoDeprecated() {
+        javadoc("-d", "out-nodepr",
+                "-nodeprecated",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.FAILED); // TODO: should be OK
+
+        checkNoDeprecated(true);
+        checkNoCommentNoDeprecated(false);
+    }
+
+    @Test
+    void testNoCommentNoDeprecated() {
+        javadoc("-d", "out-nocmnt-nodepr",
+                "-nocomment",
+                "-nodeprecated",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.FAILED); // TODO: should be OK
+        checkNoCommentNoDeprecated(true);
+        checkNoDeprecated(false);
+    }
+
     // Test for normal run of javadoc. The serialized-form.html should
     // display the inline comments, tags and deprecation information if any.
-    private static final String[][] TEST_CMNT_DEPR = {
-        { "serialized-form.html", "<dl>\n" +
-                 "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n" +
-                 "<dd><code>" +
-                 "java.io.IOException</code></dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span>" +
-                 "</dt>\n" +
-                 "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
-                 "</dl>"},
-        { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">Deprecated.</span>" +
-                 "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "<div class=\"block\">This field indicates whether the C1 " +
-                 "is undecorated.</div>\n" +
-                 "&nbsp;\n" +
-                 "<dl>\n" +
-                 "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-                 "<dd>1.4</dd>\n" +
-                 "<dt><span class=\"seeLabel\">See Also:</span>" +
-                 "</dt>\n" +
-                 "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>C1.setUndecorated(boolean)</code></a></dd>\n" +
-                 "</dl>"},
-        { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">Deprecated.</span>" +
-                 "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "<div class=\"block\">Reads the object stream.</div>\n" +
-                 "<dl>\n" +
-                 "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n" +
-                 "<dd><code><code>" +
-                 "IOException</code></code></dd>\n" +
-                 "<dd><code>java.io.IOException</code></dd>\n" +
-                 "</dl>"},
-        { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">Deprecated.</span>" +
-                 "&nbsp;</div>\n" +
-                 "<div class=\"block\">" +
-                 "The name for this class.</div>"}};
+    void checkCommentDeprecated(boolean expectFound) {
+        checkOutput("serialized-form.html", expectFound,
+                "<dl>\n"
+                + "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n"
+                + "<dd><code>"
+                + "java.io.IOException</code></dd>\n"
+                + "<dt><span class=\"seeLabel\">See Also:</span>"
+                + "</dt>\n"
+                + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
+                + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
+                + "</dl>",
+                "<span class=\"deprecatedLabel\">Deprecated.</span>"
+                + "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
+                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "<div class=\"block\">This field indicates whether the C1 "
+                + "is undecorated.</div>\n"
+                + "&nbsp;\n"
+                + "<dl>\n"
+                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dd>1.4</dd>\n"
+                + "<dt><span class=\"seeLabel\">See Also:</span>"
+                + "</dt>\n"
+                + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
+                + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
+                + "</dl>",
+                "<span class=\"deprecatedLabel\">Deprecated.</span>"
+                + "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
+                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "<div class=\"block\">Reads the object stream.</div>\n"
+                + "<dl>\n"
+                + "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n"
+                + "<dd><code><code>"
+                + "IOException</code></code></dd>\n"
+                + "<dd><code>java.io.IOException</code></dd>\n"
+                + "</dl>",
+                "<span class=\"deprecatedLabel\">Deprecated.</span>"
+                + "&nbsp;</div>\n"
+                + "<div class=\"block\">"
+                + "The name for this class.</div>");
+    }
 
     // Test with -nocomment option. The serialized-form.html should
     // not display the inline comments and tags but should display deprecation
     // information if any.
-    private static final String[][] TEST_NOCMNT = {
-        { "serialized-form.html",
-                 "<pre>boolean undecorated</pre>\n" +
-                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;<span class=\"deprecationComment\">" +
-                 "As of JDK version 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>" +
-                 "setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "</li>"},
-        { "serialized-form.html",
-                 "<span class=\"deprecatedLabel\">" +
-                 "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version" +
-                 " 1.5, replaced by\n" +
-                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
-                 "</li>"}};
+    void checkNoComment(boolean expectFound) {
+        checkOutput("serialized-form.html", expectFound,
+                "<pre>boolean undecorated</pre>\n"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;<span class=\"deprecationComment\">"
+                + "As of JDK version 1.5, replaced by\n"
+                + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>"
+                + "setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "</li>",
+                "<span class=\"deprecatedLabel\">"
+                + "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version"
+                + " 1.5, replaced by\n"
+                + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
+                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "</li>");
+    }
 
     // Test with -nodeprecated option. The serialized-form.html should
     // ignore the -nodeprecated tag and display the deprecation info. This
     // test is similar to the normal run of javadoc in which inline comment, tags
     // and deprecation information will be displayed.
-    private static final String[][] TEST_NODEPR = TEST_CMNT_DEPR;
+    void checkNoDeprecated(boolean expectFound) {
+        checkCommentDeprecated(expectFound);
+    }
 
     // Test with -nodeprecated and -nocomment options. The serialized-form.html should
     // ignore the -nodeprecated tag and display the deprecation info but should not
     // display the inline comments and tags. This test is similar to the test with
     // -nocomment option.
-    private static final String[][] TEST_NOCMNT_NODEPR = TEST_NOCMNT;
-
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg1"};
-
-    private static final String[] ARGS2 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-2", "-nocomment", "-sourcepath", SRC_DIR, "pkg1"};
-
-    private static final String[] ARGS3 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-3", "-nodeprecated", "-sourcepath", SRC_DIR, "pkg1"};
-
-    private static final String[] ARGS4 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-4", "-nocomment", "-nodeprecated", "-sourcepath",
-            SRC_DIR, "pkg1"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestSerializedFormDeprecationInfo tester = new TestSerializedFormDeprecationInfo();
-        tester.run(ARGS1, TEST_CMNT_DEPR, TEST_NOCMNT);
-        tester.run(ARGS2, TEST_NOCMNT, TEST_CMNT_DEPR);
-        tester.run(ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
-        tester.run(ARGS4, TEST_NOCMNT_NODEPR, TEST_NODEPR);
-        tester.printSummary();
+    void checkNoCommentNoDeprecated(boolean expectFound) {
+        checkNoComment(expectFound);
     }
 }

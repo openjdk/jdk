@@ -27,64 +27,52 @@
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @author   jamieh
- * @library  ../lib/
- * @build    JavadocTester TestAnnotationTypes
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestAnnotationTypes
  */
 
 public class TestAnnotationTypes extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/AnnotationTypeField.html",
-            "<li>Summary:&nbsp;</li>\n" +
-            "<li><a href=\"#annotation.type." +
-            "field.summary\">Field</a>&nbsp;|&nbsp;</li>"},
-        { "pkg/AnnotationTypeField.html",
-            "<li>Detail:&nbsp;</li>\n" +
-            "<li><a href=\"#annotation.type." +
-            "field.detail\">Field</a>&nbsp;|&nbsp;</li>"},
-        { "pkg/AnnotationTypeField.html",
-            "<!-- =========== ANNOTATION TYPE FIELD SUMMARY =========== -->"},
-        { "pkg/AnnotationTypeField.html",
-            "<h3>Field Summary</h3>"},
-        { "pkg/AnnotationTypeField.html",
-            "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../" +
-            "pkg/AnnotationTypeField.html#DEFAULT_NAME\">DEFAULT_NAME</a></span>" +
-            "</code>&nbsp;</td>"},
-        { "pkg/AnnotationTypeField.html",
-            "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->"},
-        { "pkg/AnnotationTypeField.html",
-            "<h4>DEFAULT_NAME</h4>\n" +
-            "<pre>public static final&nbsp;java." +
-            "lang.String&nbsp;DEFAULT_NAME</pre>"},
-        { "pkg/AnnotationType.html",
-            "<li>Summary:&nbsp;</li>\n" +
-            "<li>Field&nbsp;|&nbsp;</li>"},
-        { "pkg/AnnotationType.html",
-            "<li>Detail:&nbsp;</li>\n" +
-            "<li>Field&nbsp;|&nbsp;</li>"},
-    };
-    private static final String[][] NEGATED_TEST = {
-        { "pkg/AnnotationType.html",
-            "<HR>\n\n" +
-            "<P>\n\n" +
-            "<P>" +
-            "<!-- ========= END OF CLASS DATA ========= -->" + "<HR>"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestAnnotationTypes tester = new TestAnnotationTypes();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/AnnotationTypeField.html", true,
+                "<li>Summary:&nbsp;</li>\n"
+                + "<li><a href=\"#annotation.type."
+                + "field.summary\">Field</a>&nbsp;|&nbsp;</li>",
+                "<li>Detail:&nbsp;</li>\n"
+                + "<li><a href=\"#annotation.type."
+                + "field.detail\">Field</a>&nbsp;|&nbsp;</li>",
+                "<!-- =========== ANNOTATION TYPE FIELD SUMMARY =========== -->",
+                "<h3>Field Summary</h3>",
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../"
+                + "pkg/AnnotationTypeField.html#DEFAULT_NAME\">DEFAULT_NAME</a></span>"
+                + "</code>&nbsp;</td>",
+                "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->",
+                "<h4>DEFAULT_NAME</h4>\n"
+                + "<pre>public static final&nbsp;java."
+                + "lang.String&nbsp;DEFAULT_NAME</pre>");
+
+        checkOutput("pkg/AnnotationType.html", true,
+                "<li>Summary:&nbsp;</li>\n"
+                + "<li>Field&nbsp;|&nbsp;</li>",
+                "<li>Detail:&nbsp;</li>\n"
+                + "<li>Field&nbsp;|&nbsp;</li>");
+
+        checkOutput("pkg/AnnotationType.html", false,
+                "<HR>\n\n"
+                + "<P>\n\n"
+                + "<P>"
+                + "<!-- ========= END OF CLASS DATA ========= -->" + "<HR>");
     }
 }

@@ -26,25 +26,12 @@
  * @bug      4490068
  * @summary  Warn when a return tag is used on a method without a return type.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestReturnTag
  * @run main TestReturnTag
  */
 
 public class TestReturnTag extends JavadocTester {
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR +
-        "/TestReturnTag.java"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {WARNING_OUTPUT,
-            "warning - @return tag cannot be used in method with void return type."}
-    };
 
     /**
      * Trigger warning message when return tag is used on a void method.
@@ -53,13 +40,20 @@ public class TestReturnTag extends JavadocTester {
      */
     public void method() {}
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestReturnTag tester = new TestReturnTag();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void tests() {
+        javadoc("-Xdoclint:none",
+                "-d", "out",
+                "-sourcepath", testSrc,
+                testSrc("TestReturnTag.java"));
+        checkExit(Exit.OK);
+
+        checkOutput(Output.WARNING, true,
+            "warning - @return tag cannot be used in method with void return type.");
     }
 }

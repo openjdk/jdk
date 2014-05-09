@@ -27,32 +27,26 @@
  * @summary  The field detail comment should not show up in the output if there
  *           are no fields to document.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestHtmlComments
  * @run main TestHtmlComments
  */
 
 public class TestHtmlComments extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
-    };
-
-    //Input for string search tests.
-    private static final String[][] NEGATED_TEST = {
-        { "C.html",
-            "<!-- ============ FIELD DETAIL =========== -->"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHtmlComments tester = new TestHtmlComments();
-        tester.run(ARGS, NO_TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void run() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", false,
+            "<!-- ============ FIELD DETAIL =========== -->");
     }
 }

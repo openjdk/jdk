@@ -26,32 +26,28 @@
  * @bug 8027977
  * @summary Test to verify javadoc executes without CompletionFailure exception.
  * @author Bhavesh Patel
- * @library ../lib/
- * @build JavadocTester TestCompletionFailure
+ * @library ../lib
+ * @build JavadocTester
  * @run main TestCompletionFailure
  */
 
 public class TestCompletionFailure extends JavadocTester {
 
-    //Input for string search tests.
-    private static final String[][] NEGATED_TEST = {
-        {ERROR_OUTPUT, "TestCompletionFailure: error - " +
-            "com.sun.tools.javac.code.Symbol$CompletionFailure: class file for " +
-            "sun.util.locale.provider.LocaleProviderAdapter not found"
-        }
-    };
-
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) throws Exception {
+    public static void main(String... args) throws Exception {
         TestCompletionFailure tester = new TestCompletionFailure();
-        tester.run(ARGS, NO_TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.STDERR, false,
+                "TestCompletionFailure: error - "
+                + "com.sun.tools.javac.code.Symbol$CompletionFailure: class file for "
+                + "sun.util.locale.provider.LocaleProviderAdapter not found");
     }
 }
