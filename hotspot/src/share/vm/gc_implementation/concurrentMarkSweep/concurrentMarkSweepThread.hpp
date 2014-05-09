@@ -94,8 +94,6 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   static void threads_do(ThreadClosure* tc);
 
   // Printing
-  void print_on(outputStream* st) const;
-  void print() const                                  { print_on(tty); }
   static void print_all_on(outputStream* st);
   static void print_all()                             { print_all_on(tty); }
 

@@ -60,10 +60,6 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   static void makeSurrogateLockerThread(TRAPS);
   static SurrogateLockerThread* slt() { return _slt; }
 
-  // Printing
-  void print_on(outputStream* st) const;
-  void print() const;
-
   // Total virtual time so far.
   double vtime_accum();
   // Marking virtual time so far

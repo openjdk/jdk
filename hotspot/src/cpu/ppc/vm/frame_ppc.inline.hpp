@@ -26,6 +26,8 @@
 #ifndef CPU_PPC_VM_FRAME_PPC_INLINE_HPP
 #define CPU_PPC_VM_FRAME_PPC_INLINE_HPP
 
+#include "code/codeCache.hpp"
+
 // Inline functions for ppc64 frames:
 
 // Find codeblob and set deopt_state.

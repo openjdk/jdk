@@ -29,6 +29,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memPtr.hpp"
 #include "services/memReporter.hpp"

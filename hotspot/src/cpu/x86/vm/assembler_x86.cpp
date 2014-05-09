@@ -1766,7 +1766,7 @@ void Assembler::movdqu(Address dst, XMMRegister src) {
 
 // Move Unaligned 256bit Vector
 void Assembler::vmovdqu(XMMRegister dst, XMMRegister src) {
-  assert(UseAVX, "");
+  assert(UseAVX > 0, "");
   bool vector256 = true;
   int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_F3, vector256);
   emit_int8(0x6F);
@@ -1774,7 +1774,7 @@ void Assembler::vmovdqu(XMMRegister dst, XMMRegister src) {
 }
 
 void Assembler::vmovdqu(XMMRegister dst, Address src) {
-  assert(UseAVX, "");
+  assert(UseAVX > 0, "");
   InstructionMark im(this);
   bool vector256 = true;
   vex_prefix(dst, xnoreg, src, VEX_SIMD_F3, vector256);
@@ -1783,7 +1783,7 @@ void Assembler::vmovdqu(XMMRegister dst, Address src) {
 }
 
 void Assembler::vmovdqu(Address dst, XMMRegister src) {
-  assert(UseAVX, "");
+  assert(UseAVX > 0, "");
   InstructionMark im(this);
   bool vector256 = true;
   // swap src<->dst for encoding
