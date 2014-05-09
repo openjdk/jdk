@@ -30,12 +30,24 @@ import java.io.*;
 import java.security.*;
 
 public class Ext_AllPolicy {
-        public static void main (String[] args) {
-                FilePermission mine = new FilePermission("/tmp/bar", "read");
-                SecurityManager sm = System.getSecurityManager();
+    public static void main (String[] args) {
+        boolean allPerms = args.length == 1 && args[0].equals("AllPermission");
+        FilePermission mine = new FilePermission("/tmp/bar", "read");
+        SecurityManager sm = System.getSecurityManager();
 
-                if (sm != null) {
-                        sm.checkPermission(mine);
+        if (sm != null) {
+            try {
+                sm.checkPermission(mine);
+                if (!allPerms) {
+                    // Default has no privilege.
+                    throw new RuntimeException(mine + " expected to deny access");
                 }
+            } catch (AccessControlException e) {
+                if (allPerms) {
+                    // expected all permissions granted
+                    throw e;
+                }
+            }
         }
+    }
 }
