@@ -74,8 +74,6 @@ class PollingWatchService
          throws IOException
     {
         // check events - CCE will be thrown if there are invalid elements
-        if (events.length == 0)
-            throw new IllegalArgumentException("No events to register");
         final Set<WatchEvent.Kind<?>> eventSet =
             new HashSet<WatchEvent.Kind<?>>(events.length);
         for (WatchEvent.Kind<?> event: events) {
@@ -90,8 +88,6 @@ class PollingWatchService
 
             // OVERFLOW is ignored
             if (event == StandardWatchEventKinds.OVERFLOW) {
-                if (events.length == 1)
-                    throw new IllegalArgumentException("No events to register");
                 continue;
             }
 
@@ -100,6 +96,8 @@ class PollingWatchService
                 throw new NullPointerException("An element in event set is 'null'");
             throw new UnsupportedOperationException(event.name());
         }
+        if (eventSet.isEmpty())
+            throw new IllegalArgumentException("No events to register");
 
         // A modifier may be used to specify the sensitivity level
         SensitivityWatchEventModifier sensivity = SensitivityWatchEventModifier.MEDIUM;
