@@ -25,43 +25,48 @@
  * @test
  * @bug      8007687
  * @summary  Make sure that the -X option works properly.
- * @library  ../lib/
- * @build    JavadocTester TestXOption
+ * @library ../lib
+ * @build    JavadocTester
  * @run main TestXOption
  */
 
 public class TestXOption extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-X",
-            SRC_DIR + "/TestXOption.java"
-    };
-
-    private static final String[] ARGS2 = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            SRC_DIR + "/TestXOption.java"
-    };
-
-    private static final String[][] TEST = {
-        {NOTICE_OUTPUT, "-Xmaxerrs "},
-        {NOTICE_OUTPUT, "-Xmaxwarns "},
-        {STANDARD_OUTPUT, "-Xdocrootparent "},
-        {STANDARD_OUTPUT, "-Xdoclint "},
-        {STANDARD_OUTPUT, "-Xdoclint:"},
-    };
-
-    //The help option should not crash the doclet.
-    private static final int EXPECTED_EXIT_CODE = 0;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestXOption tester = new TestXOption();
-        int actualExitCode = tester.run(ARGS, TEST, NO_TEST);
-        tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void testWithOption() {
+        javadoc("-d", "out1",
+                "-sourcepath", testSrc,
+                "-X",
+                testSrc("TestXOption.java"));
+        checkExit(Exit.OK);
+        checkOutput(true);
+    }
+
+    @Test
+    void testWithoutOption() {
+        javadoc("-d", "out2",
+                "-sourcepath", testSrc,
+                testSrc("TestXOption.java"));
+        checkExit(Exit.OK);
+        checkOutput(false);
+    }
+
+    private void checkOutput(boolean expectFound) {
+        // TODO: It's an ugly hidden side-effect of the current doclet API
+        // that the -X output from the tool and the -X output from the doclet
+        // come out on different streams!
+        // When we clean up the doclet API, this should be rationalized.
+        checkOutput(Output.NOTICE, expectFound,
+                "-Xmaxerrs ",
+                "-Xmaxwarns ");
+        checkOutput(Output.STDOUT, expectFound,
+                "-Xdocrootparent ",
+                "-Xdoclint ",
+                "-Xdoclint:");
     }
 }

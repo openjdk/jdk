@@ -26,9 +26,8 @@
  * @bug      6786688 8008164
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestHtmlTableTags
  * @run main TestHtmlTableTags
  */
 
@@ -36,400 +35,350 @@ public class TestHtmlTableTags extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-use", "pkg1", "pkg2"
+
     };
 
-    //Input for string tests for HTML table tags.
-    private static final String[][] TABLE_TAGS_TEST = {
-        /*
-         * Test for validating summary for HTML tables
-         */
 
-        //Package summary
-        { "pkg1/package-summary.html",
-            "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\"" +
-            " cellspacing=\"0\" summary=\"Class Summary table, " +
-            "listing classes, and an explanation\">"
-        },
-        { "pkg1/package-summary.html",
-            "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\"" +
-            " cellspacing=\"0\" summary=\"Interface Summary table, " +
-            "listing interfaces, and an explanation\">"
-        },
-        { "pkg2/package-summary.html",
-            "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\"" +
-            " cellspacing=\"0\" summary=\"Enum Summary table, " +
-            "listing enums, and an explanation\">"
-        },
-        { "pkg2/package-summary.html",
-            "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\"" +
-            " cellspacing=\"0\" summary=\"Annotation Types Summary table, " +
-            "listing annotation types, and an explanation\">"
-        },
-        // Class documentation
-        { "pkg1/C1.html",
-            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Field Summary table, listing fields, " +
-            "and an explanation\">"
-        },
-        { "pkg1/C1.html",
-            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Method Summary table, listing methods, " +
-            "and an explanation\">"
-        },
-        { "pkg2/C2.html",
-            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Nested Class Summary table, listing " +
-            "nested classes, and an explanation\">"
-        },
-        { "pkg2/C2.html",
-            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Constructor Summary table, listing " +
-            "constructors, and an explanation\">"
-        },
-        { "pkg2/C2.ModalExclusionType.html",
-            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Enum Constant Summary table, listing " +
-            "enum constants, and an explanation\">"
-        },
-        { "pkg2/C3.html",
-            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Required Element Summary table, " +
-            "listing required elements, and an explanation\">"
-        },
-        { "pkg2/C4.html",
-            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Optional Element Summary table, " +
-            "listing optional elements, and an explanation\">"
-        },
-        // Class use documentation
-        { "pkg1/class-use/I1.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing packages, and an explanation\">"
-        },
-        { "pkg1/class-use/C1.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing fields, and an explanation\">"
-        },
-        { "pkg1/class-use/C1.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing methods, and an explanation\">"
-        },
-        { "pkg2/class-use/C2.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing fields, and an explanation\">"
-        },
-        { "pkg2/class-use/C2.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing methods, and an explanation\">"
-        },
-        { "pkg2/class-use/C2.ModalExclusionType.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing packages, and an explanation\">"
-        },
-        { "pkg2/class-use/C2.ModalExclusionType.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing methods, and an explanation\">"
-        },
-        // Package use documentation
-        { "pkg1/package-use.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing packages, and an explanation\">"
-        },
-        { "pkg1/package-use.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing classes, and an explanation\">"
-        },
-        { "pkg2/package-use.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing packages, and an explanation\">"
-        },
-        { "pkg2/package-use.html",
-            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
-            "table, listing classes, and an explanation\">"
-        },
-        // Deprecated
-        { "deprecated-list.html",
-            "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
-            "summary=\"Deprecated Fields table, listing deprecated fields, " +
-            "and an explanation\">"
-        },
-        { "deprecated-list.html",
-            "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
-            "summary=\"Deprecated Methods table, listing deprecated methods, " +
-            "and an explanation\">"
-        },
-        // Constant values
-        { "constant-values.html",
-            "<table class=\"constantsSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
-            "summary=\"Constant Field Values table, listing " +
-            "constant fields, and values\">"
-        },
-        // Overview Summary
-        { "overview-summary.html",
-            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
-            "cellspacing=\"0\" summary=\"Packages table, " +
-            "listing packages, and an explanation\">"
-        },
-
-        /*
-         * Test for validating caption for HTML tables
-         */
-
-        //Package summary
-        { "pkg1/package-summary.html",
-            "<caption><span>Class Summary</span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        { "pkg1/package-summary.html",
-            "<caption><span>Interface Summary</span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        { "pkg2/package-summary.html",
-            "<caption><span>Enum Summary</span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        { "pkg2/package-summary.html",
-            "<caption><span>Annotation Types Summary</span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        // Class documentation
-        { "pkg1/C1.html",
-            "<caption><span>Fields</span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        { "pkg1/C1.html",
-            "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All " +
-            "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">" +
-            "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">" +
-            "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">" +
-            "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "</caption>"
-        },
-        { "pkg2/C2.html",
-            "<caption><span>Nested Classes</span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        { "pkg2/C2.html",
-            "<caption><span>Constructors</span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        { "pkg2/C2.ModalExclusionType.html",
-            "<caption><span>Enum Constants</span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        { "pkg2/C3.html",
-            "<caption><span>Required Elements</span><span class=\"tabEnd\">&nbsp;" +
-            "</span></caption>"
-        },
-        { "pkg2/C4.html",
-            "<caption><span>Optional Elements</span><span class=\"tabEnd\">&nbsp;" +
-            "</span></caption>"
-        },
-        // Class use documentation
-        { "pkg1/class-use/I1.html",
-            "<caption><span>Packages that use <a href=\"../../pkg1/I1.html\" " +
-            "title=\"interface in pkg1\">I1</a></span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        { "pkg1/class-use/C1.html",
-            "<caption><span>Fields in <a href=\"../../pkg2/package-summary.html\">" +
-            "pkg2</a> declared as <a href=\"../../pkg1/C1.html\" " +
-            "title=\"class in pkg1\">C1</a></span><span class=\"tabEnd\">&nbsp;" +
-            "</span></caption>"
-        },
-        { "pkg1/class-use/C1.html",
-            "<caption><span>Methods in <a href=\"../../pkg2/package-summary.html\">" +
-            "pkg2</a> that return <a href=\"../../pkg1/C1.html\" " +
-            "title=\"class in pkg1\">C1</a></span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        { "pkg2/class-use/C2.html",
-            "<caption><span>Fields in <a href=\"../../pkg1/package-summary.html\">" +
-            "pkg1</a> declared as <a href=\"../../pkg2/C2.html\" " +
-            "title=\"class in pkg2\">C2</a></span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        { "pkg2/class-use/C2.html",
-            "<caption><span>Methods in <a href=\"../../pkg1/package-summary.html\">" +
-            "pkg1</a> that return <a href=\"../../pkg2/C2.html\" " +
-            "title=\"class in pkg2\">C2</a></span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        { "pkg2/class-use/C2.ModalExclusionType.html",
-            "<caption><span>Methods in <a href=\"../../pkg2/package-summary.html\">" +
-            "pkg2</a> that return <a href=\"../../pkg2/C2.ModalExclusionType.html\" " +
-            "title=\"enum in pkg2\">C2.ModalExclusionType</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        // Package use documentation
-        { "pkg1/package-use.html",
-            "<caption><span>Packages that use <a href=\"../pkg1/package-summary.html\">" +
-            "pkg1</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        { "pkg1/package-use.html",
-            "<caption><span>Classes in <a href=\"../pkg1/package-summary.html\">" +
-            "pkg1</a> used by <a href=\"../pkg1/package-summary.html\">pkg1</a>" +
-            "</span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        { "pkg2/package-use.html",
-            "<caption><span>Packages that use <a href=\"../pkg2/package-summary.html\">" +
-            "pkg2</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        { "pkg2/package-use.html",
-            "<caption><span>Classes in <a href=\"../pkg2/package-summary.html\">" +
-            "pkg2</a> used by <a href=\"../pkg1/package-summary.html\">pkg1</a>" +
-            "</span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        // Deprecated
-        { "deprecated-list.html",
-            "<caption><span>Deprecated Fields</span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        { "deprecated-list.html",
-            "<caption><span>Deprecated Methods</span><span class=\"tabEnd\">" +
-            "&nbsp;</span></caption>"
-        },
-        // Constant values
-        { "constant-values.html",
-            "<caption><span>pkg1.<a href=\"pkg1/C1.html\" title=\"class in pkg1\">" +
-            "C1</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-        // Overview Summary
-        { "overview-summary.html",
-            "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>"
-        },
-
-        /*
-         * Test for validating headers for HTML tables
-         */
-
-        //Package summary
-        { "pkg1/package-summary.html",
-            "<th class=\"colFirst\" scope=\"col\">" +
-            "Class</th>\n" +
-            "<th class=\"colLast\" scope=\"col\"" +
-            ">Description</th>"
-        },
-        { "pkg1/package-summary.html",
-            "<th class=\"colFirst\" scope=\"col\">" +
-            "Interface</th>\n" +
-            "<th class=\"colLast\" scope=\"col\"" +
-            ">Description</th>"
-        },
-        { "pkg2/package-summary.html",
-            "<th class=\"colFirst\" scope=\"col\">" +
-            "Enum</th>\n" +
-            "<th class=\"colLast\" scope=\"col\"" +
-            ">Description</th>"
-        },
-        { "pkg2/package-summary.html",
-            "<th class=\"colFirst\" scope=\"col\">" +
-            "Annotation Type</th>\n" +
-            "<th class=\"colLast\"" +
-            " scope=\"col\">Description</th>"
-        },
-        // Class documentation
-        { "pkg1/C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
-        },
-        { "pkg1/C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Method and Description</th>"
-        },
-        { "pkg2/C2.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Class and Description</th>"
-        },
-        { "pkg2/C2.html",
-            "<th class=\"colOne\" scope=\"col\">Constructor and Description</th>"
-        },
-        { "pkg2/C2.ModalExclusionType.html",
-            "<th class=\"colOne\" scope=\"col\">Enum Constant and Description</th>"
-        },
-        { "pkg2/C3.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Required Element and Description</th>"
-        },
-        { "pkg2/C4.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Optional Element and Description</th>"
-        },
-        // Class use documentation
-        { "pkg1/class-use/I1.html",
-            "<th class=\"colFirst\" scope=\"col\">Package</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Description</th>"
-        },
-        { "pkg1/class-use/C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
-        },
-        { "pkg1/class-use/C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Method and Description</th>"
-        },
-        { "pkg2/class-use/C2.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
-        },
-        { "pkg2/class-use/C2.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Method and Description</th>"
-        },
-        { "pkg2/class-use/C2.ModalExclusionType.html",
-            "<th class=\"colFirst\" scope=\"col\">Package</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Description</th>"
-        },
-        { "pkg2/class-use/C2.ModalExclusionType.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Method and Description</th>"
-        },
-        // Package use documentation
-        { "pkg1/package-use.html",
-            "<th class=\"colFirst\" scope=\"col\">Package</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Description</th>"
-        },
-        { "pkg1/package-use.html",
-            "<th class=\"colOne\" scope=\"col\">Class and Description</th>"
-        },
-        { "pkg2/package-use.html",
-            "<th class=\"colFirst\" scope=\"col\">Package</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Description</th>"
-        },
-        { "pkg2/package-use.html",
-            "<th class=\"colOne\" scope=\"col\">Class and Description</th>"
-        },
-        // Deprecated
-        { "deprecated-list.html",
-            "<th class=\"colOne\" scope=\"col\">Field and Description</th>"
-        },
-        { "deprecated-list.html",
-            "<th class=\"colOne\" scope=\"col\">Method and Description</th>"
-        },
-        // Constant values
-        { "constant-values.html",
-            "<th class=\"colFirst\" scope=\"col\">" +
-            "Modifier and Type</th>\n" +
-            "<th" +
-            " scope=\"col\">Constant Field</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Value</th>"
-        },
-        // Overview Summary
-        { "overview-summary.html",
-            "<th class=\"colFirst\" scope=\"col\">" +
-            "Package</th>\n" +
-            "<th class=\"colLast\" scope=\"col\"" +
-            ">Description</th>"
-        }
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHtmlTableTags tester = new TestHtmlTableTags();
-        tester.run(ARGS, TABLE_TAGS_TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg1", "pkg2");
+        checkExit(Exit.OK);
+
+        checkHtmlTableSummaries();
+        checkHtmlTableCaptions();
+        checkHtmlTableHeaders();
+    }
+
+    /*
+     * Tests for validating summary for HTML tables
+     */
+    void checkHtmlTableSummaries() {
+        //Package summary
+        checkOutput("pkg1/package-summary.html", true,
+                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\""
+                + " cellspacing=\"0\" summary=\"Class Summary table, "
+                + "listing classes, and an explanation\">",
+                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\""
+                + " cellspacing=\"0\" summary=\"Interface Summary table, "
+                + "listing interfaces, and an explanation\">");
+
+        checkOutput("pkg2/package-summary.html", true,
+                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\""
+                + " cellspacing=\"0\" summary=\"Enum Summary table, "
+                + "listing enums, and an explanation\">",
+                "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\""
+                + " cellspacing=\"0\" summary=\"Annotation Types Summary table, "
+                + "listing annotation types, and an explanation\">");
+
+        // Class documentation
+        checkOutput("pkg1/C1.html", true,
+                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
+                + "cellspacing=\"0\" summary=\"Field Summary table, listing fields, "
+                + "and an explanation\">",
+                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
+                + "cellspacing=\"0\" summary=\"Method Summary table, listing methods, "
+                + "and an explanation\">");
+
+        checkOutput("pkg2/C2.html", true,
+                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
+                + "cellspacing=\"0\" summary=\"Nested Class Summary table, listing "
+                + "nested classes, and an explanation\">",
+                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
+                + "cellspacing=\"0\" summary=\"Constructor Summary table, listing "
+                + "constructors, and an explanation\">");
+
+        checkOutput("pkg2/C2.ModalExclusionType.html", true,
+                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
+                + "cellspacing=\"0\" summary=\"Enum Constant Summary table, listing "
+                + "enum constants, and an explanation\">");
+
+        checkOutput("pkg2/C3.html", true,
+                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
+                + "cellspacing=\"0\" summary=\"Required Element Summary table, "
+                + "listing required elements, and an explanation\">");
+
+        checkOutput("pkg2/C4.html", true,
+                "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
+                + "cellspacing=\"0\" summary=\"Optional Element Summary table, "
+                + "listing optional elements, and an explanation\">");
+
+        // Class use documentation
+        checkOutput("pkg1/class-use/I1.html", true,
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing packages, and an explanation\">");
+
+        checkOutput("pkg1/class-use/C1.html", true,
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing fields, and an explanation\">",
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing methods, and an explanation\">");
+
+        checkOutput("pkg2/class-use/C2.html", true,
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing fields, and an explanation\">",
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing methods, and an explanation\">");
+
+        checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing packages, and an explanation\">");
+
+        checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing methods, and an explanation\">");
+
+        // Package use documentation
+        checkOutput("pkg1/package-use.html", true,
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing packages, and an explanation\">",
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing classes, and an explanation\">");
+
+        checkOutput("pkg2/package-use.html", true,
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing packages, and an explanation\">",
+                "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use "
+                + "table, listing classes, and an explanation\">");
+
+        // Deprecated
+        checkOutput("deprecated-list.html", true,
+                "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
+                + "summary=\"Deprecated Fields table, listing deprecated fields, "
+                + "and an explanation\">",
+                "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
+                + "summary=\"Deprecated Methods table, listing deprecated methods, "
+                + "and an explanation\">");
+
+        // Constant values
+        checkOutput("constant-values.html", true,
+                "<table class=\"constantsSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
+                + "summary=\"Constant Field Values table, listing "
+                + "constant fields, and values\">");
+
+        // Overview Summary
+        checkOutput("overview-summary.html", true,
+                "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" "
+                + "cellspacing=\"0\" summary=\"Packages table, "
+                + "listing packages, and an explanation\">");
+    }
+
+    /*
+     * Tests for validating caption for HTML tables
+     */
+    void checkHtmlTableCaptions() {
+        //Package summary
+        checkOutput("pkg1/package-summary.html", true,
+                "<caption><span>Class Summary</span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<caption><span>Interface Summary</span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>");
+
+        checkOutput("pkg2/package-summary.html", true,
+                "<caption><span>Enum Summary</span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<caption><span>Annotation Types Summary</span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>");
+
+        // Class documentation
+        checkOutput("pkg1/C1.html", true,
+                "<caption><span>Fields</span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
+                + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
+                + "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">"
+                + "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">"
+                + "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "</caption>");
+
+        checkOutput("pkg2/C2.html", true,
+                "<caption><span>Nested Classes</span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<caption><span>Constructors</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+
+        checkOutput("pkg2/C2.ModalExclusionType.html", true,
+                "<caption><span>Enum Constants</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+
+        checkOutput("pkg2/C3.html", true,
+                "<caption><span>Required Elements</span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>");
+
+        checkOutput("pkg2/C4.html", true,
+                "<caption><span>Optional Elements</span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>");
+
+        // Class use documentation
+        checkOutput("pkg1/class-use/I1.html", true,
+                "<caption><span>Packages that use <a href=\"../../pkg1/I1.html\" "
+                + "title=\"interface in pkg1\">I1</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>");
+
+        checkOutput("pkg1/class-use/C1.html", true,
+                "<caption><span>Fields in <a href=\"../../pkg2/package-summary.html\">"
+                + "pkg2</a> declared as <a href=\"../../pkg1/C1.html\" "
+                + "title=\"class in pkg1\">C1</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>",
+                "<caption><span>Methods in <a href=\"../../pkg2/package-summary.html\">"
+                + "pkg2</a> that return <a href=\"../../pkg1/C1.html\" "
+                + "title=\"class in pkg1\">C1</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>");
+
+        checkOutput("pkg2/class-use/C2.html", true,
+                "<caption><span>Fields in <a href=\"../../pkg1/package-summary.html\">"
+                + "pkg1</a> declared as <a href=\"../../pkg2/C2.html\" "
+                + "title=\"class in pkg2\">C2</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<caption><span>Methods in <a href=\"../../pkg1/package-summary.html\">"
+                + "pkg1</a> that return <a href=\"../../pkg2/C2.html\" "
+                + "title=\"class in pkg2\">C2</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>");
+
+        checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
+                "<caption><span>Methods in <a href=\"../../pkg2/package-summary.html\">"
+                + "pkg2</a> that return <a href=\"../../pkg2/C2.ModalExclusionType.html\" "
+                + "title=\"enum in pkg2\">C2.ModalExclusionType</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></caption>");
+
+        // Package use documentation
+        checkOutput("pkg1/package-use.html", true,
+                "<caption><span>Packages that use <a href=\"../pkg1/package-summary.html\">"
+                + "pkg1</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<caption><span>Classes in <a href=\"../pkg1/package-summary.html\">"
+                + "pkg1</a> used by <a href=\"../pkg1/package-summary.html\">pkg1</a>"
+                + "</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+
+        checkOutput("pkg2/package-use.html", true,
+                "<caption><span>Packages that use <a href=\"../pkg2/package-summary.html\">"
+                + "pkg2</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<caption><span>Classes in <a href=\"../pkg2/package-summary.html\">"
+                + "pkg2</a> used by <a href=\"../pkg1/package-summary.html\">pkg1</a>"
+                + "</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+
+        // Deprecated
+        checkOutput("deprecated-list.html", true,
+                "<caption><span>Deprecated Fields</span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<caption><span>Deprecated Methods</span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>");
+
+        // Constant values
+        checkOutput("constant-values.html", true,
+                "<caption><span>pkg1.<a href=\"pkg1/C1.html\" title=\"class in pkg1\">"
+                + "C1</a></span><span class=\"tabEnd\">&nbsp;</span></caption>");
+
+        // Overview Summary
+        checkOutput("overview-summary.html", true,
+                "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+    }
+
+    /*
+     * Test for validating headers for HTML tables
+     */
+    void checkHtmlTableHeaders() {
+        //Package summary
+        checkOutput("pkg1/package-summary.html", true,
+                "<th class=\"colFirst\" scope=\"col\">"
+                + "Class</th>\n"
+                + "<th class=\"colLast\" scope=\"col\""
+                + ">Description</th>",
+                "<th class=\"colFirst\" scope=\"col\">"
+                + "Interface</th>\n"
+                + "<th class=\"colLast\" scope=\"col\""
+                + ">Description</th>");
+
+        checkOutput("pkg2/package-summary.html", true,
+                "<th class=\"colFirst\" scope=\"col\">"
+                + "Enum</th>\n"
+                + "<th class=\"colLast\" scope=\"col\""
+                + ">Description</th>",
+                "<th class=\"colFirst\" scope=\"col\">"
+                + "Annotation Type</th>\n"
+                + "<th class=\"colLast\""
+                + " scope=\"col\">Description</th>");
+
+        // Class documentation
+        checkOutput("pkg1/C1.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>",
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>");
+
+        checkOutput("pkg2/C2.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Class and Description</th>",
+                "<th class=\"colOne\" scope=\"col\">Constructor and Description</th>");
+
+        checkOutput("pkg2/C2.ModalExclusionType.html", true,
+                "<th class=\"colOne\" scope=\"col\">Enum Constant and Description</th>");
+
+        checkOutput("pkg2/C3.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Required Element and Description</th>");
+
+        checkOutput("pkg2/C4.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Optional Element and Description</th>");
+
+        // Class use documentation
+        checkOutput("pkg1/class-use/I1.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>");
+
+        checkOutput("pkg1/class-use/C1.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>",
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>");
+
+        checkOutput("pkg2/class-use/C2.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>",
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>");
+
+        checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>");
+
+        // Package use documentation
+        checkOutput("pkg1/package-use.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
+                "<th class=\"colOne\" scope=\"col\">Class and Description</th>");
+
+        checkOutput("pkg2/package-use.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
+                "<th class=\"colOne\" scope=\"col\">Class and Description</th>");
+
+        // Deprecated
+        checkOutput("deprecated-list.html", true,
+                "<th class=\"colOne\" scope=\"col\">Field and Description</th>",
+                "<th class=\"colOne\" scope=\"col\">Method and Description</th>");
+
+        // Constant values
+        checkOutput("constant-values.html", true,
+                "<th class=\"colFirst\" scope=\"col\">"
+                + "Modifier and Type</th>\n"
+                + "<th"
+                + " scope=\"col\">Constant Field</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Value</th>");
+
+        // Overview Summary
+        checkOutput("overview-summary.html", true,
+                "<th class=\"colFirst\" scope=\"col\">"
+                + "Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\""
+                + ">Description</th>");
     }
 }

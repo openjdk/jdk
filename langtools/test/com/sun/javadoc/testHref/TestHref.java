@@ -26,73 +26,57 @@
  * @bug      4663254 8016328 8025633 8026567
  * @summary  Verify that spaces do not appear in hrefs and anchors.
  * @author   jamieh
- * @library  ../lib/
- * @build    JavadocTester TestHref
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestHref
  */
 
 public class TestHref extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-linkoffline",
-        "http://java.sun.com/j2se/1.4/docs/api/", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        //External link.
-        { "pkg/C1.html",
-            "href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true#wait-long-int-\""
-        },
-        //Member summary table link.
-        { "pkg/C1.html",
-            "href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\""
-        },
-        //Anchor test.
-        { "pkg/C1.html",
-            "<a name=\"method-int-int-java.util.ArrayList-\">\n" +
-            "<!--   -->\n" +
-            "</a>"
-        },
-        //Backward compatibility anchor test.
-        { "pkg/C1.html",
-            "<a name=\"method-int-int-java.util.ArrayList-\">\n" +
-            "<!--   -->\n" +
-            "</a>"
-        },
-        //{@link} test.
-        { "pkg/C2.html",
-            "Link: <a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">"
-        },
-        //@see test.
-        { "pkg/C2.html",
-            "See Also:</span></dt>\n" +
-            "<dd><a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">"
-        },
-
-        //Header does not link to the page itself.
-        { "pkg/C4.html",
-            "Class C4&lt;E extends C4&lt;E&gt;&gt;</h2>"
-        },
-
-        //Signature does not link to the page itself.
-        { "pkg/C4.html",
-            "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
-        },
-    };
-    private static final String[][] NEGATED_TEST =
-    {
-        {WARNING_OUTPUT,  "<a> tag is malformed"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHref tester = new TestHref();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-Xdoclint:none",
+                "-d", "out",
+                "-sourcepath", testSrc,
+                "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api/", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/C1.html", true,
+                //External link.
+                "href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true#wait-long-int-\"",
+                //Member summary table link.
+                "href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\"",
+                //Anchor test.
+                "<a name=\"method-int-int-java.util.ArrayList-\">\n"
+                + "<!--   -->\n"
+                + "</a>",
+                //Backward compatibility anchor test."pkg/C1.html",
+                "<a name=\"method-int-int-java.util.ArrayList-\">\n"
+                + "<!--   -->\n"
+                + "</a>");
+
+        checkOutput("pkg/C2.html", true,
+                //{@link} test.
+                "Link: <a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">",
+                //@see test.
+                "See Also:</span></dt>\n"
+                + "<dd><a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">"
+        );
+
+        checkOutput("pkg/C4.html", true,
+                //Header does not link to the page itself.
+                "Class C4&lt;E extends C4&lt;E&gt;&gt;</h2>",
+                //Signature does not link to the page itself.
+                "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
+        );
+
+        checkOutput(Output.WARNING, false,
+                "<a> tag is malformed");
     }
 }

@@ -26,150 +26,40 @@
  * @bug 4638136 7198273 8025633
  * @summary  Add ability to skip over nav bar for accessibility
  * @author dkramer
+ * @library ../lib
+ * @build JavadocTester
  * @run main AccessSkipNav
  */
 
+public class AccessSkipNav extends JavadocTester {
 
-import com.sun.javadoc.*;
-import java.util.*;
-import java.io.*;
-
-
-/**
- * Runs javadoc and runs regression tests on the resulting HTML.
- * It reads each file, complete with newlines, into a string to easily
- * find strings that contain newlines.
- */
-public class AccessSkipNav {
-
-    protected static final String NL = System.getProperty("line.separator");
-
-    private static final String BUGID = "4638136 - 7198273";
-    private static final String BUGNAME = "AccessSkipNav";
-    private static final String TMPDEST_DIR1 = "./docs1/";
-    private static final String TMPDEST_DIR2 = "./docs2/";
-
-    // Subtest number.  Needed because runResultsOnHTML is run twice,
-    // and subtestNum should increment across subtest runs.
-    public static int subtestNum = 0;
-    public static int numSubtestsPassed = 0;
-
-    // Entry point
-    public static void main(String[] args) {
-
-        // Directory that contains source files that javadoc runs on
-        String srcdir = System.getProperty("test.src", ".");
-
-        // Test for all cases except the split index page
-        runJavadoc(new String[] {"-d", TMPDEST_DIR1,
-                                 "-sourcepath", srcdir,
-                                 "p1", "p2"});
-        runTestsOnHTML(testArray);
-
-        printSummary();
+    public static void main(String... args) throws Exception {
+        AccessSkipNav tester = new AccessSkipNav();
+        tester.runTests();
     }
 
-    /** Run javadoc */
-    public static void runJavadoc(String[] javadocArgs) {
-        if (com.sun.tools.javadoc.Main.execute(javadocArgs) != 0) {
-            throw new Error("Javadoc failed to execute");
-        }
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "p1", "p2");
+        checkExit(Exit.OK);
 
-    /**
-     * Assign value for [ stringToFind, filename ]
-     * NOTE: The standard doclet uses the same separator "\n" for all OS's
-     */
-    private static final String[][] testArray = {
+        // Testing only for the presence of the <a href> and <a name>
+        checkOutput("p1/C1.html", true,
+                // Top navbar <a href>
+                "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a>",
+                // Top navbar <a name>
+                "<a name=\"skip.navbar.top\">\n"
+                + "<!--   -->\n"
+                + "</a>",
+                // Bottom navbar <a href>
+                "<a href=\"#skip.navbar.bottom\" title=\"Skip navigation links\">Skip navigation links</a>",
+                // Bottom navbar <a name>
+                "<a name=\"skip.navbar.bottom\">\n"
+                + "<!--   -->\n"
+                + "</a>");
 
-            // Testing only for the presence of the <a href> and <a name>
 
-            // Top navbar <a href>
-            { "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a>",
-                     TMPDEST_DIR1 + "p1/C1.html" },
-
-            // Top navbar <a name>
-            { "<a name=\"skip.navbar.top\">\n" +
-                      "<!--   -->\n" +
-                      "</a>",
-                     TMPDEST_DIR1 + "p1/C1.html" },
-
-            // Bottom navbar <a href>
-            { "<a href=\"#skip.navbar.bottom\" title=\"Skip navigation links\">Skip navigation links</a>",
-                     TMPDEST_DIR1 + "p1/C1.html" },
-
-            // Bottom navbar <a name>
-            { "<a name=\"skip.navbar.bottom\">\n" +
-                      "<!--   -->\n" +
-                      "</a>",
-                     TMPDEST_DIR1 + "p1/C1.html" }
-        };
-
-    public static void runTestsOnHTML(String[][] testArray) {
-
-        for (int i = 0; i < testArray.length; i++) {
-
-            subtestNum += 1;
-
-            // Read contents of file into a string
-            String fileString = readFileToString(testArray[i][1]);
-
-            // Get string to find
-            String stringToFind = testArray[i][0];
-
-            // Find string in file's contents
-            if (findString(fileString, stringToFind) == -1) {
-                System.out.println("\nSub-test " + (subtestNum)
-                    + " for bug " + BUGID + " (" + BUGNAME + ") FAILED\n"
-                    + "when searching for:\n"
-                    + stringToFind);
-            } else {
-                numSubtestsPassed += 1;
-                System.out.println("\nSub-test " + (subtestNum) + " passed:\n" + stringToFind);
-            }
-        }
-    }
-
-    public static void printSummary() {
-        if ( numSubtestsPassed == subtestNum ) {
-            System.out.println("\nAll " + numSubtestsPassed + " subtests passed");
-        } else {
-            throw new Error("\n" + (subtestNum - numSubtestsPassed) + " of " + (subtestNum)
-                             + " subtests failed for bug " + BUGID + " (" + BUGNAME + ")\n");
-        }
-    }
-
-    // Read the file into a String
-    public static String readFileToString(String filename) {
-        try {
-            File file = new File(filename);
-            if ( !file.exists() ) {
-                System.out.println("\nFILE DOES NOT EXIST: " + filename);
-            }
-            BufferedReader in = new BufferedReader(new FileReader(file));
-
-            // Create an array of characters the size of the file
-            char[] allChars = new char[(int)file.length()];
-
-            // Read the characters into the allChars array
-            in.read(allChars, 0, (int)file.length());
-            in.close();
-
-            // Convert to a string
-            String allCharsString = new String(allChars);
-
-            return allCharsString;
-
-        } catch (FileNotFoundException e) {
-            System.err.println(e);
-            return "";
-        } catch (IOException e) {
-            System.err.println(e);
-            return "";
-        }
-    }
-
-    public static int findString(String fileString, String stringToFind) {
-        return fileString.replace(NL, "\n").indexOf(stringToFind);
     }
 }

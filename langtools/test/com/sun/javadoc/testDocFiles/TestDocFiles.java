@@ -25,28 +25,26 @@
  * @test
  * @bug 8008949
  * @summary verify that doc-files get copied
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestDocFiles
  * @run main TestDocFiles
  */
 
 public class TestDocFiles extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "pkg/doc-files/test.txt", "test file"}};
-
-    private static final String[] ARGS =
-        new String[] {
-            "-d", "tmp", "-sourcepath", SRC_DIR, "pkg"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDocFiles tester = new TestDocFiles();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/doc-files/test.txt", true,
+                "test file");
     }
 }

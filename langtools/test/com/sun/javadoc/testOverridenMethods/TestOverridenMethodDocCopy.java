@@ -27,35 +27,32 @@
  * @summary  Inherited comment should link directly to member, not just
  *           class
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestOverridenMethodDocCopy
  * @run main TestOverridenMethodDocCopy
  */
 
 public class TestOverridenMethodDocCopy extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1", "pkg2"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg1/SubClass.html",
-            "<span class=\"descfrmTypeLabel\">Description copied from class:&nbsp;<code>" +
-            "<a href=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy--\">" +
-            "BaseClass</a></code></span>"
-        }
-    };
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestOverridenMethodDocCopy tester = new TestOverridenMethodDocCopy();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg1", "pkg2");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/SubClass.html", true,
+                "<span class=\"descfrmTypeLabel\">Description copied from class:&nbsp;<code>"
+                + "<a href=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy--\">"
+                + "BaseClass</a></code></span>");
     }
 }

@@ -29,29 +29,27 @@
  * Correct Answer: "The class is empty (i.e. it has no members)."
  * Wrong Answer: "The class is empty (i.e."
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestBreakIterator
  * @run main TestBreakIterator
  */
 
 public class TestBreakIterator extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "pkg/BreakIteratorTest.html",
-            "The class is empty (i.e. it has no members)."}};
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            "-breakiterator", "pkg"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestBreakIterator tester = new TestBreakIterator();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-breakiterator",
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/BreakIteratorTest.html", true,
+            "The class is empty (i.e. it has no members).");
     }
 }
