@@ -317,10 +317,6 @@ public class Gen extends JCTree.Visitor {
     int makeRef(DiagnosticPosition pos, Type type) {
         checkDimension(pos, type);
         if (type.isAnnotated()) {
-            // Treat annotated types separately - we don't want
-            // to collapse all of them - at least for annotated
-            // exceptions.
-            // TODO: review this.
             return pool.put((Object)type);
         } else {
             return pool.put(type.hasTag(CLASS) ? (Object)type.tsym : (Object)type);
@@ -1647,7 +1643,7 @@ public class Gen extends JCTree.Visitor {
                         if (subCatch.type.isAnnotated()) {
                             for (Attribute.TypeCompound tc :
                                      subCatch.type.getAnnotationMirrors()) {
-                                tc.position.setCatchType(catchType);
+                                tc.position.setCatchInfo(catchType, startpc);
                             }
                         }
                     }
@@ -1664,7 +1660,7 @@ public class Gen extends JCTree.Visitor {
                         if (subCatch.type.isAnnotated()) {
                             for (Attribute.TypeCompound tc :
                                      subCatch.type.getAnnotationMirrors()) {
-                                tc.position.setCatchType(catchType);
+                                tc.position.setCatchInfo(catchType, startpc);
                             }
                         }
                     }
