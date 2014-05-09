@@ -2768,7 +2768,7 @@ public class Attr extends JCTree.Visitor {
                         targetError = false;
                 }
 
-                JCDiagnostic detailsDiag = ((Resolve.ResolveError)refSym).getDiagnostic(JCDiagnostic.DiagnosticType.FRAGMENT,
+                JCDiagnostic detailsDiag = ((Resolve.ResolveError)refSym.baseSymbol()).getDiagnostic(JCDiagnostic.DiagnosticType.FRAGMENT,
                                 that, exprType.tsym, exprType, that.name, argtypes, typeargtypes);
 
                 JCDiagnostic.DiagnosticType diagKind = targetError ?

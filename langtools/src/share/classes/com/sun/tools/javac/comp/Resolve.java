@@ -1435,7 +1435,7 @@ public class Resolve {
             return bestSoFar;
         } else if (useVarargs && (sym.flags() & VARARGS) == 0) {
             return bestSoFar.kind >= ERRONEOUS ?
-                    new BadVarargsMethod((ResolveError)bestSoFar) :
+                    new BadVarargsMethod((ResolveError)bestSoFar.baseSymbol()) :
                     bestSoFar;
         }
         Assert.check(sym.kind < AMBIGUOUS);
@@ -2203,7 +2203,7 @@ public class Resolve {
                   List<Type> typeargtypes,
                   LogResolveHelper logResolveHelper) {
         if (sym.kind >= AMBIGUOUS) {
-            ResolveError errSym = (ResolveError)sym;
+            ResolveError errSym = (ResolveError)sym.baseSymbol();
             sym = errSym.access(name, qualified ? site.tsym : syms.noSymbol);
             argtypes = logResolveHelper.getArgumentTypes(errSym, sym, name, argtypes);
             if (logResolveHelper.resolveDiagnosticNeeded(site, argtypes, typeargtypes)) {
@@ -2592,7 +2592,7 @@ public class Resolve {
                                 sym = super.access(env, pos, location, sym);
                             } else {
                                 final JCDiagnostic details = sym.kind == WRONG_MTH ?
-                                                ((InapplicableSymbolError)sym).errCandidate().snd :
+                                                ((InapplicableSymbolError)sym.baseSymbol()).errCandidate().snd :
                                                 null;
                                 sym = new InapplicableSymbolError(sym.kind, "diamondError", currentResolutionContext) {
                                     @Override
@@ -3000,12 +3000,12 @@ public class Resolve {
                     return true;
                 case WRONG_MTH:
                     InapplicableSymbolError errSym =
-                            (InapplicableSymbolError)s;
+                            (InapplicableSymbolError)s.baseSymbol();
                     return new Template(MethodCheckDiag.ARITY_MISMATCH.regex())
                             .matches(errSym.errCandidate().snd);
                 case WRONG_MTHS:
                     InapplicableSymbolsError errSyms =
-                            (InapplicableSymbolsError)s;
+                            (InapplicableSymbolsError)s.baseSymbol();
                     return errSyms.filterCandidates(errSyms.mapCandidates()).isEmpty();
                 case WRONG_STATICNESS:
                     return false;
