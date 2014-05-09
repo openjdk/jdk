@@ -37,6 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "runtime/java.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"

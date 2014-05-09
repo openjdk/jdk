@@ -37,6 +37,7 @@
 #include "oops/methodData.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "utilities/resourceHash.hpp"
@@ -750,7 +751,11 @@ nmethod::nmethod(
     _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
     code_buffer->copy_values_to(this);
-    debug_only(verify_scavenge_root_oops());
+    if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
+      CodeCache::add_scavenge_root_nmethod(this);
+      Universe::heap()->register_nmethod(this);
+    }
+    DEBUG_ONLY(verify_scavenge_root_oops();)
     CodeCache::commit(this);
   }
 
@@ -2284,13 +2289,13 @@ nmethodLocker::nmethodLocker(address pc) {
 void nmethodLocker::lock_nmethod(nmethod* nm, bool zombie_ok) {
   if (nm == NULL)  return;
   Atomic::inc(&nm->_lock_count);
-  guarantee(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method");
+  assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method");
 }
 
 void nmethodLocker::unlock_nmethod(nmethod* nm) {
   if (nm == NULL)  return;
   Atomic::dec(&nm->_lock_count);
-  guarantee(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
+  assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
 }
 
 

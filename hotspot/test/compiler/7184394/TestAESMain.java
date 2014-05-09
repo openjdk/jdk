@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,19 @@
  * @summary add intrinsics to use AES instructions
  *
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencInputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencOutputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DdecOutputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencInputOffset=1 -DencOutputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DpaddingStr=NoPadding -DmsgSize=640 TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencInputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencOutputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DdecOutputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencInputOffset=1 -DencOutputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB -DencInputOffset=1 -DencOutputOffset=1 -DdecOutputOffset=1 -DpaddingStr=NoPadding -DmsgSize=640 TestAESMain
  *
  * @author Tom Deneau
  */
@@ -36,12 +48,13 @@
 public class TestAESMain {
   public static void main(String[] args) {
     int iters = (args.length > 0 ? Integer.valueOf(args[0]) : 1000000);
+    int warmupIters = (args.length > 1 ? Integer.valueOf(args[1]) : 20000);
     System.out.println(iters + " iterations");
     TestAESEncode etest = new TestAESEncode();
     etest.prepare();
-    // warm-up for 20K iterations
+    // warm-up
     System.out.println("Starting encryption warm-up");
-    for (int i=0; i<20000; i++) {
+    for (int i=0; i<warmupIters; i++) {
       etest.run();
     }
     System.out.println("Finished encryption warm-up");
@@ -54,9 +67,9 @@ public class TestAESMain {
 
     TestAESDecode dtest = new TestAESDecode();
     dtest.prepare();
-    // warm-up for 20K iterations
+    // warm-up
     System.out.println("Starting decryption warm-up");
-    for (int i=0; i<20000; i++) {
+    for (int i=0; i<warmupIters; i++) {
       dtest.run();
     }
     System.out.println("Finished decryption warm-up");
