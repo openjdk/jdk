@@ -2639,7 +2639,7 @@ public class Resolve {
                             ((ForAll)sym.type).tvars :
                             List.<Type>nil();
                     Type constrType = new ForAll(site.tsym.type.getTypeArguments().appendList(oldParams),
-                            types.createMethodTypeWithReturn(sym.type.asMethodType(), site));
+                                                 types.createMethodTypeWithReturn(sym.type.asMethodType(), site));
                     MethodSymbol newConstr = new MethodSymbol(sym.flags(), names.init, constrType, site.tsym) {
                         @Override
                         public Symbol baseSymbol() {
@@ -3280,7 +3280,7 @@ public class Resolve {
                 List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
             super(referenceTree, names.init, site, argtypes, typeargtypes, maxPhase);
             if (site.isRaw()) {
-                this.site = new ClassType(site.getEnclosingType(), site.tsym.type.getTypeArguments(), site.tsym);
+                this.site = new ClassType(site.getEnclosingType(), site.tsym.type.getTypeArguments(), site.tsym, site.getAnnotationMirrors());
                 needsInference = true;
             }
         }

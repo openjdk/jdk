@@ -326,15 +326,21 @@ public class TypeAnnotationPosition {
 
     public int getCatchType() {
         Assert.check(hasCatchType(),
-                     "exception_index does not contain a valid catch type");
-        return (-this.exception_index) - 1 ;
+                     "exception_index does not contain valid catch info");
+        return ((-this.exception_index) - 1) & 0xff ;
     }
 
-    public void setCatchType(final int catchType) {
+    public int getStartPos() {
+        Assert.check(hasCatchType(),
+                     "exception_index does not contain valid catch info");
+        return ((-this.exception_index) - 1) >> 8 ;
+    }
+
+    public void setCatchInfo(final int catchType, final int startPos) {
         Assert.check(this.exception_index < 0,
                      "exception_index already contains a bytecode index");
         Assert.check(catchType >= 0, "Expected a valid catch type");
-        this.exception_index = -(catchType + 1);
+        this.exception_index = -((catchType | startPos << 8) + 1);
     }
 
     /**
