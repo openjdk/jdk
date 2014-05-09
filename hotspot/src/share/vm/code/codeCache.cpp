@@ -178,10 +178,12 @@ CodeBlob* CodeCache::allocate(int size, bool is_critical) {
   // cache will contain a garbage CodeBlob until the caller can
   // run the constructor for the CodeBlob subclass he is busy
   // instantiating.
-  guarantee(size >= 0, "allocation request must be reasonable");
   assert_locked_or_safepoint(CodeCache_lock);
+  assert(size > 0, "allocation request must be reasonable");
+  if (size <= 0) {
+    return NULL;
+  }
   CodeBlob* cb = NULL;
-  _number_of_blobs++;
   while (true) {
     cb = (CodeBlob*)_heap->allocate(size, is_critical);
     if (cb != NULL) break;
@@ -199,6 +201,7 @@ CodeBlob* CodeCache::allocate(int size, bool is_critical) {
   maxCodeCacheUsed = MAX2(maxCodeCacheUsed, ((address)_heap->high_boundary() -
                           (address)_heap->low_boundary()) - unallocated_capacity());
   print_trace("allocation", cb, size);
+  _number_of_blobs++;
   return cb;
 }
 
