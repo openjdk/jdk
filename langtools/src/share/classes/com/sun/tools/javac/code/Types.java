@@ -821,8 +821,9 @@ public class Types {
         }
 
         // Generally, if 's' is a type variable, recur on lower bound; but
-        // for alpha <: CAP, alpha should get upper bound CAP
-        if (!t.hasTag(UNDETVAR)) {
+        // for inference variables and intersections, we need to keep 's'
+        // (see JLS 4.10.2 for intersections and 18.2.3 for inference vars)
+        if (!t.hasTag(UNDETVAR) && !t.isCompound()) {
             // TODO: JDK-8039198, bounds checking sometimes passes in a wildcard as s
             Type lower = cvarLowerBound(wildLowerBound(s));
             if (s != lower)
@@ -913,14 +914,11 @@ public class Types {
             @Override
             public Boolean visitClassType(ClassType t, Type s) {
                 Type sup = asSuper(t, s.tsym);
-                return sup != null
-                    && sup.tsym == s.tsym
-                    // You're not allowed to write
-                    //     Vector<Object> vec = new Vector<String>();
-                    // But with wildcards you can write
-                    //     Vector<? extends Object> vec = new Vector<String>();
-                    // which means that subtype checking must be done
-                    // here instead of same-type checking (via containsType).
+                if (sup == null) return false;
+                // If t is an intersection, sup might not be a class type
+                if (!sup.hasTag(CLASS)) return isSubtypeNoCapture(sup, s);
+                return sup.tsym == s.tsym
+                     // Check type variable containment
                     && (!s.isParameterized() || containsTypeRecursive(s, sup))
                     && isSubtypeNoCapture(sup.getEnclosingType(),
                                           s.getEnclosingType());
@@ -1970,16 +1968,18 @@ public class Types {
                     return t;
 
                 Type st = supertype(t);
-                if (st.hasTag(CLASS) || st.hasTag(TYPEVAR) || st.hasTag(ERROR)) {
+                if (st.hasTag(CLASS) || st.hasTag(TYPEVAR)) {
                     Type x = asSuper(st, sym);
                     if (x != null)
                         return x;
                 }
                 if ((sym.flags() & INTERFACE) != 0) {
                     for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail) {
-                        Type x = asSuper(l.head, sym);
-                        if (x != null)
-                            return x;
+                        if (!l.head.hasTag(ERROR)) {
+                            Type x = asSuper(l.head, sym);
+                            if (x != null)
+                                return x;
+                        }
                     }
                 }
                 return null;
