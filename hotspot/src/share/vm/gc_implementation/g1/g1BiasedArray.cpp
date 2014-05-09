@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public:
             REGION_SIZE_IN_WORDS * HeapWordSize);
     // Check address calculation (bounds)
     assert(array.bottom_address_mapped() == fake_heap,
-      err_msg("bottom mapped address should be "PTR_FORMAT", but is "PTR_FORMAT, fake_heap, array.bottom_address_mapped()));
+      err_msg("bottom mapped address should be " PTR_FORMAT ", but is " PTR_FORMAT, p2i(fake_heap), p2i(array.bottom_address_mapped())));
     assert(array.end_address_mapped() == (fake_heap + REGION_SIZE_IN_WORDS * NUM_REGIONS), "must be");
 
     int* bottom = array.address_mapped_to(fake_heap);
