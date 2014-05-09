@@ -35,9 +35,6 @@ import java.util.MissingResourceException;
 import java.util.Queue;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
@@ -1292,11 +1289,16 @@ public class JavaCompiler {
      * Perform dataflow checks on an attributed parse tree.
      */
     protected void flow(Env<AttrContext> env, Queue<Env<AttrContext>> results) {
+        if (compileStates.isDone(env, CompileState.FLOW)) {
+            results.add(env);
+            return;
+        }
+
         try {
             if (shouldStop(CompileState.FLOW))
                 return;
 
-            if (relax || compileStates.isDone(env, CompileState.FLOW)) {
+            if (relax) {
                 results.add(env);
                 return;
             }
