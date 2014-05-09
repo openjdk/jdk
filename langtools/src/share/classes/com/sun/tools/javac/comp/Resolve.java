@@ -1527,14 +1527,22 @@ public class Resolve {
             if (m2SignatureMoreSpecific) return m2;
             return ambiguityError(m1, m2);
         case AMBIGUOUS:
-            //check if m1 is more specific than all ambiguous methods in m2
+            //compare m1 to ambiguous methods in m2
             AmbiguityError e = (AmbiguityError)m2.baseSymbol();
+            boolean m1MoreSpecificThanAnyAmbiguous = true;
+            boolean allAmbiguousMoreSpecificThanM1 = true;
             for (Symbol s : e.ambiguousSyms) {
-                if (mostSpecific(argtypes, m1, s, env, site, allowBoxing, useVarargs) != m1) {
-                    return e.addAmbiguousSymbol(m1);
-                }
+                Symbol moreSpecific = mostSpecific(argtypes, m1, s, env, site, allowBoxing, useVarargs);
+                m1MoreSpecificThanAnyAmbiguous &= moreSpecific == m1;
+                allAmbiguousMoreSpecificThanM1 &= moreSpecific == s;
             }
-            return m1;
+            if (m1MoreSpecificThanAnyAmbiguous)
+                return m1;
+            //if m1 is more specific than some ambiguous methods, but other ambiguous methods are
+            //more specific than m1, add it as a new ambiguous method:
+            if (!allAmbiguousMoreSpecificThanM1)
+                e.addAmbiguousSymbol(m1);
+            return e;
         default:
             throw new AssertionError();
         }
