@@ -1540,35 +1540,41 @@ public class ClassReader {
         // local variable
         case LOCAL_VARIABLE: {
             final int table_length = nextChar();
-            final TypeAnnotationPosition position =
-                TypeAnnotationPosition.localVariable(readTypePath());
-
-            position.lvarOffset = new int[table_length];
-            position.lvarLength = new int[table_length];
-            position.lvarIndex = new int[table_length];
+            final int[] newLvarOffset = new int[table_length];
+            final int[] newLvarLength = new int[table_length];
+            final int[] newLvarIndex = new int[table_length];
 
             for (int i = 0; i < table_length; ++i) {
-                position.lvarOffset[i] = nextChar();
-                position.lvarLength[i] = nextChar();
-                position.lvarIndex[i] = nextChar();
+                newLvarOffset[i] = nextChar();
+                newLvarLength[i] = nextChar();
+                newLvarIndex[i] = nextChar();
             }
+
+            final TypeAnnotationPosition position =
+                    TypeAnnotationPosition.localVariable(readTypePath());
+            position.lvarOffset = newLvarOffset;
+            position.lvarLength = newLvarLength;
+            position.lvarIndex = newLvarIndex;
             return position;
         }
         // resource variable
         case RESOURCE_VARIABLE: {
             final int table_length = nextChar();
-            final TypeAnnotationPosition position =
-                TypeAnnotationPosition.resourceVariable(readTypePath());
-
-            position.lvarOffset = new int[table_length];
-            position.lvarLength = new int[table_length];
-            position.lvarIndex = new int[table_length];
+            final int[] newLvarOffset = new int[table_length];
+            final int[] newLvarLength = new int[table_length];
+            final int[] newLvarIndex = new int[table_length];
 
             for (int i = 0; i < table_length; ++i) {
-                position.lvarOffset[i] = nextChar();
-                position.lvarLength[i] = nextChar();
-                position.lvarIndex[i] = nextChar();
+                newLvarOffset[i] = nextChar();
+                newLvarLength[i] = nextChar();
+                newLvarIndex[i] = nextChar();
             }
+
+            final TypeAnnotationPosition position =
+                    TypeAnnotationPosition.resourceVariable(readTypePath());
+            position.lvarOffset = newLvarOffset;
+            position.lvarLength = newLvarLength;
+            position.lvarIndex = newLvarIndex;
             return position;
         }
         // exception parameter
