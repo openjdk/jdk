@@ -51,7 +51,7 @@ public class TestHtmlDocument extends JavadocTester {
     void test() {
         checking("markup");
         // Check whether the generated markup is same as the existing markup.
-        String expected = readFile(testSrc, "testMarkup.html");
+        String expected = readFile(testSrc, "testMarkup.html").replace("\n", NL);
         String actual = generateHtmlTree();
         if (actual.equals(expected)) {
             passed("");
