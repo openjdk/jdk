@@ -517,6 +517,10 @@ public class Attr extends JCTree.Visitor {
             return new ResultInfo(pkind, pt, newContext);
         }
 
+        protected ResultInfo dup(Type newPt, CheckContext newContext) {
+            return new ResultInfo(pkind, newPt, newContext);
+        }
+
         @Override
         public String toString() {
             if (pt != null) {
@@ -2843,7 +2847,8 @@ public class Attr extends JCTree.Visitor {
             ResultInfo checkInfo =
                     resultInfo.dup(newMethodTemplate(
                         desc.getReturnType().hasTag(VOID) ? Type.noType : desc.getReturnType(),
-                        that.kind.isUnbound() ? argtypes.tail : argtypes, typeargtypes));
+                        that.kind.isUnbound() ? argtypes.tail : argtypes, typeargtypes),
+                        new FunctionalReturnContext(resultInfo.checkContext));
 
             Type refType = checkId(that, lookupHelper.site, refSym, localEnv, checkInfo);
 
