@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.parser.TokenType.CASE;
 import static jdk.nashorn.internal.parser.TokenType.CATCH;
 import static jdk.nashorn.internal.parser.TokenType.COLON;
 import static jdk.nashorn.internal.parser.TokenType.COMMARIGHT;
+import static jdk.nashorn.internal.parser.TokenType.CONST;
 import static jdk.nashorn.internal.parser.TokenType.DECPOSTFIX;
 import static jdk.nashorn.internal.parser.TokenType.DECPREFIX;
 import static jdk.nashorn.internal.parser.TokenType.ELSE;
@@ -849,6 +850,11 @@ loop:
             expect(SEMICOLON);
             break;
         default:
+            if (env._const_as_var && type == CONST) {
+                variableStatement(true);
+                break;
+            }
+
             if (type == IDENT || isNonStrictModeIdent()) {
                 if (T(k + 1) == COLON) {
                     labelStatement();
@@ -1110,6 +1116,12 @@ loop:
             case SEMICOLON:
                 break;
             default:
+                if (env._const_as_var && type == CONST) {
+                    // Var statements captured in for outer block.
+                    vars = variableStatement(false);
+                    break;
+                }
+
                 final Expression expression = expression(unaryExpression(), COMMARIGHT.getPrecedence(), true);
                 forNode = forNode.setInit(lc, expression);
                 break;

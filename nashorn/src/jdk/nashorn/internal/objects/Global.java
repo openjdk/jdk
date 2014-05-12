@@ -1906,6 +1906,13 @@ public final class Global extends ScriptObject implements Scope {
         // Object.getPrototypeOf(Function.prototype) === Object.prototype
         anon.setInitialProto(ObjectPrototype);
 
+        // ES6 draft compliant __proto__ property of Object.prototype
+        // accessors on Object.prototype for "__proto__"
+        final ScriptFunction getProto = ScriptFunctionImpl.makeFunction("getProto", ScriptObject.GETPROTO);
+        final ScriptFunction setProto = ScriptFunctionImpl.makeFunction("setProto", ScriptObject.SETPROTOCHECK);
+        ObjectPrototype.addOwnProperty("__proto__", Attribute.NOT_ENUMERABLE, getProto, setProto);
+
+
         // Function valued properties of Function.prototype were not properly
         // initialized. Because, these were created before global.function and
         // global.object were not initialized.

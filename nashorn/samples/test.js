@@ -30,4 +30,3 @@
  */
 
 print("Hello World");
-

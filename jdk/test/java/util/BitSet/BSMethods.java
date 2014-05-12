@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4098239 4107540 4080736 4261102 4274710 4305272
- *      4979017 4979028 4979031 5030267 6222207
+ *      4979017 4979028 4979031 5030267 6222207 8040806
  * @summary Test the operation of the methods of BitSet class
  * @author Mike McCloskey, Martin Buchholz
  */
@@ -897,6 +897,16 @@ public class BSMethods {
     private static void testToString() {
         check(new BitSet().toString().equals("{}"));
         check(makeSet(2,3,42,43,234).toString().equals("{2, 3, 42, 43, 234}"));
+        try {
+            check(makeSet(Integer.MAX_VALUE-1).toString().equals(
+                    "{" + (Integer.MAX_VALUE-1) + "}"));
+            check(makeSet(Integer.MAX_VALUE).toString().equals(
+                    "{" + Integer.MAX_VALUE + "}"));
+            check(makeSet(0, 1, Integer.MAX_VALUE-1, Integer.MAX_VALUE).toString().equals(
+                    "{0, 1, " + (Integer.MAX_VALUE-1) + ", " + Integer.MAX_VALUE + "}"));
+        } catch (IndexOutOfBoundsException exc) {
+            fail("toString() with indices near MAX_VALUE");
+        }
     }
 
     private static void testLogicalIdentities() {

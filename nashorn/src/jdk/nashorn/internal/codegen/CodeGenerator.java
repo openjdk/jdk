@@ -1451,7 +1451,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             if (value == null) {
                 hasGettersSetters = true;
-            } else if (key.equals(ScriptObject.PROTO_PROPERTY_NAME)) {
+            } else if (propertyNode.getKey() instanceof IdentNode &&
+                       key.equals(ScriptObject.PROTO_PROPERTY_NAME)) {
+                // ES6 draft compliant __proto__ inside object literal
+                // Identifier key and name is __proto__
                 protoNode = value;
                 continue;
             }

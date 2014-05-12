@@ -41,6 +41,8 @@ import java.nio.file.attribute.*;
 import java.nio.file.spi.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -110,7 +112,9 @@ class ZipFileSystem extends FileSystem {
         }
         // sm and existence check
         zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.READ);
-        if (!Files.isWritable(zfpath))
+        boolean writeable = AccessController.doPrivileged(
+            (PrivilegedAction<Boolean>) () ->  Files.isWritable(zfpath));
+        if (!writeable)
             this.readOnly = true;
         this.zc = ZipCoder.get(nameEncoding);
         this.defaultdir = new ZipPath(this, getBytes(defaultDir));
@@ -262,9 +266,13 @@ class ZipFileSystem extends FileSystem {
         }
         beginWrite();                   // lock and sync
         try {
-            sync();
-            ch.close();                 // close the ch just in case no update
-        } finally {                     // and sync dose not close the ch
+            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                sync(); return null;
+            });
+            ch.close();                          // close the ch just in case no update
+        } catch (PrivilegedActionException e) {  // and sync dose not close the ch
+            throw (IOException)e.getException();
+        } finally {
             endWrite();
         }
 
@@ -281,8 +289,10 @@ class ZipFileSystem extends FileSystem {
         synchronized (tmppaths) {
             for (Path p: tmppaths) {
                 try {
-                    Files.deleteIfExists(p);
-                } catch (IOException x) {
+                    AccessController.doPrivileged(
+                        (PrivilegedExceptionAction<Boolean>)() -> Files.deleteIfExists(p));
+                } catch (PrivilegedActionException e) {
+                    IOException x = (IOException)e.getException();
                     if (ioe == null)
                         ioe = x;
                     else

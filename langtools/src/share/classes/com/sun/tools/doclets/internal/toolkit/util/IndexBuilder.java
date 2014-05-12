@@ -112,7 +112,7 @@ public class IndexBuilder {
      */
     protected void sortIndexMap() {
         for (List<Doc> docs : indexmap.values()) {
-            docs.sort(Util.makeComparatorForIndexUse());
+            Collections.sort(docs, Util.makeComparatorForIndexUse());
         }
     }
 

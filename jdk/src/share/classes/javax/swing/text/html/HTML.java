@@ -571,6 +571,9 @@ public class HTML {
      * are recognized by the default HTML reader.
      * This set does not include tags that are
      * manufactured by the reader.
+     *
+     * @return the set of actual HTML tags that
+     * are recognized by the default HTML reader
      */
     public static Tag[] getAllTags() {
         Tag[] tags = new Tag[Tag.allTags.length];
@@ -626,6 +629,7 @@ public class HTML {
      * @param key the key to use to fetch the value
      * @param def the default value to use if the attribute isn't
      *  defined or there is an error converting to an integer
+     * @return an attribute value
      */
     public static int getIntegerAttributeValue(AttributeSet attr,
                                                Attribute key, int def) {
