@@ -4498,7 +4498,6 @@ class Character implements java.io.Serializable, Comparable<Character> {
          * Character case is ignored for all of the valid script names.
          * The en_US locale's case mapping rules are used to provide
          * case-insensitive string comparisons for script name validation.
-         * <p>
          *
          * @param scriptName A {@code UnicodeScript} name.
          * @return The {@code UnicodeScript} constant identified
@@ -5503,7 +5502,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * '&#92;u00D0' '&#92;u00D1' '&#92;u00D2' '&#92;u00D3' '&#92;u00D4' '&#92;u00D5' '&#92;u00D6' '&#92;u00D8'
      * '&#92;u00D9' '&#92;u00DA' '&#92;u00DB' '&#92;u00DC' '&#92;u00DD' '&#92;u00DE'
      * </pre></blockquote>
-     * <p> Many other Unicode characters are uppercase too.<p>
+     * <p> Many other Unicode characters are uppercase too.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is uppercase;
@@ -5581,7 +5580,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <li>{@code LATIN CAPITAL LETTER N WITH SMALL LETTER J}
      * <li>{@code LATIN CAPITAL LETTER D WITH SMALL LETTER Z}
      * </ul>
-     * <p> Many other Unicode characters are titlecase too.<p>
+     * <p> Many other Unicode characters are titlecase too.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is titlecase;
@@ -6777,7 +6776,6 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <li> It is {@code '\u005Cu001E'}, U+001E RECORD SEPARATOR.
      * <li> It is {@code '\u005Cu001F'}, U+001F UNIT SEPARATOR.
      * </ul>
-     * <p>
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is a Java whitespace
@@ -7121,7 +7119,6 @@ class Character implements java.io.Serializable, Comparable<Character> {
     /**
      * Converts the character (Unicode code point) argument to uppercase using
      * information from the UnicodeData file.
-     * <p>
      *
      * @param   codePoint   the character (Unicode code point) to be converted.
      * @return  either the uppercase equivalent of the character, if

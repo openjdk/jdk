@@ -65,6 +65,7 @@ public class ParserTest {
         options.set("anon.functions", true);
         options.set("parse.only", true);
         options.set("scripting", true);
+        options.set("const.as.var", true);
 
         ErrorManager errors = new ErrorManager();
         this.context = new Context(options, errors, Thread.currentThread().getContextClassLoader());

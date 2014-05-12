@@ -31,8 +31,11 @@ import java.io.IOException;
 /**
  *
  * @test
- * @bug 8038500
+ * @bug 8038500 8040059
  * @summary Basic test for zip provider
+ *
+ * @run main Basic
+ * @run main/othervm/policy=test.policy Basic
  */
 
 public class Basic {

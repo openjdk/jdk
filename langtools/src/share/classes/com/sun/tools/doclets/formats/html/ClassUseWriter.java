@@ -180,7 +180,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Map<String,List<ProgramElementDoc>> map = new HashMap<>();
         List<? extends ProgramElementDoc> list= classMap.get(classdoc.qualifiedName());
         if (list != null) {
-            list.sort(Util.makeComparatorForClassUse());
+            Collections.sort(list, Util.makeComparatorForClassUse());
             for (ProgramElementDoc doc : list) {
                 PackageDoc pkg = doc.containingPackage();
                 pkgSet.add(pkg);

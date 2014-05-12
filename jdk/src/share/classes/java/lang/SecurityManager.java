@@ -1242,7 +1242,6 @@ class SecurityManager {
      * <code>super.checkPropertiesAccess</code>
      * at the point the overridden method would normally throw an
      * exception.
-     * <p>
      *
      * @exception  SecurityException  if the calling thread does not have
      *             permission to access or modify the system properties.
@@ -1320,7 +1319,6 @@ class SecurityManager {
      * <code>super.checkPrintJobAccess</code>
      * at the point the overridden method would normally throw an
      * exception.
-     * <p>
      *
      * @exception  SecurityException  if the calling thread does not have
      *             permission to initiate a print job request.
@@ -1566,7 +1564,6 @@ class SecurityManager {
      * <code>super.checkSetFactory</code>
      * at the point the overridden method would normally throw an
      * exception.
-     * <p>
      *
      * @exception  SecurityException  if the calling thread does not have
      *             permission to specify a socket factory or a stream

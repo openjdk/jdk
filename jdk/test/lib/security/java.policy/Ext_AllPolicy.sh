@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 4215035
+# @bug 4215035 8040059
 # @summary standard extensions path is hard-coded in default system policy file
 #
 # @build Ext_AllPolicy
@@ -81,6 +81,9 @@ ${COMPILEJAVA}${FS}bin${FS}jar ${TESTTOOLVMOPTS} -cvf Ext_AllPolicy.jar Ext_AllP
 
 rm Ext_AllPolicy.class
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-        -Djava.security.manager -Djava.ext.dirs="${TESTCLASSES}" Ext_AllPolicy
+        -Djava.security.manager -Djava.ext.dirs="${TESTCLASSES}" Ext_AllPolicy || exit 10
 
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
+        -Djava.security.policy=${TESTSRC}${FS}test.policy \
+        -Djava.security.manager -Djava.ext.dirs="${TESTCLASSES}" Ext_AllPolicy AllPermission
 exit $?

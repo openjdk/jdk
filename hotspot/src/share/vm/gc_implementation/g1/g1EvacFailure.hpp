@@ -191,6 +191,7 @@ public:
 
         hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
+        _g1h->check_bitmaps("Self-Forwarding Ptr Removal", hr);
 
         // In the common case (i.e. when there is no evacuation
         // failure) we make sure that the following is done when
