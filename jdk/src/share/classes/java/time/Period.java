@@ -616,7 +616,7 @@ public final class Period
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param amountToAdd  the period to add, not null
+     * @param amountToAdd  the amount to add, not null
      * @return a {@code Period} based on this period with the requested period added, not null
      * @throws DateTimeException if the specified amount has a non-ISO chronology or
      *  contains an invalid unit
@@ -705,7 +705,7 @@ public final class Period
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param amountToSubtract  the period to subtract, not null
+     * @param amountToSubtract  the amount to subtract, not null
      * @return a {@code Period} based on this period with the requested period subtracted, not null
      * @throws DateTimeException if the specified amount has a non-ISO chronology or
      *  contains an invalid unit

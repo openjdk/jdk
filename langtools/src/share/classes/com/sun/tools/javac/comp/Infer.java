@@ -1458,7 +1458,7 @@ public class Infer {
             Type solve(UndetVar uv, InferenceContext inferenceContext) {
                 Infer infer = inferenceContext.infer();
                 List<Type> hibounds = filterBounds(uv, inferenceContext);
-                //note: lobounds should have at least one element
+                //note: hibounds should have at least one element
                 Type owntype = hibounds.tail.tail == null  ? hibounds.head : infer.types.glb(hibounds);
                 if (owntype.isPrimitive() || owntype.hasTag(ERROR)) {
                     throw infer.inferenceException

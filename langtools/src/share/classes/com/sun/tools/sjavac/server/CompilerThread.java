@@ -51,6 +51,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.StringUtils;
+import com.sun.tools.sjavac.comp.AttrWithDeps;
 import com.sun.tools.sjavac.comp.Dependencies;
 import com.sun.tools.sjavac.comp.JavaCompilerWithDeps;
 import com.sun.tools.sjavac.comp.SmartFileManager;
@@ -131,6 +132,7 @@ public class CompilerThread implements Runnable {
         context = new Context();
         context.put(JavaFileManager.class, smartFileManager);
         ResolveWithDeps.preRegister(context);
+        AttrWithDeps.preRegister(context);
         JavaCompilerWithDeps.preRegister(context, this);
         subTasks = new ArrayList<>();
     }

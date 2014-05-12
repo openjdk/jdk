@@ -3214,6 +3214,14 @@ public class Attr extends JCTree.Visitor {
         result = checkId(tree, env1.enclClass.sym.type, sym, env, resultInfo);
     }
 
+    /** Report dependencies.
+     * @param from The enclosing class sym
+     * @param to   The found identifier that the class depends on.
+     */
+    public void reportDependence(Symbol from, Symbol to) {
+        // Override if you want to collect the reported dependencies.
+    }
+
     public void visitSelect(JCFieldAccess tree) {
         // Determine the expected kind of the qualifier expression.
         int skind = 0;
@@ -3341,6 +3349,10 @@ public class Attr extends JCTree.Visitor {
 
         env.info.selectSuper = selectSuperPrev;
         result = checkId(tree, site, sym, env, resultInfo);
+
+        if ((tree.sym.kind & TYP) != 0) {
+            reportDependence(env.enclClass.sym, tree.sym);
+        }
     }
     //where
         /** Determine symbol referenced by a Select expression,
