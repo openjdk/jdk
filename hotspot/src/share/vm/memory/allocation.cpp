@@ -686,40 +686,57 @@ void* Arena::internal_malloc_4(size_t x) {
 // a memory leak.  Use CHeapObj as the base class of such objects to make it explicit
 // that they're allocated on the C heap.
 // Commented out in product version to avoid conflicts with third-party C++ native code.
-// On certain platforms, such as Mac OS X (Darwin), in debug version, new is being called
-// from jdk source and causing data corruption. Such as
-//  Java_sun_security_ec_ECKeyPairGenerator_generateECKeyPair
-// define ALLOW_OPERATOR_NEW_USAGE for platform on which global operator new allowed.
 //
-#ifndef ALLOW_OPERATOR_NEW_USAGE
-void* operator new(size_t size) throw() {
-  assert(false, "Should not call global operator new");
+// In C++98/03 the throwing new operators are defined with the following signature:
+//
+// void* operator new(std::size_tsize) throw(std::bad_alloc);
+// void* operator new[](std::size_tsize) throw(std::bad_alloc);
+//
+// while all the other (non-throwing) new and delete operators are defined with an empty
+// throw clause (i.e. "operator delete(void* p) throw()") which means that they do not
+// throw any exceptions (see section 18.4 of the C++ standard).
+//
+// In the new C++11/14 standard, the signature of the throwing new operators was changed
+// by completely omitting the throw clause (which effectively means they could throw any
+// exception) while all the other new/delete operators where changed to have a 'nothrow'
+// clause instead of an empty throw clause.
+//
+// Unfortunately, the support for exception specifications among C++ compilers is still
+// very fragile. While some more strict compilers like AIX xlC or HP aCC reject to
+// override the default throwing new operator with a user operator with an empty throw()
+// clause, the MS Visual C++ compiler warns for every non-empty throw clause like
+// throw(std::bad_alloc) that it will ignore the exception specification. The following
+// operator definitions have been checked to correctly work with all currently supported
+// compilers and they should be upwards compatible with C++11/14. Therefore
+// PLEASE BE CAREFUL if you change the signature of the following operators!
+
+void* operator new(size_t size) /* throw(std::bad_alloc) */ {
+  fatal("Should not call global operator new");
   return 0;
 }
 
-void* operator new [](size_t size) throw() {
-  assert(false, "Should not call global operator new[]");
+void* operator new [](size_t size) /* throw(std::bad_alloc) */ {
+  fatal("Should not call global operator new[]");
   return 0;
 }
 
 void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
-  assert(false, "Should not call global operator new");
+  fatal("Should not call global operator new");
   return 0;
 }
 
 void* operator new [](size_t size, std::nothrow_t&  nothrow_constant) throw() {
-  assert(false, "Should not call global operator new[]");
+  fatal("Should not call global operator new[]");
   return 0;
 }
 
-void operator delete(void* p) {
-  assert(false, "Should not call global delete");
+void operator delete(void* p) throw() {
+  fatal("Should not call global delete");
 }
 
-void operator delete [](void* p) {
-  assert(false, "Should not call global delete []");
+void operator delete [](void* p) throw() {
+  fatal("Should not call global delete []");
 }
-#endif // ALLOW_OPERATOR_NEW_USAGE
 
 void AllocatedObj::print() const       { print_on(tty); }
 void AllocatedObj::print_value() const { print_value_on(tty); }
