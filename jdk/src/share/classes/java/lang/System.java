@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,6 @@ public final class System {
      * <p>First, if there is a security manager, its <code>checkPermission</code>
      * method is called with a <code>RuntimePermission("setIO")</code> permission
      *  to see if it's ok to reassign the "standard" input stream.
-     * <p>
      *
      * @param in the new standard input stream.
      *
@@ -762,7 +761,6 @@ public final class System {
      * permission. This may result in a SecurityException being thrown.
      * If no exception is thrown, the specified property is set to the given
      * value.
-     * <p>
      *
      * @param      key   the name of the system property.
      * @param      value the value of the system property.
@@ -801,7 +799,6 @@ public final class System {
      * is called with a <code>PropertyPermission(key, "write")</code>
      * permission. This may result in a SecurityException being thrown.
      * If no exception is thrown, the specified property is removed.
-     * <p>
      *
      * @param      key   the name of the system property to be removed.
      * @return     the previous string value of the system property,
