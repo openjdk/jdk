@@ -111,17 +111,7 @@ else
   ALL_META-INF_DIRS := $(ALL_META-INF_DIRS_share)
 endif
 
-ifndef OPENJDK
-  ALL_META-INF_DIRS += $(JDK_TOPDIR)/src/closed/share/classes/sun/java2d/cmm/kcms/META-INF
-endif
-
 SRC_SERVICES_FILES := $(wildcard $(addsuffix /services/*, $(ALL_META-INF_DIRS)))
-
-ifdef OPENJDK
-  SRC_SERVICES_FILES := $(filter-out %sun/java2d/cmm/kcms/META-INF/services/sun.java2d.cmm.CMMServiceProvider, $(SRC_SERVICES_FILES))
-else
-  SRC_SERVICES_FILES := $(filter-out %sun/java2d/cmm/lcms/META-INF/services/sun.java2d.cmm.CMMServiceProvider, $(SRC_SERVICES_FILES))
-endif
 
 # The number of services files are relatively few. If the increase in numbers, then
 # we have to use ListPathsSafelyNow here.
