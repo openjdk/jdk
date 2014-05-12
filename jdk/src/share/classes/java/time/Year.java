@@ -164,7 +164,7 @@ public final class Year
     /**
      * Obtains the current year from the system clock in the default time-zone.
      * <p>
-     * This will query the {@link java.time.Clock#systemDefaultZone() system clock} in the default
+     * This will query the {@link Clock#systemDefaultZone() system clock} in the default
      * time-zone to obtain the current year.
      * <p>
      * Using this method will prevent the ability to use an alternate clock for testing
@@ -179,7 +179,7 @@ public final class Year
     /**
      * Obtains the current year from the system clock in the specified time-zone.
      * <p>
-     * This will query the {@link Clock#system(java.time.ZoneId) system clock} to obtain the current year.
+     * This will query the {@link Clock#system(ZoneId) system clock} to obtain the current year.
      * Specifying the time-zone avoids dependence on the default time-zone.
      * <p>
      * Using this method will prevent the ability to use an alternate clock for testing
@@ -240,7 +240,7 @@ public final class Year
      * chronology, or can be converted to a {@code LocalDate}.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code Year::from}.
+     * allowing it to be used as a query via method reference, {@code Year::from}.
      *
      * @param temporal  the temporal object to convert, not null
      * @return the year, not null
@@ -375,7 +375,7 @@ public final class Year
     /**
      * Checks if the specified unit is supported.
      * <p>
-     * This checks if the specified unit can be added to, or subtracted from, this date-time.
+     * This checks if the specified unit can be added to, or subtracted from, this year.
      * If false, then calling the {@link #plus(long, TemporalUnit)} and
      * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
      * <p>
@@ -441,7 +441,7 @@ public final class Year
     /**
      * Gets the value of the specified field from this year as an {@code int}.
      * <p>
-     * This queries this year for the value for the specified field.
+     * This queries this year for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -472,7 +472,7 @@ public final class Year
     /**
      * Gets the value of the specified field from this year as a {@code long}.
      * <p>
-     * This queries this year for the value for the specified field.
+     * This queries this year for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -720,13 +720,13 @@ public final class Year
     }
 
     /**
-     * Returns a copy of this year with the specified number of years added.
+     * Returns a copy of this {@code Year} with the specified number of years added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
      * @param yearsToAdd  the years to add, may be negative
-     * @return a {@code Year} based on this year with the period added, not null
-     * @throws DateTimeException if the result exceeds the supported year range
+     * @return a {@code Year} based on this year with the years added, not null
+     * @throws DateTimeException if the result exceeds the supported range
      */
     public Year plusYears(long yearsToAdd) {
         if (yearsToAdd == 0) {
@@ -786,13 +786,13 @@ public final class Year
     }
 
     /**
-     * Returns a copy of this year with the specified number of years subtracted.
+     * Returns a copy of this {@code Year} with the specified number of years subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
      * @param yearsToSubtract  the years to subtract, may be negative
-     * @return a {@code Year} based on this year with the period subtracted, not null
-     * @throws DateTimeException if the result exceeds the supported year range
+     * @return a {@code Year} based on this year with the year subtracted, not null
+     * @throws DateTimeException if the result exceeds the supported range
      */
     public Year minusYears(long yearsToSubtract) {
         return (yearsToSubtract == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-yearsToSubtract));
@@ -871,12 +871,12 @@ public final class Year
      * The result will be negative if the end is before the start.
      * The {@code Temporal} passed to this method is converted to a
      * {@code Year} using {@link #from(TemporalAccessor)}.
-     * For example, the period in decades between two year can be calculated
+     * For example, the amount in decades between two year can be calculated
      * using {@code startYear.until(endYear, DECADES)}.
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two years.
-     * For example, the period in decades between 2012 and 2031
+     * For example, the amount in decades between 2012 and 2031
      * will only be one decade as it is one year short of two decades.
      * <p>
      * There are two equivalent ways of using this method.
@@ -948,7 +948,7 @@ public final class Year
      * <p>
      * The day-of-year value 366 is only valid in a leap year.
      *
-     * @param dayOfYear  the day-of-year to use, not null
+     * @param dayOfYear  the day-of-year to use, from 1 to 365-366
      * @return the local date formed from this year and the specified date of year, not null
      * @throws DateTimeException if the day of year is zero or less, 366 or greater or equal
      *  to 366 and this is not a leap year
@@ -1025,7 +1025,7 @@ public final class Year
     }
 
     /**
-     * Is this year after the specified year.
+     * Checks if this year is after the specified year.
      *
      * @param other  the other year to compare to, not null
      * @return true if this is after the specified year
@@ -1035,7 +1035,7 @@ public final class Year
     }
 
     /**
-     * Is this year before the specified year.
+     * Checks if this year is before the specified year.
      *
      * @param other  the other year to compare to, not null
      * @return true if this point is before the specified year

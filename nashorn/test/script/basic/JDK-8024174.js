@@ -46,6 +46,6 @@ var obj2 = {
     __proto__: null
 };
 
-if (obj2.__proto__ !== null || Object.getPrototypeOf(obj2) !== null) {
+if (Object.getPrototypeOf(obj2) !== null) {
     fail("obj2.__proto__ was not set to null inside literal");
 }

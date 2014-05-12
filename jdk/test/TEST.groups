@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -155,6 +155,15 @@ jdk_jmx = \
 jdk_jdi = \
     com/sun/jdi
 
+# java launcher specific tests, Note: do not include this group into any groups
+# that potentially could be included into a jprt test rule, as the complementary
+# closed  group includes awt SplashScreen and these tests may not run 
+# satisfacotorily on all platforms and  profiles thus this group must always 
+# be a stand-alone group
+jdk_launcher = \
+    tools/launcher \
+    sun/tools
+    
 #
 # Tool (and tool API) tests are split into core and svc groups
 #

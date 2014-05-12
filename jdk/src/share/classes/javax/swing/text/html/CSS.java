@@ -153,6 +153,8 @@ public class CSS implements Serializable {
          * Fetch the default value for the attribute.
          * If there is no default value (such as for
          * composite attributes), null will be returned.
+         *
+         * @return default value for the attribute
          */
         public String getDefaultValue() {
             return defaultValue;
@@ -161,6 +163,8 @@ public class CSS implements Serializable {
         /**
          * Indicates if the attribute should be inherited
          * from the parent or not.
+         *
+         * @return true if the attribute should be inherited from the parent
          */
         public boolean isInherited() {
             return inherited;
@@ -1036,6 +1040,8 @@ public class CSS implements Serializable {
 
     /**
      * Return the set of all possible CSS attribute keys.
+     *
+     * @return the set of all possible CSS attribute keys
      */
     public static Attribute[] getAllAttributeKeys() {
         Attribute[] keys = new Attribute[Attribute.allAttributes.length];

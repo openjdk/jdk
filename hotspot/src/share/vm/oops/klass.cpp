@@ -488,6 +488,7 @@ void Klass::remove_unshareable_info() {
 }
 
 void Klass::restore_unshareable_info(TRAPS) {
+  TRACE_INIT_ID(this);
   // If an exception happened during CDS restore, some of these fields may already be
   // set.  We leave the class on the CLD list, even if incomplete so that we don't
   // modify the CLD list outside a safepoint.

@@ -132,8 +132,9 @@ import java.util.Set;
  * The set of available chronologies can be extended by applications.
  * Adding a new calendar system requires the writing of an implementation of
  * {@code Chronology}, {@code ChronoLocalDate} and {@code Era}.
- * The majority of the logic specific to the calendar system will be in
- * {@code ChronoLocalDate}. The {@code Chronology} subclass acts as a factory.
+ * The majority of the logic specific to the calendar system will be in the
+ * {@code ChronoLocalDate} implementation.
+ * The {@code Chronology} implementation acts as a factory.
  * <p>
  * To permit the discovery of additional chronologies, the {@link java.util.ServiceLoader ServiceLoader}
  * is used. A file must be added to the {@code META-INF/services} directory with the
@@ -167,7 +168,7 @@ public interface Chronology extends Comparable<Chronology> {
      * If the specified temporal object does not have a chronology, {@link IsoChronology} is returned.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code Chronology::from}.
+     * allowing it to be used as a query via method reference, {@code Chronology::from}.
      *
      * @param temporal  the temporal to convert, not null
      * @return the chronology, not null
@@ -413,7 +414,7 @@ public interface Chronology extends Comparable<Chronology> {
      * The alternate clock may be introduced using {@link Clock dependency injection}.
      *
      * @implSpec
-     * The default implementation invokes {@link #date(TemporalAccessor)} )}.
+     * The default implementation invokes {@link #date(TemporalAccessor)}.
      *
      * @param clock  the clock to use, not null
      * @return the current local date, not null
@@ -622,7 +623,7 @@ public interface Chronology extends Comparable<Chronology> {
      * The parameters control the style of the returned text and the locale.
      *
      * @implSpec
-     * The default implementation behaves as the the formatter was used to
+     * The default implementation behaves as though the formatter was used to
      * format the chronology textual name.
      *
      * @param style  the style of the text required, not null
