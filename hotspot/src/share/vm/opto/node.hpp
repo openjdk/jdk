@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_OPTO_NODE_HPP
 #define SHARE_VM_OPTO_NODE_HPP
 
-#include "libadt/port.hpp"
 #include "libadt/vectset.hpp"
 #include "opto/compile.hpp"
 #include "opto/type.hpp"

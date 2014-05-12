@@ -28,6 +28,7 @@
 #endif
 
 #include "precompiled.hpp"
+#include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc_implementation/g1/bufferingOopClosure.hpp"
