@@ -177,7 +177,6 @@ define_pd_global(bool, ProfileTraps,                 false);
 define_pd_global(bool, TieredCompilation,            false);
 
 define_pd_global(intx, CompileThreshold,             0);
-define_pd_global(intx, BackEdgeThreshold,            0);
 
 define_pd_global(intx, OnStackReplacePercentage,     0);
 define_pd_global(bool, ResizeTLAB,                   false);
@@ -3524,10 +3523,6 @@ class CommandLineFlags {
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
           "number of interpreted method invocations before (re-)compiling") \
-                                                                            \
-  product_pd(intx, BackEdgeThreshold,                                       \
-          "Interpreter Back edge threshold at which an OSR compilation is " \
-          "invoked")                                                        \
                                                                             \
   product(intx, Tier0InvokeNotifyFreqLog, 7,                                \
           "Interpreter (tier 0) invocation notification frequency")         \
