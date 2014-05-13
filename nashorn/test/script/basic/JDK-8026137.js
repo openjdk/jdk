@@ -30,7 +30,9 @@
  */
 
 try {
-    (function f() { Object.defineProperty({},"x",{get: function(){return {valueOf:function(){throw 0}}}}).x - Object.defineProperty({},"x",{get: function(){throw 1}}).x })()
+    (function f() { 
+        Object.defineProperty({},"x",{get: function(){return {valueOf:function(){throw 0}}}}).x - 
+        Object.defineProperty({},"x",{get: function(){throw 1}}).x })()
 } 
 catch (e) {
     print(e);

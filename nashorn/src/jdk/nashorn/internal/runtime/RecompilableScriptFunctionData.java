@@ -36,7 +36,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompilationEnvironment;
@@ -50,6 +49,7 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
@@ -405,10 +405,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return new ApplyToCallTransform(this, callSiteType);
     }
 
-    private FunctionNode compileTypeSpecialization(final MethodType actualCallSiteType, final ScriptObject runtimeScope, final FunctionNodeTransform tr) {
-        return compile(actualCallSiteType, null, runtimeScope, "Type specialized compilation", tr);
-    }
-
     private ParamTypeMap typeMap(final MethodType fnCallSiteType, final FunctionNodeTransform tr) {
         if (isVariableArity() && !tr.wasTransformed()) {
             return null;
@@ -444,8 +440,17 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         compiler.install(fn);
 
         // look up the rest of method
-        final MethodHandle mh = lookupWithExplicitType(fn, MethodType.methodType(fn.getReturnType().getTypeClass(), RewriteException.class));
-        return mh;
+        return lookupWithExplicitType(fn, MethodType.methodType(fn.getReturnType().getTypeClass(), RewriteException.class));
+    }
+
+    private FunctionNode compileTypeSpecialization(final MethodType actualCallSiteType, final ScriptObject runtimeScope, final FunctionNodeTransform tr) {
+        // We're creating an empty script object for holding local variables. AssignSymbols will populate it with
+        // explicit Undefined values for undefined local variables (see AssignSymbols#defineSymbol() and
+        // CompilationEnvironment#declareLocalSymbol()).
+        final ScriptObject locals = Global.newEmptyInstance();
+        locals.setProto(runtimeScope);
+
+        return compile(actualCallSiteType, null, locals, "Type specialized compilation", tr);
     }
 
     FunctionNode compile(final MethodType actualCallSiteType, final Map<Integer, Type> invalidatedProgramPoints, final ScriptObject runtimeScope, final String reason, final FunctionNodeTransform tr) {
@@ -630,7 +635,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
                 final FunctionNode fn = compileTypeSpecialization(callSiteType, runtimeScope, new ApplyToCallTransform(this, callSiteType));
                 if (fn.hasOptimisticApplyToCall()) { //did the specialization work
                     existingBest = addCode(fn, callSiteType);
-                    existingBest.setIsApplyToCall();
                 }
             }
 
@@ -711,14 +715,13 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     public boolean isGlobalSymbol(final FunctionNode functionNode, final String symbolName) {
         RecompilableScriptFunctionData data = getScriptFunctionData(functionNode.getId());
         assert data != null;
-        final RecompilableScriptFunctionData program = getProgram();
 
-        while (data != program) {
+        do {
             if (data.hasInternalSymbol(symbolName)) {
                 return false;
             }
             data = data.getParent();
-        }
+        } while(data != null);
 
         return true;
     }

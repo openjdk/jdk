@@ -58,7 +58,6 @@ import jdk.nashorn.internal.codegen.CompilationEnvironment.CompilationPhases;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
-import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ClassHistogramElement;
 import jdk.nashorn.internal.ir.debug.ObjectSizeCalculator;
 import jdk.nashorn.internal.runtime.CodeInstaller;
@@ -104,8 +103,6 @@ public final class Compiler implements Loggable {
     private String scriptName;
 
     private final CodeInstaller<ScriptEnvironment> installer;
-
-    private final TemporarySymbols temporarySymbols = new TemporarySymbols();
 
     /** logger for compiler, trampolines, splits and related code generation events
      *  that affect classes */
@@ -435,10 +432,6 @@ public final class Compiler implements Loggable {
 
     CodeInstaller<ScriptEnvironment> getCodeInstaller() {
         return installer;
-    }
-
-    TemporarySymbols getTemporarySymbols() {
-        return temporarySymbols;
     }
 
     void addClass(final String name, final byte[] code) {

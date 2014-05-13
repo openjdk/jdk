@@ -61,7 +61,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.Namespace;
@@ -86,6 +85,7 @@ import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
+import jdk.nashorn.internal.ir.JoinPredecessorExpression;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
@@ -471,11 +471,6 @@ loop:
         if (isStrictMode) {
             flags |= FunctionNode.IS_STRICT;
         }
-        if (env._specialize_calls != null) {
-            if (env._specialize_calls.contains(name)) {
-                flags |= FunctionNode.CAN_SPECIALIZE;
-            }
-        }
         if (parentFunction == null) {
             flags |= FunctionNode.IS_PROGRAM;
         }
@@ -653,8 +648,12 @@ loop:
         }
 
         // Build up node.
+        if(BinaryNode.isLogical(opType)) {
+            return new BinaryNode(op, new JoinPredecessorExpression(lhs), new JoinPredecessorExpression(rhs));
+        }
         return new BinaryNode(op, lhs, rhs);
     }
+
 
     /**
      * Reduce increment/decrement to simpler operations.
@@ -1198,7 +1197,7 @@ loop:
      */
     private void forStatement() {
         // Create FOR node, capturing FOR token.
-        ForNode forNode = new ForNode(line, token, Token.descPosition(token), null, null, null, null, ForNode.IS_FOR);
+        ForNode forNode = new ForNode(line, token, Token.descPosition(token), null, ForNode.IS_FOR);
 
         lc.push(forNode);
 
@@ -1241,16 +1240,16 @@ loop:
 
                 expect(SEMICOLON);
                 if (type != SEMICOLON) {
-                    forNode = forNode.setTest(lc, expression());
+                    forNode = forNode.setTest(lc, joinPredecessorExpression());
                 }
                 expect(SEMICOLON);
                 if (type != RPAREN) {
-                    forNode = forNode.setModify(lc, expression());
+                    forNode = forNode.setModify(lc, joinPredecessorExpression());
                 }
                 break;
 
             case IN:
-                forNode = forNode.setIsForIn(lc);
+                forNode = forNode.setIsForIn(lc).setTest(lc, new JoinPredecessorExpression());
                 if (vars != null) {
                     // for (var i in obj)
                     if (vars.size() == 1) {
@@ -1283,7 +1282,7 @@ loop:
                 next();
 
                 // Get the collection expression.
-                forNode = forNode.setModify(lc, expression());
+                forNode = forNode.setModify(lc, joinPredecessorExpression());
                 break;
 
             default:
@@ -1343,7 +1342,7 @@ loop:
         try {
             expect(LPAREN);
             final int whileLine = line;
-            final Expression test = expression();
+            final JoinPredecessorExpression test = joinPredecessorExpression();
             expect(RPAREN);
             final Block body = getStatement();
             appendStatement(whileNode =
@@ -1381,7 +1380,7 @@ loop:
             expect(WHILE);
             expect(LPAREN);
             final int doLine = line;
-            final Expression test = expression();
+            final JoinPredecessorExpression test = joinPredecessorExpression();
             expect(RPAREN);
 
             if (type == SEMICOLON) {
@@ -1435,8 +1434,8 @@ loop:
             break;
         }
 
-        final IdentNode label = labelNode == null ? null : labelNode.getLabel();
-        final LoopNode targetNode = lc.getContinueTo(label);
+        final String labelName = labelNode == null ? null : labelNode.getLabelName();
+        final LoopNode targetNode = lc.getContinueTo(labelName);
 
         if (targetNode == null) {
             throw error(AbstractParser.message("illegal.continue.stmt"), continueToken);
@@ -1445,7 +1444,7 @@ loop:
         endOfLine();
 
         // Construct and add CONTINUE node.
-        appendStatement(new ContinueNode(continueLine, continueToken, finish, label == null ? null : new IdentNode(label)));
+        appendStatement(new ContinueNode(continueLine, continueToken, finish, labelName));
     }
 
     /**
@@ -1485,8 +1484,8 @@ loop:
 
         //either an explicit label - then get its node or just a "break" - get first breakable
         //targetNode is what we are breaking out from.
-        final IdentNode label = labelNode == null ? null : labelNode.getLabel();
-        final BreakableNode targetNode = lc.getBreakable(label);
+        final String labelName = labelNode == null ? null : labelNode.getLabelName();
+        final BreakableNode targetNode = lc.getBreakable(labelName);
         if (targetNode == null) {
             throw error(AbstractParser.message("illegal.break.stmt"), breakToken);
         }
@@ -1494,7 +1493,7 @@ loop:
         endOfLine();
 
         // Construct and add BREAK node.
-        appendStatement(new BreakNode(breakLine, breakToken, finish, label == null ? null : new IdentNode(label)));
+        appendStatement(new BreakNode(breakLine, breakToken, finish, labelName));
     }
 
     /**
@@ -1721,7 +1720,7 @@ loop:
             throw error(AbstractParser.message("duplicate.label", ident.getName()), labelToken);
         }
 
-        LabelNode labelNode = new LabelNode(line, labelToken, finish, ident, null);
+        LabelNode labelNode = new LabelNode(line, labelToken, finish, ident.getName(), null);
         try {
             lc.push(labelNode);
             labelNode = labelNode.setBody(lc, getStatement());
@@ -1768,7 +1767,7 @@ loop:
 
         endOfLine();
 
-        appendStatement(new ThrowNode(throwLine, throwToken, finish, expression, 0));
+        appendStatement(new ThrowNode(throwLine, throwToken, finish, expression, false));
     }
 
     /**
@@ -1831,7 +1830,7 @@ loop:
                 try {
                     // Get CATCH body.
                     final Block catchBody = getBlock(true);
-                    final CatchNode catchNode = new CatchNode(catchLine, catchToken, finish, exception, ifExpression, catchBody, 0);
+                    final CatchNode catchNode = new CatchNode(catchLine, catchToken, finish, exception, ifExpression, catchBody, false);
                     appendStatement(catchNode);
                 } finally {
                     catchBlock = restoreBlock(catchBlock);
@@ -1993,7 +1992,7 @@ loop:
         // Skip ending of edit string expression.
         expect(RBRACE);
 
-        return new CallNode(primaryLine, primaryToken, finish, execIdent, arguments);
+        return new CallNode(primaryLine, primaryToken, finish, execIdent, arguments, false);
     }
 
     /**
@@ -2343,7 +2342,7 @@ loop:
                 detectSpecialFunction((IdentNode)lhs);
             }
 
-            lhs = new CallNode(callLine, callToken, finish, lhs, arguments);
+            lhs = new CallNode(callLine, callToken, finish, lhs, arguments, false);
         }
 
 loop:
@@ -2358,7 +2357,7 @@ loop:
                 final List<Expression> arguments = optimizeList(argumentList());
 
                 // Create call node.
-                lhs = new CallNode(callLine, callToken, finish, lhs, arguments);
+                lhs = new CallNode(callLine, callToken, finish, lhs, arguments, false);
 
                 break;
 
@@ -2381,7 +2380,7 @@ loop:
                 final IdentNode property = getIdentifierName();
 
                 // Create property access node.
-                lhs = new AccessNode(callToken, finish, lhs, property);
+                lhs = new AccessNode(callToken, finish, lhs, property.getName());
 
                 break;
 
@@ -2437,7 +2436,7 @@ loop:
             arguments.add(objectLiteral());
         }
 
-        final CallNode callNode = new CallNode(callLine, constructor.getToken(), finish, constructor, optimizeList(arguments));
+        final CallNode callNode = new CallNode(callLine, constructor.getToken(), finish, constructor, optimizeList(arguments), true);
 
         return new UnaryNode(newToken, callNode);
     }
@@ -2461,7 +2460,7 @@ loop:
 
         switch (type) {
         case NEW:
-            // Get new exppression.
+            // Get new expression.
             lhs = newExpression();
             break;
 
@@ -2505,7 +2504,7 @@ loop:
                 final IdentNode property = getIdentifierName();
 
                 // Create property access node.
-                lhs = new AccessNode(callToken, finish, lhs, property);
+                lhs = new AccessNode(callToken, finish, lhs, property.getName());
 
                 break;
 
@@ -2709,7 +2708,7 @@ loop:
                 return ((PropertyKey)nameExpr).getPropertyName();
             } else if(nameExpr instanceof AccessNode) {
                 markDefaultNameUsed();
-                return ((AccessNode)nameExpr).getProperty().getName();
+                return ((AccessNode)nameExpr).getProperty();
             }
         }
         return null;
@@ -2751,7 +2750,7 @@ loop:
      */
     private List<IdentNode> formalParameterList(final TokenType endType) {
         // Prepare to gather parameters.
-        final List<IdentNode> parameters = new ArrayList<>();
+        final ArrayList<IdentNode> parameters = new ArrayList<>();
         // Track commas.
         boolean first = true;
 
@@ -2772,6 +2771,7 @@ loop:
             parameters.add(ident);
         }
 
+        parameters.trimToSize();
         return parameters;
     }
 
@@ -3089,6 +3089,10 @@ loop:
         return expression(unaryExpression(), COMMARIGHT.getPrecedence(), false);
     }
 
+    private JoinPredecessorExpression joinPredecessorExpression() {
+        return new JoinPredecessorExpression(expression());
+    }
+
     private Expression expression(final Expression exprLhs, final int minPrecedence, final boolean noIn) {
         // Get the precedence of the next operator.
         int precedence = type.getPrecedence();
@@ -3105,15 +3109,15 @@ loop:
 
                 // Pass expression. Middle expression of a conditional expression can be a "in"
                 // expression - even in the contexts where "in" is not permitted.
-                final Expression rhs = expression(unaryExpression(), ASSIGN.getPrecedence(), false);
+                final Expression trueExpr = expression(unaryExpression(), ASSIGN.getPrecedence(), false);
 
                 expect(COLON);
 
                 // Fail expression.
-                final Expression third = expression(unaryExpression(), ASSIGN.getPrecedence(), noIn);
+                final Expression falseExpr = expression(unaryExpression(), ASSIGN.getPrecedence(), noIn);
 
                 // Build up node.
-                lhs = new TernaryNode(op, lhs, rhs, third);
+                lhs = new TernaryNode(op, lhs, new JoinPredecessorExpression(trueExpr), new JoinPredecessorExpression(falseExpr));
             } else {
                 // Skip operator.
                 next();

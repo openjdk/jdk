@@ -27,21 +27,24 @@ package jdk.nashorn.internal.codegen.types;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.L2D;
 import static jdk.internal.org.objectweb.asm.Opcodes.L2I;
+import static jdk.internal.org.objectweb.asm.Opcodes.LADD;
 import static jdk.internal.org.objectweb.asm.Opcodes.LAND;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCMP;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCONST_0;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCONST_1;
 import static jdk.internal.org.objectweb.asm.Opcodes.LLOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.LMUL;
 import static jdk.internal.org.objectweb.asm.Opcodes.LOR;
-import static jdk.internal.org.objectweb.asm.Opcodes.LREM;
 import static jdk.internal.org.objectweb.asm.Opcodes.LRETURN;
 import static jdk.internal.org.objectweb.asm.Opcodes.LSHL;
 import static jdk.internal.org.objectweb.asm.Opcodes.LSHR;
 import static jdk.internal.org.objectweb.asm.Opcodes.LSTORE;
+import static jdk.internal.org.objectweb.asm.Opcodes.LSUB;
 import static jdk.internal.org.objectweb.asm.Opcodes.LUSHR;
 import static jdk.internal.org.objectweb.asm.Opcodes.LXOR;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_LONG;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -136,31 +139,49 @@ class LongType extends BitwiseType {
 
     @Override
     public Type add(final MethodVisitor method, final int programPoint) {
-        method.visitInvokeDynamicInsn("ladd", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(LADD);
+        } else {
+            method.visitInvokeDynamicInsn("ladd", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        }
         return LONG;
     }
 
     @Override
     public Type sub(final MethodVisitor method, final int programPoint) {
-        method.visitInvokeDynamicInsn("lsub", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(LSUB);
+        } else {
+            method.visitInvokeDynamicInsn("lsub", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        }
         return LONG;
     }
 
     @Override
     public Type mul(final MethodVisitor method, final int programPoint) {
-        method.visitInvokeDynamicInsn("lmul", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(LMUL);
+        } else {
+            method.visitInvokeDynamicInsn("lmul", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        }
         return LONG;
     }
 
     @Override
     public Type div(final MethodVisitor method, final int programPoint) {
+        // Never perform non-optimistic integer division in JavaScript.
+        assert programPoint != INVALID_PROGRAM_POINT;
+
         method.visitInvokeDynamicInsn("ldiv", "(JJ)J", MATHBOOTSTRAP, programPoint);
         return LONG;
     }
 
     @Override
-    public Type rem(final MethodVisitor method) {
-        method.visitInsn(LREM);
+    public Type rem(final MethodVisitor method, final int programPoint) {
+        // Never perform non-optimistic integer remainder in JavaScript.
+        assert programPoint != INVALID_PROGRAM_POINT;
+
+        method.visitInvokeDynamicInsn("lrem", "(JJ)J", MATHBOOTSTRAP, programPoint);
         return LONG;
     }
 

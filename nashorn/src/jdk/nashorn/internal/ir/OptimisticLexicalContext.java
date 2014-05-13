@@ -24,8 +24,6 @@
  */
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.IntDeque;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,7 +55,6 @@ public class OptimisticLexicalContext extends LexicalContext {
 
     /** Optimistic assumptions that could be made per function */
     private final Deque<List<Assumption>> optimisticAssumptions = new ArrayDeque<>();
-    private final IntDeque splitNodes = new IntDeque();
 
     /**
      * Constructor
@@ -111,9 +108,6 @@ public class OptimisticLexicalContext extends LexicalContext {
         if (isEnabled) {
             if(node instanceof FunctionNode) {
                 optimisticAssumptions.push(new ArrayList<Assumption>());
-                splitNodes.push(0);
-            } else if(node instanceof SplitNode) {
-                splitNodes.getAndIncrement();
             }
         }
 
@@ -126,20 +120,9 @@ public class OptimisticLexicalContext extends LexicalContext {
         if (isEnabled) {
             if(node instanceof FunctionNode) {
                 optimisticAssumptions.pop();
-                assert splitNodes.peek() == 0;
-                splitNodes.pop();
-            } else if(node instanceof SplitNode) {
-                splitNodes.decrementAndGet();
             }
         }
         return popped;
     }
 
-    /**
-     * Check whether the lexical context is inside a split node
-     * @return true if we are traversing a SplitNode
-     */
-    public boolean isInSplitNode() {
-        return !splitNodes.isEmpty() && splitNodes.peek() > 0;
-    }
 }

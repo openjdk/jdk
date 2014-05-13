@@ -128,11 +128,12 @@ public abstract class ObjectCreator<T> {
      * Technique for loading an initial value. Defined by anonymous subclasses in code gen.
      *
      * @param value Value to load.
+     * @param type the type of the value to load
      */
-    protected abstract void loadValue(T value);
+    protected abstract void loadValue(T value, Type type);
 
     MethodEmitter loadTuple(final MethodEmitter method, final MapTuple<T> tuple, final boolean pack) {
-        loadValue(tuple.value);
+        loadValue(tuple.value, tuple.type);
         if (pack && tuple.isPrimitive()) {
             method.pack();
         } else {

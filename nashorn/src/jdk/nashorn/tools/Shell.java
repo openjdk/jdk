@@ -37,7 +37,6 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -453,7 +452,7 @@ public class Shell {
             }
         } finally {
             if (globalChanged) {
-                Context.setGlobal(global);
+                Context.setGlobal(oldGlobal);
             }
         }
 

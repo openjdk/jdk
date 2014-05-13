@@ -28,6 +28,7 @@ package jdk.nashorn.internal.ir;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -85,11 +86,6 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         this.value = newValue;
     }
 
-    @Override
-    public boolean isAtom() {
-        return true;
-    }
-
     /**
      * Check if the literal value is null
      * @return true if literal value is null
@@ -99,7 +95,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
     }
 
     @Override
-    public Type getType() {
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
         return Type.typeFor(value.getClass());
     }
 
@@ -226,7 +222,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
      * Get the literal node value
      * @return the value
      */
-    public T getValue() {
+    public final T getValue() {
         return value;
     }
 
@@ -279,6 +275,16 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         public boolean isLocal() {
             return true;
         }
+
+        @Override
+        public boolean isAlwaysFalse() {
+            return !isTrue();
+        }
+
+        @Override
+        public boolean isAlwaysTrue() {
+            return isTrue();
+        }
     }
 
     @Immutable
@@ -298,7 +304,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType() {
+        public Type getType(final Function<Symbol, Type> localVariableTypes) {
             return Type.BOOLEAN;
         }
 
@@ -361,7 +367,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType() {
+        public Type getType(final Function<Symbol, Type> localVariableTypes) {
             return type;
         }
 
@@ -485,7 +491,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType() {
+        public Type getType(final Function<Symbol, Type> localVariableTypes) {
             return Type.OBJECT;
         }
 
@@ -554,7 +560,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType() {
+        public Type getType(final Function<Symbol, Type> localVariableTypes) {
             return Type.OBJECT;
         }
 
@@ -567,7 +573,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
     /**
      * Array literal node class.
      */
-    public static final class ArrayLiteralNode extends LiteralNode<Expression[]> {
+    public static final class ArrayLiteralNode extends LiteralNode<Expression[]> implements LexicalContextNode {
 
         /** Array element type. */
         private Type elementType;
@@ -738,32 +744,36 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
             return array;
         }
 
-        private static Type getNarrowestElementType(final Expression[] value) {
-            Type elementType = Type.INT;
-            for (final Expression node : value) {
-                if (node == null) {
-                    elementType = elementType.widest(Type.OBJECT); //no way to represent undefined as number
+        /**
+         * Returns the narrowest element type that is wide enough to represent all the expressions in the array.
+         * @param elementExpressions the array of expressions
+         * @return the narrowest element type that is wide enough to represent all the expressions in the array.
+         */
+        private static Type getNarrowestElementType(final Expression[] elementExpressions) {
+            Type widestElementType = Type.INT;
+            for (final Expression element : elementExpressions) {
+                if (element == null) {
+                    widestElementType = widestElementType.widest(Type.OBJECT); //no way to represent undefined as number
                     break;
                 }
 
-                assert node.getSymbol() != null; //don't run this on unresolved nodes or you are in trouble
-                Type symbolType = node.getSymbol().getSymbolType();
-                if (symbolType.isUnknown()) {
-                    symbolType = Type.OBJECT;
+                Type elementType = element.getType();
+                if (elementType.isUnknown()) {
+                    elementType = Type.OBJECT;
                 }
 
-                if (symbolType.isBoolean()) {
-                    elementType = elementType.widest(Type.OBJECT);
+                if (elementType.isBoolean()) {
+                    widestElementType = widestElementType.widest(Type.OBJECT);
                     break;
                 }
 
-                elementType = elementType.widest(symbolType);
+                widestElementType = widestElementType.widest(elementType);
 
-                if (elementType.isObject()) {
+                if (widestElementType.isObject()) {
                     break;
                 }
             }
-            return elementType;
+            return widestElementType;
         }
 
         @Override
@@ -792,7 +802,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Type getType() {
+        public Type getType(final Function<Symbol, Type> localVariableTypes) {
             return Type.typeFor(NativeArray.class);
         }
 
@@ -866,16 +876,21 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
 
         @Override
         public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
+            return Acceptor.accept(this, visitor);
+        }
+
+        @Override
+        public Node accept(LexicalContext lc, NodeVisitor<? extends LexicalContext> visitor) {
             if (visitor.enterLiteralNode(this)) {
                 final List<Expression> oldValue = Arrays.asList(value);
                 final List<Expression> newValue = Node.accept(visitor, Expression.class, oldValue);
-                return visitor.leaveLiteralNode(oldValue != newValue ? setValue(newValue) : this);
+                return visitor.leaveLiteralNode(oldValue != newValue ? setValue(lc, newValue) : this);
             }
             return this;
         }
 
-        private ArrayLiteralNode setValue(final List<Expression> value) {
-            return new ArrayLiteralNode(this, value.toArray(new Expression[value.size()]));
+        private ArrayLiteralNode setValue(final LexicalContext lc, final List<Expression> value) {
+            return (ArrayLiteralNode)lc.replace(this, new ArrayLiteralNode(this, value.toArray(new Expression[value.size()])));
         }
 
         @Override

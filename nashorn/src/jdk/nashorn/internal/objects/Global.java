@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
@@ -91,18 +90,15 @@ public final class Global extends ScriptObject implements Scope {
      * like
      *
      * <pre>
-     * {@code
      *     public boolean setterGuard(final Object receiver) {
      *         final Global          global = Global.instance();
      *         final ScriptObject    sobj   = global.getFunctionPrototype();
      *         final Object          apply  = sobj.get("apply");
      *         return apply == receiver;
      *     }
-     *
-     * }
      * </pre>
      *
-     * Naturally, checking for builting classes like NativeFunction is cheaper,
+     * Naturally, checking for builtin classes like NativeFunction is cheaper,
      * it's when you start adding property checks for said builtins you have
      * problems with guard speed.
      */
@@ -1953,7 +1949,7 @@ public final class Global extends ScriptObject implements Scope {
         this.builtinFunction      = (ScriptFunction)initConstructor("Function");
 
         // create global anonymous function
-        final ScriptFunction anon = ScriptFunctionImpl.newAnonymousFunction(this);
+        final ScriptFunction anon = ScriptFunctionImpl.newAnonymousFunction();
         // need to copy over members of Function.prototype to anon function
         anon.addBoundProperties(getFunctionPrototype());
 

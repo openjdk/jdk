@@ -39,7 +39,7 @@ public final class UnwarrantedOptimismException extends RuntimeException {
     public static final int INVALID_PROGRAM_POINT = -1;
 
     /** The value for the first ordinary program point */
-    public static final int FIRST_PROGRAM_POINT = 0;
+    public static final int FIRST_PROGRAM_POINT = 1;
 
     private Object returnValue;
     private final int    programPoint;
@@ -86,6 +86,8 @@ public final class UnwarrantedOptimismException extends RuntimeException {
      */
     public UnwarrantedOptimismException(final Object returnValue, final int programPoint, final Type returnType) {
         super("", null, false, Context.DEBUG);
+        assert returnType != Type.OBJECT || returnValue == null || !Type.typeFor(returnValue.getClass()).isNumeric();
+        assert returnType != Type.INT;
         this.returnValue  = returnValue;
         this.programPoint = programPoint;
         this.returnType   = returnType;

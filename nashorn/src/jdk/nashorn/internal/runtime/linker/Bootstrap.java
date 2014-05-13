@@ -33,7 +33,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.DynamicLinkerFactory;
@@ -197,6 +196,9 @@ public final class Bootstrap {
         case "idiv":
             mh = JSType.DIV_EXACT.methodHandle();
             break;
+        case "irem":
+            mh = JSType.REM_EXACT.methodHandle();
+            break;
         case "ineg":
             mh = JSType.NEGATE_EXACT.methodHandle();
             break;
@@ -211,6 +213,9 @@ public final class Bootstrap {
             break;
         case "ldiv":
             mh = JSType.DIV_EXACT_LONG.methodHandle();
+            break;
+        case "lrem":
+            mh = JSType.REM_EXACT_LONG.methodHandle();
             break;
         case "lneg":
             mh = JSType.NEGATE_EXACT_LONG.methodHandle();

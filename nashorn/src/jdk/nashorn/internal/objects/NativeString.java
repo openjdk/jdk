@@ -1147,7 +1147,7 @@ public final class NativeString extends ScriptObject {
         return str.substring(start, end + 1);
     }
 
-    private static Object newObj(final Object self, final CharSequence str) {
+    private static Object newObj(final CharSequence str) {
         return new NativeString(str);
     }
 
@@ -1165,7 +1165,7 @@ public final class NativeString extends ScriptObject {
     @Constructor(arity = 1)
     public static Object constructor(final boolean newObj, final Object self, final Object... args) {
         final CharSequence str = args.length > 0 ? JSType.toCharSequence(args[0]) : "";
-        return newObj ? newObj(self, str) : str.toString();
+        return newObj ? newObj(str) : str.toString();
     }
 
     /**
@@ -1180,7 +1180,7 @@ public final class NativeString extends ScriptObject {
      */
     @SpecializedConstructor
     public static Object constructor(final boolean newObj, final Object self) {
-        return newObj ? newObj(self, "") : "";
+        return newObj ? newObj("") : "";
     }
 
     /**
@@ -1197,7 +1197,7 @@ public final class NativeString extends ScriptObject {
     @SpecializedConstructor
     public static Object constructor(final boolean newObj, final Object self, final Object arg) {
         final CharSequence str = JSType.toCharSequence(arg);
-        return newObj ? newObj(self, str) : str.toString();
+        return newObj ? newObj(str) : str.toString();
     }
 
     /**
@@ -1214,7 +1214,7 @@ public final class NativeString extends ScriptObject {
     @SpecializedConstructor
     public static Object constructor(final boolean newObj, final Object self, final int arg) {
         final String str = JSType.toString(arg);
-        return newObj ? newObj(self, str) : str;
+        return newObj ? newObj(str) : str;
     }
 
     /**
@@ -1231,7 +1231,7 @@ public final class NativeString extends ScriptObject {
     @SpecializedConstructor
     public static Object constructor(final boolean newObj, final Object self, final boolean arg) {
         final String str = JSType.toString(arg);
-        return newObj ? newObj(self, str) : str;
+        return newObj ? newObj(str) : str;
     }
 
     /**

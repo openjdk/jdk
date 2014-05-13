@@ -42,7 +42,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.SwitchPoint;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -367,15 +366,7 @@ public class AccessorProperty extends Property {
      * Initialize the type of a property
      */
     protected final void initializeType() {
-        Class<?> initialType = null;
-        if (OBJECT_FIELDS_ONLY) {
-            initialType = Object.class;
-        } else {
-            if (!canBeUndefined()) { //todo if !canBeUndefined it means that we have an exact initialType
-                initialType = int.class;
-            }
-        }
-        setCurrentType(initialType);
+        setCurrentType(OBJECT_FIELDS_ONLY ? Object.class : null);
     }
 
     private static MethodHandle bindTo(final MethodHandle mh, final Object receiver) {

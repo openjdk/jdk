@@ -489,9 +489,7 @@ public class ClassEmitter implements Emitter {
             null,
             null);
 
-        final MethodEmitter method = new MethodEmitter(this, mv, functionNode);
-        method.setParameterTypes(signature.getParamTypes());
-        return method;
+        return new MethodEmitter(this, mv, functionNode);
     }
 
     /**
@@ -508,9 +506,7 @@ public class ClassEmitter implements Emitter {
             null,
             null);
 
-        final MethodEmitter method = new MethodEmitter(this, mv, functionNode);
-        method.setParameterTypes(new FunctionSignature(functionNode).getParamTypes());
-        return method;
+        return new MethodEmitter(this, mv, functionNode);
     }
 
 

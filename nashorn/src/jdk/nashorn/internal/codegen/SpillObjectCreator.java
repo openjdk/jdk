@@ -32,7 +32,7 @@ import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ON
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.runtime.JSType;
@@ -193,7 +193,7 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
     }
 
     @Override
-    protected void loadValue(final Expression node) {
-        codegen.load(node);
+    protected void loadValue(final Expression expr, final Type type) {
+        codegen.loadExpressionAsType(expr, type);
     }
 }

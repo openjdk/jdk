@@ -139,10 +139,6 @@ public class MapCreator<T> {
             flags |= Property.NOT_CONFIGURABLE;
         }
 
-        if (symbol.canBeUndefined()) {
-            flags |= Property.CAN_BE_UNDEFINED;
-        }
-
         if (symbol.isFunctionDeclaration()) {
             flags |= Property.IS_FUNCTION_DECLARATION;
         }

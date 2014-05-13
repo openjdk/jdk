@@ -70,13 +70,6 @@ public interface Optimistic {
     public boolean canBeOptimistic();
 
     /**
-     * Is this op optimistic, i.e. narrower than its narrowest statically provable
-     * type
-     * @return true if optimistic
-     */
-    public boolean isOptimistic();
-
-    /**
      * Get the most optimistic type for this node. Typically we start out as
      * an int, and then at runtime we bump this up to number and then Object
      *
@@ -92,21 +85,11 @@ public interface Optimistic {
      */
     public Type getMostPessimisticType();
 
-
-    /**
-     * Tag this type override as optimistic rather than based on statically known
-     * type coercion semantics
-     * @param isOptimistic is this function optimistic
-     * @return new optimistic function
-     */
-    public Optimistic setIsOptimistic(final boolean isOptimistic);
-
     /**
      * Set the override type
      *
-     * @param ts temporary symbols
      * @param type the type
      * @return a node equivalent to this one except for the requested change.
      */
-    public Optimistic setType(final TemporarySymbols ts, final Type type);
+    public Optimistic setType(final Type type);
 }

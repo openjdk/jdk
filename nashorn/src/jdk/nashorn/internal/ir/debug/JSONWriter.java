@@ -25,9 +25,9 @@
 
 package jdk.nashorn.internal.ir.debug;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ArrayList;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -39,12 +39,14 @@ import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.EmptyNode;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
+import jdk.nashorn.internal.ir.JoinPredecessorExpression;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
@@ -100,6 +102,17 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
     }
 
     @Override
+    public boolean enterJoinPredecessorExpression(JoinPredecessorExpression joinPredecessorExpression) {
+        final Expression expr = joinPredecessorExpression.getExpression();
+        if(expr != null) {
+            expr.accept(this);
+        } else {
+            nullValue();
+        }
+        return false;
+    }
+
+    @Override
     protected boolean enterDefault(final Node node) {
         objectStart();
         location(node);
@@ -129,8 +142,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         accessNode.getBase().accept(this);
         comma();
 
-        property("property");
-        accessNode.getProperty().accept(this);
+        property("property", accessNode.getProperty());
         comma();
 
         property("computed", false);
@@ -150,16 +162,6 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         return leave();
     }
 
-    private static boolean isLogical(final TokenType tt) {
-        switch (tt) {
-        case AND:
-        case OR:
-            return true;
-        default:
-            return false;
-        }
-    }
-
     @Override
     public boolean enterBinaryNode(final BinaryNode binaryNode) {
         enterDefault(binaryNode);
@@ -167,7 +169,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         final String name;
         if (binaryNode.isAssignment()) {
             name = "AssignmentExpression";
-        } else if (isLogical(binaryNode.tokenType())) {
+        } else if (binaryNode.isLogical()) {
             name = "LogicalExpression";
         } else {
             name = "BinaryExpression";
@@ -196,11 +198,11 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         type("BreakStatement");
         comma();
 
-        final IdentNode label = breakNode.getLabel();
-        property("label");
-        if (label != null) {
-            label.accept(this);
+        final String label = breakNode.getLabelName();
+        if(label != null) {
+            property("label", label);
         } else {
+            property("label");
             nullValue();
         }
 
@@ -275,11 +277,11 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         type("ContinueStatement");
         comma();
 
-        final IdentNode label = continueNode.getLabel();
-        property("label");
-        if (label != null) {
-            label.accept(this);
+        final String label = continueNode.getLabelName();
+        if(label != null) {
+            property("label", label);
         } else {
+            property("label");
             nullValue();
         }
 
@@ -532,8 +534,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         type("LabeledStatement");
         comma();
 
-        property("label");
-        labelNode.getLabel().accept(this);
+        property("label", labelNode.getLabelName());
         comma();
 
         property("body");

@@ -123,8 +123,9 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterVarNode(this)) {
-            final IdentNode  newName = (IdentNode)name.accept(visitor);
+            // var is right associative, so visit init before name
             final Expression newInit = init == null ? null : (Expression)init.accept(visitor);
+            final IdentNode  newName = (IdentNode)name.accept(visitor);
             final VarNode    newThis;
             if (name != newName || init != newInit) {
                 newThis = new VarNode(this, newName, newInit, flags);

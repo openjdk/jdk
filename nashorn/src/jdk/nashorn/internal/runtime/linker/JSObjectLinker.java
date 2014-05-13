@@ -30,7 +30,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
-
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardedTypeConversion;
@@ -72,7 +71,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
         final GuardedInvocation inv;
         if (self instanceof JSObject) {
-            inv = lookup(desc, request);
+            inv = lookup(desc);
         } else {
             throw new AssertionError(); // Should never reach here.
         }
@@ -96,7 +95,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     }
 
 
-    private static GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request) {
+    private static GuardedInvocation lookup(final CallSiteDescriptor desc) {
         final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
         final int c = desc.getNameTokenCount();
 

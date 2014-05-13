@@ -39,7 +39,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
@@ -928,6 +927,10 @@ public final class NashornTextifier extends Printer {
             }
         } else {
             final int lastSlash = desc.lastIndexOf('/');
+            final int lastBracket = desc.lastIndexOf('[');
+            if(lastBracket != -1) {
+                sb.append(desc, 0, lastBracket + 1);
+            }
             sb.append(lastSlash == -1 ? desc : desc.substring(lastSlash + 1));
         }
     }

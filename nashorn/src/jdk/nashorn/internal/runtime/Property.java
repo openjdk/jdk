@@ -73,11 +73,8 @@ public abstract class Property {
     /** Is parameter accessed thru arguments? */
     public static final int HAS_ARGUMENTS    = 1 << 4;
 
-    /** Can this property be undefined? */
-    public static final int CAN_BE_UNDEFINED = 1 << 5;
-
     /** Is this a function declaration property ? */
-    public static final int IS_FUNCTION_DECLARATION = 1 << 6;
+    public static final int IS_FUNCTION_DECLARATION = 1 << 5;
 
     /**
      * Is this is a primitive field given to us by Nasgen, i.e.
@@ -85,7 +82,7 @@ public abstract class Property {
      * is narrower than object, e.g. Math.PI which is declared
      * as a double
      */
-    public static final int IS_NASGEN_PRIMITIVE = 1 << 7;
+    public static final int IS_NASGEN_PRIMITIVE = 1 << 6;
 
     /** Is this property bound to a receiver? This means get/set operations will be delegated to
      *  a statically defined object instead of the object passed as callsite parameter. */
@@ -651,18 +648,6 @@ public abstract class Property {
      */
     public boolean canChangeType() {
         return false;
-    }
-
-    /**
-     * Check whether this property can be primitive. This is a conservative
-     * analysis result, so {@code true} might mean that it can still be
-     * defined, but it will never say that a property can not be undefined
-     * if it can
-     *
-     * @return can be undefined status
-     */
-    public boolean canBeUndefined() {
-        return (flags & CAN_BE_UNDEFINED) == CAN_BE_UNDEFINED;
     }
 
     /**

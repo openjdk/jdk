@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-
 import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Block;
@@ -39,7 +38,6 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
 import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.WithNode;
 
@@ -89,18 +87,18 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
                 dynamicScopeCount++;
             }
             splitNodes.push(0);
-        } else if (node instanceof SplitNode) {
-            enterSplitNode();
         }
         return super.push(node);
     }
 
     void enterSplitNode() {
         splitNodes.getAndIncrement();
+        pushFreeSlots(methodEmitters.peek().getUsedSlotsWithLiveTemporaries());
     }
 
     void exitSplitNode() {
-        splitNodes.decrementAndGet();
+        final int count = splitNodes.decrementAndGet();
+        assert count >= 0;
     }
 
     @Override
@@ -116,8 +114,6 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
             }
             assert splitNodes.peek() == 0;
             splitNodes.pop();
-        } else if (node instanceof SplitNode) {
-            exitSplitNode();
         }
         return popped;
     }
@@ -208,60 +204,67 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
         return getScopeCall(unit, symbol, valueType, valueType, null, flags);
     }
 
+    void onEnterBlock(final Block block) {
+        pushFreeSlots(assignSlots(block, isFunctionBody() ? 0 : getUsedSlotCount()));
+    }
 
-    void nextFreeSlot(final Block block) {
-        final int nextFreeSlot = isFunctionBody() ? 0 : getUsedSlotCount();
+    private void pushFreeSlots(final int freeSlots) {
         if (nextFreeSlotsSize == nextFreeSlots.length) {
             final int[] newNextFreeSlots = new int[nextFreeSlotsSize * 2];
             System.arraycopy(nextFreeSlots, 0, newNextFreeSlots, 0, nextFreeSlotsSize);
             nextFreeSlots = newNextFreeSlots;
         }
-        nextFreeSlots[nextFreeSlotsSize++] = assignSlots(block, nextFreeSlot);
+        nextFreeSlots[nextFreeSlotsSize++] = freeSlots;
     }
 
     int getUsedSlotCount() {
         return nextFreeSlots[nextFreeSlotsSize - 1];
     }
 
-    void releaseBlockSlots(final boolean optimistic) {
+    void releaseSlots() {
         --nextFreeSlotsSize;
-        if(optimistic) {
-            slotTypesDescriptors.peek().setLength(nextFreeSlots[nextFreeSlotsSize]);
+        final int undefinedFromSlot = nextFreeSlotsSize == 0 ? 0 : nextFreeSlots[nextFreeSlotsSize - 1];
+        if(!slotTypesDescriptors.isEmpty()) {
+            slotTypesDescriptors.peek().setLength(undefinedFromSlot);
         }
+        methodEmitters.peek().undefineLocalVariables(undefinedFromSlot, false);
     }
 
     private int assignSlots(final Block block, final int firstSlot) {
-        int nextSlot = firstSlot;
+        int fromSlot = firstSlot;
+        final MethodEmitter method = methodEmitters.peek();
         for (final Symbol symbol : block.getSymbols()) {
             if (symbol.hasSlot()) {
-                symbol.setSlot(nextSlot);
-                nextSlot += symbol.slotCount();
+                symbol.setFirstSlot(fromSlot);
+                final int toSlot = fromSlot + symbol.slotCount();
+                method.defineBlockLocalVariable(fromSlot, toSlot);
+                fromSlot = toSlot;
             }
         }
-        methodEmitters.peek().ensureLocalVariableCount(nextSlot);
-        return nextSlot;
+        return fromSlot;
     }
 
     static Type getTypeForSlotDescriptor(final char typeDesc) {
+        // Recognizing both lowercase and uppercase as we're using both to signify symbol boundaries; see
+        // MethodEmitter.markSymbolBoundariesInLvarTypesDescriptor().
         switch(typeDesc) {
-            case 'I': {
+            case 'I':
+            case 'i':
                 return Type.INT;
-            }
-            case 'J': {
+            case 'J':
+            case 'j':
                 return Type.LONG;
-            }
-            case 'D': {
+            case 'D':
+            case 'd':
                 return Type.NUMBER;
-            }
-            case 'A': {
+            case 'A':
+            case 'a':
                 return Type.OBJECT;
-            }
-            case 'U': {
+            case 'U':
+            case 'u':
                 return Type.UNKNOWN;
-            }
-            default: {
+            default:
                 throw new AssertionError();
-            }
         }
     }
 
@@ -277,12 +280,8 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
         return discard.peek();
     }
 
-    int quickSlot(final Symbol symbol) {
-        final int quickSlot = nextFreeSlots[nextFreeSlotsSize - 1];
-        nextFreeSlots[nextFreeSlotsSize - 1] = quickSlot + symbol.slotCount();
-        methodEmitters.peek().ensureLocalVariableCount(quickSlot);
-        return quickSlot;
+    int quickSlot(final Type type) {
+        return methodEmitters.peek().defineTemporaryLocalVariable(type.getSlots());
     }
-
 }
 

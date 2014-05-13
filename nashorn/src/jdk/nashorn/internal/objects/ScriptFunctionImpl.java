@@ -30,7 +30,6 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
-
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
@@ -176,13 +175,13 @@ public class ScriptFunctionImpl extends ScriptFunction {
     private static class AnonymousFunction extends ScriptFunctionImpl {
         private static final PropertyMap anonmap$ = PropertyMap.newMap();
 
-        AnonymousFunction(final Global global) {
+        AnonymousFunction() {
             super("", GlobalFunctions.ANONYMOUS, anonmap$, null);
         }
     }
 
-    static ScriptFunctionImpl newAnonymousFunction(final Global global) {
-        return new AnonymousFunction(global);
+    static ScriptFunctionImpl newAnonymousFunction() {
+        return new AnonymousFunction();
     }
 
     /**

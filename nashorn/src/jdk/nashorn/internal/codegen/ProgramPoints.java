@@ -27,11 +27,9 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.FIRST_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.MAX_PROGRAM_POINT_VALUE;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
-
+import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.CallNode;
@@ -51,7 +49,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 class ProgramPoints extends NodeVisitor<LexicalContext> {
 
-    private final Deque<int[]> nextProgramPoint = new ArrayDeque<>();
+    private final IntDeque nextProgramPoint = new IntDeque();
     private final Set<Node> noProgramPoint = new HashSet<>();
 
     ProgramPoints() {
@@ -59,7 +57,7 @@ class ProgramPoints extends NodeVisitor<LexicalContext> {
     }
 
     private int next() {
-        final int next = nextProgramPoint.peek()[0]++;
+        final int next = nextProgramPoint.getAndIncrement();
         if(next > MAX_PROGRAM_POINT_VALUE) {
             throw new AssertionError("Function has more than " + MAX_PROGRAM_POINT_VALUE + " program points");
         }
@@ -68,7 +66,7 @@ class ProgramPoints extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
-        nextProgramPoint.push(new int[] { FIRST_PROGRAM_POINT });
+        nextProgramPoint.push(FIRST_PROGRAM_POINT);
         return true;
     }
 
@@ -78,11 +76,11 @@ class ProgramPoints extends NodeVisitor<LexicalContext> {
         return functionNode;
     }
 
-    private Optimistic setProgramPoint(final Optimistic optimistic, final int programPoint) {
+    private Expression setProgramPoint(final Optimistic optimistic) {
         if (noProgramPoint.contains(optimistic)) {
-            return optimistic;
+            return (Expression)optimistic;
         }
-        return (Optimistic)(Expression)optimistic.setProgramPoint(programPoint);
+        return (Expression)(optimistic.canBeOptimistic() ? optimistic.setProgramPoint(next()) : optimistic);
     }
 
     @Override
@@ -101,31 +99,34 @@ class ProgramPoints extends NodeVisitor<LexicalContext> {
 
     @Override
     public Node leaveIdentNode(final IdentNode identNode) {
-        return (Node)setProgramPoint(identNode, next());
+        if(identNode.isPropertyName()) {
+            return identNode;
+        }
+        return setProgramPoint(identNode);
     }
 
     @Override
     public Node leaveCallNode(final CallNode callNode) {
-        return (Node)setProgramPoint(callNode, next());
+        return setProgramPoint(callNode);
     }
 
     @Override
     public Node leaveAccessNode(final AccessNode accessNode) {
-        return (Node)setProgramPoint(accessNode, next());
+        return setProgramPoint(accessNode);
     }
 
     @Override
     public Node leaveIndexNode(final IndexNode indexNode) {
-        return (Node)setProgramPoint(indexNode, next());
+        return setProgramPoint(indexNode);
     }
 
     @Override
     public Node leaveBinaryNode(final BinaryNode binaryNode) {
-        return (Node)setProgramPoint(binaryNode, next());
+        return setProgramPoint(binaryNode);
     }
 
     @Override
     public Node leaveUnaryNode(final UnaryNode unaryNode) {
-        return (Node)setProgramPoint(unaryNode, next());
+        return setProgramPoint(unaryNode);
     }
 }

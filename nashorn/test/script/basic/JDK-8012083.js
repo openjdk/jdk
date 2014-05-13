@@ -22,7 +22,7 @@
  */
 
 /**
- * JDK-8012093 - array literals can only be subject to constant evaluation under very special
+ * JDK-8012083 - array literals can only be subject to constant evaluation under very special
  * circumstances.
  *
  * @test
