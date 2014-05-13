@@ -318,7 +318,7 @@ ifeq ($(OPENJDK_TARGET_OS), aix)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  LIBAWT_FILES += awt_LoadLibrary.c img_colors.c
+  LIBAWT_FILES += awt_LoadLibrary.c
   LIBAWT_CFLAGS += -F/System/Library/Frameworks/JavaVM.framework/Frameworks
 endif
 
