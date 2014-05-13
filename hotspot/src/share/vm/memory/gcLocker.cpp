@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "memory/gcLocker.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/sharedHeap.hpp"
+#include "runtime/thread.inline.hpp"
 
 volatile jint GC_locker::_jni_lock_count = 0;
 volatile bool GC_locker::_needs_gc       = false;
@@ -51,7 +52,7 @@ void GC_locker::verify_critical_count() {
       tty->print_cr("critical counts don't match: %d != %d", _jni_lock_count, count);
       for (JavaThread* thr = Threads::first(); thr; thr = thr->next()) {
         if (thr->in_critical()) {
-          tty->print_cr(INTPTR_FORMAT " in_critical %d", thr, thr->in_critical());
+          tty->print_cr(INTPTR_FORMAT " in_critical %d", p2i(thr), thr->in_critical());
         }
       }
     }

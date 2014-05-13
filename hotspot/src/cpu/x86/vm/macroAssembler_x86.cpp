@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #ifdef ASSERT
 bool AbstractAssembler::pd_check_instruction_mark() { return true; }
@@ -3152,10 +3153,12 @@ void MacroAssembler::fast_pow() {
   // if fast computation is not possible, result is NaN. Requires
   // fallback from user of this macro.
   // increase precision for intermediate steps of the computation
+  BLOCK_COMMENT("fast_pow {");
   increase_precision();
   fyl2x();                 // Stack: (Y*log2(X)) ...
   pow_exp_core_encoding(); // Stack: exp(X) ...
   restore_precision();
+  BLOCK_COMMENT("} fast_pow");
 }
 
 void MacroAssembler::fast_exp() {

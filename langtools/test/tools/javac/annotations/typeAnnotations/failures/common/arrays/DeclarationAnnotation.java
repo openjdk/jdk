@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 1234567
+ * @bug 8013852
  * @summary ensure that declaration annotations are not allowed on
  *   new array expressions
  * @author Werner Dietl

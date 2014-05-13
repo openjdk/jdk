@@ -55,6 +55,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
@@ -75,6 +76,8 @@
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #ifdef DTRACE_ENABLED
 
@@ -2398,7 +2401,6 @@ const char* InstanceKlass::signature_name() const {
 
   // If this is an anonymous class, append a hash to make the name unique
   if (is_anonymous()) {
-    assert(EnableInvokeDynamic, "EnableInvokeDynamic was not set.");
     intptr_t hash = (java_mirror() != NULL) ? java_mirror()->identity_hash() : 0;
     sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
     hash_len = (int)strlen(hash_buf);
@@ -2857,7 +2859,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
-  st->print(BULLET"state:             "); st->print_cr(state_names[_init_state]);
+  st->print(BULLET"state:             "); st->print_cr("%s", state_names[_init_state]);
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); super()->print_value_on_maybe_null(st); st->cr();
   st->print(BULLET"sub:               ");

@@ -67,6 +67,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -274,7 +275,7 @@ const int MAX_REASONABLE_LOCAL_CAPACITY = 4*K;
 
   class JNITraceWrapper : public StackObj {
    public:
-    JNITraceWrapper(const char* format, ...) {
+    JNITraceWrapper(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
       if (TraceJNICalls) {
         va_list ap;
         va_start(ap, format);

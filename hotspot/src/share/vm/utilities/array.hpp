@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspace.hpp"
+#include "runtime/orderAccess.hpp"
 
 // correct linkage required to compile w/o warnings
 // (must be on file level - cannot be local)
@@ -375,7 +376,7 @@ protected:
 
   // FIXME: How to handle this?
   void print_value_on(outputStream* st) const {
-    st->print("Array<T>(" INTPTR_FORMAT ")", this);
+    st->print("Array<T>(" INTPTR_FORMAT ")", p2i(this));
   }
 
 #ifndef PRODUCT

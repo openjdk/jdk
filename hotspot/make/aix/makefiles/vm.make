@@ -136,8 +136,6 @@ include $(MAKEFILES_DIR)/dtrace.make
 JVM      = jvm
 LIBJVM   = lib$(JVM).so
 
-CFLAGS += -DALLOW_OPERATOR_NEW_USAGE
-
 LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
 LIBJVM_DIZ         = lib$(JVM).diz
 

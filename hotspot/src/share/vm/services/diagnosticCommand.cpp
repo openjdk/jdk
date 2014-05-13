@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
 #include "utilities/macros.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 void DCmdRegistrant::register_dcmds(){
   // Registration of the diagnostic commands
@@ -101,7 +103,7 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
     if (factory != NULL) {
       output()->print_cr("%s%s", factory->name(),
                          factory->is_enabled() ? "" : " [disabled]");
-      output()->print_cr(factory->description());
+      output()->print_cr("%s", factory->description());
       output()->print_cr("\nImpact: %s", factory->impact());
       JavaPermission p = factory->permission();
       if(p._class != NULL) {

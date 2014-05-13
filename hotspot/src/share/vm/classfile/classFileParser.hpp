@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,9 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     if (!b) { classfile_parse_error(msg, CHECK); }
   }
 
-  inline void assert_property(bool b, const char* msg, TRAPS) {
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+inline void assert_property(bool b, const char* msg, TRAPS) {
 #ifdef ASSERT
     if (!b) {
       ResourceMark rm(THREAD);
@@ -329,6 +331,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     }
 #endif
   }
+PRAGMA_DIAG_POP
 
   inline void check_property(bool property, const char* msg, int index, TRAPS) {
     if (_need_verify) {
@@ -377,11 +380,9 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   char* skip_over_field_signature(char* signature, bool void_ok, unsigned int length, TRAPS);
 
   bool is_anonymous() {
-    assert(EnableInvokeDynamic || _host_klass.is_null(), "");
     return _host_klass.not_null();
   }
   bool has_cp_patch_at(int index) {
-    assert(EnableInvokeDynamic, "");
     assert(index >= 0, "oob");
     return (_cp_patches != NULL
             && index < _cp_patches->length()
@@ -404,10 +405,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // constant pool construction, but in later versions they can.
   // %%% Let's phase out the old is_klass_reference.
   bool valid_klass_reference_at(int index) {
-    return _cp->is_within_bounds(index) &&
-         (EnableInvokeDynamic
-            ? _cp->tag_at(index).is_klass_or_reference()
-            : _cp->tag_at(index).is_klass_reference());
+    return _cp->is_within_bounds(index) && _cp->tag_at(index).is_klass_or_reference();
   }
 
   // Checks that the cpool index is in range and is a utf8

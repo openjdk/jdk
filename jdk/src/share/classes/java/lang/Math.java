@@ -1904,51 +1904,36 @@ public final class Math {
          * are naturally handled without any additional testing
          */
 
-        // First check for NaN values
-        if (Double.isNaN(start) || Double.isNaN(direction)) {
-            // return a NaN derived from the input NaN(s)
-            return start + direction;
-        } else if (start == direction) {
-            return direction;
-        } else {        // start > direction or start < direction
+        /*
+         * IEEE 754 floating-point numbers are lexicographically
+         * ordered if treated as signed-magnitude integers.
+         * Since Java's integers are two's complement,
+         * incrementing the two's complement representation of a
+         * logically negative floating-point value *decrements*
+         * the signed-magnitude representation. Therefore, when
+         * the integer representation of a floating-point value
+         * is negative, the adjustment to the representation is in
+         * the opposite direction from what would initially be expected.
+         */
+
+        // Branch to descending case first as it is more costly than ascending
+        // case due to start != 0.0d conditional.
+        if (start > direction) { // descending
+            if (start != 0.0d) {
+                final long transducer = Double.doubleToRawLongBits(start);
+                return Double.longBitsToDouble(transducer + ((transducer > 0L) ? -1L : 1L));
+            } else { // start == 0.0d && direction < 0.0d
+                return -Double.MIN_VALUE;
+            }
+        } else if (start < direction) { // ascending
             // Add +0.0 to get rid of a -0.0 (+0.0 + -0.0 => +0.0)
             // then bitwise convert start to integer.
-            long transducer = Double.doubleToRawLongBits(start + 0.0d);
-
-            /*
-             * IEEE 754 floating-point numbers are lexicographically
-             * ordered if treated as signed- magnitude integers .
-             * Since Java's integers are two's complement,
-             * incrementing" the two's complement representation of a
-             * logically negative floating-point value *decrements*
-             * the signed-magnitude representation. Therefore, when
-             * the integer representation of a floating-point values
-             * is less than zero, the adjustment to the representation
-             * is in the opposite direction than would be expected at
-             * first .
-             */
-            if (direction > start) { // Calculate next greater value
-                transducer = transducer + (transducer >= 0L ? 1L:-1L);
-            } else  { // Calculate next lesser value
-                assert direction < start;
-                if (transducer > 0L)
-                    --transducer;
-                else
-                    if (transducer < 0L )
-                        ++transducer;
-                    /*
-                     * transducer==0, the result is -MIN_VALUE
-                     *
-                     * The transition from zero (implicitly
-                     * positive) to the smallest negative
-                     * signed magnitude value must be done
-                     * explicitly.
-                     */
-                    else
-                        transducer = DoubleConsts.SIGN_BIT_MASK | 1L;
-            }
-
-            return Double.longBitsToDouble(transducer);
+            final long transducer = Double.doubleToRawLongBits(start + 0.0d);
+            return Double.longBitsToDouble(transducer + ((transducer >= 0L) ? 1L : -1L));
+        } else if (start == direction) {
+            return direction;
+        } else { // isNaN(start) || isNaN(direction)
+            return start + direction;
         }
     }
 
@@ -2003,51 +1988,36 @@ public final class Math {
          * are naturally handled without any additional testing
          */
 
-        // First check for NaN values
-        if (Float.isNaN(start) || Double.isNaN(direction)) {
-            // return a NaN derived from the input NaN(s)
-            return start + (float)direction;
-        } else if (start == direction) {
-            return (float)direction;
-        } else {        // start > direction or start < direction
+        /*
+         * IEEE 754 floating-point numbers are lexicographically
+         * ordered if treated as signed-magnitude integers.
+         * Since Java's integers are two's complement,
+         * incrementing the two's complement representation of a
+         * logically negative floating-point value *decrements*
+         * the signed-magnitude representation. Therefore, when
+         * the integer representation of a floating-point value
+         * is negative, the adjustment to the representation is in
+         * the opposite direction from what would initially be expected.
+         */
+
+        // Branch to descending case first as it is more costly than ascending
+        // case due to start != 0.0f conditional.
+        if (start > direction) { // descending
+            if (start != 0.0f) {
+                final int transducer = Float.floatToRawIntBits(start);
+                return Float.intBitsToFloat(transducer + ((transducer > 0) ? -1 : 1));
+            } else { // start == 0.0f && direction < 0.0f
+                return -Float.MIN_VALUE;
+            }
+        } else if (start < direction) { // ascending
             // Add +0.0 to get rid of a -0.0 (+0.0 + -0.0 => +0.0)
             // then bitwise convert start to integer.
-            int transducer = Float.floatToRawIntBits(start + 0.0f);
-
-            /*
-             * IEEE 754 floating-point numbers are lexicographically
-             * ordered if treated as signed- magnitude integers .
-             * Since Java's integers are two's complement,
-             * incrementing" the two's complement representation of a
-             * logically negative floating-point value *decrements*
-             * the signed-magnitude representation. Therefore, when
-             * the integer representation of a floating-point values
-             * is less than zero, the adjustment to the representation
-             * is in the opposite direction than would be expected at
-             * first.
-             */
-            if (direction > start) {// Calculate next greater value
-                transducer = transducer + (transducer >= 0 ? 1:-1);
-            } else  { // Calculate next lesser value
-                assert direction < start;
-                if (transducer > 0)
-                    --transducer;
-                else
-                    if (transducer < 0 )
-                        ++transducer;
-                    /*
-                     * transducer==0, the result is -MIN_VALUE
-                     *
-                     * The transition from zero (implicitly
-                     * positive) to the smallest negative
-                     * signed magnitude value must be done
-                     * explicitly.
-                     */
-                    else
-                        transducer = FloatConsts.SIGN_BIT_MASK | 1;
-            }
-
-            return Float.intBitsToFloat(transducer);
+            final int transducer = Float.floatToRawIntBits(start + 0.0f);
+            return Float.intBitsToFloat(transducer + ((transducer >= 0) ? 1 : -1));
+        } else if (start == direction) {
+            return (float)direction;
+        } else { // isNaN(start) || isNaN(direction)
+            return start + (float)direction;
         }
     }
 
@@ -2077,12 +2047,13 @@ public final class Math {
      * @since 1.6
      */
     public static double nextUp(double d) {
-        if( Double.isNaN(d) || d == Double.POSITIVE_INFINITY)
+        // Use a single conditional and handle the likely cases first.
+        if (d < Double.POSITIVE_INFINITY) {
+            // Add +0.0 to get rid of a -0.0 (+0.0 + -0.0 => +0.0).
+            final long transducer = Double.doubleToRawLongBits(d + 0.0D);
+            return Double.longBitsToDouble(transducer + ((transducer >= 0L) ? 1L : -1L));
+        } else { // d is NaN or +Infinity
             return d;
-        else {
-            d += 0.0d;
-            return Double.longBitsToDouble(Double.doubleToRawLongBits(d) +
-                                           ((d >= 0.0d)?+1L:-1L));
         }
     }
 
@@ -2112,12 +2083,13 @@ public final class Math {
      * @since 1.6
      */
     public static float nextUp(float f) {
-        if( Float.isNaN(f) || f == FloatConsts.POSITIVE_INFINITY)
+        // Use a single conditional and handle the likely cases first.
+        if (f < Float.POSITIVE_INFINITY) {
+            // Add +0.0 to get rid of a -0.0 (+0.0 + -0.0 => +0.0).
+            final int transducer = Float.floatToRawIntBits(f + 0.0F);
+            return Float.intBitsToFloat(transducer + ((transducer >= 0) ? 1 : -1));
+        } else { // f is NaN or +Infinity
             return f;
-        else {
-            f += 0.0f;
-            return Float.intBitsToFloat(Float.floatToRawIntBits(f) +
-                                        ((f >= 0.0f)?+1:-1));
         }
     }
 

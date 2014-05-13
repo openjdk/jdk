@@ -36,6 +36,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
+// --------------------------------------------------------------------------
 // the number of buckets a thread claims
 const int ClaimChunkSize = 32;
 

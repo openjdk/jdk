@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,6 +295,9 @@ class KlassInfoHisto : public StackObj {
   // returns a format string to print a julong with the given width. E.g,
   // printf(num_fmt(6), julong(10)) would print out the number 10 with 4
   // leading spaces.
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+
   static void print_julong(outputStream* st, int width, julong n) {
     int num_spaces = width - julong_width(n);
     if (num_spaces > 0) {
@@ -302,6 +305,7 @@ class KlassInfoHisto : public StackObj {
     }
     st->print(JULONG_FORMAT, n);
   }
+PRAGMA_DIAG_POP
 
   static char* perc_fmt(int width) {
     static char buf[32];

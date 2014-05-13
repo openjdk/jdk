@@ -58,6 +58,7 @@
 #include "runtime/memprofiler.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -110,6 +111,8 @@
 #if INCLUDE_RTM_OPT
 #include "runtime/rtmLocking.hpp"
 #endif
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #ifdef DTRACE_ENABLED
 
@@ -3609,9 +3612,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // It is done after compilers are initialized, because otherwise compilations of
   // signature polymorphic MH intrinsics can be missed
   // (see SystemDictionary::find_method_handle_intrinsic).
-  if (EnableInvokeDynamic) {
-    initialize_jsr292_core_classes(CHECK_JNI_ERR);
-  }
+  initialize_jsr292_core_classes(CHECK_JNI_ERR);
 
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
@@ -4274,7 +4275,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(address owner, bool doLock
 // Threads::print_on() is called at safepoint by VM_PrintThreads operation.
 void Threads::print_on(outputStream* st, bool print_stacks, bool internal_format, bool print_concurrent_locks) {
   char buf[32];
-  st->print_cr(os::local_time_string(buf, sizeof(buf)));
+  st->print_cr("%s", os::local_time_string(buf, sizeof(buf)));
 
   st->print_cr("Full thread dump %s (%s %s):",
                 Abstract_VM_Version::vm_name(),
