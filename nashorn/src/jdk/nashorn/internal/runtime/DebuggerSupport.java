@@ -183,7 +183,7 @@ final class DebuggerSupport {
             for (long i = 0; i < length; i++) {
                 if (object.has(i)) {
                     final Object valueAsObject = object.get(i);
-                    final boolean isUndefined = JSType.of(valueAsObject) == JSType.UNDEFINED;
+                    final boolean isUndefined = valueAsObject == ScriptRuntime.UNDEFINED;
 
                     if (isUndefined) {
                         if (i != 0) {
