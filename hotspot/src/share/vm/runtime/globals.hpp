@@ -2561,6 +2561,20 @@ class CommandLineFlags {
   diagnostic(bool, PrintMethodFlushingStatistics, false,                    \
           "print statistics about method flushing")                         \
                                                                             \
+  diagnostic(intx, HotMethodDetectionLimit, 100000,                         \
+          "Number of compiled code invocations after which "                \
+          "the method is considered as hot by the flusher")                 \
+                                                                            \
+  diagnostic(intx, MinPassesBeforeFlush, 10,                                \
+          "Minimum number of sweeper passes before an nmethod "             \
+          "can be flushed")                                                 \
+                                                                            \
+  product(bool, UseCodeAging, true,                                         \
+          "Insert counter to detect warm methods")                          \
+                                                                            \
+  diagnostic(bool, StressCodeAging, false,                                  \
+          "Start with counters compiled in")                                \
+                                                                            \
   develop(bool, UseRelocIndex, false,                                       \
           "Use an index to speed random access to relocations")             \
                                                                             \

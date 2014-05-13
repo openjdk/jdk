@@ -371,6 +371,13 @@ class Method : public Metadata {
     }
   }
 #endif
+  int nmethod_age() const {
+    if (method_counters() == NULL) {
+      return INT_MAX;
+    } else {
+      return method_counters()->nmethod_age();
+    }
+  }
 
   int invocation_count();
   int backedge_count();

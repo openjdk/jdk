@@ -111,6 +111,7 @@ class NMethodSweeper : public AllStatic {
   static int hotness_counter_reset_val();
   static void report_state_change(nmethod* nm);
   static void possibly_enable_sweeper();
+  static void possibly_flush(nmethod* nm);
   static void print();   // Printing/debugging
 };
 

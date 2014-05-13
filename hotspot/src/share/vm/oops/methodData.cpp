@@ -1130,6 +1130,7 @@ void MethodData::init() {
   _backedge_counter.init();
   _invocation_counter_start = 0;
   _backedge_counter_start = 0;
+  _tenure_traps = 0;
   _num_loops = 0;
   _num_blocks = 0;
   _highest_comp_level = 0;
