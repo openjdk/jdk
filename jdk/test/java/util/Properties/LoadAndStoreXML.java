@@ -25,8 +25,6 @@
  * @test
  * @bug 8000354 8000685 8004371
  * @summary Basic test of storeToXML and loadToXML
- * @run main LoadAndStoreXML
- * @run main/othervm -Dsun.util.spi.XmlPropertiesProvider=jdk.internal.util.xml.BasicXmlPropertiesProvider LoadAndStoreXML
  */
 
 import java.io.*;
