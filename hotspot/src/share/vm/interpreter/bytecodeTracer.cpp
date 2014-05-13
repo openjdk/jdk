@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ void print_oop(oop value, outputStream* st) {
       st->print_cr(" %s", buf);
     }
   } else {
-    st->print_cr(" " PTR_FORMAT, (void *)value);
+    st->print_cr(" " INTPTR_FORMAT, p2i((void *)value));
   }
 }
 
@@ -282,7 +282,7 @@ bool BytecodePrinter::check_cp_cache_index(int i, int& cp_index, outputStream* s
   if (i >= 0 && i < climit) {
     cp_index = cache->entry_at(i)->constant_pool_index();
   } else {
-    st->print_cr(" not in CP[*]?", i);
+    st->print_cr("%d not in CP[*]?", i);
       return false;
     }
   return true;
@@ -297,7 +297,7 @@ bool BytecodePrinter::check_obj_index(int i, int& cp_index, outputStream* st) {
      cp_index = constants->object_to_cp_index(i);
      return true;
   } else {
-    st->print_cr(" not in OBJ[*]?", i);
+    st->print_cr("%d not in OBJ[*]?", i);
   return false;
 }
 }
@@ -321,7 +321,7 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
   if (tag.is_int()) {
     st->print_cr(" " INT32_FORMAT, constants->int_at(i));
   } else if (tag.is_long()) {
-    st->print_cr(" " INT64_FORMAT, constants->long_at(i));
+    st->print_cr(" " INT64_FORMAT, (int64_t)(constants->long_at(i)));
   } else if (tag.is_float()) {
     st->print_cr(" %f", constants->float_at(i));
   } else if (tag.is_double()) {
@@ -340,7 +340,7 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
   } else if (tag.is_method_handle()) {
     int kind = constants->method_handle_ref_kind_at(i);
     int i2 = constants->method_handle_index_at(i);
-    st->print(" <MethodHandle of kind %d>", kind, i2);
+    st->print(" <MethodHandle of kind %d index at %d>", kind, i2);
     print_field_or_method(-i, i2, st);
   } else {
     st->print_cr(" bad tag=%d at %d", tag.value(), i);
@@ -389,6 +389,7 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
 }
 
 
+PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 void BytecodePrinter::print_attributes(int bci, outputStream* st) {
   // Show attributes of pre-rewritten codes
   Bytecodes::Code code = Bytecodes::java_code(raw_code());
@@ -515,7 +516,10 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
           int idx = ll - lo;
           const char *format = first ? " %d:" INT32_FORMAT " (delta: %d)" :
                                        ", %d:" INT32_FORMAT " (delta: %d)";
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
           st->print(format, ll, dest[idx], dest[idx]-bci);
+PRAGMA_DIAG_POP
         }
         st->cr();
       }
@@ -535,7 +539,10 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
         for (int ll = 0; ll < len; ll++, first = false)  {
           const char *format = first ? " " INT32_FORMAT ":" INT32_FORMAT :
                                        ", " INT32_FORMAT ":" INT32_FORMAT ;
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
           st->print(format, key[ll], dest[ll]);
+PRAGMA_DIAG_POP
         }
         st->cr();
       }

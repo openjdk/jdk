@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     1234567
+ * @bug     8013852
  * @summary Annotations on types
  * @library /tools/javac/lib
  * @ignore

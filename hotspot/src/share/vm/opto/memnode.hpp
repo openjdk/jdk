@@ -332,7 +332,7 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual int store_Opcode() const { return Op_StoreL; }
   virtual BasicType memory_type() const { return T_LONG; }
-  bool require_atomic_access() { return _require_atomic_access; }
+  bool require_atomic_access() const { return _require_atomic_access; }
   static LoadLNode* make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type,
                                 const Type* rt, MemOrd mo);
 #ifndef PRODUCT
@@ -367,13 +367,31 @@ public:
 //------------------------------LoadDNode--------------------------------------
 // Load a double (64 bits) from memory
 class LoadDNode : public LoadNode {
+  virtual uint hash() const { return LoadNode::hash() + _require_atomic_access; }
+  virtual uint cmp( const Node &n ) const {
+    return _require_atomic_access == ((LoadDNode&)n)._require_atomic_access
+      && LoadNode::cmp(n);
+  }
+  virtual uint size_of() const { return sizeof(*this); }
+  const bool _require_atomic_access;  // is piecewise load forbidden?
+
 public:
-  LoadDNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *t, MemOrd mo)
-    : LoadNode(c, mem, adr, at, t, mo) {}
+  LoadDNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *t,
+            MemOrd mo, bool require_atomic_access = false)
+    : LoadNode(c, mem, adr, at, t, mo), _require_atomic_access(require_atomic_access) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual int store_Opcode() const { return Op_StoreD; }
   virtual BasicType memory_type() const { return T_DOUBLE; }
+  bool require_atomic_access() const { return _require_atomic_access; }
+  static LoadDNode* make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type,
+                                const Type* rt, MemOrd mo);
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const {
+    LoadNode::dump_spec(st);
+    if (_require_atomic_access)  st->print(" Atomic!");
+  }
+#endif
 };
 
 //------------------------------LoadD_unalignedNode----------------------------
@@ -574,7 +592,7 @@ public:
     : StoreNode(c, mem, adr, at, val, mo), _require_atomic_access(require_atomic_access) {}
   virtual int Opcode() const;
   virtual BasicType memory_type() const { return T_LONG; }
-  bool require_atomic_access() { return _require_atomic_access; }
+  bool require_atomic_access() const { return _require_atomic_access; }
   static StoreLNode* make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo);
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const {
@@ -597,11 +615,28 @@ public:
 //------------------------------StoreDNode-------------------------------------
 // Store double to memory
 class StoreDNode : public StoreNode {
+  virtual uint hash() const { return StoreNode::hash() + _require_atomic_access; }
+  virtual uint cmp( const Node &n ) const {
+    return _require_atomic_access == ((StoreDNode&)n)._require_atomic_access
+      && StoreNode::cmp(n);
+  }
+  virtual uint size_of() const { return sizeof(*this); }
+  const bool _require_atomic_access;  // is piecewise store forbidden?
 public:
-  StoreDNode(Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, MemOrd mo)
-    : StoreNode(c, mem, adr, at, val, mo) {}
+  StoreDNode(Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val,
+             MemOrd mo, bool require_atomic_access = false)
+    : StoreNode(c, mem, adr, at, val, mo), _require_atomic_access(require_atomic_access) {}
   virtual int Opcode() const;
   virtual BasicType memory_type() const { return T_DOUBLE; }
+  bool require_atomic_access() const { return _require_atomic_access; }
+  static StoreDNode* make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo);
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const {
+    StoreNode::dump_spec(st);
+    if (_require_atomic_access)  st->print(" Atomic!");
+  }
+#endif
+
 };
 
 //------------------------------StorePNode-------------------------------------

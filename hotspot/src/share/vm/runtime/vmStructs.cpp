@@ -879,7 +879,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(nmethod,             _entry_point,                                  address)                               \
   nonstatic_field(nmethod,             _verified_entry_point,                         address)                               \
   nonstatic_field(nmethod,             _osr_entry_point,                              address)                               \
-  nonstatic_field(nmethod,             _lock_count,                                   jint)                                  \
+  volatile_nonstatic_field(nmethod,    _lock_count,                                   jint)                                  \
   nonstatic_field(nmethod,             _stack_traversal_mark,                         long)                                  \
   nonstatic_field(nmethod,             _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,             _comp_level,                                   int)                                   \

@@ -28,8 +28,10 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 DictionaryEntry*  Dictionary::_current_class_entry = NULL;
 int               Dictionary::_current_class_index =    0;

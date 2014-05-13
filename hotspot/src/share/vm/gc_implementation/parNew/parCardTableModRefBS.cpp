@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,11 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/virtualspace.hpp"
 #include "runtime/vmThread.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
                                                              OopsInGenClosure* cl,

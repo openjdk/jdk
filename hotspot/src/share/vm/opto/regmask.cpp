@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ void OptoReg::dump(int r, outputStream *st) {
   case Special: st->print("r---"); break;
   case Bad:     st->print("rBAD"); break;
   default:
-    if (r < _last_Mach_Reg) st->print(Matcher::regName[r]);
+    if (r < _last_Mach_Reg) st->print("%s", Matcher::regName[r]);
     else st->print("rS%d",r);
     break;
   }

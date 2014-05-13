@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -628,7 +628,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     _method->print_short_name();
     tty->print_cr(" switch decision tree");
     tty->print_cr("    %d ranges (%d singletons), max_depth=%d, est_depth=%d",
-                  hi-lo+1, nsing, _max_switch_depth, _est_switch_depth);
+                  (int) (hi-lo+1), nsing, _max_switch_depth, _est_switch_depth);
     if (_max_switch_depth > _est_switch_depth) {
       tty->print_cr("******** BAD SWITCH DEPTH ********");
     }
@@ -636,7 +636,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     for( r = lo; r <= hi; r++ ) {
       r->print();
     }
-    tty->print_cr("");
+    tty->cr();
   }
 #endif
 }

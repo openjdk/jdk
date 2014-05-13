@@ -47,7 +47,7 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "services/attachListener.hpp"
 #include "services/serviceUtil.hpp"
@@ -55,6 +55,8 @@
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
 #endif // INCLUDE_ALL_GCS
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #ifdef JVMTI_TRACE
 #define EVT_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_SENT) != 0) { SafeResourceMark rm; tty->print_cr out; }

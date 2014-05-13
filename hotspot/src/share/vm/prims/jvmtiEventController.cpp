@@ -38,6 +38,8 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 #ifdef JVMTI_TRACE
 #define EC_TRACE(out) do { \
   if (JvmtiTrace::trace_event_controller()) { \

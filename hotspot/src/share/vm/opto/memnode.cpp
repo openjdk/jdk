@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,33 +308,16 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     int alias_idx = phase->C->get_alias_index(t_adr->is_ptr());
   }
 
-#ifdef ASSERT
   Node* base = NULL;
-  if (address->is_AddP())
+  if (address->is_AddP()) {
     base = address->in(AddPNode::Base);
+  }
   if (base != NULL && phase->type(base)->higher_equal(TypePtr::NULL_PTR) &&
       !t_adr->isa_rawptr()) {
     // Note: raw address has TOP base and top->higher_equal(TypePtr::NULL_PTR) is true.
-    Compile* C = phase->C;
-    tty->cr();
-    tty->print_cr("===== NULL+offs not RAW address =====");
-    if (C->is_dead_node(this->_idx))    tty->print_cr("'this' is dead");
-    if ((ctl != NULL) && C->is_dead_node(ctl->_idx)) tty->print_cr("'ctl' is dead");
-    if (C->is_dead_node(mem->_idx))     tty->print_cr("'mem' is dead");
-    if (C->is_dead_node(address->_idx)) tty->print_cr("'address' is dead");
-    if (C->is_dead_node(base->_idx))    tty->print_cr("'base' is dead");
-    tty->cr();
-    base->dump(1);
-    tty->cr();
-    this->dump(2);
-    tty->print("this->adr_type():     "); adr_type()->dump(); tty->cr();
-    tty->print("phase->type(address): "); t_adr->dump(); tty->cr();
-    tty->print("phase->type(base):    "); phase->type(address)->dump(); tty->cr();
-    tty->cr();
+    // Skip this node optimization if its address has TOP base.
+    return NodeSentinel; // caller will return NULL
   }
-  assert(base == NULL || t_adr->isa_rawptr() ||
-        !phase->type(base)->higher_equal(TypePtr::NULL_PTR), "NULL+offs not RAW address?");
-#endif
 
   // Avoid independent memory operations
   Node* old_mem = mem;
@@ -955,6 +938,10 @@ LoadLNode* LoadLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, c
   return new (C) LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, require_atomic);
 }
 
+LoadDNode* LoadDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
+  bool require_atomic = true;
+  return new (C) LoadDNode(ctl, mem, adr, adr_type, rt, mo, require_atomic);
+}
 
 
 
@@ -2395,6 +2382,11 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
 StoreLNode* StoreLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
   bool require_atomic = true;
   return new (C) StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
+}
+
+StoreDNode* StoreDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
+  bool require_atomic = true;
+  return new (C) StoreDNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
 }
 
 
@@ -3989,7 +3981,7 @@ bool InitializeNode::stores_are_sane(PhaseTransform* phase) {
     intptr_t st_off = get_store_offset(st, phase);
     if (st_off < 0)  continue;  // ignore dead garbage
     if (last_off > st_off) {
-      tty->print_cr("*** bad store offset at %d: %d > %d", i, last_off, st_off);
+      tty->print_cr("*** bad store offset at %d: " INTX_FORMAT " > " INTX_FORMAT, i, last_off, st_off);
       this->dump(2);
       assert(false, "ascending store offsets");
       return false;

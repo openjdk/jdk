@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 class UnlockFlagSaver {
   private:
@@ -769,7 +771,6 @@ IRT_END
 
 // First time execution:  Resolve symbols, create a permanent MethodType object.
 IRT_ENTRY(void, InterpreterRuntime::resolve_invokehandle(JavaThread* thread)) {
-  assert(EnableInvokeDynamic, "");
   const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
 
   // resolve method
@@ -789,7 +790,6 @@ IRT_END
 
 // First time execution:  Resolve symbols, create a permanent CallSite object.
 IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
-  assert(EnableInvokeDynamic, "");
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
 
   //TO DO: consider passing BCI to Java.

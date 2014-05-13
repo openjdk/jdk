@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #ifdef TARGET_ARCH_x86
 # include "jniTypes_x86.hpp"
 #endif
@@ -100,7 +100,7 @@ extern "C" {                                                             \
   result_type JNICALL header {                                           \
     JavaThread* thr = (JavaThread*)ThreadLocalStorage::get_thread_slow();\
     if (thr == NULL || !thr->is_Java_thread()) {                         \
-      tty->print_cr(fatal_using_jnienv_in_nonjava);                      \
+      tty->print_cr("%s", fatal_using_jnienv_in_nonjava);                      \
       os::abort(true);                                                   \
     }                                                                    \
     JNIEnv* xenv = thr->jni_environment();                               \
@@ -184,7 +184,7 @@ static inline void
 functionEnter(JavaThread* thr)
 {
   if (thr->in_critical()) {
-    tty->print_cr(warn_other_function_in_critical);
+    tty->print_cr("%s", warn_other_function_in_critical);
   }
   if (thr->has_pending_exception()) {
     NativeReportJNIWarning(thr, "JNI call made with exception pending");
@@ -195,7 +195,7 @@ static inline void
 functionEnterExceptionAllowed(JavaThread* thr)
 {
   if (thr->in_critical()) {
-    tty->print_cr(warn_other_function_in_critical);
+    tty->print_cr("%s", warn_other_function_in_critical);
   }
 }
 

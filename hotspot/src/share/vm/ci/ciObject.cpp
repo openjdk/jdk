@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,9 +181,8 @@ bool ciObject::should_be_constant() {
     if (klass() == env->String_klass() || klass() == env->Class_klass()) {
       return true;
     }
-  if (EnableInvokeDynamic &&
-      (klass()->is_subclass_of(env->MethodHandle_klass()) ||
-       klass()->is_subclass_of(env->CallSite_klass()))) {
+  if (klass()->is_subclass_of(env->MethodHandle_klass()) ||
+      klass()->is_subclass_of(env->CallSite_klass())) {
     assert(ScavengeRootsInCode >= 1, "must be");
     // We want to treat these aggressively.
     return true;
@@ -214,9 +213,9 @@ void ciObject::init_flags_from(oop x) {
 void ciObject::print(outputStream* st) {
   st->print("<%s", type_string());
   GUARDED_VM_ENTRY(print_impl(st);)
-  st->print(" ident=%d %s address=0x%x>", ident(),
+  st->print(" ident=%d %s address=" INTPTR_FORMAT ">", ident(),
         is_scavengable() ? "SCAVENGABLE" : "",
-        (address)this);
+        p2i((address)this));
 }
 
 // ------------------------------------------------------------------

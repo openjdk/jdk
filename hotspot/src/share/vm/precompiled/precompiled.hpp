@@ -193,6 +193,7 @@
 # include "runtime/mutexLocker.hpp"
 # include "runtime/objectMonitor.hpp"
 # include "runtime/orderAccess.hpp"
+# include "runtime/orderAccess.inline.hpp"
 # include "runtime/os.hpp"
 # include "runtime/osThread.hpp"
 # include "runtime/perfData.hpp"

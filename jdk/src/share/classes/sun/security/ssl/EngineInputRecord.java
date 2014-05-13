@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,14 +109,8 @@ final class EngineInputRecord extends InputRecord {
             ProtocolVersion recordVersion =
                 ProtocolVersion.valueOf(buf.get(pos + 1), buf.get(pos + 2));
 
-            // Check if too old (currently not possible)
-            // or if the major version does not match.
-            // The actual version negotiation is in the handshaker classes
-            if ((recordVersion.v < ProtocolVersion.MIN.v)
-                    || (recordVersion.major > ProtocolVersion.MAX.major)) {
-                throw new SSLException(
-                    "Unsupported record version " + recordVersion);
-            }
+            // check the record version
+            checkRecordVersion(recordVersion, false);
 
             /*
              * Reasonably sure this is a V3, disable further checks.
@@ -147,18 +141,8 @@ final class EngineInputRecord extends InputRecord {
                 ProtocolVersion recordVersion =
                     ProtocolVersion.valueOf(buf.get(pos + 3), buf.get(pos + 4));
 
-                // Check if too old (currently not possible)
-                // or if the major version does not match.
-                // The actual version negotiation is in the handshaker classes
-                if ((recordVersion.v < ProtocolVersion.MIN.v)
-                        || (recordVersion.major > ProtocolVersion.MAX.major)) {
-
-                    // if it's not SSLv2, we're out of here.
-                    if (recordVersion.v != ProtocolVersion.SSL20Hello.v) {
-                        throw new SSLException(
-                            "Unsupported record version " + recordVersion);
-                    }
-                }
+                // check the record version
+                checkRecordVersion(recordVersion, true);
 
                 /*
                  * Client or Server Hello
@@ -406,14 +390,9 @@ final class EngineInputRecord extends InputRecord {
 
         ProtocolVersion recordVersion = ProtocolVersion.valueOf(
                 srcBB.get(srcPos + 1), srcBB.get(srcPos + 2));
-        // Check if too old (currently not possible)
-        // or if the major version does not match.
-        // The actual version negotiation is in the handshaker classes
-        if ((recordVersion.v < ProtocolVersion.MIN.v)
-                || (recordVersion.major > ProtocolVersion.MAX.major)) {
-            throw new SSLException(
-                "Unsupported record version " + recordVersion);
-        }
+
+        // check the record version
+        checkRecordVersion(recordVersion, false);
 
         /*
          * It's really application data.  How much to consume?

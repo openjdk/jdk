@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,6 +318,7 @@ class Compile : public Phase {
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
+  bool                  _has_irreducible_loop;  // Found irreducible loops
   // JSR 292
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
@@ -457,7 +458,7 @@ class Compile : public Phase {
   void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
     stringStream ss;
     CompileTask::print_inlining(&ss, method, inline_level, bci, msg);
-    print_inlining_stream()->print(ss.as_string());
+    print_inlining_stream()->print("%s", ss.as_string());
   }
 
   void log_late_inline(CallGenerator* cg);
@@ -603,6 +604,8 @@ class Compile : public Phase {
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
   int _in_dump_cnt;  // Required for dumping ir nodes.
 #endif
+  bool              has_irreducible_loop() const { return _has_irreducible_loop; }
+  void          set_has_irreducible_loop(bool z) { _has_irreducible_loop = z; }
 
   // JSR 292
   bool              has_method_handle_invokes() const { return _has_method_handle_invokes;     }

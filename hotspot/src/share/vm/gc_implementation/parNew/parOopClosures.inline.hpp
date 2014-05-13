@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,12 +79,12 @@ inline void ParScanClosure::do_oop_work(T* p,
     if ((HeapWord*)obj < _boundary) {
 #ifndef PRODUCT
       if (_g->to()->is_in_reserved(obj)) {
-        tty->print_cr("Scanning field (" PTR_FORMAT ") twice?", p);
+        tty->print_cr("Scanning field (" PTR_FORMAT ") twice?", p2i(p));
         GenCollectedHeap* gch =  (GenCollectedHeap*)Universe::heap();
         Space* sp = gch->space_containing(p);
         oop obj = oop(sp->block_start(p));
         assert((HeapWord*)obj < (HeapWord*)p, "Error");
-        tty->print_cr("Object: " PTR_FORMAT, (void *)obj);
+        tty->print_cr("Object: " PTR_FORMAT, p2i((void *)obj));
         tty->print_cr("-------");
         obj->print();
         tty->print_cr("-----");
@@ -110,7 +110,7 @@ inline void ParScanClosure::do_oop_work(T* p,
         if (TraceScavenge) {
           gclog_or_tty->print_cr("{%s %s ( " PTR_FORMAT " ) " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
              "forwarded ",
-             new_obj->klass()->internal_name(), p, (void *)obj, (void *)new_obj, new_obj->size());
+             new_obj->klass()->internal_name(), p2i(p), p2i((void *)obj), p2i((void *)new_obj), new_obj->size());
         }
 #endif
 

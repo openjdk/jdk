@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "utilities/taskqueue.hpp"
 
 // Inline functions for G1CollectedHeap
@@ -46,7 +47,7 @@ G1CollectedHeap::heap_region_containing_raw(const T addr) const {
   assert(addr != NULL, "invariant");
   assert(_g1_reserved.contains((const void*) addr),
       err_msg("Address "PTR_FORMAT" is outside of the heap ranging from ["PTR_FORMAT" to "PTR_FORMAT")",
-          (void*)addr, _g1_reserved.start(), _g1_reserved.end()));
+          p2i((void*)addr), p2i(_g1_reserved.start()), p2i(_g1_reserved.end())));
   return _hrs.addr_to_region((HeapWord*) addr);
 }
 
@@ -58,6 +59,19 @@ G1CollectedHeap::heap_region_containing(const T addr) const {
     return hr->humongous_start_region();
   }
   return hr;
+}
+
+inline void G1CollectedHeap::reset_gc_time_stamp() {
+  _gc_time_stamp = 0;
+  OrderAccess::fence();
+  // Clear the cached CSet starting regions and time stamps.
+  // Their validity is dependent on the GC timestamp.
+  clear_cset_start_regions();
+}
+
+inline void G1CollectedHeap::increment_gc_time_stamp() {
+  ++_gc_time_stamp;
+  OrderAccess::fence();
 }
 
 inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {

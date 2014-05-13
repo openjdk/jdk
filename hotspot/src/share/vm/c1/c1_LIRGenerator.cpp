@@ -2636,8 +2636,10 @@ ciKlass* LIRGenerator::profile_type(ciMethodData* md, int md_base_offset, int md
       // LIR_Assembler::emit_profile_type() from emitting useless code
       profiled_k = ciTypeEntries::with_status(result, profiled_k);
     }
-    if (exact_signature_k != NULL && exact_klass != exact_signature_k) {
-      assert(exact_klass == NULL, "obj and signature disagree?");
+    // exact_klass and exact_signature_k can be both non NULL but
+    // different if exact_klass is loaded after the ciObject for
+    // exact_signature_k is created.
+    if (exact_klass == NULL && exact_signature_k != NULL && exact_klass != exact_signature_k) {
       // sometimes the type of the signature is better than the best type
       // the compiler has
       exact_klass = exact_signature_k;
@@ -2648,8 +2650,7 @@ ciKlass* LIRGenerator::profile_type(ciMethodData* md, int md_base_offset, int md
       if (improved_klass == NULL) {
         improved_klass = comp->cha_exact_type(callee_signature_k);
       }
-      if (improved_klass != NULL && exact_klass != improved_klass) {
-        assert(exact_klass == NULL, "obj and signature disagree?");
+      if (exact_klass == NULL && improved_klass != NULL && exact_klass != improved_klass) {
         exact_klass = exact_signature_k;
       }
     }

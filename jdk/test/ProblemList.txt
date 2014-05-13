@@ -249,6 +249,18 @@ tools/launcher/FXLauncherTest.java                              linux-all
 
 # jdk_jdi
 
+# 6983531
+com/sun/jdi/BadHandshakeTest.java                               linux-all, windows-all
+
+# 8004127
+com/sun/jdi/RedefineImplementor.sh                              generic-all
+
+# 8031555
+com/sun/jdi/JdbMethodExitTest.sh                                generic-all
+
+# 8041934
+com/sun/jdi/RepStep.java                                        generic-all
+
 ############################################################################
 
 # jdk_util
@@ -269,5 +281,11 @@ sun/tools/jcmd/TestJcmdSanity.java				windows-all
 
 # 8033104
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
+
+# 8041989
+sun/tools/jstatd/TestJstatdDefaults.java                        generic-all
+
+# 8037285
+sun/tools/jstatd/TestJstatdServer.java                          generic-all
 
 ############################################################################

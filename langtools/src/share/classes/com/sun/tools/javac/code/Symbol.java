@@ -694,10 +694,10 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         /**
-         * A total ordering between type symbols that refines the
+         * A partial ordering between type symbols that refines the
          * class inheritance graph.
          *
-         * Typevariables always precede other kinds of symbols.
+         * Type variables always precede other kinds of symbols.
          */
         public final boolean precedes(TypeSymbol that, Types types) {
             if (this == that)

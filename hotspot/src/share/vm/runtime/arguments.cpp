@@ -853,7 +853,7 @@ void Arguments::print_jvm_flags_on(outputStream* st) {
     for (int i=0; i < _num_jvm_flags; i++) {
       st->print("%s ", _jvm_flags_array[i]);
     }
-    st->print_cr("");
+    st->cr();
   }
 }
 
@@ -862,7 +862,7 @@ void Arguments::print_jvm_args_on(outputStream* st) {
     for (int i=0; i < _num_jvm_args; i++) {
       st->print("%s ", _jvm_args_array[i]);
     }
-    st->print_cr("");
+    st->cr();
   }
 }
 
@@ -1350,8 +1350,8 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   }
   if (PrintGCDetails && Verbose) {
     tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
-      MarkStackSize / K, MarkStackSizeMax / K);
-    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
+      (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+    tty->print_cr("ConcGCThreads: %u", (uint) ConcGCThreads);
   }
 }
 #endif // INCLUDE_ALL_GCS
@@ -1431,7 +1431,7 @@ bool Arguments::should_auto_select_low_pause_collector() {
     if (PrintGCDetails) {
       // Cannot use gclog_or_tty yet.
       tty->print_cr("Automatic selection of the low pause collector"
-       " based on pause goal of %d (ms)", MaxGCPauseMillis);
+       " based on pause goal of %d (ms)", (int) MaxGCPauseMillis);
     }
     return true;
   }
@@ -1648,8 +1648,8 @@ void Arguments::set_g1_gc_flags() {
 
   if (PrintGCDetails && Verbose) {
     tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
-      MarkStackSize / K, MarkStackSizeMax / K);
-    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
+      (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+    tty->print_cr("ConcGCThreads: %u", (uint) ConcGCThreads);
   }
 }
 
@@ -1733,7 +1733,7 @@ void Arguments::set_heap_size() {
 
     if (PrintGCDetails && Verbose) {
       // Cannot use gclog_or_tty yet.
-      tty->print_cr("  Maximum heap size " SIZE_FORMAT, reasonable_max);
+      tty->print_cr("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
     }
     FLAG_SET_ERGO(uintx, MaxHeapSize, (uintx)reasonable_max);
   }
@@ -2106,7 +2106,7 @@ bool Arguments::check_vm_args_consistency() {
     // Using "else if" below to avoid printing two error messages if min > max.
     // This will also prevent us from reporting both min>100 and max>100 at the
     // same time, but that is less annoying than printing two identical errors IMHO.
-    FormatBuffer<80> err_msg("");
+    FormatBuffer<80> err_msg("%s","");
     if (!verify_MinHeapFreeRatio(err_msg, MinHeapFreeRatio)) {
       jio_fprintf(defaultStream::error_stream(), "%s\n", err_msg.buffer());
       status = false;
@@ -2400,7 +2400,7 @@ bool Arguments::check_vm_args_consistency() {
   status &= verify_interval(CodeCacheSegmentSize, 1, 1024, "CodeCacheSegmentSize");
 
   // TieredCompilation needs at least 2 compiler threads.
-  const int num_min_compiler_threads = (TieredCompilation && (TieredStopAtLevel >= CompLevel_full_optimization)) ? 2 : 1;
+  const int num_min_compiler_threads = (TieredCompilation && (TieredStopAtLevel >= CompLevel_full_optimization)) ? 2 : CI_COMPILER_COUNT;
   status &=verify_min_value(CICompilerCount, num_min_compiler_threads, "CICompilerCount");
 
   if (!FLAG_IS_DEFAULT(CICompilerCount) && !FLAG_IS_DEFAULT(CICompilerCountPerCPU) && CICompilerCountPerCPU) {
@@ -3639,19 +3639,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 #endif // PRODUCT
 
-  // JSR 292 is not supported before 1.7
-  if (!JDK_Version::is_gte_jdk17x_version()) {
-    if (EnableInvokeDynamic) {
-      if (!FLAG_IS_DEFAULT(EnableInvokeDynamic)) {
-        warning("JSR 292 is not supported before 1.7.  Disabling support.");
-      }
-      EnableInvokeDynamic = false;
-    }
-  }
-
-  if (EnableInvokeDynamic && ScavengeRootsInCode == 0) {
+  if (ScavengeRootsInCode == 0) {
     if (!FLAG_IS_DEFAULT(ScavengeRootsInCode)) {
-      warning("forcing ScavengeRootsInCode non-zero because EnableInvokeDynamic is true");
+      warning("forcing ScavengeRootsInCode non-zero");
     }
     ScavengeRootsInCode = 1;
   }

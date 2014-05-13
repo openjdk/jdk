@@ -28,11 +28,14 @@
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/statSampler.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // Prefix of performance data file.
 const char               PERFDATA_NAME[] = "hsperfdata";

@@ -270,7 +270,7 @@ void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle kl
     }
   }
 
-  if (checkpolymorphism && EnableInvokeDynamic && result_oop != NULL) {
+  if (checkpolymorphism && result_oop != NULL) {
     vmIntrinsics::ID iid = result_oop->intrinsic_id();
     if (MethodHandles::is_signature_polymorphic(iid)) {
       // Do not link directly to these.  The VM must produce a synthetic one using lookup_polymorphic_method.
@@ -345,8 +345,7 @@ void LinkResolver::lookup_polymorphic_method(methodHandle& result,
                   vmIntrinsics::name_at(iid), klass->external_name(),
                   name->as_C_string(), full_signature->as_C_string());
   }
-  if (EnableInvokeDynamic &&
-      klass() == SystemDictionary::MethodHandle_klass() &&
+  if (klass() == SystemDictionary::MethodHandle_klass() &&
       iid != vmIntrinsics::_none) {
     if (MethodHandles::is_signature_polymorphic_intrinsic(iid)) {
       // Most of these do not need an up-call to Java to resolve, so can be done anywhere.
@@ -1543,7 +1542,6 @@ void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, consta
 
 
 void LinkResolver::resolve_invokehandle(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
-  assert(EnableInvokeDynamic, "");
   // This guy is reached from InterpreterRuntime::resolve_invokehandle.
   KlassHandle  resolved_klass;
   Symbol* method_name = NULL;
@@ -1575,8 +1573,6 @@ void LinkResolver::resolve_handle_call(CallInfo& result, KlassHandle resolved_kl
 
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
-  assert(EnableInvokeDynamic, "");
-
   //resolve_pool(<resolved_klass>, method_name, method_signature, current_klass, pool, index, CHECK);
   Symbol* method_name       = pool->name_ref_at(index);
   Symbol* method_signature  = pool->signature_ref_at(index);
@@ -1630,7 +1626,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
                                                      THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (TraceMethodHandles) {
-      tty->print_cr("invokedynamic throws BSME for "INTPTR_FORMAT, (void *)PENDING_EXCEPTION);
+      tty->print_cr("invokedynamic throws BSME for " INTPTR_FORMAT, p2i((void *)PENDING_EXCEPTION));
       PENDING_EXCEPTION->print();
     }
     if (PENDING_EXCEPTION->is_a(SystemDictionary::BootstrapMethodError_klass())) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,13 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/orderAccess.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "services/memTracker.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 typedef BinaryTreeDictionary<Metablock, FreeList<Metablock> > BlockTreeDictionary;
 typedef BinaryTreeDictionary<Metachunk, FreeList<Metachunk> > ChunkTreeDictionary;
@@ -1961,7 +1963,7 @@ void SpaceManager::locked_print_chunks_in_use_on(outputStream* st) const {
       st->print_cr(" free " SIZE_FORMAT,
                    chunk->free_word_size());
     } else {
-      st->print_cr("");
+      st->cr();
     }
   }
 
@@ -2245,7 +2247,7 @@ SpaceManager::~SpaceManager() {
     humongous_chunks = next_humongous_chunks;
   }
   if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print_cr("");
+    gclog_or_tty->cr();
     gclog_or_tty->print_cr("updated dictionary count %d %s",
                      chunk_manager()->humongous_dictionary()->total_count(),
                      chunk_size_name(HumongousIndex));

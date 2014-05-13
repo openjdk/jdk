@@ -32,7 +32,6 @@
 #include "oops/klassPS.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
-#include "runtime/orderAccess.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/macros.hpp"

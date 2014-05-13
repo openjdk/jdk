@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 void NativeInstruction::wrote(int offset) {
   ICache::invalidate_word(addr_at(offset));

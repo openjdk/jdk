@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,7 +339,7 @@ void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
     st->print(" FRegPressure: %d",_freg_pressure);
     st->print(" FHRP Index: %d",_fhrp_index);
   }
-  st->print_cr("");
+  st->cr();
 }
 
 void Block::dump() const {

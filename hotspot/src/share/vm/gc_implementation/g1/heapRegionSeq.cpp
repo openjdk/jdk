@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,7 @@ void HeapRegionSeq::verify_optional() {
     guarantee(hr != NULL, err_msg("invariant: i: %u", i));
     guarantee(hr->bottom() == prev_end,
               err_msg("invariant i: %u "HR_FORMAT" prev_end: "PTR_FORMAT,
-                      i, HR_FORMAT_PARAMS(hr), prev_end));
+                      i, HR_FORMAT_PARAMS(hr), p2i(prev_end)));
     guarantee(hr->hrs_index() == i,
               err_msg("invariant: i: %u hrs_index(): %u", i, hr->hrs_index()));
     if (i < length()) {

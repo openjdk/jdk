@@ -29,8 +29,10 @@ package com.sun.security.auth.module;
  * <p> This class implementation retrieves and makes available Solaris
  * UID/GID/groups information for the current user.
  *
+ * @deprecated replaced by {@link UnixSystem}.
  */
-@jdk.Exported
+@jdk.Exported(false)
+@Deprecated
 public class SolarisSystem {
 
     private native void getSolarisInfo();
