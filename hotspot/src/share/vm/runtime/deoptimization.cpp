@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,8 @@
 # include "adfiles/ad_ppc_64.hpp"
 #endif
 #endif // COMPILER2
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 bool DeoptimizationMarker::_is_active = false;
 

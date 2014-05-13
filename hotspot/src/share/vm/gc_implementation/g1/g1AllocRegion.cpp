@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
 void G1AllocRegion::fill_in_ext_msg(ar_ext_msg* msg, const char* message) {
   msg->append("[%s] %s c: %u b: %s r: "PTR_FORMAT" u: "SIZE_FORMAT,
               _name, message, _count, BOOL_TO_STR(_bot_updates),
-              _alloc_region, _used_bytes_before);
+              p2i(_alloc_region), _used_bytes_before);
 }
 
 void G1AllocRegion::init() {

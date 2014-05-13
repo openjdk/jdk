@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ void DCmdParser::print_help(outputStream* out, const char* cmd_name) {
     }
     arg = arg->next();
   }
-  out->print_cr("");
+  out->cr();
   if (_arguments_list != NULL) {
     out->print_cr("\nArguments:");
     arg = _arguments_list;
@@ -268,7 +268,7 @@ void DCmdParser::print_help(outputStream* out, const char* cmd_name) {
                  arg->is_mandatory() ? "" : "[optional]",
                  arg->description(), arg->type());
       if (arg->has_default()) {
-        out->print(arg->default_string());
+        out->print("%s", arg->default_string());
       } else {
         out->print("no default value");
       }
@@ -284,7 +284,7 @@ void DCmdParser::print_help(outputStream* out, const char* cmd_name) {
                  arg->is_mandatory() ? "" : "[optional]",
                  arg->description(), arg->type());
       if (arg->has_default()) {
-        out->print(arg->default_string());
+        out->print("%s", arg->default_string());
       } else {
         out->print("no default value");
       }

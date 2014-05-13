@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,5 +148,5 @@ void ciSignature::print() {
   print_signature();
  tty->print(" accessing_klass=");
   _accessing_klass->print();
-  tty->print(" address=0x%x>", (address)this);
+  tty->print(" address=" INTPTR_FORMAT ">", p2i((address)this));
 }

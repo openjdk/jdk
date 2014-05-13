@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -611,7 +611,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Pars
   set_map(entry_map);
   do_exits();
 
-  if (log)  log->done("parse nodes='%d' live='%d' memory='%d'",
+  if (log)  log->done("parse nodes='%d' live='%d' memory='" SIZE_FORMAT "'",
                       C->unique(), C->live_nodes(), C->node_arena()->used());
 }
 
@@ -1395,7 +1395,7 @@ void Parse::do_one_block() {
       tty->print((( i < ns) ? " %d" : " %d(e)"), b->successor_at(i)->rpo());
     }
     if (b->is_loop_head()) tty->print("  lphd");
-    tty->print_cr("");
+    tty->cr();
   }
 
   assert(block()->is_merged(), "must be merged before being parsed");

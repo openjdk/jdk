@@ -56,6 +56,7 @@
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 HeapWord*                  PSScavenge::_to_space_top_before_gc = NULL;
 int                        PSScavenge::_consecutive_skipped_scavenges = 0;
@@ -833,7 +834,7 @@ void PSScavenge::initialize() {
 
   if (AlwaysTenure || NeverTenure) {
     assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markOopDesc::max_age + 1,
-        err_msg("MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is ", MaxTenuringThreshold));
+        err_msg("MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is %d", (int) MaxTenuringThreshold));
     _tenuring_threshold = MaxTenuringThreshold;
   } else {
     // We want to smooth out our startup times for the AdaptiveSizePolicy

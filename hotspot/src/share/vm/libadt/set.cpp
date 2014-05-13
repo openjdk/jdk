@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ char *Set::setstr() const
 void Set::print() const
 {
   char *printable_set = setstr();
-  tty->print_cr(printable_set);
+  tty->print_cr("%s", printable_set);
   FreeHeap(printable_set);
 }
 

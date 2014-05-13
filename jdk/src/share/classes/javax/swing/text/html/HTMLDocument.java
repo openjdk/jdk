@@ -339,6 +339,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * <p>This is a convenience method for
      * <code>getReader(int, int, int, HTML.Tag, TRUE)</code>.
      *
+     * @param pos the starting position
      * @param popDepth   the number of <code>ElementSpec.EndTagTypes</code>
      *          to generate before inserting
      * @param pushDepth  the number of <code>ElementSpec.StartTagTypes</code>
@@ -1022,6 +1023,9 @@ public class HTMLDocument extends DefaultStyledDocument {
      * @throws IllegalArgumentException if <code>elem</code> is a leaf
      * @throws IllegalStateException if an <code>HTMLEditorKit.Parser</code>
      *         has not been defined
+     * @throws BadLocationException if replacement is impossible because of
+     *         a structural issue
+     * @throws IOException if an I/O exception occurs
      * @since 1.3
      */
     public void setInnerHTML(Element elem, String htmlText) throws
@@ -1099,6 +1103,9 @@ public class HTMLDocument extends DefaultStyledDocument {
      * @param htmlText the string to be parsed and inserted in place of <code>elem</code>
      * @throws IllegalStateException if an HTMLEditorKit.Parser has not
      *         been set
+     * @throws BadLocationException if replacement is impossible because of
+     *         a structural issue
+     * @throws IOException if an I/O exception occurs
      * @since 1.3
      */
     public void setOuterHTML(Element elem, String htmlText) throws
@@ -1177,6 +1184,9 @@ public class HTMLDocument extends DefaultStyledDocument {
      * @throws IllegalArgumentException if <code>elem</code> is a leaf
      * @throws IllegalStateException if an HTMLEditorKit.Parser has not
      *         been set on the document
+     * @throws BadLocationException if insertion is impossible because of
+     *         a structural issue
+     * @throws IOException if an I/O exception occurs
      * @since 1.3
      */
     public void insertAfterStart(Element elem, String htmlText) throws
@@ -1247,6 +1257,9 @@ public class HTMLDocument extends DefaultStyledDocument {
      * @throws IllegalArgumentException if <code>elem</code> is a leaf
      * @throws IllegalStateException if an HTMLEditorKit.Parser has not
      *         been set on the document
+     * @throws BadLocationException if insertion is impossible because of
+     *         a structural issue
+     * @throws IOException if an I/O exception occurs
      * @since 1.3
      */
     public void insertBeforeEnd(Element elem, String htmlText) throws
@@ -1310,6 +1323,9 @@ public class HTMLDocument extends DefaultStyledDocument {
      * @param htmlText the string to be parsed and inserted before <code>elem</code>
      * @throws IllegalStateException if an HTMLEditorKit.Parser has not
      *         been set on the document
+     * @throws BadLocationException if insertion is impossible because of
+     *         a structural issue
+     * @throws IOException if an I/O exception occurs
      * @since 1.3
      */
     public void insertBeforeStart(Element elem, String htmlText) throws
@@ -1368,6 +1384,9 @@ public class HTMLDocument extends DefaultStyledDocument {
      * @param htmlText the string to be parsed and inserted after <code>elem</code>
      * @throws IllegalStateException if an HTMLEditorKit.Parser has not
      *         been set on the document
+     * @throws BadLocationException if insertion is impossible because of
+     *         a structural issue
+     * @throws IOException if an I/O exception occurs
      * @since 1.3
      */
     public void insertAfterEnd(Element elem, String htmlText) throws
@@ -1890,6 +1909,7 @@ public class HTMLDocument extends DefaultStyledDocument {
 
         /**
          * Type of tag this iterator represents.
+         * @return the tag
          */
         public abstract HTML.Tag getTag();
     }
@@ -2171,10 +2191,24 @@ public class HTMLDocument extends DefaultStyledDocument {
      */
     public class HTMLReader extends HTMLEditorKit.ParserCallback {
 
+        /**
+         * Constructs an HTMLReader using default pop and push depth and no tag to insert.
+         *
+         * @param offset the starting offset
+         */
         public HTMLReader(int offset) {
             this(offset, 0, 0, null);
         }
 
+        /**
+         * Constructs an HTMLReader.
+         *
+         * @param offset the starting offset
+         * @param popDepth how many parents to ascend before insert new element
+         * @param pushDepth how many parents to descend (relative to popDepth) before
+         *                  inserting
+         * @param insertTag a tag to insert (may be null)
+         */
         public HTMLReader(int offset, int popDepth, int pushDepth,
                           HTML.Tag insertTag) {
             this(offset, popDepth, pushDepth, insertTag, true, false, true);
@@ -2742,6 +2776,9 @@ public class HTMLDocument extends DefaultStyledDocument {
          * all of the well-known tags will have been registered.
          * This can be used to change the handling of a particular
          * tag or to add support for custom tags.
+         *
+         * @param t an HTML tag
+         * @param a tag action handler
          */
         protected void registerTag(HTML.Tag t, TagAction a) {
             tagMap.put(t, a);
@@ -2762,6 +2799,9 @@ public class HTMLDocument extends DefaultStyledDocument {
              * tag for those actions that are shared across
              * many tags.  By default this does nothing and
              * completely ignores the tag.
+             *
+             * @param t the HTML tag
+             * @param a the attributes
              */
             public void start(HTML.Tag t, MutableAttributeSet a) {
             }
@@ -2773,12 +2813,17 @@ public class HTMLDocument extends DefaultStyledDocument {
              * tag for those actions that are shared across
              * many tags.  By default this does nothing and
              * completely ignores the tag.
+             *
+             * @param t the HTML tag
              */
             public void end(HTML.Tag t) {
             }
 
         }
 
+        /**
+         * Action assigned by default to handle the Block task of the reader.
+         */
         public class BlockAction extends TagAction {
 
             public void start(HTML.Tag t, MutableAttributeSet attr) {
@@ -2816,6 +2861,9 @@ public class HTMLDocument extends DefaultStyledDocument {
         }
 
 
+        /**
+         * Action assigned by default to handle the Paragraph task of the reader.
+         */
         public class ParagraphAction extends BlockAction {
 
             public void start(HTML.Tag t, MutableAttributeSet a) {
@@ -2829,6 +2877,9 @@ public class HTMLDocument extends DefaultStyledDocument {
             }
         }
 
+        /**
+         * Action assigned by default to handle the Special task of the reader.
+         */
         public class SpecialAction extends TagAction {
 
             public void start(HTML.Tag t, MutableAttributeSet a) {
@@ -2848,6 +2899,9 @@ public class HTMLDocument extends DefaultStyledDocument {
         }
 
 
+        /**
+         * Action assigned by default to handle the Hidden task of the reader.
+         */
         public class HiddenAction extends TagAction {
 
             public void start(HTML.Tag t, MutableAttributeSet a) {
@@ -3093,6 +3147,9 @@ public class HTMLDocument extends DefaultStyledDocument {
             }
         }
 
+        /**
+         * Action assigned by default to handle the Character task of the reader.
+         */
         public class CharacterAction extends TagAction {
 
             public void start(HTML.Tag t, MutableAttributeSet attr) {
@@ -3515,6 +3572,8 @@ public class HTMLDocument extends DefaultStyledDocument {
          * context.  Therefore all text that is seen belongs
          * to the text area and is hence added to the
          * TextAreaDocument associated with the text area.
+         *
+         * @param data the given content
          */
         protected void textAreaContent(char[] data) {
             try {
@@ -3529,6 +3588,8 @@ public class HTMLDocument extends DefaultStyledDocument {
          * PRE element.  This synthesizes lines to hold the
          * runs of text, and makes calls to addContent to
          * actually add the text.
+         *
+         * @param data the given content
          */
         protected void preContent(char[] data) {
             int last = 0;
@@ -3550,6 +3611,9 @@ public class HTMLDocument extends DefaultStyledDocument {
         /**
          * Adds an instruction to the parse buffer to create a
          * block element with the given attributes.
+         *
+         * @param t an HTML tag
+         * @param attr the attribute set
          */
         protected void blockOpen(HTML.Tag t, MutableAttributeSet attr) {
             if (impliedP) {
@@ -3574,6 +3638,8 @@ public class HTMLDocument extends DefaultStyledDocument {
         /**
          * Adds an instruction to the parse buffer to close out
          * a block element of the given type.
+         *
+         * @param t the HTML tag
          */
         protected void blockClose(HTML.Tag t) {
             inBlock--;
@@ -3672,6 +3738,9 @@ public class HTMLDocument extends DefaultStyledDocument {
         /**
          * Adds content that is basically specified entirely
          * in the attribute set.
+         *
+         * @param t an HTML tag
+         * @param a the attribute set
          */
         protected void addSpecialElement(HTML.Tag t, MutableAttributeSet a) {
             if ((t != HTML.Tag.FRAME) && (! inParagraph) && (! inPre)) {
@@ -4049,7 +4118,13 @@ public class HTMLDocument extends DefaultStyledDocument {
          */
         Option option;
 
+        /**
+         * Buffer to keep building elements.
+         */
         protected Vector<ElementSpec> parseBuffer = new Vector<ElementSpec>();
+        /**
+         * Current character attribute set.
+         */
         protected MutableAttributeSet charAttr = new TaggedAttributeSet();
         Stack<AttributeSet> charAttrStack = new Stack<AttributeSet>();
         Hashtable<HTML.Tag, TagAction> tagMap;

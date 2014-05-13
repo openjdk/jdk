@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
   // native memory tracking has to be on
   if (!MemTracker::is_on() || MemTracker::shutdown_in_progress()) {
     // if it is not on, what's the reason?
-    output()->print_cr(MemTracker::reason());
+    output()->print_cr("%s", MemTracker::reason());
     return;
   }
 

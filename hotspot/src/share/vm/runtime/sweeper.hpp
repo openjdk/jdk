@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ class NMethodSweeper : public AllStatic {
   static const Tickspan total_time_sweeping()      { return _total_time_sweeping; }
   static const Tickspan peak_sweep_time()          { return _peak_sweep_time; }
   static const Tickspan peak_sweep_fraction_time() { return _peak_sweep_fraction_time; }
-  static void log_sweep(const char* msg, const char* format = NULL, ...);
+  static void log_sweep(const char* msg, const char* format = NULL, ...) ATTRIBUTE_PRINTF(2, 3);
 
 
 #ifdef ASSERT

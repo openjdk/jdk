@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7069824
+ * @bug 7069824 8042360
  * @summary Verify implementation for Locale matching.
  * @run main Bug7069824
  */
@@ -90,6 +90,17 @@ public class Bug7069824 {
         LanguageRange lr;
         String range;
         double weight;
+
+        // Testcase for 8042360
+        range = "en-Latn-1234567890";
+        try {
+            lr = new LanguageRange(range);
+            error = true;
+            System.err.println("    IAE should be thrown for LanguageRange("
+                + range + ").");
+        }
+        catch (IllegalArgumentException ex) {
+        }
 
         range = null;
         try {

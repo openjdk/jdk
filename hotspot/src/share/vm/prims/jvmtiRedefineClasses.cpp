@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "runtime/relocator.hpp"
 #include "utilities/bitMap.inline.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 Array<Method*>* VM_RedefineClasses::_old_methods = NULL;
 Array<Method*>* VM_RedefineClasses::_new_methods = NULL;
@@ -1904,6 +1905,8 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
 // annotations_typeArray if needed. Returns the original constant
 // pool reference if a rewrite was not needed or the new constant
 // pool reference if a rewrite was needed.
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
 u2 VM_RedefineClasses::rewrite_cp_ref_in_annotation_data(
      AnnotationArray* annotations_typeArray, int &byte_i_ref,
      const char * trace_mesg, TRAPS) {
@@ -1920,6 +1923,7 @@ u2 VM_RedefineClasses::rewrite_cp_ref_in_annotation_data(
   byte_i_ref += 2;
   return old_cp_index;
 }
+PRAGMA_DIAG_POP
 
 
 // Rewrite constant pool references in the element_value portion of an

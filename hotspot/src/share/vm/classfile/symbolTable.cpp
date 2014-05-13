@@ -39,6 +39,8 @@
 #include "gc_implementation/g1/g1StringDedup.hpp"
 #endif
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 // --------------------------------------------------------------------------
 
 // the number of buckets a thread claims

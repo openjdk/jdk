@@ -53,6 +53,8 @@
 #include "compiler/compileBroker.hpp"
 #include "runtime/compilationPolicy.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 #define SIZE_T_MAX_VALUE ((size_t) -1)
 
 bool WhiteBox::_used = false;

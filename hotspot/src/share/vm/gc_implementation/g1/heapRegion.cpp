@@ -35,6 +35,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 int    HeapRegion::LogOfHRGrainBytes = 0;
 int    HeapRegion::LogOfHRGrainWords = 0;
 size_t HeapRegion::GrainBytes        = 0;
@@ -827,7 +829,7 @@ public:
                         Mutex::_no_safepoint_check_flag);
 
         if (!_failures) {
-          gclog_or_tty->print_cr("");
+          gclog_or_tty->cr();
           gclog_or_tty->print_cr("----------");
         }
         if (!_g1h->is_in_closed_subset(obj)) {
@@ -882,7 +884,7 @@ public:
                             Mutex::_no_safepoint_check_flag);
 
             if (!_failures) {
-              gclog_or_tty->print_cr("");
+              gclog_or_tty->cr();
               gclog_or_tty->print_cr("----------");
             }
             gclog_or_tty->print_cr("Missing rem set entry:");
