@@ -34,7 +34,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -44,11 +43,12 @@ import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.Optimistic;
 import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.FindProperty;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
  * Class for managing metadata during a compilation, e.g. which phases
@@ -104,10 +104,10 @@ public final class CompilationEnvironment {
             CompilationPhase.CONSTANT_FOLDING_PHASE,
             CompilationPhase.LOWERING_PHASE,
             CompilationPhase.SPLITTING_PHASE,
-            CompilationPhase.ATTRIBUTION_PHASE,
-            CompilationPhase.RANGE_ANALYSIS_PHASE,
-            CompilationPhase.TYPE_FINALIZATION_PHASE,
+            CompilationPhase.SYMBOL_ASSIGNMENT_PHASE,
             CompilationPhase.SCOPE_DEPTH_COMPUTATION_PHASE,
+            CompilationPhase.OPTIMISTIC_TYPE_ASSIGNMENT_PHASE,
+            CompilationPhase.LOCAL_VARIABLE_TYPE_CALCULATION_PHASE,
             CompilationPhase.BYTECODE_GENERATION_PHASE
         };
 
@@ -402,6 +402,18 @@ public final class CompilationEnvironment {
         return mostOptimisticType;
     }
 
+    /**
+     * Tells the compilation environment that a symbol of a particular name is a local variables in a function. Used
+     * with on-demand compilation, this will hide symbols of the same name from a parent scope and prevent them from
+     * being mistakenly found by the optimistic types heuristics.
+     * @param symbolName the name of the symbols to declare.
+     */
+    void declareLocalSymbol(final String symbolName) {
+        assert useOptimisticTypes() && isOnDemandCompilation() && runtimeScope != null;
+        if(runtimeScope.findProperty(symbolName, false) == null) {
+            runtimeScope.set(symbolName, ScriptRuntime.UNDEFINED, true);
+        }
+    }
 
     private Type getEvaluatedType(final Optimistic expr) {
         if(expr instanceof IdentNode) {
@@ -412,7 +424,7 @@ public final class CompilationEnvironment {
             if(!(base instanceof ScriptObject)) {
                 return null;
             }
-            return getPropertyType((ScriptObject)base, accessNode.getProperty().getName());
+            return getPropertyType((ScriptObject)base, accessNode.getProperty());
         } else if(expr instanceof IndexNode) {
             final IndexNode indexNode = (IndexNode)expr;
             final Object base = evaluateSafely(indexNode.getBase());
@@ -453,8 +465,12 @@ public final class CompilationEnvironment {
         }
 
         // Safely evaluate the property, and return the narrowest type for the actual value (e.g. Type.INT for a boxed
-        // integer).
-        return Type.typeFor(JSType.unboxedFieldType(property.getObjectValue(owner, owner)));
+        // integer). Continue not making guesses for undefined.
+        final Object value = property.getObjectValue(owner, owner);
+        if(value == ScriptRuntime.UNDEFINED) {
+            return null;
+        }
+        return Type.typeFor(JSType.unboxedFieldType(value));
     }
 
     private Object evaluateSafely(final Expression expr) {
@@ -466,7 +482,7 @@ public final class CompilationEnvironment {
             if(!(base instanceof ScriptObject)) {
                 return null;
             }
-            return evaluatePropertySafely((ScriptObject)base, accessNode.getProperty().getName());
+            return evaluatePropertySafely((ScriptObject)base, accessNode.getProperty());
         }
         return null;
     }

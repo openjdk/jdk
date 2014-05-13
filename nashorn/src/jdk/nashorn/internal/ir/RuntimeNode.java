@@ -25,16 +25,17 @@
 
 package jdk.nashorn.internal.ir;
 
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
+import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
-import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 /**
  * IR representation for a runtime call.
@@ -169,9 +170,14 @@ public class RuntimeNode extends Expression implements Optimistic {
          * @param node the node
          * @return request type
          */
-        public static Request requestFor(final Node node) {
-            assert node.isComparison();
+        public static Request requestFor(final Expression node) {
             switch (node.tokenType()) {
+            case TYPEOF:
+                return Request.TYPEOF;
+            case IN:
+                return Request.IN;
+            case INSTANCEOF:
+                return Request.INSTANCEOF;
             case EQ_STRICT:
                 return Request.EQ_STRICT;
             case NE_STRICT:
@@ -409,13 +415,12 @@ public class RuntimeNode extends Expression implements Optimistic {
     }
 
     /**
-     * Constructor
+     * Constructor used to replace a binary node with a runtime request.
      *
      * @param parent  parent node from which to inherit source, token, finish and arguments
-     * @param request the request
      */
-    public RuntimeNode(final BinaryNode parent, final Request request) {
-        this(parent, request, parent.lhs(), parent.rhs());
+    public RuntimeNode(final BinaryNode parent) {
+        this(parent, Request.requestFor(parent), parent.lhs(), parent.rhs());
     }
 
     /**
@@ -455,7 +460,7 @@ public class RuntimeNode extends Expression implements Optimistic {
      * Return type for the ReferenceNode
      */
     @Override
-    public Type getType() {
+    public Type getType(Function<Symbol, Type> localVariableTypes) {
         return request.getReturnType();
     }
 
@@ -568,17 +573,7 @@ public class RuntimeNode extends Expression implements Optimistic {
     }
 
     @Override
-    public boolean isOptimistic() {
-        return false;
-    }
-
-    @Override
-    public RuntimeNode setIsOptimistic(final boolean isOptimistic) {
-        return this;
-    }
-
-    @Override
-    public RuntimeNode setType(final TemporarySymbols ts, final Type type) {
+    public RuntimeNode setType(final Type type) {
         return this;
     }
 }

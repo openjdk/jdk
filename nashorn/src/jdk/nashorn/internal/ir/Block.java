@@ -25,8 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
-
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +34,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import jdk.nashorn.internal.codegen.Label;
-import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -60,15 +57,13 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     /** Does the block/function need a new scope? */
     protected final int flags;
 
+    /**
+     * @see JoinPredecessor
+     */
+    private final LocalVariableConversion conversion;
+
     /** Flag indicating that this block needs scope */
     public static final int NEEDS_SCOPE = 1 << 0;
-
-    /**
-     * Flag indicating whether this block uses the self symbol for the function. This is used only for blocks that are
-     * bodies of function nodes who refer to themselves by name. It causes Attr to insert a var [fn_name] = __callee__
-     * at the start of the body
-     */
-    public static final int USES_SELF_SYMBOL = 1 << 1;
 
     /**
      * Is this block tagged as terminal based on its contents
@@ -98,6 +93,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         this.breakLabel = new Label("block_break");
         final int len = statements.length;
         this.flags = len > 0 && statements[len - 1].hasTerminalFlags() ? IS_TERMINAL : 0;
+        this.conversion = null;
     }
 
     /**
@@ -111,7 +107,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         this(token, finish, statements.toArray(new Statement[statements.size()]));
     }
 
-    private Block(final Block block, final int finish, final List<Statement> statements, final int flags, final Map<String, Symbol> symbols) {
+    private Block(final Block block, final int finish, final List<Statement> statements, final int flags, final Map<String, Symbol> symbols, LocalVariableConversion conversion) {
         super(block);
         this.statements = statements;
         this.flags      = flags;
@@ -119,6 +115,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         this.entryLabel = new Label(block.entryLabel);
         this.breakLabel = new Label(block.breakLabel);
         this.finish     = finish;
+        this.conversion = conversion;
     }
 
     /**
@@ -131,8 +128,8 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     }
 
     /**
-     * Clear the symbols in a block
-     * TODO: make this immutable
+     * Clear the symbols in the block.
+     * TODO: make this immutable.
      */
     public void clearSymbols() {
         symbols.clear();
@@ -140,7 +137,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
 
     @Override
     public Node ensureUniqueLabels(final LexicalContext lc) {
-        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags, symbols));
+        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags, symbols, conversion));
     }
 
     /**
@@ -159,7 +156,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     }
 
     /**
-     * Get an iterator for all the symbols defined in this block
+     * Get a copy of the list for all the symbols defined in this block
      * @return symbol iterator
      */
     public List<Symbol> getSymbols() {
@@ -229,19 +226,6 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         return isTerminal ? setFlag(lc, IS_TERMINAL) : clearFlag(lc, IS_TERMINAL);
     }
 
-    /**
-     * Set the type of the return symbol in this block if present.
-     * @param returnType the new type
-     * @return this block
-     */
-    public Block setReturnType(final Type returnType) {
-        final Symbol symbol = getExistingSymbol(RETURN.symbolName());
-        if (symbol != null) {
-            symbol.setTypeOverride(returnType);
-        }
-        return this;
-    }
-
     @Override
     public int getFlags() {
         return flags;
@@ -265,6 +249,19 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         return breakLabel;
     }
 
+    @Override
+    public Block setLocalVariableConversion(final LexicalContext lc, final LocalVariableConversion conversion) {
+        if(this.conversion == conversion) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags, symbols, conversion));
+    }
+
+    @Override
+    public LocalVariableConversion getLocalVariableConversion() {
+        return conversion;
+    }
+
     /**
      * Get the list of statements in this block
      *
@@ -272,6 +269,17 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
      */
     public List<Statement> getStatements() {
         return Collections.unmodifiableList(statements);
+    }
+
+    /**
+     * Returns the line number of the first statement in the block.
+     * @return the line number of the first statement in the block, or -1 if the block has no statements.
+     */
+    public int getFirstStatementLineNumber() {
+        if(statements == null || statements.isEmpty()) {
+            return -1;
+        }
+        return statements.get(0).getLineNumber();
     }
 
     /**
@@ -289,7 +297,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         if (!statements.isEmpty()) {
             lastFinish = statements.get(statements.size() - 1).getFinish();
         }
-        return Node.replaceInLexicalContext(lc, this, new Block(this, Math.max(finish, lastFinish), statements, flags, symbols));
+        return Node.replaceInLexicalContext(lc, this, new Block(this, Math.max(finish, lastFinish), statements, flags, symbols, conversion));
     }
 
     /**
@@ -316,7 +324,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         if (this.flags == flags) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags, symbols));
+        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags, symbols, conversion));
     }
 
     @Override
@@ -344,7 +352,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
             return this;
         }
 
-        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags | NEEDS_SCOPE, symbols));
+        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags | NEEDS_SCOPE, symbols, conversion));
     }
 
     /**

@@ -43,11 +43,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.IFNULL;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ACMPNE;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPEQ;
-import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPNE;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPGE;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPGT;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPLE;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPLT;
+import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPNE;
 import static jdk.internal.org.objectweb.asm.Opcodes.INSTANCEOF;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
@@ -74,11 +74,11 @@ import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALL
 
 import java.io.PrintStream;
 import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.IdentityHashMap;
 import java.util.List;
-
+import java.util.Map;
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -89,12 +89,16 @@ import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.BitwiseType;
 import jdk.nashorn.internal.codegen.types.NumericType;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.BreakableNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
+import jdk.nashorn.internal.ir.JoinPredecessor;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
+import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ArgumentSetter;
 import jdk.nashorn.internal.runtime.Context;
@@ -102,6 +106,7 @@ import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.RewriteException;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -123,22 +128,27 @@ public class MethodEmitter implements Emitter {
     /** The ASM MethodVisitor we are plugged into */
     private final MethodVisitor method;
 
-    /** Current type stack for current evaluation */
-    private Label.Stack stack;
-
     /** Parent classEmitter representing the class of this method */
     private final ClassEmitter classEmitter;
 
     /** FunctionNode representing this method, or null if none exists */
     protected FunctionNode functionNode;
 
+    /** Current type stack for current evaluation */
+    private Label.Stack stack;
+
     /** Check whether this emitter ever has a function return point */
     private boolean hasReturn;
 
+    private boolean preventUndefinedLoad;
+
+    /**
+     * Map of live local variable definitions.
+     */
+    private final Map<Symbol, LocalVariableDef> localVariableDefs = new IdentityHashMap<>();
+
     /** The context */
     private final Context context;
-
-    private final List<Type> localVariableTypes = new ArrayList<>();
 
     /** Threshold in chars for when string constants should be split */
     static final int LARGE_STRING_THRESHOLD = 32 * 1024;
@@ -225,9 +235,12 @@ public class MethodEmitter implements Emitter {
         classEmitter.endMethod(this);
     }
 
-    void createNewStack() {
-        assert stack == null;
-        newStack();
+    boolean isReachable() {
+        return stack != null;
+    }
+
+    private void doesNotContinueSequentially() {
+        stack = null;
     }
 
     private void newStack() {
@@ -273,26 +286,40 @@ public class MethodEmitter implements Emitter {
     }
 
     /**
-     * Pop a type from the existing stack, ensuring that it is numeric,
-     * assert if not
+     * Pop a type from the existing stack, ensuring that it is numeric. Boolean type is popped as int type.
      *
      * @return the type
      */
     private NumericType popNumeric() {
         final Type type = popType();
-        assert type.isNumeric() : type + " is not numeric";
+        if(type.isBoolean()) {
+            // Booleans are treated as int for purposes of arithmetic operations
+            return Type.INT;
+        }
+        assert type.isNumeric();
         return (NumericType)type;
     }
 
     /**
      * Pop a type from the existing stack, ensuring that it is an integer type
-     * (integer or long), assert if not
+     * (integer or long). Boolean type is popped as int type.
      *
      * @return the type
      */
+    private BitwiseType popBitwise() {
+        final Type type = popType();
+        if(type == Type.BOOLEAN) {
+            return Type.INT;
+        }
+        return (BitwiseType)type;
+    }
+
     private BitwiseType popInteger() {
         final Type type = popType();
-        assert type.isInteger() || type.isLong() : type + " is not an integer or long";
+        if(type == Type.BOOLEAN) {
+            return Type.INT;
+        }
+        assert type == Type.INT;
         return (BitwiseType)type;
     }
 
@@ -534,24 +561,14 @@ public class MethodEmitter implements Emitter {
     }
 
     /**
-     * Add a local variable. This is a nop if the symbol has no slot
-     *
-     * @param symbol symbol for the local variable
-     * @param start  start of scope
-     * @param end    end of scope
+     * Initializes a bytecode method parameter
+     * @param symbol the symbol for the parameter
+     * @param type the type of the parameter
+     * @param start the label for the start of the method
      */
-    void localVariable(final Symbol symbol, final Label start, final Label end) {
-        if (!symbol.hasSlot()) {
-            return;
-        }
-
-        String name = symbol.getName();
-
-        if (name.equals(THIS.symbolName())) {
-            name = THIS_DEBUGGER.symbolName();
-        }
-
-        method.visitLocalVariable(name, symbol.getSymbolType().getDescriptor(), null, start.getLabel(), end.getLabel(), symbol.getSlot());
+    void initializeMethodParameter(final Symbol symbol, final Type type, final Label start) {
+        assert symbol.isBytecodeLocal();
+        localVariableDefs.put(symbol, new LocalVariableDef(start.getLabel(), type));
     }
 
     /**
@@ -619,8 +636,8 @@ public class MethodEmitter implements Emitter {
      */
     MethodEmitter shr() {
         debug("shr");
-        popType(Type.INT);
-        pushType(popInteger().shr(method));
+        popInteger();
+        pushType(popBitwise().shr(method));
         return this;
     }
 
@@ -632,21 +649,21 @@ public class MethodEmitter implements Emitter {
      */
     MethodEmitter shl() {
         debug("shl");
-        popType(Type.INT);
-        pushType(popInteger().shl(method));
+        popInteger();
+        pushType(popBitwise().shl(method));
         return this;
     }
 
     /**
-     * Pops two integer types from the stack, performs a bitwise arithetic shift right and pushes
+     * Pops two integer types from the stack, performs a bitwise arithmetic shift right and pushes
      * the result. The shift count, the first element, must be INT.
      *
      * @return the method emitter
      */
     MethodEmitter sar() {
         debug("sar");
-        popType(Type.INT);
-        pushType(popInteger().sar(method));
+        popInteger();
+        pushType(popBitwise().sar(method));
         return this;
     }
 
@@ -668,9 +685,12 @@ public class MethodEmitter implements Emitter {
      * @param recovery label pointing to start of catch block
      */
     void _catch(final Label recovery) {
+        // While in JVM a catch block can be reached through normal control flow, our code generator never does this,
+        // so we might as well presume there's no stack on entry.
+        assert stack == null;
+        recovery.onCatch();
         label(recovery);
-        stack.clear();
-        pushType(Type.typeFor(Throwable.class));
+        beginCatchBlock();
     }
 
     /**
@@ -680,13 +700,21 @@ public class MethodEmitter implements Emitter {
      * @param recoveries labels pointing to start of catch block
      */
     void _catch(final Collection<Label> recoveries) {
+        assert stack == null;
         for(final Label l: recoveries) {
             label(l);
         }
-        stack.clear();
-        pushType(Type.OBJECT);
+        beginCatchBlock();
     }
 
+    private void beginCatchBlock() {
+        // It can happen that the catch label wasn't marked as reachable. They are marked as reachable if there's an
+        // assignment in the try block, but it's possible that there was none.
+        if(!isReachable()) {
+            newStack();
+        }
+        pushType(Type.typeFor(Throwable.class));
+    }
     /**
      * Start a try/catch block.
      *
@@ -694,8 +722,12 @@ public class MethodEmitter implements Emitter {
      * @param exit           end label for try
      * @param recovery       start label for catch
      * @param typeDescriptor type descriptor for exception
+     * @param isOptimismHandler true if this is a hander for {@code UnwarrantedOptimismException}. Normally joining on a
+     * catch handler kills temporary variables, but optimism handlers are an exception, as they need to capture
+     * temporaries as well, so they must remain live.
      */
-    void _try(final Label entry, final Label exit, final Label recovery, final String typeDescriptor) {
+    private void _try(final Label entry, final Label exit, final Label recovery, final String typeDescriptor, final boolean isOptimismHandler) {
+        recovery.joinFromTry(entry.getStack(), isOptimismHandler);
         method.visitTryCatchBlock(entry.getLabel(), exit.getLabel(), recovery.getLabel(), typeDescriptor);
     }
 
@@ -708,7 +740,7 @@ public class MethodEmitter implements Emitter {
      * @param clazz    exception class
      */
     void _try(final Label entry, final Label exit, final Label recovery, final Class<?> clazz) {
-        method.visitTryCatchBlock(entry.getLabel(), exit.getLabel(), recovery.getLabel(), CompilerConstants.className(clazz));
+        _try(entry, exit, recovery, CompilerConstants.className(clazz), clazz == UnwarrantedOptimismException.class);
     }
 
     /**
@@ -719,9 +751,12 @@ public class MethodEmitter implements Emitter {
      * @param recovery start label for catch
      */
     void _try(final Label entry, final Label exit, final Label recovery) {
-        _try(entry, exit, recovery, (String)null);
+        _try(entry, exit, recovery, (String)null, false);
     }
 
+    void markLabelAsOptimisticCatchHandler(final Label label, final int liveLocalCount) {
+        label.markAsOptimisticCatchHandler(stack, liveLocalCount);
+    }
 
     /**
      * Load the constants array
@@ -894,23 +929,36 @@ public class MethodEmitter implements Emitter {
     }
 
     /**
-     * Push a local variable to the stack. If the symbol representing
-     * the local variable doesn't have a slot, this is a NOP
+     * Pushes the value of an identifier to the stack. If the identifier does not represent a local variable or a
+     * parameter, this will be a no-op.
      *
-     * @param symbol the symbol representing the local variable.
+     * @param ident the identifier for the variable being loaded.
      *
      * @return the method emitter
      */
-    MethodEmitter load(final Symbol symbol) {
+    MethodEmitter load(final IdentNode ident) {
+        return load(ident.getSymbol(), ident.getType());
+    }
+
+    /**
+     * Pushes the value of the symbol to the stack with the specified type. No type conversion is being performed, and
+     * the type is only being used if the symbol addresses a local variable slot. The value of the symbol is loaded if
+     * it addresses a local variable slot, or it is a parameter (in which case it can also be loaded from a vararg array
+     * or the arguments object). If it is neither, the operation is a no-op.
+     *
+     * @param symbol the symbol addressing the value being loaded
+     * @param type the presumed type of the value when it is loaded from a local variable slot
+     * @return the method emitter
+     */
+    MethodEmitter load(final Symbol symbol, final Type type) {
         assert symbol != null;
         if (symbol.hasSlot()) {
-            final int slot = symbol.getSlot();
-            debug("load symbol", symbol.getName(), " slot=", slot, "type=", symbol.getSymbolType());
-            load(symbol.getSymbolType(), slot);
+            final int slot = symbol.getSlot(type);
+            debug("load symbol", symbol.getName(), " slot=", slot, "type=", type);
+            load(type, slot);
            // _try(new Label("dummy"), new Label("dummy2"), recovery);
            // method.visitTryCatchBlock(new Label(), arg1, arg2, arg3);
         } else if (symbol.isParam()) {
-            assert !symbol.isScope();
             assert functionNode.isVarArg() : "Non-vararg functions have slotted parameters";
             final int index = symbol.getFieldIndex();
             if (functionNode.needsArguments()) {
@@ -931,7 +979,7 @@ public class MethodEmitter implements Emitter {
     }
 
     /**
-     * Push a local variable to the stack, given an explicit bytecode slot
+     * Push a local variable to the stack, given an explicit bytecode slot.
      * This is used e.g. for stub generation where we know where items like
      * "this" and "scope" reside.
      *
@@ -945,6 +993,8 @@ public class MethodEmitter implements Emitter {
         final Type loadType = type.load(method, slot);
         assert loadType != null;
         pushType(loadType == Type.OBJECT && isThisSlot(slot) ? Type.THIS : loadType);
+        assert !preventUndefinedLoad || (slot < stack.localVariableTypes.size() && stack.localVariableTypes.get(slot) != Type.UNKNOWN)
+            : "Attempted load of uninitialized slot " + slot + " (as type " + type + ")";
         stack.markLocalLoad(slot);
         return this;
     }
@@ -953,7 +1003,7 @@ public class MethodEmitter implements Emitter {
         if (functionNode == null) {
             return slot == CompilerConstants.JAVA_THIS.slot();
         }
-        final int thisSlot = compilerConstant(THIS).getSlot();
+        final int thisSlot = getCompilerConstantSymbol(THIS).getSlot(Type.OBJECT);
         assert !functionNode.needsCallee() || thisSlot == 1; // needsCallee -> thisSlot == 1
         assert functionNode.needsCallee() || thisSlot == 0; // !needsCallee -> thisSlot == 0
         return slot == thisSlot;
@@ -975,7 +1025,7 @@ public class MethodEmitter implements Emitter {
         return this;
     }
 
-    private Symbol compilerConstant(final CompilerConstants cc) {
+    private Symbol getCompilerConstantSymbol(final CompilerConstants cc) {
         return functionNode.getBody().getExistingSymbol(cc.symbolName());
     }
 
@@ -985,22 +1035,38 @@ public class MethodEmitter implements Emitter {
      * @return if this method has a slot allocated for the scope variable.
      */
     boolean hasScope() {
-        return compilerConstant(SCOPE).hasSlot();
+        return getCompilerConstantSymbol(SCOPE).hasSlot();
     }
 
     MethodEmitter loadCompilerConstant(final CompilerConstants cc) {
-        final Symbol symbol = compilerConstant(cc);
+        return loadCompilerConstant(cc, null);
+    }
+
+    MethodEmitter loadCompilerConstant(final CompilerConstants cc, final Type type) {
         if (cc == SCOPE && peekType() == Type.SCOPE) {
             dup();
             return this;
         }
-        return load(symbol);
+        return load(getCompilerConstantSymbol(cc), type != null ? type : getCompilerConstantType(cc));
     }
 
     void storeCompilerConstant(final CompilerConstants cc) {
-        final Symbol symbol = compilerConstant(cc);
+        storeCompilerConstant(cc, null);
+    }
+
+    void storeCompilerConstant(final CompilerConstants cc, final Type type) {
+        final Symbol symbol = getCompilerConstantSymbol(cc);
+        if(!symbol.hasSlot()) {
+            return;
+        }
         debug("store compiler constant ", symbol);
-        store(symbol);
+        store(symbol, type != null ? type : getCompilerConstantType(cc));
+    }
+
+    private static Type getCompilerConstantType(final CompilerConstants cc) {
+        final Class<?> constantType = cc.type();
+        assert constantType != null;
+        return Type.typeFor(constantType);
     }
 
     /**
@@ -1032,74 +1098,212 @@ public class MethodEmitter implements Emitter {
 
     /**
      * Pop a value from the stack and store it in a local variable represented
-     * by the given symbol. If the symbol has no slot, this is a NOP
+     * by the given identifier. If the symbol has no slot, this is a NOP
      *
-     * @param symbol symbol to store stack to
+     * @param ident identifier to store stack to
      */
-    void store(final Symbol symbol) {
+    void store(final IdentNode ident) {
+        final Type type = ident.getType();
+        final Symbol symbol = ident.getSymbol();
+        if(type == Type.UNDEFINED) {
+            assert peekType() == Type.UNDEFINED;
+            store(symbol, Type.OBJECT);
+        } else {
+            store(symbol, type);
+        }
+    }
+
+    /**
+     * Represents a definition of a local variable with a type. Used for local variable table building.
+     */
+    private static class LocalVariableDef {
+        // The start label from where this definition lives.
+        private final jdk.internal.org.objectweb.asm.Label label;
+        // The currently live type of the local variable.
+        private final Type type;
+
+        LocalVariableDef(final jdk.internal.org.objectweb.asm.Label label, final Type type) {
+            this.label = label;
+            this.type = type;
+        }
+
+    }
+
+    void closeLocalVariable(final Symbol symbol, final Label label) {
+        final LocalVariableDef def = localVariableDefs.get(symbol);
+        if(def != null) {
+            endLocalValueDef(symbol, def, label.getLabel());
+        }
+        if(isReachable()) {
+            markDeadLocalVariable(symbol);
+        }
+    }
+
+    void markDeadLocalVariable(final Symbol symbol) {
+        if(!symbol.isDead()) {
+            markDeadSlots(symbol.getFirstSlot(), symbol.slotCount());
+        }
+    }
+
+    void markDeadSlots(final int firstSlot, final int slotCount) {
+        stack.markDeadLocalVariables(firstSlot, slotCount);
+    }
+
+    private void endLocalValueDef(final Symbol symbol, final LocalVariableDef def, final jdk.internal.org.objectweb.asm.Label label) {
+        String name = symbol.getName();
+        if (name.equals(THIS.symbolName())) {
+            name = THIS_DEBUGGER.symbolName();
+        }
+        method.visitLocalVariable(name, def.type.getDescriptor(), null, def.label, label, symbol.getSlot(def.type));
+    }
+
+    void store(final Symbol symbol, final Type type) {
+        store(symbol, type, true);
+    }
+
+    /**
+     * Pop a value from the stack and store it in a variable denoted by the given symbol. The variable should be either
+     * a local variable, or a function parameter (and not a scoped variable). For local variables, this method will also
+     * do the bookeeping of the local variable table as well as mark values in all alternative slots for the symbol as
+     * dead. In this regard it differs from {@link #storeHidden(Type, int)}.
+     *
+     * @param symbol the symbol to store into.
+     * @param type the type to store
+     * @param onlySymbolLiveValue if true, this is the sole live value for the symbol. If false, currently live values should
+     * be kept live.
+     */
+    void store(final Symbol symbol, final Type type, final boolean onlySymbolLiveValue) {
         assert symbol != null : "No symbol to store";
         if (symbol.hasSlot()) {
-            final int slot = symbol.getSlot();
-            debug("store symbol", symbol.getName(), " slot=", slot);
-            store(symbol.getSymbolType(), slot);
+            final boolean isLiveType = symbol.hasSlotFor(type);
+            final LocalVariableDef existingDef = localVariableDefs.get(symbol);
+            if(existingDef == null || existingDef.type != type) {
+                final jdk.internal.org.objectweb.asm.Label here = new jdk.internal.org.objectweb.asm.Label();
+                if(isLiveType) {
+                    final LocalVariableDef newDef = new LocalVariableDef(here, type);
+                    localVariableDefs.put(symbol, newDef);
+                }
+                method.visitLabel(here);
+                if(existingDef != null) {
+                    endLocalValueDef(symbol, existingDef, here);
+                }
+            }
+            if(isLiveType) {
+                final int slot = symbol.getSlot(type);
+                debug("store symbol", symbol.getName(), " type=", type, " slot=", slot);
+                storeHidden(type, slot, onlySymbolLiveValue);
+            } else {
+                if(onlySymbolLiveValue) {
+                    markDeadLocalVariable(symbol);
+                }
+                debug("dead store symbol ", symbol.getName(), " type=", type);
+                pop();
+            }
         } else if (symbol.isParam()) {
             assert !symbol.isScope();
             assert functionNode.isVarArg() : "Non-vararg functions have slotted parameters";
             final int index = symbol.getFieldIndex();
             if (functionNode.needsArguments()) {
+                convert(Type.OBJECT);
                 debug("store symbol", symbol.getName(), " arguments index=", index);
                 loadCompilerConstant(ARGUMENTS);
                 load(index);
                 ArgumentSetter.SET_ARGUMENT.invoke(this);
             } else {
+                convert(Type.OBJECT);
                 // varargs without arguments object - just do array store to __varargs__
                 debug("store symbol", symbol.getName(), " array index=", index);
                 loadCompilerConstant(VARARGS);
                 load(index);
                 ArgumentSetter.SET_ARRAY_ELEMENT.invoke(this);
             }
+        } else {
+            debug("dead store symbol ", symbol.getName(), " type=", type);
+            pop();
         }
     }
 
     /**
-     * Pop a value from the stack and store it in a given local variable
-     * slot.
+     * Pop a value from the stack and store it in a local variable slot. Note that in contrast with
+     * {@link #store(Symbol, Type)}, this method does not adjust the local variable table, nor marks slots for
+     * alternative value types for the symbol as being dead. For that reason, this method is usually not called
+     * directly. Notable exceptions are temporary internal locals (e.g. quick store, last-catch-condition, etc.) that
+     * are not desired to show up in the local variable table.
      *
      * @param type the type to pop
      * @param slot the slot
      */
-    void store(final Type type, final int slot) {
+    void storeHidden(final Type type, final int slot) {
+        storeHidden(type, slot, true);
+    }
+
+    void storeHidden(final Type type, final int slot, final boolean onlyLiveSymbolValue) {
+        explicitStore(type, slot);
+        stack.onLocalStore(type, slot, onlyLiveSymbolValue);
+    }
+
+    void storeTemp(final Type type, final int slot) {
+        explicitStore(type, slot);
+        defineTemporaryLocalVariable(slot, slot + type.getSlots());
+        onLocalStore(type, slot);
+    }
+
+    void onLocalStore(final Type type, final int slot) {
+        stack.onLocalStore(type, slot, true);
+    }
+
+    private void explicitStore(final Type type, final int slot) {
+        assert slot != -1;
         debug("explicit store", type, slot);
         popType(type);
         type.store(method, slot);
-        // TODO: disable this when not running with optimistic types?
-        final int slotCount = type.getSlots();
-        ensureLocalVariableCount(slot + slotCount);
-        localVariableTypes.set(slot, type);
-        if(slotCount == 2) {
-            localVariableTypes.set(slot + 1, Type.SLOT_2);
-        }
-        stack.markLocalStore(slot, slotCount);
     }
 
-    void ensureLocalVariableCount(final int slotCount) {
-        while(localVariableTypes.size() < slotCount) {
-            localVariableTypes.add(Type.UNKNOWN);
+    /**
+     * Marks a range of slots as belonging to a defined local variable. The slots will start out with no live value
+     * in them.
+     * @param fromSlot first slot, inclusive.
+     * @param toSlot last slot, exclusive.
+     */
+    void defineBlockLocalVariable(final int fromSlot, final int toSlot) {
+        stack.defineBlockLocalVariable(fromSlot, toSlot);
+    }
+
+    /**
+     * Marks a range of slots as belonging to a defined temporary local variable. The slots will start out with no
+     * live value in them.
+     * @param fromSlot first slot, inclusive.
+     * @param toSlot last slot, exclusive.
+     */
+    void defineTemporaryLocalVariable(final int fromSlot, final int toSlot) {
+        stack.defineTemporaryLocalVariable(fromSlot, toSlot);
+    }
+
+    /**
+     * Defines a new temporary local variable and returns its allocated index.
+     * @param width the required width (in slots) for the new variable.
+     * @return the bytecode slot index where the newly allocated local begins.
+     */
+    int defineTemporaryLocalVariable(final int width) {
+        return stack.defineTemporaryLocalVariable(width);
+    }
+
+    void undefineLocalVariables(final int fromSlot, final boolean canTruncateSymbol) {
+        if(isReachable()) {
+            stack.undefineLocalVariables(fromSlot, canTruncateSymbol);
         }
     }
 
     List<Type> getLocalVariableTypes() {
-        return localVariableTypes;
+        return stack.localVariableTypes;
     }
 
-    void setParameterTypes(final Type... paramTypes) {
-        assert localVariableTypes.isEmpty();
-        for(final Type type: paramTypes) {
-            localVariableTypes.add(type);
-            if(type.isCategory2()) {
-                localVariableTypes.add(Type.SLOT_2);
-            }
-        }
+    List<Type> getWidestLiveLocals(final List<Type> localTypes) {
+        return stack.getWidestLiveLocals(localTypes);
+    }
+
+    String markSymbolBoundariesInLvarTypesDescriptor(final String lvarDescriptor) {
+        return stack.markSymbolBoundariesInLvarTypesDescriptor(lvarDescriptor);
     }
 
     /**
@@ -1122,7 +1326,7 @@ public class MethodEmitter implements Emitter {
         final Type receiver = popType(Type.OBJECT);
         assert Throwable.class.isAssignableFrom(receiver.getTypeClass()) : receiver.getTypeClass();
         method.visitInsn(ATHROW);
-        stack = null;
+        doesNotContinueSequentially();
     }
 
     /**
@@ -1354,7 +1558,7 @@ public class MethodEmitter implements Emitter {
         debug("lookupswitch", peekType());
         adjustStackForSwitch(defaultLabel, table);
         method.visitLookupSwitchInsn(defaultLabel.getLabel(), values, getLabels(table));
-        stack = null; //whoever reaches the point after us provides the stack, because we don't
+        doesNotContinueSequentially();
     }
 
     /**
@@ -1368,14 +1572,14 @@ public class MethodEmitter implements Emitter {
         debug("tableswitch", peekType());
         adjustStackForSwitch(defaultLabel, table);
         method.visitTableSwitchInsn(lo, hi, defaultLabel.getLabel(), getLabels(table));
-        stack = null; //whoever reaches the point after us provides the stack, because we don't
+        doesNotContinueSequentially();
     }
 
     private void adjustStackForSwitch(final Label defaultLabel, final Label... table) {
         popType(Type.INT);
-        mergeStackTo(defaultLabel);
+        joinTo(defaultLabel);
         for(final Label label: table) {
-            mergeStackTo(label);
+            joinTo(label);
         }
     }
 
@@ -1432,7 +1636,7 @@ public class MethodEmitter implements Emitter {
             convert(type);
         }
         popType(type)._return(method);
-        stack = null;
+        doesNotContinueSequentially();
     }
 
     /**
@@ -1449,7 +1653,7 @@ public class MethodEmitter implements Emitter {
         debug("return [void]");
         assert stack.isEmpty() : stack;
         method.visitInsn(RETURN);
-        stack = null;
+        doesNotContinueSequentially();
     }
 
     /**
@@ -1458,8 +1662,10 @@ public class MethodEmitter implements Emitter {
      * jump target is another method
      *
      * @param label destination label
+     * @param targetNode the node to which the destination label belongs (the label is normally a break or continue
+     * label)
      */
-    void splitAwareGoto(final LexicalContext lc, final Label label) {
+    void splitAwareGoto(final LexicalContext lc, final Label label, final BreakableNode targetNode) {
         _goto(label);
     }
 
@@ -1486,7 +1692,7 @@ public class MethodEmitter implements Emitter {
             assert peekType().isInteger() || peekType().isBoolean() || peekType().isObject() : "expecting integer type or object for jump, but found " + peekType();
             popType();
         }
-        mergeStackTo(label);
+        joinTo(label);
         method.visitJumpInsn(opcode, label.getLabel());
     }
 
@@ -1658,17 +1864,41 @@ public class MethodEmitter implements Emitter {
     void _goto(final Label label) {
         debug("goto", label);
         jump(GOTO, label, 0);
-        stack = null; //whoever reaches the point after us provides the stack, because we don't
+        doesNotContinueSequentially(); //whoever reaches the point after us provides the stack, because we don't
     }
 
     /**
-     * Examine two stacks and make sure they are of the same size and their
-     * contents are equivalent to each other
-     * @param s0 first stack
-     * @param s1 second stack
+     * Unconditional jump to the start label of a loop. It differs from ordinary {@link #_goto(Label)} in that it will
+     * preserve the current label stack, as the next instruction after the goto is loop body that the loop will come
+     * back to. Also used to jump at the start label of the continuation handler, as it behaves much like a loop test in
+     * the sense that after it is evaluated, it also jumps backwards.
      *
-     * @return true if stacks are equivalent, false otherwise
+     * @param loopStart start label of a loop
      */
+    void gotoLoopStart(final Label loopStart) {
+        debug("goto (loop)", loopStart);
+        jump(GOTO, loopStart, 0);
+    }
+
+    /**
+     * Unconditional jump without any control flow and data flow testing. You should not normally use this method when
+     * generating code, except if you're very sure that you know what you're doing. Normally only used for the
+     * admittedly torturous control flow of continuation handler plumbing.
+     * @param target the target of the jump
+     */
+    void uncheckedGoto(final Label target) {
+        method.visitJumpInsn(GOTO, target.getLabel());
+    }
+
+    /**
+     * Potential transfer of control to a catch block.
+     *
+     * @param catchLabel destination catch label
+     */
+    void canThrow(final Label catchLabel) {
+        catchLabel.joinFromTry(stack, false);
+    }
+
     /**
      * A join in control flow - helper function that makes sure all entry stacks
      * discovered for the join point so far are equivalent
@@ -1678,46 +1908,46 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label
      */
-    private void mergeStackTo(final Label label) {
-        //sometimes we can do a merge stack without having a stack - i.e. when jumping ahead to dead code
-        //see NASHORN-73. So far we had been saved by the line number nodes. This should have been fixed
-        //by Lower removing everything after an unconditionally executed terminating statement OR a break
-        //or continue in a block. Previously code left over after breaks and continues was still there
-        //and caused bytecode to be generated - which crashed on stack not being there, as the merge
-        //was not in fact preceeded by a visit. Furthermore, this led to ASM putting out its NOP NOP NOP
-        //ATHROW sequences instead of no code being generated at all. This should now be fixed.
-        assert stack != null : label + " entered with no stack. deadcode that remains?";
-
-        final Label.Stack labelStack = label.getStack();
-        if (labelStack == null) {
-            label.setStack(stack.copy());
-            return;
-        }
-        assert stack.isEquivalentInTypesTo(labelStack) : "stacks " + stack + " is not equivalent with " + labelStack + " at join point " + label;
-        stack.mergeLocalLoads(labelStack);
+    private void joinTo(final Label label) {
+        assert isReachable();
+        label.joinFrom(stack);
     }
 
     /**
      * Register a new label, enter it here.
-     *
-     * @param label the label
+     * @param label
      */
     void label(final Label label) {
-        /*
-         * If stack == null, this means that we came here not through a fallthrough.
-         * E.g. a label after an athrow. Then we create a new stack if one doesn't exist
-         * for this location already.
-         */
-        if (stack == null) {
-            stack = label.getStack();
-            if (stack == null) {
-                newStack();
-            }
+        breakLabel(label, -1);
+    }
+
+    /**
+     * Register a new break target label, enter it here.
+     *
+     * @param label the label
+     * @param liveLocals the number of live locals at this label
+     */
+    void breakLabel(final Label label, final int liveLocals) {
+        if (!isReachable()) {
+            // If we emit a label, and the label's stack is null, it must not be reachable.
+            assert (label.getStack() == null) != label.isReachable();
+        } else {
+            joinTo(label);
+        }
+        // Use label's stack as we might have no stack.
+        final Label.Stack labelStack = label.getStack();
+        stack = labelStack == null ? null : labelStack.clone();
+        if(stack != null && label.isBreakTarget() && liveLocals != -1) {
+            // This has to be done because we might not have another frame to provide us with its firstTemp if the label
+            // is only reachable through a break or continue statement; also in this case, the frame can actually
+            // give us a higher number of live locals, e.g. if it comes from a catch. Typical example:
+            // for(;;) { try{ throw 0; } catch(e) { break; } }.
+            // Since the for loop can only be exited through the break in the catch block, it'll bring with it the
+            // "e" as a live local, and we need to trim it off here.
+            assert stack.firstTemp >= liveLocals;
+            stack.firstTemp = liveLocals;
         }
         debug_label(label);
-
-        mergeStackTo(label); //we have to merge our stack to whatever is in the label
-
         method.visitLabel(label.getLabel());
     }
 
@@ -1777,8 +2007,8 @@ public class MethodEmitter implements Emitter {
      * @return common type
      */
     private BitwiseType get2i() {
-        final BitwiseType p0 = popInteger();
-        final BitwiseType p1 = popInteger();
+        final BitwiseType p0 = popBitwise();
+        final BitwiseType p1 = popBitwise();
         assert p0.isEquivalentTo(p1) : "expecting equivalent types on stack but got " + p0 + " and " + p1;
         return p0;
     }
@@ -1844,9 +2074,9 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    MethodEmitter rem() {
+    MethodEmitter rem(final int programPoint) {
         debug("rem");
-        pushType(get2n().rem(method));
+        pushType(get2n().rem(method, programPoint));
         return this;
     }
 
@@ -1866,6 +2096,14 @@ public class MethodEmitter implements Emitter {
 
     int getStackSize() {
         return stack.size();
+    }
+
+    int getFirstTemp() {
+        return stack.firstTemp;
+    }
+
+    int getUsedSlotsWithLiveTemporaries() {
+        return stack.getUsedSlotsWithLiveTemporaries();
     }
 
     /**
@@ -2054,7 +2292,6 @@ public class MethodEmitter implements Emitter {
         return this;
     }
 
-
     private static String getProgramPoint(final int flags) {
         if((flags & CALLSITE_OPTIMISTIC) == 0) {
             return "";
@@ -2236,6 +2473,44 @@ public class MethodEmitter implements Emitter {
         }
     }
 
+    void beforeJoinPoint(final JoinPredecessor joinPredecessor) {
+        LocalVariableConversion next = joinPredecessor.getLocalVariableConversion();
+        while(next != null) {
+            final Symbol symbol = next.getSymbol();
+            if(next.isLive()) {
+                emitLocalVariableConversion(next, true);
+            } else {
+                markDeadLocalVariable(symbol);
+            }
+            next = next.getNext();
+        }
+    }
+
+    void beforeTry(final TryNode tryNode, final Label recovery) {
+        LocalVariableConversion next = tryNode.getLocalVariableConversion();
+        while(next != null) {
+            if(next.isLive()) {
+                final Type to = emitLocalVariableConversion(next, false);
+                recovery.getStack().onLocalStore(to, next.getSymbol().getSlot(to), true);
+            }
+            next = next.getNext();
+        }
+    }
+
+    private Type emitLocalVariableConversion(final LocalVariableConversion conversion, final boolean onlySymbolLiveValue) {
+        final Type from = conversion.getFrom();
+        final Type to = conversion.getTo();
+        final Symbol symbol = conversion.getSymbol();
+        assert symbol.isBytecodeLocal();
+        if(from == Type.UNDEFINED) {
+            loadUndefined(to);
+        } else {
+            load(symbol, from).convert(to);
+        }
+        store(symbol, to, onlySymbolLiveValue);
+        return to;
+    }
+
     /*
      * Debugging below
      */
@@ -2334,7 +2609,7 @@ public class MethodEmitter implements Emitter {
                 pad--;
             }
 
-            if (stack != null && !stack.isEmpty()) {
+            if (isReachable() && !stack.isEmpty()) {
                 sb.append("{");
                 sb.append(stack.size());
                 sb.append(":");
@@ -2408,8 +2683,14 @@ public class MethodEmitter implements Emitter {
         return hasReturn;
     }
 
-    List<Label> getExternalTargets() {
-        return null;
+    /**
+     * Invoke to enforce assertions preventing load from a local variable slot that's known to not have been written to.
+     * Used by CodeGenerator, as it strictly enforces tracking of stores. Simpler uses of MethodEmitter, e.g. those
+     * for creating initializers for structure  classes, array getters, etc. don't have strict tracking of stores,
+     * therefore they would fail if they had this assertion turned on.
+     */
+    void setPreventUndefinedLoad() {
+        this.preventUndefinedLoad = true;
     }
 
     private static boolean isOptimistic(final int flags) {

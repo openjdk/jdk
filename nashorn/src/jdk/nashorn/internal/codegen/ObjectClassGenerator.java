@@ -38,12 +38,12 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.JSType.CONVERT_OBJECT;
 import static jdk.nashorn.internal.runtime.JSType.CONVERT_OBJECT_OPTIMISTIC;
 import static jdk.nashorn.internal.runtime.JSType.GET_UNDEFINED;
-import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
-import static jdk.nashorn.internal.runtime.JSType.TYPE_UNDEFINED_INDEX;
+import static jdk.nashorn.internal.runtime.JSType.TYPE_DOUBLE_INDEX;
 import static jdk.nashorn.internal.runtime.JSType.TYPE_INT_INDEX;
 import static jdk.nashorn.internal.runtime.JSType.TYPE_LONG_INDEX;
-import static jdk.nashorn.internal.runtime.JSType.TYPE_DOUBLE_INDEX;
 import static jdk.nashorn.internal.runtime.JSType.TYPE_OBJECT_INDEX;
+import static jdk.nashorn.internal.runtime.JSType.TYPE_UNDEFINED_INDEX;
+import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 
 import java.lang.invoke.MethodHandle;
@@ -58,6 +58,7 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.FunctionScope;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -303,11 +304,11 @@ public final class ObjectClassGenerator implements Loggable {
 
         addFields(classEmitter, fieldCount);
 
-        final MethodEmitter init = newInitMethod(className, classEmitter);
+        final MethodEmitter init = newInitMethod(classEmitter);
         init.returnVoid();
         init.end();
 
-        final MethodEmitter initWithSpillArrays = newInitWithSpillArraysMethod(className, classEmitter, ScriptObject.class);
+        final MethodEmitter initWithSpillArrays = newInitWithSpillArraysMethod(classEmitter, ScriptObject.class);
         initWithSpillArrays.returnVoid();
         initWithSpillArrays.end();
 
@@ -332,17 +333,17 @@ public final class ObjectClassGenerator implements Loggable {
         final ClassEmitter classEmitter = newClassEmitter(className, superName);
         final List<String> initFields   = addFields(classEmitter, fieldCount);
 
-        final MethodEmitter init = newInitScopeMethod(className, classEmitter);
+        final MethodEmitter init = newInitScopeMethod(classEmitter);
         initializeToUndefined(init, className, initFields);
         init.returnVoid();
         init.end();
 
-        final MethodEmitter initWithSpillArrays = newInitWithSpillArraysMethod(className, classEmitter, FunctionScope.class);
+        final MethodEmitter initWithSpillArrays = newInitWithSpillArraysMethod(classEmitter, FunctionScope.class);
         initializeToUndefined(initWithSpillArrays, className, initFields);
         initWithSpillArrays.returnVoid();
         initWithSpillArrays.end();
 
-        final MethodEmitter initWithArguments = newInitScopeWithArgumentsMethod(className, classEmitter);
+        final MethodEmitter initWithArguments = newInitScopeWithArgumentsMethod(classEmitter);
         initializeToUndefined(initWithArguments, className, initFields);
         initWithArguments.returnVoid();
         initWithArguments.end();
@@ -396,7 +397,7 @@ public final class ObjectClassGenerator implements Loggable {
      *
      * @return Open method emitter.
      */
-    private static MethodEmitter newInitMethod(final String className, final ClassEmitter classEmitter) {
+    private static MethodEmitter newInitMethod(final ClassEmitter classEmitter) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
@@ -406,7 +407,7 @@ public final class ObjectClassGenerator implements Loggable {
         return init;
     }
 
-     private static MethodEmitter newInitWithSpillArraysMethod(final String className, final ClassEmitter classEmitter, final Class<?> superClass) {
+     private static MethodEmitter newInitWithSpillArraysMethod(final ClassEmitter classEmitter, final Class<?> superClass) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, long[].class, Object[].class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
@@ -423,7 +424,7 @@ public final class ObjectClassGenerator implements Loggable {
      * @param classEmitter  Open class emitter.
      * @return Open method emitter.
      */
-    private static MethodEmitter newInitScopeMethod(final String className, final ClassEmitter classEmitter) {
+    private static MethodEmitter newInitScopeMethod(final ClassEmitter classEmitter) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
@@ -439,7 +440,7 @@ public final class ObjectClassGenerator implements Loggable {
      * @param classEmitter  Open class emitter.
      * @return Open method emitter.
      */
-    private static MethodEmitter newInitScopeWithArgumentsMethod(final String className, final ClassEmitter classEmitter) {
+    private static MethodEmitter newInitScopeWithArgumentsMethod(final ClassEmitter classEmitter) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class, ScriptObject.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
@@ -523,8 +524,7 @@ public final class ObjectClassGenerator implements Loggable {
         final MethodHandle sameTypeGetter = getterForType(forType, primitiveGetter, objectGetter);
         final MethodHandle mh = MH.asType(sameTypeGetter, sameTypeGetter.type().changeReturnType(Object.class));
         try {
-            @SuppressWarnings("cast")
-            final Object value = (Object)mh.invokeExact(receiver);
+            final Object value = mh.invokeExact(receiver);
             throw new UnwarrantedOptimismException(value, programPoint);
         } catch (final Error | RuntimeException e) {
             throw e;
@@ -648,12 +648,14 @@ public final class ObjectClassGenerator implements Loggable {
         assert primitiveGetter != null;
         final MethodType tgetterType = tgetter.type();
         switch (fti) {
-        case TYPE_INT_INDEX:
+        case TYPE_INT_INDEX: {
+            return MH.asType(tgetter, tgetterType.changeReturnType(type));
+        }
         case TYPE_LONG_INDEX:
             switch (ti) {
             case TYPE_INT_INDEX:
                 //get int while an int, truncating cast of long value
-                return MH.explicitCastArguments(tgetter, tgetterType.changeReturnType(int.class));
+                return MH.filterReturnValue(tgetter, JSType.TO_INT32_L.methodHandle);
             case TYPE_LONG_INDEX:
                 return primitiveGetter;
             default:
@@ -662,6 +664,7 @@ public final class ObjectClassGenerator implements Loggable {
         case TYPE_DOUBLE_INDEX:
             switch (ti) {
             case TYPE_INT_INDEX:
+                return MH.filterReturnValue(tgetter, JSType.TO_INT32_D.methodHandle);
             case TYPE_LONG_INDEX:
                 return MH.explicitCastArguments(tgetter, tgetterType.changeReturnType(type));
             case TYPE_DOUBLE_INDEX:

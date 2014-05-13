@@ -145,13 +145,16 @@ public enum JSType {
     /** Div exact wrapper for potentially integer division that turns into float point */
     public static final Call DIV_EXACT       = staticCall(JSTYPE_LOOKUP, JSType.class, "divExact", int.class, int.class, int.class, int.class);
 
+    /** Mod exact wrapper for potentially integer remainders that turns into float point */
+    public static final Call REM_EXACT       = staticCall(JSTYPE_LOOKUP, JSType.class, "remExact", int.class, int.class, int.class, int.class);
+
     /** Decrement exact wrapper for potentially overflowing integer operations */
     public static final Call DECREMENT_EXACT = staticCall(JSTYPE_LOOKUP, JSType.class, "decrementExact",   int.class, int.class, int.class);
 
     /** Increment exact wrapper for potentially overflowing integer operations */
     public static final Call INCREMENT_EXACT = staticCall(JSTYPE_LOOKUP, JSType.class, "incrementExact",   int.class, int.class, int.class);
 
-    /** Negate exact exact wrapper for potentially overflowing long operations */
+    /** Negate exact exact wrapper for potentially overflowing integer operations */
     public static final Call NEGATE_EXACT         = staticCall(JSTYPE_LOOKUP, JSType.class, "negateExact", int.class, int.class, int.class);
 
     /** Add exact wrapper for potentially overflowing long operations */
@@ -165,6 +168,9 @@ public enum JSType {
 
     /** Div exact wrapper for potentially integer division that turns into float point */
     public static final Call DIV_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "divExact", long.class, long.class, long.class, int.class);
+
+    /** Mod exact wrapper for potentially integer remainders that turns into float point */
+    public static final Call REM_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "remExact", long.class, long.class, long.class, int.class);
 
     /** Decrement exact wrapper for potentially overflowing long operations */
     public static final Call DECREMENT_EXACT_LONG = staticCall(JSTYPE_LOOKUP, JSType.class, "decrementExact",  long.class, long.class, int.class);
@@ -1418,6 +1424,24 @@ public enum JSType {
     }
 
     /**
+     * Wrapper for modExact. Throws UnwarrantedOptimismException if the modulo can't be represented as int.
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if the modulo can't be represented as int.
+     */
+    public static int remExact(final int x, final int y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return x % y;
+        } catch (final ArithmeticException e) {
+            assert y == 0; // Only mod by zero anticipated
+            throw new UnwarrantedOptimismException(Double.NaN, programPoint);
+        }
+    }
+
+    /**
      * Wrapper for divExact. Throws UnwarrantedOptimismException if the result of the division can't be represented as
      * long.
      *
@@ -1440,6 +1464,24 @@ public enum JSType {
             return res;
         }
         throw new UnwarrantedOptimismException((double)x / (double)y, programPoint);
+    }
+
+    /**
+     * Wrapper for modExact. Throws UnwarrantedOptimismException if the modulo can't be represented as int.
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if the modulo can't be represented as int.
+     */
+    public static long remExact(final long x, final long y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return x % y;
+        } catch (final ArithmeticException e) {
+            assert y == 0L; // Only mod by zero anticipated
+            throw new UnwarrantedOptimismException(Double.NaN, programPoint);
+        }
     }
 
     /**

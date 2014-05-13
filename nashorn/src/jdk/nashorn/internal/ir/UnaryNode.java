@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -49,8 +50,6 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     private final Expression expression;
 
     private final int programPoint;
-
-    private final boolean isOptimistic;
 
     private final Type type;
 
@@ -88,16 +87,14 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         super(token, start, finish);
         this.expression   = expression;
         this.programPoint = INVALID_PROGRAM_POINT;
-        this.isOptimistic = false;
         this.type = null;
     }
 
 
-    private UnaryNode(final UnaryNode unaryNode, final Expression expression, final Type type, final int programPoint, final boolean isOptimistic) {
+    private UnaryNode(final UnaryNode unaryNode, final Expression expression, final Type type, final int programPoint) {
         super(unaryNode);
         this.expression   = expression;
         this.programPoint = programPoint;
-        this.isOptimistic = isOptimistic;
         this.type = type;
     }
 
@@ -124,12 +121,40 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         return isAssignment();
     }
 
+    private static final Function<Symbol, Type> UNKNOWN_LOCALS = new Function<Symbol, Type>() {
+        @Override
+        public Type apply(Symbol t) {
+            return null;
+        }
+    };
+
+
     @Override
     public Type getWidestOperationType() {
+        return getWidestOperationType(UNKNOWN_LOCALS);
+    }
+
+    private Type getWidestOperationType(final Function<Symbol, Type> localVariableTypes) {
         switch (tokenType()) {
         case ADD:
+            final Type operandType = getExpression().getType(localVariableTypes);
+            if(operandType == Type.BOOLEAN) {
+                return Type.INT;
+            } else if(operandType.isObject()) {
+                return Type.NUMBER;
+            }
+            assert operandType.isNumeric();
+            return operandType;
         case SUB:
+            // This might seems overly conservative until you consider that -0 can only be represented as a double.
             return Type.NUMBER;
+        case NOT:
+        case DELETE:
+            return Type.BOOLEAN;
+        case BIT_NOT:
+            return Type.INT;
+        case VOID:
+            return Type.UNDEFINED;
         default:
             return isAssignment() ? Type.NUMBER : Type.OBJECT;
         }
@@ -206,7 +231,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         final boolean   isPostfix = tokenType == DECPOSTFIX || tokenType == INCPOSTFIX;
 
         if (isOptimistic()) {
-            sb.append(Node.OPT_IDENTIFIER);
+            sb.append(Expression.OPT_IDENTIFIER);
         }
         boolean rhsParen   = tokenType.needsParens(getExpression().tokenType(), false);
 
@@ -261,7 +286,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         if (this.expression == expression) {
             return this;
         }
-        return new UnaryNode(this, expression, type, programPoint, isOptimistic);
+        return new UnaryNode(this, expression, type, programPoint);
     }
 
     @Override
@@ -274,15 +299,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         if (this.programPoint == programPoint) {
             return this;
         }
-        return new UnaryNode(this, expression, type, programPoint, isOptimistic);
-    }
-
-    @Override
-    public UnaryNode setIsOptimistic(final boolean isOptimistic) {
-        if (this.isOptimistic == isOptimistic) {
-            return this;
-        }
-        return new UnaryNode(this, expression, type, programPoint, isOptimistic);
+        return new UnaryNode(this, expression, type, programPoint);
     }
 
     @Override
@@ -304,22 +321,20 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     }
 
     @Override
-    public boolean isOptimistic() {
-        //return hasType() && canBeOptimistic() && getType().narrowerThan(getMostPessimisticType());
-        return isOptimistic;
+    public Type getType(Function<Symbol, Type> localVariableTypes) {
+        final Type widest = getWidestOperationType(localVariableTypes);
+        if(type == null) {
+            return widest;
+        }
+        return Type.narrowest(widest, Type.widest(type, expression.getType(localVariableTypes)));
     }
 
     @Override
-    public Type getType() {
-        return type == null ? super.getType() : type;
-    }
-
-    @Override
-    public UnaryNode setType(TemporarySymbols ts, Type type) {
+    public UnaryNode setType(Type type) {
         if (this.type == type) {
             return this;
         }
-        return new UnaryNode(this, expression, type, programPoint, isOptimistic);
+        return new UnaryNode(this, expression, type, programPoint);
     }
 
 }

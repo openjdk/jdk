@@ -164,7 +164,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      * @param args arguments array passed to script engine.
      * @return newly created script engine.
      */
-    public ScriptEngine getScriptEngine(final String[] args) {
+    public ScriptEngine getScriptEngine(final String... args) {
         checkConfigPermission();
         return new NashornScriptEngine(this, args, getAppClassLoader());
     }

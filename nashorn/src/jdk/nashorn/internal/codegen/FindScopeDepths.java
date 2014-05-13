@@ -34,15 +34,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
 import jdk.nashorn.internal.ir.Block;
-import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
+import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -211,7 +210,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
 
         assert nestedFunctions != null;
         // Generate the object class and property map in case this function is ever used as constructor
-        final int         fieldCount         = getPaddedFieldCount(newFunctionNode.countThisProperties());
+        final int         fieldCount         = getPaddedFieldCount(newFunctionNode.getThisProperties());
         final String      allocatorClassName = Compiler.binaryName(getClassName(fieldCount));
         final PropertyMap allocatorMap       = PropertyMap.newMap(null, 0, fieldCount, 0);
         final RecompilableScriptFunctionData data = new RecompilableScriptFunctionData(
@@ -292,8 +291,8 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
             @Override
             public final boolean enterDefault(final Node node) {
                 if (!env.isOnDemandCompilation()) {
-                    if (node instanceof Expression) {
-                        final Symbol symbol = ((Expression)node).getSymbol();
+                    if (node instanceof IdentNode) {
+                        final Symbol symbol = ((IdentNode)node).getSymbol();
                         if (symbol != null && symbol.isScope()) {
                             //if this is an internal symbol, skip it.
                             symbols.add(symbol);

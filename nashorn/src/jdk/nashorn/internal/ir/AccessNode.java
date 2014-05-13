@@ -34,8 +34,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class AccessNode extends BaseNode {
-    /** Property ident. */
-    private final IdentNode property;
+    /** Property name. */
+    private final String property;
 
     /**
      * Constructor
@@ -45,13 +45,13 @@ public final class AccessNode extends BaseNode {
      * @param base      base node
      * @param property  property
      */
-    public AccessNode(final long token, final int finish, final Expression base, final IdentNode property) {
+    public AccessNode(final long token, final int finish, final Expression base, final String property) {
         super(token, finish, base, false);
-        this.property = property.setIsPropertyName();
+        this.property = property;
     }
 
-    private AccessNode(final AccessNode accessNode, final Expression base, final IdentNode property, final boolean isFunction, final Type optimisticType, final boolean isOptimistic, final int id) {
-        super(accessNode, base, isFunction, optimisticType, isOptimistic, id);
+    private AccessNode(final AccessNode accessNode, final Expression base, final String property, final boolean isFunction, final Type type, final int id) {
+        super(accessNode, base, isFunction, type, id);
         this.property = property;
     }
 
@@ -63,8 +63,7 @@ public final class AccessNode extends BaseNode {
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterAccessNode(this)) {
             return visitor.leaveAccessNode(
-                setBase((Expression)base.accept(visitor)).
-                setProperty((IdentNode)property.accept(visitor)));
+                setBase((Expression)base.accept(visitor)));
         }
         return this;
     }
@@ -73,7 +72,7 @@ public final class AccessNode extends BaseNode {
     public void toString(final StringBuilder sb) {
         final boolean needsParen = tokenType().needsParens(getBase().tokenType(), true);
 
-        Node.optimisticType(this, sb);
+        optimisticTypeToString(sb);
 
         if (needsParen) {
             sb.append('(');
@@ -86,15 +85,15 @@ public final class AccessNode extends BaseNode {
         }
         sb.append('.');
 
-        sb.append(property.getName());
+        sb.append(property);
     }
 
     /**
-     * Get the property
+     * Get the property name
      *
-     * @return the property IdentNode
+     * @return the property name
      */
-    public IdentNode getProperty() {
+    public String getProperty() {
         return property;
     }
 
@@ -102,22 +101,15 @@ public final class AccessNode extends BaseNode {
         if (this.base == base) {
             return this;
         }
-        return new AccessNode(this, base, property, isFunction(), optimisticType, isOptimistic, programPoint);
-    }
-
-    private AccessNode setProperty(final IdentNode property) {
-        if (this.property == property) {
-            return this;
-        }
-        return new AccessNode(this, base, property, isFunction(), optimisticType, isOptimistic, programPoint);
+        return new AccessNode(this, base, property, isFunction(), type, programPoint);
     }
 
     @Override
-    public AccessNode setType(final TemporarySymbols ts, final Type optimisticType) {
-        if (this.optimisticType == optimisticType) {
+    public AccessNode setType(final Type type) {
+        if (this.type == type) {
             return this;
         }
-        return new AccessNode(this, base, property, isFunction(), optimisticType, isOptimistic, programPoint);
+        return new AccessNode(this, base, property, isFunction(), type, programPoint);
     }
 
     @Override
@@ -125,7 +117,7 @@ public final class AccessNode extends BaseNode {
         if (this.programPoint == programPoint) {
             return this;
         }
-        return new AccessNode(this, base, property, isFunction(), optimisticType, isOptimistic, programPoint);
+        return new AccessNode(this, base, property, isFunction(), type, programPoint);
     }
 
     @Override
@@ -133,15 +125,6 @@ public final class AccessNode extends BaseNode {
         if (isFunction()) {
             return this;
         }
-        return new AccessNode(this, base, property, true, optimisticType, isOptimistic, programPoint);
+        return new AccessNode(this, base, property, true, type, programPoint);
     }
-
-    @Override
-    public AccessNode setIsOptimistic(final boolean isOptimistic) {
-        if (this.isOptimistic == isOptimistic) {
-            return this;
-        }
-        return new AccessNode(this, base, property, isFunction(), optimisticType, isOptimistic, programPoint);
-    }
-
 }

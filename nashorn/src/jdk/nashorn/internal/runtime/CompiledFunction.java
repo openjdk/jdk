@@ -37,7 +37,6 @@ import java.lang.invoke.SwitchPoint;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
-
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -68,7 +67,6 @@ final class CompiledFunction {
     private MethodHandle constructor;
     private OptimismInfo optimismInfo;
     private int flags; // from FunctionNode
-    private boolean applyToCall;
 
     CompiledFunction(final MethodHandle invoker) {
         this(invoker, null);
@@ -91,7 +89,7 @@ final class CompiledFunction {
     CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData, final int flags) {
         this(invoker, null, functionData.getLogger());
         this.flags = flags;
-        if ((flags & FunctionNode.IS_OPTIMISTIC) != 0) {
+        if ((flags & FunctionNode.IS_DEOPTIMIZABLE) != 0) {
             optimismInfo = new OptimismInfo(functionData);
         } else {
             optimismInfo = null;
@@ -102,12 +100,8 @@ final class CompiledFunction {
         return flags;
     }
 
-    void setIsApplyToCall() {
-        applyToCall = true;
-    }
-
     boolean isApplyToCall() {
-        return applyToCall;
+        return (flags & FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION) != 0;
     }
 
     boolean isVarArg() {
@@ -150,10 +144,6 @@ final class CompiledFunction {
         }
 
         return constructor;
-    }
-
-    MethodHandle getInvoker() {
-        return invoker;
     }
 
     /**
@@ -480,10 +470,10 @@ final class CompiledFunction {
      * function has no optimistic assumptions.
      */
     SwitchPoint getOptimisticAssumptionsSwitchPoint() {
-        return isOptimistic() ? optimismInfo.optimisticAssumptions : null;
+        return canBeDeoptimized() ? optimismInfo.optimisticAssumptions : null;
     }
 
-    boolean isOptimistic() {
+    boolean canBeDeoptimized() {
         return optimismInfo != null;
     }
 
@@ -492,7 +482,7 @@ final class CompiledFunction {
 
         // If compiled function is not optimistic, it can't ever change its invoker/constructor, so just return them
         // directly.
-        if(!isOptimistic()) {
+        if(!canBeDeoptimized()) {
             return handle;
         }
 
@@ -518,7 +508,7 @@ final class CompiledFunction {
             final MethodHandle relink = MethodHandles.insertArguments(RELINK_COMPOSABLE_INVOKER, 0, cs, inv, constructor);
             target = assumptions.guardWithTest(handle, MethodHandles.foldArguments(cs.dynamicInvoker(), relink));
         }
-        cs.setTarget(target);
+        cs.setTarget(target.asType(cs.type()));
     }
 
     private MethodHandle getInvokerOrConstructor(final boolean selectCtor) {
@@ -526,12 +516,13 @@ final class CompiledFunction {
     }
 
     MethodHandle createInvoker(final Class<?> callSiteReturnType, final int callerProgramPoint) {
-        final boolean isOptimistic = isOptimistic();
+        final boolean isOptimistic = canBeDeoptimized();
         MethodHandle handleRewriteException = isOptimistic ? createRewriteExceptionHandler() : null;
 
         MethodHandle inv = invoker;
         if(isValid(callerProgramPoint)) {
             inv = OptimisticReturnFilters.filterOptimisticReturnValue(inv, callSiteReturnType, callerProgramPoint);
+            inv = changeReturnType(inv, callSiteReturnType);
             if(callSiteReturnType.isPrimitive() && handleRewriteException != null) {
                 // because handleRewriteException always returns Object
                 handleRewriteException = OptimisticReturnFilters.filterOptimisticReturnValue(handleRewriteException,
@@ -575,32 +566,30 @@ final class CompiledFunction {
      * @return the method handle for the rest-of method, for folding composition.
      */
     private MethodHandle handleRewriteException(final OptimismInfo oldOptimismInfo, final RewriteException re) {
+        if (log.isEnabled()) {
+            log.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "\tRewriteException ", re.getMessageShort());
+        }
+
         final MethodType type = type();
         // Compiler needs a call site type as its input, which always has a callee parameter, so we must add it if
         // this function doesn't have a callee parameter.
         final MethodType callSiteType = type.parameterType(0) == ScriptFunction.class ? type : type.insertParameterTypes(0, ScriptFunction.class);
 
         final FunctionNode fn = oldOptimismInfo.recompile(callSiteType, re);
-        if (log.isEnabled()) {
-            log.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "\tRewriteException ", re.getMessageShort());
-        }
 
-        // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already
-        // recompiled a deoptimized version for an inner invocation.
-
-        final boolean isOptimistic;
+        final boolean canBeDeoptimized;
         if (fn != null) {
             //is recompiled
             assert optimismInfo == oldOptimismInfo;
-            isOptimistic = fn.isOptimistic();
+            canBeDeoptimized = fn.canBeDeoptimized();
             if (log.isEnabled()) {
-                log.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ")", isOptimistic ? " remains optimistic." : " is no longer optimistic.");
+                log.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ")", canBeDeoptimized ? " can still be deoptimized." : " is completely deoptimized.");
             }
             final MethodHandle newInvoker = oldOptimismInfo.data.lookup(fn);
             invoker = newInvoker.asType(type.changeReturnType(newInvoker.type().returnType()));
             constructor = null; // Will be regenerated when needed
             // Note that we only adjust the switch point after we set the invoker/constructor. This is important.
-            if (isOptimistic) {
+            if (canBeDeoptimized) {
                 // Otherwise, set a new switch point.
                 oldOptimismInfo.newOptimisticAssumptions();
             } else {
@@ -608,13 +597,15 @@ final class CompiledFunction {
                 optimismInfo = null;
             }
         } else {
-            isOptimistic = isOptimistic();
-            assert !isOptimistic || optimismInfo == oldOptimismInfo;
+            // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already
+            // recompiled a deoptimized version for an inner invocation.
+            canBeDeoptimized = canBeDeoptimized();
+            assert !canBeDeoptimized || optimismInfo == oldOptimismInfo;
         }
 
         final MethodHandle restOf = changeReturnType(oldOptimismInfo.compileRestOfMethod(callSiteType, re), Object.class);
         // If rest-of is itself optimistic, we must make sure that we can repeat a deoptimization if it, too hits an exception.
-        return isOptimistic ? MH.catchException(restOf, RewriteException.class, createRewriteExceptionHandler()) : restOf;
+        return canBeDeoptimized ? MH.catchException(restOf, RewriteException.class, createRewriteExceptionHandler()) : restOf;
     }
 
     private static class OptimismInfo {

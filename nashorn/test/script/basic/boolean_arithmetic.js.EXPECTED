@@ -1,0 +1,60 @@
++
+f, f: 0
+f, t: 1
+t, f: 1
+t, t: 2
+-
+f, f: 0
+f, t: -1
+t, f: 1
+t, t: 0
+*
+f, f: 0
+f, t: 0
+t, f: 0
+t, t: 1
+/
+f, f: NaN
+f, t: 0
+t, f: Infinity
+t, t: 1
+<<
+f, f: 0
+f, t: 0
+t, f: 1
+t, t: 2
+>>
+f, f: 0
+f, t: 0
+t, f: 1
+t, t: 0
+>>>
+f, f: 0
+f, t: 0
+t, f: 1
+t, t: 0
+|
+f, f: 0
+f, t: 1
+t, f: 1
+t, t: 1
+&
+f, f: 0
+f, t: 0
+t, f: 0
+t, t: 1
+^
+f, f: 0
+f, t: 1
+t, f: 1
+t, t: 0
+~
+f: -1
+t: -2
++
+f: 0
+t: 1
+-
+f: 0
+t: -1
+1/-f: -Infinity

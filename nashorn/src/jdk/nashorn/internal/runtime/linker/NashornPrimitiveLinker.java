@@ -39,6 +39,7 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ConsString;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
  * Internal linker for String, Boolean, and Number objects, only ever used by Nashorn engine and not exposed to other
@@ -46,6 +47,9 @@ import jdk.nashorn.internal.runtime.ConsString;
  * primitive type conversions for these types when linking to Java methods.
  */
 final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
+    private static final GuardedTypeConversion VOID_TO_OBJECT = new GuardedTypeConversion(
+            new GuardedInvocation(MethodHandles.constant(Object.class, ScriptRuntime.UNDEFINED)), true);
+
     @Override
     public boolean canLinkType(final Class<?> type) {
         return canLinkTypeStatic(type);
@@ -77,6 +81,9 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
     public GuardedTypeConversion convertToType(final Class<?> sourceType, final Class<?> targetType) {
         final MethodHandle mh = JavaArgumentConverters.getConverter(targetType);
         if (mh == null) {
+            if(targetType == Object.class && sourceType == void.class) {
+                return VOID_TO_OBJECT;
+            }
             return null;
         }
 

@@ -26,6 +26,8 @@
 package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
+
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Symbol;
 
 /**
@@ -35,15 +37,17 @@ import jdk.nashorn.internal.ir.Symbol;
 class MapTuple<T> {
     final String key;
     final Symbol symbol;
+    final Type   type;
     final T      value;
 
-    MapTuple(final String key, final Symbol symbol) {
-        this(key, symbol, null);
+    MapTuple(final String key, final Symbol symbol, final Type type) {
+        this(key, symbol, type, null);
     }
 
-    MapTuple(final String key, final Symbol symbol, final T value) {
+    MapTuple(final String key, final Symbol symbol, final Type type, final T value) {
         this.key    = key;
         this.symbol = symbol;
+        this.type   = type;
         this.value  = value;
     }
 

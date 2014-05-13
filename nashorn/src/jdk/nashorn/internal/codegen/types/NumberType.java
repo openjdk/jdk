@@ -164,7 +164,7 @@ class NumberType extends NumericType {
     }
 
     @Override
-    public Type rem(final MethodVisitor method) {
+    public Type rem(final MethodVisitor method, final int programPoint) {
         method.visitInsn(DREM);
         return NUMBER;
     }

@@ -45,15 +45,4 @@ abstract class LexicalContextExpression extends Expression implements LexicalCon
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         return Acceptor.accept(this, visitor);
     }
-
-    /**
-     * Set the symbol and replace in lexical context if applicable
-     * @param lc     lexical context
-     * @param symbol symbol
-     * @return new node if symbol changed
-     */
-    @Override
-    public Expression setSymbol(final LexicalContext lc, final Symbol symbol) {
-        return Node.replaceInLexicalContext(lc, this, (LexicalContextExpression)super.setSymbol(null, symbol));
-    }
 }

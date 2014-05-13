@@ -29,8 +29,9 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.HashSet;
 import java.util.Iterator;
-
+import java.util.Set;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -42,7 +43,6 @@ import jdk.nashorn.internal.runtime.Source;
  */
 
 public enum CompilerConstants {
-
     /** the __FILE__ variable */
     __FILE__,
 
@@ -87,7 +87,7 @@ public enum CompilerConstants {
      * representations of ECMAScript functions. It is not assigned a slot, as its position in the method signature is
      * dependent on other factors (most notably, callee can precede it).
      */
-    THIS("this"),
+    THIS("this", Object.class),
 
     /** this debugger symbol */
     THIS_DEBUGGER(":this"),
@@ -120,7 +120,7 @@ public enum CompilerConstants {
     /** prefix for tag variable used for switch evaluation */
     SWITCH_TAG_PREFIX(":s"),
 
-    /** prefix for all exceptions */
+    /** prefix for JVM exceptions */
     EXCEPTION_PREFIX(":e", Throwable.class),
 
     /** prefix for quick slots generated in Store */
@@ -184,6 +184,8 @@ public enum CompilerConstants {
         }
     }
 
+    private static Set<String> symbolNames;
+
     /**
      * Prefix used for internal methods generated in script clases.
      */
@@ -223,12 +225,17 @@ public enum CompilerConstants {
      * @return true if compiler constant name
      */
     public static boolean isCompilerConstant(final String name) {
-        for (final CompilerConstants cc : CompilerConstants.values()) {
-            if (name.equals(cc.symbolName())) {
-                return true;
+        ensureSymbolNames();
+        return symbolNames.contains(name);
+    }
+
+    private static void ensureSymbolNames() {
+        if(symbolNames == null) {
+            symbolNames = new HashSet<>();
+            for(final CompilerConstants cc: CompilerConstants.values()) {
+                symbolNames.add(cc.symbolName);
             }
         }
-        return false;
     }
 
     /**

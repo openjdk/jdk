@@ -25,7 +25,10 @@
 
 package jdk.nashorn.internal.ir;
 
+import java.util.HashMap;
+import java.util.Map;
 import jdk.nashorn.internal.codegen.CompileUnit;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -41,7 +44,9 @@ public class SplitNode extends LexicalContextStatement {
     private final CompileUnit compileUnit;
 
     /** Body of split code. */
-    private final Node body;
+    private final Block body;
+
+    private Map<Label, JoinPredecessor> jumps;
 
     /**
      * Constructor
@@ -50,18 +55,19 @@ public class SplitNode extends LexicalContextStatement {
      * @param body        body of split code
      * @param compileUnit compile unit to use for the body
      */
-    public SplitNode(final String name, final Node body, final CompileUnit compileUnit) {
-        super(-1, body.getToken(), body.getFinish());
+    public SplitNode(final String name, final Block body, final CompileUnit compileUnit) {
+        super(body.getFirstStatementLineNumber(), body.getToken(), body.getFinish());
         this.name        = name;
         this.body        = body;
         this.compileUnit = compileUnit;
     }
 
-    private SplitNode(final SplitNode splitNode, final Node body) {
+    private SplitNode(final SplitNode splitNode, final Block body) {
         super(splitNode);
         this.name        = splitNode.name;
         this.body        = body;
         this.compileUnit = splitNode.compileUnit;
+        this.jumps = splitNode.jumps;
     }
 
     /**
@@ -72,7 +78,7 @@ public class SplitNode extends LexicalContextStatement {
         return body;
     }
 
-    private SplitNode setBody(final LexicalContext lc, final Node body) {
+    private SplitNode setBody(final LexicalContext lc, final Block body) {
         if (this.body == body) {
             return this;
         }
@@ -82,7 +88,7 @@ public class SplitNode extends LexicalContextStatement {
     @Override
     public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterSplitNode(this)) {
-            return visitor.leaveSplitNode(setBody(lc, body.accept(visitor)));
+            return visitor.leaveSplitNode(setBody(lc, (Block)body.accept(visitor)));
         }
         return this;
     }
@@ -111,4 +117,25 @@ public class SplitNode extends LexicalContextStatement {
         return compileUnit;
     }
 
+    /**
+     * Adds a jump that crosses this split node's boundary (it originates within the split node, and goes to a target
+     * outside of it).
+     * @param jumpOrigin the join predecessor that's the origin of the jump
+     * @param targetLabel the label that's the target of the jump.
+     */
+    public void addJump(final JoinPredecessor jumpOrigin, final Label targetLabel) {
+        if(jumps == null) {
+            jumps = new HashMap<>();
+        }
+        jumps.put(targetLabel, jumpOrigin);
+    }
+
+    /**
+     * Returns the jump origin within this split node for a target.
+     * @param targetLabel the target for which a jump origin is sought.
+     * @return the jump origin, or null.
+     */
+    public JoinPredecessor getJumpOrigin(final Label targetLabel) {
+        return jumps == null ? null : jumps.get(targetLabel);
+    }
 }

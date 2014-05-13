@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 import java.io.File;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -203,6 +202,19 @@ public class LexicalContext {
     }
 
     /**
+     * Explicitly apply flags to the topmost element on the stack. This is only valid to use from a
+     * {@code NodeVisitor.leaveXxx()} method and only on the node being exited at the time. It is not mandatory to use,
+     * as {@link #pop(LexicalContextNode)} will apply the flags automatically, but this method can be used to apply them
+     * during the {@code leaveXxx()} method in case its logic depends on the value of the flags.
+     * @param node the node to apply the flags to. Must be the topmost node on the stack.
+     * @return the passed in node, or a modified node (if any flags were modified)
+     */
+    public <T extends LexicalContextNode & Flags<T>> T applyTopFlags(final T node) {
+        assert node == peek();
+        return node.setFlag(this, flags[sp - 1]);
+    }
+
+    /**
      * Return the top element in the context
      * @return the node that was pushed last
      */
@@ -268,6 +280,20 @@ public class LexicalContext {
         iter.next();
         return iter.hasNext() ? iter.next() : null;
     }
+
+    /**
+     * Gets the label node of the current block.
+     * @return the label node of the current block, if it is labeled. Otherwise returns null.
+     */
+    public LabelNode getCurrentBlockLabelNode() {
+        assert stack[sp - 1] instanceof Block;
+        if(sp < 2) {
+            return null;
+        }
+        final LexicalContextNode parent = stack[sp - 2];
+        return parent instanceof LabelNode ? (LabelNode)parent : null;
+    }
+
 
     /*
     public FunctionNode getProgram() {
@@ -374,9 +400,6 @@ public class LexicalContext {
      * @return block in which the symbol is defined, assert if no such block in context
      */
     public Block getDefiningBlock(final Symbol symbol) {
-        if (symbol.isTemp()) {
-            return null;
-        }
         final String name = symbol.getName();
         for (final Iterator<Block> it = getBlocks(); it.hasNext();) {
             final Block next = it.next();
@@ -393,9 +416,6 @@ public class LexicalContext {
      * @return function node in which this symbol is defined, assert if no such symbol exists in context
      */
     public FunctionNode getDefiningFunction(final Symbol symbol) {
-        if (symbol.isTemp()) {
-            return null;
-        }
         final String name = symbol.getName();
         for (final Iterator<LexicalContextNode> iter = new NodeIterator<>(LexicalContextNode.class); iter.hasNext();) {
             final LexicalContextNode next = iter.next();
@@ -438,7 +458,10 @@ public class LexicalContext {
     }
 
     /**
-     * Count the number of scopes until a given node.
+     * Count the number of scopes until a given node. Note that this method is solely used to figure out the number of
+     * scopes that need to be explicitly popped in order to perform a break or continue jump within the current bytecode
+     * method. For this reason, the method returns 0 if it encounters a {@code SplitNode} between the current location
+     * and the break/continue target.
      * @param until node to stop counting at. Must be within the current  function
      * @return number of with scopes encountered in the context
      */
@@ -450,6 +473,9 @@ public class LexicalContext {
             final LexicalContextNode node = iter.next();
             if (node == until) {
                 break;
+            } else if (node instanceof SplitNode) {
+                // Don't bother popping scopes if we're going to do a return from a split method anyway.
+                return 0;
             }
             assert !(node instanceof FunctionNode); // Can't go outside current function
             if (node instanceof WithNode || node instanceof Block && ((Block)node).needsScope()) {
@@ -488,12 +514,13 @@ public class LexicalContext {
 
     /**
      * Find the breakable node corresponding to this label.
-     * @param label label to search for, if null the closest breakable node will be returned unconditionally, e.g. a while loop with no label
+     * @param labelName name of the label to search for. If null, the closest breakable node will be returned
+     * unconditionally, e.g. a while loop with no label
      * @return closest breakable node
      */
-    public BreakableNode getBreakable(final IdentNode label) {
-        if (label != null) {
-            final LabelNode foundLabel = findLabel(label.getName());
+    public BreakableNode getBreakable(final String labelName) {
+        if (labelName != null) {
+            final LabelNode foundLabel = findLabel(labelName);
             if (foundLabel != null) {
                 // iterate to the nearest breakable to the foundLabel
                 BreakableNode breakable = null;
@@ -513,12 +540,13 @@ public class LexicalContext {
 
     /**
      * Find the continue target node corresponding to this label.
-     * @param label label to search for, if null the closest loop node will be returned unconditionally, e.g. a while loop with no label
+     * @param labelName label name to search for. If null the closest loop node will be returned unconditionally, e.g. a
+     * while loop with no label
      * @return closest continue target node
      */
-    public LoopNode getContinueTo(final IdentNode label) {
-        if (label != null) {
-            final LabelNode foundLabel = findLabel(label.getName());
+    public LoopNode getContinueTo(final String labelName) {
+        if (labelName != null) {
+            final LabelNode foundLabel = findLabel(labelName);
             if (foundLabel != null) {
                 // iterate to the nearest loop to the foundLabel
                 LoopNode loop = null;
@@ -540,7 +568,7 @@ public class LexicalContext {
     public LabelNode findLabel(final String name) {
         for (final Iterator<LabelNode> iter = new NodeIterator<>(LabelNode.class, getCurrentFunction()); iter.hasNext(); ) {
             final LabelNode next = iter.next();
-            if (next.getLabel().getName().equals(name)) {
+            if (next.getLabelName().equals(name)) {
                 return next;
             }
         }
@@ -548,31 +576,21 @@ public class LexicalContext {
     }
 
     /**
-     * Checks whether a given label is a jump destination that lies outside a given
-     * split node
+     * Checks whether a given target is a jump destination that lies outside a given split node
      * @param splitNode the split node
-     * @param label     the label
-     * @return true if label resides outside the split node
+     * @param target the target node
+     * @return true if target resides outside the split node
      */
-    public boolean isExternalTarget(final SplitNode splitNode, final Label label) {
-        boolean targetFound = false;
-        for (int i = sp - 1; i >= 0; i--) {
+    public boolean isExternalTarget(final SplitNode splitNode, final BreakableNode target) {
+        for (int i = sp; i-- > 0;) {
             final LexicalContextNode next = stack[i];
             if (next == splitNode) {
-                return !targetFound;
-            }
-
-            if (next instanceof BreakableNode) {
-                for (final Label l : ((BreakableNode)next).getLabels()) {
-                    if (l == label) {
-                        targetFound = true;
-                        break;
-                    }
-                }
+                return true;
+            } else if (next == target) {
+                return false;
             }
         }
-        assert false : label + " was expected in lexical context " + LexicalContext.this + " but wasn't";
-        return false;
+        throw new AssertionError(target + " was expected in lexical context " + LexicalContext.this + " but wasn't");
     }
 
     @Override

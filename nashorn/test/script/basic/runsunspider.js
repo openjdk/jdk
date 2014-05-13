@@ -54,6 +54,7 @@ function runbench(name) {
 
     var start = new Date;
     load(name);
+
     var stop = new Date - start;
     total_time += stop;
 
@@ -83,6 +84,7 @@ var rtimes = 0;
 var dir = (typeof(__DIR__) == 'undefined') ? "test/script/basic/" : __DIR__;
 var single;
 var verbose_run = false;
+var runall = false;
 
 var args = [];
 if (typeof $ARGS !== 'undefined') {
@@ -100,6 +102,9 @@ for (var i = 0; i < args.length; i++) {
     } else if (args[i] === '--single') {
 	i++;
 	single = args[i];
+    } else if (args[i] === '--runall') {
+	i++;
+	runall = true;
     }
 }
 
@@ -110,45 +115,53 @@ function runsuite(tests) {
 
     try {
 	for (var n = 0; n < tests.length; n++) {
-            path = dir + '../external/sunspider/tests/sunspider-1.0.2/' + tests[n].name
+            try {
+                path = dir + '../external/sunspider/tests/sunspider-1.0.2/' + tests[n].name
 
-	    initrandom();
+                initrandom();
 
-	    var dd = new Date;
+                var dd = new Date;
 
-            runbench(path);
-            if (typeof tests[n].actual !== 'undefined') {
-                assertEq(tests[n].actual(), tests[n].expected());
+                runbench(path);
+                if (typeof tests[n].actual !== 'undefined') {
+                    assertEq(tests[n].actual(), tests[n].expected());
+                }
+
+                if (typeof tests[n].rerun !== 'undefined' && tests[n].times > 0) {
+                    pprint("rerunning " + tests[n].name + " " + tests[n].times + " times...");
+                    var times = 0;
+                    var to = tests[n].times;
+
+                    var elemsPerPercent = to / 100;
+                    var po = 0|(to / 10);
+
+                    times = 0;
+                    for (; times < to; times++) {
+                        initrandom();
+                        tests[n].rerun();
+                        if ((times % (po|0)) == 0) {
+                            pprint(times/to * 100 + "%");
+                        }
+                    }
+                }
+
+                var t = new Date - dd;
+                pprint("time: " + t + " ms");
+                if (typeof tests[n].actual !== 'undefined') {
+                    assertEq(tests[n].actual(), tests[n].expected());
+                }
+                res.push(t);
+
+                pprint("");
+
+                changed = true;
+            } catch(e) {
+                if(runall) {
+                    print("FAIL!");
+                } else {
+                    throw e;
+                }
             }
-
-	    if (typeof tests[n].rerun !== 'undefined' && tests[n].times > 0) {
-		pprint("rerunning " + tests[n].name + " " + tests[n].times + " times...");
-		var times = 0;
-		var to = tests[n].times;
-
-		var elemsPerPercent = to / 100;
-		var po = 0|(to / 10);
-
-		times = 0;
-		for (; times < to; times++) {
-		    initrandom();
-		    tests[n].rerun();
-		    if ((times % (po|0)) == 0) {
-			pprint(times/to * 100 + "%");
-		    }		    
-		}
-	    }
-	    
-	    var t = new Date - dd;		    
-	    pprint("time: " + t + " ms");
-	    if (typeof tests[n].actual !== 'undefined') {
-		assertEq(tests[n].actual(), tests[n].expected());		    			
-	    }
-	    res.push(t);
-
-	    pprint("");
-
-            changed = true;
         }
     } catch (e) {
 	print("FAIL!");
@@ -178,7 +191,7 @@ function runsuite(tests) {
 	if (tests[n].times > 0) {
 	    str += " [";
 	    str += tests[n].times + " reruns]";
-	} 
+	}
 	pprint(str);
     }
 
@@ -201,11 +214,11 @@ var tests = [
     { name: 'regexp-dna.js',
       actual: function() {
 	  return dnaOutputString + dnaInput;
-      },      
+      },
       expected: function() {
 	  return expectedDNAOutputString + expectedDNAInput;
       },
-    },      
+    },
 
     { name: 'string-base64.js',
       actual: function() {
@@ -225,12 +238,12 @@ var tests = [
 	           15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
 		  -1,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
 	          41,42,43,44, 45,46,47,48, 49,50,51,-1, -1,-1,-1,-1
-	  ];   
-	  var str = "";	  
+	  ];
+	  var str = "";	
 	  for (var i = 0; i < 8192; i++)
               str += String.fromCharCode((25 * Math.random()) + 97);
-	  
-	  for (var i = 8192; i <= 16384; i *= 2) {	      
+	
+	  for (var i = 8192; i <= 16384; i *= 2) {	
 	      var base64;
 	      base64 = toBase64(str);
 	      var encoded = base64ToString(base64);
@@ -249,14 +262,14 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  date = new Date("1/1/2007 1:11:11");	  
+	  date = new Date("1/1/2007 1:11:11");	
 	  for (i = 0; i < 4000; ++i) {
 	      var shortFormat = date.dateFormat("Y-m-d");
 	      var longFormat = date.dateFormat("l, F d, Y g:i:s A");
 	      date.setTime(date.getTime() + 84266956);
 	  }
       }
-	  
+	
     },
     { name: 'string-validate-input.js',
       actual: function() {
@@ -268,7 +281,7 @@ var tests = [
       times: rtimes,
       rerun: function() {
 	  doTest();
-      },	 
+      },	
     },
     { name: '3d-morph.js',
       actual: function() {
@@ -279,9 +292,9 @@ var tests = [
           return true;
       },
       times: rtimes,
-      rerun: function() {	  
+      rerun: function() {	
 	  a = Array()
-	  for (var i=0; i < nx*nz*3; ++i) 
+	  for (var i=0; i < nx*nz*3; ++i)
 	      a[i] = 0
 	  for (var i = 0; i < loops; ++i) {
 	      morph(a, i/loops)
@@ -290,7 +303,7 @@ var tests = [
 	  for (var i = 0; i < nx; i++)
 	      testOutput += a[3*(i*nx+i)+1];
 	  a = null;
-	  
+	
       }
     },
     { name: 'crypto-aes.js',
@@ -304,7 +317,7 @@ var tests = [
       rerun: function() {
 	  cipherText = AESEncryptCtr(plainText, password, 256);
 	  decryptedText = AESDecryptCtr(cipherText, password, 256);
-	  
+	
       }
     },
     { name: 'crypto-md5.js',
@@ -319,7 +332,7 @@ var tests = [
 	  md5Output = hex_md5(plainText);
       }
     },
-    
+
     { name: 'crypto-sha1.js',
       actual: function() {
           return sha1Output;
@@ -329,7 +342,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  sha1Output = hex_sha1(plainText);	  
+	  sha1Output = hex_sha1(plainText);	
       }
     },
 
@@ -344,7 +357,7 @@ var tests = [
       rerun: function() {
 	  bitwiseAndValue = 4294967296;
 	  for (var i = 0; i < 600000; i++) {
-	      bitwiseAndValue = bitwiseAndValue & i;	  
+	      bitwiseAndValue = bitwiseAndValue & i;	
 	  }
 	  result = bitwiseAndValue;
       }
@@ -390,7 +403,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  sum = TimeFunc(fast3bitlookup);	 
+	  sum = TimeFunc(fast3bitlookup);	
       }
     },
 
@@ -403,14 +416,14 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  var ret = 0;	  
+	  var ret = 0;	
 	  for (var n = 3; n <= 24; n *= 2) {
 	      (function(){
 		  var bodies = new NBodySystem( Array(
 		      Sun(),Jupiter(),Saturn(),Uranus(),Neptune()
 		  ));
 		  var max = n * 100;
-		  
+		
 		  ret += bodies.energy();
 		  for (var i=0; i<max; i++){
 		      bodies.advance(0.01);
@@ -431,25 +444,25 @@ var tests = [
       times: rtimes,
       rerun: function() {
 	  ret = 0;
-	  
+	
 	  for (var n = 4; n <= 7; n += 1) {
 	      var minDepth = 4;
 	      var maxDepth = Math.max(minDepth + 2, n);
 	      var stretchDepth = maxDepth + 1;
-	      
+	
 	      var check = bottomUpTree(0,stretchDepth).itemCheck();
-	      
+	
 	      var longLivedTree = bottomUpTree(0,maxDepth);
 	      for (var depth=minDepth; depth<=maxDepth; depth+=2){
 		  var iterations = 1 << (maxDepth - depth + minDepth);
-		  
+		
 		  check = 0;
 		  for (var i=1; i<=iterations; i++){
 		      check += bottomUpTree(i,depth).itemCheck();
 		      check += bottomUpTree(-i,depth).itemCheck();
 		  }
 	      }
-	      
+	
 	      ret += longLivedTree.itemCheck();
 	  }
       }
@@ -465,7 +478,7 @@ var tests = [
       times: rtimes,
       rerun: function() {
 	  n = 8;
-	  ret = fannkuch(n);	  
+	  ret = fannkuch(n);	
       }
     },
 
@@ -482,7 +495,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  total = 0;	  
+	  total = 0;	
 	  for (var i = 6; i <= 48; i *= 2) {
 	      total += spectralnorm(i);
 	  }
@@ -498,7 +511,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  testOutput = arrayToCanvasCommands(raytraceScene());	  
+	  testOutput = arrayToCanvasCommands(raytraceScene());	
       }
     },
 
@@ -531,7 +544,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  result = 0;	  
+	  result = 0;	
 	  for (var i = 3; i <= 5; i++) {
 	      result += ack(3,i);
 	      result += fib(17.0+i);
@@ -549,7 +562,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  date = new Date("1/1/2007 1:11:11");	  
+	  date = new Date("1/1/2007 1:11:11");	
 	  for (i = 0; i < 500; ++i) {
 	      var shortFormat = date.formatDate("Y-m-d");
 	      var longFormat = date.formatDate("l, F d, Y g:i:s A");
@@ -569,7 +582,7 @@ var tests = [
           return 295906;
       },
       times: rtimes,
-      rerun: function() {	  
+      rerun: function() {	
 	  tagInfo = tagInfoJSON.parseJSON(function(a, b) { if (a == "popularity") { return Math.log(b) / log2; } else {return b; } });
 	  tagcloud = makeTagCloud(tagInfo);
       }
@@ -601,7 +614,7 @@ var tests = [
       times: rtimes,
       rerun: function() {
 	  result = sieve();
-      }      
+      }
     },
 
     { name: '3d-cube.js',
@@ -612,7 +625,7 @@ var tests = [
 	  MQube = new Array();  // position information of qube
 	  I = new Array();      // entity matrix
 	  Origin = new Object();
-	  Testing = new Object();	  
+	  Testing = new Object();	
 	  for ( var i = 20; i <= 160; i *= 2 ) {
 	      Init(i);
 	  }
@@ -629,7 +642,7 @@ var tests = [
 	  fastaRandom(3*count*1000, IUB);
 	  fastaRandom(5*count*1000, HomoSap);
       }
-    },      
+    },
 
     //TODO no easy way to sanity check result
     { name: 'string-unpack-code.js',

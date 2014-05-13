@@ -54,7 +54,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -498,6 +497,37 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     }
 
     /**
+     * When doing widening for return types of a function or a ternary operator, it is not valid to widen a boolean to
+     * anything other than object. Note that this wouldn't be necessary if {@code Type.widest} did not allow
+     * boolean-to-number widening. Eventually, we should address it there, but it affects too many other parts of the
+     * system and is sometimes legitimate (e.g. whenever a boolean value would undergo ToNumber conversion anyway).
+     * @param t1 type 1
+     * @param t2 type 2
+     * @return wider of t1 and t2, except if one is boolean and the other is neither boolean nor unknown, in which case
+     * {@code Type.OBJECT} is returned.
+     */
+    public static Type widestReturnType(final Type t1, final Type t2) {
+        if (t1.isUnknown()) {
+            return t2;
+        } else if (t2.isUnknown()) {
+            return t1;
+        } else if(t1.isBoolean() != t2.isBoolean() || t1.isNumeric() != t2.isNumeric()) {
+            return Type.OBJECT;
+        }
+        return Type.widest(t1, t2);
+    }
+
+    /**
+     * Returns a generic version of the type. Basically, if the type {@link #isObject()}, returns {@link #OBJECT},
+     * otherwise returns the type unchanged.
+     * @param type the type to generify
+     * @return the generified type
+     */
+    public static Type generic(final Type type) {
+        return type.isObject() ? Type.OBJECT : type;
+    }
+
+    /**
      * Returns the narrowest or least common of two types
      *
      * @param type0 type one
@@ -752,17 +782,17 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     /**
      * This is an integer type, i.e INT, INT32.
      */
-    public static final Type INT = putInCache(new IntType());
+    public static final BitwiseType INT = putInCache(new IntType());
 
     /**
      * This is the number singleton, used for all number types
      */
-    public static final Type NUMBER = putInCache(new NumberType());
+    public static final NumericType NUMBER = putInCache(new NumberType());
 
     /**
      * This is the long singleton, used for all long types
      */
-    public static final Type LONG = putInCache(new LongType());
+    public static final BitwiseType LONG = putInCache(new LongType());
 
     /**
      * A string singleton

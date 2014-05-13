@@ -49,6 +49,7 @@ public final class OptimisticReturnFilters {
     private static final int BOOLEAN_TYPE_INDEX;
     private static final int CHAR_TYPE_INDEX;
     private static final int FLOAT_TYPE_INDEX;
+    private static final int VOID_TYPE_INDEX;
 
     static {
         final MethodHandle INT_DOUBLE = findOwnMH("ensureInt", int.class, double.class, int.class);
@@ -57,11 +58,13 @@ public final class OptimisticReturnFilters {
                 findOwnMH("ensureInt", int.class, long.class, int.class),
                 INT_DOUBLE,
                 findOwnMH("ensureInt", int.class, Object.class, int.class),
+                findOwnMH("ensureInt", int.class, int.class),
                 findOwnMH("ensureInt", int.class, boolean.class, int.class),
                 findOwnMH("ensureInt", int.class, char.class, int.class),
                 INT_DOUBLE.asType(INT_DOUBLE.type().changeParameterType(0, float.class)),
         };
 
+        VOID_TYPE_INDEX = ENSURE_INT.length - 4;
         BOOLEAN_TYPE_INDEX = ENSURE_INT.length - 3;
         CHAR_TYPE_INDEX = ENSURE_INT.length - 2;
         FLOAT_TYPE_INDEX = ENSURE_INT.length - 1;
@@ -72,6 +75,7 @@ public final class OptimisticReturnFilters {
                 null,
                 LONG_DOUBLE,
                 findOwnMH("ensureLong", long.class, Object.class, int.class),
+                ENSURE_INT[VOID_TYPE_INDEX].asType(ENSURE_INT[VOID_TYPE_INDEX].type().changeReturnType(long.class)),
                 ENSURE_INT[BOOLEAN_TYPE_INDEX].asType(ENSURE_INT[BOOLEAN_TYPE_INDEX].type().changeReturnType(long.class)),
                 ENSURE_INT[CHAR_TYPE_INDEX].asType(ENSURE_INT[CHAR_TYPE_INDEX].type().changeReturnType(long.class)),
                 LONG_DOUBLE.asType(LONG_DOUBLE.type().changeParameterType(0, float.class)),
@@ -82,6 +86,7 @@ public final class OptimisticReturnFilters {
                 null,
                 null,
                 findOwnMH("ensureNumber", double.class, Object.class, int.class),
+                ENSURE_INT[VOID_TYPE_INDEX].asType(ENSURE_INT[VOID_TYPE_INDEX].type().changeReturnType(double.class)),
                 ENSURE_INT[BOOLEAN_TYPE_INDEX].asType(ENSURE_INT[BOOLEAN_TYPE_INDEX].type().changeReturnType(double.class)),
                 ENSURE_INT[CHAR_TYPE_INDEX].asType(ENSURE_INT[CHAR_TYPE_INDEX].type().changeReturnType(double.class)),
                 null
@@ -108,12 +113,12 @@ public final class OptimisticReturnFilters {
         }
 
         final MethodHandle guard = getOptimisticTypeGuard(expectedReturnType, actualReturnType);
-        return guard == null ? mh : MH.filterReturnValue(mh, MH.insertArguments(guard, 1, programPoint));
+        return guard == null ? mh : MH.filterReturnValue(mh, MH.insertArguments(guard, guard.type().parameterCount() - 1, programPoint));
     }
 
     /**
      * Given a guarded invocation and a callsite descriptor, perform return value filtering
-     * according to the optimistic type coercion rules, using the return value from the deccriptor
+     * according to the optimistic type coercion rules, using the return value from the descriptor
      * @param inv the invocation
      * @param desc the descriptor
      * @return filtered invocation
@@ -156,6 +161,8 @@ public final class OptimisticReturnFilters {
             return accTypeIndex;
         } else if(provable == boolean.class) {
             return BOOLEAN_TYPE_INDEX;
+        } else if(provable == void.class) {
+            return VOID_TYPE_INDEX;
         } else if(provable == byte.class || provable == short.class) {
             return 0; // never needs a guard, as it's assignable to int
         } else if(provable == char.class) {
@@ -213,6 +220,12 @@ public final class OptimisticReturnFilters {
     @SuppressWarnings("unused")
     private static int ensureInt(final char arg, final int programPoint) {
         throw new UnwarrantedOptimismException(arg, programPoint, Type.OBJECT);
+    }
+
+    @SuppressWarnings("unused")
+    private static int ensureInt(final int programPoint) {
+        // Turns a void into UNDEFINED
+        throw new UnwarrantedOptimismException(ScriptRuntime.UNDEFINED, programPoint, Type.OBJECT);
     }
 
     private static long ensureLong(final double arg, final int programPoint) {

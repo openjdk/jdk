@@ -84,7 +84,7 @@ interface BytecodeNumericOps {
      * @param programPoint program point id
      * @return result type
      */
-    Type rem(MethodVisitor method);
+    Type rem(MethodVisitor method, int programPoint);
 
     /**
      * Comparison with int return value, e.g. LCMP, DCMP.

@@ -172,7 +172,6 @@ function run_one_benchmark(arg, iters) {
 	    max_score = Math.max(max_score, scores[x]);
 	}
 	mean_score /= iters;    
-
     } catch (e) {
 	print_always("*** Aborted and setting score to zero. Reason: " + e);
 	if (e instanceof java.lang.Throwable) {
@@ -286,6 +285,3 @@ tests_found.sort();
 
 load(path + 'base.js');
 run_suite(tests_found, iters);
-
-
-

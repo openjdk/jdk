@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import java.util.ArrayList;
 import java.util.List;
-import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
@@ -82,15 +81,6 @@ public abstract class Node implements Cloneable {
     }
 
     /**
-     * Is this an atom node - for example a literal or an identity
-     *
-     * @return true if atom
-     */
-    public boolean isAtom() {
-        return false;
-    }
-
-    /**
      * Is this a loop node?
      *
      * @return true if atom
@@ -106,31 +96,6 @@ public abstract class Node implements Cloneable {
      * @return true if assignment
      */
     public boolean isAssignment() {
-        return false;
-    }
-
-    /**
-     * Is this a self modifying assignment?
-     * @return true if self modifying, e.g. a++, or a*= 17
-     */
-    public boolean isSelfModifying() {
-        return false;
-    }
-
-    /**
-     * Returns widest operation type of this operation.
-     *
-     * @return the widest type for this operation
-     */
-    public Type getWidestOperationType() {
-        return Type.OBJECT;
-    }
-
-    /**
-     * Returns true if this node represents a comparison operator
-     * @return true if comparison
-     */
-    public boolean isComparison() {
         return false;
     }
 
@@ -282,21 +247,6 @@ public abstract class Node implements Cloneable {
         return false;
     }
 
-    /**
-     * Tag an expression as optimistic or not. This is a convenience wrapper
-     * that is a no op of the expression cannot be optimistic
-     * @param expr          expression
-     * @param isOptimistic  is optimistic flag
-     * @return the new expression, or same if unmodified state
-     */
-    //SAM method in Java 8
-    public static Expression setIsOptimistic(final Expression expr, final boolean isOptimistic) {
-        if (expr instanceof Optimistic) {
-            return (Expression)((Optimistic)expr).setIsOptimistic(isOptimistic);
-        }
-        return expr;
-    }
-
     //on change, we have to replace the entire list, that's we can't simple do ListIterator.set
     static <T extends Node> List<T> accept(final NodeVisitor<? extends LexicalContext> visitor, final Class<T> clazz, final List<T> list) {
         boolean changed = false;
@@ -319,21 +269,4 @@ public abstract class Node implements Cloneable {
         }
         return newNode;
     }
-
-    static final String OPT_IDENTIFIER = "%";
-
-    static void optimisticType(final Node node, final StringBuilder sb) {
-        if (node instanceof Optimistic && ((Optimistic)node).isOptimistic()) {
-            sb.append('{');
-            final String desc = (((Expression)node).getType()).getDescriptor();
-            sb.append(desc.charAt(desc.length() - 1) == ';' ? "O" : desc);
-            if (node instanceof Optimistic && ((Optimistic)node).isOptimistic()) {
-                sb.append(OPT_IDENTIFIER);
-                sb.append('_');
-                sb.append(((Optimistic)node).getProgramPoint());
-            }
-            sb.append('}');
-        }
-    }
-
 }

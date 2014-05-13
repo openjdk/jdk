@@ -35,7 +35,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -45,12 +44,12 @@ import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.objects.Global;
-import jdk.nashorn.internal.runtime.logging.DebugLogger;
-import jdk.nashorn.internal.runtime.logging.Loggable;
-import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -59,7 +58,6 @@ import jdk.nashorn.internal.runtime.options.Options;
  * introduces expensive args collection and boxing
  *
  * <pre>
- * {@code
  * var Class = {
  *     create: function() {
  *         return function() { //vararg
@@ -80,7 +78,6 @@ import jdk.nashorn.internal.runtime.options.Options;
  * }
  *
  * new Color(17, 47, 11);
- * }
  * </pre>
  */
 
@@ -303,16 +300,9 @@ public final class ApplySpecialization implements Loggable {
         return finish();
     }
 
-    private static boolean isApply(final Node node) {
-        if (node instanceof AccessNode) {
-            return isApply(((AccessNode)node).getProperty());
-        }
-        return node instanceof IdentNode && "apply".equals(((IdentNode)node).getName());
-    }
-
     private static boolean isApply(final CallNode callNode) {
         final Expression f = callNode.getFunction();
-        return f instanceof AccessNode && isApply(f);
+        return f instanceof AccessNode && "apply".equals(((AccessNode)f).getProperty());
     }
 
 }

@@ -25,34 +25,21 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.ATTR;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.CONSTANT_FOLDED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.FINALIZED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.INITIALIZED;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.LOCAL_VARIABLE_TYPES_CALCULATED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.LOWERED;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.OPTIMISTIC_TYPES_ASSIGNED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.PARSED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SCOPE_DEPTHS_COMPUTED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SPLIT;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SYMBOLS_ASSIGNED;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
 import java.util.EnumSet;
-import java.util.List;
-
-import jdk.nashorn.internal.codegen.types.Range;
-import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
-import jdk.nashorn.internal.ir.LexicalContext;
-import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.ReturnNode;
-import jdk.nashorn.internal.ir.Symbol;
-import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.Timing;
 
@@ -140,169 +127,19 @@ enum CompilationPhase {
         }
     },
 
-    /**
-     * Attribution Assign symbols and types to all nodes.
-     */
-    ATTRIBUTION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, SPLIT)) {
+    SYMBOL_ASSIGNMENT_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, SPLIT)) {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            final TemporarySymbols ts = compiler.getTemporarySymbols();
-            final FunctionNode     newFunctionNode =
-                    (FunctionNode)enterAttr(fn, ts).
-                        accept(new Attr(compiler.getCompilationEnvironment(), ts));
-
-            if (compiler.getEnv()._print_mem_usage) {
-                compiler.getLogger().info("Attr temporary symbol count:", ts.getTotalSymbolCount());
-            }
-
-            return newFunctionNode;
-        }
-
-        /**
-         * Pessimistically set all lazy functions' return types to Object
-         * and the function symbols to object
-         * @param functionNode node where to start iterating
-         */
-        private FunctionNode enterAttr(final FunctionNode functionNode, final TemporarySymbols ts) {
-            return (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                @Override
-                public Node leaveFunctionNode(final FunctionNode node) {
-                    return node.setReturnType(lc, Type.UNKNOWN).setSymbol(lc, null);
-                }
-            });
+            return (FunctionNode)fn.accept(new AssignSymbols(compiler.getCompilationEnvironment()));
         }
 
         @Override
         public String toString() {
-            return "[Type Attribution]";
+            return "[Symbol Assignment]";
         }
     },
 
-    /**
-     * Range analysis
-     *    Conservatively prove that certain variables can be narrower than
-     *    the most generic number type
-     */
-    RANGE_ANALYSIS_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, SPLIT, ATTR)) {
-        @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            if (!compiler.getEnv()._range_analysis) {
-                return fn;
-            }
-
-            FunctionNode newFunctionNode = (FunctionNode)fn.accept(new RangeAnalyzer(compiler.getCompilationEnvironment()));
-            final List<ReturnNode> returns = new ArrayList<>();
-
-            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                private final Deque<ArrayList<ReturnNode>> returnStack = new ArrayDeque<>();
-
-                @Override
-                public boolean enterFunctionNode(final FunctionNode functionNode) {
-                    returnStack.push(new ArrayList<ReturnNode>());
-                    return true;
-                }
-
-                @Override
-                public Node leaveFunctionNode(final FunctionNode functionNode) {
-                    Type returnType = Type.UNKNOWN;
-                    for (final ReturnNode ret : returnStack.pop()) {
-                        if (ret.getExpression() == null) {
-                            returnType = Type.OBJECT;
-                            break;
-                        }
-                        returnType = Type.widest(returnType, ret.getExpression().getType());
-                    }
-                    return functionNode.setReturnType(lc, returnType);
-                }
-
-                @Override
-                public Node leaveReturnNode(final ReturnNode returnNode) {
-                    final ReturnNode result = (ReturnNode)leaveDefault(returnNode);
-                    returns.add(result);
-                    return result;
-                }
-
-                @Override
-                public Node leaveDefault(final Node node) {
-                    if (node instanceof Expression) {
-                        final Expression expr = (Expression)node;
-                        final Symbol symbol = expr.getSymbol();
-                        if (symbol != null) {
-                            final Range range      = symbol.getRange();
-                            final Type  symbolType = symbol.getSymbolType();
-
-                            if (!symbolType.isUnknown() && !symbolType.isNumeric()) {
-                                return expr;
-                            }
-
-                            final Type rangeType  = range.getType();
-                            if (!rangeType.isUnknown() && !Type.areEquivalent(symbolType, rangeType) && Type.widest(symbolType, rangeType) == symbolType) { //we can narrow range
-                                compiler.getCompilationEnvironment().getContext().getLogger(RangeAnalyzer.class).info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
-                                return expr.setSymbol(lc, symbol.setTypeOverrideShared(range.getType(), compiler.getTemporarySymbols()));
-                            }
-                        }
-                    }
-                    return node;
-                }
-            });
-
-            Type returnType = Type.UNKNOWN;
-            for (final ReturnNode node : returns) {
-                if (node.getExpression() != null) {
-                    returnType = Type.widest(returnType, node.getExpression().getType());
-                } else {
-                    returnType = Type.OBJECT;
-                    break;
-                }
-            }
-
-            return newFunctionNode.setReturnType(null, returnType);
-        }
-
-        @Override
-        public String toString() {
-            return "[Range Analysis]";
-        }
-    },
-
-    /**
-     * FinalizeTypes
-     *
-     * This pass finalizes the types for nodes. If Attr created wider types than
-     * known during the first pass, convert nodes are inserted or access nodes
-     * are specialized where scope accesses.
-     *
-     * Runtime nodes may be removed and primitivized or reintroduced depending
-     * on information that was established in Attr.
-     *
-     * Contract: all variables must have slot assignments and scope assignments
-     * before type finalization.
-     */
-    TYPE_FINALIZATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT)) {
-        @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            final ScriptEnvironment env = compiler.getEnv();
-
-            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new FinalizeTypes(compiler.getCompilationEnvironment()));
-
-            if (env._print_lower_ast) {
-                env.getErr().println(new ASTWriter(newFunctionNode));
-            }
-
-            if (env._print_lower_parse) {
-                env.getErr().println(new PrintVisitor(newFunctionNode));
-            }
-
-            return newFunctionNode;
-        }
-
-        @Override
-        public String toString() {
-            return "[Type Finalization]";
-        }
-    },
-
-    SCOPE_DEPTH_COMPUTATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED)) {
+    SCOPE_DEPTH_COMPUTATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, SPLIT, SYMBOLS_ASSIGNED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             return (FunctionNode)fn.accept(new FindScopeDepths(compiler));
@@ -314,19 +151,55 @@ enum CompilationPhase {
         }
     },
 
+    OPTIMISTIC_TYPE_ASSIGNMENT_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, SPLIT, SYMBOLS_ASSIGNED, SCOPE_DEPTHS_COMPUTED)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
+            if(compiler.getCompilationEnvironment().useOptimisticTypes()) {
+                return (FunctionNode)fn.accept(new OptimisticTypesCalculator(compiler.getCompilationEnvironment()));
+            }
+            return fn.setState(null, OPTIMISTIC_TYPES_ASSIGNED);
+        }
+
+        @Override
+        public String toString() {
+            return "[Optimistic Type Assignment]";
+        }
+    },
+
+    LOCAL_VARIABLE_TYPE_CALCULATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, SPLIT, SYMBOLS_ASSIGNED, SCOPE_DEPTHS_COMPUTED, OPTIMISTIC_TYPES_ASSIGNED)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
+            return (FunctionNode)fn.accept(new LocalVariableTypesCalculator(compiler.getCompilationEnvironment()));
+        }
+
+        @Override
+        public String toString() {
+            return "[Local Variable Type Calculation]";
+        }
+    },
+
     /**
      * Bytecode generation:
      *
      * Generate the byte code class(es) resulting from the compiled FunctionNode
      */
-    BYTECODE_GENERATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED, SCOPE_DEPTHS_COMPUTED)) {
+    BYTECODE_GENERATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, SPLIT, SYMBOLS_ASSIGNED, SCOPE_DEPTHS_COMPUTED, OPTIMISTIC_TYPES_ASSIGNED, LOCAL_VARIABLE_TYPES_CALCULATED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             final ScriptEnvironment env = compiler.getEnv();
+
+            if (env._print_lower_ast) {
+                env.getErr().println(new ASTWriter(fn));
+            }
+
+            if (env._print_lower_parse) {
+                env.getErr().println(new PrintVisitor(fn));
+            }
+
             FunctionNode newFunctionNode = fn;
 
+            final CodeGenerator codegen = new CodeGenerator(compiler);
             try {
-                final CodeGenerator codegen = new CodeGenerator(compiler);
                 newFunctionNode = (FunctionNode)newFunctionNode.accept(codegen);
                 codegen.generateScopeCalls();
             } catch (final VerifyError e) {
@@ -338,6 +211,9 @@ enum CompilationPhase {
                 } else {
                     throw e;
                 }
+            } catch (final Throwable e) {
+                // Provide source file and line number being compiled when the assertion occurred
+                throw new AssertionError("Failed generating bytecode for " + fn.getSourceName() + ":" + codegen.getLastLineNumber(), e);
             }
 
             for (final CompileUnit compileUnit : compiler.getCompileUnits()) {

@@ -34,7 +34,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * Case nodes are not BreakableNodes, but the SwitchNode is
  */
 @Immutable
-public final class CaseNode extends Node {
+public final class CaseNode extends Node implements JoinPredecessor {
     /** Test expression. */
     private final Expression test;
 
@@ -43,6 +43,11 @@ public final class CaseNode extends Node {
 
     /** Case entry label. */
     private final Label entry;
+
+    /**
+     * @see JoinPredecessor
+     */
+    private final LocalVariableConversion conversion;
 
     /**
      * Constructors
@@ -58,14 +63,16 @@ public final class CaseNode extends Node {
         this.test  = test;
         this.body  = body;
         this.entry = new Label("entry");
+        this.conversion = null;
     }
 
-    CaseNode(final CaseNode caseNode, final Expression test, final Block body) {
+    CaseNode(final CaseNode caseNode, final Expression test, final Block body, final LocalVariableConversion conversion) {
         super(caseNode);
 
         this.test  = test;
         this.body  = body;
         this.entry = new Label(caseNode.entry);
+        this.conversion = conversion;
     }
 
     @Override
@@ -133,13 +140,26 @@ public final class CaseNode extends Node {
         if (this.test == test) {
             return this;
         }
-        return new CaseNode(this, test, body);
+        return new CaseNode(this, test, body, conversion);
+    }
+
+    @Override
+    public JoinPredecessor setLocalVariableConversion(final LexicalContext lc, final LocalVariableConversion conversion) {
+        if(this.conversion == conversion) {
+            return this;
+        }
+        return new CaseNode(this, test, body, conversion);
+    }
+
+    @Override
+    public LocalVariableConversion getLocalVariableConversion() {
+        return conversion;
     }
 
     private CaseNode setBody(final Block body) {
         if (this.body == body) {
             return this;
         }
-        return new CaseNode(this, test, body);
+        return new CaseNode(this, test, body, conversion);
     }
 }

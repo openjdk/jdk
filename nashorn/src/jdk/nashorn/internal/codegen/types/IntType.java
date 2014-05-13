@@ -28,6 +28,7 @@ package jdk.nashorn.internal.codegen.types;
 import static jdk.internal.org.objectweb.asm.Opcodes.BIPUSH;
 import static jdk.internal.org.objectweb.asm.Opcodes.I2D;
 import static jdk.internal.org.objectweb.asm.Opcodes.I2L;
+import static jdk.internal.org.objectweb.asm.Opcodes.IADD;
 import static jdk.internal.org.objectweb.asm.Opcodes.IAND;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_1;
@@ -37,17 +38,21 @@ import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_4;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_5;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_M1;
 import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.IMUL;
+import static jdk.internal.org.objectweb.asm.Opcodes.INEG;
 import static jdk.internal.org.objectweb.asm.Opcodes.IOR;
-import static jdk.internal.org.objectweb.asm.Opcodes.IREM;
 import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
 import static jdk.internal.org.objectweb.asm.Opcodes.ISHL;
 import static jdk.internal.org.objectweb.asm.Opcodes.ISHR;
 import static jdk.internal.org.objectweb.asm.Opcodes.ISTORE;
+import static jdk.internal.org.objectweb.asm.Opcodes.ISUB;
 import static jdk.internal.org.objectweb.asm.Opcodes.IUSHR;
 import static jdk.internal.org.objectweb.asm.Opcodes.IXOR;
 import static jdk.internal.org.objectweb.asm.Opcodes.SIPUSH;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_INT;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 
@@ -145,7 +150,11 @@ class IntType extends BitwiseType {
 
     @Override
     public Type add(final MethodVisitor method, final int programPoint) {
-        method.visitInvokeDynamicInsn("iadd", "(II)I", MATHBOOTSTRAP, programPoint);
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(IADD);
+        } else {
+            method.visitInvokeDynamicInsn("iadd", "(II)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 
@@ -200,31 +209,49 @@ class IntType extends BitwiseType {
 
     @Override
     public Type sub(final MethodVisitor method, final int programPoint) {
-        method.visitInvokeDynamicInsn("isub", "(II)I", MATHBOOTSTRAP, programPoint);
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(ISUB);
+        } else {
+            method.visitInvokeDynamicInsn("isub", "(II)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 
     @Override
     public Type mul(final MethodVisitor method, final int programPoint) {
-        method.visitInvokeDynamicInsn("imul", "(II)I", MATHBOOTSTRAP, programPoint);
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(IMUL);
+        } else {
+            method.visitInvokeDynamicInsn("imul", "(II)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 
     @Override
     public Type div(final MethodVisitor method, final int programPoint) {
+        // Never perform non-optimistic integer division in JavaScript.
+        assert programPoint != INVALID_PROGRAM_POINT;
+
         method.visitInvokeDynamicInsn("idiv", "(II)I", MATHBOOTSTRAP, programPoint);
         return INT;
     }
 
     @Override
-    public Type rem(final MethodVisitor method) {
-        method.visitInsn(IREM);
+    public Type rem(final MethodVisitor method, final int programPoint) {
+        // Never perform non-optimistic integer remainder in JavaScript.
+        assert programPoint != INVALID_PROGRAM_POINT;
+
+        method.visitInvokeDynamicInsn("irem", "(II)I", MATHBOOTSTRAP, programPoint);
         return INT;
     }
 
     @Override
     public Type neg(final MethodVisitor method, final int programPoint) {
-        method.visitInvokeDynamicInsn("ineg", "(I)I", MATHBOOTSTRAP, programPoint);
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(INEG);
+        } else {
+            method.visitInvokeDynamicInsn("ineg", "(I)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 

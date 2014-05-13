@@ -281,7 +281,7 @@ public class TypeUtilities {
         }
         if(sourceType.isPrimitive()) {
             if(sourceType == void.class) {
-                return true; // Void can be losslessly represented by any type
+                return false; // Void can't be losslessly represented by any type
             }
             if(targetType.isPrimitive()) {
                 return isProperPrimitiveLosslessSubtype(sourceType, targetType);

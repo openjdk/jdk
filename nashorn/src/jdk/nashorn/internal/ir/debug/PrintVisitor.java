@@ -29,18 +29,25 @@ import java.util.List;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.BlockStatement;
+import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
+import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
+import jdk.nashorn.internal.ir.JoinPredecessor;
+import jdk.nashorn.internal.ir.JoinPredecessorExpression;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
+import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
+import jdk.nashorn.internal.ir.ThrowNode;
 import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
@@ -140,6 +147,27 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
     }
 
     @Override
+    public boolean enterContinueNode(final ContinueNode node) {
+        node.toString(sb);
+        printLocalVariableConversion(node);
+        return false;
+    }
+
+    @Override
+    public boolean enterBreakNode(final BreakNode node) {
+        node.toString(sb);
+        printLocalVariableConversion(node);
+        return false;
+    }
+
+    @Override
+    public boolean enterThrowNode(final ThrowNode node) {
+        node.toString(sb);
+        printLocalVariableConversion(node);
+        return false;
+    }
+
+    @Override
     public boolean enterBlock(final Block block) {
         sb.append(' ');
         sb.append('{');
@@ -190,6 +218,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
         sb.append(EOLN);
         indent();
         sb.append('}');
+        printLocalVariableConversion(block);
 
         return false;
     }
@@ -208,6 +237,24 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
         sb.append(' ');
         binaryNode.rhs().accept(this);
         return false;
+    }
+
+    @Override
+    public boolean enterJoinPredecessorExpression(JoinPredecessorExpression expr) {
+        expr.getExpression().accept(this);
+        printLocalVariableConversion(expr);
+        return false;
+    }
+
+    @Override
+    public boolean enterIdentNode(IdentNode identNode) {
+        identNode.toString(sb);
+        printLocalVariableConversion(identNode);
+        return true;
+    }
+
+    private void printLocalVariableConversion(final JoinPredecessor joinPredecessor) {
+        LocalVariableConversion.toString(joinPredecessor.getLocalVariableConversion(), sb);
     }
 
     @Override
@@ -252,7 +299,12 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
             sb.append(" else ");
             fail.accept(this);
         }
-
+        if(ifNode.getLocalVariableConversion() != null) {
+            assert fail == null;
+            sb.append(" else ");
+            printLocalVariableConversion(ifNode);
+            sb.append(";");
+        }
         return false;
     }
 
@@ -263,7 +315,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
         indent += TABWIDTH;
         labeledNode.toString(sb);
         labeledNode.getBody().accept(this);
-
+        printLocalVariableConversion(labeledNode);
         return false;
     }
 
@@ -296,12 +348,19 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
             sb.append(EOLN);
             indent();
             caseNode.toString(sb);
+            printLocalVariableConversion(caseNode);
             indent += TABWIDTH;
             caseNode.getBody().accept(this);
             indent -= TABWIDTH;
             sb.append(EOLN);
         }
-
+        if(switchNode.getLocalVariableConversion() != null) {
+            sb.append(EOLN);
+            indent();
+            sb.append("default: ");
+            printLocalVariableConversion(switchNode);
+            sb.append("{}");
+        }
         sb.append(EOLN);
         indent();
         sb.append("}");
@@ -312,6 +371,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
     @Override
     public boolean enterTryNode(final TryNode tryNode) {
         tryNode.toString(sb);
+        printLocalVariableConversion(tryNode);
         tryNode.getBody().accept(this);
 
         final List<Block> catchBlocks = tryNode.getCatchBlocks();
@@ -336,6 +396,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
     public boolean enterVarNode(final VarNode varNode) {
         sb.append("var ");
         varNode.getName().toString(sb);
+        printLocalVariableConversion(varNode.getName());
         final Node init = varNode.getInit();
         if (init != null) {
             sb.append(" = ");
@@ -347,6 +408,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterWhileNode(final WhileNode whileNode) {
+        printLocalVariableConversion(whileNode);
         if (whileNode.isDoWhile()) {
             sb.append("do");
             whileNode.getBody().accept(this);

@@ -49,8 +49,8 @@ public final class IndexNode extends BaseNode {
         this.index = index;
     }
 
-    private IndexNode(final IndexNode indexNode, final Expression base, final Expression index, final boolean isFunction, final Type optimisticType, final boolean isOptimistic, final int programPoint) {
-        super(indexNode, base, isFunction, optimisticType, isOptimistic, programPoint);
+    private IndexNode(final IndexNode indexNode, final Expression base, final Expression index, final boolean isFunction, final Type type, final int programPoint) {
+        super(indexNode, base, isFunction, type, programPoint);
         this.index = index;
     }
 
@@ -72,7 +72,7 @@ public final class IndexNode extends BaseNode {
             sb.append('(');
         }
 
-        Node.optimisticType(this, sb);
+        optimisticTypeToString(sb);
 
         base.toString(sb);
 
@@ -97,7 +97,7 @@ public final class IndexNode extends BaseNode {
         if (this.base == base) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
+        return new IndexNode(this, base, index, isFunction(), type, programPoint);
     }
 
     /**
@@ -109,15 +109,15 @@ public final class IndexNode extends BaseNode {
         if(this.index == index) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
+        return new IndexNode(this, base, index, isFunction(), type, programPoint);
     }
 
     @Override
-    public IndexNode setType(final TemporarySymbols ts, final Type optimisticType) {
-        if (this.optimisticType == optimisticType) {
+    public IndexNode setType(final Type type) {
+        if (this.type == type) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
+        return new IndexNode(this, base, index, isFunction(), type, programPoint);
     }
 
     @Override
@@ -125,7 +125,7 @@ public final class IndexNode extends BaseNode {
         if (isFunction()) {
             return this;
         }
-        return new IndexNode(this, base, index, true, optimisticType, isOptimistic, programPoint);
+        return new IndexNode(this, base, index, true, type, programPoint);
     }
 
     @Override
@@ -133,14 +133,6 @@ public final class IndexNode extends BaseNode {
         if (this.programPoint == programPoint) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
-    }
-
-    @Override
-    public IndexNode setIsOptimistic(boolean isOptimistic) {
-        if (this.isOptimistic == isOptimistic) {
-            return this;
-        }
-        return new IndexNode(this, base, index, isFunction(), optimisticType, isOptimistic, programPoint);
+        return new IndexNode(this, base, index, isFunction(), type, programPoint);
     }
 }

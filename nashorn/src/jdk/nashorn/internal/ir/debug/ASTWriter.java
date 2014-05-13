@@ -36,6 +36,7 @@ import java.util.List;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.Expression;
+import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TernaryNode;
@@ -121,8 +122,8 @@ public final class ASTWriter {
             type = "ref: " + type;
         }
         final Symbol symbol;
-        if (node instanceof Expression) {
-            symbol = ((Expression)node).getSymbol();
+        if (node instanceof IdentNode) {
+            symbol = ((IdentNode)node).getSymbol();
         } else {
             symbol = null;
         }
