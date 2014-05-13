@@ -310,6 +310,44 @@ public enum JSType {
     }
 
     /**
+     * Similar to {@link #of(Object)}, but does not distinguish between {@link #FUNCTION} and {@link #OBJECT}, returning
+     * {@link #OBJECT} in both cases. The distinction is costly, and the EQ and STRICT_EQ predicates don't care about it
+     * so we maintain this version for their use.
+     *
+     * @param obj an object
+     *
+     * @return the JSType for the object; returns {@link #OBJECT} instead of {@link #FUNCTION} for functions.
+     */
+    public static JSType ofNoFunction(final Object obj) {
+        // Order of these statements is tuned for performance (see JDK-8024476)
+        if (obj == null) {
+            return JSType.NULL;
+        }
+
+        if (obj instanceof ScriptObject) {
+            return JSType.OBJECT;
+        }
+
+        if (obj instanceof Boolean) {
+            return JSType.BOOLEAN;
+        }
+
+        if (obj instanceof String || obj instanceof ConsString) {
+            return JSType.STRING;
+        }
+
+        if (obj instanceof Number) {
+            return JSType.NUMBER;
+        }
+
+        if (obj == ScriptRuntime.UNDEFINED) {
+            return JSType.UNDEFINED;
+        }
+
+        return JSType.OBJECT;
+    }
+
+    /**
      * Void return method handle glue
      */
     public static void voidReturn() {

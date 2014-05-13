@@ -42,7 +42,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -167,7 +166,7 @@ public final class ScriptRuntime {
         // But we don't need to -- all we need is the right class name
         // of the corresponding primitive wrapper type.
 
-        final JSType type = JSType.of(self);
+        final JSType type = JSType.ofNoFunction(self);
 
         switch (type) {
         case BOOLEAN:
@@ -187,7 +186,6 @@ public final class ScriptRuntime {
             className = "Undefined";
             break;
         case OBJECT:
-        case FUNCTION:
             if (self instanceof ScriptObject) {
                 className = ((ScriptObject)self).getClassName();
             } else if (self instanceof JSObject) {
@@ -407,8 +405,8 @@ public final class ScriptRuntime {
      * @return true if both objects have the same value
      */
     public static boolean sameValue(final Object x, final Object y) {
-        final JSType xType = JSType.of(x);
-        final JSType yType = JSType.of(y);
+        final JSType xType = JSType.ofNoFunction(x);
+        final JSType yType = JSType.ofNoFunction(y);
 
         if (xType != yType) {
             return false;
@@ -681,8 +679,8 @@ public final class ScriptRuntime {
 
     /** ECMA 11.9.3 The Abstract Equality Comparison Algorithm */
     private static boolean equals(final Object x, final Object y) {
-        final JSType xType = JSType.of(x);
-        final JSType yType = JSType.of(y);
+        final JSType xType = JSType.ofNoFunction(x);
+        final JSType yType = JSType.ofNoFunction(y);
 
         if (xType == yType) {
 
@@ -691,13 +689,7 @@ public final class ScriptRuntime {
             }
 
             if (xType == JSType.NUMBER) {
-                final double xVal = ((Number)x).doubleValue();
-                final double yVal = ((Number)y).doubleValue();
-                if (Double.isNaN(xVal) || Double.isNaN(yVal)) {
-                    return false;
-                }
-
-                return xVal == yVal;
+                return ((Number)x).doubleValue() == ((Number)y).doubleValue();
             }
 
             if (xType == JSType.STRING) {
@@ -706,8 +698,7 @@ public final class ScriptRuntime {
             }
 
             if (xType == JSType.BOOLEAN) {
-                // Boolean comparison
-                return x.equals(y);
+                return ((Boolean)x).booleanValue() == ((Boolean)y).booleanValue();
             }
 
             return x == y;
@@ -773,8 +764,8 @@ public final class ScriptRuntime {
 
     /** ECMA 11.9.6 The Strict Equality Comparison Algorithm */
     private static boolean strictEquals(final Object x, final Object y) {
-        final JSType xType = JSType.of(x);
-        final JSType yType = JSType.of(y);
+        final JSType xType = JSType.ofNoFunction(x);
+        final JSType yType = JSType.ofNoFunction(y);
 
         if (xType != yType) {
             return false;
@@ -785,14 +776,7 @@ public final class ScriptRuntime {
         }
 
         if (xType == JSType.NUMBER) {
-            final double xVal = ((Number)x).doubleValue();
-            final double yVal = ((Number)y).doubleValue();
-
-            if (Double.isNaN(xVal) || Double.isNaN(yVal)) {
-                return false;
-            }
-
-            return xVal == yVal;
+            return ((Number)x).doubleValue() == ((Number)y).doubleValue();
         }
 
         if (xType == JSType.STRING) {
@@ -801,7 +785,7 @@ public final class ScriptRuntime {
         }
 
         if (xType == JSType.BOOLEAN) {
-            return x.equals(y);
+            return ((Boolean)x).booleanValue() == ((Boolean)y).booleanValue();
         }
 
         // finally, the object identity comparison
@@ -817,9 +801,9 @@ public final class ScriptRuntime {
      * @return true if objects are equal
      */
     public static boolean IN(final Object property, final Object obj) {
-        final JSType rvalType = JSType.of(obj);
+        final JSType rvalType = JSType.ofNoFunction(obj);
 
-        if (rvalType == JSType.OBJECT || rvalType == JSType.FUNCTION) {
+        if (rvalType == JSType.OBJECT) {
             if (obj instanceof ScriptObject) {
                 return ((ScriptObject)obj).has(property);
             }
@@ -931,7 +915,7 @@ public final class ScriptRuntime {
             px = JSType.toPrimitive(x, Number.class);
         }
 
-        if (JSType.of(px) == JSType.STRING && JSType.of(py) == JSType.STRING) {
+        if (JSType.ofNoFunction(px) == JSType.STRING && JSType.ofNoFunction(py) == JSType.STRING) {
             // May be String or ConsString
             return px.toString().compareTo(py.toString()) < 0;
         }

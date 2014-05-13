@@ -38,7 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -418,7 +417,7 @@ public final class NativeObject {
      */
     @Constructor
     public static Object construct(final boolean newObj, final Object self, final Object value) {
-        final JSType type = JSType.of(value);
+        final JSType type = JSType.ofNoFunction(value);
 
         // Object(null), Object(undefined), Object() are same as "new Object()"
 
@@ -429,7 +428,6 @@ public final class NativeObject {
             case STRING:
                 return Global.toObject(value);
             case OBJECT:
-            case FUNCTION:
                 return value;
             case NULL:
             case UNDEFINED:
