@@ -525,13 +525,6 @@ class CommandLineFlags {
   product_pd(bool, UseMembar,                                               \
           "(Unstable) Issues membars on thread state transitions")          \
                                                                             \
-  /* Temp PPC Flag to allow disabling the use of lwsync on ppc platforms    \
-   * that don't support it.  This will be replaced by processor detection   \
-   * logic.                                                                 \
-   */                                                                       \
-  product(bool, UsePPCLWSYNC, true,                                         \
-          "Use lwsync instruction if true, else use slower sync")           \
-                                                                            \
   develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
           "Clean the chunk pool asynchronously")                            \
                                                                             \
