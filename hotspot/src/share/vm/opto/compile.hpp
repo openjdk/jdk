@@ -311,6 +311,7 @@ class Compile : public Phase {
   bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
   bool                  _do_count_invocations;  // True if we generate code to count invocations
   bool                  _do_method_data_update; // True if we generate code to update MethodData*s
+  bool                  _age_code;              // True if we need to profile code age (decrement the aging counter)
   int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
@@ -584,7 +585,9 @@ class Compile : public Phase {
   void          set_do_count_invocations(bool z){ _do_count_invocations = z; }
   bool              do_method_data_update() const { return _do_method_data_update; }
   void          set_do_method_data_update(bool z) { _do_method_data_update = z; }
-  int               AliasLevel() const          { return _AliasLevel; }
+  bool              age_code() const             { return _age_code; }
+  void          set_age_code(bool z)             { _age_code = z; }
+  int               AliasLevel() const           { return _AliasLevel; }
   bool              print_assembly() const       { return _print_assembly; }
   void          set_print_assembly(bool z)       { _print_assembly = z; }
   bool              print_inlining() const       { return _print_inlining; }

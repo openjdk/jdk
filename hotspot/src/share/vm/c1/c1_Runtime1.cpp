@@ -685,19 +685,32 @@ JRT_LEAF(void, Runtime1::monitorexit(JavaThread* thread, BasicObjectLock* lock))
 JRT_END
 
 // Cf. OptoRuntime::deoptimize_caller_frame
-JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* thread))
+JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* thread, jint trap_request))
   // Called from within the owner thread, so no need for safepoint
   RegisterMap reg_map(thread, false);
   frame stub_frame = thread->last_frame();
-  assert(stub_frame.is_runtime_frame(), "sanity check");
+  assert(stub_frame.is_runtime_frame(), "Sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
+  nmethod* nm = caller_frame.cb()->as_nmethod_or_null();
+  assert(nm != NULL, "Sanity check");
+  methodHandle method(thread, nm->method());
+  assert(nm == CodeCache::find_nmethod(caller_frame.pc()), "Should be the same");
+  Deoptimization::DeoptAction action = Deoptimization::trap_request_action(trap_request);
+  Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
 
-  // We are coming from a compiled method; check this is true.
-  assert(CodeCache::find_nmethod(caller_frame.pc()) != NULL, "sanity");
+  if (action == Deoptimization::Action_make_not_entrant) {
+    if (nm->make_not_entrant()) {
+      if (reason == Deoptimization::Reason_tenured) {
+        MethodData* trap_mdo = Deoptimization::get_method_data(thread, method, true /*create_if_missing*/);
+        if (trap_mdo != NULL) {
+          trap_mdo->inc_tenure_traps();
+        }
+      }
+    }
+  }
 
   // Deoptimize the caller frame.
   Deoptimization::deoptimize_frame(thread, caller_frame.id());
-
   // Return to the now deoptimized frame.
 JRT_END
 
