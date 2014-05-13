@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 extern "C" {
   typedef void (JNICALL *abort_hook_t)(void);
   typedef void (JNICALL *exit_hook_t)(jint code);
-  typedef jint (JNICALL *vfprintf_hook_t)(FILE *fp, const char *format, va_list args);
+  typedef jint (JNICALL *vfprintf_hook_t)(FILE *fp, const char *format, va_list args)  ATTRIBUTE_PRINTF(2, 0);
 }
 
 // Forward declarations

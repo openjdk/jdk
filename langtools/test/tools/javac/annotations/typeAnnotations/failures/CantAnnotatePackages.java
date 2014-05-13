@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 1234567
+ * @bug 8026564
  * @summary The parts of a fully-qualified type can't be annotated.
  * @author Werner Dietl
  * @compile/fail/ref=CantAnnotatePackages.out -XDrawDiagnostics CantAnnotatePackages.java

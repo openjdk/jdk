@@ -39,7 +39,7 @@ private:
   int _indent_level;
   int _cur;
 
-  void vappend(const char* format, va_list ap) {
+  void vappend(const char* format, va_list ap)  ATTRIBUTE_PRINTF(2, 0) {
     int res = vsnprintf(&_buffer[_cur], BUFFER_LEN - _cur, format, ap);
     if (res != -1) {
       _cur += res;
@@ -63,14 +63,14 @@ public:
   }
 #endif
 
-  void append(const char* format, ...) {
+  void append(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3) {
     va_list ap;
     va_start(ap, format);
     vappend(format, ap);
     va_end(ap);
   }
 
-  void append_and_print_cr(const char* format, ...) {
+  void append_and_print_cr(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3) {
     va_list ap;
     va_start(ap, format);
     vappend(format, ap);
@@ -80,6 +80,8 @@ public:
   }
 };
 
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
 template <class T>
 void WorkerDataArray<T>::print(int level, const char* title) {
   if (_length == 1) {
@@ -109,7 +111,7 @@ void WorkerDataArray<T>::print(int level, const char* title) {
   }
 
   if (G1Log::finest()) {
-    buf.append_and_print_cr("");
+    buf.append_and_print_cr("%s", "");
   }
 
   double avg = (double)sum / (double)_length;
@@ -129,6 +131,7 @@ void WorkerDataArray<T>::print(int level, const char* title) {
   }
   buf.append_and_print_cr("]");
 }
+PRAGMA_DIAG_POP
 
 #ifndef PRODUCT
 

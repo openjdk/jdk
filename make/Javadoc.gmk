@@ -115,10 +115,7 @@ endef
 DOCSDIR_URL = {@docroot}/$(GET2DOCSDIR)
 
 # Url to copyright html file
-COPYRIGHT_URL-7 = $(DOCSDIR_URL)/legal/cpyr.html
-# This isn't added in old build yet.
-#COPYRIGHT_URL-8 = $(DOCSDIR_URL)/legal/cpyr.html
-COPYRIGHT_URL = $(COPYRIGHT_URL-$(JDK_MINOR_VERSION))
+COPYRIGHT_URL = $(DOCSDIR_URL)/legal/cpyr.html
 
 # Url to bug filing site
 BUG_SUBMIT_URL = http://bugreport.sun.com/bugreport/

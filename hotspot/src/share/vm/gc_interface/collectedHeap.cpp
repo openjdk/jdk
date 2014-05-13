@@ -599,12 +599,12 @@ void CollectedHeap::test_is_in() {
   assert(heap_start >= ((uintptr_t)NULL + epsilon), "sanity");
   void* before_heap = (void*)(heap_start - epsilon);
   assert(!heap->is_in(before_heap),
-      err_msg("before_heap: " PTR_FORMAT " is unexpectedly in the heap", before_heap));
+      err_msg("before_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(before_heap)));
 
   // Test that a pointer to after the heap end is reported as outside the heap.
   assert(heap_end <= ((uintptr_t)-1 - epsilon), "sanity");
   void* after_heap = (void*)(heap_end + epsilon);
   assert(!heap->is_in(after_heap),
-      err_msg("after_heap: " PTR_FORMAT " is unexpectedly in the heap", after_heap));
+      err_msg("after_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(after_heap)));
 }
 #endif

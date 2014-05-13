@@ -71,6 +71,7 @@ public class CompilerTest {
         options.set("print.ast", true);
         options.set("print.parse", true);
         options.set("scripting", true);
+        options.set("const.as.var", true);
 
         final ErrorManager errors = new ErrorManager() {
             @Override

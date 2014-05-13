@@ -131,6 +131,12 @@ public class ClassReader {
     public boolean preferSource;
 
     /**
+     * Switch: Search classpath and sourcepath for classes before the
+     * bootclasspath
+     */
+    public boolean userPathsFirst;
+
+    /**
      * The currently selected profile.
      */
     public final Profile profile;
@@ -270,6 +276,7 @@ public class ClassReader {
         saveParameterNames = options.isSet("save-parameter-names");
         cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
+        userPathsFirst = options.isSet(XXUSERPATHSFIRST);
 
         profile = Profile.instance(context);
 
@@ -2649,7 +2656,7 @@ public class ClassReader {
                 if (c.owner == p)  // it might be an inner class
                     p.members_field.enter(c);
             }
-        } else if (c.classfile != null && (c.flags_field & seen) == 0) {
+        } else if (!preferCurrent && c.classfile != null && (c.flags_field & seen) == 0) {
             // if c.classfile == null, we are currently compiling this class
             // and no further action is necessary.
             // if (c.flags_field & seen) != 0, we have already encountered
@@ -2695,19 +2702,32 @@ public class ClassReader {
 
     private boolean verbosePath = true;
 
+    // Set to true when the currently selected file should be kept
+    private boolean preferCurrent;
+
     /** Load directory of package into members scope.
      */
     private void fillIn(PackageSymbol p) throws IOException {
-        if (p.members_field == null) p.members_field = new Scope(p);
-        String packageName = p.fullname.toString();
+        if (p.members_field == null)
+            p.members_field = new Scope(p);
 
+        preferCurrent = false;
+        if (userPathsFirst) {
+            scanUserPaths(p);
+            preferCurrent = true;
+            scanPlatformPath(p);
+        } else {
+            scanPlatformPath(p);
+            scanUserPaths(p);
+        }
+        verbosePath = false;
+    }
+
+    /**
+     * Scans class path and source path for files in given package.
+     */
+    private void scanUserPaths(PackageSymbol p) throws IOException {
         Set<JavaFileObject.Kind> kinds = getPackageFileKinds();
-
-        fillIn(p, PLATFORM_CLASS_PATH,
-               fileManager.list(PLATFORM_CLASS_PATH,
-                                packageName,
-                                EnumSet.of(JavaFileObject.Kind.CLASS),
-                                false));
 
         Set<JavaFileObject.Kind> classKinds = EnumSet.copyOf(kinds);
         classKinds.remove(JavaFileObject.Kind.SOURCE);
@@ -2748,6 +2768,7 @@ public class ClassReader {
             }
         }
 
+        String packageName = p.fullname.toString();
         if (wantSourceFiles && !haveSourcePath) {
             fillIn(p, CLASS_PATH,
                    fileManager.list(CLASS_PATH,
@@ -2768,7 +2789,17 @@ public class ClassReader {
                                         sourceKinds,
                                         false));
         }
-        verbosePath = false;
+    }
+
+    /**
+     * Scans platform class path for files in given package.
+     */
+    private void scanPlatformPath(PackageSymbol p) throws IOException {
+        fillIn(p, PLATFORM_CLASS_PATH,
+               fileManager.list(PLATFORM_CLASS_PATH,
+                                p.fullname.toString(),
+                                EnumSet.of(JavaFileObject.Kind.CLASS),
+                                false));
     }
     // where
         private void fillIn(PackageSymbol p,

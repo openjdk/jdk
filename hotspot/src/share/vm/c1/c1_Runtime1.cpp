@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -532,8 +532,8 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     if (TraceExceptions) {
       ttyLocker ttyl;
       ResourceMark rm;
-      tty->print_cr("Exception <%s> (0x%x) thrown in compiled method <%s> at PC " PTR_FORMAT " for thread 0x%x",
-                    exception->print_value_string(), (address)exception(), nm->method()->print_value_string(), pc, thread);
+      tty->print_cr("Exception <%s> (" INTPTR_FORMAT ") thrown in compiled method <%s> at PC " INTPTR_FORMAT " for thread " INTPTR_FORMAT "",
+                    exception->print_value_string(), p2i((address)exception()), nm->method()->print_value_string(), p2i(pc), p2i(thread));
     }
     // for AbortVMOnException flag
     NOT_PRODUCT(Exceptions::debug_check_abort(exception));
@@ -563,7 +563,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     ttyLocker ttyl;
     ResourceMark rm;
     tty->print_cr("Thread " PTR_FORMAT " continuing at PC " PTR_FORMAT " for exception thrown at PC " PTR_FORMAT,
-                  thread, continuation, pc);
+                  p2i(thread), p2i(continuation), p2i(pc));
   }
 
   return continuation;
@@ -988,8 +988,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         address copy_buff = stub_location - *byte_skip - *byte_count;
         address being_initialized_entry = stub_location - *being_initialized_entry_offset;
         if (TracePatching) {
-          tty->print_cr(" Patching %s at bci %d at address 0x%x  (%s)", Bytecodes::name(code), bci,
-                        instr_pc, (stub_id == Runtime1::access_field_patching_id) ? "field" : "klass");
+          tty->print_cr(" Patching %s at bci %d at address " INTPTR_FORMAT "  (%s)", Bytecodes::name(code), bci,
+                        p2i(instr_pc), (stub_id == Runtime1::access_field_patching_id) ? "field" : "klass");
           nmethod* caller_code = CodeCache::find_nmethod(caller_frame.pc());
           assert(caller_code != NULL, "nmethod not found");
 
@@ -1448,7 +1448,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
     methodHandle inlinee = methodHandle(vfst.method());
     inlinee->print_short_name(&ss1);
     m->print_short_name(&ss2);
-    tty->print_cr("Predicate failed trap in method %s at bci %d inlined in %s at pc %x", ss1.as_string(), vfst.bci(), ss2.as_string(), caller_frame.pc());
+    tty->print_cr("Predicate failed trap in method %s at bci %d inlined in %s at pc " INTPTR_FORMAT, ss1.as_string(), vfst.bci(), ss2.as_string(), p2i(caller_frame.pc()));
   }
 
 

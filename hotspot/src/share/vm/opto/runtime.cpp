@@ -1393,7 +1393,7 @@ static void trace_exception(oop exception_oop, address exception_pc, const char*
   } else {
     tty->print("<unknown>");
   }
-  tty->print(" at " INTPTR_FORMAT,  exception_pc);
+  tty->print(" at " INTPTR_FORMAT,  p2i(exception_pc));
   tty->print_cr("]");
 }
 

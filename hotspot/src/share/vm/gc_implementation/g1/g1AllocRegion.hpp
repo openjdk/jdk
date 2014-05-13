@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public:
 
 class ar_ext_msg : public err_msg {
 public:
-  ar_ext_msg(G1AllocRegion* alloc_region, const char *message) : err_msg("") {
+  ar_ext_msg(G1AllocRegion* alloc_region, const char *message) : err_msg("%s", "") {
     alloc_region->fill_in_ext_msg(this, message);
   }
 };

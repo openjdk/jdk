@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public:
 
   // Debugging
   static void print_state()                                PRODUCT_RETURN;
-  static void safepoint_msg(const char* format, ...)       PRODUCT_RETURN;
+  static void safepoint_msg(const char* format, ...) ATTRIBUTE_PRINTF(1, 2) PRODUCT_RETURN;
 
   static void deferred_initialize_stat();
   static void print_stat_on_exit();
@@ -240,7 +240,7 @@ class ThreadSafepointState: public CHeapObj<mtInternal> {
   static void create(JavaThread *thread);
   static void destroy(JavaThread *thread);
 
-  void safepoint_msg(const char* format, ...) {
+  void safepoint_msg(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
     if (ShowSafepointMsgs) {
       va_list ap;
       va_start(ap, format);

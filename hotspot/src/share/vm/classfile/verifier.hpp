@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,15 +375,15 @@ class ClassVerifier : public StackObj {
   bool has_error() const { return result() != NULL; }
   char* exception_message() {
     stringStream ss;
-    ss.print(_message);
+    ss.print("%s", _message);
     _error_context.details(&ss, _method());
     return ss.as_string();
   }
 
   // Called when verify or class format errors are encountered.
   // May throw an exception based upon the mode.
-  void verify_error(ErrorContext ctx, const char* fmt, ...);
-  void class_format_error(const char* fmt, ...);
+  void verify_error(ErrorContext ctx, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+  void class_format_error(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);
 
   Klass* load_class(Symbol* name, TRAPS);
 
