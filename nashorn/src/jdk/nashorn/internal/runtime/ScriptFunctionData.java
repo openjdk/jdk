@@ -32,12 +32,6 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-import java.util.Collections;
-import java.util.Map;
-import java.util.WeakHashMap;
-
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
@@ -53,9 +47,6 @@ public abstract class ScriptFunctionData {
         assert MAX_ARITY < 256;
     }
 
-    private static final Map<ScriptFunctionData, Reference<MethodHandle>> GENERIC_INVOKERS     = Collections.synchronizedMap(new WeakHashMap<ScriptFunctionData, Reference<MethodHandle>>());
-    private static final Map<ScriptFunctionData, Reference<MethodHandle>> GENERIC_CONSTRUCTORS = Collections.synchronizedMap(new WeakHashMap<ScriptFunctionData, Reference<MethodHandle>>());
-
     /** Name of the function or "" for anonymous functions */
     protected final String name;
 
@@ -70,6 +61,13 @@ public abstract class ScriptFunctionData {
     // some built-in ECMAScript functions have their arity declared by the specification. Note that regardless of this
     // value, the function might still be capable of receiving variable number of arguments, see isVariableArity.
     private int arity;
+
+    /**
+     * A pair of method handles used for generic invoker and constructor. Field is volatile as it can be initialized by
+     * multiple threads concurrently, but we still tolerate a race condition in it as all values stored into it are
+     * idempotent.
+     */
+    private volatile GenericInvokers genericInvokers;
 
     private static final MethodHandle BIND_VAR_ARGS = findOwnMH("bindVarArgs", Object[].class, Object[].class, Object[].class);
 
@@ -221,7 +219,7 @@ public abstract class ScriptFunctionData {
      * @return guarded invocation with method handle to best invoker and potentially a switch point guarding optimistic
      * assumptions.
      */
-     final CompiledFunction getBestInvoker(final MethodType callSiteType, final int callerProgramPoint, final ScriptObject runtimeScope) {
+     final CompiledFunction getBestInvoker(final MethodType callSiteType, final ScriptObject runtimeScope) {
         final CompiledFunction cf = getBest(callSiteType, runtimeScope);
         assert cf != null;
         return cf;
@@ -255,16 +253,14 @@ public abstract class ScriptFunctionData {
      * @return generic invoker of this script function
      */
     final MethodHandle getGenericInvoker(final ScriptObject runtimeScope) {
-        MethodHandle invoker;
-        final Reference<MethodHandle> ref = GENERIC_INVOKERS.get(this);
-        if(ref != null) {
-            invoker = ref.get();
-            if(invoker != null) {
-                return invoker;
-            }
+        // This method has race conditions both on genericsInvoker and genericsInvoker.invoker, but even if invoked
+        // concurrently, they'll create idempotent results, so it doesn't matter. We could alternatively implement this
+        // using java.util.concurrent.AtomicReferenceFieldUpdater, but it's hardly worth it.
+        final GenericInvokers lgenericInvokers = ensureGenericInvokers();
+        MethodHandle invoker = lgenericInvokers.invoker;
+        if(invoker == null) {
+            lgenericInvokers.invoker = invoker = createGenericInvoker(runtimeScope);
         }
-        invoker = createGenericInvoker(runtimeScope);
-        GENERIC_INVOKERS.put(this, new WeakReference<>(invoker));
         return invoker;
     }
 
@@ -273,21 +269,27 @@ public abstract class ScriptFunctionData {
     }
 
     final MethodHandle getGenericConstructor(final ScriptObject runtimeScope) {
-        MethodHandle constructor;
-        final Reference<MethodHandle> ref = GENERIC_CONSTRUCTORS.get(this);
-        if(ref != null) {
-            constructor = ref.get();
-            if(constructor != null) {
-                return constructor;
-            }
+        // This method has race conditions both on genericsInvoker and genericsInvoker.constructor, but even if invoked
+        // concurrently, they'll create idempotent results, so it doesn't matter. We could alternatively implement this
+        // using java.util.concurrent.AtomicReferenceFieldUpdater, but it's hardly worth it.
+        final GenericInvokers lgenericInvokers = ensureGenericInvokers();
+        MethodHandle constructor = lgenericInvokers.constructor;
+        if(constructor == null) {
+            lgenericInvokers.constructor = constructor = createGenericConstructor(runtimeScope);
         }
-        constructor = createGenericConstructor(runtimeScope);
-        GENERIC_CONSTRUCTORS.put(this, new WeakReference<>(constructor));
         return constructor;
     }
 
     private MethodHandle createGenericConstructor(final ScriptObject runtimeScope) {
         return makeGenericMethod(getGeneric(runtimeScope).createComposableConstructor());
+    }
+
+    private GenericInvokers ensureGenericInvokers() {
+        GenericInvokers lgenericInvokers = genericInvokers;
+        if(lgenericInvokers == null) {
+            genericInvokers = lgenericInvokers = new GenericInvokers();
+        }
+        return lgenericInvokers;
     }
 
     /**
@@ -780,5 +782,15 @@ public abstract class ScriptFunctionData {
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
         return MH.findStatic(MethodHandles.lookup(), ScriptFunctionData.class, name, MH.type(rtype, types));
+    }
+
+    /**
+     * This class is used to hold the generic invoker and generic constructor pair. It is structured in this way since
+     * most functions will never use them, so this way ScriptFunctionData only pays storage cost for one null reference
+     * to the GenericInvokers object, instead of two null references for the two method handles.
+     */
+    private static final class GenericInvokers {
+        volatile MethodHandle invoker;
+        volatile MethodHandle constructor;
     }
 }
