@@ -542,7 +542,7 @@ public abstract class ScriptFunction extends ScriptObject {
         } //else just fall through and link as ordinary function or unstable apply
 
         final int programPoint = NashornCallSiteDescriptor.isOptimistic(desc) ? NashornCallSiteDescriptor.getProgramPoint(desc) : INVALID_PROGRAM_POINT;
-        final CompiledFunction cf = data.getBestInvoker(type, programPoint, scope);
+        final CompiledFunction cf = data.getBestInvoker(type, scope);
         final GuardedInvocation bestInvoker =
                 new GuardedInvocation(
                         cf.createInvoker(type.returnType(), programPoint),
