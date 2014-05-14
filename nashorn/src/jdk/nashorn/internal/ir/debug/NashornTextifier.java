@@ -61,6 +61,12 @@ public final class NashornTextifier extends Printer {
     private Graph graph;
     private String currentBlock;
 
+    // Following variables are used to govern the state of collapsing long sequences of NOP.
+    /** True if the last instruction was a NOP. */
+    private boolean lastWasNop = false;
+    /** True if ellipse ("...") was emitted in place of a second NOP. */
+    private boolean lastWasEllipse = false;
+
     private static final int INTERNAL_NAME = 0;
     private static final int FIELD_DESCRIPTOR = 1;
     private static final int FIELD_SIGNATURE = 2;
@@ -394,7 +400,7 @@ public final class NashornTextifier extends Printer {
     }
 
     private StringBuilder appendOpcode(final StringBuilder sb, final int opcode) {
-        final Label next = labelIter == null ? null : labelIter.next();
+        final Label next = getNextLabel();
         if (next instanceof NashornLabel) {
             final int bci = next.getOffset();
             if (bci != -1) {
@@ -412,8 +418,27 @@ public final class NashornTextifier extends Printer {
         return sb.append(tab2).append(OPCODES[opcode].toLowerCase());
     }
 
+    private Label getNextLabel() {
+        return labelIter == null ? null : labelIter.next();
+    }
+
     @Override
     public void visitInsn(final int opcode) {
+        if(opcode == Opcodes.NOP) {
+            if(lastWasEllipse) {
+                getNextLabel();
+                return;
+            } else if(lastWasNop) {
+                getNextLabel();
+                addText("          ...\n");
+                lastWasEllipse = true;
+                return;
+            } else {
+                lastWasNop = true;
+            }
+        } else {
+            lastWasNop = lastWasEllipse = false;
+        }
         final StringBuilder sb = new StringBuilder();
         appendOpcode(sb, opcode).append('\n');
         addText(sb);
