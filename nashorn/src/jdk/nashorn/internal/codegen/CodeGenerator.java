@@ -2213,6 +2213,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             public Boolean get() {
                 value.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                     @Override
+                    public boolean enterFunctionNode(FunctionNode functionNode) {
+                        return false;
+                    }
+
+                    @Override
                     public boolean enterDefault(final Node node) {
                         if (contains) {
                             return false;
@@ -2257,7 +2262,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             restOfProperty |=
                 value != null &&
                 isValid(ccp) &&
-                value instanceof Optimistic &&
                 propertyValueContains(value, ccp);
 
             //for literals, a value of null means object type, i.e. the value null or getter setter function
@@ -2288,6 +2292,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         //handler
         if (restOfProperty) {
             final ContinuationInfo ci = getContinuationInfo();
+            // Can be set at most once for a single rest-of method
+            assert ci.getObjectLiteralMap() == null;
             ci.setObjectLiteralMap(oc.getMap());
             ci.setObjectLiteralStackDepth(method.getStackSize());
         }
@@ -5094,6 +5100,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final int[]   stackStoreSpec = ci.getStackStoreSpec();
         final Type[]  stackTypes     = ci.getStackTypes();
         final boolean isStackEmpty   = stackStoreSpec.length == 0;
+        boolean replacedObjectLiteralMap = false;
         if(!isStackEmpty) {
             // Load arguments on the stack
             final int objectLiteralStackDepth = ci.getObjectLiteralStackDepth();
@@ -5110,10 +5117,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     assert ScriptObject.class.isAssignableFrom(method.peekType().getTypeClass()) : method.peekType().getTypeClass() + " is not a script object";
                     loadConstant(ci.getObjectLiteralMap());
                     method.invoke(ScriptObject.SET_MAP);
+                    replacedObjectLiteralMap = true;
                 }
             }
         }
-
+        // Must have emitted the code for replacing the map of an object literal if we have a set object literal stack depth
+        assert ci.getObjectLiteralStackDepth() == -1 || replacedObjectLiteralMap;
         // Load RewriteException back.
         method.load(rewriteExceptionType, lvarCount);
         // Get rid of the stored reference
