@@ -819,7 +819,7 @@ void ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurren
     // false before we start remark. At this point we should also be
     // in a STW phase.
     assert(!concurrent_marking_in_progress(), "invariant");
-    assert(_finger == _heap_end,
+    assert(out_of_regions(),
            err_msg("only way to get here: _finger: "PTR_FORMAT", _heap_end: "PTR_FORMAT,
                    _finger, _heap_end));
     update_g1_committed(true);
