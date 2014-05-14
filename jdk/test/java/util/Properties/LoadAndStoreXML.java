@@ -23,14 +23,28 @@
 
 /*
  * @test
- * @bug 8000354 8000685 8004371
+ * @bug 8000354 8000685 8004371 8043119
  * @summary Basic test of storeToXML and loadToXML
  */
 
-import java.io.*;
-import java.util.*;
-import java.security.*;
-import java.nio.file.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Permissions;
+import java.security.Policy;
+import java.security.ProtectionDomain;
+import java.util.InvalidPropertiesFormatException;
+import java.util.Properties;
+import java.util.PropertyPermission;
 
 public class LoadAndStoreXML {
 
@@ -64,6 +78,50 @@ public class LoadAndStoreXML {
     }
 
     /**
+     * A {@code ByteArrayInputStream} that allows testing if the
+     * {@code close} method has been invoked.
+     */
+    static class TestInputStream extends ByteArrayInputStream {
+        private boolean closed;
+
+        TestInputStream(byte[] buf) {
+            super(buf);
+        }
+
+        boolean isOpen() {
+            return !closed;
+        }
+
+        public void close() throws IOException {
+            try {
+                super.close();
+            } finally {
+                closed = true;
+            }
+        }
+    }
+
+    /**
+     * A {@code ByteArrayOutputStream} that allows testing if the
+     * {@code close} method has been invoked.
+     */
+    static class TestOutputStream extends ByteArrayOutputStream {
+        private boolean closed;
+
+        boolean isOpen() {
+            return !closed;
+        }
+
+        public void close() throws IOException {
+            try {
+                super.close();
+            } finally {
+                closed = true;
+            }
+        }
+    }
+
+    /**
      * Sanity test that properties saved with Properties#storeToXML can be
      * read with Properties#loadFromXML.
      */
@@ -77,12 +135,16 @@ public class LoadAndStoreXML {
         props.put("k4", "\u7532\u9aa8\u6587");
         props.put("k5", "<java.home>/lib/jaxp.properties");
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        TestOutputStream out = new TestOutputStream();
         props.storeToXML(out, null, encoding);
+        if (!out.isOpen())
+            throw new RuntimeException("OutputStream closed by storeToXML");
 
         Properties p = new Properties();
-        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+        TestInputStream in = new TestInputStream(out.toByteArray());
         p.loadFromXML(in);
+        if (in.isOpen())
+            throw new RuntimeException("InputStream not closed by loadFromXML");
 
         if (!p.equals(props)) {
             System.err.println("stored: " + props);
