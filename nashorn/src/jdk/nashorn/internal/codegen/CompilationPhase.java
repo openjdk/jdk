@@ -232,7 +232,7 @@ enum CompilationPhase {
                     compiler.getCodeInstaller().verify(bytecode);
                 }
 
-                DumpBytecode.dumpBytecode(env, compiler, bytecode, className);
+                DumpBytecode.dumpBytecode(env, compiler.getLogger(), bytecode, className);
             }
 
             return newFunctionNode;

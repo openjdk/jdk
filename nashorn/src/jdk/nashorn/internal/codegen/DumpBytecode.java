@@ -31,12 +31,20 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
 
 /**
- * Class that facilitates dumping bytecode to disk
+ * Class that facilitates printing bytecode and dumping it to disk.
  */
-final class DumpBytecode {
-    static void dumpBytecode(final ScriptEnvironment env, final Compiler compiler, final byte[] bytecode, final String className) {
+public final class DumpBytecode {
+    /**
+     * Dump bytecode to console and potentially disk.
+     * @param env the script environment defining options for printing bytecode
+     * @param logger a logger used to write diagnostics about bytecode dumping
+     * @param bytecode the actual code to dump
+     * @param className the name of the class being dumped
+     */
+    public static void dumpBytecode(final ScriptEnvironment env, final DebugLogger logger, final byte[] bytecode, final String className) {
         File dir = null;
         try {
             // should could be printed to stderr for generate class?
@@ -98,10 +106,10 @@ final class DumpBytecode {
                 try (final FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(bytecode);
                 }
-                compiler.getLogger().info("Wrote class to '" + file.getAbsolutePath() + '\'');
+                logger.info("Wrote class to '" + file.getAbsolutePath() + '\'');
             }
         } catch (final IOException e) {
-            compiler.getLogger().warning("Skipping class dump for ",
+            logger.warning("Skipping class dump for ",
                     className,
                     ": ",
                     ECMAErrors.getMessage(
