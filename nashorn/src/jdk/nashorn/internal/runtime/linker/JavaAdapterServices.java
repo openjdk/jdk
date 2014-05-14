@@ -185,4 +185,45 @@ public final class JavaAdapterServices {
             throw new AssertionError(e.getMessage(), e);
         }
     }
+
+    /**
+     * Returns a method handle used to convert a return value from a delegate method (always Object) to the expected
+     * Java return type.
+     * @param returnType the return type
+     * @return the converter for the expected return type
+     */
+    public static MethodHandle getObjectConverter(final Class<?> returnType) {
+        return Bootstrap.getLinkerServices().getTypeConverter(Object.class, returnType);
+    }
+
+    /**
+     * Invoked when returning Object from an adapted method to filter out internal Nashorn objects that must not be seen
+     * by the callers. Currently only transforms {@code ConsString} into {@code String}.
+     * @param obj the return value
+     * @return the filtered return value.
+     */
+    public static Object exportReturnValue(final Object obj) {
+        return NashornBeansLinker.exportArgument(obj);
+    }
+
+    /**
+     * Invoked to convert a return value of a delegate function to primitive char. There's no suitable conversion in
+     * {@code JSType}, so we provide our own to adapters.
+     * @param obj the return value.
+     * @return the character value of the return value
+     */
+    public static char toCharPrimitive(final Object obj) {
+        return JavaArgumentConverters.toCharPrimitive(obj);
+    }
+
+    /**
+     * Invoked to convert a return value of a delegate function to String. It is similar to
+     * {@code JSType.toString(Object)}, except it doesn't handle StaticClass specially, and it returns null for null
+     * input instead of the string "null".
+     * @param obj the return value.
+     * @return the String value of the return value
+     */
+    public static String toString(final Object obj) {
+        return JavaArgumentConverters.toString(obj);
+    }
 }

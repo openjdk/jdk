@@ -32,6 +32,8 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -362,8 +364,13 @@ public enum CompilerConstants {
     public static Call specialCallNoLookup(final String className, final String name, final String desc) {
         return new Call(null, className, name, desc) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokespecial(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, name, desc, false);
             }
         };
     }
@@ -396,8 +403,13 @@ public enum CompilerConstants {
     public static Call staticCallNoLookup(final String className, final String name, final String desc) {
         return new Call(null, className, name, desc) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokestatic(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, name, desc, false);
             }
         };
     }
@@ -431,8 +443,13 @@ public enum CompilerConstants {
     public static Call virtualCallNoLookup(final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Call(null, className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokevirtual(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, name, descriptor, false);
             }
         };
     }
@@ -451,8 +468,13 @@ public enum CompilerConstants {
     public static Call interfaceCallNoLookup(final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Call(null, className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokeinterface(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, className, name, descriptor, true);
             }
         };
     }
@@ -547,8 +569,13 @@ public enum CompilerConstants {
     public static Call staticCall(final MethodHandles.Lookup lookup, final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Call(MH.findStatic(lookup, clazz, name, MH.type(rtype, ptypes)), className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokestatic(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, name, descriptor, false);
             }
         };
     }
@@ -567,29 +594,13 @@ public enum CompilerConstants {
     public static Call virtualCall(final MethodHandles.Lookup lookup, final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Call(MH.findVirtual(lookup, clazz, name, MH.type(rtype, ptypes)), className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokevirtual(className, name, descriptor);
             }
-        };
-    }
 
-    /**
-     * Create a special call, given an explicit lookup, looking up the method handle for it at the same time
-     *
-     * @param lookup    the lookup
-     * @param thisClass this class
-     * @param clazz     the class
-     * @param name      the name of the method
-     * @param rtype     the return type
-     * @param ptypes    the parameter types
-     *
-     * @return the call object representing the virtual call
-     */
-    public static Call specialCall0(final MethodHandles.Lookup lookup, final Class<?> thisClass, final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
-        return new Call(MH.findSpecial(lookup, clazz, name, MH.type(rtype, ptypes), thisClass), className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
-                return method.invokespecial(className, name, descriptor);
+            public void invoke(MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, name, descriptor, false);
             }
         };
     }
@@ -609,8 +620,13 @@ public enum CompilerConstants {
     public static Call specialCall(final MethodHandles.Lookup lookup, final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Call(MH.findSpecial(lookup, clazz, name, MH.type(rtype, ptypes), clazz), className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokespecial(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, name, descriptor, false);
             }
         };
     }
@@ -757,7 +773,14 @@ public enum CompilerConstants {
          *
          * @return the method emitter
          */
-        protected abstract MethodEmitter invoke(final MethodEmitter emitter);
+        abstract MethodEmitter invoke(final MethodEmitter emitter);
+
+        /**
+         * Generate invocation code for the method
+         *
+         * @param mv a method visitor
+         */
+        public abstract void invoke(final MethodVisitor mv);
     }
 
 }

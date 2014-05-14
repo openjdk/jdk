@@ -31,6 +31,8 @@ import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
 import jdk.internal.dynalink.beans.StaticClass;
+import jdk.nashorn.internal.codegen.DumpBytecode;
+import jdk.nashorn.internal.runtime.Context;
 
 /**
  * This class encapsulates the bytecode of the adapter class and can be used to load it into the JVM as an actual Class.
@@ -41,6 +43,7 @@ import jdk.internal.dynalink.beans.StaticClass;
  */
 final class JavaAdapterClassLoader {
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
+    private static final AccessControlContext GET_CONTEXT_ACC_CTXT = ClassAndLoader.createPermAccCtxt(Context.NASHORN_GET_CONTEXT);
 
     private final String className;
     private final byte[] classBytes;
@@ -101,6 +104,14 @@ final class JavaAdapterClassLoader {
             protected Class<?> findClass(final String name) throws ClassNotFoundException {
                 if(name.equals(className)) {
                     assert classBytes != null : "what? already cleared .class bytes!!";
+
+                    final Context ctx = AccessController.doPrivileged(new PrivilegedAction<Context>() {
+                        @Override
+                        public Context run() {
+                            return Context.getContext();
+                        }
+                    }, GET_CONTEXT_ACC_CTXT);
+                    DumpBytecode.dumpBytecode(ctx.getEnv(), ctx.getLogger(jdk.nashorn.internal.codegen.Compiler.class), classBytes, name);
                     return defineClass(name, classBytes, 0, classBytes.length, protectionDomain);
                 }
                 throw new ClassNotFoundException(name);

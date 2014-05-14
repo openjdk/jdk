@@ -67,8 +67,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         return delegateLinker.getGuardedInvocation(linkRequest, new NashornBeansLinkerServices(linkerServices));
     }
 
-    @SuppressWarnings("unused")
-    private static Object exportArgument(final Object arg) {
+    static Object exportArgument(final Object arg) {
         return arg instanceof ConsString ? arg.toString() : arg;
     }
 

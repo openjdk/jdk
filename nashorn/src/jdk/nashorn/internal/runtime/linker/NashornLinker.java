@@ -188,7 +188,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
      */
     private static GuardedInvocation getArrayConverter(final Class<?> sourceType, final Class<?> targetType) {
         final boolean isSourceTypeNativeArray = sourceType == NativeArray.class;
-        // If source type is more generic than ScriptFunction class, we'll need to use a guard
+        // If source type is more generic than NativeArray class, we'll need to use a guard
         final boolean isSourceTypeGeneric = !isSourceTypeNativeArray && sourceType.isAssignableFrom(NativeArray.class);
 
         if (isSourceTypeNativeArray || isSourceTypeGeneric) {
