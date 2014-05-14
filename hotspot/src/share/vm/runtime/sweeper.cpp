@@ -615,6 +615,11 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
       // flat profiles). Check the age counter for possible data.
       if (UseCodeAging && make_not_entrant && (nm->is_compiled_by_c2() || nm->is_compiled_by_c1())) {
         MethodCounters* mc = nm->method()->method_counters();
+        if (mc == NULL) {
+          // Sometimes we can get here without MethodCounters. For example if we run with -Xcomp.
+          // Try to allocate them.
+          mc = Method::build_method_counters(nm->method(), Thread::current());
+        }
         if (mc != NULL) {
           // Snapshot the value as it's changed concurrently
           int age = mc->nmethod_age();
