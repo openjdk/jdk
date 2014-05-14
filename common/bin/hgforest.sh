@@ -326,7 +326,7 @@ else
                 echo "ERROR: Missing parent path: ${parent_path}" > ${status_output}
                 exit 1
               fi
-              times=`expr ${times} '+' 1)`
+              times=`expr ${times} '+' 1`
               if [ `expr ${times} '%' 10` -eq 0 ] ; then
                 echo "${parent_path} still not created, waiting..." > ${status_output}
               fi
