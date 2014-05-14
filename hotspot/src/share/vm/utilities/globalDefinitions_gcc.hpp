@@ -283,13 +283,25 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define VALUE_OBJ_CLASS_SPEC
 
 #ifndef ATTRIBUTE_PRINTF
+// Diagnostic pragmas like the ones defined below in PRAGMA_FORMAT_NONLITERAL_IGNORED
+// were only introduced in GCC 4.2. Because we have no other possibility to ignore
+// these warnings for older versions of GCC, we simply don't decorate our printf-style
+// functions with __attribute__(format) in that case.
+#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)) || (__GNUC__ > 4)
 #define ATTRIBUTE_PRINTF(fmt,vargs)  __attribute__((format(printf, fmt, vargs)))
+#else
+#define ATTRIBUTE_PRINTF(fmt,vargs)
+#endif
 #endif
 
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED _Pragma("GCC diagnostic ignored \"-Wformat-nonliteral\"") _Pragma("GCC diagnostic ignored \"-Wformat-security\"")
+#define PRAGMA_FORMAT_NONLITERAL_IGNORED _Pragma("GCC diagnostic ignored \"-Wformat-nonliteral\"") \
+                                         _Pragma("GCC diagnostic ignored \"-Wformat-security\"")
 #define PRAGMA_FORMAT_IGNORED _Pragma("GCC diagnostic ignored \"-Wformat\"")
 
-#if defined(__clang_major__) && (__clang_major__ >= 4 || (__clang_major__ >= 3 && __clang_minor__ >= 1)) || (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 6)
+#if defined(__clang_major__) && \
+      (__clang_major__ >= 4 || \
+      (__clang_major__ >= 3 && __clang_minor__ >= 1)) || \
+    ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ > 4)
 // Tested to work with clang version 3.1 and better.
 #define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
 #define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
