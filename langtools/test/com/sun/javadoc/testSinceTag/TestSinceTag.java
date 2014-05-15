@@ -26,44 +26,49 @@
  * @bug      7180906 8026567
  * @summary  Test to make sure that the since tag works correctly
  * @author   Bhavesh Patel
- * @library  ../lib/
- * @build    JavadocTester TestSinceTag
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestSinceTag
  */
 
 public class TestSinceTag extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS1 = new String[] {
-        "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg1"
-    };
-
-    private static final String[] ARGS2 = new String[] {
-        "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR, "-nosince", "pkg1"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg1/C1.html",
-            "<dl>\n" +
-            "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-            "<dd>JDK1.0</dd>"
-        },
-        { "serialized-form.html",
-            "<dl>\n" +
-            "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n" +
-            "<dd>1.4</dd>"
-        }
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSinceTag tester = new TestSinceTag();
-        tester.run(ARGS1, TEST, NO_TEST);
-        tester.run(ARGS2, NO_TEST, TEST);
+        tester.runTests();
         tester.printSummary();
+    }
+
+    @Test
+    void testSince() {
+        javadoc("-d", "out-since",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.FAILED); // TODO: investigate
+
+        checkSince(true);
+    }
+
+    @Test
+    void testNoSince() {
+        javadoc("-d", "out-nosince",
+                "-sourcepath", testSrc,
+                "-nosince",
+                "pkg1");
+        checkExit(Exit.FAILED); // TODO: investigate
+
+        checkSince(false);
+    }
+
+    void checkSince(boolean on) {
+        checkOutput("pkg1/C1.html", on,
+                "<dl>\n"
+                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dd>JDK1.0</dd>");
+
+        checkOutput("serialized-form.html", on,
+                "<dl>\n"
+                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dd>1.4</dd>");
     }
 }

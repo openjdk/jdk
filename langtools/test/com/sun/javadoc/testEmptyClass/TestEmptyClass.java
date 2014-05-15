@@ -27,39 +27,32 @@
  * @summary Test to make sure that Javadoc behaves properly when
  * run on a completely empty class (no comments or members).
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestEmptyClass
  * @run main TestEmptyClass
  */
 
 public class TestEmptyClass extends JavadocTester {
 
-    private static final String[][] NEGATED_TEST = {
+    public static void main(String... args) throws Exception {
+        TestEmptyClass tester = new TestEmptyClass();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-classpath", testSrc("src"),
+                "-d", "out",
+                "-sourcepath", testSrc("src"),
+                testSrc("src/Empty.java"));
+        checkExit(Exit.OK);
 
         //The overview tree should not link to classes that were not documented
-        { "overview-tree.html", "<A HREF=\"TestEmptyClass.html\">"},
+        checkOutput("overview-tree.html", false,
+                "<A HREF=\"TestEmptyClass.html\">");
 
         //The index page should not link to classes that were not documented
-        { "index-all.html", "<A HREF=\"TestEmptyClass.html\">"},
-    };
-    private static final String[] ARGS =
-        new String[] {
-            "-classpath", SRC_DIR + "/src",
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR + "/src",
-            SRC_DIR + "/src/Empty.java"
-        };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestEmptyClass tester = new TestEmptyClass();
-        int exitCode = tester.run(ARGS, NO_TEST, NEGATED_TEST);
-        tester.printSummary();
-        if (exitCode != 0) {
-            throw new Error("Error found while executing Javadoc");
-        }
+        checkOutput("index-all.html", false,
+                "<A HREF=\"TestEmptyClass.html\">");
     }
 }

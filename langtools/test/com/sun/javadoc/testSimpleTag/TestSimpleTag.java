@@ -24,47 +24,38 @@
 /*
  * @test
  * @bug 4695326 4750173 4920381 8026567
- * @summary Test the declarartion of simple tags using -tag. Verify that
+ * @summary Test the declaration of simple tags using -tag. Verify that
  * "-tag name" is a shortcut for "-tag name:a:Name:".  Also verity that
  * you can escape the ":" character with a back slash so that it is not
  * considered a separator when parsing the simple tag argument.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestSimpleTag
  * @run main TestSimpleTag
  */
 
 public class TestSimpleTag extends JavadocTester {
 
-    private static final String[][] TEST =
-        new String[][] {
-            { "C.html",
-                "<span class=\"simpleTagLabel\">Todo:</span>"},
-            { "C.html",
-                "<span class=\"simpleTagLabel\">EJB Beans:</span>"},
-            { "C.html",
-                "<span class=\"simpleTagLabel\">Regular Tag:</span>"},
-            { "C.html",
-                "<span class=\"simpleTagLabel\">Back-Slash-Tag:</span>"},
-        };
-
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-        "-tag", "todo",
-        "-tag", "ejb\\:bean:a:EJB Beans:",
-        "-tag", "regular:a:Regular Tag:",
-        "-tag", "back-slash\\:tag\\\\:a:Back-Slash-Tag:",
-        SRC_DIR + "/C.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSimpleTag tester = new TestSimpleTag();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-tag", "todo",
+                "-tag", "ejb\\:bean:a:EJB Beans:",
+                "-tag", "regular:a:Regular Tag:",
+                "-tag", "back-slash\\:tag\\\\:a:Back-Slash-Tag:",
+                testSrc("C.java"));
+        checkExit(Exit.FAILED); // TODO: investigate why failed
+
+        checkOutput("C.html", true,
+                "<span class=\"simpleTagLabel\">Todo:</span>",
+                "<span class=\"simpleTagLabel\">EJB Beans:</span>",
+                "<span class=\"simpleTagLabel\">Regular Tag:</span>",
+                "<span class=\"simpleTagLabel\">Back-Slash-Tag:</span>");
     }
 }
