@@ -211,7 +211,7 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
     const char *type = oper->ideal_type(globals);
     if (!strcmp(type, "ConI")) {
       if (i > 0) fprintf(fp,", ");
-      fprintf(fp,"  int32          _c%d;\n", i);
+      fprintf(fp,"  int32_t        _c%d;\n", i);
     }
     else if (!strcmp(type, "ConP")) {
       if (i > 0) fprintf(fp,", ");
@@ -307,7 +307,7 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
     assert(num_consts == 1, "Bad component list detected.\n");
     switch( constant_type ) {
     case Form::idealI : {
-      fprintf(fp,is_ideal_bool ? "BoolTest::mask c%d" : "int32 c%d", i);
+      fprintf(fp,is_ideal_bool ? "BoolTest::mask c%d" : "int32_t c%d", i);
       break;
     }
     case Form::idealN :      { fprintf(fp,"const TypeNarrowOop *c%d", i); break; }
@@ -326,7 +326,7 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
     while((comp = lst.iter()) != NULL) {
       if (!strcmp(comp->base_type(globals), "ConI")) {
         if (i > 0) fprintf(fp,", ");
-        fprintf(fp,"int32 c%d", i);
+        fprintf(fp,"int32_t c%d", i);
         i++;
       }
       else if (!strcmp(comp->base_type(globals), "ConP")) {
