@@ -23,6 +23,7 @@
  */
 
 #include "asm/assembler.hpp"
+#include "memory/allocation.hpp"
 #include "loadlib_aix.hpp"
 #include "porting_aix.hpp"
 #include "utilities/debug.hpp"
@@ -67,7 +68,7 @@ inline char* align_ptr_up(char* ptr, intptr_t alignment) {
 // a primitive string map. Should this turn out to be a performance
 // problem, a better hashmap has to be used.
 class fixed_strings {
-  struct node {
+  struct node : public CHeapObj<mtInternal> {
     char* v;
     node* next;
   };

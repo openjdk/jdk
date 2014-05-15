@@ -30,12 +30,13 @@
 //
 
 // standard library constants
-#include "stdio.h"
-#include "stdlib.h"
 #include <iostream>
-#include "string.h"
-#include "ctype.h"
-#include "stdarg.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdarg.h>
 #include <sys/types.h>
 
 /* Make sure that we have the intptr_t and uintptr_t definitions */
