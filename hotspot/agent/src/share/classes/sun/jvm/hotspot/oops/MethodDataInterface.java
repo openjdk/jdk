@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,42 +22,18 @@
  *
  */
 
-package sun.jvm.hotspot.ci;
+package sun.jvm.hotspot.oops;
 
-import java.io.PrintStream;
+import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
 
-public class ciKlass extends ciType {
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
-  }
-
-  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("ciKlass");
-    nameField = type.getAddressField("_name");
-  }
-
-  private static AddressField nameField;
-
-  public String name() {
-    ciSymbol sym = new ciSymbol(nameField.getValue(getAddress()));
-    return sym.asUtf88();
-  }
-
-  public ciKlass(Address addr) {
-    super(addr);
-  }
-
-  public void printValueOn(PrintStream tty) {
-    Klass k = (Klass)getMetadata();
-    k.printValueOn(tty);
-  }
+public interface MethodDataInterface<K, M> {
+  K getKlassAtAddress(Address addr);
+  M getMethodAtAddress(Address addr);
+  void printKlassValueOn(K klass, PrintStream st);
+  void printMethodValueOn(M klass, PrintStream st);
 }

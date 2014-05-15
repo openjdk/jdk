@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,14 @@
  *
  */
 
-package sun.jvm.hotspot.ci;
+package sun.jvm.hotspot.oops;
 
-import java.io.*;
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.types.*;
-
-public class ciVirtualCallData extends VirtualCallData {
-  public ciVirtualCallData(DataLayout data) {
-    super(data);
-  }
-
-  public Klass receiver(int row) {
-      throw new InternalError("should not call");
-  }
-
-  public ciKlass receiverAt(int row) {
-    //assert((uint)row < rowLimit(), "oob");
-    ciMetadata recv = ciObjectFactory.getMetadata(addressAt(receiverCellIndex(row)));
-    if (recv != null && !(recv instanceof ciKlass)) {
-      System.err.println(recv);
-    }
-    //assert(recv == NULL || recv->isKlass(), "wrong type");
-    return (ciKlass)recv;
-  }
+public interface CallTypeDataInterface<K> {
+  int numberOfArguments();
+  boolean hasArguments();
+  K argumentType(int i);
+  boolean hasReturn();
+  K returnType();
+  int argumentTypeIndex(int i);
+  int returnTypeIndex();
 }

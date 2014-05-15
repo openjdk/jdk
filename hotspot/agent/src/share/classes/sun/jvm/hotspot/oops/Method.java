@@ -354,9 +354,7 @@ public class Method extends Metadata {
       }
       Klass holder = getMethodHolder();
       out.println("ciMethod " +
-                  holder.getName().asString() + " " +
-                  OopUtilities.escapeString(getName().asString()) + " " +
-                  getSignature().asString() + " " +
+                  nameAsAscii() + " " +
                   getInvocationCount() + " " +
                   getBackedgeCount() + " " +
                   interpreterInvocationCount() + " " +
@@ -370,5 +368,11 @@ public class Method extends Metadata {
 
   public int interpreterInvocationCount() {
     return getMethodCounters().interpreterInvocationCount();
+  }
+
+  public String nameAsAscii() {
+    return getMethodHolder().getName().asString() + " " +
+      OopUtilities.escapeString(getName().asString()) + " " +
+      getSignature().asString();
   }
 }
