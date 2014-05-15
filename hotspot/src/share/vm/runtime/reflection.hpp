@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,11 +113,11 @@ class Reflection: public AllStatic {
   //
 
   // Create a java.lang.reflect.Method object based on a method
-  static oop new_method(methodHandle method, bool intern_name, bool for_constant_pool_access, TRAPS);
+  static oop new_method(methodHandle method, bool for_constant_pool_access, TRAPS);
   // Create a java.lang.reflect.Constructor object based on a method
   static oop new_constructor(methodHandle method, TRAPS);
   // Create a java.lang.reflect.Field object based on a field descriptor
-  static oop new_field(fieldDescriptor* fd, bool intern_name, TRAPS);
+  static oop new_field(fieldDescriptor* fd, TRAPS);
   // Create a java.lang.reflect.Parameter object based on a
   // MethodParameterElement
   static oop new_parameter(Handle method, int index, Symbol* sym,

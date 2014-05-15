@@ -311,6 +311,9 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseBoundThreads",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "DefaultThreadPriority",         JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "NoYieldsInMicrolock",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "UseNewReflection",              JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "ReflectionWrapResolutionErrors",JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "VerifyReflectionBytecodes",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
