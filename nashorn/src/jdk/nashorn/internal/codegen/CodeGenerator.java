@@ -2383,6 +2383,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
+        if(isDeoptimizedExpression(lhs)) {
+            // This is actually related to "lhs.getType().isPrimitive()" above: any expression being deoptimized in
+            // the current chain of rest-of compilations used to have a type narrower than Object (so it was primitive).
+            // We must not perform undefined check specialization for them, as then we'd violate the basic rule of
+            // "Thou shalt not alter the stack shape between a deoptimized method and any of its (transitive) rest-ofs."
+            return false;
+        }
+
         final CompilationEnvironment  env = compiler.getCompilationEnvironment();
         // TODO: why?
         if (env.isCompileRestOf()) {
@@ -2450,6 +2458,19 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
+        if(isDeoptimizedExpression(lhs)) {
+            // This is actually related to "!lhs.getType().isObject()" above: any expression being deoptimized in
+            // the current chain of rest-of compilations used to have a type narrower than Object. We must not
+            // perform null check specialization for them, as then we'd no longer be loading aconst_null on stack
+            // and thus violate the basic rule of "Thou shalt not alter the stack shape between a deoptimized
+            // method and any of its (transitive) rest-ofs."
+            // NOTE also that if we had a representation for well-known constants (e.g. null, 0, 1, -1, etc.) in
+            // Label$Stack.localLoads then this wouldn't be an issue, as we would never (somewhat ridiculously)
+            // allocate a temporary local to hold the result of aconst_null before attempting an optimistic
+            // operation.
+            return false;
+        }
+
         // this is a null literal check, so if there is implicit coercion
         // involved like {D}x=null, we will fail - this is very rare
         final Label trueLabel  = new Label("trueLabel");
@@ -2503,6 +2524,39 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.convert(runtimeNode.getType());
 
         return true;
+    }
+
+    /**
+     * Was this expression or any of its subexpressions deoptimized in the current recompilation chain of rest-of methods?
+     * @param rootExpr the expression being tested
+     * @return true if the expression or any of its subexpressions was deoptimized in the current recompilation chain.
+     */
+    private boolean isDeoptimizedExpression(final Expression rootExpr) {
+        final CompilationEnvironment env = compiler.getCompilationEnvironment();
+        if(!env.isCompileRestOf()) {
+            return false;
+        }
+        return new Supplier<Boolean>() {
+            boolean contains;
+            @Override
+            public Boolean get() {
+                rootExpr.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                    @Override
+                    public boolean enterFunctionNode(FunctionNode functionNode) {
+                        return false;
+                    }
+                    @Override
+                    public boolean enterDefault(final Node node) {
+                        if(!contains && node instanceof Optimistic) {
+                            final int pp = ((Optimistic)node).getProgramPoint();
+                            contains = isValid(pp) && env.isContinuationEntryPoint(pp);
+                        }
+                        return !contains;
+                    }
+                });
+                return contains;
+            }
+        }.get();
     }
 
     private void loadRuntimeNode(final RuntimeNode runtimeNode) {
