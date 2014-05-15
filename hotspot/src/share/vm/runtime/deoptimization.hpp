@@ -376,8 +376,8 @@ class Deoptimization : AllStatic {
   static UnrollBlock* fetch_unroll_info_helper(JavaThread* thread);
 
   static DeoptAction _unloaded_action; // == Action_reinterpret;
-  static const char* _trap_reason_name[Reason_LIMIT];
-  static const char* _trap_action_name[Action_LIMIT];
+  static const char* _trap_reason_name[];
+  static const char* _trap_action_name[];
 
   static juint _deoptimization_hist[Reason_LIMIT][1+Action_LIMIT][BC_CASE_LIMIT];
   // Note:  Histogram array size is 1-2 Kb.
