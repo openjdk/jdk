@@ -1866,6 +1866,14 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
   loader_data->jmethod_ids()->clear_all_methods();
 }
 
+bool Method::has_method_vptr(const void* ptr) {
+  Method m;
+  // This assumes that the vtbl pointer is the first word of a C++ object.
+  // This assumption is also in universe.cpp patch_klass_vtble
+  void* vtbl2 = dereference_vptr((const void*)&m);
+  void* this_vtbl = dereference_vptr(ptr);
+  return vtbl2 == this_vtbl;
+}
 
 // Check that this pointer is valid by checking that the vtbl pointer matches
 bool Method::is_valid_method() const {
@@ -1874,12 +1882,7 @@ bool Method::is_valid_method() const {
   } else if (!is_metaspace_object()) {
     return false;
   } else {
-    Method m;
-    // This assumes that the vtbl pointer is the first word of a C++ object.
-    // This assumption is also in universe.cpp patch_klass_vtble
-    void* vtbl2 = dereference_vptr((void*)&m);
-    void* this_vtbl = dereference_vptr((void*)this);
-    return vtbl2 == this_vtbl;
+    return has_method_vptr((const void*)this);
   }
 }
 

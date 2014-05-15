@@ -861,6 +861,7 @@ class Method : public Metadata {
   const char* internal_name() const { return "{method}"; }
 
   // Check for valid method pointer
+  static bool has_method_vptr(const void* ptr);
   bool is_valid_method() const;
 
   // Verify

@@ -549,6 +549,8 @@ ClassLoaderData* ClassLoaderDataGraph::_head = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_unloading = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_saved_head = NULL;
 
+bool ClassLoaderDataGraph::_should_purge = false;
+
 // Add a new class loader data node to the list.  Assign the newly created
 // ClassLoaderData into the java/lang/ClassLoader object as a hidden field
 ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRAPS) {
@@ -675,32 +677,6 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   return array;
 }
 
-// For profiling and hsfind() only.  Otherwise, this is unsafe (and slow).  This
-// is done lock free to avoid lock inversion problems.  It is safe because
-// new ClassLoaderData are added to the end of the CLDG, and only removed at
-// safepoint.  The _unloading list can be deallocated concurrently with CMS so
-// this doesn't look in metaspace for classes that have been unloaded.
-bool ClassLoaderDataGraph::contains(const void* x) {
-  if (DumpSharedSpaces) {
-    // There are only two metaspaces to worry about.
-    ClassLoaderData* ncld = ClassLoaderData::the_null_class_loader_data();
-    return (ncld->ro_metaspace()->contains(x) || ncld->rw_metaspace()->contains(x));
-  }
-
-  if (UseSharedSpaces && MetaspaceShared::is_in_shared_space(x)) {
-    return true;
-  }
-
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    if (cld->metaspace_or_null() != NULL && cld->metaspace_or_null()->contains(x)) {
-      return true;
-    }
-  }
-
-  // Do not check unloading list because deallocation can be concurrent.
-  return false;
-}
-
 #ifndef PRODUCT
 bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
   for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
@@ -759,6 +735,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
 }
 
 void ClassLoaderDataGraph::purge() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
   ClassLoaderData* list = _unloading;
   _unloading = NULL;
   ClassLoaderData* next = list;
