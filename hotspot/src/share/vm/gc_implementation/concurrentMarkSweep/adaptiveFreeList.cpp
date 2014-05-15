@@ -158,7 +158,7 @@ void AdaptiveFreeList<Chunk>::verify_stats() const {
                  " coal_deaths(" SIZE_FORMAT ")"
                  " + count(" SSIZE_FORMAT ")",
                  this, size(), _allocation_stats.prev_sweep(), _allocation_stats.split_births(),
-                 _allocation_stats.split_births(), _allocation_stats.split_deaths(),
+                 _allocation_stats.coal_births(), _allocation_stats.split_deaths(),
                  _allocation_stats.coal_deaths(), count()));
 }
 #endif
