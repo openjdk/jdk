@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
  */
 package sun.tools.attach;
 
-import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
+
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.File;
-import java.util.Properties;
 
 /*
  * Bsd implementation of HotSpotVirtualMachine
@@ -191,6 +191,8 @@ public class BsdVirtualMachine extends HotSpotVirtualMachine {
         }
 
         if (completionStatus != 0) {
+            // read from the stream and use that as the error message
+            String message = readErrorMessage(sis);
             sis.close();
 
             // In the event of a protocol mismatch then the target VM
@@ -205,7 +207,11 @@ public class BsdVirtualMachine extends HotSpotVirtualMachine {
             if (cmd.equals("load")) {
                 throw new AgentLoadException("Failed to load agent library");
             } else {
-                throw new IOException("Command failed in target VM");
+                if (message == null) {
+                    throw new AttachOperationFailedException("Command failed in target VM");
+                } else {
+                    throw new AttachOperationFailedException(message);
+                }
             }
         }
 
@@ -237,8 +243,9 @@ public class BsdVirtualMachine extends HotSpotVirtualMachine {
             if ((off < 0) || (off > bs.length) || (len < 0) ||
                 ((off + len) > bs.length) || ((off + len) < 0)) {
                 throw new IndexOutOfBoundsException();
-            } else if (len == 0)
+            } else if (len == 0) {
                 return 0;
+            }
 
             return BsdVirtualMachine.read(s, bs, off, len);
         }

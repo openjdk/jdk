@@ -34,6 +34,7 @@ import jdk.testlibrary.ProcessTools;
  * @bug 6321286
  * @summary Unit test for jmap utility
  * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
  * @run main BasicJMapTest
  */
 public class BasicJMapTest {
