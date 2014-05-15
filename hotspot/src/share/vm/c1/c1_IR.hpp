@@ -293,7 +293,6 @@ class IR: public CompilationResourceObj {
  private:
   Compilation*     _compilation;                 // the current compilation
   IRScope*         _top_scope;                   // the root of the scope hierarchy
-  WordSize         _locals_size;                 // the space required for all locals
   int              _num_loops;                   // Total number of loops
   BlockList*       _code;                        // the blocks in code generation order w/ use counts
 
@@ -310,8 +309,6 @@ class IR: public CompilationResourceObj {
   BlockBegin*      start() const                 { return top_scope()->start(); }
   BlockBegin*      std_entry() const             { return start()->end()->as_Base()->std_entry(); }
   BlockBegin*      osr_entry() const             { return start()->end()->as_Base()->osr_entry(); }
-  WordSize         locals_size() const           { return _locals_size; }
-  int              locals_size_in_words() const  { return in_words(_locals_size); }
   BlockList*       code() const                  { return _code; }
   int              num_loops() const             { return _num_loops; }
   int              max_stack() const             { return top_scope()->max_stack(); } // expensive

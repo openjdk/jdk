@@ -1701,6 +1701,15 @@ Values* GraphBuilder::args_list_for_profiling(ciMethod* target, int& start, bool
   return NULL;
 }
 
+void GraphBuilder::check_args_for_profiling(Values* obj_args, int expected) {
+#ifdef ASSERT
+  bool ignored_will_link;
+  ciSignature* declared_signature = NULL;
+  ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
+  assert(expected == obj_args->length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
+#endif
+}
+
 // Collect arguments that we want to profile in a list
 Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver) {
   int start = 0;
@@ -1709,13 +1718,14 @@ Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target,
     return NULL;
   }
   int s = obj_args->size();
-  for (int i = start, j = 0; j < s; i++) {
+  // if called through method handle invoke, some arguments may have been popped
+  for (int i = start, j = 0; j < s && i < args->length(); i++) {
     if (args->at(i)->type()->is_object_kind()) {
       obj_args->push(args->at(i));
       j++;
     }
   }
-  assert(s == obj_args->length(), "missed on arg?");
+  check_args_for_profiling(obj_args, s);
   return obj_args;
 }
 
@@ -3847,14 +3857,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
             j++;
           }
         }
-#ifdef ASSERT
-        {
-          bool ignored_will_link;
-          ciSignature* declared_signature = NULL;
-          ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
-          assert(s == obj_args->length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
-        }
-#endif
+        check_args_for_profiling(obj_args, s);
       }
       profile_call(callee, recv, holder_known ? callee->holder() : NULL, obj_args, true);
     }

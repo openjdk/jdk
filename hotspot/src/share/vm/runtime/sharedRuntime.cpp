@@ -2658,19 +2658,20 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* threa
 JRT_END
 
 #ifdef HAVE_DTRACE_H
-// Create a dtrace nmethod for this method.  The wrapper converts the
-// java compiled calling convention to the native convention, makes a dummy call
-// (actually nops for the size of the call instruction, which become a trap if
-// probe is enabled). The returns to the caller. Since this all looks like a
-// leaf no thread transition is needed.
-
+/**
+ * Create a dtrace nmethod for this method.  The wrapper converts the
+ * Java-compiled calling convention to the native convention, makes a dummy call
+ * (actually nops for the size of the call instruction, which become a trap if
+ * probe is enabled), and finally returns to the caller. Since this all looks like a
+ * leaf, no thread transition is needed.
+ */
 nmethod *AdapterHandlerLibrary::create_dtrace_nmethod(methodHandle method) {
   ResourceMark rm;
   nmethod* nm = NULL;
 
   if (PrintCompilation) {
     ttyLocker ttyl;
-    tty->print("---   n%s  ");
+    tty->print("---   n  ");
     method->print_short_name(tty);
     if (method->is_static()) {
       tty->print(" (static)");

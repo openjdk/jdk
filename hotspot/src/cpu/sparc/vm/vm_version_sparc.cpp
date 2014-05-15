@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,9 +266,9 @@ void VM_Version::initialize() {
   if (!has_vis1()) // Drop to 0 if no VIS1 support
     UseVIS = 0;
 
-  // T2 and above should have support for AES instructions
+  // SPARC T4 and above should have support for AES instructions
   if (has_aes()) {
-    if (UseVIS > 0) { // AES intrinsics use FXOR instruction which is VIS1
+    if (UseVIS > 2) { // AES intrinsics use MOVxTOd/MOVdTOx which are VIS3
       if (FLAG_IS_DEFAULT(UseAES)) {
         FLAG_SET_DEFAULT(UseAES, true);
       }
@@ -282,7 +282,7 @@ void VM_Version::initialize() {
       }
     } else {
         if (UseAES || UseAESIntrinsics) {
-          warning("SPARC AES intrinsics require VIS1 instruction support. Intrinsics will be disabled.");
+          warning("SPARC AES intrinsics require VIS3 instruction support. Intrinsics will be disabled.");
           if (UseAES) {
             FLAG_SET_DEFAULT(UseAES, false);
           }

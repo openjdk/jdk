@@ -3209,12 +3209,6 @@ void TemplateTable::invokehandle(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  if (!EnableInvokeDynamic) {
-    // rewriter does not generate this bytecode
-    __ should_not_reach_here();
-    return;
-  }
-
   const Register Rret       = Lscratch;
   const Register G4_mtype   = G4_scratch;
   const Register O0_recv    = O0;
@@ -3239,17 +3233,6 @@ void TemplateTable::invokehandle(int byte_no) {
 void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
-
-  if (!EnableInvokeDynamic) {
-    // We should not encounter this bytecode if !EnableInvokeDynamic.
-    // The verifier will stop it.  However, if we get past the verifier,
-    // this will stop the thread in a reasonable way, without crashing the JVM.
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                     InterpreterRuntime::throw_IncompatibleClassChangeError));
-    // the call_VM checks for exception, so we should never return here.
-    __ should_not_reach_here();
-    return;
-  }
 
   const Register Rret        = Lscratch;
   const Register G4_callsite = G4_scratch;
