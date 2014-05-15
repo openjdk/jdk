@@ -1019,13 +1019,11 @@ bool Method::should_not_be_cached() const {
  *  security related stack walks (like Reflection.getCallerClass).
  */
 bool Method::is_ignored_by_security_stack_walk() const {
-  const bool use_new_reflection = JDK_Version::is_gte_jdk14x_version() && UseNewReflection;
-
   if (intrinsic_id() == vmIntrinsics::_invoke) {
     // This is Method.invoke() -- ignore it
     return true;
   }
-  if (use_new_reflection &&
+  if (JDK_Version::is_gte_jdk14x_version() &&
       method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
     // This is an auxilary frame -- ignore it
     return true;
