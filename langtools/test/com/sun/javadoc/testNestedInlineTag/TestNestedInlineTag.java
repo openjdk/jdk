@@ -25,12 +25,11 @@
  * @test
  * @summary Test for nested inline tags. *
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
  * @build testtaglets.UnderlineTaglet
  * @build testtaglets.BoldTaglet
  * @build testtaglets.GreenTaglet
- * @build TestNestedInlineTag
  * @run main TestNestedInlineTag
  */
 
@@ -38,7 +37,6 @@
  * This should be green, underlined and bold (Class): {@underline {@bold {@green My test}}} .
  */
 public class TestNestedInlineTag extends JavadocTester {
-
     /**
      * This should be green, underlined and bold (Field): {@underline {@bold {@green My test}}} .
      */
@@ -54,44 +52,35 @@ public class TestNestedInlineTag extends JavadocTester {
      */
     public void method(){}
 
-    private static final String[][] TEST = {
-        //Test nested inline tag in class description.
-        { "TestNestedInlineTag.html",
-         "This should be green, underlined and bold (Class): <u><b><font color=\"green\">My test</font></b></u>"
-        },
-
-        //Test nested inline tag in field description.
-        { "TestNestedInlineTag.html",
-         "This should be green, underlined and bold (Field): <u><b><font color=\"green\">My test</font></b></u>"
-        },
-
-        //Test nested inline tag in constructor description.
-        { "TestNestedInlineTag.html",
-         "This should be green, underlined and bold (Constructor): <u><b><font color=\"green\">My test</font></b></u>"
-        },
-
-        //Test nested inline tag in method description.
-        { "TestNestedInlineTag.html",
-         "This should be green, underlined and bold (Method): <u><b><font color=\"green\">My test</font></b></u>"
-        }
-    };
-
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            "-taglet", "testtaglets.UnderlineTaglet",
-            "-taglet", "testtaglets.BoldTaglet",
-            "-taglet", "testtaglets.GreenTaglet",
-            SRC_DIR + "/TestNestedInlineTag.java"
-        };
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestNestedInlineTag tester = new TestNestedInlineTag();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-taglet", "testtaglets.UnderlineTaglet",
+                "-taglet", "testtaglets.BoldTaglet",
+                "-taglet", "testtaglets.GreenTaglet",
+                testSrc("TestNestedInlineTag.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("TestNestedInlineTag.html", true,
+                //Test nested inline tag in class description.
+                "This should be green, underlined and bold (Class): <u><b><font color=\"green\">My test</font></b></u>",
+                //Test nested inline tag in field description.
+                "This should be green, underlined and bold (Field): <u><b><font color=\"green\">My test</font></b></u>",
+                //Test nested inline tag in constructor description.
+                "This should be green, underlined and bold (Constructor): <u><b><font color=\"green\">My test</font></b></u>",
+                //Test nested inline tag in method description.
+                "This should be green, underlined and bold (Method): <u><b><font color=\"green\">My test</font></b></u>"
+        );
     }
 }

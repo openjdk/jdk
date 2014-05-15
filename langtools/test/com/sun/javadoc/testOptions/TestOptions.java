@@ -26,34 +26,30 @@
  * @bug      4749567
  * @summary  Test the output for -header and -footer options.
  * @author   Bhavesh Patel
- * @library  ../lib/
- * @build    JavadocTester TestOptions
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestOptions
  */
 
 public class TestOptions extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-header", "Test header", "-footer", "Test footer",
-        "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    private static final String[][] TEST = {
-        { "pkg/package-summary.html",
-            "<div class=\"aboutLanguage\">Test header</div>"},
-        { "pkg/package-summary.html",
-            "<div class=\"aboutLanguage\">Test footer</div>"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestOptions tester = new TestOptions();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-header", "Test header",
+                "-footer", "Test footer",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/package-summary.html", true,
+                "<div class=\"aboutLanguage\">Test header</div>",
+                "<div class=\"aboutLanguage\">Test footer</div>");
     }
 }
 

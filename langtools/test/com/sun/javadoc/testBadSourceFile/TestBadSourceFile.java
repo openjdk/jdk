@@ -27,27 +27,28 @@
  * @summary  Make sure exception is not thrown if there is a bad source
  *           file in the same directory as the file being documented.
  * @author   jamieh
- * @library  ../lib/
+ * @library ../lib
  * @build    JavadocTester
- * @build    TestBadSourceFile
  * @run main TestBadSourceFile
  */
 
 public class TestBadSourceFile extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR, SRC_DIR + "/C2.java"
-    };
-
     /**
      * The entry point of the test.
-     * @param args the array of command line arguments.
+     * @param args the array of command line arguments
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestBadSourceFile tester = new TestBadSourceFile();
-        int exitCode = tester.run(ARGS, NO_TEST, NO_TEST);
-        tester.checkExitCode(0, exitCode);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-Xdoclint:none",
+                "-d", "out",
+                testSrc("C2.java"));
+        checkExit(Exit.OK);
     }
 }

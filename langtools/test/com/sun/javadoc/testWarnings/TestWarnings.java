@@ -30,55 +30,50 @@
  *           a "link unresolved" warning.
  *           Make sure error message starts with "error -".
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestWarnings
  * @run main TestWarnings
  */
 
 public class TestWarnings extends JavadocTester {
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    private static final String[] ARGS2 = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR + "-2", "-private", "-sourcepath", SRC_DIR,
-        "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {WARNING_OUTPUT,
-            "X.java:11: warning - Missing closing '}' character for inline tag"},
-        {ERROR_OUTPUT,
-            "package.html: error - Body tag missing from HTML"},
-
-    };
-    private static final String[][] NEGATED_TEST = {
-        { "pkg/X.html", "can't find m()"},
-        { "pkg/X.html", "can't find X()"},
-        { "pkg/X.html", "can't find f"},
-    };
-
-    private static final String[][] TEST2 = {
-        { "pkg/X.html",
-            "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>"},
-        { "pkg/X.html",
-            "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>"},
-        { "pkg/X.html",
-            "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>"},
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception  {
         TestWarnings tester = new TestWarnings();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.run(ARGS2, TEST2, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void testDefault() {
+        javadoc("-Xdoclint:none",
+                "-d", "out-default",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.FAILED);  // TODO: investigate; suspect bad input HTML
+
+        checkOutput(Output.WARNING, true,
+                "X.java:11: warning - Missing closing '}' character for inline tag");
+        checkOutput(Output.ERROR, true,
+                "package.html: error - Body tag missing from HTML");
+
+        checkOutput("pkg/X.html", false,
+                "can't find m()");
+        checkOutput("pkg/X.html", false,
+                "can't find X()");
+        checkOutput("pkg/X.html", false,
+                "can't find f");
+    }
+
+    @Test
+    void testPrivate() {
+        javadoc("-Xdoclint:none",
+                "-d", "out-private",
+                "-private",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.FAILED);  // TODO: investigate; suspect bad input HTML
+
+        checkOutput("pkg/X.html", true,
+            "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>",
+            "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>",
+            "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>");
     }
 }

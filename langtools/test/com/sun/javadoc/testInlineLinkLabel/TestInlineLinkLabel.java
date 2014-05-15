@@ -26,34 +26,29 @@
  * @bug 4524136
  * @summary Test to make sure label is used for inline links.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestInlineLinkLabel
  * @run main TestInlineLinkLabel
  */
 
 public class TestInlineLinkLabel extends JavadocTester {
 
-    private static final String[][] TEST = {
-        //Search for the label to the package link.
-        { "pkg/C1.html" ,
-            "<a href=\"../pkg/package-summary.html\"><code>Here is a link to a package</code></a>"},
-
-        //Search for the label to the class link
-        { "pkg/C1.html" ,
-            "<a href=\"../pkg/C2.html\" title=\"class in pkg\"><code>Here is a link to a class</code></a>"}
-    };
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestInlineLinkLabel tester = new TestInlineLinkLabel();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/C1.html", true,
+                //Search for the label to the package link.
+                "<a href=\"../pkg/package-summary.html\"><code>Here is a link to a package</code></a>",
+                //Search for the label to the class link
+                "<a href=\"../pkg/C2.html\" title=\"class in pkg\"><code>Here is a link to a class</code></a>");
     }
 }

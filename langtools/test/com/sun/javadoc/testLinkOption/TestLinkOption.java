@@ -27,105 +27,111 @@
  * @summary Test to make sure that -link and -linkoffline link to
  * right files, and URLs with and without trailing slash are accepted.
  * @author jamieh
- * @library ../lib/
- * @build JavadocTester TestLinkOption
+ * @library ../lib
+ * @build JavadocTester
  * @run main TestLinkOption
  */
 
 import java.io.File;
 
 public class TestLinkOption extends JavadocTester {
+    /**
+     * The entry point of the test.
+     * @param args the array of command line arguments.
+     */
+    public static void main(String... args) throws Exception {
+        TestLinkOption tester = new TestLinkOption();
+        tester.runTests();
+    }
 
-    //Generate the documentation using -linkoffline and a URL as the first parameter.
-    private static final String[] ARGS1 = new String[] {
-        "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR,
-        "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api/",
-        SRC_DIR, "-package", "pkg", "java.lang"
-    };
+    // The following test runs javadoc multiple times; it is important that the
+    // first one is run first, since the subsequent runs refer to the output
+    // it generates. Therefore we run everything serially in a single @Test
+    // method and not in independent @Test methods.
+    @Test
+    void test() {
+        // Generate the documentation using -linkoffline and a URL as the first parameter.
+        String out1 = "out1";
+        String url = "http://java.sun.com/j2se/1.4/docs/api/";
+        javadoc("-d", out1,
+                "-sourcepath", testSrc,
+                "-linkoffline", url, testSrc,
+                "-package",
+                "pkg", "java.lang");
+        checkExit(Exit.OK);
 
-    private static final String[][] TEST1 = {
-        { "pkg/C.html",
-            "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/String.html?is-external=true\" " +
-            "title=\"class or interface in java.lang\"><code>Link to String Class</code></a>"
-        },
-        //Make sure the parameters are indented properly when the -link option is used.
-        { "pkg/C.html",
-            "(int&nbsp;p1,\n" +
-            "      int&nbsp;p2,\n" +
-            "      int&nbsp;p3)"
-        },
-        { "pkg/C.html",
-            "(int&nbsp;p1,\n" +
-            "      int&nbsp;p2,\n" +
-            "      <a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" title=\"class or interface in java.lang\">" +
-            "Object</a>&nbsp;p3)"
-        },
-        { "java/lang/StringBuilderChild.html",
-            "<pre>public abstract class <span class=\"typeNameLabel\">StringBuilderChild</span>\n" +
-                "extends <a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" " +
-            "title=\"class or interface in java.lang\">Object</a></pre>"
-        },
+        checkOutput("pkg/C.html", true,
+                "<a href=\"" + url + "java/lang/String.html?is-external=true\" "
+                + "title=\"class or interface in java.lang\"><code>Link to String Class</code></a>",
+                //Make sure the parameters are indented properly when the -link option is used.
+                "(int&nbsp;p1,\n"
+                + "      int&nbsp;p2,\n"
+                + "      int&nbsp;p3)",
+                "(int&nbsp;p1,\n"
+                + "      int&nbsp;p2,\n"
+                + "      <a href=\"" + url + "java/lang/Object.html?is-external=true\" title=\"class or interface in java.lang\">"
+                + "Object</a>&nbsp;p3)");
 
-    };
-    private static final String[][] NEGATED_TEST1 = NO_TEST;
+        checkOutput("java/lang/StringBuilderChild.html", true,
+                "<pre>public abstract class <span class=\"typeNameLabel\">StringBuilderChild</span>\n"
+                + "extends <a href=\"" + url + "java/lang/Object.html?is-external=true\" "
+                + "title=\"class or interface in java.lang\">Object</a></pre>"
+        );
 
-    //Generate the documentation using -linkoffline and a relative path as the first parameter.
-    //We will try linking to the docs generated in test 1 with a relative path.
-    private static final String[] ARGS2 = new String[] {
-        "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR,
-        "-linkoffline", "../" + OUTPUT_DIR + "-1",
-        OUTPUT_DIR + "-1", "-package", "pkg2"
-    };
-
-    private static final String[][] TEST2 = {
-        { "pkg2/C2.html",
-            "This is a link to <a href=\"../../" +
-            OUTPUT_DIR + "-1/pkg/C.html?is-external=true\" " +
+        // Generate the documentation using -linkoffline and a relative path as the first parameter.
+        // We will try linking to the docs generated in test 1 with a relative path.
+        String out2 = "out2";
+        javadoc("-d", out2,
+                "-sourcepath", testSrc,
+                "-linkoffline", "../" + out1, out1,
+                "-package",
+                "pkg2");
+        checkExit(Exit.OK);
+        checkOutput("pkg2/C2.html", true,
+            "This is a link to <a href=\"../../" + out1 + "/pkg/C.html?is-external=true\" " +
             "title=\"class or interface in pkg\"><code>Class C</code></a>."
-        }
-    };
+        );
+
+        String out3 = "out3";
+        javadoc(createArguments(out3, out1, true));  // with trailing slash
+        checkExit(Exit.OK);
+
+        String out4 = "out4";
+        javadoc(createArguments(out4, out1, false)); // without trailing slash
+        checkExit(Exit.OK);
+        // Note: the following test is very weak, and will fail if ever the test
+        // of the message is changed. We should have a separate test to verify
+        // this is the text that is given when there is a problem with a URL
+        checkOutput(Output.WARNING, false,
+                "warning - Error fetching URL");
+    }
+
     /*
      * Create the documentation using the -link option, vary the behavior with
      * both trailing and no trailing slash. We are only interested in ensuring
      * that the command executes with no errors or related warnings.
      */
-    static String[] createArguments(boolean withTrailingSlash) {
-        String packagePath = new File(OUTPUT_DIR + "-1").getAbsolutePath();
-        String outputDirName = OUTPUT_DIR;
+    static String[] createArguments(String outDir, String packageDir, boolean withTrailingSlash) {
+        String packagePath = new File(packageDir).getAbsolutePath();
         if (withTrailingSlash) {
             // add the trailing slash, if it is not present!
             if (!packagePath.endsWith(FS)) {
                 packagePath = packagePath + FS;
             }
-            outputDirName = outputDirName + "-3";
         } else {
             // remove the trailing slash, if it is present!
             if (packagePath.endsWith(FS)) {
                 packagePath = packagePath.substring(0, packagePath.length() - 1);
             }
-            outputDirName = outputDirName + "-4";
         }
         String args[] = {
-            "-d", outputDirName, "-sourcepath", SRC_DIR,
-            "-link", "file:///" + packagePath, "-package", "pkg2"
+            "-d", outDir,
+            "-sourcepath", testSrc,
+            "-link", "file:///" + packagePath,
+            "-package",
+            "pkg2"
         };
         System.out.println("packagePath: " + packagePath);
         return args;
-    }
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestLinkOption tester = new TestLinkOption();
-        tester.run(ARGS1, TEST1, NEGATED_TEST1);
-        tester.run(ARGS2, TEST2, NO_TEST);
-        tester.runJavadoc(createArguments(true));  // with trailing slash
-        tester.runJavadoc(createArguments(false)); // without trailing slash
-        tester.printSummary();
-        if (tester.getWarningOutput().contains("warning - Error fetching URL")) {
-            throw new Error("URL rejected ?");
-        }
-        tester.printSummary();
     }
 }

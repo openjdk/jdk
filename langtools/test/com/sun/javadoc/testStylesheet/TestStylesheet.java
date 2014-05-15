@@ -26,132 +26,118 @@
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
- * @library  ../lib/
- * @build    JavadocTester TestStylesheet
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestStylesheet
  */
 
 public class TestStylesheet extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
+    public static void main(String... args) throws Exception {
+        TestStylesheet tester = new TestStylesheet();
+        tester.runTests();
+    }
 
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "stylesheet.css",
-            "/* Javadoc style sheet */"},
-        { "stylesheet.css",
-            "/*\n" +
-            "Overall document style\n" +
-            "*/"},
-        { "stylesheet.css",
-            "/*\n" +
-            "Heading styles\n" +
-            "*/"},
-        { "stylesheet.css",
-            "/*\n" +
-            "Navigation bar styles\n" +
-            "*/"},
-        { "stylesheet.css",
-            "body {\n" +
-            "    background-color:#ffffff;\n" +
-            "    color:#353833;\n" +
-            "    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;\n" +
-            "    font-size:14px;\n" +
-            "    margin:0;\n" +
-            "}"},
-        { "stylesheet.css",
-            "ul {\n" +
-            "    list-style-type:disc;\n" +
-            "}"},
-        { "stylesheet.css",
-            ".overviewSummary caption, .memberSummary caption, .typeSummary caption,\n" +
-            ".useSummary caption, .constantsSummary caption, .deprecatedSummary caption {\n" +
-            "    position:relative;\n" +
-            "    text-align:left;\n" +
-            "    background-repeat:no-repeat;\n" +
-            "    color:#253441;\n" +
-            "    font-weight:bold;\n" +
-            "    clear:none;\n" +
-            "    overflow:hidden;\n" +
-            "    padding:0px;\n" +
-            "    padding-top:10px;\n" +
-            "    padding-left:1px;\n" +
-            "    margin:0px;\n" +
-            "    white-space:pre;\n" +
-            "}"},
-        { "stylesheet.css",
-            ".overviewSummary caption span, .memberSummary caption span, .typeSummary caption span,\n" +
-            ".useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span {\n" +
-            "    white-space:nowrap;\n" +
-            "    padding-top:5px;\n" +
-            "    padding-left:12px;\n" +
-            "    padding-right:12px;\n" +
-            "    padding-bottom:7px;\n" +
-            "    display:inline-block;\n" +
-            "    float:left;\n" +
-            "    background-color:#F8981D;\n" +
-            "    border: none;\n" +
-            "    height:16px;\n" +
-            "}"},
-        { "stylesheet.css",
-            ".memberSummary caption span.activeTableTab span {\n" +
-            "    white-space:nowrap;\n" +
-            "    padding-top:5px;\n" +
-            "    padding-left:12px;\n" +
-            "    padding-right:12px;\n" +
-            "    margin-right:3px;\n" +
-            "    display:inline-block;\n" +
-            "    float:left;\n" +
-            "    background-color:#F8981D;\n" +
-            "    height:16px;\n" +
-            "}"},
-        { "stylesheet.css",
-            ".memberSummary caption span.tableTab span {\n" +
-            "    white-space:nowrap;\n" +
-            "    padding-top:5px;\n" +
-            "    padding-left:12px;\n" +
-            "    padding-right:12px;\n" +
-            "    margin-right:3px;\n" +
-            "    display:inline-block;\n" +
-            "    float:left;\n" +
-            "    background-color:#4D7A97;\n" +
-            "    height:16px;\n" +
-            "}"},
-        { "stylesheet.css",
-            ".memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab {\n" +
-            "    padding-top:0px;\n" +
-            "    padding-left:0px;\n" +
-            "    padding-right:0px;\n" +
-            "    background-image:none;\n" +
-            "    float:none;\n" +
-            "    display:inline;\n" +
-            "}"},
-        { "stylesheet.css",
-            "@import url('resources/fonts/dejavu.css');"},
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        // TODO: most of this test seems a bit silly, since javadoc is simply
+        // copying in the stylesheet from the source directory
+        checkOutput("stylesheet.css", true,
+                "/* Javadoc style sheet */",
+                "/*\n"
+                + "Overall document style\n"
+                + "*/",
+                "/*\n"
+                + "Heading styles\n"
+                + "*/",
+                "/*\n"
+                + "Navigation bar styles\n"
+                + "*/",
+                "body {\n"
+                + "    background-color:#ffffff;\n"
+                + "    color:#353833;\n"
+                + "    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;\n"
+                + "    font-size:14px;\n"
+                + "    margin:0;\n"
+                + "}",
+                "ul {\n"
+                + "    list-style-type:disc;\n"
+                + "}",
+                ".overviewSummary caption, .memberSummary caption, .typeSummary caption,\n"
+                + ".useSummary caption, .constantsSummary caption, .deprecatedSummary caption {\n"
+                + "    position:relative;\n"
+                + "    text-align:left;\n"
+                + "    background-repeat:no-repeat;\n"
+                + "    color:#253441;\n"
+                + "    font-weight:bold;\n"
+                + "    clear:none;\n"
+                + "    overflow:hidden;\n"
+                + "    padding:0px;\n"
+                + "    padding-top:10px;\n"
+                + "    padding-left:1px;\n"
+                + "    margin:0px;\n"
+                + "    white-space:pre;\n"
+                + "}",
+                ".overviewSummary caption span, .memberSummary caption span, .typeSummary caption span,\n"
+                + ".useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span {\n"
+                + "    white-space:nowrap;\n"
+                + "    padding-top:5px;\n"
+                + "    padding-left:12px;\n"
+                + "    padding-right:12px;\n"
+                + "    padding-bottom:7px;\n"
+                + "    display:inline-block;\n"
+                + "    float:left;\n"
+                + "    background-color:#F8981D;\n"
+                + "    border: none;\n"
+                + "    height:16px;\n"
+                + "}",
+                ".memberSummary caption span.activeTableTab span {\n"
+                + "    white-space:nowrap;\n"
+                + "    padding-top:5px;\n"
+                + "    padding-left:12px;\n"
+                + "    padding-right:12px;\n"
+                + "    margin-right:3px;\n"
+                + "    display:inline-block;\n"
+                + "    float:left;\n"
+                + "    background-color:#F8981D;\n"
+                + "    height:16px;\n"
+                + "}",
+                ".memberSummary caption span.tableTab span {\n"
+                + "    white-space:nowrap;\n"
+                + "    padding-top:5px;\n"
+                + "    padding-left:12px;\n"
+                + "    padding-right:12px;\n"
+                + "    margin-right:3px;\n"
+                + "    display:inline-block;\n"
+                + "    float:left;\n"
+                + "    background-color:#4D7A97;\n"
+                + "    height:16px;\n"
+                + "}",
+                ".memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab {\n"
+                + "    padding-top:0px;\n"
+                + "    padding-left:0px;\n"
+                + "    padding-right:0px;\n"
+                + "    background-image:none;\n"
+                + "    float:none;\n"
+                + "    display:inline;\n"
+                + "}",
+                "@import url('resources/fonts/dejavu.css');");
+
         // Test whether a link to the stylesheet file is inserted properly
         // in the class documentation.
-        { "pkg/A.html",
-            "<link rel=\"stylesheet\" type=\"text/css\" " +
-            "href=\"../stylesheet.css\" title=\"Style\">"}
-    };
-    private static final String[][] NEGATED_TEST = {
-        { "stylesheet.css",
-            "* {\n" +
-            "    margin:0;\n" +
-            "    padding:0;\n" +
-            "}"}
-    };
+        checkOutput("pkg/A.html", true,
+                "<link rel=\"stylesheet\" type=\"text/css\" "
+                + "href=\"../stylesheet.css\" title=\"Style\">");
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestStylesheet tester = new TestStylesheet();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        checkOutput("stylesheet.css", false,
+                "* {\n"
+                + "    margin:0;\n"
+                + "    padding:0;\n"
+                + "}");
     }
 }

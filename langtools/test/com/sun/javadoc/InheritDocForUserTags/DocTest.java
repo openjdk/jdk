@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
  * @bug 8008768
  * @summary Using {@inheritDoc} in simple tag defined via -tag fails
  * @author Mike Duigou
+ * @library ../lib
+ * @build JavadocTester
  * @run main DocTest
  */
-
-import java.io.*;
 
 /**
  * DocTest documentation.
@@ -38,41 +38,27 @@ import java.io.*;
  * @implSpec DocTest implementation spec.
  * @implNote DocTest implementation note.
  */
-public class DocTest {
+public class DocTest extends JavadocTester {
     public static void main(String... args) throws Exception {
-        String[] javadoc_args = {
-            "-verbose",
-            "-d", "DocTest",
-            "-tag", "apiNote:optcm:<em>API Note</em>",
-            "-tag", "implSpec:optcm:<em>Implementation Requirements</em>:",
-            "-tag", "implNote:optcm:<em>Implementation Note</em>:",
-            "-package",
-            new File(System.getProperty("test.src"), "DocTest.java").getPath()
-        };
+        DocTest tester = new DocTest();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-verbose",
+                "-d", "DocTest",
+                "-tag", "apiNote:optcm:<em>API Note</em>",
+                "-tag", "implSpec:optcm:<em>Implementation Requirements</em>:",
+                "-tag", "implNote:optcm:<em>Implementation Note</em>:",
+                "-package",
+                testSrc("DocTest.java")
+        );
+        checkExit(Exit.OK);
 
         // javadoc does not report an exit code for an internal exception (!)
         // so monitor stderr for stack dumps.
-        PrintStream prevErr = System.err;
-        ByteArrayOutputStream err_baos = new ByteArrayOutputStream();
-        PrintStream err_ps = new PrintStream(err_baos);
-        System.setErr(err_ps);
-
-        int rc;
-        try {
-            rc = com.sun.tools.javadoc.Main.execute(javadoc_args);
-        } finally {
-            err_ps.close();
-            System.setErr(prevErr);
-        }
-
-        String err = err_baos.toString();
-        System.err.println(err);
-
-        if (rc != 0)
-            throw new Exception("javadoc exited with rc=" + rc);
-
-        if (err.contains("at com.sun."))
-            throw new Exception("javadoc output contains stack trace");
+        checkOutput(Output.STDERR, false, "at com.sun");
     }
 
     /**

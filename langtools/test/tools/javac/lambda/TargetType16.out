@@ -1,2 +1,0 @@
-TargetType16.java:23:9: compiler.err.ref.ambiguous: m, kindname.method, m(TargetType16.SAM1), TargetType16, kindname.method, <T>m(TargetType16.SAM2<T>), TargetType16
-1 error

@@ -28,83 +28,62 @@
  *           is present for three sets of options: (1) -header,
  *           (2) -packagesheader, and (3) -header -packagesheader
  * @author   dkramer
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    PackagesHeader
  * @run main PackagesHeader
  */
 
 public class PackagesHeader extends JavadocTester {
 
-    //Test information.
-    private static final String OUTPUT_DIR1 = OUTPUT_DIR + "-1/";
-    private static final String OUTPUT_DIR2 = OUTPUT_DIR + "-2/";
-    private static final String OUTPUT_DIR3 = OUTPUT_DIR + "-3/";
+    public static void main(String... args) throws Exception {
+        JavadocTester tester = new PackagesHeader();
+        tester.runTests();
+    }
 
-    /**
-     * Assign value for [ fileToSearch, stringToFind ]
-     */
-    private static final String[][] TESTARRAY1 = {
+    @Test
+    void testHeader() {
+        // First test with -header only
+        javadoc("-d", "out-header",
+                "-header", "Main Frame Header",
+                "-sourcepath", testSrc,
+                "p1", "p2");
+        checkExit(Exit.OK);
 
         // Test that the -header shows up in the packages frame
-        { "overview-frame.html",
-                 "Main Frame Header" }
-    };
+        checkOutput("overview-frame.html", true,
+                "Main Frame Header");
+    }
 
-    private static final String[][] TESTARRAY2 = {
+    @Test
+    void testPackagesHeader() {
+        // Second test with -packagesheader only
+        javadoc("-d", "out-packages-header",
+                "-packagesheader", "Packages Frame Header",
+                "-sourcepath", testSrc,
+                "p1", "p2");
+        checkExit(Exit.OK);
 
         // Test that the -packagesheader string shows
         // up in the packages frame
+        checkOutput("overview-frame.html", true,
+                "Packages Frame Header");
+    }
 
-        { "overview-frame.html",
-                 "Packages Frame Header" }
-    };
-
-    private static final String[][] TESTARRAY3 = {
+    @Test
+    void testBothHeaders() {
+        // Third test with both -packagesheader and -header
+        javadoc("-d", "out-both",
+                "-packagesheader", "Packages Frame Header",
+                "-header", "Main Frame Header",
+                "-sourcepath", testSrc,
+                "p1", "p2");
+        checkExit(Exit.OK);
 
         // Test that the both headers show up and are different
+        checkOutput("overview-frame.html", true,
+                "Packages Frame Header");
 
-        { "overview-frame.html",
-                 "Packages Frame Header" },
-
-        { "overview-summary.html",
-                 "Main Frame Header" }
-    };
-
-    // First test with -header only
-    private static final String[] JAVADOC_ARGS1 = new String[] {
-            "-d", OUTPUT_DIR1,
-            "-header", "Main Frame Header",
-            "-sourcepath", SRC_DIR,
-            "p1", "p2"};
-
-    // Second test with -packagesheader only
-    private static final String[] JAVADOC_ARGS2 = new String[] {
-            "-d", OUTPUT_DIR2,
-            "-packagesheader", "Packages Frame Header",
-            "-sourcepath", SRC_DIR,
-            "p1", "p2"};
-
-    // Third test with both -packagesheader and -header
-    private static final String[] JAVADOC_ARGS3 = new String[] {
-            "-d", OUTPUT_DIR3,
-            "-packagesheader", "Packages Frame Header",
-            "-header", "Main Frame Header",
-            "-sourcepath", SRC_DIR,
-            "p1", "p2"};
-
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        JavadocTester tester = new PackagesHeader();
-
-        tester.run(JAVADOC_ARGS1, TESTARRAY1, NO_TEST);
-        tester.run(JAVADOC_ARGS2, TESTARRAY2, NO_TEST);
-        tester.run(JAVADOC_ARGS3, TESTARRAY3, NO_TEST);
-
-        tester.printSummary();
+        checkOutput("overview-summary.html", true,
+                "Main Frame Header");
     }
 }

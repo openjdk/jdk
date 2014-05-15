@@ -31,36 +31,30 @@
  * @summary  Run tests on -docencoding to see if the value is
              used for stylesheet as well.
  * @author   jayashree viswanathan
- * @library  ../lib/
- * @build    JavadocTester TestDocEncoding
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestDocEncoding
  */
 
 public class TestDocEncoding extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR,
-        "-docencoding", "Cp930",
-        "-sourcepath", SRC_DIR,
-        "-notimestamp",
-        "pkg"
-    };
-
-    private static final String[][] NEGATED_TEST = {
-        { "stylesheet.css",
-            "body {\n" +
-            "    background-color:#ffffff;"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDocEncoding tester = new TestDocEncoding();
-        tester.run(ARGS, NO_TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-docencoding", "Cp930",
+                "-sourcepath", testSrc,
+                "-notimestamp",
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("stylesheet.css", false,
+                "body {\n"
+                + "    background-color:#ffffff;");
     }
 }
 

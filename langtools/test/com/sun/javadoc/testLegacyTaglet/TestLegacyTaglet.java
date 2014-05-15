@@ -27,38 +27,35 @@
  * @summary Test to ensure that the refactored version of the standard
  * doclet still works with Taglets that implement the 1.4.0 interface.
  * @author jamieh
- * @library ../lib/
- * @compile ../lib/JavadocTester.java TestLegacyTaglet.java ToDoTaglet.java UnderlineTaglet.java Check.java
+ * @library ../lib
+ * @build JavadocTester ToDoTaglet UnderlineTaglet Check
  * @run main TestLegacyTaglet
  */
 
 public class TestLegacyTaglet extends JavadocTester {
 
-    private static final String[] ARGS =
-        new String[] {"-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            "-tagletpath", SRC_DIR, "-taglet", "ToDoTaglet", "-taglet", "Check",
-            "-taglet", "UnderlineTaglet", SRC_DIR + "/C.java"};
-
-    private static final String[][] TEST = new String[][] {
-            { "C.html", "This is an <u>underline</u>"},
-            { "C.html",
-            "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
-                "<td bgcolor=\"yellow\">Finish this class.</td></tr></table></DD>"},
-            { "C.html",
-                "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
-                "<td bgcolor=\"yellow\">Tag in Method.</td></tr></table></DD>"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestLegacyTaglet tester = new TestLegacyTaglet();
-        tester.run(ARGS, TEST, NO_TEST);
-        if (tester.getErrorOutput().contains("NullPointerException")) {
-            throw new AssertionError("javadoc threw NullPointerException");
-        }
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-tagletpath", testSrc,
+                "-taglet", "ToDoTaglet",
+                "-taglet", "Check",
+                "-taglet", "UnderlineTaglet",
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+        checkOutput("C.html", true,
+                "This is an <u>underline</u>",
+                "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
+                "<td bgcolor=\"yellow\">Finish this class.</td></tr></table></DD>",
+                "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
+                "<td bgcolor=\"yellow\">Tag in Method.</td></tr></table></DD>");
+        checkOutput(Output.STDERR, false,
+                "NullPointerException");
     }
 }

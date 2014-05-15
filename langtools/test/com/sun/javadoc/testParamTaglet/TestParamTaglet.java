@@ -28,50 +28,38 @@
  *           match up with a real parameters.
  *           Make sure inheritDoc cannot be used in an invalid param tag.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestParamTaglet
  * @run main TestParamTaglet
  */
 
 public class TestParamTaglet extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        //Regular param tags.
-        { "pkg/C.html",
-            "<span class=\"paramLabel\">Parameters:</span></dt>\n" +
-            "<dd><code>param1</code> - testing 1 2 3.</dd>\n" +
-                "<dd><code>param2</code> - testing 1 2 3."
-        },
-        //Param tags that don't match with any real parameters.
-        { "pkg/C.html",
-            "<span class=\"paramLabel\">Parameters:</span></dt>\n" +
-            "<dd><code><I>p1</I></code> - testing 1 2 3.</dd>\n" +
-                "<dd><code><I>p2</I></code> - testing 1 2 3."
-        },
-        //{@inherit} doc misuse does not cause doclet to throw exception.
-        // Param is printed with nothing inherited.
-        //XXX: in the future when Configuration is available during doc inheritence,
-        //print a warning for this mistake.
-        { "pkg/C.html",
-            "<code><I>inheritBug</I></code> -"
-        },
-
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestParamTaglet tester = new TestParamTaglet();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.FAILED);
+
+        checkOutput("pkg/C.html", true,
+                //Regular param tags.
+                "<span class=\"paramLabel\">Parameters:</span></dt>\n"
+                + "<dd><code>param1</code> - testing 1 2 3.</dd>\n"
+                + "<dd><code>param2</code> - testing 1 2 3.",
+                //Param tags that don't match with any real parameters.
+                "<span class=\"paramLabel\">Parameters:</span></dt>\n"
+                + "<dd><code><I>p1</I></code> - testing 1 2 3.</dd>\n"
+                + "<dd><code><I>p2</I></code> - testing 1 2 3.",
+                //{@inherit} doc misuse does not cause doclet to throw exception.
+                // Param is printed with nothing inherited.
+                //XXX: in the future when Configuration is available during doc inheritence,
+                //print a warning for this mistake.
+                "<code><I>inheritBug</I></code> -");
     }
 }
