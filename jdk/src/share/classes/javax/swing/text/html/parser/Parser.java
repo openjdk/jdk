@@ -216,6 +216,8 @@ class Parser implements DTDConstants {
      * the current comment tag, text, block.... This is provided for
      * subclassers that wish to know the start of the current block when
      * called with one of the handleXXX methods.
+     *
+     * @return the start position of the current block
      */
     int getBlockStartPosition() {
         return Math.max(0, lastBlockStartPos - 1);
@@ -223,31 +225,55 @@ class Parser implements DTDConstants {
 
     /**
      * Makes a TagElement.
+     *
+     * @param elem       the element storing the tag definition
+     * @param fictional  the value of the flag "{@code fictional}" to be set for the tag
+     *
+     * @return the created {@code TagElement}
      */
     protected TagElement makeTag(Element elem, boolean fictional) {
         return new TagElement(elem, fictional);
     }
 
+    /**
+     * Makes a TagElement.
+     *
+     * @param elem  the element storing the tag definition
+     *
+     * @return the created {@code TagElement}
+     */
     protected TagElement makeTag(Element elem) {
         return makeTag(elem, false);
     }
 
+    /**
+     * Returns attributes for the current tag.
+     *
+     * @return {@code SimpleAttributeSet} containing the attributes
+     */
     protected SimpleAttributeSet getAttributes() {
         return attributes;
     }
 
+    /**
+     * Removes the current attributes.
+     */
     protected void flushAttributes() {
         attributes.removeAttributes(attributes);
     }
 
     /**
      * Called when PCDATA is encountered.
+     *
+     * @param text  the section text
      */
     protected void handleText(char text[]) {
     }
 
     /**
      * Called when an HTML title tag is encountered.
+     *
+     * @param text  the title text
      */
     protected void handleTitle(char text[]) {
         // default behavior is to call handleText. Subclasses
@@ -257,10 +283,15 @@ class Parser implements DTDConstants {
 
     /**
      * Called when an HTML comment is encountered.
+     *
+     * @param text  the comment being handled
      */
     protected void handleComment(char text[]) {
     }
 
+    /**
+     * Called when the content terminates without closing the HTML comment.
+     */
     protected void handleEOFInComment() {
         // We've reached EOF.  Our recovery strategy is to
         // see if we have more than one line in the comment;
@@ -288,24 +319,34 @@ class Parser implements DTDConstants {
 
     /**
      * Called when an empty tag is encountered.
+     *
+     * @param tag  the tag being handled
+     * @throws ChangedCharSetException if the document charset was changed
      */
     protected void handleEmptyTag(TagElement tag) throws ChangedCharSetException {
     }
 
     /**
      * Called when a start tag is encountered.
+     *
+     * @param tag  the tag being handled
      */
     protected void handleStartTag(TagElement tag) {
     }
 
     /**
      * Called when an end tag is encountered.
+     *
+     * @param tag  the tag being handled
      */
     protected void handleEndTag(TagElement tag) {
     }
 
     /**
      * An error has occurred.
+     *
+     * @param ln   the number of line containing the error
+     * @param msg  the error message
      */
     protected void handleError(int ln, String msg) {
         /*
@@ -368,7 +409,12 @@ class Parser implements DTDConstants {
     }
 
     /**
-     * Invoke the error handler.
+     * Invokes the error handler.
+     *
+     * @param err   the error type
+     * @param arg1  the 1st error message argument
+     * @param arg2  the 2nd error message argument
+     * @param arg3  the 3rd error message argument
      */
     protected void error(String err, String arg1, String arg2,
         String arg3) {
@@ -390,6 +436,9 @@ class Parser implements DTDConstants {
      * Handle a start tag. The new tag is pushed
      * onto the tag stack. The attribute list is
      * checked for required attributes.
+     *
+     * @param tag  the tag
+     * @throws ChangedCharSetException if the document charset was changed
      */
     protected void startTag(TagElement tag) throws ChangedCharSetException {
         Element elem = tag.getElement();
@@ -441,6 +490,9 @@ class Parser implements DTDConstants {
     /**
      * Handle an end tag. The end tag is popped
      * from the tag stack.
+     *
+     * @param omitted  {@code true} if the tag is no actually present in the
+     *                 document, but is supposed by the parser
      */
     protected void endTag(boolean omitted) {
         handleText(stack.tag);
@@ -498,6 +550,8 @@ class Parser implements DTDConstants {
 
     /**
      * Marks the first time a tag has been seen in a document
+     *
+     * @param elem  the element represented by the tag
      */
 
     protected void markFirstTime(Element elem) {
@@ -1478,8 +1532,11 @@ class Parser implements DTDConstants {
     }
 
     /**
-     * Parses th Document Declaration Type markup declaration.
+     * Parses the Document Type Declaration markup declaration.
      * Currently ignores it.
+     *
+     * @return the string representation of the markup declaration
+     * @throws IOException if an I/O error occurs
      */
     public String parseDTDMarkup() throws IOException {
 
@@ -1523,6 +1580,11 @@ class Parser implements DTDConstants {
      * Parse markup declarations.
      * Currently only handles the Document Type Declaration markup.
      * Returns true if it is a markup declaration false otherwise.
+     *
+     * @param strBuff  the markup declaration
+     * @return {@code true} if this is a valid markup declaration;
+     *         otherwise {@code false}
+     * @throws IOException if an I/O error occurs
      */
     protected boolean parseMarkupDeclarations(StringBuffer strBuff) throws IOException {
 
@@ -2236,6 +2298,9 @@ class Parser implements DTDConstants {
 
     /**
      * Parse an HTML stream, given a DTD.
+     *
+     * @param in  the reader to read the source from
+     * @throws IOException if an I/O error occurs
      */
     public synchronized void parse(Reader in) throws IOException {
         this.in = in;
