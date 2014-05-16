@@ -498,9 +498,10 @@ bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
     // _f1 == NULL || !_f1->is_method() are OK here
     return true;
   }
-  // return false if _f1 refers to an old or an obsolete method
+  // return false if _f1 refers to a non-deleted old or obsolete method
   return (NOT_PRODUCT(_f1->is_valid() &&) _f1->is_method() &&
-          !((Method*)_f1)->is_old() && !((Method*)_f1)->is_obsolete());
+          (f1_as_method()->is_deleted() ||
+          (!f1_as_method()->is_old() && !f1_as_method()->is_obsolete())));
 }
 
 bool ConstantPoolCacheEntry::is_interesting_method_entry(Klass* k) {

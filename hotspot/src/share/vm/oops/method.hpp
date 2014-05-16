@@ -669,6 +669,8 @@ class Method : public Metadata {
   void set_is_old()                                 { _access_flags.set_is_old(); }
   bool is_obsolete() const                          { return access_flags().is_obsolete(); }
   void set_is_obsolete()                            { _access_flags.set_is_obsolete(); }
+  bool is_deleted() const                           { return access_flags().is_deleted(); }
+  void set_is_deleted()                             { _access_flags.set_is_deleted(); }
   bool on_stack() const                             { return access_flags().on_stack(); }
   void set_on_stack(const bool value);
 
