@@ -353,6 +353,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(MethodData,           _method,                                       Method*)                               \
   nonstatic_field(MethodData,           _data_size,                                    int)                                   \
   nonstatic_field(MethodData,           _data[0],                                      intptr_t)                              \
+  nonstatic_field(MethodData,           _parameters_type_data_di,                      int)                                   \
   nonstatic_field(MethodData,           _nof_decompiles,                               uint)                                  \
   nonstatic_field(MethodData,           _nof_overflow_recompiles,                      uint)                                  \
   nonstatic_field(MethodData,           _nof_overflow_traps,                           uint)                                  \
@@ -2499,6 +2500,10 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_constant(Deoptimization::Reason_age)                            \
   declare_constant(Deoptimization::Reason_predicate)                      \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_speculate_class_check)          \
+  declare_constant(Deoptimization::Reason_speculate_null_check)           \
+  declare_constant(Deoptimization::Reason_rtm_state_change)               \
+  declare_constant(Deoptimization::Reason_tenured)                        \
   declare_constant(Deoptimization::Reason_LIMIT)                          \
   declare_constant(Deoptimization::Reason_RECORDED_LIMIT)                 \
                                                                           \

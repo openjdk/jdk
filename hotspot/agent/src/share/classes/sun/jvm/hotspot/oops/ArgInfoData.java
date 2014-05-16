@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,42 +22,35 @@
  *
  */
 
-package sun.jvm.hotspot.ci;
+package sun.jvm.hotspot.oops;
 
-import java.io.PrintStream;
+import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
 
-public class ciKlass extends ciType {
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
+public class ArgInfoData extends ArrayData {
+
+  public ArgInfoData(DataLayout layout) {
+    super(layout);
   }
 
-  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("ciKlass");
-    nameField = type.getAddressField("_name");
+  int numberOfArgs() {
+    return arrayLen();
   }
 
-  private static AddressField nameField;
-
-  public String name() {
-    ciSymbol sym = new ciSymbol(nameField.getValue(getAddress()));
-    return sym.asUtf88();
+  int argModified(int arg) {
+    return arrayUintAt(arg);
   }
 
-  public ciKlass(Address addr) {
-    super(addr);
-  }
-
-  public void printValueOn(PrintStream tty) {
-    Klass k = (Klass)getMetadata();
-    k.printValueOn(tty);
+  public void printDataOn(PrintStream st) {
+    printShared(st, "ArgInfoData");
+    int nargs = numberOfArgs();
+    for (int i = 0; i < nargs; i++) {
+      st.print("  0x" + Integer.toHexString(argModified(i)));
+    }
+    st.println();
   }
 }
