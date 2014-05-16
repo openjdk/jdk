@@ -583,11 +583,20 @@ char* SysClassPath::add_jars_to_path(char* path, const char* directory) {
 // Parses a memory size specification string.
 static bool atomull(const char *s, julong* result) {
   julong n = 0;
-  int args_read = sscanf(s, JULONG_FORMAT, &n);
+  int args_read = 0;
+  bool is_hex = false;
+  // Skip leading 0[xX] for hexadecimal
+  if (*s =='0' && (*(s+1) == 'x' || *(s+1) == 'X')) {
+    s += 2;
+    is_hex = true;
+    args_read = sscanf(s, JULONG_FORMAT_X, &n);
+  } else {
+    args_read = sscanf(s, JULONG_FORMAT, &n);
+  }
   if (args_read != 1) {
     return false;
   }
-  while (*s != '\0' && isdigit(*s)) {
+  while (*s != '\0' && (isdigit(*s) || (is_hex && isxdigit(*s)))) {
     s++;
   }
   // 4705540: illegal if more characters are found after the first non-digit
@@ -781,7 +790,7 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     }
   }
 
-#define VALUE_RANGE "[-kmgtKMGT0123456789]"
+#define VALUE_RANGE "[-kmgtxKMGTX0123456789abcdefABCDEF]"
   if (sscanf(arg, "%" XSTR(BUFLEN) NAME_RANGE "=" "%" XSTR(BUFLEN) VALUE_RANGE "%c", name, value, &dummy) == 2) {
     return set_numeric_flag(name, value, origin);
   }
