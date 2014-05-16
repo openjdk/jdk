@@ -26,6 +26,7 @@ package javax.swing.plaf.synth;
 
 import javax.swing.*;
 import java.util.*;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * An immutable transient object containing contextual information about
@@ -70,7 +71,7 @@ public class SynthContext {
         }
         if (context == null) {
             try {
-                context = (SynthContext)type.newInstance();
+                context = (SynthContext) ReflectUtil.newInstance(type);
             } catch (IllegalAccessException iae) {
             } catch (InstantiationException ie) {
             }
