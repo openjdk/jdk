@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ inline Klass* Klass::decode_klass_not_null(narrowKlass v) {
   assert(!is_null(v), "narrow klass value can never be zero");
   int    shift = Universe::narrow_klass_shift();
   Klass* result = (Klass*)(void*)((uintptr_t)Universe::narrow_klass_base() + ((uintptr_t)v << shift));
-  assert(check_klass_alignment(result), err_msg("address not aligned: " PTR_FORMAT, (void*) result));
+  assert(check_klass_alignment(result), err_msg("address not aligned: " INTPTR_FORMAT, p2i((void*) result)));
   return result;
 }
 

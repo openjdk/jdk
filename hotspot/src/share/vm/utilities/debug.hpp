@@ -43,17 +43,17 @@ class FormatBufferBase {
 #define RES_BUFSZ 256
 class FormatBufferResource : public FormatBufferBase {
  public:
-  FormatBufferResource(const char * format, ...);
+  FormatBufferResource(const char * format, ...) ATTRIBUTE_PRINTF(2, 3);
 };
 
 // Use stack for buffer
 template <size_t bufsz = 256>
 class FormatBuffer : public FormatBufferBase {
  public:
-  inline FormatBuffer(const char * format, ...);
-  inline void append(const char* format, ...);
-  inline void print(const char* format, ...);
-  inline void printv(const char* format, va_list ap);
+  inline FormatBuffer(const char * format, ...) ATTRIBUTE_PRINTF(2, 3);
+  inline void append(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
+  inline void print(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
+  inline void printv(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
 
   char* buffer() { return _buf; }
   int size() { return bufsz; }
@@ -223,7 +223,7 @@ void report_should_not_reach_here(const char* file, int line);
 void report_unimplemented(const char* file, int line);
 void report_untested(const char* file, int line, const char* message);
 
-void warning(const char* format, ...);
+void warning(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
 
 #ifdef ASSERT
 // Compile-time asserts.

@@ -36,6 +36,15 @@ class MethodCounters: public MetaspaceObj {
   u2                _number_of_breakpoints;      // fullspeed debugging support
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
   InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequencey-based optimizations
+  // NMethod age is a counter for warm methods detection in the code cache sweeper.
+  // The counter is reset by the sweeper and is decremented by some of the compiled
+  // code. The counter values are interpreted as follows:
+  // 1. (HotMethodDetection..INT_MAX] - initial value, no counters inserted
+  // 2. (1..HotMethodDetectionLimit)  - the method is warm, the counter is used
+  //                                    to figure out which methods can be flushed.
+  // 3. (INT_MIN..0]                  - method is hot and will deopt and get
+  //                                    recompiled without the counters
+  int               _nmethod_age;
 
 #ifdef TIERED
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
@@ -44,7 +53,8 @@ class MethodCounters: public MetaspaceObj {
 
   MethodCounters() : _interpreter_invocation_count(0),
                      _interpreter_throwout_count(0),
-                     _number_of_breakpoints(0)
+                     _number_of_breakpoints(0),
+                     _nmethod_age(INT_MAX)
 #ifdef TIERED
                    , _rate(0),
                      _prev_time(0)
@@ -52,6 +62,10 @@ class MethodCounters: public MetaspaceObj {
   {
     invocation_counter()->init();
     backedge_counter()->init();
+
+    if (StressCodeAging) {
+      set_nmethod_age(HotMethodDetectionLimit);
+    }
   }
 
  public:
@@ -103,6 +117,24 @@ class MethodCounters: public MetaspaceObj {
   // invocation counter
   InvocationCounter* invocation_counter() { return &_invocation_counter; }
   InvocationCounter* backedge_counter()   { return &_backedge_counter; }
+
+  int nmethod_age() {
+    return _nmethod_age;
+  }
+  void set_nmethod_age(int age) {
+    _nmethod_age = age;
+  }
+  void reset_nmethod_age() {
+    set_nmethod_age(HotMethodDetectionLimit);
+  }
+
+  static bool is_nmethod_hot(int age)       { return age <= 0; }
+  static bool is_nmethod_warm(int age)      { return age < HotMethodDetectionLimit; }
+  static bool is_nmethod_age_unset(int age) { return age > HotMethodDetectionLimit; }
+
+  static ByteSize nmethod_age_offset() {
+    return byte_offset_of(MethodCounters, _nmethod_age);
+  }
 
   static ByteSize interpreter_invocation_counter_offset() {
     return byte_offset_of(MethodCounters, _interpreter_invocation_count);

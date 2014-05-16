@@ -875,6 +875,7 @@ void ClassFileParser::parse_field_attributes(u2 attributes_count,
   int runtime_visible_type_annotations_length = 0;
   u1* runtime_invisible_type_annotations = NULL;
   int runtime_invisible_type_annotations_length = 0;
+  bool runtime_invisible_annotations_exists = false;
   bool runtime_invisible_type_annotations_exists = false;
   while (attributes_count--) {
     cfs->guarantee_more(6, CHECK);  // attribute_name_index, attribute_length
@@ -920,6 +921,10 @@ void ClassFileParser::parse_field_attributes(u2 attributes_count,
         }
         generic_signature_index = cfs->get_u2(CHECK);
       } else if (attribute_name == vmSymbols::tag_runtime_visible_annotations()) {
+        if (runtime_visible_annotations != NULL) {
+          classfile_parse_error(
+            "Multiple RuntimeVisibleAnnotations attributes for field in class file %s", CHECK);
+        }
         runtime_visible_annotations_length = attribute_length;
         runtime_visible_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
@@ -928,11 +933,18 @@ void ClassFileParser::parse_field_attributes(u2 attributes_count,
                           parsed_annotations,
                           CHECK);
         cfs->skip_u1(runtime_visible_annotations_length, CHECK);
-      } else if (PreserveAllAnnotations && attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
-        runtime_invisible_annotations_length = attribute_length;
-        runtime_invisible_annotations = cfs->get_u1_buffer();
-        assert(runtime_invisible_annotations != NULL, "null invisible annotations");
-        cfs->skip_u1(runtime_invisible_annotations_length, CHECK);
+      } else if (attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
+        if (runtime_invisible_annotations_exists) {
+          classfile_parse_error(
+            "Multiple RuntimeInvisibleAnnotations attributes for field in class file %s", CHECK);
+        }
+        runtime_invisible_annotations_exists = true;
+        if (PreserveAllAnnotations) {
+          runtime_invisible_annotations_length = attribute_length;
+          runtime_invisible_annotations = cfs->get_u1_buffer();
+          assert(runtime_invisible_annotations != NULL, "null invisible annotations");
+        }
+        cfs->skip_u1(attribute_length, CHECK);
       } else if (attribute_name == vmSymbols::tag_runtime_visible_type_annotations()) {
         if (runtime_visible_type_annotations != NULL) {
           classfile_parse_error(
@@ -2066,7 +2078,9 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
   int runtime_visible_type_annotations_length = 0;
   u1* runtime_invisible_type_annotations = NULL;
   int runtime_invisible_type_annotations_length = 0;
+  bool runtime_invisible_annotations_exists = false;
   bool runtime_invisible_type_annotations_exists = false;
+  bool runtime_invisible_parameter_annotations_exists = false;
   u1* annotation_default = NULL;
   int annotation_default_length = 0;
 
@@ -2295,6 +2309,10 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
         cfs->guarantee_more(2, CHECK_(nullHandle));  // generic_signature_index
         generic_signature_index = cfs->get_u2_fast();
       } else if (method_attribute_name == vmSymbols::tag_runtime_visible_annotations()) {
+        if (runtime_visible_annotations != NULL) {
+          classfile_parse_error(
+            "Multiple RuntimeVisibleAnnotations attributes for method in class file %s", CHECK_(nullHandle));
+        }
         runtime_visible_annotations_length = method_attribute_length;
         runtime_visible_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
@@ -2302,22 +2320,45 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
             runtime_visible_annotations_length, &parsed_annotations,
             CHECK_(nullHandle));
         cfs->skip_u1(runtime_visible_annotations_length, CHECK_(nullHandle));
-      } else if (PreserveAllAnnotations && method_attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
-        runtime_invisible_annotations_length = method_attribute_length;
-        runtime_invisible_annotations = cfs->get_u1_buffer();
-        assert(runtime_invisible_annotations != NULL, "null invisible annotations");
-        cfs->skip_u1(runtime_invisible_annotations_length, CHECK_(nullHandle));
+      } else if (method_attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
+        if (runtime_invisible_annotations_exists) {
+          classfile_parse_error(
+            "Multiple RuntimeInvisibleAnnotations attributes for method in class file %s", CHECK_(nullHandle));
+        }
+        runtime_invisible_annotations_exists = true;
+        if (PreserveAllAnnotations) {
+          runtime_invisible_annotations_length = method_attribute_length;
+          runtime_invisible_annotations = cfs->get_u1_buffer();
+          assert(runtime_invisible_annotations != NULL, "null invisible annotations");
+        }
+        cfs->skip_u1(method_attribute_length, CHECK_(nullHandle));
       } else if (method_attribute_name == vmSymbols::tag_runtime_visible_parameter_annotations()) {
+        if (runtime_visible_parameter_annotations != NULL) {
+          classfile_parse_error(
+            "Multiple RuntimeVisibleParameterAnnotations attributes for method in class file %s", CHECK_(nullHandle));
+        }
         runtime_visible_parameter_annotations_length = method_attribute_length;
         runtime_visible_parameter_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_parameter_annotations != NULL, "null visible parameter annotations");
         cfs->skip_u1(runtime_visible_parameter_annotations_length, CHECK_(nullHandle));
-      } else if (PreserveAllAnnotations && method_attribute_name == vmSymbols::tag_runtime_invisible_parameter_annotations()) {
-        runtime_invisible_parameter_annotations_length = method_attribute_length;
-        runtime_invisible_parameter_annotations = cfs->get_u1_buffer();
-        assert(runtime_invisible_parameter_annotations != NULL, "null invisible parameter annotations");
-        cfs->skip_u1(runtime_invisible_parameter_annotations_length, CHECK_(nullHandle));
+      } else if (method_attribute_name == vmSymbols::tag_runtime_invisible_parameter_annotations()) {
+        if (runtime_invisible_parameter_annotations_exists) {
+          classfile_parse_error(
+            "Multiple RuntimeInvisibleParameterAnnotations attributes for method in class file %s", CHECK_(nullHandle));
+        }
+        runtime_invisible_parameter_annotations_exists = true;
+        if (PreserveAllAnnotations) {
+          runtime_invisible_parameter_annotations_length = method_attribute_length;
+          runtime_invisible_parameter_annotations = cfs->get_u1_buffer();
+          assert(runtime_invisible_parameter_annotations != NULL, "null invisible parameter annotations");
+        }
+        cfs->skip_u1(method_attribute_length, CHECK_(nullHandle));
       } else if (method_attribute_name == vmSymbols::tag_annotation_default()) {
+        if (annotation_default != NULL) {
+          classfile_parse_error(
+            "Multiple AnnotationDefault attributes for method in class file %s",
+            CHECK_(nullHandle));
+        }
         annotation_default_length = method_attribute_length;
         annotation_default = cfs->get_u1_buffer();
         assert(annotation_default != NULL, "null annotation default");
@@ -2846,6 +2887,8 @@ void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotatio
   u1* runtime_invisible_type_annotations = NULL;
   int runtime_invisible_type_annotations_length = 0;
   bool runtime_invisible_type_annotations_exists = false;
+  bool runtime_invisible_annotations_exists = false;
+  bool parsed_source_debug_ext_annotations_exist = false;
   u1* inner_classes_attribute_start = NULL;
   u4  inner_classes_attribute_length = 0;
   u2  enclosing_method_class_index = 0;
@@ -2873,6 +2916,11 @@ void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotatio
       parse_classfile_sourcefile_attribute(CHECK);
     } else if (tag == vmSymbols::tag_source_debug_extension()) {
       // Check for SourceDebugExtension tag
+      if (parsed_source_debug_ext_annotations_exist) {
+          classfile_parse_error(
+            "Multiple SourceDebugExtension attributes in class file %s", CHECK);
+      }
+      parsed_source_debug_ext_annotations_exist = true;
       parse_classfile_source_debug_extension_attribute((int)attribute_length, CHECK);
     } else if (tag == vmSymbols::tag_inner_classes()) {
       // Check for InnerClasses tag
@@ -2909,6 +2957,10 @@ void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotatio
         }
         parse_classfile_signature_attribute(CHECK);
       } else if (tag == vmSymbols::tag_runtime_visible_annotations()) {
+        if (runtime_visible_annotations != NULL) {
+          classfile_parse_error(
+            "Multiple RuntimeVisibleAnnotations attributes in class file %s", CHECK);
+        }
         runtime_visible_annotations_length = attribute_length;
         runtime_visible_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
@@ -2917,11 +2969,18 @@ void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotatio
                           parsed_annotations,
                           CHECK);
         cfs->skip_u1(runtime_visible_annotations_length, CHECK);
-      } else if (PreserveAllAnnotations && tag == vmSymbols::tag_runtime_invisible_annotations()) {
-        runtime_invisible_annotations_length = attribute_length;
-        runtime_invisible_annotations = cfs->get_u1_buffer();
-        assert(runtime_invisible_annotations != NULL, "null invisible annotations");
-        cfs->skip_u1(runtime_invisible_annotations_length, CHECK);
+      } else if (tag == vmSymbols::tag_runtime_invisible_annotations()) {
+        if (runtime_invisible_annotations_exists) {
+          classfile_parse_error(
+            "Multiple RuntimeInvisibleAnnotations attributes in class file %s", CHECK);
+        }
+        runtime_invisible_annotations_exists = true;
+        if (PreserveAllAnnotations) {
+          runtime_invisible_annotations_length = attribute_length;
+          runtime_invisible_annotations = cfs->get_u1_buffer();
+          assert(runtime_invisible_annotations != NULL, "null invisible annotations");
+        }
+        cfs->skip_u1(attribute_length, CHECK);
       } else if (tag == vmSymbols::tag_enclosing_method()) {
         if (parsed_enclosingmethod_attribute) {
           classfile_parse_error("Multiple EnclosingMethod attributes in class file %s", CHECK);

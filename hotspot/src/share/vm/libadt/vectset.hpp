@@ -47,7 +47,7 @@ class VectorSet : public Set {
 friend class VectorSetI;        // Friendly iterator class
 protected:
   uint size;                    // Size of data IN LONGWORDS (32bits)
-  uint32 *data;                 // The data, bit packed
+  uint32_t* data;               // The data, bit packed
 
   void slamin( const VectorSet& s );     // Initialize one set with another
   int compare(const VectorSet &s) const; // Compare set contents
@@ -99,7 +99,7 @@ public:
   void Sort(void);                  // Sort before iterating
   int hash() const;                 // Hash function
   void Reset(void) {                // Reset a set
-    memset( data, 0, size*sizeof(uint32) );
+    memset( data, 0, size*sizeof(uint32_t) );
   }
 
   /* Removed for MCC BUG
@@ -108,7 +108,7 @@ public:
 
   // Expose internals for speed-critical fast iterators
   uint word_size() const { return size; }
-  uint32 *EXPOSE() const { return data; }
+  uint32_t* EXPOSE() const { return data; }
 
   // Fast inlined "test and set".  Replaces the idiom:
   //     if( visited[idx] ) return;
@@ -120,8 +120,8 @@ public:
     uint word = elem >> 5;           // Get the longword offset
     if( word >= size )               // Beyond the last?
       return test_set_grow(elem);    // Then grow; set; return 0;
-    uint32 mask = 1L << (elem & 31); // Get bit mask
-    uint32 datum = data[word] & mask;// Get bit
+    uint32_t mask = 1L << (elem & 31); // Get bit mask
+    uint32_t datum = data[word] & mask;// Get bit
     data[word] |= mask;              // Set bit
     return datum;                    // Return bit
   }
@@ -134,7 +134,7 @@ public:
   int test( uint elem ) const {
     uint word = elem >> 5;      // Get the longword offset
     if( word >= size ) return 0; // Beyond the last?
-    uint32 mask = 1L << (elem & 31); // Get bit mask
+    uint32_t mask = 1L << (elem & 31); // Get bit mask
     return data[word] & mask;   // Get bit
   }
 
@@ -144,7 +144,7 @@ public:
     if( word >= size ) {        // Beyond the last?
       test_set_grow(elem);      // Then grow and set
     } else {
-      uint32 mask = 1L << (elem & 31); // Get bit mask
+      uint32_t mask = 1L << (elem & 31); // Get bit mask
       data[word] |= mask;       // Set bit
     }
   }
@@ -164,7 +164,7 @@ class VectorSetI : public StackObj {
   friend class VectorSet;
   const VectorSet *s;
   uint i, j;
-  uint32 mask;
+  uint32_t mask;
   uint next(void);
 
 public:

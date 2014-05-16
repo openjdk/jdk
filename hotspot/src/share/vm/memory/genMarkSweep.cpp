@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"

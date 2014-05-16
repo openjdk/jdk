@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ const char * const ParmNode::names[TypeFunc::Parms+1] = {
 #ifndef PRODUCT
 void ParmNode::dump_spec(outputStream *st) const {
   if( _con < TypeFunc::Parms ) {
-    st->print(names[_con]);
+    st->print("%s", names[_con]);
   } else {
     st->print("Parm%d: ",_con-TypeFunc::Parms);
     // Verbose and WizardMode dump bottom_type for all nodes
@@ -348,19 +348,19 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
       break;
     case Type::AryPtr:
     case Type::InstPtr:
-      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->isa_oopptr()->const_oop());
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->isa_oopptr()->const_oop()));
       break;
     case Type::KlassPtr:
-      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->make_ptr()->isa_klassptr()->klass());
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->make_ptr()->isa_klassptr()->klass()));
       break;
     case Type::MetadataPtr:
-      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->make_ptr()->isa_metadataptr()->metadata());
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->make_ptr()->isa_metadataptr()->metadata()));
       break;
     case Type::NarrowOop:
-      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->make_ptr()->isa_oopptr()->const_oop());
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->make_ptr()->isa_oopptr()->const_oop()));
       break;
     case Type::RawPtr:
-      st->print(" %s%d]=#Raw" INTPTR_FORMAT,msg,i,t->is_rawptr());
+      st->print(" %s%d]=#Raw" INTPTR_FORMAT,msg,i,p2i(t->is_rawptr()));
       break;
     case Type::DoubleCon:
       st->print(" %s%d]=#%fD",msg,i,t->is_double_constant()->_d);
@@ -369,7 +369,7 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
       st->print(" %s%d]=#%fF",msg,i,t->is_float_constant()->_f);
       break;
     case Type::Long:
-      st->print(" %s%d]=#"INT64_FORMAT,msg,i,t->is_long()->get_con());
+      st->print(" %s%d]=#"INT64_FORMAT,msg,i,(int64_t)(t->is_long()->get_con()));
       break;
     case Type::Half:
     case Type::Top:
@@ -428,7 +428,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
 
     for (i = 0; i < (uint)scobjs.length(); i++) {
       // Scalar replaced objects.
-      st->print_cr("");
+      st->cr();
       st->print("        # ScObj" INT32_FORMAT " ", i);
       SafePointScalarObjectNode* spobj = scobjs.at(i);
       ciKlass* cik = spobj->bottom_type()->is_oopptr()->klass();
@@ -485,7 +485,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
       st->print(" }");
     }
   }
-  st->print_cr("");
+  st->cr();
   if (caller() != NULL) caller()->format(regalloc, n, st);
 }
 
@@ -981,7 +981,7 @@ uint CallRuntimeNode::cmp( const Node &n ) const {
 #ifndef PRODUCT
 void CallRuntimeNode::dump_spec(outputStream *st) const {
   st->print("# ");
-  st->print(_name);
+  st->print("%s", _name);
   CallNode::dump_spec(st);
 }
 #endif
@@ -999,7 +999,7 @@ void CallRuntimeNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_reg
 #ifndef PRODUCT
 void CallLeafNode::dump_spec(outputStream *st) const {
   st->print("# ");
-  st->print(_name);
+  st->print("%s", _name);
   CallNode::dump_spec(st);
 }
 #endif

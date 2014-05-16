@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,7 +292,7 @@ bool ciInstanceKlass::is_in_package_impl(const char* packagename, int len) {
 // Implementation of the print method.
 void ciInstanceKlass::print_impl(outputStream* st) {
   ciKlass::print_impl(st);
-  GUARDED_VM_ENTRY(st->print(" loader=0x%x", (address)loader());)
+  GUARDED_VM_ENTRY(st->print(" loader=" INTPTR_FORMAT, p2i((address)loader()));)
   if (is_loaded()) {
     st->print(" loaded=true initialized=%s finalized=%s subklass=%s size=%d flags=",
               bool_to_str(is_initialized()),
@@ -618,7 +618,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
         case T_SHORT:   _out->print_cr("%d", mirror->short_field(fd->offset()));  break;
         case T_CHAR:    _out->print_cr("%d", mirror->char_field(fd->offset()));   break;
         case T_INT:     _out->print_cr("%d", mirror->int_field(fd->offset()));    break;
-        case T_LONG:    _out->print_cr(INT64_FORMAT, mirror->long_field(fd->offset()));   break;
+        case T_LONG:    _out->print_cr(INT64_FORMAT, (int64_t)(mirror->long_field(fd->offset())));   break;
         case T_FLOAT: {
           float f = mirror->float_field(fd->offset());
           _out->print_cr("%d", *(int*)&f);
@@ -626,7 +626,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
         }
         case T_DOUBLE: {
           double d = mirror->double_field(fd->offset());
-          _out->print_cr(INT64_FORMAT, *(jlong*)&d);
+          _out->print_cr(INT64_FORMAT, *(int64_t*)&d);
           break;
         }
         case T_ARRAY: {
@@ -656,7 +656,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
               _out->print_cr("\"");
             } else {
               const char* klass_name  = value->klass()->name()->as_quoted_ascii();
-              _out->print_cr(klass_name);
+              _out->print_cr("%s", klass_name);
             }
           } else {
             ShouldNotReachHere();

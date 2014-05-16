@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ inline void ConcurrentMarkSweepThread::trace_state(const char* desc) {
     jio_snprintf(buf, sizeof(buf), " [%.3f:  CMSThread %s] ",
                  ts.seconds(), desc);
     buf[sizeof(buf) - 1] = '\0';
-    gclog_or_tty->print(buf);
+    gclog_or_tty->print("%s", buf);
   }
 }
 
@@ -271,7 +271,7 @@ class CMSLoopCountWarn: public StackObj {
   inline void tick() {
     _ticks++;
     if (CMSLoopWarn && _ticks % _threshold == 0) {
-      warning("%s has looped %d times %s", _src, _ticks, _msg);
+      warning("%s has looped " INTX_FORMAT " times %s", _src, _ticks, _msg);
     }
   }
 };

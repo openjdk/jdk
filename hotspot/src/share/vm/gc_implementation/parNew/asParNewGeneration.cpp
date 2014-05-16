@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,22 +259,22 @@ void ASParNewGeneration::resize_spaces(size_t requested_eden_size,
                   requested_eden_size, requested_survivor_size);
     gclog_or_tty->print_cr("    eden: [" PTR_FORMAT ".." PTR_FORMAT ") "
                   SIZE_FORMAT,
-                  eden()->bottom(),
-                  eden()->end(),
+                  p2i(eden()->bottom()),
+                  p2i(eden()->end()),
                   pointer_delta(eden()->end(),
                                 eden()->bottom(),
                                 sizeof(char)));
     gclog_or_tty->print_cr("    from: [" PTR_FORMAT ".." PTR_FORMAT ") "
                   SIZE_FORMAT,
-                  from()->bottom(),
-                  from()->end(),
+                  p2i(from()->bottom()),
+                  p2i(from()->end()),
                   pointer_delta(from()->end(),
                                 from()->bottom(),
                                 sizeof(char)));
     gclog_or_tty->print_cr("      to: [" PTR_FORMAT ".." PTR_FORMAT ") "
                   SIZE_FORMAT,
-                  to()->bottom(),
-                  to()->end(),
+                  p2i(to()->bottom()),
+                  p2i(to()->end()),
                   pointer_delta(  to()->end(),
                                   to()->bottom(),
                                   sizeof(char)));
@@ -382,18 +382,18 @@ void ASParNewGeneration::resize_spaces(size_t requested_eden_size,
     if (PrintAdaptiveSizePolicy && Verbose) {
       gclog_or_tty->print_cr("    [eden_start .. eden_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    eden_start,
-                    eden_end,
+                    p2i(eden_start),
+                    p2i(eden_end),
                     pointer_delta(eden_end, eden_start, sizeof(char)));
       gclog_or_tty->print_cr("    [from_start .. from_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    from_start,
-                    from_end,
+                    p2i(from_start),
+                    p2i(from_end),
                     pointer_delta(from_end, from_start, sizeof(char)));
       gclog_or_tty->print_cr("    [  to_start ..   to_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    to_start,
-                    to_end,
+                    p2i(to_start),
+                    p2i(to_end),
                     pointer_delta(  to_end,   to_start, sizeof(char)));
     }
   } else {
@@ -473,18 +473,18 @@ void ASParNewGeneration::resize_spaces(size_t requested_eden_size,
     if (PrintAdaptiveSizePolicy && Verbose) {
       gclog_or_tty->print_cr("    [eden_start .. eden_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    eden_start,
-                    eden_end,
+                    p2i(eden_start),
+                    p2i(eden_end),
                     pointer_delta(eden_end, eden_start, sizeof(char)));
       gclog_or_tty->print_cr("    [  to_start ..   to_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    to_start,
-                    to_end,
+                    p2i(to_start),
+                    p2i(to_end),
                     pointer_delta(  to_end,   to_start, sizeof(char)));
       gclog_or_tty->print_cr("    [from_start .. from_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    from_start,
-                    from_end,
+                    p2i(from_start),
+                    p2i(from_end),
                     pointer_delta(from_end, from_start, sizeof(char)));
     }
   }

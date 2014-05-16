@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"
@@ -361,10 +362,12 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(MethodData,           _arg_local,                                    intx)                                  \
   nonstatic_field(MethodData,           _arg_stack,                                    intx)                                  \
   nonstatic_field(MethodData,           _arg_returned,                                 intx)                                  \
+  nonstatic_field(MethodData,           _tenure_traps,                                 uint)                                  \
   nonstatic_field(DataLayout,           _header._struct._tag,                          u1)                                    \
   nonstatic_field(DataLayout,           _header._struct._flags,                        u1)                                    \
   nonstatic_field(DataLayout,           _header._struct._bci,                          u2)                                    \
   nonstatic_field(DataLayout,           _cells[0],                                     intptr_t)                              \
+  nonstatic_field(MethodCounters,       _nmethod_age,                                  int)                                   \
   nonstatic_field(MethodCounters,       _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(MethodCounters,       _interpreter_throwout_count,                   u2)                                    \
   nonstatic_field(MethodCounters,       _number_of_breakpoints,                        u2)                                    \

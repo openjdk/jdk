@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,10 @@ RangeCheckEliminator::RangeCheckEliminator(IR *ir) :
   _optimistic = ir->compilation()->is_optimistic();
 
   TRACE_RANGE_CHECK_ELIMINATION(
-    tty->print_cr("");
+    tty->cr();
     tty->print_cr("Range check elimination");
     ir->method()->print_name(tty);
-    tty->print_cr("");
+    tty->cr();
   );
 
   TRACE_RANGE_CHECK_ELIMINATION(
@@ -1024,7 +1024,7 @@ void RangeCheckEliminator::dump_condition_stack(BlockBegin *block) {
                                                          tty->print("i%d", phi->id());
                                                          tty->print(": ");
                                                          bound->print();
-                                                         tty->print_cr("");
+                                                         tty->cr();
                            );
                          }
                      });
@@ -1039,7 +1039,7 @@ void RangeCheckEliminator::dump_condition_stack(BlockBegin *block) {
                                             tty->print("i%d", instr->id());
                                             tty->print(": ");
                                             bound->print();
-                                            tty->print_cr("");
+                                            tty->cr();
               );
           }
         }
@@ -1400,7 +1400,7 @@ Value RangeCheckEliminator::Bound::lower_instr() {
 
 // print
 void RangeCheckEliminator::Bound::print() {
-  tty->print("");
+  tty->print("%s", "");
   if (this->_lower_instr || this->_lower != min_jint) {
     if (this->_lower_instr) {
       tty->print("i%d", this->_lower_instr->id());
