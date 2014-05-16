@@ -674,11 +674,6 @@ public class JNIWriter {
         }
 
         @Override
-        public R visitAnnotatedType(Type.AnnotatedType t, P p) {
-            return defaultAction(t, p);
-        }
-
-        @Override
         public R visitType(Type t, P p) {
             return defaultAction(t, p);
         }

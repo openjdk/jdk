@@ -373,7 +373,7 @@ public class Infer {
             List<Type> upperBounds = uv.getBounds(InferenceBound.UPPER);
             if (Type.containsAny(upperBounds, vars)) {
                 TypeSymbol fresh_tvar = new TypeVariableSymbol(Flags.SYNTHETIC, uv.qtype.tsym.name, null, uv.qtype.tsym.owner);
-                fresh_tvar.type = new TypeVar(fresh_tvar, types.makeCompoundType(uv.getBounds(InferenceBound.UPPER)), null);
+                fresh_tvar.type = new TypeVar(fresh_tvar, types.makeCompoundType(uv.getBounds(InferenceBound.UPPER)), null, Type.noAnnotations);
                 todo.append(uv);
                 uv.inst = fresh_tvar.type;
             } else if (upperBounds.nonEmpty()) {
@@ -1505,7 +1505,9 @@ public class Infer {
                         LOWER.solve(uv, inferenceContext) :
                         infer.syms.botType;
                 CapturedType prevCaptured = (CapturedType)uv.qtype;
-                return new CapturedType(prevCaptured.tsym.name, prevCaptured.tsym.owner, upper, lower, prevCaptured.wildcard);
+                return new CapturedType(prevCaptured.tsym.name, prevCaptured.tsym.owner,
+                                        upper, lower, prevCaptured.wildcard,
+                                        Type.noAnnotations);
             }
         };
 

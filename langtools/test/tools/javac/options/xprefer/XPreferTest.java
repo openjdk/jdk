@@ -26,6 +26,7 @@
  * @summary Tests which path is used to represent an implicit type given
  * various xprefer arguments and multiple .class / .java files involved.
  * @bug 8028196
+ * @ignore 8042839 XPreferTest fails on Windows
  */
 
 import java.io.File;

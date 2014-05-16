@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 7098660 8014649
- * @summary Write better overload resolution/inference tests
+ * @bug 7098660 8014649 8034223
+ * @summary Test harness for overload resolution/inference tests
  * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor ResolveHarness
  * @run main ResolveHarness

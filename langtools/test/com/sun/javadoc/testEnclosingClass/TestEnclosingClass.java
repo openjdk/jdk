@@ -26,31 +26,26 @@
  * @bug      5008230
  * @summary  Check the outer class when documenting enclosing class/interface.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestEnclosingClass
  * @run main TestEnclosingClass
  */
 
 public class TestEnclosingClass extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/MyClass.MyInterface.html", "Enclosing class:"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestEnclosingClass tester = new TestEnclosingClass();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/MyClass.MyInterface.html", true,
+                "Enclosing class:");
     }
 }

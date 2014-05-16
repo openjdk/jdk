@@ -40,79 +40,74 @@
 
 public class TestLambdaFeature extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg", "pkg1"
-    };
-
-    private static final String[] ARGS_1 = new String[] {
-        "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR, "-source", "1.7", "pkg1"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/A.html",
-            "<td class=\"colFirst\"><code>default void</code></td>"},
-        { "pkg/A.html",
-            "<pre>default&nbsp;void&nbsp;defaultMethod()</pre>"},
-        { "pkg/A.html",
-            "<caption><span id=\"t0\" class=\"activeTableTab\"><span>" +
-            "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t2\" class=\"tableTab\"><span>" +
-            "<a href=\"javascript:show(2);\">Instance Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" " +
-            "class=\"tableTab\"><span><a href=\"javascript:show(4);\">" +
-            "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span>" +
-            "</span><span id=\"t5\" class=\"tableTab\"><span>" +
-            "<a href=\"javascript:show(16);\">Default Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span></span></caption>"},
-        { "pkg/A.html",
-            "<dl>\n" +
-            "<dt>Functional Interface:</dt>\n" +
-            "<dd>This is a functional interface and can therefore be used as " +
-            "the assignment target for a lambda expression or method " +
-            "reference.</dd>\n" +
-            "</dl>"},
-        { "pkg1/FuncInf.html",
-            "<dl>\n" +
-            "<dt>Functional Interface:</dt>\n" +
-            "<dd>This is a functional interface and can therefore be used as " +
-            "the assignment target for a lambda expression or method " +
-            "reference.</dd>\n" +
-            "</dl>"}
-    };
-    private static final String[][] NEGATED_TEST = {
-        { "pkg/A.html",
-            "<td class=\"colFirst\"><code>default default void</code></td>"},
-        { "pkg/A.html",
-            "<pre>default&nbsp;default&nbsp;void&nbsp;defaultMethod()</pre>"},
-        { "pkg/B.html",
-            "<td class=\"colFirst\"><code>default void</code></td>"},
-        { "pkg1/NotAFuncInf.html",
-            "<dl>\n" +
-            "<dt>Functional Interface:</dt>\n" +
-            "<dd>This is a functional interface and can therefore be used as " +
-            "the assignment target for a lambda expression or method " +
-            "reference.</dd>\n" +
-            "</dl>"},
-        { "pkg/B.html",
-            "<dl>\n" +
-            "<dt>Functional Interface:</dt>"}
-    };
-    private static final String[][] NEGATED_TEST_1 = {
-        { "pkg1/FuncInf.html",
-            "<dl>\n" +
-            "<dt>Functional Interface:</dt>"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestLambdaFeature tester = new TestLambdaFeature();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.run(ARGS_1, NO_TEST, NEGATED_TEST_1);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void testDefault() {
+        javadoc("-d", "out-default",
+                "-sourcepath", testSrc,
+                "pkg", "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/A.html", true,
+                "<td class=\"colFirst\"><code>default void</code></td>",
+                "<pre>default&nbsp;void&nbsp;defaultMethod()</pre>",
+                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>"
+                + "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t2\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:show(2);\">Instance Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" "
+                + "class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
+                + "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span>"
+                + "</span><span id=\"t5\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:show(16);\">Default Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                "<dl>\n"
+                + "<dt>Functional Interface:</dt>\n"
+                + "<dd>This is a functional interface and can therefore be used as "
+                + "the assignment target for a lambda expression or method "
+                + "reference.</dd>\n"
+                + "</dl>");
+
+        checkOutput("pkg1/FuncInf.html", true,
+                "<dl>\n"
+                + "<dt>Functional Interface:</dt>\n"
+                + "<dd>This is a functional interface and can therefore be used as "
+                + "the assignment target for a lambda expression or method "
+                + "reference.</dd>\n"
+                + "</dl>");
+
+        checkOutput("pkg/A.html", false,
+                "<td class=\"colFirst\"><code>default default void</code></td>",
+                "<pre>default&nbsp;default&nbsp;void&nbsp;defaultMethod()</pre>");
+
+        checkOutput("pkg/B.html", false,
+                "<td class=\"colFirst\"><code>default void</code></td>",
+                "<dl>\n"
+                + "<dt>Functional Interface:</dt>");
+
+        checkOutput("pkg1/NotAFuncInf.html", false,
+                "<dl>\n"
+                + "<dt>Functional Interface:</dt>\n"
+                + "<dd>This is a functional interface and can therefore be used as "
+                + "the assignment target for a lambda expression or method "
+                + "reference.</dd>\n"
+                + "</dl>");
+    }
+
+    @Test
+    void testSource7() {
+        javadoc("-d", "out-7",
+                "-sourcepath", testSrc,
+                "-source", "1.7",
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/FuncInf.html", false,
+                "<dl>\n"
+                + "<dt>Functional Interface:</dt>");
     }
 }

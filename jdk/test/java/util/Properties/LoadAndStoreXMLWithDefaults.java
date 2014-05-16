@@ -35,58 +35,17 @@ import java.util.Properties;
  */
 public class LoadAndStoreXMLWithDefaults {
 
-    public static enum StoreMethod {
-        // Note: this case will test the default provider when available,
-        //       and the basic provider when it's not.
-        PROPERTIES {
-            @Override
-            public String writeToXML(Properties p) throws IOException {
-                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                p.storeToXML(baos, "Test 8016344");
-                return baos.toString();
-            }
-            @Override
-            public Properties loadFromXML(String xml, Properties defaults)
-                    throws IOException {
-                final ByteArrayInputStream bais = new ByteArrayInputStream(xml.getBytes("UTF-8"));
-                Properties p = new Properties(defaults);
-                p.loadFromXML(bais);
-                return p;
-            }
-        },
-        // Note: this case always test the basic provider, which is always available.
-        //       so sometimes it's just a dup with the previous case...
-        BASICPROVIDER {
-            @Override
-            public String writeToXML(Properties p) throws IOException {
-                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                jdk.internal.util.xml.BasicXmlPropertiesProvider provider =
-                        new  jdk.internal.util.xml.BasicXmlPropertiesProvider();
-                provider.store(p, baos, "Test 8016344", "UTF-8");
-                return baos.toString();
-            }
-            @Override
-            public Properties loadFromXML(String xml, Properties defaults)
-                    throws IOException {
-                final ByteArrayInputStream bais = new ByteArrayInputStream(xml.getBytes("UTF-8"));
-                Properties p = new Properties(defaults);
-                jdk.internal.util.xml.BasicXmlPropertiesProvider provider =
-                        new  jdk.internal.util.xml.BasicXmlPropertiesProvider();
-                provider.load(p, bais);
-                return p;
-            }
-        };
-        public abstract String writeToXML(Properties p) throws IOException;
-        public abstract Properties loadFromXML(String xml, Properties defaults)
-                    throws IOException;
-        public String displayName() {
-            switch(this) {
-                case PROPERTIES: return "Properties.storeToXML";
-                case BASICPROVIDER: return "BasicXmlPropertiesProvider.store";
-                default:
-                    throw new UnsupportedOperationException(this.name());
-            }
-        }
+    static String writeToXML(Properties props) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        props.storeToXML(baos, "Test 8016344");
+        return baos.toString();
+    }
+
+    static Properties loadFromXML(String xml, Properties defaults) throws IOException {
+        ByteArrayInputStream bais = new ByteArrayInputStream(xml.getBytes("UTF-8"));
+        Properties props = new Properties(defaults);
+        props.loadFromXML(bais);
+        return props;
     }
 
     static enum Objects { OBJ1, OBJ2, OBJ3 };
@@ -106,63 +65,59 @@ public class LoadAndStoreXMLWithDefaults {
         p3.setProperty("p1.and.p2.and.p3.prop", "prop9-p3");
         p3.setProperty("p2.and.p3.prop", "prop10-p3");
 
-        for (StoreMethod m : StoreMethod.values()) {
-            System.out.println("Testing with " + m.displayName());
-            Properties P1 = m.loadFromXML(m.writeToXML(p1), null);
-            Properties P2 = m.loadFromXML(m.writeToXML(p2), P1);
-            Properties P3 = m.loadFromXML(m.writeToXML(p3), P2);
+        Properties P1 = loadFromXML(writeToXML(p1), null);
+        Properties P2 = loadFromXML(writeToXML(p2), P1);
+        Properties P3 = loadFromXML(writeToXML(p3), P2);
 
-            testResults(m, p1, P1, p2, P2, p3, P3);
+        testResults(p1, P1, p2, P2, p3, P3);
 
-            // Now check that properties whose keys or values are objects
-            // are skipped.
+        // Now check that properties whose keys or values are objects
+        // are skipped.
 
-            System.out.println("Testing with " + m.displayName() + " and Objects");
-            P1.put("p1.object.prop", Objects.OBJ1);
-            P1.put(Objects.OBJ1, "p1.object.prop");
-            P1.put("p2.object.prop", "p2.object.prop");
-            P2.put("p2.object.prop", Objects.OBJ2);
-            P2.put(Objects.OBJ2, "p2.object.prop");
-            P3.put("p3.object.prop", Objects.OBJ3);
-            P3.put(Objects.OBJ3, "p3.object.prop");
+        P1.put("p1.object.prop", Objects.OBJ1);
+        P1.put(Objects.OBJ1, "p1.object.prop");
+        P1.put("p2.object.prop", "p2.object.prop");
+        P2.put("p2.object.prop", Objects.OBJ2);
+        P2.put(Objects.OBJ2, "p2.object.prop");
+        P3.put("p3.object.prop", Objects.OBJ3);
+        P3.put(Objects.OBJ3, "p3.object.prop");
 
-            Properties PP1 = m.loadFromXML(m.writeToXML(P1), null);
-            Properties PP2 = m.loadFromXML(m.writeToXML(P2), PP1);
-            Properties PP3 = m.loadFromXML(m.writeToXML(P3), PP2);
+        Properties PP1 = loadFromXML(writeToXML(P1), null);
+        Properties PP2 = loadFromXML(writeToXML(P2), PP1);
+        Properties PP3 = loadFromXML(writeToXML(P3), PP2);
 
-            p1.setProperty("p2.object.prop", "p2.object.prop");
-            try {
-                testResults(m, p1, PP1, p2, PP2, p3, PP3);
-            } finally {
-                p1.remove("p2.object.prop");
-            }
+        p1.setProperty("p2.object.prop", "p2.object.prop");
+        try {
+            testResults(p1, PP1, p2, PP2, p3, PP3);
+        } finally {
+            p1.remove("p2.object.prop");
         }
     }
 
-    public static void testResults(StoreMethod m, Properties... pps) {
+    public static void testResults(Properties... pps) {
         for (int i=0 ; i < pps.length ; i += 2) {
             if (!pps[i].equals(pps[i+1])) {
-                System.err.println(m.displayName() +": P" + (i/2+1)
+                System.err.println("P" + (i/2+1)
                         + " Reloaded properties differ from original");
                 System.err.println("\toriginal: " + pps[i]);
                 System.err.println("\treloaded: " + pps[i+1]);
-                throw new RuntimeException(m.displayName() +": P" + (i/2+1)
+                throw new RuntimeException("P" + (i/2+1)
                         + " Reloaded properties differ from original");
             }
             if (!pps[i].keySet().equals(pps[i+1].keySet())) {
-                System.err.println(m.displayName() +": P" + (i/2+1)
+                System.err.println("P" + (i/2+1)
                         + " Reloaded property names differ from original");
                 System.err.println("\toriginal: " + pps[i].keySet());
                 System.err.println("\treloaded: " + pps[i+1].keySet());
-                throw new RuntimeException(m.displayName() +": P" + (i/2+1)
+                throw new RuntimeException("P" + (i/2+1)
                         + " Reloaded property names differ from original");
             }
             if (!pps[i].stringPropertyNames().equals(pps[i+1].stringPropertyNames())) {
-                System.err.println(m.displayName() +": P" + (i/2+1)
+                System.err.println("P" + (i/2+1)
                         + " Reloaded string property names differ from original");
                 System.err.println("\toriginal: " + pps[i].stringPropertyNames());
                 System.err.println("\treloaded: " + pps[i+1].stringPropertyNames());
-                throw new RuntimeException(m.displayName() +": P" + (i/2+1)
+                throw new RuntimeException("P" + (i/2+1)
                         + " Reloaded string property names differ from original");
             }
         }

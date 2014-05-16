@@ -26,34 +26,32 @@
  * @bug 4625883
  * @summary Make sure that bad -link arguments trigger warnings.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestBadLinkOption
  * @run main TestBadLinkOption
  */
 
 public class TestBadLinkOption extends JavadocTester {
 
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-        "-link", OUTPUT_DIR, "pkg"
-    };
-
-    private static final String[][] TEST = {
-        {WARNING_OUTPUT, "Error reading file:"}
-    };
-
-    private static final String[][] NEG_TEST = {
-        {ERROR_OUTPUT, "Error reading file:"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestBadLinkOption tester = new TestBadLinkOption();
-        tester.run(ARGS, TEST, NEG_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        String out = "out";
+        javadoc("-d", out,
+                "-sourcepath", testSrc,
+                "-link", out,
+                "pkg");
+        checkExit(Exit.OK);
+
+        // TODO: the file it is trying to read, out/out/package-list, warrants investigation
+        checkOutput(Output.WARNING, true,
+                "Error reading file:");
+
+        checkOutput(Output.ERROR, false,
+                "Error reading file:");
     }
 }

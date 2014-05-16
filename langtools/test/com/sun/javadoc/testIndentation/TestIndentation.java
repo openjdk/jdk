@@ -25,37 +25,30 @@
  * @test
  * @bug      8011288
  * @summary  Erratic/inconsistent indentation of signatures
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
  * @run main TestIndentation
  */
 
 public class TestIndentation extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "p"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "p/Indent.html",
-          "<pre>public&nbsp;&lt;T&gt;&nbsp;void&nbsp;m(T&nbsp;t1," },
-        { "p/Indent.html",
-          "\n" +
-          "                  T&nbsp;t2)" },
-        { "p/Indent.html",
-          "\n" +
-          "           throws java.lang.Exception" }
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestIndentation tester = new TestIndentation();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/Indent.html", true,
+                "<pre>public&nbsp;&lt;T&gt;&nbsp;void&nbsp;m(T&nbsp;t1,",
+                "\n"
+                + "                  T&nbsp;t2)",
+                "\n"
+                + "           throws java.lang.Exception");
     }
 }

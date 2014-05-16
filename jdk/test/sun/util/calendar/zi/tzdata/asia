@@ -1370,22 +1370,6 @@ Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 # "Jordan will switch to winter time on Friday, October 27".
 #
 
-# From Phil Pizzey (2009-04-02):
-# ...I think I may have spotted an error in the timezone data for
-# Jordan.
-# The current (2009d) asia file shows Jordan going to daylight
-# saving
-# time on the last Thursday in March.
-#
-# Rule  Jordan      2000  max	-  Mar   lastThu     0:00s 1:00  S
-#
-# However timeanddate.com, which I usually find reliable, shows Jordan
-# going to daylight saving time on the last Friday in March since 2002.
-# Please see
-# <a href="http://www.timeanddate.com/worldclock/timezone.html?n=11">
-# http://www.timeanddate.com/worldclock/timezone.html?n=11
-# </a>
-
 # From Steffen Thorsen (2009-04-02):
 # This single one might be good enough, (2009-03-24, Arabic):
 # <a href="http://petra.gov.jo/Artical.aspx?Lng=2&Section=8&Artical=95279">

@@ -28,50 +28,43 @@
  *           be created.
  *           Make sure classname is not include in javadoc usage message.
  * @author   jamieh
- * @library  ../lib/
+ * @library ../lib
  * @build    JavadocTester
- * @build    TestNotifications
  * @run main TestNotifications
  */
 
 public class TestNotifications extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    private static final String[] ARGS2 = new String[] {
-        "-help"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {NOTICE_OUTPUT, "Creating destination directory: \"" + OUTPUT_DIR}
-    };
-    private static final String[][] NEGATED_TEST = {
-        {NOTICE_OUTPUT, "Creating destination directory: \"" + OUTPUT_DIR}
-    };
-
-    private static final String[][] NEGATED_TEST2 = {
-        {NOTICE_OUTPUT, "[classnames]"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestNotifications tester = new TestNotifications();
+        tester.runTests();
+    }
+
+    @Test
+    void test1() {
+        String outDir = "out";
+
         // Notify that the destination directory must be created.
-        tester.run(ARGS, TEST, NO_TEST);
+        javadoc("-d", outDir, "-sourcepath", testSrc, "pkg");
+        checkExit(Exit.OK);
+        checkOutput(Output.NOTICE, true,
+                "Creating destination directory: \"" + outDir);
+
         // No need to notify that the destination must be created because
         // it already exists.
-        tester.setCheckOutputDirectoryCheck(DirectoryCheck.NONE);
-        tester.run(ARGS, NO_TEST, NEGATED_TEST);
-        tester.setCheckOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
+        setOutputDirectoryCheck(DirectoryCheck.NONE);
+        javadoc("-d", outDir, "-sourcepath", testSrc, "pkg");
+        checkExit(Exit.OK);
+        checkOutput(Output.NOTICE, false,
+                "Creating destination directory: \"" + outDir);
+    }
+
+    @Test
+    void test() {
         //Make sure classname is not include in javadoc usage message.
-        tester.run(ARGS2, NO_TEST, NEGATED_TEST2);
-        tester.printSummary();
+        setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
+        javadoc("-help");
+        checkOutput(Output.NOTICE, false,
+                "[classnames]");
     }
 }

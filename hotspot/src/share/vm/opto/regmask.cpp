@@ -51,7 +51,7 @@
 
 //-------------Non-zero bit search methods used by RegMask---------------------
 // Find lowest 1, or return 32 if empty
-int find_lowest_bit( uint32 mask ) {
+int find_lowest_bit( uint32_t mask ) {
   int n = 0;
   if( (mask & 0xffff) == 0 ) {
     mask >>= 16;
@@ -80,7 +80,7 @@ int find_lowest_bit( uint32 mask ) {
 }
 
 // Find highest 1, or return 32 if empty
-int find_hihghest_bit( uint32 mask ) {
+int find_hihghest_bit( uint32_t mask ) {
   int n = 0;
   if( mask > 0xffff ) {
     mask >>= 16;
@@ -395,7 +395,7 @@ bool RegMask::is_UP() const {
 //------------------------------Size-------------------------------------------
 // Compute size of register mask in bits
 uint RegMask::Size() const {
-  extern uint8 bitsInByte[256];
+  extern uint8_t bitsInByte[256];
   uint sum = 0;
   for( int i = 0; i < RM_SIZE; i++ )
     sum +=

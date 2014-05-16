@@ -32,7 +32,6 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "libadt/dict.hpp"
-#include "libadt/port.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/idealGraphPrinter.hpp"

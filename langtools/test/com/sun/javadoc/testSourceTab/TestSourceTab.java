@@ -27,9 +27,8 @@
  * @summary Test to make sure that the source documentation is indented properly
  * when -linksourcetab is used.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestSourceTab
  * @run main TestSourceTab
  */
 
@@ -37,45 +36,39 @@ import java.io.*;
 
 public class TestSourceTab extends JavadocTester {
 
-    private static final String TMP_SRC_DIR = "tmpSrc";
-    private static final String OUTPUT_DIR1 = OUTPUT_DIR + "-tabLengthEight";
-    private static final String OUTPUT_DIR2 = OUTPUT_DIR + "-tabLengthFour";
-
-    //Run Javadoc on a source file with that is indented with a single tab per line
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", OUTPUT_DIR1, "-sourcepath", TMP_SRC_DIR,
-            "-notimestamp", "-linksource", TMP_SRC_DIR + "/SingleTab/C.java"
-        };
-
-    //Run Javadoc on a source file with that is indented with a two tab per line
-    //If we double the tabs and decrease the tab length by a half, the output should
-    //be the same as the one generated above.
-    private static final String[] ARGS2 =
-        new String[] {
-            "-d", OUTPUT_DIR2, "-sourcepath", TMP_SRC_DIR,
-            "-notimestamp", "-sourcetab", "4", TMP_SRC_DIR + "/DoubleTab/C.java"
-        };
-
-    //Files to diff
-    private static final String[] FILES_TO_DIFF = {
-        "src-html/C.html",
-        "C.html"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) throws IOException {
+    public static void main(String... args) throws Exception {
         TestSourceTab tester = new TestSourceTab();
-        tester.run(ARGS1, NO_TEST, NO_TEST);
-        tester.run(ARGS2, NO_TEST, NO_TEST);
-        tester.runDiffs(OUTPUT_DIR1, OUTPUT_DIR2, FILES_TO_DIFF);
+        tester.runTests();
     }
 
-    TestSourceTab() throws IOException {
-        initTabs(new File(SRC_DIR), new File(TMP_SRC_DIR));
+    @Test
+    void test() throws Exception {
+        String tmpSrcDir = "tmpSrc";
+        String outdir1 = "out-tabLengthEight";
+        String outdir2 = "out-tabLengthFour";
+        initTabs(new File(testSrc), new File(tmpSrcDir));
+
+        // Run Javadoc on a source file with that is indented with a single tab per line
+        javadoc("-d", outdir1,
+                "-sourcepath", tmpSrcDir,
+                "-notimestamp",
+                "-linksource",
+                tmpSrcDir + "/SingleTab/C.java");
+        checkExit(Exit.OK);
+
+        // Run Javadoc on a source file with that is indented with a two tab per line
+        // If we double the tabs and decrease the tab length by a half, the output should
+        // be the same as the one generated above.
+        javadoc("-d", outdir2,
+                "-sourcepath", tmpSrcDir,
+                "-notimestamp",
+                "-sourcetab", "4",
+                tmpSrcDir + "/DoubleTab/C.java");
+        checkExit(Exit.OK);
+
+        diff(outdir1, outdir2,
+                "src-html/C.html",
+                "C.html");
     }
 
     void initTabs(File from, File to) throws IOException {
@@ -91,26 +84,20 @@ public class TestSourceTab extends JavadocTester {
 
     String read(File f) throws IOException {
         StringBuilder sb = new StringBuilder();
-        BufferedReader in = new BufferedReader(new FileReader(f));
-        try {
+        try (BufferedReader in = new BufferedReader(new FileReader(f))) {
             String line;
             while ((line = in.readLine()) != null) {
                 sb.append(line);
-                sb.append("\n");
+                sb.append(NL);
             }
-        } finally {
-            in.close();
         }
         return sb.toString();
     }
 
     void write(File f, String s) throws IOException {
         f.getParentFile().mkdirs();
-        Writer out = new FileWriter(f);
-        try {
+        try (Writer out = new FileWriter(f)) {
             out.write(s);
-        } finally {
-            out.close();
         }
     }
 }

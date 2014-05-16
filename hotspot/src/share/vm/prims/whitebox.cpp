@@ -27,7 +27,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
-#include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/classLoaderData.hpp"
 
 #include "prims/whitebox.hpp"

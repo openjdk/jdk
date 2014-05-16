@@ -26,45 +26,35 @@
  * @bug      4637604 4775148
  * @summary  Test the tables for summary attribute
  * @author   dkramer
- * @library  ../lib/
+ * @library ../lib
  * @build    JavadocTester
- * @build    AccessSummary
  * @run main AccessSummary
  */
 
 public class AccessSummary extends JavadocTester {
-
-    /**
-     * Assign value for [ fileToSearch, stringToFind ]
-     */
-    private static final String[][] TESTARRAY1 = {
-
-        // Test that the summary attribute appears
-        { "overview-summary.html",
-                 "summary=\"Packages table, listing packages, and an explanation\"" },
-
-        // Test that the summary attribute appears
-        { "p1/C1.html",
-                 "summary=\"Constructor Summary table, listing constructors, and an explanation\"" },
-
-        // Test that the summary attribute appears
-        { "constant-values.html",
-                 "summary=\"Constant Field Values table, listing constant fields, and values\"" }
-    };
-
-    // First test with -header only
-    private static final String[] JAVADOC_ARGS = new String[] {
-            "-d", OUTPUT_DIR,
-            "-sourcepath", SRC_DIR,
-            "p1", "p2"};
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
-        JavadocTester tester = new AccessSummary();
-        tester.run(JAVADOC_ARGS,  TESTARRAY1, new String[][] {});
-        tester.printSummary();       // Necessary for string search
+    public static void main(String... args) throws Exception {
+        AccessSummary tester = new AccessSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void testAccessSummary() {
+        javadoc("-d", "out", "-sourcepath", testSrc, "p1", "p2");
+        checkExit(Exit.OK);
+        checkOutput("overview-summary.html", true,
+                 "summary=\"Packages table, listing packages, and an explanation\"");
+
+        // Test that the summary attribute appears
+        checkOutput("p1/C1.html", true,
+                 "summary=\"Constructor Summary table, listing constructors, and an explanation\"");
+
+        // Test that the summary attribute appears
+        checkOutput("constant-values.html", true,
+                 "summary=\"Constant Field Values table, listing constant fields, and values\"");
     }
 }
