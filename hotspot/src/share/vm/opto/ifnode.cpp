@@ -673,7 +673,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node *val, Node* if_proj
 //           /    Region
 //
 Node* IfNode::fold_compares(PhaseGVN* phase) {
-  if (!phase->C->eliminate_boxing() || Opcode() != Op_If) return NULL;
+  if (Opcode() != Op_If) return NULL;
 
   Node* this_cmp = in(1)->in(1);
   if (this_cmp != NULL && this_cmp->Opcode() == Op_CmpI &&
