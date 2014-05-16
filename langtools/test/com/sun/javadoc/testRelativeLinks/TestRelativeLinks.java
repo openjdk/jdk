@@ -27,81 +27,64 @@
  * @summary  Test to make sure that relative paths are redirected in the
  *           output so that they are not broken.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestRelativeLinks
  * @run main TestRelativeLinks
  */
 
 public class TestRelativeLinks extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-use", "-sourcepath", SRC_DIR, "pkg", "pkg2"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        //These relative paths should stay relative because they appear
-        //in the right places.
-        { "pkg/C.html",
-            "<a href=\"relative-class-link.html\">relative class link</a>"},
-        { "pkg/C.html",
-            "<a href=\"relative-field-link.html\">relative field link</a>"},
-        { "pkg/C.html",
-            "<a href=\"relative-method-link.html\">relative method link</a>"},
-        { "pkg/package-summary.html",
-            "<a href=\"relative-package-link.html\">relative package link</a>"},
-        { "pkg/C.html",
-            " <a\n" +
-            " href=\"relative-multi-line-link.html\">relative-multi-line-link</a>."},
-
-        //These relative paths should be redirected because they are in different
-        //places.
-
-        //INDEX PAGE
-        { "index-all.html",
-            "<a href=\"./pkg/relative-class-link.html\">relative class link</a>"},
-        { "index-all.html",
-            "<a href=\"./pkg/relative-field-link.html\">relative field link</a>"},
-        { "index-all.html",
-            "<a href=\"./pkg/relative-method-link.html\">relative method link</a>"},
-        { "index-all.html",
-            "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
-        { "index-all.html",
-            " <a\n" +
-            " href=\"./pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
-
-
-        //PACKAGE USE
-        { "pkg/package-use.html",
-            "<a href=\"../pkg/relative-package-link.html\">relative package link</a>."},
-        { "pkg/package-use.html",
-            "<a href=\"../pkg/relative-class-link.html\">relative class link</a>"},
-
-        //CLASS_USE
-        { "pkg/class-use/C.html",
-            "<a href=\"../../pkg/relative-field-link.html\">relative field link</a>"},
-        { "pkg/class-use/C.html",
-            "<a href=\"../../pkg/relative-method-link.html\">relative method link</a>"},
-        { "pkg/class-use/C.html",
-            "<a href=\"../../pkg/relative-package-link.html\">relative package link</a>"},
-        { "pkg/class-use/C.html",
-            " <a\n" +
-            " href=\"../../pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
-
-        //PACKAGE OVERVIEW
-        { "overview-summary.html",
-            "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestRelativeLinks tester = new TestRelativeLinks();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-use",
+                "-sourcepath", testSrc,
+                "pkg", "pkg2");
+        checkExit(Exit.OK);
+
+        // These relative paths should stay relative because they appear
+        // in the right places.
+        checkOutput("pkg/C.html", true,
+            "<a href=\"relative-class-link.html\">relative class link</a>",
+            "<a href=\"relative-field-link.html\">relative field link</a>",
+            "<a href=\"relative-method-link.html\">relative method link</a>",
+            " <a\n" +
+            " href=\"relative-multi-line-link.html\">relative-multi-line-link</a>.");
+        checkOutput("pkg/package-summary.html", true,
+            "<a href=\"relative-package-link.html\">relative package link</a>");
+
+        // These relative paths should be redirected because they are in different
+        // places.
+
+        // INDEX PAGE
+        checkOutput("index-all.html", true,
+            "<a href=\"./pkg/relative-class-link.html\">relative class link</a>",
+            "<a href=\"./pkg/relative-field-link.html\">relative field link</a>",
+            "<a href=\"./pkg/relative-method-link.html\">relative method link</a>",
+            "<a href=\"./pkg/relative-package-link.html\">relative package link</a>",
+            " <a\n" +
+            " href=\"./pkg/relative-multi-line-link.html\">relative-multi-line-link</a>.");
+
+        // PACKAGE USE
+        checkOutput("pkg/package-use.html", true,
+            "<a href=\"../pkg/relative-package-link.html\">relative package link</a>.",
+            "<a href=\"../pkg/relative-class-link.html\">relative class link</a>");
+
+        // CLASS_USE
+        checkOutput("pkg/class-use/C.html", true,
+            "<a href=\"../../pkg/relative-field-link.html\">relative field link</a>",
+            "<a href=\"../../pkg/relative-method-link.html\">relative method link</a>",
+            "<a href=\"../../pkg/relative-package-link.html\">relative package link</a>",
+            " <a\n" +
+            " href=\"../../pkg/relative-multi-line-link.html\">relative-multi-line-link</a>.");
+
+        // PACKAGE OVERVIEW
+        checkOutput("overview-summary.html", true,
+            "<a href=\"./pkg/relative-package-link.html\">relative package link</a>");
     }
 }

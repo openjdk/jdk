@@ -26,29 +26,25 @@
  * @bug 4197513
  * @summary Javadoc does not process base class.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build BaseClass
  * @build JavadocTester
- * @build TestBaseClass
  * @run main TestBaseClass
  */
 
 public class TestBaseClass extends JavadocTester {
 
-    private static final String[] ARGS =
-        new String[] {
-            "-sourcepath", SRC_DIR,
-            "-docletpath", SRC_DIR, "-doclet", "BaseClass",
-            SRC_DIR + "/Bar.java", "baz"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestBaseClass tester = new TestBaseClass();
-        if (tester.run(ARGS, NO_TEST, NO_TEST) != 0) {
-            throw new Error("Javadoc failed to execute.");
-        }
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-sourcepath", testSrc,
+                "-docletpath", testSrc,
+                "-doclet", "BaseClass",
+                testSrc("Bar.java"), "baz");
+        checkExit(Exit.OK);
     }
 }

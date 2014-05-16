@@ -1268,7 +1268,6 @@ void UnionFind::extend( uint from_idx, uint to_idx ) {
 }
 
 void UnionFind::reset( uint max ) {
-  assert( max <= max_uint, "Must fit within uint" );
   // Force the Union-Find mapping to be at least this large
   extend(max,0);
   // Initialize to be the ID mapping.

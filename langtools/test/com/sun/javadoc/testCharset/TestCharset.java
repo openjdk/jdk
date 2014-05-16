@@ -27,39 +27,34 @@
  * @summary  Run a test on -charset to make sure the charset gets generated as a
  *           part of the meta tag.
  * @author   Bhavesh Patel
- * @library  ../lib/
- * @build    JavadocTester TestCharset
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestCharset
  */
 
 public class TestCharset extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-charset", "UTF-8", "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    private static final String[][] TEST = {
-        { "index.html",
-            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">"},
-        { "pkg/Foo.html",
-            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">"}
-    };
-
-    private static final String[][] NEGATED_TEST = {
-        { "index.html",
-            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">"},
-        { "pkg/Foo.html",
-            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestCharset tester = new TestCharset();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-charset", "UTF-8",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("index.html", true,
+            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
+        checkOutput("pkg/Foo.html", true,
+            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
+
+        checkOutput("index.html", false,
+            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">");
+        checkOutput("pkg/Foo.html", false,
+            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">");
     }
 }

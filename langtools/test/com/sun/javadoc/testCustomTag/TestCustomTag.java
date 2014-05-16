@@ -26,69 +26,67 @@
  * @bug      8006248
  * @summary  Test custom tag. Verify that an unknown tag generates appropriate warnings.
  * @author   Bhavesh Patel
- * @library  ../lib/
- * @build    JavadocTester taglets.CustomTag TestCustomTag
+ * @library  ../lib
+ * @build    JavadocTester taglets.CustomTag
  * @run main TestCustomTag
  */
 
 public class TestCustomTag extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR, "-tagletpath", SRC_DIR,
-        "-taglet", "taglets.CustomTag", "-sourcepath",
-        SRC_DIR, SRC_DIR + "/TagTestClass.java"
-    };
-
-    private static final String[] ARGS1 = new String[] {
-        "-d", OUTPUT_DIR + "-1", "-tagletpath",
-        SRC_DIR, "-taglet", "taglets.CustomTag",
-        "-sourcepath", SRC_DIR, SRC_DIR + "/TagTestClass.java"
-    };
-    private static final String[] ARGS2 = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR + "-2", "-sourcepath",
-        SRC_DIR, SRC_DIR + "/TagTestClass.java"
-    };
-
-    private static final String[] ARGS3 = new String[] {
-        "-d", OUTPUT_DIR + "-3", "-sourcepath",
-        SRC_DIR, SRC_DIR + "/TagTestClass.java"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = new String[][] {
-        {WARNING_OUTPUT, "warning - @unknownTag is an unknown tag."
-        }
-    };
-
-    private static final String[][] TEST1 = new String[][] {
-        {ERROR_OUTPUT, "error: unknown tag: unknownTag"
-        }
-    };
-    private static final String[][] TEST2 = new String[][] {
-        {WARNING_OUTPUT, "warning - @customTag is an unknown tag."
-        },
-        {WARNING_OUTPUT, "warning - @unknownTag is an unknown tag."
-        }
-    };
-
-    private static final String[][] TEST3 = new String[][] {
-        {ERROR_OUTPUT, "error: unknown tag: customTag"
-        },
-        {ERROR_OUTPUT, "error: unknown tag: unknownTag"
-        }
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestCustomTag tester = new TestCustomTag();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.run(ARGS1, TEST1, NO_TEST);
-        tester.run(ARGS2, TEST2, NO_TEST);
-        tester.run(ARGS3, TEST3, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test1() {
+        javadoc("-Xdoclint:none",
+                "-d", "out-1",
+                "-tagletpath", testSrc, // TODO: probably useless
+                "-taglet", "taglets.CustomTag",
+                "-sourcepath",  testSrc,
+                testSrc("TagTestClass.java"));
+        checkExit(Exit.OK);
+
+        checkOutput(Output.WARNING, true,
+                "warning - @unknownTag is an unknown tag.");
+    }
+
+    @Test
+    void test2() {
+        javadoc("-d", "out-2",
+                "-tagletpath", testSrc,  // TODO: probably useless
+                "-taglet", "taglets.CustomTag",
+                "-sourcepath", testSrc,
+                testSrc("TagTestClass.java"));
+        checkExit(Exit.FAILED);
+
+        checkOutput(Output.ERROR, true,
+                "error: unknown tag: unknownTag");
+    }
+
+    @Test
+    void test3() {
+        javadoc("-Xdoclint:none",
+                "-d", "out-3",
+                "-sourcepath", testSrc,
+                testSrc("TagTestClass.java"));
+        checkExit(Exit.OK);
+
+        checkOutput(Output.WARNING,  true,
+            "warning - @customTag is an unknown tag.",
+            "warning - @unknownTag is an unknown tag.");
+    }
+
+    @Test
+    void test4() {
+        javadoc("-d", "out-4",
+                "-sourcepath",  testSrc,
+                testSrc("TagTestClass.java"));
+        checkExit(Exit.FAILED);
+
+        checkOutput(Output.ERROR, true,
+            "error: unknown tag: customTag",
+            "error: unknown tag: unknownTag");
     }
 }

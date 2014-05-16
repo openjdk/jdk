@@ -80,6 +80,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     /** Constant type: special type to be used for marking stuck trees. */
     public static final JCNoType stuckType = new JCNoType();
 
+    public static final List<Attribute.TypeCompound> noAnnotations =
+        List.nil();
+
     /** If this switch is turned on, the names of type variables
      *  and anonymous classes are printed with hashcodes appended.
      */
@@ -88,6 +91,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     /** The defining class / interface / package / type variable.
      */
     public TypeSymbol tsym;
+
+    /** The type annotations on this type.
+     */
+    protected final List<Attribute.TypeCompound> annos;
 
     /**
      * Checks if the current type tag is equal to the given tag.
@@ -173,10 +180,15 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     public <R,S> R accept(Type.Visitor<R,S> v, S s) { return v.visitType(this, s); }
 
-    /** Define a type given its tag and type symbol
+    /** Define a type given its tag, type symbol, and type annotations
      */
-    public Type(TypeSymbol tsym) {
+    public Type(TypeSymbol tsym, List<Attribute.TypeCompound> annos) {
+        if(annos == null) {
+            Assert.error("Attempting to create type " + tsym + " with null type annotations");
+        }
+
         this.tsym = tsym;
+        this.annos = annos;
     }
 
     /** An abstract class for mappings from types to types
@@ -225,25 +237,15 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         return this;
     }
 
-    public Type annotatedType(List<Attribute.TypeCompound> annos) {
-        return new AnnotatedType(annos, this);
-    }
+    public abstract Type annotatedType(List<Attribute.TypeCompound> annos);
 
     public boolean isAnnotated() {
-        return false;
-    }
-
-    /**
-     * If this is an annotated type, return the underlying type.
-     * Otherwise, return the type itself.
-     */
-    public Type unannotatedType() {
-        return this;
+        return !annos.isEmpty();
     }
 
     @Override
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
-        return List.nil();
+        return annos;
     }
 
 
@@ -272,16 +274,35 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         return ts;
     }
 
+    protected void appendAnnotationsString(StringBuilder sb,
+                                         boolean prefix) {
+        if (isAnnotated()) {
+            if (prefix) {
+                sb.append(" ");
+            }
+            sb.append(annos);
+            sb.append(" ");
+        }
+    }
+
+    protected void appendAnnotationsString(StringBuilder sb) {
+        appendAnnotationsString(sb, false);
+    }
+
     /** The Java source which this type represents.
      */
     public String toString() {
-        String s = (tsym == null || tsym.name == null)
-            ? "<none>"
-            : tsym.name.toString();
-        if (moreInfo && hasTag(TYPEVAR)) {
-            s = s + hashCode();
+        StringBuilder sb = new StringBuilder();
+        appendAnnotationsString(sb);
+        if (tsym == null || tsym.name == null) {
+            sb.append("<none>");
+        } else {
+            sb.append(tsym.name);
         }
-        return s;
+        if (moreInfo && hasTag(TYPEVAR)) {
+            sb.append(hashCode());
+        }
+        return sb.toString();
     }
 
     /**
@@ -333,8 +354,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             args = args.tail;
             buf.append(',');
         }
-        if (args.head.unannotatedType().hasTag(ARRAY)) {
-            buf.append(((ArrayType)args.head.unannotatedType()).elemtype);
+        if (args.head.hasTag(ARRAY)) {
+            buf.append(((ArrayType)args.head).elemtype);
             if (args.head.getAnnotationMirrors().nonEmpty()) {
                 buf.append(args.head.getAnnotationMirrors());
             }
@@ -486,9 +507,19 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         TypeTag tag;
 
         public JCPrimitiveType(TypeTag tag, TypeSymbol tsym) {
-            super(tsym);
+            this(tag, tsym, noAnnotations);
+        }
+
+        public JCPrimitiveType(TypeTag tag, TypeSymbol tsym,
+                               List<Attribute.TypeCompound> annos) {
+            super(tsym, annos);
             this.tag = tag;
             Assert.check(tag.isPrimitive);
+        }
+
+        @Override
+        public Type annotatedType(List<Attribute.TypeCompound> annos) {
+            return new JCPrimitiveType(tag, tsym, annos);
         }
 
         @Override
@@ -517,7 +548,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         @Override
         public Type constType(Object constValue) {
             final Object value = constValue;
-            return new JCPrimitiveType(tag, tsym) {
+            return new JCPrimitiveType(tag, tsym, annos) {
                     @Override
                     public Object constValue() {
                         return value;
@@ -601,17 +632,35 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public WildcardType(Type type, BoundKind kind, TypeSymbol tsym) {
-            super(tsym);
-            this.type = Assert.checkNonNull(type);
-            this.kind = kind;
-        }
-        public WildcardType(WildcardType t, TypeVar bound) {
-            this(t.type, t.kind, t.tsym, bound);
+            this(type, kind, tsym, null, noAnnotations);
         }
 
-        public WildcardType(Type type, BoundKind kind, TypeSymbol tsym, TypeVar bound) {
-            this(type, kind, tsym);
+        public WildcardType(Type type, BoundKind kind, TypeSymbol tsym,
+                            List<Attribute.TypeCompound> annos) {
+            this(type, kind, tsym, null, annos);
+        }
+
+        public WildcardType(WildcardType t, TypeVar bound,
+                            List<Attribute.TypeCompound> annos) {
+            this(t.type, t.kind, t.tsym, bound, annos);
+        }
+
+        public WildcardType(Type type, BoundKind kind, TypeSymbol tsym,
+                            TypeVar bound) {
+            this(type, kind, tsym, noAnnotations);
+        }
+
+        public WildcardType(Type type, BoundKind kind, TypeSymbol tsym,
+                            TypeVar bound, List<Attribute.TypeCompound> annos) {
+            super(tsym, annos);
+            this.type = Assert.checkNonNull(type);
+            this.kind = kind;
             this.bound = bound;
+        }
+
+        @Override
+        public WildcardType annotatedType(List<Attribute.TypeCompound> annos) {
+            return new WildcardType(type, kind, tsym, bound, annos);
         }
 
         @Override
@@ -658,6 +707,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         boolean isPrintingBound = false;
         public String toString() {
             StringBuilder s = new StringBuilder();
+            appendAnnotationsString(s);
             s.append(kind.toString());
             if (kind != UNBOUND)
                 s.append(type);
@@ -679,7 +729,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             if (t == type)
                 return this;
             else
-                return new WildcardType(t, kind, tsym, bound);
+                return new WildcardType(t, kind, tsym, bound, annos);
         }
 
         public Type getExtendsBound() {
@@ -736,7 +786,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public List<Type> all_interfaces_field;
 
         public ClassType(Type outer, List<Type> typarams, TypeSymbol tsym) {
-            super(tsym);
+            this(outer, typarams, tsym, noAnnotations);
+        }
+
+        public ClassType(Type outer, List<Type> typarams, TypeSymbol tsym,
+                         List<Attribute.TypeCompound> annos) {
+            super(tsym, annos);
             this.outer_field = outer;
             this.typarams_field = typarams;
             this.allparams_field = null;
@@ -754,6 +809,15 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         @Override
+        public ClassType annotatedType(List<Attribute.TypeCompound> annos) {
+            final ClassType out = new ClassType(outer_field, typarams_field, tsym, annos);
+            out.allparams_field = allparams_field;
+            out.supertype_field = supertype_field;
+            out.interfaces_field = interfaces_field;
+            return out;
+        }
+
+        @Override
         public TypeTag getTag() {
             return CLASS;
         }
@@ -765,7 +829,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         public Type constType(Object constValue) {
             final Object value = constValue;
-            return new ClassType(getEnclosingType(), typarams_field, tsym) {
+            return new ClassType(getEnclosingType(), typarams_field, tsym, annos) {
                     @Override
                     public Object constValue() {
                         return value;
@@ -781,6 +845,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
          */
         public String toString() {
             StringBuilder buf = new StringBuilder();
+            appendAnnotationsString(buf);
             if (getEnclosingType().hasTag(CLASS) && tsym.owner.kind == TYP) {
                 buf.append(getEnclosingType().toString());
                 buf.append(".");
@@ -806,7 +871,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                     return s.toString();
                 } else if (sym.name.isEmpty()) {
                     String s;
-                    ClassType norm = (ClassType) tsym.type.unannotatedType();
+                    ClassType norm = (ClassType) tsym.type;
                     if (norm == null) {
                         s = Log.getLocalizedString("anonymous.class", (Object)null);
                     } else if (norm.interfaces_field != null && norm.interfaces_field.nonEmpty()) {
@@ -858,7 +923,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return
                 getEnclosingType().isErroneous() ||
                 isErroneous(getTypeArguments()) ||
-                this != tsym.type.unannotatedType() && tsym.type.isErroneous();
+                this != tsym.type && tsym.type.isErroneous();
         }
 
         public boolean isParameterized() {
@@ -897,7 +962,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             List<Type> typarams = getTypeArguments();
             List<Type> typarams1 = map(typarams, f);
             if (outer1 == outer && typarams1 == typarams) return this;
-            else return new ClassType(outer1, typarams1, tsym);
+            else return new ClassType(outer1, typarams1, tsym, annos);
         }
 
         public boolean contains(Type elem) {
@@ -924,7 +989,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     public static class ErasedClassType extends ClassType {
         public ErasedClassType(Type outer, TypeSymbol tsym) {
-            super(outer, List.<Type>nil(), tsym);
+            this(outer, tsym, noAnnotations);
+        }
+
+        public ErasedClassType(Type outer, TypeSymbol tsym,
+                               List<Attribute.TypeCompound> annos) {
+            super(outer, List.<Type>nil(), tsym, annos);
         }
 
         @Override
@@ -938,7 +1008,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         final List<? extends Type> alternatives_field;
 
         public UnionClassType(ClassType ct, List<? extends Type> alternatives) {
-            super(ct.outer_field, ct.typarams_field, ct.tsym);
+            // Presently no way to refer to this type directly, so we
+            // cannot put annotations directly on it.
+            super(ct.outer_field, ct.typarams_field, ct.tsym, noAnnotations);
             allparams_field = ct.allparams_field;
             supertype_field = ct.supertype_field;
             interfaces_field = ct.interfaces_field;
@@ -971,7 +1043,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public boolean allInterfaces;
 
         public IntersectionClassType(List<Type> bounds, ClassSymbol csym, boolean allInterfaces) {
-            super(Type.noType, List.<Type>nil(), csym);
+            // Presently no way to refer to this type directly, so we
+            // cannot put annotations directly on it.
+            super(Type.noType, List.<Type>nil(), csym, noAnnotations);
             this.allInterfaces = allInterfaces;
             Assert.check((csym.flags() & COMPOUND) != 0);
             supertype_field = bounds.head;
@@ -1011,8 +1085,18 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public Type elemtype;
 
         public ArrayType(Type elemtype, TypeSymbol arrayClass) {
-            super(arrayClass);
+            this(elemtype, arrayClass, noAnnotations);
+        }
+
+        public ArrayType(Type elemtype, TypeSymbol arrayClass,
+                         List<Attribute.TypeCompound> annos) {
+            super(arrayClass, annos);
             this.elemtype = elemtype;
+        }
+
+        @Override
+        public ArrayType annotatedType(List<Attribute.TypeCompound> annos) {
+            return new ArrayType(elemtype, tsym, annos);
         }
 
         @Override
@@ -1025,7 +1109,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public String toString() {
-            return elemtype + "[]";
+            StringBuilder sb = new StringBuilder();
+            sb.append(elemtype);
+            appendAnnotationsString(sb, true);
+            sb.append("[]");
+            return sb.toString();
         }
 
         public boolean equals(Object obj) {
@@ -1068,7 +1156,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public ArrayType makeVarargs() {
-            return new ArrayType(elemtype, tsym) {
+            return new ArrayType(elemtype, tsym, annos) {
                 @Override
                 public boolean isVarargs() {
                     return true;
@@ -1079,7 +1167,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public Type map(Mapping f) {
             Type elemtype1 = f.apply(elemtype);
             if (elemtype1 == elemtype) return this;
-            else return new ArrayType(elemtype1, tsym);
+            else return new ArrayType(elemtype1, tsym, annos);
         }
 
         public boolean contains(Type elem) {
@@ -1117,10 +1205,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                           Type restype,
                           List<Type> thrown,
                           TypeSymbol methodClass) {
-            super(methodClass);
+            // Presently no way to refer to a method type directly, so
+            // we cannot put type annotations on it.
+            super(methodClass, noAnnotations);
             this.argtypes = argtypes;
             this.restype = restype;
             this.thrown = thrown;
+        }
+
+        @Override
+        public MethodType annotatedType(List<Attribute.TypeCompound> annos) {
+            throw new AssertionError("Cannot annotate a method type");
         }
 
         @Override
@@ -1138,7 +1233,13 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
          *  should be.
          */
         public String toString() {
-            return "(" + argtypes + ")" + restype;
+            StringBuilder sb = new StringBuilder();
+            appendAnnotationsString(sb);
+            sb.append('(');
+            sb.append(argtypes);
+            sb.append(')');
+            sb.append(restype);
+            return sb.toString();
         }
 
         public List<Type>        getParameterTypes() { return argtypes; }
@@ -1197,7 +1298,13 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     public static class PackageType extends Type implements NoType {
 
         PackageType(TypeSymbol tsym) {
-            super(tsym);
+            // Package types cannot be annotated
+            super(tsym, noAnnotations);
+        }
+
+        @Override
+        public PackageType annotatedType(List<Attribute.TypeCompound> annos) {
+            throw new AssertionError("Cannot annotate a package type");
         }
 
         @Override
@@ -1245,15 +1352,26 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public Type lower;
 
         public TypeVar(Name name, Symbol owner, Type lower) {
-            super(null);
+            this(name, owner, lower, noAnnotations);
+        }
+
+        public TypeVar(Name name, Symbol owner, Type lower,
+                       List<Attribute.TypeCompound> annos) {
+            super(null, annos);
             tsym = new TypeVariableSymbol(0, name, this, owner);
             this.lower = lower;
         }
 
-        public TypeVar(TypeSymbol tsym, Type bound, Type lower) {
-            super(tsym);
+        public TypeVar(TypeSymbol tsym, Type bound, Type lower,
+                       List<Attribute.TypeCompound> annos) {
+            super(tsym, annos);
             this.bound = bound;
             this.lower = lower;
+        }
+
+        @Override
+        public TypeVar annotatedType(List<Attribute.TypeCompound> annos) {
+            return new TypeVar(tsym, bound, lower, annos);
         }
 
         @Override
@@ -1317,11 +1435,27 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                             Symbol owner,
                             Type upper,
                             Type lower,
-                            WildcardType wildcard) {
-            super(name, owner, lower);
+                            WildcardType wildcard,
+                            List<Attribute.TypeCompound> annos) {
+            super(name, owner, lower, annos);
             this.lower = Assert.checkNonNull(lower);
             this.bound = upper;
             this.wildcard = wildcard;
+        }
+
+        public CapturedType(TypeSymbol tsym,
+                            Type bound,
+                            Type upper,
+                            Type lower,
+                            WildcardType wildcard,
+                            List<Attribute.TypeCompound> annos) {
+            super(tsym, bound, lower, annos);
+            this.wildcard = wildcard;
+        }
+
+        @Override
+        public CapturedType annotatedType(List<Attribute.TypeCompound> annos) {
+            return new CapturedType(tsym, bound, bound, lower, wildcard, annos);
         }
 
         @Override
@@ -1336,18 +1470,22 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         @Override
         public String toString() {
-            return "capture#"
-                + (hashCode() & 0xFFFFFFFFL) % Printer.PRIME
-                + " of "
-                + wildcard;
+            StringBuilder sb = new StringBuilder();
+            appendAnnotationsString(sb);
+            sb.append("capture#");
+            sb.append((hashCode() & 0xFFFFFFFFL) % Printer.PRIME);
+            sb.append(" of ");
+            sb.append(wildcard);
+            return sb.toString();
         }
     }
 
     public static abstract class DelegatedType extends Type {
         public Type qtype;
         public TypeTag tag;
-        public DelegatedType(TypeTag tag, Type qtype) {
-            super(qtype.tsym);
+        public DelegatedType(TypeTag tag, Type qtype,
+                             List<Attribute.TypeCompound> annos) {
+            super(qtype.tsym, annos);
             this.tag = tag;
             this.qtype = qtype;
         }
@@ -1373,8 +1511,13 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public List<Type> tvars;
 
         public ForAll(List<Type> tvars, Type qtype) {
-            super(FORALL, (MethodType)qtype);
+            super(FORALL, (MethodType)qtype, noAnnotations);
             this.tvars = tvars;
+        }
+
+        @Override
+        public ForAll annotatedType(List<Attribute.TypeCompound> annos) {
+            throw new AssertionError("Cannot annotate forall type");
         }
 
         @Override
@@ -1383,7 +1526,13 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public String toString() {
-            return "<" + tvars + ">" + qtype;
+            StringBuilder sb = new StringBuilder();
+            appendAnnotationsString(sb);
+            sb.append('<');
+            sb.append(tvars);
+            sb.append('>');
+            sb.append(qtype);
+            return sb.toString();
         }
 
         public List<Type> getTypeArguments()   { return tvars; }
@@ -1479,7 +1628,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public UndetVar(TypeVar origin, Types types) {
-            super(UNDETVAR, origin);
+            // This is a synthesized internal type, so we cannot annotate it.
+            super(UNDETVAR, origin, noAnnotations);
             bounds = new EnumMap<>(InferenceBound.class);
             List<Type> declaredBounds = types.getBounds(origin);
             declaredCount = declaredBounds.length();
@@ -1489,7 +1639,15 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public String toString() {
-            return (inst == null) ? qtype + "?" : inst.toString();
+            StringBuilder sb = new StringBuilder();
+            appendAnnotationsString(sb);
+            if (inst == null) {
+                sb.append(qtype);
+                sb.append('?');
+            } else {
+                sb.append(inst);
+            }
+            return sb.toString();
         }
 
         public String debugString() {
@@ -1504,6 +1662,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 }
             }
             return result;
+        }
+
+        @Override
+        public UndetVar annotatedType(List<Attribute.TypeCompound> annos) {
+            throw new AssertionError("Cannot annotate an UndetVar type");
         }
 
         @Override
@@ -1659,7 +1822,15 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
      */
     public static class JCNoType extends Type implements NoType {
         public JCNoType() {
-            super(null);
+            // Need to use List.nil(), because JCNoType constructor
+            // gets called in static initializers in Type, where
+            // noAnnotations is also defined.
+            super(null, List.<Attribute.TypeCompound>nil());
+        }
+
+        @Override
+        public JCNoType annotatedType(List<Attribute.TypeCompound> annos) {
+            throw new AssertionError("Cannot annotate JCNoType");
         }
 
         @Override
@@ -1686,7 +1857,13 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     public static class JCVoidType extends Type implements NoType {
 
         public JCVoidType() {
-            super(null);
+            // Void cannot be annotated
+            super(null, noAnnotations);
+        }
+
+        @Override
+        public JCVoidType annotatedType(List<Attribute.TypeCompound> annos) {
+            throw new AssertionError("Cannot annotate void type");
         }
 
         @Override
@@ -1715,7 +1892,13 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     static class BottomType extends Type implements NullType {
         public BottomType() {
-            super(null);
+            // Bottom is a synthesized internal type, so it cannot be annotated
+            super(null, noAnnotations);
+        }
+
+        @Override
+        public BottomType annotatedType(List<Attribute.TypeCompound> annos) {
+            throw new AssertionError("Cannot annotate bottom type");
         }
 
         @Override
@@ -1759,7 +1942,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         private Type originalType = null;
 
         public ErrorType(Type originalType, TypeSymbol tsym) {
-            super(noType, List.<Type>nil(), null);
+            this(originalType, tsym, noAnnotations);
+        }
+
+        public ErrorType(Type originalType, TypeSymbol tsym,
+                         List<Attribute.TypeCompound> typeAnnotations) {
+            super(noType, List.<Type>nil(), null, typeAnnotations);
             this.tsym = tsym;
             this.originalType = (originalType == null ? noType : originalType);
         }
@@ -1769,6 +1957,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             c.type = this;
             c.kind = ERR;
             c.members_field = new Scope.ErrorScope(c);
+        }
+
+        @Override
+        public ErrorType annotatedType(List<Attribute.TypeCompound> annos) {
+            return new ErrorType(originalType, tsym, annos);
         }
 
         @Override
@@ -1827,182 +2020,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
     }
 
-    public static class AnnotatedType extends Type
-            implements
-                javax.lang.model.type.ArrayType,
-                javax.lang.model.type.DeclaredType,
-                javax.lang.model.type.PrimitiveType,
-                javax.lang.model.type.TypeVariable,
-                javax.lang.model.type.WildcardType {
-        /** The type annotations on this type.
-         */
-        private List<Attribute.TypeCompound> typeAnnotations;
-
-        /** The underlying type that is annotated.
-         */
-        private Type underlyingType;
-
-        protected AnnotatedType(List<Attribute.TypeCompound> typeAnnotations,
-                Type underlyingType) {
-            super(underlyingType.tsym);
-            this.typeAnnotations = typeAnnotations;
-            this.underlyingType = underlyingType;
-            Assert.check(typeAnnotations != null && typeAnnotations.nonEmpty(),
-                    "Can't create AnnotatedType without annotations: " + underlyingType);
-            Assert.check(!underlyingType.isAnnotated(),
-                    "Can't annotate already annotated type: " + underlyingType +
-                    "; adding: " + typeAnnotations);
-        }
-
-        @Override
-        public TypeTag getTag() {
-            return underlyingType.getTag();
-        }
-
-        @Override
-        public boolean isAnnotated() {
-            return true;
-        }
-
-        @Override
-        public List<Attribute.TypeCompound> getAnnotationMirrors() {
-            return typeAnnotations;
-        }
-
-
-        @Override
-        public TypeKind getKind() {
-            return underlyingType.getKind();
-        }
-
-        @Override
-        public Type unannotatedType() {
-            return underlyingType;
-        }
-
-        @Override
-        public <R,S> R accept(Type.Visitor<R,S> v, S s) {
-            return v.visitAnnotatedType(this, s);
-        }
-
-        @Override
-        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-            return underlyingType.accept(v, p);
-        }
-
-        @Override
-        public Type map(Mapping f) {
-            underlyingType.map(f);
-            return this;
-        }
-
-        @Override
-        public Type constType(Object constValue) { return underlyingType.constType(constValue); }
-        @Override
-        public Type getEnclosingType()           { return underlyingType.getEnclosingType(); }
-
-        @Override
-        public Type getReturnType()              { return underlyingType.getReturnType(); }
-        @Override
-        public List<Type> getTypeArguments()     { return underlyingType.getTypeArguments(); }
-        @Override
-        public List<Type> getParameterTypes()    { return underlyingType.getParameterTypes(); }
-        @Override
-        public Type getReceiverType()            { return underlyingType.getReceiverType(); }
-        @Override
-        public List<Type> getThrownTypes()       { return underlyingType.getThrownTypes(); }
-        @Override
-        public Type getUpperBound()              { return underlyingType.getUpperBound(); }
-        @Override
-        public Type getLowerBound()              { return underlyingType.getLowerBound(); }
-
-        @Override
-        public boolean isErroneous()             { return underlyingType.isErroneous(); }
-        @Override
-        public boolean isCompound()              { return underlyingType.isCompound(); }
-        @Override
-        public boolean isInterface()             { return underlyingType.isInterface(); }
-        @Override
-        public List<Type> allparams()            { return underlyingType.allparams(); }
-        @Override
-        public boolean isPrimitive()             { return underlyingType.isPrimitive(); }
-        @Override
-        public boolean isPrimitiveOrVoid()       { return underlyingType.isPrimitiveOrVoid(); }
-        @Override
-        public boolean isNumeric()               { return underlyingType.isNumeric(); }
-        @Override
-        public boolean isReference()             { return underlyingType.isReference(); }
-        @Override
-        public boolean isNullOrReference()       { return underlyingType.isNullOrReference(); }
-        @Override
-        public boolean isPartial()               { return underlyingType.isPartial(); }
-        @Override
-        public boolean isParameterized()         { return underlyingType.isParameterized(); }
-        @Override
-        public boolean isRaw()                   { return underlyingType.isRaw(); }
-        @Override
-        public boolean isFinal()                 { return underlyingType.isFinal(); }
-        @Override
-        public boolean isSuperBound()            { return underlyingType.isSuperBound(); }
-        @Override
-        public boolean isExtendsBound()          { return underlyingType.isExtendsBound(); }
-        @Override
-        public boolean isUnbound()               { return underlyingType.isUnbound(); }
-
-        @Override
-        public String toString() {
-            // This method is only used for internal debugging output.
-            // See
-            // com.sun.tools.javac.code.Printer.visitAnnotatedType(AnnotatedType, Locale)
-            // for the user-visible logic.
-            if (typeAnnotations != null &&
-                    !typeAnnotations.isEmpty()) {
-                return "(" + typeAnnotations.toString() + " :: " + underlyingType.toString() + ")";
-            } else {
-                return "({} :: " + underlyingType.toString() +")";
-            }
-        }
-
-        @Override
-        public boolean contains(Type t)          { return underlyingType.contains(t); }
-
-        @Override
-        public Type withTypeVar(Type t) {
-            // Don't create a new AnnotatedType, as 'this' will
-            // get its annotations set later.
-            underlyingType = underlyingType.withTypeVar(t);
-            return this;
-        }
-
-        // TODO: attach annotations?
-        @Override
-        public TypeSymbol asElement()            { return underlyingType.asElement(); }
-
-        // TODO: attach annotations?
-        @Override
-        public MethodType asMethodType()         { return underlyingType.asMethodType(); }
-
-        @Override
-        public void complete()                   { underlyingType.complete(); }
-
-        @Override
-        public TypeMirror getComponentType()     { return ((ArrayType)underlyingType).getComponentType(); }
-
-        // The result is an ArrayType, but only in the model sense, not the Type sense.
-        public Type makeVarargs() {
-            return ((ArrayType) underlyingType).makeVarargs().annotatedType(typeAnnotations);
-        }
-
-        @Override
-        public TypeMirror getExtendsBound()      { return ((WildcardType)underlyingType).getExtendsBound(); }
-        @Override
-        public TypeMirror getSuperBound()        { return ((WildcardType)underlyingType).getSuperBound(); }
-    }
-
     public static class UnknownType extends Type {
 
         public UnknownType() {
-            super(null);
+            // Unknown is a synthesized internal type, so it cannot be
+            // annotated.
+            super(null, noAnnotations);
+        }
+
+        @Override
+        public UnknownType annotatedType(List<Attribute.TypeCompound> annos) {
+            throw new AssertionError("Cannot annotate unknown type");
         }
 
         @Override
@@ -2046,7 +2074,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         R visitForAll(ForAll t, S s);
         R visitUndetVar(UndetVar t, S s);
         R visitErrorType(ErrorType t, S s);
-        R visitAnnotatedType(AnnotatedType t, S s);
         R visitType(Type t, S s);
     }
 }

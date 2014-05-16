@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class Runtime {
      * blocks indefinitely.
      *
      * <p> The <tt>{@link System#exit(int) System.exit}</tt> method is the
-     * conventional and convenient means of invoking this method. <p>
+     * conventional and convenient means of invoking this method.
      *
      * @param  status
      *         Termination status.  By convention, a nonzero status code
@@ -180,7 +180,7 @@ public class Runtime {
      * method goes awry by, for example, corrupting internal data structures or
      * attempting to access nonexistent memory.  If the virtual machine aborts
      * then no guarantee can be made about whether or not any shutdown hooks
-     * will be run. <p>
+     * will be run.
      *
      * @param   hook
      *          An initialized but unstarted <tt>{@link Thread}</tt> object
@@ -248,7 +248,7 @@ public class Runtime {
      * hooks to be started and does not run uninvoked finalizers if
      * finalization-on-exit has been enabled.  If the shutdown sequence has
      * already been initiated then this method does not wait for any running
-     * shutdown hooks or finalizers to finish their work. <p>
+     * shutdown hooks or finalizers to finish their work.
      *
      * @param  status
      *         Termination status.  By convention, a nonzero status code

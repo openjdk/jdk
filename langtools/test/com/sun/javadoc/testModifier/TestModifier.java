@@ -26,29 +26,25 @@
  * @bug 4210388
  * @summary Javadoc declares interfaces to be "abstract".
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build ModifierAbstract
  * @build JavadocTester
- * @build TestModifier
  * @run main TestModifier
  */
 
 public class TestModifier extends JavadocTester {
 
-    private static final String[] ARGS =
-        new String[] {
-            "-sourcepath", SRC_DIR,
-            "-docletpath", SRC_DIR, "-doclet", "ModifierAbstract",
-            SRC_DIR + "/Interface.java", SRC_DIR + "/Test.java"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestModifier tester = new TestModifier();
-        if (tester.run(ARGS, NO_TEST, NO_TEST) != 0) {
-            throw new Error("Javadoc error occured during execution.");
-        }
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-sourcepath", testSrc,
+                "-docletpath", testSrc,
+                "-doclet", "ModifierAbstract",
+                testSrc("Interface.java"), testSrc("Test.java"));
+        checkExit(Exit.OK);
     }
 }

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaAssertions.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"

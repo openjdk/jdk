@@ -1,9 +1,9 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280
+ * @bug 8003280 8034223
  * @summary Add lambda tests
  *  Check void-compatibility in strict vs. loose conversion contexts
- * @compile/fail/ref=TargetType16.out -XDrawDiagnostics TargetType16.java
+ * @compile TargetType16.java
  */
 
 class TargetType16 {
@@ -20,6 +20,6 @@ class TargetType16 {
     static <T> void m(SAM2<T> s2) { }
 
     public static void main(String[] args) {
-        m(() -> { throw new AssertionError(); }); //ambiguous
+        m(() -> { throw new AssertionError(); }); // prefer SAM2
     }
 }

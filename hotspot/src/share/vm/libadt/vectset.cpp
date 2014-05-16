@@ -28,15 +28,10 @@
 
 // Vector Sets - An Abstract Data Type
 
-// %%%%% includes not needed with AVM framework - Ungar
-// #include "port.hpp"
-//IMPLEMENTATION
-// #include "vectset.hpp"
-
 // BitsInByte is a lookup table which tells the number of bits that
 // are in the looked-up number.  It is very useful in VectorSet_Size.
 
-uint8 bitsInByte[256] = {
+uint8_t bitsInByte[256] = {
   0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
   1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
   1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
@@ -59,7 +54,7 @@ uint8 bitsInByte[256] = {
 // Create a new, empty Set.
 VectorSet::VectorSet(Arena *arena) : Set(arena) {
   size = 2;                     // Small initial size
-  data = (uint32 *)_set_arena->Amalloc(size*sizeof(uint32));
+  data = (uint32_t *)_set_arena->Amalloc(size*sizeof(uint32_t));
   data[0] = 0;                  // No elements
   data[1] = 0;
 }
@@ -85,8 +80,8 @@ Set &VectorSet::operator = (const Set &set)
 void VectorSet::slamin(const VectorSet& s)
 {
   size = s.size;                // Use new size
-  data = (uint32*)s._set_arena->Amalloc(size*sizeof(uint32)); // Make array of required size
-  memcpy( data, s.data, size*sizeof(uint32) ); // Fill the array
+  data = (uint32_t*)s._set_arena->Amalloc(size*sizeof(uint32_t)); // Make array of required size
+  memcpy( data, s.data, size*sizeof(uint32_t) ); // Fill the array
 }
 
 //------------------------------grow-------------------------------------------
@@ -96,8 +91,8 @@ void VectorSet::grow( uint newsize )
   newsize = (newsize+31) >> 5;  // Convert to longwords
   uint x = size;
   while( x < newsize ) x <<= 1;
-  data = (uint32 *)_set_arena->Arealloc(data, size*sizeof(uint32), x*sizeof(uint32));
-  memset((char *)(data + size), 0, (x - size)*sizeof(uint32));
+  data = (uint32_t *)_set_arena->Arealloc(data, size*sizeof(uint32_t), x*sizeof(uint32_t));
+  memset((char *)(data + size), 0, (x - size)*sizeof(uint32_t));
   size = x;
 }
 
@@ -106,7 +101,7 @@ void VectorSet::grow( uint newsize )
 Set &VectorSet::operator <<= (uint elem)
 {
   register uint word = elem >> 5;            // Get the longword offset
-  register uint32 mask = 1L << (elem & 31);  // Get bit mask
+  register uint32_t mask = 1L << (elem & 31);  // Get bit mask
 
   if( word >= size )            // Need to grow set?
     grow(elem+1);               // Then grow it
@@ -121,7 +116,7 @@ Set &VectorSet::operator >>= (uint elem)
   register uint word = elem >> 5; // Get the longword offset
   if( word >= size )              // Beyond the last?
     return *this;                 // Then it's clear & return clear
-  register uint32 mask = 1L << (elem & 31);     // Get bit mask
+  register uint32_t mask = 1L << (elem & 31);     // Get bit mask
   data[word] &= ~mask;            // Clear bit
   return *this;
 }
@@ -132,8 +127,8 @@ VectorSet &VectorSet::operator &= (const VectorSet &s)
 {
   // NOTE: The intersection is never any larger than the smallest set.
   if( s.size < size ) size = s.size; // Get smaller size
-  register uint32 *u1 = data;   // Pointer to the destination data
-  register uint32 *u2 = s.data; // Pointer to the source data
+  register uint32_t *u1 = data;   // Pointer to the destination data
+  register uint32_t *u2 = s.data; // Pointer to the source data
   for( uint i=0; i<size; i++)   // For data in set
     *u1++ &= *u2++;             // Copy and AND longwords
   return *this;                 // Return set
@@ -152,14 +147,14 @@ VectorSet &VectorSet::operator |= (const VectorSet &s)
 {
   // This many words must be unioned
   register uint cnt = ((size<s.size)?size:s.size);
-  register uint32 *u1 = data;   // Pointer to the destination data
-  register uint32 *u2 = s.data; // Pointer to the source data
+  register uint32_t *u1 = data;   // Pointer to the destination data
+  register uint32_t *u2 = s.data; // Pointer to the source data
   for( uint i=0; i<cnt; i++)    // Copy and OR the two sets
     *u1++ |= *u2++;
   if( size < s.size ) {         // Is set 2 larger than set 1?
     // Extend result by larger set
-    grow(s.size*sizeof(uint32)*8);
-    memcpy(&data[cnt], u2, (s.size - cnt)*sizeof(uint32));
+    grow(s.size*sizeof(uint32_t)*8);
+    memcpy(&data[cnt], u2, (s.size - cnt)*sizeof(uint32_t));
   }
   return *this;                 // Return result set
 }
@@ -177,8 +172,8 @@ VectorSet &VectorSet::operator -= (const VectorSet &s)
 {
   // This many words must be unioned
   register uint cnt = ((size<s.size)?size:s.size);
-  register uint32 *u1 = data;   // Pointer to the destination data
-  register uint32 *u2 = s.data; // Pointer to the source data
+  register uint32_t *u1 = data;   // Pointer to the destination data
+  register uint32_t *u2 = s.data; // Pointer to the source data
   for( uint i=0; i<cnt; i++ )   // For data in set
     *u1++ &= ~(*u2++);          // A <-- A & ~B  with longwords
   return *this;                 // Return new set
@@ -199,17 +194,17 @@ Set &VectorSet::operator -= (const Set &set)
 //        1X --  B is a subset of A
 int VectorSet::compare (const VectorSet &s) const
 {
-  register uint32 *u1 = data;   // Pointer to the destination data
-  register uint32 *u2 = s.data; // Pointer to the source data
-  register uint32 AnotB = 0, BnotA = 0;
+  register uint32_t *u1 = data;   // Pointer to the destination data
+  register uint32_t *u2 = s.data; // Pointer to the source data
+  register uint32_t AnotB = 0, BnotA = 0;
   // This many words must be unioned
   register uint cnt = ((size<s.size)?size:s.size);
 
   // Get bits for both sets
   uint i;                       // Exit value of loop
   for( i=0; i<cnt; i++ ) {      // For data in BOTH sets
-    register uint32 A = *u1++;  // Data from one guy
-    register uint32 B = *u2++;  // Data from other guy
+    register uint32_t A = *u1++;  // Data from one guy
+    register uint32_t B = *u2++;  // Data from other guy
     AnotB |= (A & ~B);          // Compute bits in A not B
     BnotA |= (B & ~A);          // Compute bits in B not A
   }
@@ -250,8 +245,8 @@ int VectorSet::disjoint(const Set &set) const
 
   // NOTE: The intersection is never any larger than the smallest set.
   register uint small_size = ((size<s.size)?size:s.size);
-  register uint32 *u1 = data;        // Pointer to the destination data
-  register uint32 *u2 = s.data;      // Pointer to the source data
+  register uint32_t *u1 = data;        // Pointer to the destination data
+  register uint32_t *u2 = s.data;      // Pointer to the source data
   for( uint i=0; i<small_size; i++)  // For data in set
     if( *u1++ & *u2++ )              // If any elements in common
       return 0;                      // Then not disjoint
@@ -293,7 +288,7 @@ int VectorSet::operator[](uint elem) const
   register uint word = elem >> 5; // Get the longword offset
   if( word >= size )              // Beyond the last?
     return 0;                     // Then it's clear
-  register uint32 mask = 1L << (elem & 31);  // Get bit mask
+  register uint32_t mask = 1L << (elem & 31);  // Get bit mask
   return ((data[word] & mask))!=0;           // Return the sense of the bit
 }
 
@@ -305,7 +300,7 @@ uint VectorSet::getelem(void) const
   for( i=0; i<size; i++ )
     if( data[i] )
       break;
-  uint32 word = data[i];
+  uint32_t word = data[i];
   int j;                        // Exit value of loop
   for( j= -1; word; j++, word>>=1 );
   return (i<<5)+j;
@@ -316,11 +311,11 @@ uint VectorSet::getelem(void) const
 void VectorSet::Clear(void)
 {
   if( size > 100 ) {            // Reclaim storage only if huge
-    FREE_RESOURCE_ARRAY(uint32,data,size);
+    FREE_RESOURCE_ARRAY(uint32_t,data,size);
     size = 2;                   // Small initial size
-    data = NEW_RESOURCE_ARRAY(uint32,size);
+    data = NEW_RESOURCE_ARRAY(uint32_t,size);
   }
-  memset( data, 0, size*sizeof(uint32) );
+  memset( data, 0, size*sizeof(uint32_t) );
 }
 
 //------------------------------Size-------------------------------------------
@@ -328,8 +323,8 @@ void VectorSet::Clear(void)
 uint VectorSet::Size(void) const
 {
   uint sum = 0;                 // Cumulative size so far.
-  uint8 *currByte = (uint8*)data;
-  for( uint32 i = 0; i < (size<<2); i++) // While have bytes to process
+  uint8_t* currByte = (uint8_t*) data;
+  for( uint32_t i = 0; i < (size<<2); i++) // While have bytes to process
     sum += bitsInByte[*currByte++];      // Add bits in current byte to size.
   return sum;
 }
@@ -343,7 +338,7 @@ void VectorSet::Sort(void)
 //------------------------------hash-------------------------------------------
 int VectorSet::hash() const
 {
-  uint32 _xor = 0;
+  uint32_t _xor = 0;
   uint lim = ((size<4)?size:4);
   for( uint i = 0; i < lim; i++ )
     _xor ^= data[i];

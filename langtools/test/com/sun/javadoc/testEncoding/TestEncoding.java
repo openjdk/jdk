@@ -27,32 +27,28 @@
  * @summary This test determines if the value of the -encoding option is
  * properly passed from Javadoc to the source file parser.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestEncoding
  * @run main TestEncoding
  */
 
 public class TestEncoding extends JavadocTester {
 
-
-    //If ??? is found in the output, the source file was not read with the correct encoding setting.
-    private static final String[][] NEGATED_TEST = {
-        { "EncodeTest.html", "??"}
-    };
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            "-encoding", "iso-8859-1", SRC_DIR + "/EncodeTest.java"
-        };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestEncoding tester = new TestEncoding();
-        tester.run(ARGS, NO_TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-encoding", "iso-8859-1",
+                testSrc("EncodeTest.java"));
+        checkExit(Exit.OK);
+
+        // If ??? is found in the output, the source file was not read with the correct encoding setting.
+        checkOutput("EncodeTest.html", false,
+                "??");
     }
 }

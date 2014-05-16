@@ -1048,7 +1048,6 @@ public final class Math {
      *       whereas {@code (-4 / 3) == -1}.
      *   </li>
      * </ul>
-     * <p>
      *
      * @param x the dividend
      * @param y the divisor

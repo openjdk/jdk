@@ -27,28 +27,26 @@
  * @summary Test to make sure that constant values page does not get
  * generated when doclet has nothing to document.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestConstantValuesPage
  * @run main TestConstantValuesPage
  */
 
 public class TestConstantValuesPage extends JavadocTester {
 
-    private static final String[][] NEGATED_TEST = {
-        {NOTICE_OUTPUT, "constant-values.html..."}
-        };
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "foo"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestConstantValuesPage tester = new TestConstantValuesPage();
-        tester.run(ARGS, NO_TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "foo");
+        checkExit(Exit.FAILED);
+
+        checkOutput(Output.NOTICE, false,
+                "constant-values.html...");
     }
 }

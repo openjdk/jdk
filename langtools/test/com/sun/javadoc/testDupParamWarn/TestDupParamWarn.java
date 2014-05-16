@@ -27,28 +27,26 @@
  * @summary Test to ensure that the doclet does not print out bad
  * warning messages about duplicate param tags.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestDupParamWarn
  * @run main TestDupParamWarn
  */
 
 public class TestDupParamWarn extends JavadocTester {
 
-    private static final String[] ARGS =
-        new String[] {"-d", OUTPUT_DIR, "-sourcepath",
-                SRC_DIR + "/", "pkg"};
-    private static final String[][] NEGATED_TEST =
-        new String[][] {{WARNING_OUTPUT,
-            "Parameter \"a\" is documented more than once."}};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         JavadocTester tester = new TestDupParamWarn();
-        tester.run(ARGS, NO_TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.WARNING, false,
+            "Parameter \"a\" is documented more than once.");
     }
 }
