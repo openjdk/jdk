@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ void QuickSort::print_array(const char* prefix, int* array, int length) {
   for (int i = 0; i < length; i++) {
     tty->print(" %d", array[i]);
   }
-  tty->print_cr("");
+  tty->cr();
 }
 
 bool QuickSort::compare_arrays(int* actual, int* expected, int length) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,7 +533,7 @@ void vmIntrinsics::verify_method(ID actual_id, Method* m) {
     xtty->begin_elem("intrinsic_misdeclared actual='%s' declared='%s'",
                      actual_name, declared_name);
     xtty->method(mh);
-    xtty->end_elem("");
+    xtty->end_elem("%s", "");
   }
   if (PrintMiscellaneous && (WizardMode || Verbose)) {
     tty->print_cr("*** misidentified method; %s(%d) should be %s(%d):",

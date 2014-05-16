@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,8 +388,8 @@ void ConstMethod::copy_annotations_from(ConstMethod* cm) {
 void ConstMethod::print_on(outputStream* st) const {
   ResourceMark rm;
   assert(is_constMethod(), "must be constMethod");
-  st->print_cr(internal_name());
-  st->print(" - method:       " INTPTR_FORMAT " ", (address)method());
+  st->print_cr("%s", internal_name());
+  st->print(" - method:       " INTPTR_FORMAT " ", p2i((address)method()));
   method()->print_value_on(st); st->cr();
   if (has_stackmap_table()) {
     st->print(" - stackmap data:       ");

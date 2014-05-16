@@ -251,6 +251,10 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
   }
+  bool age_code() const {
+    return _method->profile_aging();
+  }
+
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
   bool is_optimistic() const                             {
