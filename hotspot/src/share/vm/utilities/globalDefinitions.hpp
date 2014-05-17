@@ -1346,6 +1346,9 @@ inline intptr_t p2i(const void * p) {
 #ifndef JULONG_FORMAT
 #define JULONG_FORMAT          UINT64_FORMAT
 #endif
+#ifndef JULONG_FORMAT_X
+#define JULONG_FORMAT_X        UINT64_FORMAT_X
+#endif
 
 // Format pointers which change size between 32- and 64-bit.
 #ifdef  _LP64
@@ -1385,7 +1388,7 @@ inline intptr_t p2i(const void * p) {
 // All C++ compilers that we know of have the vtbl pointer in the first
 // word.  If there are exceptions, this function needs to be made compiler
 // specific.
-static inline void* dereference_vptr(void* addr) {
+static inline void* dereference_vptr(const void* addr) {
   return *(void**)addr;
 }
 
