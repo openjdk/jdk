@@ -66,7 +66,7 @@ class TraceStream : public StackObj {
   }
 
   void print_val(const char* label, s8 val) {
-    _st.print("%s = "INT64_FORMAT, label, val);
+    _st.print("%s = "INT64_FORMAT, label, (int64_t) val);
   }
 
   void print_val(const char* label, bool val) {

@@ -541,6 +541,13 @@ void SafepointSynchronize::do_cleanup_tasks() {
     gclog_or_tty->rotate_log(false);
   }
 
+  {
+    // CMS delays purging the CLDG until the beginning of the next safepoint and to
+    // make sure concurrent sweep is done
+    TraceTime t7("purging class loader data graph", TraceSafepointCleanupTime);
+    ClassLoaderDataGraph::purge_if_needed();
+  }
+
   if (MemTracker::is_on()) {
     MemTracker::sync();
   }

@@ -1097,11 +1097,15 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
   }
 
-  // Check if in metaspace.
-  if (ClassLoaderDataGraph::contains((address)addr)) {
-    // Use addr->print() from the debugger instead (not here)
-    st->print_cr(INTPTR_FORMAT
-                 " is pointing into metadata", addr);
+  // Check if in metaspace and print types that have vptrs (only method now)
+  if (Metaspace::contains(addr)) {
+    if (Method::has_method_vptr((const void*)addr)) {
+      ((Method*)addr)->print_value_on(st);
+      st->cr();
+    } else {
+      // Use addr->print() from the debugger instead (not here)
+      st->print_cr(INTPTR_FORMAT " is pointing into metadata", addr);
+    }
     return;
   }
 

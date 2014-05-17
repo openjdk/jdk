@@ -316,6 +316,8 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   MetaWord* bottom() const { return (MetaWord*) _virtual_space.low(); }
   MetaWord* end() const { return (MetaWord*) _virtual_space.high(); }
 
+  bool contains(const void* ptr) { return ptr >= low() && ptr < high(); }
+
   size_t reserved_words() const  { return _virtual_space.reserved_size() / BytesPerWord; }
   size_t committed_words() const { return _virtual_space.actual_committed_size() / BytesPerWord; }
 
@@ -557,6 +559,8 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   void inc_virtual_space_count();
   void dec_virtual_space_count();
 
+  bool contains(const void* ptr);
+
   // Unlink empty VirtualSpaceNodes and free it.
   void purge(ChunkManager* chunk_manager);
 
@@ -641,8 +645,6 @@ class SpaceManager : public CHeapObj<mtClass> {
   // Accessors
   Metachunk* chunks_in_use(ChunkIndex index) const { return _chunks_in_use[index]; }
   void set_chunks_in_use(ChunkIndex index, Metachunk* v) {
-    // ensure lock-free iteration sees fully initialized node
-    OrderAccess::storestore();
     _chunks_in_use[index] = v;
   }
 
@@ -756,8 +758,6 @@ class SpaceManager : public CHeapObj<mtClass> {
   void dump(outputStream* const out) const;
   void print_on(outputStream* st) const;
   void locked_print_chunks_in_use_on(outputStream* st) const;
-
-  bool contains(const void *ptr);
 
   void verify();
   void verify_chunk_size(Metachunk* chunk);
@@ -1078,6 +1078,7 @@ void ChunkManager::remove_chunk(Metachunk* chunk) {
 // nodes with a 0 container_count.  Remove Metachunks in
 // the node from their respective freelists.
 void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint for contains to work");
   assert_lock_strong(SpaceManager::expand_lock());
   // Don't use a VirtualSpaceListIterator because this
   // list is being changed and a straightforward use of an iterator is not safe.
@@ -1111,14 +1112,31 @@ void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
   }
 #ifdef ASSERT
   if (purged_vsl != NULL) {
-  // List should be stable enough to use an iterator here.
-  VirtualSpaceListIterator iter(virtual_space_list());
+    // List should be stable enough to use an iterator here.
+    VirtualSpaceListIterator iter(virtual_space_list());
     while (iter.repeat()) {
       VirtualSpaceNode* vsl = iter.get_next();
       assert(vsl != purged_vsl, "Purge of vsl failed");
     }
   }
 #endif
+}
+
+
+// This function looks at the mmap regions in the metaspace without locking.
+// The chunks are added with store ordering and not deleted except for at
+// unloading time during a safepoint.
+bool VirtualSpaceList::contains(const void* ptr) {
+  // List should be stable enough to use an iterator here because removing virtual
+  // space nodes is only allowed at a safepoint.
+  VirtualSpaceListIterator iter(virtual_space_list());
+  while (iter.repeat()) {
+    VirtualSpaceNode* vsn = iter.get_next();
+    if (vsn->contains(ptr)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void VirtualSpaceList::retire_current_virtual_space() {
@@ -1210,6 +1228,8 @@ bool VirtualSpaceList::create_new_virtual_space(size_t vs_word_size) {
   } else {
     assert(new_entry->reserved_words() == vs_word_size,
         "Reserved memory size differs from requested memory size");
+    // ensure lock-free iteration sees fully initialized node
+    OrderAccess::storestore();
     link_vs(new_entry);
     return true;
   }
@@ -2434,21 +2454,6 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
   return result;
 }
 
-// This function looks at the chunks in the metaspace without locking.
-// The chunks are added with store ordering and not deleted except for at
-// unloading time.
-bool SpaceManager::contains(const void *ptr) {
-  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i))
-  {
-    Metachunk* curr = chunks_in_use(i);
-    while (curr != NULL) {
-      if (curr->contains(ptr)) return true;
-      curr = curr->next();
-    }
-  }
-  return false;
-}
-
 void SpaceManager::verify() {
   // If there are blocks in the dictionary, then
   // verification of chunks does not work since
@@ -3538,11 +3543,15 @@ void Metaspace::print_on(outputStream* out) const {
 }
 
 bool Metaspace::contains(const void* ptr) {
-  if (vsm()->contains(ptr)) return true;
-  if (using_class_space()) {
-    return class_vsm()->contains(ptr);
+  if (UseSharedSpaces && MetaspaceShared::is_in_shared_space(ptr)) {
+    return true;
   }
-  return false;
+
+  if (using_class_space() && get_space_list(ClassType)->contains(ptr)) {
+     return true;
+  }
+
+  return get_space_list(NonClassType)->contains(ptr);
 }
 
 void Metaspace::verify() {
@@ -3787,5 +3796,4 @@ void TestVirtualSpaceNode_test() {
   TestVirtualSpaceNodeTest::test();
   TestVirtualSpaceNodeTest::test_is_available();
 }
-
 #endif

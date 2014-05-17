@@ -390,7 +390,7 @@ public:
     return k;
   }
   static Klass* check_klass_Opt_Only_JDK14NewRef(Klass* k) {
-    assert(JDK_Version::is_gte_jdk14x_version() && UseNewReflection, "JDK 1.4 only");
+    assert(JDK_Version::is_gte_jdk14x_version(), "JDK 1.4 only");
     // despite the optional loading, if you use this it must be present:
     return check_klass(k);
   }
