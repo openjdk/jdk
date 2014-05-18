@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,8 @@ public class CipherInputStream extends FilterInputStream {
     private int ofinish = 0;
     // stream status
     private boolean closed = false;
+    // The stream has been read from.  False if the stream has never been read.
+    private boolean read = false;
 
     /**
      * private convenience function.
@@ -103,6 +105,7 @@ public class CipherInputStream extends FilterInputStream {
     private int getMoreData() throws IOException {
         if (done) return -1;
         int readin = input.read(ibuffer);
+        read = true;
         if (readin == -1) {
             done = true;
             try {
@@ -306,7 +309,11 @@ public class CipherInputStream extends FilterInputStream {
             }
         }
         catch (BadPaddingException | IllegalBlockSizeException ex) {
-            throw new IOException(ex);
+            /* If no data has been read from the stream to be en/decrypted,
+               we supress any exceptions, and close quietly. */
+            if (read) {
+                throw new IOException(ex);
+            }
         }
         ostart = 0;
         ofinish = 0;
