@@ -1433,10 +1433,9 @@ size_t MetaspaceGC::allowed_expansion() {
   }
 
   size_t capacity_until_gc = capacity_until_GC();
-
-  if (capacity_until_gc <= committed_bytes) {
-    return 0;
-  }
+  assert(capacity_until_gc >= committed_bytes,
+         err_msg("capacity_until_gc: " SIZE_FORMAT " < committed_bytes: " SIZE_FORMAT,
+                 capacity_until_gc, committed_bytes));
 
   size_t left_until_GC = capacity_until_gc - committed_bytes;
   size_t left_to_commit = MIN2(left_until_GC, left_until_max);
@@ -1449,7 +1448,15 @@ void MetaspaceGC::compute_new_size() {
   uint current_shrink_factor = _shrink_factor;
   _shrink_factor = 0;
 
-  const size_t used_after_gc = MetaspaceAux::capacity_bytes();
+  // Using committed_bytes() for used_after_gc is an overestimation, since the
+  // chunk free lists are included in committed_bytes() and the memory in an
+  // un-fragmented chunk free list is available for future allocations.
+  // However, if the chunk free lists becomes fragmented, then the memory may
+  // not be available for future allocations and the memory is therefore "in use".
+  // Including the chunk free lists in the definition of "in use" is therefore
+  // necessary. Not including the chunk free lists can cause capacity_until_GC to
+  // shrink below committed_bytes() and this has caused serious bugs in the past.
+  const size_t used_after_gc = MetaspaceAux::committed_bytes();
   const size_t capacity_until_GC = MetaspaceGC::capacity_until_GC();
 
   const double minimum_free_percentage = MinMetaspaceFreeRatio / 100.0;

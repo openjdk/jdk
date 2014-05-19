@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,23 +194,16 @@ bool RSHashTable::add_card(RegionIdx_t region_ind, CardIdx_t card_index) {
 }
 
 bool RSHashTable::get_cards(RegionIdx_t region_ind, CardIdx_t* cards) {
-  int ind = (int) (region_ind & capacity_mask());
-  int cur_ind = _buckets[ind];
-  SparsePRTEntry* cur;
-  while (cur_ind != NullEntry &&
-         (cur = entry(cur_ind))->r_ind() != region_ind) {
-    cur_ind = cur->next_index();
+  SparsePRTEntry* entry = get_entry(region_ind);
+  if (entry == NULL) {
+    return false;
   }
-
-  if (cur_ind == NullEntry) return false;
   // Otherwise...
-  assert(cur->r_ind() == region_ind, "Postcondition of loop + test above.");
-  assert(cur->num_valid_cards() > 0, "Inv");
-  cur->copy_cards(cards);
+  entry->copy_cards(cards);
   return true;
 }
 
-SparsePRTEntry* RSHashTable::get_entry(RegionIdx_t region_ind) {
+SparsePRTEntry* RSHashTable::get_entry(RegionIdx_t region_ind) const {
   int ind = (int) (region_ind & capacity_mask());
   int cur_ind = _buckets[ind];
   SparsePRTEntry* cur;
@@ -247,27 +240,8 @@ bool RSHashTable::delete_entry(RegionIdx_t region_ind) {
 }
 
 SparsePRTEntry*
-RSHashTable::entry_for_region_ind(RegionIdx_t region_ind) const {
-  assert(occupied_entries() < capacity(), "Precondition");
-  int ind = (int) (region_ind & capacity_mask());
-  int cur_ind = _buckets[ind];
-  SparsePRTEntry* cur;
-  while (cur_ind != NullEntry &&
-         (cur = entry(cur_ind))->r_ind() != region_ind) {
-    cur_ind = cur->next_index();
-  }
-
-  if (cur_ind != NullEntry) {
-    assert(cur->r_ind() == region_ind, "Loop postcondition + test");
-    return cur;
-  } else {
-    return NULL;
-  }
-}
-
-SparsePRTEntry*
 RSHashTable::entry_for_region_ind_create(RegionIdx_t region_ind) {
-  SparsePRTEntry* res = entry_for_region_ind(region_ind);
+  SparsePRTEntry* res = get_entry(region_ind);
   if (res == NULL) {
     int new_ind = alloc_entry();
     assert(0 <= new_ind && (size_t)new_ind < capacity(), "There should be room.");
@@ -365,7 +339,7 @@ bool RSHashTableIter::has_next(size_t& card_index) {
 }
 
 bool RSHashTable::contains_card(RegionIdx_t region_index, CardIdx_t card_index) const {
-  SparsePRTEntry* e = entry_for_region_ind(region_index);
+  SparsePRTEntry* e = get_entry(region_index);
   return (e != NULL && e->contains_card(card_index));
 }
 
