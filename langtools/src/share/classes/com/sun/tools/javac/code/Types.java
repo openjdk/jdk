@@ -42,9 +42,8 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.jvm.ClassReader;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
+
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Scope.*;
@@ -84,7 +83,6 @@ public class Types {
     final boolean allowBoxing;
     final boolean allowCovariantReturns;
     final boolean allowObjectToPrimitiveCast;
-    final ClassReader reader;
     final Check chk;
     final Enter enter;
     JCDiagnostic.Factory diags;
@@ -110,7 +108,6 @@ public class Types {
         allowBoxing = source.allowBoxing();
         allowCovariantReturns = source.allowCovariantReturns();
         allowObjectToPrimitiveCast = source.allowObjectToPrimitiveCast();
-        reader = ClassReader.instance(context);
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");

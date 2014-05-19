@@ -67,25 +67,24 @@ public class Lower extends TreeTranslator {
         return instance;
     }
 
-    private Names names;
-    private Log log;
-    private Symtab syms;
-    private Resolve rs;
-    private Check chk;
-    private Attr attr;
+    private final Names names;
+    private final Log log;
+    private final Symtab syms;
+    private final Resolve rs;
+    private final Check chk;
+    private final Attr attr;
     private TreeMaker make;
     private DiagnosticPosition make_pos;
-    private ClassWriter writer;
-    private ClassReader reader;
-    private ConstFold cfolder;
-    private Target target;
-    private Source source;
-    private boolean allowEnums;
+    private final ClassWriter writer;
+    private final ConstFold cfolder;
+    private final Target target;
+    private final Source source;
+    private final boolean allowEnums;
     private final Name dollarAssertionsDisabled;
     private final Name classDollar;
-    private Types types;
-    private boolean debugLower;
-    private PkgInfo pkginfoOpt;
+    private final Types types;
+    private final boolean debugLower;
+    private final PkgInfo pkginfoOpt;
 
     protected Lower(Context context) {
         context.put(lowerKey, this);
@@ -97,7 +96,6 @@ public class Lower extends TreeTranslator {
         attr = Attr.instance(context);
         make = TreeMaker.instance(context);
         writer = ClassWriter.instance(context);
-        reader = ClassReader.instance(context);
         cfolder = ConstFold.instance(context);
         target = Target.instance(context);
         source = Source.instance(context);
