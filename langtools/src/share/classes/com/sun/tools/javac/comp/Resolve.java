@@ -87,7 +87,7 @@ public class Resolve {
     DeferredAttr deferredAttr;
     Check chk;
     Infer infer;
-    ClassReader reader;
+    ClassFinder finder;
     TreeInfo treeinfo;
     Types types;
     JCDiagnostic.Factory diags;
@@ -121,7 +121,7 @@ public class Resolve {
         deferredAttr = DeferredAttr.instance(context);
         chk = Check.instance(context);
         infer = Infer.instance(context);
-        reader = ClassReader.instance(context);
+        finder = ClassFinder.instance(context);
         treeinfo = TreeInfo.instance(context);
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
@@ -1886,9 +1886,9 @@ public class Resolve {
      */
     Symbol loadClass(Env<AttrContext> env, Name name) {
         try {
-            ClassSymbol c = reader.loadClass(name);
+            ClassSymbol c = finder.loadClass(name);
             return isAccessible(env, c) ? c : new AccessError(c);
-        } catch (ClassReader.BadClassFile err) {
+        } catch (ClassFinder.BadClassFile err) {
             throw err;
         } catch (CompletionFailure ex) {
             return typeNotFound;

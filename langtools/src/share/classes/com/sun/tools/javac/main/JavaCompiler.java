@@ -219,6 +219,10 @@ public class JavaCompiler {
      */
     protected TreeMaker make;
 
+    /** The class finder.
+     */
+    protected ClassFinder finder;
+
     /** The class reader.
      */
     protected ClassReader reader;
@@ -296,13 +300,13 @@ public class JavaCompiler {
     protected MultiTaskListener taskListener;
 
     /**
-     * SourceCompleter that delegates to the complete-method of this class.
+     * SourceCompleter that delegates to the readSourceFile method of this class.
      */
-    protected final ClassReader.SourceCompleter thisCompleter =
-            new ClassReader.SourceCompleter() {
+    protected final Symbol.Completer sourceCompleter =
+            new Symbol.Completer() {
                 @Override
-                public void complete(ClassSymbol sym) throws CompletionFailure {
-                    JavaCompiler.this.complete(sym);
+                public void complete(Symbol sym) throws CompletionFailure {
+                    readSourceFile((ClassSymbol) sym);
                 }
             };
 
@@ -338,6 +342,7 @@ public class JavaCompiler {
         names = Names.instance(context);
         log = Log.instance(context);
         diagFactory = JCDiagnostic.Factory.instance(context);
+        finder = ClassFinder.instance(context);
         reader = ClassReader.instance(context);
         make = TreeMaker.instance(context);
         writer = ClassWriter.instance(context);
@@ -355,7 +360,7 @@ public class JavaCompiler {
         } catch (CompletionFailure ex) {
             // inlined Check.completionError as it is not initialized yet
             log.error("cant.access", ex.sym, ex.getDetailValue());
-            if (ex instanceof ClassReader.BadClassFile)
+            if (ex instanceof ClassFinder.BadClassFile)
                 throw new Abort();
         }
         source = Source.instance(context);
@@ -370,7 +375,7 @@ public class JavaCompiler {
         types = Types.instance(context);
         taskListener = MultiTaskListener.instance(context);
 
-        reader.sourceCompleter = thisCompleter;
+        finder.sourceCompleter = sourceCompleter;
 
         options = Options.instance(context);
 
@@ -663,7 +668,7 @@ public class JavaCompiler {
     public Symbol resolveBinaryNameOrIdent(String name) {
         try {
             Name flatname = names.fromString(name.replace("/", "."));
-            return reader.loadClass(flatname);
+            return finder.loadClass(flatname);
         } catch (CompletionFailure ignore) {
             return resolveIdent(name);
         }
@@ -737,22 +742,20 @@ public class JavaCompiler {
         return null;
     }
 
-    /** Complete compiling a source file that has been accessed
-     *  by the class file reader.
+    /** Compile a source file that has been accessed by the class finder.
      *  @param c          The class the source file of which needs to be compiled.
      */
-    public void complete(ClassSymbol c) throws CompletionFailure {
-        complete(null, c);
+    private void readSourceFile(ClassSymbol c) throws CompletionFailure {
+        readSourceFile(null, c);
     }
 
-    /** Complete a ClassSymbol from source, optionally using the given compilation unit as
+    /** Compile a ClassSymbol from source, optionally using the given compilation unit as
      *  the source tree.
-     *  @param tree the compilation unit int which the given ClassSymbol resides,
+     *  @param tree the compilation unit in which the given ClassSymbol resides,
      *              or null if should be parsed from source
      *  @param c    the ClassSymbol to complete
      */
-    public void complete(JCCompilationUnit tree, ClassSymbol c) throws CompletionFailure {
-//      System.err.println("completing " + c);//DEBUG
+    public void readSourceFile(JCCompilationUnit tree, ClassSymbol c) throws CompletionFailure {
         if (completionFailureName == c.fullname) {
             throw new CompletionFailure(c, "user-selected completion failure by class name");
         }
@@ -791,13 +794,13 @@ public class JavaCompiler {
                     JCDiagnostic diag =
                         diagFactory.fragment("file.does.not.contain.package",
                                                  c.location());
-                    throw reader.new BadClassFile(c, filename, diag);
+                    throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
                 }
             } else {
                 JCDiagnostic diag =
                         diagFactory.fragment("file.doesnt.contain.class",
                                             c.getQualifiedName());
-                throw reader.new BadClassFile(c, filename, diag);
+                throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
             }
         }
 
@@ -1663,6 +1666,7 @@ public class JavaCompiler {
      */
     public void close() {
         rootClasses = null;
+        finder = null;
         reader = null;
         make = null;
         writer = null;
