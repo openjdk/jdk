@@ -56,6 +56,12 @@
 #undef MAX
 #define MAX(a,b)        ((a) > (b) ? (a) : (b))
 
+#ifdef __APPLE__
+/* use setjmp/longjmp versions that do not save/restore the signal mask */
+#define setjmp _setjmp
+#define longjmp _longjmp
+#endif
+
 /* Cached Java method ids */
 static jmethodID JPEGImageReader_readInputDataID;
 static jmethodID JPEGImageReader_skipInputBytesID;
