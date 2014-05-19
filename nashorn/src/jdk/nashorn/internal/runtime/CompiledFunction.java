@@ -34,9 +34,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
+
+import jdk.nashorn.internal.codegen.Compiler;
+import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -556,6 +560,43 @@ final class CompiledFunction {
     }
 
     /**
+     * Debug function for printing out all invalidated program points and their
+     * invalidation mapping to next type
+     * @param ipp
+     * @return string describing the ipp map
+     */
+    private static String toStringInvalidations(final Map<Integer, Type> ipp) {
+        if (ipp == null) {
+            return "";
+        }
+
+        final StringBuilder sb = new StringBuilder();
+
+        for (final Iterator<Map.Entry<Integer, Type>> iter = ipp.entrySet().iterator(); iter.hasNext(); ) {
+            final Map.Entry<Integer, Type> entry = iter.next();
+            final char bct = entry.getValue().getBytecodeStackType();
+
+            sb.append('[').
+                    append(entry.getKey()).
+                    append("->").
+                    append(bct == 'A' ? 'O' : bct).
+                    append(']');
+
+            if (iter.hasNext()) {
+                sb.append(' ');
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private void logRecompile(final String reason, final FunctionNode fn, final MethodType callSiteType, final Map<Integer, Type> ipp) {
+        if (log.isEnabled()) {
+            log.info(reason, DebugLogger.quote(fn.getName()), " signature: ", callSiteType, " ", toStringInvalidations(ipp));
+        }
+    }
+
+    /**
      * Handles a {@link RewriteException} raised during the execution of this function by recompiling (if needed) the
      * function with an optimistic assumption invalidated at the program point indicated by the exception, and then
      * executing a rest-of method to complete the execution with the deoptimized version.
@@ -567,45 +608,90 @@ final class CompiledFunction {
      */
     private MethodHandle handleRewriteException(final OptimismInfo oldOptimismInfo, final RewriteException re) {
         if (log.isEnabled()) {
-            log.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "\tRewriteException ", re.getMessageShort());
+            log.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "RewriteException ", re.getMessageShort());
         }
 
         final MethodType type = type();
+
         // Compiler needs a call site type as its input, which always has a callee parameter, so we must add it if
         // this function doesn't have a callee parameter.
-        final MethodType callSiteType = type.parameterType(0) == ScriptFunction.class ? type : type.insertParameterTypes(0, ScriptFunction.class);
+        final MethodType callSiteType = type.parameterType(0) == ScriptFunction.class ?
+                type :
+                type.insertParameterTypes(0, ScriptFunction.class);
+        final boolean shouldRecompile = oldOptimismInfo.requestRecompile(re);
+        final boolean  canBeDeoptimized;
 
-        final FunctionNode fn = oldOptimismInfo.recompile(callSiteType, re);
+        FunctionNode fn = oldOptimismInfo.reparse();
+        final Compiler compiler = oldOptimismInfo.getCompiler(fn, callSiteType, re); //set to non rest-of
 
-        final boolean canBeDeoptimized;
-        if (fn != null) {
-            //is recompiled
-            assert optimismInfo == oldOptimismInfo;
-            canBeDeoptimized = fn.canBeDeoptimized();
-            if (log.isEnabled()) {
-                log.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ")", canBeDeoptimized ? " can still be deoptimized." : " is completely deoptimized.");
-            }
-            final MethodHandle newInvoker = oldOptimismInfo.data.lookup(fn);
-            invoker = newInvoker.asType(type.changeReturnType(newInvoker.type().returnType()));
-            constructor = null; // Will be regenerated when needed
-            // Note that we only adjust the switch point after we set the invoker/constructor. This is important.
-            if (canBeDeoptimized) {
-                // Otherwise, set a new switch point.
-                oldOptimismInfo.newOptimisticAssumptions();
-            } else {
-                // If we got to a point where we no longer have optimistic assumptions, let the optimism info go.
-                optimismInfo = null;
-            }
-        } else {
+        if (!shouldRecompile) {
             // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already
             // recompiled a deoptimized version for an inner invocation.
+            // We still need to do the rest of from the beginning
             canBeDeoptimized = canBeDeoptimized();
             assert !canBeDeoptimized || optimismInfo == oldOptimismInfo;
+            logRecompile("Rest-of compilation [STANDALONE] ", fn, callSiteType, oldOptimismInfo.invalidatedProgramPoints);
+            return restOfHandle(oldOptimismInfo, compiler.compile(fn, CompilationPhases.COMPILE_ALL_RESTOF), canBeDeoptimized);
         }
 
-        final MethodHandle restOf = changeReturnType(oldOptimismInfo.compileRestOfMethod(callSiteType, re), Object.class);
+        logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, callSiteType, oldOptimismInfo.invalidatedProgramPoints);
+        fn = compiler.compile(fn, CompilationPhases.COMPILE_UPTO_BYTECODE);
+        log.info("Reusable IR generated");
+
+        assert optimismInfo == oldOptimismInfo;
+
+        // compile the rest of the function, and install it
+        log.info("Generating and installing bytecode from reusable IR...");
+        logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, callSiteType, oldOptimismInfo.invalidatedProgramPoints);
+        final FunctionNode normalFn = compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE);
+
+        FunctionNode fn2 = oldOptimismInfo.reparse();
+        fn2 = compiler.compile(fn2, CompilationPhases.COMPILE_UPTO_BYTECODE);
+        log.info("Done.");
+
+        canBeDeoptimized = normalFn.canBeDeoptimized();
+
+        if (log.isEnabled()) {
+            log.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ") ", canBeDeoptimized ? " can still be deoptimized." : " is completely deoptimized.");
+        }
+
+        log.info("Looking up invoker...");
+
+        final MethodHandle newInvoker = oldOptimismInfo.data.lookup(fn);
+        invoker     = newInvoker.asType(type.changeReturnType(newInvoker.type().returnType()));
+        constructor = null; // Will be regenerated when needed
+
+        log.info("Done: ", invoker);
+        final MethodHandle restOf = restOfHandle(oldOptimismInfo, compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE_RESTOF), canBeDeoptimized);
+
+        // Note that we only adjust the switch point after we set the invoker/constructor. This is important.
+        if (canBeDeoptimized) {
+            oldOptimismInfo.newOptimisticAssumptions(); // Otherwise, set a new switch point.
+        } else {
+            optimismInfo = null; // If we got to a point where we no longer have optimistic assumptions, let the optimism info go.
+        }
+
+        return restOf;
+    }
+
+    private MethodHandle restOfHandle(final OptimismInfo info, final FunctionNode restOfFunction, final boolean canBeDeoptimized) {
+        assert info != null;
+        assert restOfFunction.getCompileUnit().getUnitClassName().indexOf("restOf") != -1;
+        final MethodHandle restOf =
+                changeReturnType(
+                        info.data.lookupWithExplicitType(
+                                restOfFunction,
+                                MH.type(restOfFunction.getReturnType().getTypeClass(),
+                                        RewriteException.class)),
+                        Object.class);
+
+        if (!canBeDeoptimized) {
+            return restOf;
+        }
+
         // If rest-of is itself optimistic, we must make sure that we can repeat a deoptimization if it, too hits an exception.
-        return canBeDeoptimized ? MH.catchException(restOf, RewriteException.class, createRewriteExceptionHandler()) : restOf;
+        return MH.catchException(restOf, RewriteException.class, createRewriteExceptionHandler());
+
     }
 
     private static class OptimismInfo {
@@ -625,23 +711,34 @@ final class CompiledFunction {
             optimisticAssumptions = new SwitchPoint();
         }
 
-        FunctionNode recompile(final MethodType callSiteType, final RewriteException e) {
-            final Type retType = e.getReturnType();
+        boolean requestRecompile(final RewriteException e) {
+            final Type retType            = e.getReturnType();
             final Type previousFailedType = invalidatedProgramPoints.put(e.getProgramPoint(), retType);
+
             if (previousFailedType != null && !previousFailedType.narrowerThan(retType)) {
-                final StackTraceElement[] stack = e.getStackTrace();
-                final String functionId = stack.length == 0 ? data.getName() : stack[0].getClassName() + "." + stack[0].getMethodName();
+                final StackTraceElement[] stack      = e.getStackTrace();
+                final String              functionId = stack.length == 0 ?
+                        data.getName() :
+                        stack[0].getClassName() + "." + stack[0].getMethodName();
+
                 log.info("RewriteException for an already invalidated program point ", e.getProgramPoint(), " in ", functionId, ". This is okay for a recursive function invocation, but a bug otherwise.");
-                return null;
+
+                return false;
             }
+
             SwitchPoint.invalidateAll(new SwitchPoint[] { optimisticAssumptions });
-            return data.compile(callSiteType, invalidatedProgramPoints, e.getRuntimeScope(), "Deoptimizing recompilation", data.getDefaultTransform(callSiteType));
+
+            return true;
         }
 
-        MethodHandle compileRestOfMethod(final MethodType callSiteType, final RewriteException e) {
+        Compiler getCompiler(final FunctionNode fn, final MethodType actualCallSiteType, final RewriteException e) {
+            return data.getCompiler(fn, actualCallSiteType, e.getRuntimeScope(), invalidatedProgramPoints, getEntryPoints(e));
+        }
+
+        private static int[] getEntryPoints(final RewriteException e) {
             final int[] prevEntryPoints = e.getPreviousContinuationEntryPoints();
             final int[] entryPoints;
-            if(prevEntryPoints == null) {
+            if (prevEntryPoints == null) {
                 entryPoints = new int[1];
             } else {
                 final int l = prevEntryPoints.length;
@@ -649,7 +746,11 @@ final class CompiledFunction {
                 System.arraycopy(prevEntryPoints, 0, entryPoints, 1, l);
             }
             entryPoints[0] = e.getProgramPoint();
-            return data.compileRestOfMethod(callSiteType, invalidatedProgramPoints, entryPoints, e.getRuntimeScope(), data.getDefaultTransform(callSiteType));
+            return entryPoints;
+        }
+
+        FunctionNode reparse() {
+            return data.reparse();
         }
     }
 

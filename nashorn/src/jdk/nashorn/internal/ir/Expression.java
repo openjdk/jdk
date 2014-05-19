@@ -26,7 +26,9 @@
 package jdk.nashorn.internal.ir;
 
 import java.util.function.Function;
+
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 
 /**
  * Common superclass for all expression nodes. Expression nodes can have
@@ -34,9 +36,11 @@ import jdk.nashorn.internal.codegen.types.Type;
  *
  */
 public abstract class Expression extends Node {
+    static final String OPT_IDENTIFIER = "%";
+
     private static final Function<Symbol, Type> UNKNOWN_LOCALS = new Function<Symbol, Type>() {
         @Override
-        public Type apply(Symbol t) {
+        public Type apply(final Symbol t) {
             return null;
         }
     };
@@ -109,22 +113,22 @@ public abstract class Expression extends Node {
         return getType().narrowerThan(getWidestOperationType());
     }
 
-    static final String OPT_IDENTIFIER = "%";
-
     void optimisticTypeToString(final StringBuilder sb) {
         optimisticTypeToString(sb, isOptimistic());
     }
 
-    void optimisticTypeToString(final StringBuilder sb, boolean optimistic) {
+    void optimisticTypeToString(final StringBuilder sb, final boolean optimistic) {
         sb.append('{');
         final Type type = getType();
         final String desc = type == Type.UNDEFINED ? "U" : type.getDescriptor();
 
         sb.append(desc.charAt(desc.length() - 1) == ';' ? "O" : desc);
-        if(isOptimistic() && optimistic) {
+        if (isOptimistic() && optimistic) {
             sb.append(OPT_IDENTIFIER);
-            sb.append('_');
-            sb.append(((Optimistic)this).getProgramPoint());
+            final int pp = ((Optimistic)this).getProgramPoint();
+            if (UnwarrantedOptimismException.isValid(pp)) {
+                sb.append('_').append(pp);
+            }
         }
         sb.append('}');
     }
@@ -152,7 +156,7 @@ public abstract class Expression extends Node {
      * @param test a test expression used as a predicate of a branch or a loop.
      * @return true if the expression is not null and {@link #isAlwaysFalse()}.
      */
-    public static boolean isAlwaysFalse(Expression test) {
+    public static boolean isAlwaysFalse(final Expression test) {
         return test != null && test.isAlwaysFalse();
     }
 
@@ -163,7 +167,7 @@ public abstract class Expression extends Node {
      * @param test a test expression used as a predicate of a branch or a loop.
      * @return true if the expression is null or {@link #isAlwaysFalse()}.
      */
-    public static boolean isAlwaysTrue(Expression test) {
+    public static boolean isAlwaysTrue(final Expression test) {
         return test == null || test.isAlwaysTrue();
     }
 }

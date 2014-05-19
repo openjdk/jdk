@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -210,7 +211,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         if (value == null) {
             sb.append("null");
         } else {
@@ -448,7 +449,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public void toString(final StringBuilder sb) {
+        public void toString(final StringBuilder sb, final boolean printType) {
             sb.append('\"');
             sb.append(value);
             sb.append('\"');
@@ -496,7 +497,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public void toString(final StringBuilder sb) {
+        public void toString(final StringBuilder sb, final boolean printType) {
             sb.append(value.toString());
         }
     }
@@ -880,7 +881,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public Node accept(LexicalContext lc, NodeVisitor<? extends LexicalContext> visitor) {
+        public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
             if (visitor.enterLiteralNode(this)) {
                 final List<Expression> oldValue = Arrays.asList(value);
                 final List<Expression> newValue = Node.accept(visitor, Expression.class, oldValue);
@@ -894,7 +895,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         }
 
         @Override
-        public void toString(final StringBuilder sb) {
+        public void toString(final StringBuilder sb, final boolean printType) {
             sb.append('[');
             boolean first = true;
             for (final Node node : value) {
@@ -905,7 +906,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
                 if (node == null) {
                     sb.append("undefined");
                 } else {
-                    node.toString(sb);
+                    node.toString(sb, printType);
                 }
                 first = false;
             }

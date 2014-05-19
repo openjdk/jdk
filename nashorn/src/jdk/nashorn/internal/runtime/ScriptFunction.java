@@ -505,11 +505,12 @@ public abstract class ScriptFunction extends ScriptObject {
         final String  name       = getName();
         final boolean isUnstable = request.isCallSiteUnstable();
         final boolean scopeCall  = NashornCallSiteDescriptor.isScope(desc);
-
         final boolean isCall     = !scopeCall && data.isBuiltin() && "call".equals(name);
         final boolean isApply    = !scopeCall && data.isBuiltin() && "apply".equals(name);
 
-        if (isUnstable && !(isApply || isCall)) {
+        final boolean isApplyOrCall = isCall | isApply;
+
+        if (isUnstable && !isApplyOrCall) {
             //megamorphic - replace call with apply
             final MethodHandle handle;
             //ensure that the callsite is vararg so apply can consume it
@@ -534,7 +535,7 @@ public abstract class ScriptFunction extends ScriptObject {
         MethodHandle guard = null;
 
         // Special handling of Function.apply and Function.call. Note we must be invoking
-        if ((isApply || isCall) && !isUnstable) {
+        if (isApplyOrCall && !isUnstable) {
             final Object[] args = request.getArguments();
             if (Bootstrap.isCallable(args[1])) {
                 return createApplyOrCallCall(isApply, desc, request, args);

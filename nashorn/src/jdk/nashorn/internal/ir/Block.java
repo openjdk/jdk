@@ -107,7 +107,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         this(token, finish, statements.toArray(new Statement[statements.size()]));
     }
 
-    private Block(final Block block, final int finish, final List<Statement> statements, final int flags, final Map<String, Symbol> symbols, LocalVariableConversion conversion) {
+    private Block(final Block block, final int finish, final List<Statement> statements, final int flags, final Map<String, Symbol> symbols, final LocalVariableConversion conversion) {
         super(block);
         this.statements = statements;
         this.flags      = flags;
@@ -184,9 +184,9 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         for (final Node statement : statements) {
-            statement.toString(sb);
+            statement.toString(sb, printType);
             sb.append(';');
         }
     }
@@ -378,7 +378,7 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
 
     @Override
     public List<Label> getLabels() {
-        return Collections.singletonList(breakLabel);
+        return Collections.unmodifiableList(Arrays.asList(entryLabel, breakLabel));
     }
 
     @Override

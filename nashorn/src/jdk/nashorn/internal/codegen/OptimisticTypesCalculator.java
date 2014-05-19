@@ -66,16 +66,16 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  */
 final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
 
-    final CompilationEnvironment env;
+    final Compiler compiler;
 
     // Per-function bit set of program points that must never be optimistic.
     final Deque<BitSet> neverOptimistic = new ArrayDeque<>();
     // Per-function depth of split nodes
     final IntDeque splitDepth = new IntDeque();
 
-    OptimisticTypesCalculator(final CompilationEnvironment env) {
+    OptimisticTypesCalculator(final Compiler compiler) {
         super(new LexicalContext());
-        this.env = env;
+        this.compiler = compiler;
     }
 
     @Override
@@ -85,7 +85,7 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
     }
 
     @Override
-    public boolean enterPropertyNode(PropertyNode propertyNode) {
+    public boolean enterPropertyNode(final PropertyNode propertyNode) {
         if(propertyNode.getKeyName().equals(ScriptObject.PROTO_PROPERTY_NAME)) {
             tagNeverOptimistic(propertyNode.getValue());
         }
@@ -149,7 +149,7 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
-        if (!neverOptimistic.isEmpty() && env.isOnDemandCompilation()) {
+        if (!neverOptimistic.isEmpty() && compiler.isOnDemandCompilation()) {
             // This is a nested function, and we're doing on-demand compilation. In these compilations, we never descend
             // into nested functions.
             return false;
@@ -190,13 +190,13 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
     }
 
     @Override
-    public boolean enterSplitNode(SplitNode splitNode) {
+    public boolean enterSplitNode(final SplitNode splitNode) {
         splitDepth.getAndIncrement();
         return true;
     }
 
     @Override
-    public Node leaveSplitNode(SplitNode splitNode) {
+    public Node leaveSplitNode(final SplitNode splitNode) {
         final int depth = splitDepth.decrementAndGet();
         assert depth >= 0;
         return splitNode;
@@ -257,7 +257,7 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
     private Expression leaveOptimistic(final Optimistic opt) {
         final int pp = opt.getProgramPoint();
         if(isValid(pp) && !inSplitNode() && !neverOptimistic.peek().get(pp)) {
-            return (Expression)opt.setType(env.getOptimisticType(opt));
+            return (Expression)opt.setType(compiler.getOptimisticType(opt));
         }
         return (Expression)opt;
     }

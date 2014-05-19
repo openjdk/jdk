@@ -460,7 +460,7 @@ public class RuntimeNode extends Expression implements Optimistic {
      * Return type for the ReferenceNode
      */
     @Override
-    public Type getType(Function<Symbol, Type> localVariableTypes) {
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
         return request.getReturnType();
     }
 
@@ -478,7 +478,7 @@ public class RuntimeNode extends Expression implements Optimistic {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("ScriptRuntime.");
         sb.append(request);
         sb.append('(');
@@ -492,7 +492,7 @@ public class RuntimeNode extends Expression implements Optimistic {
                 first = false;
             }
 
-            arg.toString(sb);
+            arg.toString(sb, printType);
         }
 
         sb.append(')');

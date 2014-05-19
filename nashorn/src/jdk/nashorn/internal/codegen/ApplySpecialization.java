@@ -35,6 +35,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -45,8 +46,6 @@ import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.Debug;
-import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -82,39 +81,31 @@ import jdk.nashorn.internal.runtime.options.Options;
  */
 
 @Logger(name="apply2call")
-public final class ApplySpecialization implements Loggable {
+public final class ApplySpecialization extends NodeVisitor<LexicalContext> implements Loggable {
 
     private static final boolean USE_APPLY2CALL = Options.getBooleanProperty("nashorn.apply2call", true);
 
-    private final RecompilableScriptFunctionData data;
-
-    private FunctionNode functionNode;
-
-    private final MethodType actualCallSiteType;
-
     private final DebugLogger log;
 
+    private final Compiler compiler;
+
+    private final Set<Integer> changed = new HashSet<>();
+
+    private final Deque<List<IdentNode>> explodedArguments = new ArrayDeque<>();
+
     private static final String ARGUMENTS = ARGUMENTS_VAR.symbolName();
-
-    private boolean changed;
-
-    private boolean finished;
 
     /**
      * Apply specialization optimization. Try to explode arguments and call
      * applies as calls if they just pass on the "arguments" array and
      * "arguments" doesn't escape.
      *
-     * @param context             context
-     * @param data                recompilable script function data, which contains e.g. needs callee information
-     * @param functionNode        functionNode
-     * @param actualCallSiteType  actual call site type that we use (not Object[] varargs)
+     * @param compiler compiler
      */
-    public ApplySpecialization(final Context context, final RecompilableScriptFunctionData data, final FunctionNode functionNode, final MethodType actualCallSiteType) {
-        this.data               = data;
-        this.functionNode       = functionNode;
-        this.actualCallSiteType = actualCallSiteType;
-        this.log                = initLogger(context);
+    public ApplySpecialization(final Compiler compiler) {
+        super(new LexicalContext());
+        this.compiler = compiler;
+        this.log = initLogger(compiler.getContext());
     }
 
     @Override
@@ -128,14 +119,6 @@ public final class ApplySpecialization implements Loggable {
     }
 
     /**
-     * Return the function node, possibly after transformation
-     * @return function node
-     */
-    public FunctionNode getFunctionNode() {
-        return functionNode;
-    }
-
-    /**
      * Arguments may only be used as args to the apply. Everything else is disqualified
      * We cannot control arguments if they escape from the method and go into an unknown
      * scope, thus we are conservative and treat any access to arguments outside the
@@ -143,12 +126,12 @@ public final class ApplySpecialization implements Loggable {
      *
      * @return true if arguments escape
      */
-    private boolean argumentsEscape() {
+    private boolean argumentsEscape(final FunctionNode functionNode) {
 
         final Deque<Set<Expression>> stack = new ArrayDeque<>();
         //ensure that arguments is only passed as arg to apply
         try {
-            functionNode = (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 private boolean isCurrentArg(final Expression expr) {
                     return !stack.isEmpty() && stack.peek().contains(expr); //args to current apply call
                 }
@@ -202,53 +185,60 @@ public final class ApplySpecialization implements Loggable {
         return false;
     }
 
-    private boolean finish() {
-        finished = true;
-        return changed;
+    @Override
+    public boolean enterCallNode(final CallNode callNode) {
+        return !explodedArguments.isEmpty();
     }
 
-    /**
-     * Try to do the apply to call transformation
-     * @return true if successful, false otherwise
-     */
-    public boolean transform() {
-        if (!USE_APPLY2CALL) {
-            return false;
+    @Override
+    public Node leaveCallNode(final CallNode callNode) {
+        //apply needs to be a global symbol or we don't allow it
+
+        final List<IdentNode> newParams = explodedArguments.peek();
+        if (isApply(callNode)) {
+            final List<Expression> newArgs = new ArrayList<>();
+            for (final Expression arg : callNode.getArgs()) {
+                if (arg instanceof IdentNode && ARGUMENTS.equals(((IdentNode)arg).getName())) {
+                    newArgs.addAll(newParams);
+                } else {
+                    newArgs.add(arg);
+                }
+            }
+
+            changed.add(lc.getCurrentFunction().getId());
+
+            final CallNode newCallNode = callNode.setArgs(newArgs).setIsApplyToCall();
+
+            log.fine("Transformed ",
+                    callNode,
+                    " from apply to call => ",
+                    newCallNode,
+                    " in ",
+                    DebugLogger.quote(lc.getCurrentFunction().getName()));
+
+            return newCallNode;
         }
 
-        if (finished) {
-            throw new AssertionError("Can't apply transform twice");
-        }
+        return callNode;
+    }
 
-
-        assert actualCallSiteType.parameterType(actualCallSiteType.parameterCount() - 1) != Object[].class : "error vararg callsite passed to apply2call " + functionNode.getName() + " " + actualCallSiteType;
-
-        changed = false;
-
-        if (!Global.instance().isSpecialNameValid("apply")) {
-            log.fine("Apply transform disabled: apply/call overridden");
-            assert !Global.instance().isSpecialNameValid("call") : "call and apply should have the same SwitchPoint";
-            return finish();
-        }
-
-        //eval can do anything to escape arguments so that is not ok
-        if (functionNode.hasEval()) {
-            return finish();
-        }
-
-        if (argumentsEscape()) {
-            return finish();
-        }
-
+    private boolean pushExplodedArgs(final FunctionNode functionNode) {
         int start = 0;
 
-        if (data.needsCallee()) {
+        final MethodType actualCallSiteType = compiler.getCallSiteType(functionNode);
+        if (actualCallSiteType == null) {
+            return false;
+        }
+        assert actualCallSiteType.parameterType(actualCallSiteType.parameterCount() - 1) != Object[].class : "error vararg callsite passed to apply2call " + functionNode.getName() + " " + actualCallSiteType;
+
+        final TypeMap ptm = compiler.getTypeMap();
+        if (ptm.needsCallee()) {
             start++;
         }
 
         start++; //we always uses this
 
-        final List<IdentNode> params = functionNode.getParameters();
+        final List<IdentNode> params    = functionNode.getParameters();
         final List<IdentNode> newParams = new ArrayList<>();
         final long to = Math.max(params.size(), actualCallSiteType.parameterCount() - start);
         for (int i = 0; i < to; i++) {
@@ -259,45 +249,66 @@ public final class ApplySpecialization implements Loggable {
             }
         }
 
-        // expand arguments
-        // this function has to be guarded with call and apply being builtins
-        functionNode = (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-            @Override
-            public Node leaveCallNode(final CallNode callNode) {
-                //apply needs to be a global symbol or we don't allow it
+        explodedArguments.push(newParams);
+        return true;
+    }
 
-                if (isApply(callNode)) {
-                    final List<Expression> newArgs = new ArrayList<>();
-                    for (final Expression arg : callNode.getArgs()) {
-                        if (arg instanceof IdentNode && ARGUMENTS.equals(((IdentNode)arg).getName())) {
-                            newArgs.addAll(newParams);
-                        } else {
-                            newArgs.add(arg);
-                        }
-                    }
+    @Override
+    public boolean enterFunctionNode(final FunctionNode functionNode) {
+        if (!USE_APPLY2CALL) {
+            return false;
+        }
 
-                    changed = true;
+        if (!Global.instance().isSpecialNameValid("apply")) {
+            log.fine("Apply transform disabled: apply/call overridden");
+            assert !Global.instance().isSpecialNameValid("call") : "call and apply should have the same SwitchPoint";
+            return false;
+        }
 
-                    final CallNode newCallNode = callNode.setArgs(newArgs).setIsApplyToCall();
-                    log.fine("Transformed " + callNode + " from apply to call => " + newCallNode + " in '" + functionNode.getName() + "'");
-                    return newCallNode;
-                }
+        if (!compiler.isOnDemandCompilation()) {
+            return false;
+        }
 
-                return callNode;
+        if (functionNode.hasEval()) {
+            return false;
+        }
+
+        if (argumentsEscape(functionNode)) {
+            return false;
+        }
+
+        return pushExplodedArgs(functionNode);
+    }
+
+    /**
+     * Try to do the apply to call transformation
+     * @return true if successful, false otherwise
+     */
+    @Override
+    public Node leaveFunctionNode(final FunctionNode functionNode0) {
+        FunctionNode newFunctionNode = functionNode0;
+        final String functionName = newFunctionNode.getName();
+
+        if (changed.contains(newFunctionNode.getId())) {
+            newFunctionNode = newFunctionNode.clearFlag(lc, FunctionNode.USES_ARGUMENTS).
+                    setFlag(lc, FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION).
+                    setParameters(lc, explodedArguments.peek());
+
+            if (log.isEnabled()) {
+                log.info("Successfully specialized apply to call in '",
+                        functionName,
+                        " params=",
+                        explodedArguments.peek(),
+                        "' id=",
+                        newFunctionNode.getId(),
+                        " source=",
+                        newFunctionNode.getSource().getURL());
             }
-        });
-
-        if (changed) {
-            functionNode = functionNode.clearFlag(null, FunctionNode.USES_ARGUMENTS).
-                    setFlag(null, FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION).
-                    setParameters(null, newParams);
         }
 
-        if (log.isEnabled()) {
-            log.info(Debug.id(data) + " Successfully specialized apply to call in '" + functionNode.getName() + "' id=" + functionNode.getId() + " signature=" + actualCallSiteType + " needsCallee=" + data.needsCallee() + " " + functionNode.getSource().getURL());
-        }
+        explodedArguments.pop();
 
-        return finish();
+        return newFunctionNode;
     }
 
     private static boolean isApply(final CallNode callNode) {

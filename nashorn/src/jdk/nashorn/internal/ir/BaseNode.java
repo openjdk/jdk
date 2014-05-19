@@ -97,7 +97,7 @@ public abstract class BaseNode extends Expression implements FunctionCall, Optim
     }
 
     @Override
-    public Type getType(Function<Symbol, Type> localVariableTypes) {
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
         return type == null ? getMostPessimisticType() : type;
     }
 

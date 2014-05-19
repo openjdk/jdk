@@ -42,7 +42,9 @@
 var forName             = java.lang.Class["forName(String)"];
 var Parser              = forName("jdk.nashorn.internal.parser.Parser").static
 var Compiler            = forName("jdk.nashorn.internal.codegen.Compiler").static
+var CompilationPhases   = forName("jdk.nashorn.internal.codegen.Compiler$CompilationPhases").static;
 var Context             = forName("jdk.nashorn.internal.runtime.Context").static
+var CodeInstaller       = forName("jdk.nashorn.internal.runtime.CodeInstaller").static
 var ScriptEnvironment   = forName("jdk.nashorn.internal.runtime.ScriptEnvironment").static
 var Source              = forName("jdk.nashorn.internal.runtime.Source").static
 var FunctionNode        = forName("jdk.nashorn.internal.ir.FunctionNode").static
@@ -54,9 +56,11 @@ var BinaryNode          = forName("jdk.nashorn.internal.ir.BinaryNode").static
 var ThrowErrorManager   = forName("jdk.nashorn.internal.runtime.Context$ThrowErrorManager").static
 var ErrorManager        = forName("jdk.nashorn.internal.runtime.ErrorManager").static
 var Debug               = forName("jdk.nashorn.internal.runtime.Debug").static
+var String              = forName("java.lang.String").static
+var boolean             = Java.type("boolean");
 
 var parseMethod = Parser.class.getMethod("parse");
-var compileMethod = Compiler.class.getMethod("compile", FunctionNode.class);
+var compileMethod = Compiler.class.getMethod("compile", FunctionNode.class, CompilationPhases.class);
 var getBodyMethod = FunctionNode.class.getMethod("getBody");
 var getStatementsMethod = Block.class.getMethod("getStatements");
 var getInitMethod = VarNode.class.getMethod("getInit");
@@ -65,6 +69,7 @@ var rhsMethod = UnaryNode.class.getMethod("getExpression")
 var lhsMethod = BinaryNode.class.getMethod("lhs")
 var binaryRhsMethod = BinaryNode.class.getMethod("rhs")
 var debugIdMethod = Debug.class.getMethod("id", java.lang.Object.class)
+var compilePhases = CompilationPhases.class.getField("COMPILE_UPTO_BYTECODE").get(null);
 
 // These are method names of methods in FunctionNode class
 var allAssertionList = ['isVarArg', 'needsParentScope', 'needsCallee', 'hasScopeBlock', 'usesSelfSymbol', 'isSplit', 'hasEval', 'allVarsInScope', 'isStrict']
@@ -115,22 +120,23 @@ var getEnvMethod = Context.class.getMethod("getEnv")
 
 var SourceConstructor = Source.class.getConstructor(java.lang.String.class, java.lang.String.class)
 var ParserConstructor = Parser.class.getConstructor(ScriptEnvironment.class, Source.class, ErrorManager.class)
-var CompilerConstructor = Compiler.class.getConstructor(ScriptEnvironment.class)
+var CompilerConstructor = Compiler.class.getConstructor(Context.class, ScriptEnvironment.class, CodeInstaller.class, Source.class, String.class, boolean.class);
 
 // compile(script) -- compiles a script specified as a string with its 
 // source code, returns a jdk.nashorn.internal.ir.FunctionNode object 
 // representing it.
-function compile(source) {
+function compile(source, phases) {
     var source = SourceConstructor.newInstance("<no name>", source);
 
-    var env = getEnvMethod.invoke(getContextMethod.invoke(null))
+    var ctxt = getContextMethod.invoke(null);
+    var env = getEnvMethod.invoke(ctxt);
 
     var parser   = ParserConstructor.newInstance(env, source, ThrowErrorManager.class.newInstance());
     var func     = parseMethod.invoke(parser);
 
-    var compiler = CompilerConstructor.newInstance(env);
+    var compiler = CompilerConstructor.newInstance(ctxt, env, null, source, null, false);
 
-    return compileMethod.invoke(compiler, func);
+    return compileMethod.invoke(compiler, func, phases);
 };
 
 var allAssertions = (function() {
@@ -166,8 +172,8 @@ function test(f) {
 // assertions are true in the first function in the given script; "script"
 // is a string with the source text of the script.
 function testFirstFn(script) {
-    arguments[0] = getFirstFunction(compile(script))
-    test.apply(null, arguments)
+    arguments[0] = getFirstFunction(compile(script, compilePhases));
+    test.apply(null, arguments);
 }
 
 // ---------------------------------- ACTUAL TESTS START HERE --------------

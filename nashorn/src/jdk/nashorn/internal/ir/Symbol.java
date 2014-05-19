@@ -138,7 +138,7 @@ public final class Symbol implements Comparable<Symbol> {
     protected Symbol(final String name, final int flags, final int slot) {
         this.name       = name;
         this.flags      = flags;
-        this.firstSlot       = slot;
+        this.firstSlot  = slot;
         this.fieldIndex = -1;
         if(shouldTrace()) {
             trace("CREATE SYMBOL " + name);

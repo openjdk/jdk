@@ -37,9 +37,6 @@ import jdk.nashorn.internal.codegen.types.Type;
  * @see BinaryNode (local calculations to strongly typed bytecode)
  * @see UnaryNode  (local calculations to strongly typed bytecode)
  * @see CallNode   (dynamicCall)
- *
- * TODO : to be implemented are
- *
  * @see AccessNode (dynamicGet)
  * @see IdentNode  (dynamicGet)
  */

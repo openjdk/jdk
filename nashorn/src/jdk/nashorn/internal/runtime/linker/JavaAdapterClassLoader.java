@@ -39,7 +39,7 @@ import jdk.nashorn.internal.runtime.Context;
  * It can be invoked repeatedly to create multiple adapter classes from the same bytecode; adapter classes that have
  * class-level overrides must be re-created for every set of such overrides. Note that while this class is named
  * "class loader", it does not, in fact, extend {@code ClassLoader}, but rather uses them internally. Instances of this
- * class are normally created by {@link JavaAdapterBytecodeGenerator}.
+ * class are normally created by {@code JavaAdapterBytecodeGenerator}.
  */
 final class JavaAdapterClassLoader {
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");

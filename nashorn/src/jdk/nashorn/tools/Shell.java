@@ -39,7 +39,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.Compiler;
-import jdk.nashorn.internal.codegen.CompilerConstants;
+import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
@@ -259,8 +259,14 @@ public class Shell {
                 }
 
                 //null - pass no code installer - this is compile only
-                new Compiler(env).
-                    compile(CompilerConstants.DEFAULT_SCRIPT_NAME.symbolName(), functionNode);
+                new Compiler(
+                       context,
+                       env,
+                       null,
+                       functionNode.getSource(),
+                       functionNode.getSourceURL(),
+                       env._strict | functionNode.isStrict()).
+                       compile(functionNode, CompilationPhases.COMPILE_ALL_NO_INSTALL);
             }
         } finally {
             env.getOut().flush();

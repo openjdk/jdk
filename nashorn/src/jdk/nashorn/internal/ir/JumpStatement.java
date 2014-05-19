@@ -72,7 +72,7 @@ public abstract class JumpStatement extends Statement implements JoinPredecessor
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append(getStatementName());
 
         if (labelName != null) {

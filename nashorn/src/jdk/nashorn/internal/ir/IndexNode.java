@@ -65,23 +65,25 @@ public final class IndexNode extends BaseNode {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         final boolean needsParen = tokenType().needsParens(base.tokenType(), true);
 
         if (needsParen) {
             sb.append('(');
         }
 
-        optimisticTypeToString(sb);
+        if (printType) {
+            optimisticTypeToString(sb);
+        }
 
-        base.toString(sb);
+        base.toString(sb, printType);
 
         if (needsParen) {
             sb.append(')');
         }
 
         sb.append('[');
-        index.toString(sb);
+        index.toString(sb, printType);
         sb.append(']');
     }
 
@@ -105,7 +107,7 @@ public final class IndexNode extends BaseNode {
      * @param index new index expression
      * @return a node equivalent to this one except for the requested change.
      */
-    public IndexNode setIndex(Expression index) {
+    public IndexNode setIndex(final Expression index) {
         if(this.index == index) {
             return this;
         }
@@ -129,7 +131,7 @@ public final class IndexNode extends BaseNode {
     }
 
     @Override
-    public IndexNode setProgramPoint(int programPoint) {
+    public IndexNode setProgramPoint(final int programPoint) {
         if (this.programPoint == programPoint) {
             return this;
         }

@@ -95,13 +95,13 @@ public final class CatchNode extends Statement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printTypes) {
         sb.append(" catch (");
-        exception.toString(sb);
+        exception.toString(sb, printTypes);
 
         if (exceptionCondition != null) {
             sb.append(" if ");
-            exceptionCondition.toString(sb);
+            exceptionCondition.toString(sb, printTypes);
         }
         sb.append(')');
     }

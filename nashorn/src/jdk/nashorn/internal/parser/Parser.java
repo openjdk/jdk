@@ -234,20 +234,7 @@ public class Parser extends AbstractParser implements Loggable {
      * @return function node resulting from successful parse
      */
     public FunctionNode parse() {
-        return parse(PROGRAM.symbolName());
-    }
-
-    /**
-     * Execute parse and return the resulting function node.
-     * Errors will be thrown and the error manager will contain information
-     * if parsing should fail
-     *
-     * @param scriptName name for the script, given to the parsed FunctionNode
-     *
-     * @return function node resulting from successful parse
-     */
-    public FunctionNode parse(final String scriptName) {
-        return parse(scriptName, 0, source.getLength(), false);
+        return parse(PROGRAM.symbolName(), 0, source.getLength(), false);
     }
 
     /**
@@ -3184,7 +3171,7 @@ loop:
 
     @Override
     public String toString() {
-        return "[JavaScript Parsing]";
+        return "'JavaScript Parsing'";
     }
 
     private static void markEval(final LexicalContext lc) {

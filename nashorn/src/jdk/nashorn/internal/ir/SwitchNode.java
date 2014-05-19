@@ -28,6 +28,7 @@ package jdk.nashorn.internal.ir;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -111,9 +112,9 @@ public final class SwitchNode extends BreakableStatement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("switch (");
-        expression.toString(sb);
+        expression.toString(sb, printType);
         sb.append(')');
     }
 

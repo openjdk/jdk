@@ -26,7 +26,9 @@
 package jdk.nashorn.internal.ir;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.Label;
 
 /**
@@ -126,7 +128,7 @@ public abstract class LoopNode extends BreakableStatement {
 
     @Override
     public List<Label> getLabels() {
-        return Arrays.asList(breakLabel, continueLabel);
+        return Collections.unmodifiableList(Arrays.asList(breakLabel, continueLabel));
     }
 
     @Override

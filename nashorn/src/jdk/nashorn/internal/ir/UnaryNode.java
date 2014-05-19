@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -123,7 +124,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
 
     private static final Function<Symbol, Type> UNKNOWN_LOCALS = new Function<Symbol, Type>() {
         @Override
-        public Type apply(Symbol t) {
+        public Type apply(final Symbol t) {
             return null;
         }
     };
@@ -166,7 +167,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     }
 
     @Override
-    public UnaryNode setAssignmentDest(Expression n) {
+    public UnaryNode setAssignmentDest(final Expression n) {
         return setExpression(n);
     }
 
@@ -209,13 +210,15 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
-        toString(sb, new Runnable() {
-            @Override
-            public void run() {
-                sb.append(getExpression().toString());
-            }
-        });
+    public void toString(final StringBuilder sb, final boolean printType) {
+        toString(sb,
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        getExpression().toString(sb, printType);
+                    }
+                },
+                printType);
     }
 
     /**
@@ -223,9 +226,10 @@ public final class UnaryNode extends Expression implements Assignment<Expression
      * operand to a specified runnable.
      * @param sb the string builder to use
      * @param rhsStringBuilder the runnable that appends the string representation of the operand to the string builder
+     * @param printType should we print type
      * when invoked.
      */
-    public void toString(final StringBuilder sb, final Runnable rhsStringBuilder) {
+    public void toString(final StringBuilder sb, final Runnable rhsStringBuilder, final boolean printType) {
         final TokenType tokenType = tokenType();
         final String    name      = tokenType.getName();
         final boolean   isPostfix = tokenType == DECPOSTFIX || tokenType == INCPOSTFIX;
@@ -233,7 +237,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         if (isOptimistic()) {
             sb.append(Expression.OPT_IDENTIFIER);
         }
-        boolean rhsParen   = tokenType.needsParens(getExpression().tokenType(), false);
+        boolean rhsParen = tokenType.needsParens(getExpression().tokenType(), false);
 
         if (!isPostfix) {
             if (name == null) {
@@ -321,7 +325,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     }
 
     @Override
-    public Type getType(Function<Symbol, Type> localVariableTypes) {
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
         final Type widest = getWidestOperationType(localVariableTypes);
         if(type == null) {
             return widest;
@@ -330,7 +334,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     }
 
     @Override
-    public UnaryNode setType(Type type) {
+    public UnaryNode setType(final Type type) {
         if (this.type == type) {
             return this;
         }

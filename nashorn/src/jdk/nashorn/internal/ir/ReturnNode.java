@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import static jdk.nashorn.internal.parser.TokenType.RETURN;
 import static jdk.nashorn.internal.parser.TokenType.YIELD;
-
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -100,11 +99,11 @@ public class ReturnNode extends Statement {
 
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append(isYield() ? "yield" : "return");
         if (expression != null) {
             sb.append(' ');
-            expression.toString(sb);
+            expression.toString(sb, printType);
         }
     }
 

@@ -57,10 +57,8 @@ import java.util.logging.Level;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import jdk.nashorn.internal.codegen.CompilationEnvironment;
-import jdk.nashorn.internal.codegen.CompilationEnvironment.CompilationPhases;
 import jdk.nashorn.internal.codegen.Compiler;
-import jdk.nashorn.internal.codegen.CompilerConstants;
+import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
@@ -944,7 +942,7 @@ public final class Context {
         }
 
         if (env._print_parse) {
-            getErr().println(new PrintVisitor(functionNode));
+            getErr().println(new PrintVisitor(functionNode, true, false));
         }
 
         if (env._parse_only) {
@@ -956,18 +954,17 @@ public final class Context {
         final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
-        final CompilationPhases phases = CompilationEnvironment.CompilationPhases.EAGER;
-        final Compiler compiler = new Compiler(
-                new CompilationEnvironment(
-                    this,
-                    phases.
-                        makeOptimistic(
-                            ScriptEnvironment.globalOptimistic()),
-                    strict),
-                installer);
+        final CompilationPhases phases = Compiler.CompilationPhases.COMPILE_ALL;
 
-        final FunctionNode newFunctionNode = compiler.compile(CompilerConstants.DEFAULT_SCRIPT_NAME.symbolName(), functionNode);
-        script = compiler.install(newFunctionNode);
+        final Compiler compiler = new Compiler(
+                this,
+                env,
+                installer,
+                source,
+                functionNode.getSourceURL(),
+                strict | functionNode.isStrict());
+
+        script = compiler.compile(functionNode, phases).getRootClass();
         cacheClass(source, script);
 
         return script;

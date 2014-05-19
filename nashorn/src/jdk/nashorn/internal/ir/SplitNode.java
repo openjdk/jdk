@@ -25,8 +25,12 @@
 
 package jdk.nashorn.internal.ir;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -36,7 +40,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * Node indicating code is split across classes.
  */
 @Immutable
-public class SplitNode extends LexicalContextStatement {
+public class SplitNode extends LexicalContextStatement implements Labels {
     /** Split node method name. */
     private final String name;
 
@@ -62,12 +66,12 @@ public class SplitNode extends LexicalContextStatement {
         this.compileUnit = compileUnit;
     }
 
-    private SplitNode(final SplitNode splitNode, final Block body) {
+    private SplitNode(final SplitNode splitNode, final Block body, final CompileUnit compileUnit, final Map<Label, JoinPredecessor> jumps) {
         super(splitNode);
         this.name        = splitNode.name;
         this.body        = body;
-        this.compileUnit = splitNode.compileUnit;
-        this.jumps = splitNode.jumps;
+        this.compileUnit = compileUnit;
+        this.jumps       = jumps;
     }
 
     /**
@@ -82,7 +86,7 @@ public class SplitNode extends LexicalContextStatement {
         if (this.body == body) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new SplitNode(this, body));
+        return Node.replaceInLexicalContext(lc, this, new SplitNode(this, body, compileUnit, jumps));
     }
 
     @Override
@@ -94,11 +98,11 @@ public class SplitNode extends LexicalContextStatement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("<split>(");
         sb.append(compileUnit.getClass().getSimpleName());
         sb.append(") ");
-        body.toString(sb);
+        body.toString(sb, printType);
     }
 
     /**
@@ -118,13 +122,26 @@ public class SplitNode extends LexicalContextStatement {
     }
 
     /**
+     * Set the compile unit for this split node
+     * @param lc lexical context
+     * @param compileUnit compile unit
+     * @return new node if changed, otherwise same node
+     */
+    public SplitNode setCompileUnit(final LexicalContext lc, final CompileUnit compileUnit) {
+        if (this.compileUnit == compileUnit) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new SplitNode(this, body, compileUnit, jumps));
+    }
+
+    /**
      * Adds a jump that crosses this split node's boundary (it originates within the split node, and goes to a target
      * outside of it).
      * @param jumpOrigin the join predecessor that's the origin of the jump
      * @param targetLabel the label that's the target of the jump.
      */
     public void addJump(final JoinPredecessor jumpOrigin, final Label targetLabel) {
-        if(jumps == null) {
+        if (jumps == null) {
             jumps = new HashMap<>();
         }
         jumps.put(targetLabel, jumpOrigin);
@@ -137,5 +154,10 @@ public class SplitNode extends LexicalContextStatement {
      */
     public JoinPredecessor getJumpOrigin(final Label targetLabel) {
         return jumps == null ? null : jumps.get(targetLabel);
+    }
+
+    @Override
+    public List<Label> getLabels() {
+        return Collections.unmodifiableList(new ArrayList<>(jumps.keySet()));
     }
 }

@@ -60,7 +60,7 @@ public final class WhileNode extends LoopNode {
      * @param controlFlowEscapes control flow escapes?
      * @param conversion TODO
      */
-    private WhileNode(final WhileNode whileNode, final JoinPredecessorExpression test, final Block body, final boolean controlFlowEscapes, LocalVariableConversion conversion) {
+    private WhileNode(final WhileNode whileNode, final JoinPredecessorExpression test, final Block body, final boolean controlFlowEscapes, final LocalVariableConversion conversion) {
         super(whileNode, test, body, controlFlowEscapes, conversion);
         this.isDoWhile = whileNode.isDoWhile;
     }
@@ -133,9 +133,9 @@ public final class WhileNode extends LoopNode {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("while (");
-        test.toString(sb);
+        test.toString(sb, printType);
         sb.append(')');
     }
 
