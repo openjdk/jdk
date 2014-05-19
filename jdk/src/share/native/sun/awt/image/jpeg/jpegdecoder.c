@@ -47,6 +47,12 @@
 #include <jpeglib.h>
 #include "jerror.h"
 
+#ifdef __APPLE__
+/* use setjmp/longjmp versions that do not save/restore the signal mask */
+#define setjmp _setjmp
+#define longjmp _longjmp
+#endif
+
 /* The method IDs we cache. Note that the last two belongs to the
  * java.io.InputStream class.
  */
