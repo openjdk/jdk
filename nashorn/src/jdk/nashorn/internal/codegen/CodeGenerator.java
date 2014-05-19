@@ -2256,6 +2256,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     }
 
                     @Override
+                    public boolean enterObjectNode(ObjectNode objectNode) {
+                        return false;
+                    }
+
+                    @Override
                     public boolean enterDefault(final Node node) {
                         if (contains) {
                             return false;
