@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,18 +92,16 @@ public final class AudioPlayer extends Thread {
         private static AudioPlayer getAudioPlayer() {
 
             if(DEBUG) { System.out.println("> AudioPlayer.getAudioPlayer()"); }
-            AudioPlayer audioPlayer;
-            PrivilegedAction action = new PrivilegedAction() {
-                    public Object run() {
-                        Thread t = new AudioPlayer();
+            PrivilegedAction<AudioPlayer> action = new PrivilegedAction<AudioPlayer>() {
+                    public AudioPlayer run() {
+                        AudioPlayer t = new AudioPlayer();
                         t.setPriority(MAX_PRIORITY);
                         t.setDaemon(true);
                         t.start();
                         return t;
                     }
                 };
-            audioPlayer = (AudioPlayer) AccessController.doPrivileged(action);
-            return audioPlayer;
+            return  AccessController.doPrivileged(action);
         }
 
         /**
