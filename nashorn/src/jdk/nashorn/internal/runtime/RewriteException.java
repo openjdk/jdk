@@ -230,7 +230,7 @@ public class RewriteException extends Exception {
             return (Object[])obj;
         }
 
-        assert obj instanceof int[] || obj instanceof long[] || obj instanceof double[] : obj.getClass().getName();
+        assert obj instanceof int[] || obj instanceof long[] || obj instanceof double[] : obj + " is " + obj.getClass().getName();
 
         final int l = Array.getLength(obj);
         final Object[] out = new Object[l];

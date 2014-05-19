@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
@@ -129,7 +130,19 @@ public abstract class Node implements Cloneable {
      *
      * @param sb a StringBuilder
      */
-    public abstract void toString(StringBuilder sb);
+    public void toString(final StringBuilder sb) {
+        toString(sb, true);
+    }
+
+    /**
+     * Print logic that decides whether to show the optimistic type
+     * or not - for example it should not be printed after just parse,
+     * when it hasn't been computed, or has been set to a trivially provable
+     * value
+     * @param sb   string builder
+     * @param printType print type?
+     */
+    public abstract void toString(final StringBuilder sb, final boolean printType);
 
     /**
      * Check if this node has terminal flags, i.e. ends or breaks control flow

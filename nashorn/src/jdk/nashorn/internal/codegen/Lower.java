@@ -146,7 +146,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         });
 
         this.installer = compiler.getCodeInstaller();
-        this.log       = initLogger(compiler.getCompilationEnvironment().getContext());
+        this.log       = initLogger(compiler.getContext());
     }
 
     @Override
@@ -268,12 +268,12 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     }
 
     @Override
-    public Node leaveIN(BinaryNode binaryNode) {
+    public Node leaveIN(final BinaryNode binaryNode) {
         return new RuntimeNode(binaryNode);
     }
 
     @Override
-    public Node leaveINSTANCEOF(BinaryNode binaryNode) {
+    public Node leaveINSTANCEOF(final BinaryNode binaryNode) {
         return new RuntimeNode(binaryNode);
     }
 
@@ -289,7 +289,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     }
 
     @Override
-    public Node leaveCaseNode(CaseNode caseNode) {
+    public Node leaveCaseNode(final CaseNode caseNode) {
         // Try to represent the case test as an integer
         final Node test = caseNode.getTest();
         if (test instanceof LiteralNode) {
@@ -526,7 +526,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         return spliceFinally(newTryNode, rethrows, finallyBody);
     }
 
-    private TryNode ensureUnconditionalCatch(TryNode tryNode) {
+    private TryNode ensureUnconditionalCatch(final TryNode tryNode) {
         final List<CatchNode> catches = tryNode.getCatches();
         if(catches == null || catches.isEmpty() || catches.get(catches.size() - 1).getExceptionCondition() == null) {
             return tryNode;

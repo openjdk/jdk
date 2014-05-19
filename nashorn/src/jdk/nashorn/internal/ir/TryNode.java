@@ -28,6 +28,7 @@ package jdk.nashorn.internal.ir;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -71,7 +72,7 @@ public final class TryNode extends Statement implements JoinPredecessor {
         this.conversion  = null;
     }
 
-    private TryNode(final TryNode tryNode, final Block body, final List<Block> catchBlocks, final Block finallyBody, LocalVariableConversion conversion) {
+    private TryNode(final TryNode tryNode, final Block body, final List<Block> catchBlocks, final Block finallyBody, final LocalVariableConversion conversion) {
         super(tryNode);
         this.body        = body;
         this.catchBlocks = catchBlocks;
@@ -120,7 +121,7 @@ public final class TryNode extends Statement implements JoinPredecessor {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("try ");
     }
 

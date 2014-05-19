@@ -70,7 +70,7 @@ public class BlockStatement extends Statement {
      * @return a block statement with the new statements. It will have the line number, and token of the
      * original statement.
      */
-    public static BlockStatement createReplacement(final Statement stmt, int finish, final List<Statement> newStmts) {
+    public static BlockStatement createReplacement(final Statement stmt, final int finish, final List<Statement> newStmts) {
         return new BlockStatement(stmt.getLineNumber(), new Block(stmt.getToken(), finish, newStmts));
     }
 
@@ -89,8 +89,8 @@ public class BlockStatement extends Statement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
-        block.toString(sb);
+    public void toString(final StringBuilder sb, final boolean printType) {
+        block.toString(sb, printType);
     }
 
     /**

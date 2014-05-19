@@ -70,7 +70,7 @@ public class JoinPredecessorExpression extends Expression implements JoinPredece
     }
 
     @Override
-    public Type getType(Function<Symbol, Type> localVariableTypes) {
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
         return expression.getType(localVariableTypes);
     }
 
@@ -110,7 +110,7 @@ public class JoinPredecessorExpression extends Expression implements JoinPredece
     }
 
     @Override
-    public Node accept(NodeVisitor<? extends LexicalContext> visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if(visitor.enterJoinPredecessorExpression(this)) {
             final Expression expr = getExpression();
             return visitor.leaveJoinPredecessorExpression(expr == null ? this : setExpression((Expression)expr.accept(visitor)));
@@ -119,9 +119,9 @@ public class JoinPredecessorExpression extends Expression implements JoinPredece
     }
 
     @Override
-    public void toString(StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         if(expression != null) {
-            expression.toString(sb);
+            expression.toString(sb, printType);
         }
         if(conversion != null) {
             conversion.toString(sb);

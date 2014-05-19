@@ -26,9 +26,11 @@
 package jdk.nashorn.internal.ir;
 
 import java.util.function.Function;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.parser.TokenType;
 
 /**
  * TernaryNode represent the ternary operator {@code ?:}. Note that for control-flow calculation reasons its branch
@@ -76,15 +78,16 @@ public final class TernaryNode extends Expression {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
-        final boolean testParen  = tokenType().needsParens(getTest().tokenType(), true);
-        final boolean trueParen  = tokenType().needsParens(getTrueExpression().tokenType(), false);
-        final boolean falseParen = tokenType().needsParens(getFalseExpression().tokenType(), false);
+    public void toString(final StringBuilder sb, final boolean printType) {
+        final TokenType tokenType  = tokenType();
+        final boolean   testParen  = tokenType.needsParens(getTest().tokenType(), true);
+        final boolean   trueParen  = tokenType.needsParens(getTrueExpression().tokenType(), false);
+        final boolean   falseParen = tokenType.needsParens(getFalseExpression().tokenType(), false);
 
         if (testParen) {
             sb.append('(');
         }
-        getTest().toString(sb);
+        getTest().toString(sb, printType);
         if (testParen) {
             sb.append(')');
         }
@@ -94,7 +97,7 @@ public final class TernaryNode extends Expression {
         if (trueParen) {
             sb.append('(');
         }
-        getTrueExpression().toString(sb);
+        getTrueExpression().toString(sb, printType);
         if (trueParen) {
             sb.append(')');
         }
@@ -104,7 +107,7 @@ public final class TernaryNode extends Expression {
         if (falseParen) {
             sb.append('(');
         }
-        getFalseExpression().toString(sb);
+        getFalseExpression().toString(sb, printType);
         if (falseParen) {
             sb.append(')');
         }
@@ -118,7 +121,7 @@ public final class TernaryNode extends Expression {
     }
 
     @Override
-    public Type getType(Function<Symbol, Type> localVariableTypes) {
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
         return Type.widestReturnType(getTrueExpression().getType(localVariableTypes), getFalseExpression().getType(localVariableTypes));
     }
 

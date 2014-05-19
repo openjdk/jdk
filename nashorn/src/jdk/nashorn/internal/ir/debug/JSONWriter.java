@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir.debug;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -92,7 +91,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         final Parser       parser     = new Parser(context.getEnv(), new Source(name, code), new Context.ThrowErrorManager(), context.getEnv()._strict, context.getLogger(Parser.class));
         final JSONWriter   jsonWriter = new JSONWriter(includeLoc);
         try {
-            final FunctionNode functionNode = parser.parse(CompilerConstants.PROGRAM.symbolName());
+            final FunctionNode functionNode = parser.parse(); //symbol name is ":program", default
             functionNode.accept(jsonWriter);
             return jsonWriter.getString();
         } catch (final ParserException e) {
@@ -102,7 +101,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
     }
 
     @Override
-    public boolean enterJoinPredecessorExpression(JoinPredecessorExpression joinPredecessorExpression) {
+    public boolean enterJoinPredecessorExpression(final JoinPredecessorExpression joinPredecessorExpression) {
         final Expression expr = joinPredecessorExpression.getExpression();
         if(expr != null) {
             expr.accept(this);

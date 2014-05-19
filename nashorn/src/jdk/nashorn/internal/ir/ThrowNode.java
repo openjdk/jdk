@@ -83,13 +83,13 @@ public final class ThrowNode extends Statement implements JoinPredecessor {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("throw ");
 
         if (expression != null) {
-            expression.toString(sb);
+            expression.toString(sb, printType);
         }
-        if(conversion != null) {
+        if (conversion != null) {
             conversion.toString(sb);
         }
     }

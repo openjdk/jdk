@@ -2260,21 +2260,22 @@ public abstract class ScriptObject implements PropertyAccess {
         final boolean      scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
         if (find != null) {
-            final Object   value        = find.getObjectValue();
-            ScriptFunction func         = null;
-            MethodHandle   methodHandle = null;
+            final Object   value = find.getObjectValue();
+            ScriptFunction func  = null;
+            MethodHandle   mh    = null;
 
             if (value instanceof ScriptFunction) {
                 func = (ScriptFunction)value;
-                methodHandle = getCallMethodHandle(func, desc.getMethodType(), name);
+                mh   = getCallMethodHandle(func, desc.getMethodType(), name);
             }
 
-            if (methodHandle != null) {
-                if (scopeAccess && func.isStrict()) {
-                    methodHandle = bindTo(methodHandle, UNDEFINED);
+            if (mh != null) {
+                assert func != null;
+                if (scopeAccess && func != null && func.isStrict()) {
+                    mh = bindTo(mh, UNDEFINED);
                 }
                 return new GuardedInvocation(
-                        methodHandle,
+                        mh,
                         //TODO this always does a scriptobject check
                         getKnownFunctionPropertyGuard(
                                 getMap(),

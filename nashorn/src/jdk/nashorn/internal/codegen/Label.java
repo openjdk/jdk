@@ -30,6 +30,7 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+
 import jdk.nashorn.internal.codegen.types.Type;
 
 /**
@@ -93,7 +94,7 @@ public final class Label {
         }
 
         Type peek(final int n) {
-            int pos = sp - 1 - n;
+            final int pos = sp - 1 - n;
             return pos < 0 ? null : data[pos];
         }
 
@@ -168,6 +169,7 @@ public final class Label {
         private void mergeVariableTypes(final Stack joinOrigin, final int toSlot) {
             final ListIterator<Type> it1 = localVariableTypes.listIterator();
             final Iterator<Type> it2 = joinOrigin.localVariableTypes.iterator();
+
             for(int i = 0; i < toSlot; ++i) {
                 final Type thisType = it1.next();
                 final Type otherType = it2.next();
@@ -194,11 +196,13 @@ public final class Label {
             mergeVariableTypes(joinOrigin, firstTemp);
         }
 
-        private int getFirstDeadLocal(List<Type> types) {
+        private int getFirstDeadLocal(final List<Type> types) {
             int i = types.size();
             for(final ListIterator<Type> it = types.listIterator(i);
                 it.hasPrevious() && it.previous() == Type.UNKNOWN;
-                --i); // no body
+                --i) {
+                // no body
+            }
 
             // Respect symbol boundaries; we never chop off half a symbol's storage
             while(!symbolBoundary.get(i - 1)) {
@@ -253,7 +257,7 @@ public final class Label {
          * @return a list of widest local variable slot types.
          */
         List<Type> getWidestLiveLocals(final List<Type> lvarTypes) {
-            List<Type> widestLiveLocals = new ArrayList<>(lvarTypes);
+            final List<Type> widestLiveLocals = new ArrayList<>(lvarTypes);
             boolean keepNextValue = true;
             final int size = widestLiveLocals.size();
             for(int i = size - 1; i-- > 0;) {
@@ -522,7 +526,6 @@ public final class Label {
         this.name = label.name;
         this.id   = label.id;
     }
-
 
     jdk.internal.org.objectweb.asm.Label getLabel() {
         if (this.label == null) {

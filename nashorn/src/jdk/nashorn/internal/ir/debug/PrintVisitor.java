@@ -77,25 +77,30 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
     /** Print line numbers */
     private final boolean printLineNumbers;
 
+    /** Print inferred and optimistic types */
+    private final boolean printTypes;
+
     private int lastLineNumber = -1;
 
     /**
      * Constructor.
      */
     public PrintVisitor() {
-        this(true);
+        this(true, true);
     }
 
     /**
      * Constructor
      *
      * @param printLineNumbers  should line number nodes be included in the output?
+     * @param printTypes        should we print optimistic and inferred types?
      */
-    public PrintVisitor(final boolean printLineNumbers) {
+    public PrintVisitor(final boolean printLineNumbers, final boolean printTypes) {
         super(new LexicalContext());
         this.EOLN             = System.lineSeparator();
         this.sb               = new StringBuilder();
         this.printLineNumbers = printLineNumbers;
+        this.printTypes       = printTypes;
     }
 
     /**
@@ -104,7 +109,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
      * @param root  a node from which to start printing code
      */
     public PrintVisitor(final Node root) {
-        this(root, true);
+        this(root, true, true);
     }
 
     /**
@@ -112,9 +117,10 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
      *
      * @param root              a node from which to start printing code
      * @param printLineNumbers  should line numbers nodes be included in the output?
+     * @param printTypes        should we print optimistic and inferred types?
      */
-    public PrintVisitor(final Node root, final boolean printLineNumbers) {
-        this(printLineNumbers);
+    public PrintVisitor(final Node root, final boolean printLineNumbers, final boolean printTypes) {
+        this(printLineNumbers, printTypes);
         visit(root);
     }
 
@@ -142,27 +148,27 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterDefault(final Node node) {
-        node.toString(sb);
+        node.toString(sb, printTypes);
         return false;
     }
 
     @Override
     public boolean enterContinueNode(final ContinueNode node) {
-        node.toString(sb);
+        node.toString(sb, printTypes);
         printLocalVariableConversion(node);
         return false;
     }
 
     @Override
     public boolean enterBreakNode(final BreakNode node) {
-        node.toString(sb);
+        node.toString(sb, printTypes);
         printLocalVariableConversion(node);
         return false;
     }
 
     @Override
     public boolean enterThrowNode(final ThrowNode node) {
-        node.toString(sb);
+        node.toString(sb, printTypes);
         printLocalVariableConversion(node);
         return false;
     }
@@ -240,15 +246,15 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
     }
 
     @Override
-    public boolean enterJoinPredecessorExpression(JoinPredecessorExpression expr) {
+    public boolean enterJoinPredecessorExpression(final JoinPredecessorExpression expr) {
         expr.getExpression().accept(this);
         printLocalVariableConversion(expr);
         return false;
     }
 
     @Override
-    public boolean enterIdentNode(IdentNode identNode) {
-        identNode.toString(sb);
+    public boolean enterIdentNode(final IdentNode identNode) {
+        identNode.toString(sb, printTypes);
         printLocalVariableConversion(identNode);
         return true;
     }
@@ -264,7 +270,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
             public void run() {
                 unaryNode.getExpression().accept(PrintVisitor.this);
             }
-        });
+        }, printTypes);
         return false;
     }
 
@@ -276,21 +282,21 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterForNode(final ForNode forNode) {
-        forNode.toString(sb);
+        forNode.toString(sb, printTypes);
         forNode.getBody().accept(this);
         return false;
     }
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
-        functionNode.toString(sb);
+        functionNode.toString(sb, printTypes);
         enterBlock(functionNode.getBody());
         return false;
     }
 
     @Override
     public boolean enterIfNode(final IfNode ifNode) {
-        ifNode.toString(sb);
+        ifNode.toString(sb, printTypes);
         ifNode.getPass().accept(this);
 
         final Block fail = ifNode.getFail();
@@ -313,7 +319,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
         indent -= TABWIDTH;
         indent();
         indent += TABWIDTH;
-        labeledNode.toString(sb);
+        labeledNode.toString(sb, printTypes);
         labeledNode.getBody().accept(this);
         printLocalVariableConversion(labeledNode);
         return false;
@@ -321,7 +327,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterSplitNode(final SplitNode splitNode) {
-        splitNode.toString(sb);
+        splitNode.toString(sb, printTypes);
         sb.append(EOLN);
         indent += TABWIDTH;
         indent();
@@ -339,7 +345,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterSwitchNode(final SwitchNode switchNode) {
-        switchNode.toString(sb);
+        switchNode.toString(sb, printTypes);
         sb.append(" {");
 
         final List<CaseNode> cases = switchNode.getCases();
@@ -347,7 +353,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
         for (final CaseNode caseNode : cases) {
             sb.append(EOLN);
             indent();
-            caseNode.toString(sb);
+            caseNode.toString(sb, printTypes);
             printLocalVariableConversion(caseNode);
             indent += TABWIDTH;
             caseNode.getBody().accept(this);
@@ -370,7 +376,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterTryNode(final TryNode tryNode) {
-        tryNode.toString(sb);
+        tryNode.toString(sb, printTypes);
         printLocalVariableConversion(tryNode);
         tryNode.getBody().accept(this);
 
@@ -378,7 +384,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
 
         for (final Block catchBlock : catchBlocks) {
             final CatchNode catchNode = (CatchNode)catchBlock.getStatements().get(0);
-            catchNode.toString(sb);
+            catchNode.toString(sb, printTypes);
             catchNode.getBody().accept(this);
         }
 
@@ -395,7 +401,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
     @Override
     public boolean enterVarNode(final VarNode varNode) {
         sb.append("var ");
-        varNode.getName().toString(sb);
+        varNode.getName().toString(sb, printTypes);
         printLocalVariableConversion(varNode.getName());
         final Node init = varNode.getInit();
         if (init != null) {
@@ -413,9 +419,9 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
             sb.append("do");
             whileNode.getBody().accept(this);
             sb.append(' ');
-            whileNode.toString(sb);
+            whileNode.toString(sb, printTypes);
         } else {
-            whileNode.toString(sb);
+            whileNode.toString(sb, printTypes);
             whileNode.getBody().accept(this);
         }
 
@@ -424,7 +430,7 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
 
     @Override
     public boolean enterWithNode(final WithNode withNode) {
-        withNode.toString(sb);
+        withNode.toString(sb, printTypes);
         withNode.getBody().accept(this);
 
         return false;

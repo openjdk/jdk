@@ -114,7 +114,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
     }
 
     @Override
-    public Type getType(Function<Symbol, Type> localVariableTypes) {
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
         if(type != null) {
             return type;
         } else if(symbol != null && symbol.isScope()) {
@@ -139,8 +139,10 @@ public final class IdentNode extends Expression implements PropertyKey, Function
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
-        optimisticTypeToString(sb, symbol == null || !symbol.hasSlot());
+    public void toString(final StringBuilder sb, final boolean printType) {
+        if (printType) {
+            optimisticTypeToString(sb, symbol == null || !symbol.hasSlot());
+        }
         sb.append(name);
     }
 

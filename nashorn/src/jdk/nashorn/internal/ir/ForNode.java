@@ -71,7 +71,7 @@ public final class ForNode extends LoopNode {
     }
 
     private ForNode(final ForNode forNode, final Expression init, final JoinPredecessorExpression test,
-            final Block body, final JoinPredecessorExpression modify, final int flags, final boolean controlFlowEscapes, LocalVariableConversion conversion) {
+            final Block body, final JoinPredecessorExpression modify, final int flags, final boolean controlFlowEscapes, final LocalVariableConversion conversion) {
         super(forNode, test, body, controlFlowEscapes, conversion);
         this.init   = init;
         this.modify = modify;
@@ -82,7 +82,7 @@ public final class ForNode extends LoopNode {
     }
 
     @Override
-    public Node ensureUniqueLabels(LexicalContext lc) {
+    public Node ensureUniqueLabels(final LexicalContext lc) {
         return Node.replaceInLexicalContext(lc, this, new ForNode(this, init, test, body, modify, flags, controlFlowEscapes, conversion));
     }
 
@@ -100,25 +100,25 @@ public final class ForNode extends LoopNode {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printTypes) {
         sb.append("for");
         LocalVariableConversion.toString(conversion, sb).append(' ');
 
         if (isForIn()) {
-            init.toString(sb);
+            init.toString(sb, printTypes);
             sb.append(" in ");
-            modify.toString(sb);
+            modify.toString(sb, printTypes);
         } else {
             if (init != null) {
-                init.toString(sb);
+                init.toString(sb, printTypes);
             }
             sb.append("; ");
             if (test != null) {
-                test.toString(sb);
+                test.toString(sb, printTypes);
             }
             sb.append("; ");
             if (modify != null) {
-                modify.toString(sb);
+                modify.toString(sb, printTypes);
             }
         }
 

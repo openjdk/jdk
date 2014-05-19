@@ -91,11 +91,11 @@ abstract class BreakableStatement extends LexicalContextStatement implements Bre
      */
     @Override
     public List<Label> getLabels() {
-        return Collections.singletonList(breakLabel);
+        return Collections.unmodifiableList(Collections.singletonList(breakLabel));
     }
 
     @Override
-    public JoinPredecessor setLocalVariableConversion(final LexicalContext lc, LocalVariableConversion conversion) {
+    public JoinPredecessor setLocalVariableConversion(final LexicalContext lc, final LocalVariableConversion conversion) {
         if(this.conversion == conversion) {
             return this;
         }

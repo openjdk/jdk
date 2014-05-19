@@ -152,12 +152,12 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
 
     private final Deque<Set<String>> thisProperties = new ArrayDeque<>();
     private final Map<String, Symbol> globalSymbols = new HashMap<>(); //reuse the same global symbol
-    private final CompilationEnvironment env;
+    private final Compiler compiler;
 
-    public AssignSymbols(final CompilationEnvironment env) {
+    public AssignSymbols(final Compiler compiler) {
         super(new LexicalContext());
-        this.env   = env;
-        this.log   = initLogger(env.getContext());
+        this.compiler = compiler;
+        this.log   = initLogger(compiler.getContext());
         this.debug = log.isEnabled();
     }
 
@@ -216,7 +216,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         });
     }
 
-    private IdentNode compilerConstantIdentifier(CompilerConstants cc) {
+    private IdentNode compilerConstantIdentifier(final CompilerConstants cc) {
         return (IdentNode)createImplicitIdentifier(cc.symbolName()).setSymbol(lc.getCurrentFunction().compilerConstant(cc));
     }
 
@@ -382,8 +382,8 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             symbol.setFlags(flags);
         }
 
-        if((isVar || isParam) && env.useOptimisticTypes() && env.isOnDemandCompilation()) {
-            env.declareLocalSymbol(name);
+        if((isVar || isParam) && compiler.useOptimisticTypes() && compiler.isOnDemandCompilation()) {
+            compiler.declareLocalSymbol(name);
         }
 
         return symbol;
@@ -751,7 +751,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
     }
 
     @Override
-    public Node leaveFunctionNode(FunctionNode functionNode) {
+    public Node leaveFunctionNode(final FunctionNode functionNode) {
 
         return markProgramBlock(
                removeUnusedSlots(
@@ -842,8 +842,8 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         return runtimeNode;
     }
 
-    private FunctionNode markProgramBlock(FunctionNode functionNode) {
-        if (env.isOnDemandCompilation() || !functionNode.isProgram()) {
+    private FunctionNode markProgramBlock(final FunctionNode functionNode) {
+        if (compiler.isOnDemandCompilation() || !functionNode.isProgram()) {
             return functionNode;
         }
 

@@ -185,7 +185,7 @@ public final class CallNode extends LexicalContextExpression implements Optimist
     }
 
     @Override
-    public Type getType(Function<Symbol, Type> localVariableTypes) {
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
         return optimisticType == null ? Type.OBJECT : optimisticType;
     }
 
@@ -225,10 +225,14 @@ public final class CallNode extends LexicalContextExpression implements Optimist
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
-        optimisticTypeToString(sb);
+    public void toString(final StringBuilder sb, final boolean printType) {
+        if (printType) {
+            optimisticTypeToString(sb);
+        }
+
         final StringBuilder fsb = new StringBuilder();
-        function.toString(fsb);
+        function.toString(fsb, printType);
+
         if (isApplyToCall()) {
             sb.append(fsb.toString().replace("apply", "[apply => call]"));
         } else {
@@ -246,7 +250,7 @@ public final class CallNode extends LexicalContextExpression implements Optimist
                 first = false;
             }
 
-            arg.toString(sb);
+            arg.toString(sb, printType);
         }
 
         sb.append(')');

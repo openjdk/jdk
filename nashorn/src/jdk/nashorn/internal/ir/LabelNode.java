@@ -82,7 +82,7 @@ public final class LabelNode extends LexicalContextStatement implements JoinPred
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append(labelName).append(':');
     }
 

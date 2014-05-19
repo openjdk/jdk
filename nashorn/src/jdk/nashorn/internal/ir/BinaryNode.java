@@ -143,7 +143,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
 
     private static final Function<Symbol, Type> UNKNOWN_LOCALS = new Function<Symbol, Type>() {
         @Override
-        public Type apply(Symbol t) {
+        public Type apply(final Symbol t) {
             return null;
         }
     };
@@ -250,7 +250,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         }
     }
 
-    private static Type booleanToInt(Type type) {
+    private static Type booleanToInt(final Type type) {
         return type == Type.BOOLEAN ? Type.INT : type;
     }
 
@@ -291,7 +291,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
     }
 
     @Override
-    public BinaryNode setAssignmentDest(Expression n) {
+    public BinaryNode setAssignmentDest(final Expression n) {
         return setLHS(n);
     }
 
@@ -377,7 +377,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         final TokenType tokenType = tokenType();
 
         final boolean lhsParen = tokenType.needsParens(lhs().tokenType(), true);
@@ -387,7 +387,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
             sb.append('(');
         }
 
-        lhs().toString(sb);
+        lhs().toString(sb, printType);
 
         if (lhsParen) {
             sb.append(')');
@@ -420,7 +420,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         if (rhsParen) {
             sb.append('(');
         }
-        rhs().toString(sb);
+        rhs().toString(sb, printType);
         if (rhsParen) {
             sb.append(')');
         }
@@ -531,7 +531,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
     }
 
     @Override
-    public BinaryNode setType(Type type) {
+    public BinaryNode setType(final Type type) {
         if (this.type == type) {
             return this;
         }

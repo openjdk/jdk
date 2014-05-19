@@ -69,16 +69,18 @@ public final class AccessNode extends BaseNode {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         final boolean needsParen = tokenType().needsParens(getBase().tokenType(), true);
 
-        optimisticTypeToString(sb);
+        if (printType) {
+            optimisticTypeToString(sb);
+        }
 
         if (needsParen) {
             sb.append('(');
         }
 
-        base.toString(sb);
+        base.toString(sb, printType);
 
         if (needsParen) {
             sb.append(')');
@@ -113,7 +115,7 @@ public final class AccessNode extends BaseNode {
     }
 
     @Override
-    public AccessNode setProgramPoint(int programPoint) {
+    public AccessNode setProgramPoint(final int programPoint) {
         if (this.programPoint == programPoint) {
             return this;
         }

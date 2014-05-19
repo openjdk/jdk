@@ -49,7 +49,7 @@ final class ScriptLoader extends NashornLoader {
     }
 
     @Override
-    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
         checkPackageAccess(name);
         if (name.startsWith(NASHORN_PKG_PREFIX)) {
             return context.getSharedLoader().loadClass(name);

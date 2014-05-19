@@ -138,13 +138,13 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("var ");
-        name.toString(sb);
+        name.toString(sb, printType);
 
         if (init != null) {
             sb.append(" = ");
-            init.toString(sb);
+            init.toString(sb, printType);
         }
     }
 

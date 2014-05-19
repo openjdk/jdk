@@ -28,6 +28,8 @@ package jdk.nashorn.internal.codegen;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.TreeSet;
+
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 
@@ -36,7 +38,7 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
  */
 public final class CompileUnit implements Comparable<CompileUnit> {
     /** Current class name */
-    private final String className;
+    private String className;
 
     /** Current class generator */
     private ClassEmitter classEmitter;
@@ -67,24 +69,22 @@ public final class CompileUnit implements Comparable<CompileUnit> {
 
         @Override
         public boolean equals(final Object obj) {
-            if(obj == null || obj.getClass() != FunctionInitializer.class) {
+            if (obj == null || obj.getClass() != FunctionInitializer.class) {
                 return false;
             }
             final FunctionInitializer other = (FunctionInitializer)obj;
             return data == other.data && functionNode == other.functionNode;
         }
-
-
-    }
-
-    CompileUnit(final String className, final ClassEmitter classEmitter) {
-        this(className, classEmitter, 0L);
     }
 
     CompileUnit(final String className, final ClassEmitter classEmitter, final long initialWeight) {
         this.className    = className;
-        this.classEmitter = classEmitter;
         this.weight       = initialWeight;
+        this.classEmitter = classEmitter;
+    }
+
+    static Set<CompileUnit> createCompileUnitSet() {
+        return new TreeSet<>();
     }
 
     /**
@@ -126,7 +126,7 @@ public final class CompileUnit implements Comparable<CompileUnit> {
     }
 
     void initializeFunctionsCode() {
-        for(final FunctionInitializer init: functionInitializers) {
+        for(final FunctionInitializer init : functionInitializers) {
             init.initializeCode();
         }
         functionInitializers = Collections.emptySet();
@@ -173,13 +173,25 @@ public final class CompileUnit implements Comparable<CompileUnit> {
         return className;
     }
 
-    @Override
-    public String toString() {
-        return "[classname=" + className + " weight=" + weight + '/' + Splitter.SPLIT_THRESHOLD + ']';
+    /**
+     * Reset the class name for this compile unit
+     * @param className new class name
+     */
+    public void setUnitClassName(final String className) {
+        this.className = className;
+    }
+
+    private static String shortName(final String name) {
+        return name.lastIndexOf('/') == -1 ? name : name.substring(name.lastIndexOf('/') + 1);
     }
 
     @Override
-    public int compareTo(CompileUnit o) {
+    public String toString() {
+        return "[CompileUnit className=" + shortName(className) + " weight=" + weight + '/' + Splitter.SPLIT_THRESHOLD + ']';
+    }
+
+    @Override
+    public int compareTo(final CompileUnit o) {
         return className.compareTo(o.className);
     }
 }

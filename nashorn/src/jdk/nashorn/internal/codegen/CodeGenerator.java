@@ -253,16 +253,20 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     // Number of live locals on entry to (and thus also break from) labeled blocks.
     private final IntDeque labeledBlockBreakLiveLocals = new IntDeque();
 
+    //is this a rest of compilation
+    private final int[] continuationEntryPoints;
+
     /**
      * Constructor.
      *
      * @param compiler
      */
-    CodeGenerator(final Compiler compiler) {
+    CodeGenerator(final Compiler compiler, final int[] continuationEntryPoints) {
         super(new CodeGeneratorLexicalContext());
-        this.compiler      = compiler;
-        this.callSiteFlags = compiler.getEnv()._callsite_flags;
-        this.log           = initLogger(compiler.getCompilationEnvironment().getContext());
+        this.compiler                = compiler;
+        this.continuationEntryPoints = continuationEntryPoints;
+        this.callSiteFlags           = compiler.getEnv()._callsite_flags;
+        this.log                     = initLogger(compiler.getContext());
     }
 
     @Override
@@ -324,8 +328,36 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return method;
     }
 
+    private boolean isRestOf() {
+        return continuationEntryPoints != null;
+    }
+
     private boolean isOptimisticOrRestOf() {
-        return useOptimisticTypes() || compiler.getCompilationEnvironment().isCompileRestOf();
+        return useOptimisticTypes() || isRestOf();
+    }
+
+    private boolean isCurrentContinuationEntryPoint(final int programPoint) {
+        return isRestOf() && getCurrentContinuationEntryPoint() == programPoint;
+    }
+
+    private int[] getContinuationEntryPoints() {
+        return isRestOf() ? continuationEntryPoints : null;
+    }
+
+    private int getCurrentContinuationEntryPoint() {
+        return isRestOf() ? continuationEntryPoints[0] : INVALID_PROGRAM_POINT;
+    }
+
+    private boolean isContinuationEntryPoint(final int programPoint) {
+        if (isRestOf()) {
+            assert continuationEntryPoints != null;
+            for (final int cep : continuationEntryPoints) {
+                if (cep == programPoint) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -406,6 +438,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         void getProto() {
+            //empty
         }
 
         @Override
@@ -443,7 +476,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         //information.
         final FunctionNode fn   = lc.getCurrentFunction();
         final int          fnId = fn.getId();
-        final int externalDepth = compiler.getCompilationEnvironment().getScriptFunctionData(fnId).getExternalSymbolDepth(symbol.getName());
+        final int externalDepth = compiler.getScriptFunctionData(fnId).getExternalSymbolDepth(symbol.getName());
 
         //count the number of scopes from this place to the start of the function
 
@@ -589,11 +622,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return maybeNew(objectToNumber(narrowest), objectToNumber(widest));
         }
 
-        private static Type booleanToInt(Type t) {
+        private static Type booleanToInt(final Type t) {
             return t == Type.BOOLEAN ? Type.INT : t;
         }
 
-        private static Type objectToNumber(Type t) {
+        private static Type objectToNumber(final Type t) {
             return t.isObject() ? Type.NUMBER : t;
         }
 
@@ -805,7 +838,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             @Override
-            public boolean enterSUB(UnaryNode unaryNode) {
+            public boolean enterSUB(final UnaryNode unaryNode) {
                 loadSUB(unaryNode, resultBounds);
                 return false;
             }
@@ -877,19 +910,19 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             @Override
-            public boolean enterNOT(UnaryNode unaryNode) {
+            public boolean enterNOT(final UnaryNode unaryNode) {
                 loadNOT(unaryNode);
                 return false;
             }
 
             @Override
-            public boolean enterADD(UnaryNode unaryNode) {
+            public boolean enterADD(final UnaryNode unaryNode) {
                 loadADD(unaryNode, resultBounds);
                 return false;
             }
 
             @Override
-            public boolean enterBIT_NOT(UnaryNode unaryNode) {
+            public boolean enterBIT_NOT(final UnaryNode unaryNode) {
                 loadBIT_NOT(unaryNode);
                 return false;
             }
@@ -913,7 +946,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             @Override
-            public boolean enterVOID(UnaryNode unaryNode) {
+            public boolean enterVOID(final UnaryNode unaryNode) {
                 loadVOID(unaryNode, resultBounds);
                 return false;
             }
@@ -1041,7 +1074,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private boolean useOptimisticTypes() {
-        return !lc.inSplitNode() && compiler.getCompilationEnvironment().useOptimisticTypes();
+        return !lc.inSplitNode() && compiler.useOptimisticTypes();
     }
 
     @Override
@@ -1438,7 +1471,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @param flags the flags that need optimism stripped from them.
      * @return flags without optimism
      */
-    static int nonOptimisticFlags(int flags) {
+    static int nonOptimisticFlags(final int flags) {
         return flags & ~(CALLSITE_OPTIMISTIC | -1 << CALLSITE_PROGRAM_POINT_SHIFT);
     }
 
@@ -1626,12 +1659,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 } else if (symbol.isParam() && (varsInScope || hasArguments || symbol.isScope())) {
                     assert symbol.isScope()   : "scope for " + symbol + " should have been set in AssignSymbols already " + function.getName() + " varsInScope="+varsInScope+" hasArguments="+hasArguments+" symbol.isScope()=" + symbol.isScope();
                     assert !(hasArguments && symbol.hasSlot())  : "slot for " + symbol + " should have been removed in Lower already " + function.getName();
-                    final Type paramType;
+
+                    final Type   paramType;
                     final Symbol paramSymbol;
-                    if(hasArguments) {
+
+                    if (hasArguments) {
                         assert !symbol.hasSlot()  : "slot for " + symbol + " should have been removed in Lower already ";
                         paramSymbol = null;
-                        paramType = null;
+                        paramType   = null;
                     } else {
                         paramSymbol = symbol;
                         // NOTE: We're relying on the fact here that Block.symbols is a LinkedHashMap, hence it will
@@ -1647,11 +1682,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                             }
                         }
                     }
+
                     tuples.add(new MapTuple<Symbol>(symbol.getName(), symbol, paramType, paramSymbol) {
                         //this symbol will be put fielded, we can't initialize it as undefined with a known type
                         @Override
                         public Class<?> getValueType() {
-                            return OBJECT_FIELDS_ONLY || value == null || paramType.isBoolean() ? Object.class : paramType.getTypeClass();
+                            if (OBJECT_FIELDS_ONLY || value == null || paramType == null) {
+                                return Object.class;
+                            }
+                            return paramType.isBoolean() ? Object.class : paramType.getTypeClass();
                         }
                     });
                 }
@@ -1718,13 +1757,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
     }
 
-    private void initializeInternalFunctionParameter(CompilerConstants cc, final FunctionNode fn, final Label functionStart, final int slot) {
+    private void initializeInternalFunctionParameter(final CompilerConstants cc, final FunctionNode fn, final Label functionStart, final int slot) {
         final Symbol symbol = initializeInternalFunctionOrSplitParameter(cc, fn, functionStart, slot);
         // Internal function params (:callee, this, and :varargs) are never expanded to multiple slots
         assert symbol.getFirstSlot() == slot;
     }
 
-    private Symbol initializeInternalFunctionOrSplitParameter(CompilerConstants cc, final FunctionNode fn, final Label functionStart, final int slot) {
+    private Symbol initializeInternalFunctionOrSplitParameter(final CompilerConstants cc, final FunctionNode fn, final Label functionStart, final int slot) {
         final Symbol symbol = fn.getBody().getExistingSymbol(cc.symbolName());
         final Type type = Type.typeFor(cc.type());
         method.initializeMethodParameter(symbol, type, functionStart);
@@ -1739,7 +1778,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * and we need to spread them into their new locations.
      * @param function the function for which parameter-spreading code needs to be emitted
      */
-    private void expandParameterSlots(FunctionNode function) {
+    private void expandParameterSlots(final FunctionNode function) {
         final List<IdentNode> parameters = function.getParameters();
         // Calculate the total number of incoming parameter slots
         int currentIncomingSlot = function.needsCallee() ? 2 : 1;
@@ -1787,7 +1826,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * doing an on-demand ("just-in-time") compilation, then we aren't generating code for inner functions.
      */
     private boolean compileOutermostOnly() {
-        return RecompilableScriptFunctionData.LAZY_COMPILATION || compiler.getCompilationEnvironment().isOnDemandCompilation();
+        return RecompilableScriptFunctionData.LAZY_COMPILATION || compiler.isOnDemandCompilation();
     }
 
     @Override
@@ -1818,10 +1857,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             unit = lc.pushCompileUnit(functionNode.getCompileUnit());
             assert lc.hasCompileUnits();
 
-            final CompilationEnvironment compEnv = compiler.getCompilationEnvironment();
-            final boolean isRestOf = compEnv.isCompileRestOf();
             final ClassEmitter classEmitter = unit.getClassEmitter();
-            pushMethodEmitter(isRestOf ? classEmitter.restOfMethod(functionNode) : classEmitter.method(functionNode));
+            pushMethodEmitter(isRestOf() ? classEmitter.restOfMethod(functionNode) : classEmitter.method(functionNode));
             method.setPreventUndefinedLoad();
             if(useOptimisticTypes()) {
                 lc.pushUnwarrantedOptimismHandlers();
@@ -1832,7 +1869,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             method.begin();
 
-            if (isRestOf) {
+            if (isRestOf()) {
                 final ContinuationInfo ci = new ContinuationInfo();
                 fnIdToContinuationInfo.put(fnId, ci);
                 method.gotoLoopStart(ci.getHandlerLabel());
@@ -1868,8 +1905,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 markOptimistic = false;
             }
 
-            FunctionNode newFunctionNode = functionNode.setState(lc, CompilationState.EMITTED);
-            if(markOptimistic) {
+            FunctionNode newFunctionNode = functionNode.setState(lc, CompilationState.BYTECODE_GENERATED);
+            if (markOptimistic) {
                 newFunctionNode = newFunctionNode.setFlag(lc, FunctionNode.IS_DEOPTIMIZABLE);
             }
 
@@ -1972,6 +2009,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 unit = lc.pushCompileUnit(arrayUnit.getCompileUnit());
 
                 final String className = unit.getUnitClassName();
+                assert unit != null;
                 final String name      = currentFunction.uniqueName(SPLIT_PREFIX.symbolName());
                 final String signature = methodDescriptor(type, ScriptFunction.class, Object.class, ScriptObject.class, type);
 
@@ -2213,7 +2251,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             public Boolean get() {
                 value.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                     @Override
-                    public boolean enterFunctionNode(FunctionNode functionNode) {
+                    public boolean enterFunctionNode(final FunctionNode functionNode) {
                         return false;
                     }
 
@@ -2240,11 +2278,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         final List<MapTuple<Expression>> tuples = new ArrayList<>();
         final List<PropertyNode> gettersSetters = new ArrayList<>();
-        Expression protoNode = null;
+        final int ccp = getCurrentContinuationEntryPoint();
 
+        Expression protoNode = null;
         boolean restOfProperty = false;
-        final CompilationEnvironment env = compiler.getCompilationEnvironment();
-        final int ccp = env.getCurrentContinuationEntryPoint();
 
         for (final PropertyNode propertyNode : elements) {
             final Expression value = propertyNode.getValue();
@@ -2366,15 +2403,17 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Symbol rhsSymbol = rhs instanceof IdentNode ? ((IdentNode)rhs).getSymbol() : null;
         // One must be a "undefined" identifier, otherwise we can't get here
         assert lhsSymbol != null || rhsSymbol != null;
+
         final Symbol undefinedSymbol;
-        if(isUndefinedSymbol(lhsSymbol)) {
+        if (isUndefinedSymbol(lhsSymbol)) {
             undefinedSymbol = lhsSymbol;
         } else {
             assert isUndefinedSymbol(rhsSymbol);
             undefinedSymbol = rhsSymbol;
         }
 
-        if (!undefinedSymbol.isScope()) {
+        assert undefinedSymbol != null; //remove warning
+        if (undefinedSymbol == null || !undefinedSymbol.isScope()) {
             return false; //disallow undefined as local var or parameter
         }
 
@@ -2391,15 +2430,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
-        final CompilationEnvironment  env = compiler.getCompilationEnvironment();
         // TODO: why?
-        if (env.isCompileRestOf()) {
+        if (isRestOf()) {
             return false;
         }
 
         //make sure that undefined has not been overridden or scoped as a local var
         //between us and global
-        if (!env.isGlobalSymbol(lc.getCurrentFunction(), "undefined")) {
+        if (!compiler.isGlobalSymbol(lc.getCurrentFunction(), "undefined")) {
             return false;
         }
 
@@ -2532,8 +2570,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @return true if the expression or any of its subexpressions was deoptimized in the current recompilation chain.
      */
     private boolean isDeoptimizedExpression(final Expression rootExpr) {
-        final CompilationEnvironment env = compiler.getCompilationEnvironment();
-        if(!env.isCompileRestOf()) {
+        if(!isRestOf()) {
             return false;
         }
         return new Supplier<Boolean>() {
@@ -2542,14 +2579,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             public Boolean get() {
                 rootExpr.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                     @Override
-                    public boolean enterFunctionNode(FunctionNode functionNode) {
+                    public boolean enterFunctionNode(final FunctionNode functionNode) {
                         return false;
                     }
                     @Override
                     public boolean enterDefault(final Node node) {
                         if(!contains && node instanceof Optimistic) {
                             final int pp = ((Optimistic)node).getProgramPoint();
-                            contains = isValid(pp) && env.isContinuationEntryPoint(pp);
+                            contains = isValid(pp) && isContinuationEntryPoint(pp);
                         }
                         return !contains;
                     }
@@ -2806,12 +2843,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
-        final CaseNode defaultCase = switchNode.getDefaultCase();
-        final Label breakLabel  = switchNode.getBreakLabel();
-        final int liveLocalsOnBreak = method.getUsedSlotsWithLiveTemporaries();
+        final CaseNode defaultCase       = switchNode.getDefaultCase();
+        final Label    breakLabel        = switchNode.getBreakLabel();
+        final int      liveLocalsOnBreak = method.getUsedSlotsWithLiveTemporaries();
 
-        final boolean hasDefault = defaultCase != null;
-        if(hasDefault && cases.size() == 1) {
+        if (defaultCase != null && cases.size() == 1) {
             // default case only
             assert cases.get(0) == defaultCase;
             loadAndDiscard(expression);
@@ -2822,7 +2858,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         // NOTE: it can still change in the tableswitch/lookupswitch case if there's no default case
         // but we need to add a synthetic default case for local variable conversions
-        Label defaultLabel = hasDefault? defaultCase.getEntry() : breakLabel;
+        Label defaultLabel = defaultCase != null ? defaultCase.getEntry() : breakLabel;
         final boolean hasSkipConversion = LocalVariableConversion.hasLiveConversion(switchNode);
 
         if (switchNode.isInteger()) {
@@ -2922,7 +2958,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     method.ifne(caseNode.getEntry());
                 }
             }
-            if(hasDefault) {
+
+            if (defaultCase != null) {
                 method._goto(defaultLabel);
             } else {
                 method.beforeJoinPoint(switchNode);
@@ -3244,9 +3281,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.label(repeatLabel);
         final int liveLocalsOnContinue = method.getUsedSlotsWithLiveTemporaries();
 
-        final Block body = loopNode.getBody();
-        final Label breakLabel = loopNode.getBreakLabel();
+        final Block   body                  = loopNode.getBody();
+        final Label   breakLabel            = loopNode.getBreakLabel();
         final boolean testHasLiveConversion = test != null && LocalVariableConversion.hasLiveConversion(test);
+
         if(Expression.isAlwaysTrue(test)) {
             if(test != null) {
                 loadAndDiscard(test);
@@ -3254,12 +3292,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     method.beforeJoinPoint(test);
                 }
             }
-        } else if(testHasLiveConversion) {
-            emitBranch(test.getExpression(), body.getEntryLabel(), true);
-            method.beforeJoinPoint(test);
-            method._goto(breakLabel);
-        } else {
-            emitBranch(test.getExpression(), breakLabel, false);
+        } else if (test != null) {
+            if (testHasLiveConversion) {
+                emitBranch(test.getExpression(), body.getEntryLabel(), true);
+                method.beforeJoinPoint(test);
+                method._goto(breakLabel);
+            } else {
+                emitBranch(test.getExpression(), breakLabel, false);
+            }
         }
 
         body.accept(this);
@@ -3376,7 +3416,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method._try(tryLabel, endLabel, catchLabel);
             }
 
-            boolean reachable = method.isReachable();
+            final boolean reachable = method.isReachable();
             if(reachable) {
                 popScope();
                 if(bodyCanThrow) {
@@ -3955,13 +3995,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     @Override
-    public boolean enterLabelNode(LabelNode labelNode) {
+    public boolean enterLabelNode(final LabelNode labelNode) {
         labeledBlockBreakLiveLocals.push(lc.getUsedSlotCount());
         return true;
     }
 
     @Override
-    protected boolean enterDefault(Node node) {
+    protected boolean enterDefault(final Node node) {
         throw new AssertionError("Code generator entered node of type " + node.getClass().getName());
     }
 
@@ -3973,7 +4013,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Label falseLabel = new Label("ternary_false");
         final Label exitLabel  = new Label("ternary_exit");
 
-        Type outNarrowest = Type.narrowest(resultBounds.widest, Type.generic(Type.widestReturnType(trueExpr.getType(), falseExpr.getType())));
+        final Type outNarrowest = Type.narrowest(resultBounds.widest, Type.generic(Type.widestReturnType(trueExpr.getType(), falseExpr.getType())));
         final TypeBounds outBounds = resultBounds.notNarrowerThan(outNarrowest);
 
         emitBranch(test, falseLabel, false);
@@ -4255,9 +4295,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         assert lc.peek() == functionNode;
 
         final int fnId = functionNode.getId();
-        final CompilationEnvironment env = compiler.getCompilationEnvironment();
 
-        final RecompilableScriptFunctionData data = env.getScriptFunctionData(fnId);
+        final RecompilableScriptFunctionData data = compiler.getScriptFunctionData(fnId);
 
         assert data != null : functionNode.getName() + " has no data";
 
@@ -4276,7 +4315,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             createFunction.end();
         }
 
-        if (addInitializer && !initializedFunctionIds.contains(fnId) && !env.isOnDemandCompilation()) {
+        if (addInitializer && !initializedFunctionIds.contains(fnId) && !compiler.isOnDemandCompilation()) {
             functionNode.getCompileUnit().addFunctionInitializer(data, functionNode);
             initializedFunctionIds.add(fnId);
         }
@@ -4359,11 +4398,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         MethodEmitter emit(final int ignoredArgCount) {
-            final CompilationEnvironment env = compiler.getCompilationEnvironment();
-            final int programPoint = optimistic.getProgramPoint();
-            final boolean optimisticOrContinuation = isOptimistic || env.isContinuationEntryPoint(programPoint);
-            final boolean currentContinuationEntryPoint = env.isCurrentContinuationEntryPoint(programPoint);
-            final int stackSizeOnEntry = method.getStackSize() - ignoredArgCount;
+            final int     programPoint                  = optimistic.getProgramPoint();
+            final boolean optimisticOrContinuation      = isOptimistic || isContinuationEntryPoint(programPoint);
+            final boolean currentContinuationEntryPoint = isCurrentContinuationEntryPoint(programPoint);
+            final int     stackSizeOnEntry              = method.getStackSize() - ignoredArgCount;
 
             // First store the values on the stack opportunistically into local variables. Doing it before loadStack()
             // allows us to not have to pop/load any arguments that are pushed onto it by loadStack() in the second
@@ -4387,7 +4425,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             final Label afterConsumeStack = isOptimistic || currentContinuationEntryPoint ? new Label("after_consume_stack") : null;
             if(isOptimistic) {
                 beginTry = new Label("try_optimistic");
-                catchLabel = new Label(afterConsumeStack.toString() + "_handler");
+                final String catchLabelName = (afterConsumeStack == null ? "" : afterConsumeStack.toString()) + "_handler";
+                catchLabel = new Label(catchLabelName);
                 method.label(beginTry);
             } else {
                 beginTry = catchLabel = null;
@@ -4414,6 +4453,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
                 if(currentContinuationEntryPoint) {
                     final ContinuationInfo ci = getContinuationInfo();
+                    assert ci != null : "no continuation info found for " + lc.getCurrentFunction();
                     assert !ci.hasTargetLabel(); // No duplicate program points
                     ci.setTargetLabel(afterConsumeStack);
                     ci.getHandlerLabel().markAsOptimisticContinuationHandlerFor(afterConsumeStack);
@@ -4907,9 +4947,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.dup(2);
                 method.pop();
                 loadConstant(getByteCodeSymbolNames(fn));
-                final CompilationEnvironment env = compiler.getCompilationEnvironment();
-                if (env.isCompileRestOf()) {
-                    loadConstant(env.getContinuationEntryPoints());
+                if (isRestOf()) {
+                    loadConstant(getContinuationEntryPoints());
                     method.invoke(INIT_REWRITE_EXCEPTION_REST_OF);
                 } else {
                     method.invoke(INIT_REWRITE_EXCEPTION);
@@ -5079,7 +5118,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void generateContinuationHandler() {
-        if (!compiler.getCompilationEnvironment().isCompileRestOf()) {
+        if (!isRestOf()) {
             return;
         }
 

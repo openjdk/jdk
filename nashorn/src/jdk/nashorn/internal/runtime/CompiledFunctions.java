@@ -63,6 +63,14 @@ final class CompiledFunctions {
         return '\'' + name + "' code=" + functions;
     }
 
+    private static MethodType widen(final MethodType cftype) {
+        final Class<?>[] paramTypes = new Class<?>[cftype.parameterCount()];
+        for (int i = 0; i < cftype.parameterCount(); i++) {
+            paramTypes[i] = cftype.parameterType(i).isPrimitive() ? cftype.parameterType(i) : Object.class;
+        }
+        return MH.type(cftype.returnType(), paramTypes);
+    }
+
     /**
      * Used to find an apply to call version that fits this callsite.
      * We cannot just, as in the normal matcher case, return e.g. (Object, Object, int)
@@ -82,15 +90,10 @@ final class CompiledFunctions {
                 continue;
             }
 
-            final Class<?>[] paramTypes = new Class<?>[cftype.parameterCount()];
-            for (int i = 0; i < cftype.parameterCount(); i++) {
-                paramTypes[i] = cftype.parameterType(i).isPrimitive() ? cftype.parameterType(i) : Object.class;
-            }
-
-            if (MH.type(cftype.returnType(), paramTypes).equals(type)) {
+            if (widen(cftype).equals(widen(type))) {
                 return cf;
             }
-        }
+         }
 
         return null;
     }

@@ -60,7 +60,6 @@ import jdk.nashorn.internal.runtime.logging.Logger;
 final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Loggable {
 
     private final Compiler compiler;
-    private final CompilationEnvironment env;
     private final Map<Integer, Map<Integer, RecompilableScriptFunctionData>> fnIdToNestedFunctions = new HashMap<>();
     private final Map<Integer, Map<String, Integer>> externalSymbolDepths = new HashMap<>();
     private final Map<Integer, Set<String>> internalSymbols = new HashMap<>();
@@ -73,8 +72,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
     FindScopeDepths(final Compiler compiler) {
         super(new LexicalContext());
         this.compiler = compiler;
-        this.env      = compiler.getCompilationEnvironment();
-        this.log      = initLogger(compiler.getCompilationEnvironment().getContext());
+        this.log      = initLogger(compiler.getContext());
     }
 
     @Override
@@ -165,7 +163,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
-        if (env.isOnDemandCompilation()) {
+        if (compiler.isOnDemandCompilation()) {
             return true;
         }
 
@@ -189,8 +187,8 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         final String name = functionNode.getName();
         FunctionNode newFunctionNode = functionNode.setState(lc, CompilationState.SCOPE_DEPTHS_COMPUTED);
 
-        if (env.isOnDemandCompilation()) {
-            final RecompilableScriptFunctionData data = env.getScriptFunctionData(newFunctionNode.getId());
+        if (compiler.isOnDemandCompilation()) {
+            final RecompilableScriptFunctionData data = compiler.getScriptFunctionData(newFunctionNode.getId());
             assert data != null : newFunctionNode.getName() + " lacks data";
             if (data.inDynamicContext()) {
                 log.fine("Reviving scriptfunction ", quote(name), " as defined in previous (now lost) dynamic scope.");
@@ -214,7 +212,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         final String      allocatorClassName = Compiler.binaryName(getClassName(fieldCount));
         final PropertyMap allocatorMap       = PropertyMap.newMap(null, 0, fieldCount, 0);
         final RecompilableScriptFunctionData data = new RecompilableScriptFunctionData(
-                compiler.getCompilationEnvironment().getContext(),
+                compiler.getContext(),
                 newFunctionNode,
                 compiler.getCodeInstaller(),
                 allocatorClassName,
@@ -231,7 +229,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
                 fnIdToNestedFunctions.get(parentFn.getId()).put(fnId, data);
             }
         } else {
-            env.setData(data);
+            compiler.setData(data);
         }
 
         if (isDynamicScopeBoundary(functionNode)) {
@@ -269,7 +267,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
 
     @Override
     public boolean enterBlock(final Block block) {
-        if (env.isOnDemandCompilation()) {
+        if (compiler.isOnDemandCompilation()) {
             return true;
         }
 
@@ -290,7 +288,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         block.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public final boolean enterDefault(final Node node) {
-                if (!env.isOnDemandCompilation()) {
+                if (!compiler.isOnDemandCompilation()) {
                     if (node instanceof IdentNode) {
                         final Symbol symbol = ((IdentNode)node).getSymbol();
                         if (symbol != null && symbol.isScope()) {
@@ -351,7 +349,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
 
     @Override
     public Node leaveBlock(final Block block) {
-        if (env.isOnDemandCompilation()) {
+        if (compiler.isOnDemandCompilation()) {
             return block;
         }
         if (isDynamicScopeBoundary(block)) {

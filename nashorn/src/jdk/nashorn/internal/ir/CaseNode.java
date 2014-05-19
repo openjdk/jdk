@@ -25,6 +25,9 @@
 
 package jdk.nashorn.internal.ir;
 
+import java.util.Collections;
+import java.util.List;
+
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -34,7 +37,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * Case nodes are not BreakableNodes, but the SwitchNode is
  */
 @Immutable
-public final class CaseNode extends Node implements JoinPredecessor {
+public final class CaseNode extends Node implements JoinPredecessor, Labels {
     /** Test expression. */
     private final Expression test;
 
@@ -97,10 +100,10 @@ public final class CaseNode extends Node implements JoinPredecessor {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printTypes) {
         if (test != null) {
             sb.append("case ");
-            test.toString(sb);
+            test.toString(sb, printTypes);
             sb.append(':');
         } else {
             sb.append("default:");
@@ -161,5 +164,10 @@ public final class CaseNode extends Node implements JoinPredecessor {
             return this;
         }
         return new CaseNode(this, test, body, conversion);
+    }
+
+    @Override
+    public List<Label> getLabels() {
+        return Collections.unmodifiableList(Collections.singletonList(entry));
     }
 }

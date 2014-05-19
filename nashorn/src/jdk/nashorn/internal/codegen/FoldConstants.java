@@ -60,9 +60,9 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
 
     private final DebugLogger log;
 
-    FoldConstants(final CompilationEnvironment env) {
+    FoldConstants(final Compiler compiler) {
         super(new LexicalContext());
-        this.log = initLogger(env.getContext());
+        this.log = initLogger(compiler.getContext());
     }
 
     @Override

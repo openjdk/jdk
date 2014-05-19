@@ -106,7 +106,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     }
 
     private static class JumpTarget {
-        private List<JumpOrigin> origins = new LinkedList<>();
+        private final List<JumpOrigin> origins = new LinkedList<>();
         private Map<Symbol, LvarType> types = Collections.emptyMap();
 
         void addOrigin(final JoinPredecessor originNode, final Map<Symbol, LvarType> originTypes) {
@@ -143,7 +143,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     private LocalVariableConversion createConversion(final Symbol symbol, final LvarType branchLvarType,
             final Map<Symbol, LvarType> joinLvarTypes, final LocalVariableConversion next) {
-        LvarType targetType = joinLvarTypes.get(symbol);
+        final LvarType targetType = joinLvarTypes.get(symbol);
         assert targetType != null;
         if(targetType == branchLvarType) {
             return next;
@@ -193,7 +193,8 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                         union = cloneMap(types2);
                     }
                 }
-                if(!(matches1 || matches2)) {
+                if(!(matches1 || matches2) && union != null) { //remove overly enthusiastic "union can be null" warning
+                    assert union != null;
                     union.put(symbol, widest);
                 }
             }
@@ -344,7 +345,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         // Int64 type anyway, so this loss of precision is actually more conformant to the specification...
         return LvarType.values()[Math.max(t1.ordinal(), t2.ordinal())];
     }
-    private final CompilationEnvironment env;
+    private final Compiler compiler;
     private final Map<Label, JumpTarget> jumpTargets = new IdentityHashMap<>();
     // Local variable type mapping at the currently evaluated point. No map instance is ever modified; setLvarType() always
     // allocates a new map. Immutability of maps allows for cheap snapshots by just keeping the reference to the current
@@ -378,9 +379,9 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     // variables).
     private final Deque<Label> catchLabels = new ArrayDeque<>();
 
-    LocalVariableTypesCalculator(final CompilationEnvironment env) {
+    LocalVariableTypesCalculator(final Compiler compiler) {
         super(new LexicalContext());
-        this.env = env;
+        this.compiler = compiler;
     }
 
     private JumpTarget createJumpTarget(final Label label) {
@@ -449,7 +450,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     @Override
     public boolean enterBlock(final Block block) {
-        for(Symbol symbol: block.getSymbols()) {
+        for(final Symbol symbol: block.getSymbols()) {
             if(symbol.isBytecodeLocal() && getLocalVariableTypeOrNull(symbol) == null) {
                 setType(symbol, LvarType.UNDEFINED);
             }
@@ -569,7 +570,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                 // Parameter is not necessarily bytecode local as it can be scoped due to nested context use, but it
                 // must have a slot if we aren't in a function with vararg signature.
                 assert symbol.hasSlot();
-                final Type callSiteParamType = env.getParamType(functionNode, pos);
+                final Type callSiteParamType = compiler.getParamType(functionNode, pos);
                 final LvarType paramType = callSiteParamType == null ? LvarType.OBJECT : toLvarType(callSiteParamType);
                 setType(symbol, paramType);
                 // Make sure parameter slot for its incoming value is not marked dead. NOTE: this is a heuristic. Right
@@ -1079,7 +1080,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             // If the function is split, the ":return" symbol is used and needs a slot. Note we can't mark the return
             // symbol as used in enterSplitNode, as we don't know the final return type of the function earlier than
             // here.
-            Symbol retSymbol = getCompilerConstantSymbol(lc.getCurrentFunction(), CompilerConstants.RETURN);
+            final Symbol retSymbol = getCompilerConstantSymbol(lc.getCurrentFunction(), CompilerConstants.RETURN);
             retSymbol.setHasSlotFor(returnType);
             retSymbol.setNeedsSlot(true);
         }
@@ -1100,10 +1101,10 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         FunctionNode newFunction = functionNode;
         final NodeVisitor<LexicalContext> applyChangesVisitor = new NodeVisitor<LexicalContext>(new LexicalContext()) {
             private boolean inOuterFunction = true;
-            private Deque<JoinPredecessor> joinPredecessors = new ArrayDeque<>();
+            private final Deque<JoinPredecessor> joinPredecessors = new ArrayDeque<>();
 
             @Override
-            protected boolean enterDefault(Node node) {
+            protected boolean enterDefault(final Node node) {
                 if(!inOuterFunction) {
                     return false;
                 }
@@ -1115,7 +1116,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
             @Override
             public boolean enterFunctionNode(final FunctionNode fn) {
-                if(env.isOnDemandCompilation()) {
+                if(compiler.isOnDemandCompilation()) {
                     // Only calculate nested function local variable types if we're doing eager compilation
                     return false;
                 }
@@ -1125,7 +1126,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
             @SuppressWarnings("fallthrough")
             @Override
-            public Node leaveBinaryNode(BinaryNode binaryNode) {
+            public Node leaveBinaryNode(final BinaryNode binaryNode) {
                 if(binaryNode.isComparison()) {
                     final Expression lhs = binaryNode.lhs();
                     final Expression rhs = binaryNode.rhs();
@@ -1173,16 +1174,16 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             }
 
             @Override
-            public Node leaveFunctionNode(FunctionNode nestedFunctionNode) {
+            public Node leaveFunctionNode(final FunctionNode nestedFunctionNode) {
                 inOuterFunction = true;
                 final FunctionNode newNestedFunction = (FunctionNode)nestedFunctionNode.accept(
-                        new LocalVariableTypesCalculator(env));
+                        new LocalVariableTypesCalculator(compiler));
                 lc.replace(nestedFunctionNode, newNestedFunction);
                 return newNestedFunction;
             }
 
             @Override
-            public Node leaveIdentNode(IdentNode identNode) {
+            public Node leaveIdentNode(final IdentNode identNode) {
                 final IdentNode original = (IdentNode)joinPredecessors.pop();
                 final Symbol symbol = identNode.getSymbol();
                 if(symbol == null) {
@@ -1205,7 +1206,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             }
 
             @Override
-            public Node leaveLiteralNode(LiteralNode<?> literalNode) {
+            public Node leaveLiteralNode(final LiteralNode<?> literalNode) {
                 if(literalNode instanceof ArrayLiteralNode) {
                     ((ArrayLiteralNode)literalNode).analyze();
                 }
@@ -1370,9 +1371,9 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             final Symbol symbol = ((IdentNode)node).getSymbol();
             conversion = createConversion(symbol, branchLvarTypes.get(symbol), joinLvarTypes, null);
         } else {
-            for(Map.Entry<Symbol, LvarType> entry: branchLvarTypes.entrySet()) {
+            for(final Map.Entry<Symbol, LvarType> entry: branchLvarTypes.entrySet()) {
                 final Symbol symbol = entry.getKey();
-                LvarType branchLvarType = entry.getValue();
+                final LvarType branchLvarType = entry.getValue();
                 conversion = createConversion(symbol, branchLvarType, joinLvarTypes, conversion);
             }
         }

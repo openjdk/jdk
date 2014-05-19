@@ -92,9 +92,9 @@ public final class IfNode extends Statement implements JoinPredecessor {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printTypes) {
         sb.append("if (");
-        test.toString(sb);
+        test.toString(sb, printTypes);
         sb.append(')');
     }
 
