@@ -2363,6 +2363,9 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_percentage(MarkSweepDeadRatio, "MarkSweepDeadRatio");
 
   status = status && verify_min_value(MarkSweepAlwaysCompactCount, 1, "MarkSweepAlwaysCompactCount");
+#ifdef COMPILER1
+  status = status && verify_min_value(ValueMapInitialSize, 1, "ValueMapInitialSize");
+#endif
 
   if (PrintNMTStatistics) {
 #if INCLUDE_NMT
