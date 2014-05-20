@@ -31,6 +31,11 @@
 #include "jdwpTransport.h"
 #include "sysSocket.h"
 
+#ifdef _WIN32
+ #include <winsock2.h>
+ #include <ws2tcpip.h>
+#endif
+
 /*
  * The Socket Transport Library.
  *
@@ -189,23 +194,81 @@ handshake(int fd, jlong timeout) {
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
+static uint32_t
+getLocalHostAddress() {
+    // Simple routine to guess localhost address.
+    // it looks up "localhost" and returns 127.0.0.1 if lookup
+    // fails.
+    struct addrinfo hints = {0}, *res = NULL;
+    int err;
+
+    hints.ai_family = AF_INET;
+
+    err = getaddrinfo("localhost", NULL, &hints, &res);
+    if (err < 0 || res == NULL) {
+        return dbgsysHostToNetworkLong(INADDR_LOOPBACK);
+    }
+
+    // getaddrinfo might return more than one address
+    // but we are using first one only
+    return ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
+}
+
+static int
+getPortNumber(const char *s_port) {
+    u_long n;
+    char *eptr;
+
+    if (*s_port == 0) {
+        // bad address - colon with no port number in parameters
+        return -1;
+    }
+
+    n = strtoul(s_port, &eptr, 10);
+    if (eptr != s_port + strlen(s_port)) {
+        // incomplete conversion - port number contains non-digit
+        return -1;
+    }
+
+    if (n > (u_short) -1) {
+        // check that value supplied by user is less than
+        // maximum possible u_short value (65535) and
+        // will not be truncated later.
+        return -1;
+    }
+
+    return n;
+}
+
 static jdwpTransportError
-parseAddress(const char *address, struct sockaddr_in *sa, uint32_t defaultHost) {
+parseAddress(const char *address, struct sockaddr_in *sa) {
     char *colon;
+    int port;
 
     memset((void *)sa,0,sizeof(struct sockaddr_in));
     sa->sin_family = AF_INET;
 
     /* check for host:port or port */
     colon = strchr(address, ':');
+    port = getPortNumber((colon == NULL) ? address : colon +1);
+    if (port < 0) {
+        RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT, "invalid port number specified");
+    }
+    sa->sin_port = dbgsysHostToNetworkShort((u_short)port);
+
     if (colon == NULL) {
-        u_short port = (u_short)atoi(address);
-        sa->sin_port = dbgsysHostToNetworkShort(port);
-        sa->sin_addr.s_addr = dbgsysHostToNetworkLong(defaultHost);
-    } else {
+        // bind to localhost only if no address specified
+        sa->sin_addr.s_addr = getLocalHostAddress();
+    } else if (strncmp(address,"localhost:",10) == 0) {
+        // optimize for common case
+        sa->sin_addr.s_addr = getLocalHostAddress();
+    } else if (*address == '*' && *(address+1) == ':') {
+        // we are explicitly asked to bind server to all available IP addresses
+        // has no meaning for client.
+        sa->sin_addr.s_addr = dbgsysHostToNetworkLong(INADDR_ANY);
+     } else {
         char *buf;
         char *hostname;
-        u_short port;
         uint32_t addr;
 
         buf = (*callback->alloc)((int)strlen(address)+1);
@@ -215,8 +278,6 @@ parseAddress(const char *address, struct sockaddr_in *sa, uint32_t defaultHost) 
         strcpy(buf, address);
         buf[colon - address] = '\0';
         hostname = buf;
-        port = atoi(colon + 1);
-        sa->sin_port = dbgsysHostToNetworkShort(port);
 
         /*
          * First see if the host is a literal IP address.
@@ -277,7 +338,7 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
         address = "0";
     }
 
-    err = parseAddress(address, &sa, INADDR_ANY);
+    err = parseAddress(address, &sa);
     if (err != JDWPTRANSPORT_ERROR_NONE) {
         return err;
     }
@@ -437,7 +498,7 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
         RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT, "address is missing");
     }
 
-    err = parseAddress(addressString, &sa, 0x7f000001);
+    err = parseAddress(addressString, &sa);
     if (err != JDWPTRANSPORT_ERROR_NONE) {
         return err;
     }
