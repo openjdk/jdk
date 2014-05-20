@@ -2012,8 +2012,8 @@ public class ClassReader {
         Type type = readType(nextChar());
         if (currentOwner.isInterface() &&
                 (flags & ABSTRACT) == 0 && !name.equals(names.clinit)) {
-            if (majorVersion > Target.JDK1_8.majorVersion ||
-                    (majorVersion == Target.JDK1_8.majorVersion && minorVersion >= Target.JDK1_8.minorVersion)) {
+            if (majorVersion > Version.V52.major ||
+                    (majorVersion == Version.V52.major && minorVersion >= Version.V52.minor)) {
                 if ((flags & STATIC) == 0) {
                     currentOwner.flags_field |= DEFAULT;
                     flags |= DEFAULT | ABSTRACT;
@@ -2294,11 +2294,11 @@ public class ClassReader {
 
         minorVersion = nextChar();
         majorVersion = nextChar();
-        int maxMajor = Target.MAX().majorVersion;
-        int maxMinor = Target.MAX().minorVersion;
+        int maxMajor = Version.MAX().major;
+        int maxMinor = Version.MAX().minor;
         if (majorVersion > maxMajor ||
             majorVersion * 1000 + minorVersion <
-            Target.MIN().majorVersion * 1000 + Target.MIN().minorVersion)
+            Version.MIN().major * 1000 + Version.MIN().minor)
         {
             if (majorVersion == (maxMajor + 1))
                 log.warning("big.major.version",
