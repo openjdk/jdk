@@ -173,7 +173,7 @@ function run_one_benchmark(arg, iters) {
 	}
 	mean_score /= iters;    
     } catch (e) {
-	print_always("*** Aborted and setting score to zero. Reason: " + e);
+	print_always(arg, "*** Aborted and setting score to zero. Reason: " + e);
 	if (e instanceof java.lang.Throwable) {
 	    e.printStackTrace();
 	}
