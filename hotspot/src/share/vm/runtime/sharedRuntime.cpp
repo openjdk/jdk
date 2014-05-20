@@ -993,12 +993,6 @@ JRT_LEAF(int, SharedRuntime::dtrace_method_exit(
   return 0;
 JRT_END
 
-JRT_ENTRY(int, SharedRuntime::jvmti_method_exit(
-    JavaThread* thread, Method* method))
-  JvmtiExport::post_method_exit(thread, method, thread->last_frame());
-  return 0;
-JRT_END
-
 
 // Finds receiver, CallInfo (i.e. receiver method), and calling bytecode)
 // for a call current in progress, i.e., arguments has been pushed on stack

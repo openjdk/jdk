@@ -2657,30 +2657,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ bind(done);
   }
 
-  {
-    // Normally we do not post method_entry and method_exit events from
-    // compiled code, only from the interpreter. If method_entry/exit
-    // events are switched on at runtime, we will deoptimize everything
-    // (see VM_EnterInterpOnlyMode) on the stack and call method_entry/exit
-    // from the interpreter. But when we do that, we will not deoptimize
-    // this native wrapper frame. Thus we have an extra check here to see
-    // if we are now in interp_only_mode and in that case we do the jvmti
-    // callback.
-    Label skip_jvmti_method_exit;
-    __ ld(G2_thread, JavaThread::interp_only_mode_offset(), G3_scratch);
-    __ cmp_and_br_short(G3_scratch, 0, Assembler::zero, Assembler::pt, skip_jvmti_method_exit);
-
-    save_native_result(masm, ret_type, stack_slots);
-    __ set_metadata_constant(method(), G3_scratch);
-    __ call_VM(
-        noreg,
-        CAST_FROM_FN_PTR(address, SharedRuntime::jvmti_method_exit),
-        G2_thread, G3_scratch,
-        true);
-    restore_native_result(masm, ret_type, stack_slots);
-    __ bind(skip_jvmti_method_exit);
-  }
-
   // Tell dtrace about this method exit
   {
     SkipIfEqual skip_if(
