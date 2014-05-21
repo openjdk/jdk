@@ -32,6 +32,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.logging.Level;
+
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.options.KeyValueOption;
@@ -93,8 +95,7 @@ public final class ScriptEnvironment {
     /** Argument passed to compile only if optimistic compilation should take place */
     public static final String COMPILE_ONLY_OPTIMISTIC_ARG = "optimistic";
 
-    /**
-     * Behavior when encountering a function declaration in a lexical context where only statements are acceptable
+    /**     * Behavior when encountering a function declaration in a lexical context where only statements are acceptable
      * (function declarations are source elements, but not statements).
      */
     public enum FunctionStatementBehavior {
@@ -199,6 +200,9 @@ public final class ScriptEnvironment {
     /** Logging */
     public final Map<String, LoggerInfo> _loggers;
 
+    /** Timing */
+    public final Timing _timing;
+
     /**
      * Constructor
      *
@@ -302,8 +306,11 @@ public final class ScriptEnvironment {
             this._locale = Locale.getDefault();
         }
 
-        final LoggingOption lo = (LoggingOption)options.get("log");
-        this._loggers = lo == null ? new HashMap<String, LoggerInfo>() : lo.getLoggers();
+        final LoggingOption loggingOption = (LoggingOption)options.get("log");
+        this._loggers = loggingOption == null ? new HashMap<String, LoggerInfo>() : loggingOption.getLoggers();
+
+        final LoggerInfo timeLoggerInfo = _loggers.get(Timing.getLoggerName());
+        this._timing = new Timing(timeLoggerInfo != null && timeLoggerInfo.getLevel() != Level.OFF);
     }
 
     /**
@@ -358,6 +365,14 @@ public final class ScriptEnvironment {
      */
     public boolean hasLogger(final String name) {
         return _loggers.get(name) != null;
+    }
+
+    /**
+     * Check if compilation/runtime timings are enabled
+     * @return true if enabled
+     */
+    public boolean isTimingEnabled() {
+        return _timing != null ? _timing.isEnabled() : false;
     }
 
 }

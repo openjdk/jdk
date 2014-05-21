@@ -265,7 +265,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         super(new CodeGeneratorLexicalContext());
         this.compiler                = compiler;
         this.continuationEntryPoints = continuationEntryPoints;
-        this.callSiteFlags           = compiler.getEnv()._callsite_flags;
+        this.callSiteFlags           = compiler.getScriptEnvironment()._callsite_flags;
         this.log                     = initLogger(compiler.getContext());
     }
 
@@ -2256,7 +2256,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     }
 
                     @Override
-                    public boolean enterObjectNode(ObjectNode objectNode) {
+                    public boolean enterObjectNode(final ObjectNode objectNode) {
                         return false;
                     }
 
@@ -4050,11 +4050,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @param ident identifier for block or function where applicable
      */
     private void printSymbols(final Block block, final String ident) {
-        if (!compiler.getEnv()._print_symbols) {
+        if (!compiler.getScriptEnvironment()._print_symbols) {
             return;
         }
 
-        final PrintWriter out = compiler.getEnv().getErr();
+        final PrintWriter out = compiler.getScriptEnvironment().getErr();
         out.println("[BLOCK in '" + ident + "']");
         if (!block.printSymbols(out)) {
             out.println("<no symbols>");

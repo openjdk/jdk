@@ -76,3 +76,10 @@ jdk.nashorn.tools.Shell ${@}
 # compiler threads is set to 1 for determinsm.
 #-XX:+PrintOptoAssembly -XX:-TieredCompilation -XX:CICompilerCount=1 \
 
+
+#[20/05/14 14:05:54] Albert Noll: IncreaseFirstTierCompileThresholdAt=XX
+#[20/05/14 14:06:03] Albert Noll: where X is between 1..100
+#[20/05/14 14:06:33] Albert Noll: The smaller X is, the less methods are being compiled with C1
+#[20/05/14 14:07:37] Albert Noll: You can also do more aggressive sweeping with:
+# NmethodSweepActivity=XX
+#[20/05/14 14:07:47] Albert Noll: The default value is 10

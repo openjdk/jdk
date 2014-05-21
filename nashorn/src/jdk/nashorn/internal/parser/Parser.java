@@ -113,7 +113,6 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
-import jdk.nashorn.internal.runtime.Timing;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -254,7 +253,8 @@ public class Parser extends AbstractParser implements Loggable {
      * @return function node resulting from successful parse
      */
     public FunctionNode parse(final String scriptName, final int startPos, final int len, final boolean allowPropertyFunction) {
-        final long t0 = Timing.isEnabled() ? System.currentTimeMillis() : 0L;
+        final boolean isTimingEnabled = env.isTimingEnabled();
+        final long t0 = isTimingEnabled ? System.currentTimeMillis() : 0L;
         log.info(this, " begin for '", scriptName, "'");
 
         try {
@@ -274,8 +274,8 @@ public class Parser extends AbstractParser implements Loggable {
             return null;
         } finally {
             final String end = this + " end '" + scriptName + "'";
-            if (Timing.isEnabled()) {
-                Timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
+            if (isTimingEnabled) {
+                env._timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
                 log.info(end, "' in ", System.currentTimeMillis() - t0, " ms");
             } else {
                 log.info(end);
