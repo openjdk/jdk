@@ -1083,7 +1083,7 @@ void LIR_OpLabel::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpArrayCopy::emit_code(LIR_Assembler* masm) {
   masm->emit_arraycopy(this);
-  masm->emit_code_stub(stub());
+  masm->append_code_stub(stub());
 }
 
 void LIR_OpUpdateCRC32::emit_code(LIR_Assembler* masm) {
@@ -1100,20 +1100,20 @@ void LIR_Op1::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpAllocObj::emit_code(LIR_Assembler* masm) {
   masm->emit_alloc_obj(this);
-  masm->emit_code_stub(stub());
+  masm->append_code_stub(stub());
 }
 
 void LIR_OpBranch::emit_code(LIR_Assembler* masm) {
   masm->emit_opBranch(this);
   if (stub()) {
-    masm->emit_code_stub(stub());
+    masm->append_code_stub(stub());
   }
 }
 
 void LIR_OpConvert::emit_code(LIR_Assembler* masm) {
   masm->emit_opConvert(this);
   if (stub() != NULL) {
-    masm->emit_code_stub(stub());
+    masm->append_code_stub(stub());
   }
 }
 
@@ -1123,13 +1123,13 @@ void LIR_Op2::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpAllocArray::emit_code(LIR_Assembler* masm) {
   masm->emit_alloc_array(this);
-  masm->emit_code_stub(stub());
+  masm->append_code_stub(stub());
 }
 
 void LIR_OpTypeCheck::emit_code(LIR_Assembler* masm) {
   masm->emit_opTypeCheck(this);
   if (stub()) {
-    masm->emit_code_stub(stub());
+    masm->append_code_stub(stub());
   }
 }
 
@@ -1144,7 +1144,7 @@ void LIR_Op3::emit_code(LIR_Assembler* masm) {
 void LIR_OpLock::emit_code(LIR_Assembler* masm) {
   masm->emit_lock(this);
   if (stub()) {
-    masm->emit_code_stub(stub());
+    masm->append_code_stub(stub());
   }
 }
 
