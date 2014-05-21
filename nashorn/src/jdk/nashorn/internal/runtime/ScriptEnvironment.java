@@ -95,7 +95,8 @@ public final class ScriptEnvironment {
     /** Argument passed to compile only if optimistic compilation should take place */
     public static final String COMPILE_ONLY_OPTIMISTIC_ARG = "optimistic";
 
-    /**     * Behavior when encountering a function declaration in a lexical context where only statements are acceptable
+    /**
+     *  Behavior when encountering a function declaration in a lexical context where only statements are acceptable
      * (function declarations are source elements, but not statements).
      */
     public enum FunctionStatementBehavior {

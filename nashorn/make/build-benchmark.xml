@@ -24,12 +24,12 @@
 <project name="nashorn-benchmarks" default="all" basedir="..">
 
   <target name="octane-init" depends="jar">
-    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes pdfjs raytrace regexp richards splay"/>
+    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes mandreel pdfjs raytrace regexp richards splay typescript zlib"/>
   </target>
   
-  <!-- ignore benchmarks where rhino crashes -->
+  <!-- ignore benchmarks where rhino crashes - the test harness should do this now -->
   <target name="octane-init-rhino" depends="jar">
-    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes raytrace regexp richards splay"/>
+    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes mandreel pdfjs raytrace regexp richards splay typescript zlib"/>
   </target>
 
   <!-- box2d -->
@@ -150,7 +150,6 @@
       <param name="octane-tests" value="gbemu"/>
     </antcall>
   </target>
-
 
   <!-- mandreel -->  
   <target name="octane-mandreel" depends="jar">
@@ -333,14 +332,13 @@
   <target name="octane-single-process" depends="octane-init">
     <antcall target="run-octane"/>
   </target>
-
-  <!-- zlib excluded due to missing implementation of 'read' -->
+ 
   <target name="octane-separate-process" depends=
      "octane-box2d, octane-code-load, octane-crypto, 
       octane-deltablue, octane-earley-boyer, octane-gbemu,
       octane-mandreel, octane-navier-stokes, octane-pdfjs, 
       octane-raytrace, octane-regexp, octane-richards, 
-      octane-splay, octane-typescript"/>
+      octane-splay, octane-typescript, octane-zlib"/>
 
   <target name="--single-process" unless="${octane-test-sys-prop.separate.process}">
     <antcall target="octane-single-process"/>
@@ -373,12 +371,13 @@
         <propertyref prefix="nashorn."/>
       </syspropertyset>
       <arg value="${octane-test-sys-prop.test.js.framework}"/>
+      <arg value="-scripting"/>
       <arg value="--"/>
       <arg value="${octane-tests}"/>
       <arg value="--runtime"/>
       <arg value="Nashorn"/>
       <arg value="--verbose"/>
-      <arg value="--iterations 8"/>
+      <arg value="--iterations 10"/>
     </java>
   </target>
 
@@ -390,7 +389,7 @@
       <arg value="--runtime"/>
       <arg value="v8"/>
       <arg value="--verbose"/>
-      <arg value="--iterations 8"/>
+      <arg value="--iterations 10"/>
     </exec>
   </target>
 
@@ -407,7 +406,7 @@
       <arg value="--runtime"/>
       <arg value="Rhino"/>
       <arg value="--verbose"/>
-      <arg value="--iterations 8"/>
+      <arg value="--iterations 10"/>
     </java>
   </target>
 

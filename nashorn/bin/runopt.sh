@@ -1,4 +1,26 @@
 #!/bin/sh
+#
+# Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+# 
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+# 
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+# 
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+# 
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
 
 ###########################################################################################
 # This is a helper script to evaluate nashorn with optimistic types
@@ -23,6 +45,7 @@
 # set the "method-sampling-interval" Normal and Maximum sample time as low as you
 # can go (10 ms on most platforms). The default is normally higher. The increased
 # sampling overhead is usually negligible for Nashorn runs, but the data is better
+
 JFR_FILENAME="./nashorn_$(date|sed "s/ /_/g"|sed "s/:/_/g").jfr"
 
 
@@ -44,14 +67,20 @@ $FLAGS \
 -esa \
 -Xbootclasspath/p:$NASHORN_JAR \
 -Xms2G -Xmx2G \
--XX:+UnlockCommercialFeatures \
--XX:+FlightRecorder \
--XX:FlightRecorderOptions=defaultrecording=true,disk=true,dumponexit=true,dumponexitpath=$JFR_FILENAME,stackdepth=1024 \
 -XX:TypeProfileLevel=222 \
 -cp $CLASSPATH:../build/test/classes/ \
 jdk.nashorn.tools.Shell ${@}
 
 # Below are flags that may come in handy, but aren't used for default runs
+
+# Testing out new code optimizations using the generic hotspot "new code" parameter
+#-XX:+UnlockDiagnosticVMOptions \
+#-XX:+UseNewCode \
+
+# Flight recorder
+#-XX:+UnlockCommercialFeatures \
+#-XX:+FlightRecorder \
+#-XX:FlightRecorderOptions=defaultrecording=true,disk=true,dumponexit=true,dumponexitpath=$JFR_FILENAME,stackdepth=1024 \
 
 
 # Type specialization and math intrinsic replacement should be enabled by default in 8u20 and nine,
@@ -76,10 +105,6 @@ jdk.nashorn.tools.Shell ${@}
 # compiler threads is set to 1 for determinsm.
 #-XX:+PrintOptoAssembly -XX:-TieredCompilation -XX:CICompilerCount=1 \
 
+# Tier compile threasholds. Default value is 10. (1-100 is useful for experiments)
+# -XX:IncreaseFirstTierCompileThresholdAt=XX
 
-#[20/05/14 14:05:54] Albert Noll: IncreaseFirstTierCompileThresholdAt=XX
-#[20/05/14 14:06:03] Albert Noll: where X is between 1..100
-#[20/05/14 14:06:33] Albert Noll: The smaller X is, the less methods are being compiled with C1
-#[20/05/14 14:07:37] Albert Noll: You can also do more aggressive sweeping with:
-# NmethodSweepActivity=XX
-#[20/05/14 14:07:47] Albert Noll: The default value is 10

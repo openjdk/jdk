@@ -737,26 +737,6 @@ an implementation based on Joni, the regular expression engine used by
 the JRuby project. The default value for this flag is "joni"
 
 
-SYSTEM PROPERTY: -Dnashorn.time
-
-This enables timers for various phases of script compilation. The timers
-will be dumped when the Nashorn process exits. We see a percentage value
-of how much time was spent not executing bytecode (i.e. compilation and
-internal tasks) at the end of the report. 
-
-Here is an example:
-
-[JavaScript Parsing]    61  ms
-[Constant Folding]      11  ms
-[Control Flow Lowering] 26  ms
-[Type Attribution]      81  ms
-[Range Analysis]        0  ms
-[Code Splitting]        29  ms
-[Type Finalization]     19  ms
-[Bytecode Generation]   189  ms
-[Code Installation]     7  ms
-Total runtime: 508 ms (Non-runtime: 423 ms [83%])
-
 ===============
 2. The loggers.
 ===============
@@ -887,6 +867,34 @@ etc. It will also show the internal representation of respective field
 (Object in the normal case, unless running with the dual field
 representation)
 
+* time
+
+This enables timers for various phases of script compilation. The timers
+will be dumped when the Nashorn process exits. We see a percentage value
+of how much time was spent not executing bytecode (i.e. compilation and
+internal tasks) at the end of the report. 
+
+A finer level than "info" will show individual compilation timings as they
+happen.
+
+Here is an example:
+
+[time] Accumulated complation phase Timings:
+[time] 
+[time] 'JavaScript Parsing'              1076 ms
+[time] 'Constant Folding'                 159 ms
+[time] 'Control Flow Lowering'            303 ms
+[time] 'Program Point Calculation'        282 ms
+[time] 'Builtin Replacement'               71 ms
+[time] 'Code Splitting'                   670 ms
+[time] 'Symbol Assignment'                474 ms
+[time] 'Scope Depth Computation'          249 ms
+[time] 'Optimistic Type Assignment'       186 ms
+[time] 'Local Variable Type Calculation'  526 ms
+[time] 'Bytecode Generation'             5177 ms
+[time] 'Class Installation'              1854 ms
+[time] 
+[time] Total runtime: 11994 ms (Non-runtime: 11027 ms [91%])
 
 =======================
 3. Undocumented options
