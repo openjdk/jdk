@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -513,34 +514,41 @@ enum CompilationPhase {
                 throw new CompilationException("Internal compiler error: root class not found!");
             }
 
-            // do these in a loop, to use only one privileged action - this significantly
-            // reduces class installation overhead
-            log.fine("Preparing source and constant fields...");
-            try {
-                final Object[] constants = compiler.getConstantData().toArray();
-                // Need doPrivileged because these fields are private
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+            // do these in parallel, this significantly reduces class installation overhead
+            // however - it still means that every thread needs a separate doPrivileged
+            final Object[] constants = compiler.getConstantData().toArray();
+            installedClasses.entrySet().parallelStream().forEach(
+                new Consumer<Entry<String, Class<?>>>() {
                     @Override
-                    public Void run() throws Exception {
-                        for (final Entry<String, Class<?>> entry : installedClasses.entrySet()) {
-                            final Class<?> clazz = entry.getValue();
-                            log.fine("Initializing source for ", clazz);
-                            //use reflection to write source and constants table to installed classes
-                            final Field sourceField    = clazz.getDeclaredField(SOURCE.symbolName());
-                            sourceField.setAccessible(true);
-                            sourceField.set(null, compiler.getSource());
+                    public void accept(final Entry<String, Class<?>> entry) {
+                        try {
+                            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                                @Override
+                                public Void run() {
+                                    try {
+                                        final Class<?> clazz = entry.getValue();
+                                        log.fine("Initializing source for ", clazz);
+                                        //use reflection to write source and constants table to installed classes
+                                        final Field sourceField = clazz.getDeclaredField(SOURCE.symbolName());
+                                        sourceField.setAccessible(true);
+                                        sourceField.set(null, compiler.getSource());
 
-                            log.fine("Initializing constants for ", clazz);
-                            final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
-                            constantsField.setAccessible(true);
-                            constantsField.set(null, constants);
+                                        log.fine("Initializing constants for ", clazz);
+                                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
+                                        constantsField.setAccessible(true);
+                                        constantsField.set(null, constants);
+                                    } catch (final IllegalAccessException | NoSuchFieldException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    return null;
+                                }
+                            });
+                        } catch (final PrivilegedActionException e) {
+                            throw new RuntimeException(e);
                         }
-                        return null;
                     }
                 });
-            } catch (final PrivilegedActionException e) {
-                throw new RuntimeException(e);
-            }
+            log.fine("Done");
             log.fine("Done");
 
             // index recompilable script function datas in the constant pool
@@ -587,7 +595,8 @@ enum CompilationPhase {
         @Override
         public String toString() {
             return "'Class Installation'";
-         }
+        }
+
      };
 
     /** pre conditions required for function node to which this transform is to be applied */
