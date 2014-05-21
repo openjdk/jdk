@@ -211,9 +211,9 @@ bool Verifier::is_eligible_for_verification(instanceKlassHandle klass, bool shou
     // reflection implementation, not just those associated with
     // sun/reflect/SerializationConstructorAccessor.
     // NOTE: this is called too early in the bootstrapping process to be
-    // guarded by Universe::is_gte_jdk14x_version()/UseNewReflection.
+    // guarded by Universe::is_gte_jdk14x_version().
     // Also for lambda generated code, gte jdk8
-    (!is_reflect || VerifyReflectionBytecodes));
+    (!is_reflect));
 }
 
 Symbol* Verifier::inference_verify(

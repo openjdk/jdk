@@ -5401,7 +5401,7 @@ public:
       if (_g1h->is_in_g1_reserved(p)) {
         _par_scan_state->push_on_queue(p);
       } else {
-        assert(!ClassLoaderDataGraph::contains((address)p),
+        assert(!Metaspace::contains((const void*)p),
                err_msg("Otherwise need to call _copy_metadata_obj_cl->do_oop(p) "
                               PTR_FORMAT, p));
           _copy_non_heap_obj_cl->do_oop(p);
