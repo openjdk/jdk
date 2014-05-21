@@ -1251,8 +1251,10 @@ public class MetalIconFactory implements Serializable {
             g.translate(x, y);
 
             // fill interior
-            g.setColor(interiorColor);
-            g.fillRect(2,2, 9,9);
+            if (c.isOpaque()) {
+                g.setColor(interiorColor);
+                g.fillRect(2, 2, 9, 9);
+            }
 
             // draw Dark Circle (start at top, go clockwise)
             g.setColor(darkCircle);
