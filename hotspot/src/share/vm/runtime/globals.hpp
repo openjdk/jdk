@@ -3656,22 +3656,6 @@ class CommandLineFlags {
                                                                             \
   /* New JDK 1.4 reflection implementation */                               \
                                                                             \
-  develop(bool, UseNewReflection, true,                                     \
-          "Temporary flag for transition to reflection based on dynamic "   \
-          "bytecode generation in 1.4; can no longer be turned off in 1.4 " \
-          "JDK, and is unneeded in 1.3 JDK, but marks most places VM "      \
-          "changes were needed")                                            \
-                                                                            \
-  develop(bool, VerifyReflectionBytecodes, false,                           \
-          "Force verification of 1.4 reflection bytecodes. Does not work "  \
-          "in situations like that described in 4486457 or for "            \
-          "constructors generated for serialization, so can not be enabled "\
-          "in product.")                                                    \
-                                                                            \
-  product(bool, ReflectionWrapResolutionErrors, true,                       \
-          "Temporary flag for transition to AbstractMethodError wrapped "   \
-          "in InvocationTargetException. See 6531596")                      \
-                                                                            \
   develop(intx, FastSuperclassLimit, 8,                                     \
           "Depth of hardwired instanceof accelerator array")                \
                                                                             \
