@@ -651,13 +651,11 @@ public final class PropertyMap implements Iterable<Object> {
      * @param newMap   Modified {@link PropertyMap}.
      */
     private void addToHistory(final Property property, final PropertyMap newMap) {
-        if (!properties.isEmpty()) {
-            if (history == null) {
-                history = new WeakHashMap<>();
-            }
-
-            history.put(property, new SoftReference<>(newMap));
+        if (history == null) {
+            history = new WeakHashMap<>();
         }
+
+        history.put(property, new SoftReference<>(newMap));
     }
 
     /**
