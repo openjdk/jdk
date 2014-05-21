@@ -679,60 +679,97 @@ public final class ScriptRuntime {
 
     /** ECMA 11.9.3 The Abstract Equality Comparison Algorithm */
     private static boolean equals(final Object x, final Object y) {
+        if (x == y) {
+            return true;
+        }
+        if (x instanceof ScriptObject && y instanceof ScriptObject) {
+            return x == y;
+        }
+        return equalValues(x, y);
+    }
+
+    /**
+     * Extracted portion of {@code equals()} that compares objects by value (or by reference, if no known value
+     * comparison applies).
+     * @param x one value
+     * @param y another value
+     * @return true if they're equal according to 11.9.3
+     */
+    private static boolean equalValues(final Object x, final Object y) {
         final JSType xType = JSType.ofNoFunction(x);
         final JSType yType = JSType.ofNoFunction(y);
 
         if (xType == yType) {
-
-            if (xType == JSType.UNDEFINED || xType == JSType.NULL) {
-                return true;
-            }
-
-            if (xType == JSType.NUMBER) {
-                return ((Number)x).doubleValue() == ((Number)y).doubleValue();
-            }
-
-            if (xType == JSType.STRING) {
-                // String may be represented by ConsString
-                return x.toString().equals(y.toString());
-            }
-
-            if (xType == JSType.BOOLEAN) {
-                return ((Boolean)x).booleanValue() == ((Boolean)y).booleanValue();
-            }
-
-            return x == y;
+            return equalSameTypeValues(x, y, xType);
         }
 
-        if (xType == JSType.UNDEFINED && yType == JSType.NULL ||
-            xType == JSType.NULL && yType == JSType.UNDEFINED) {
+        return equalDifferentTypeValues(x, y, xType, yType);
+    }
+
+    /**
+     * Extracted portion of {@link #equals(Object, Object)} and {@link #strictEquals(Object, Object)} that compares
+     * values belonging to the same JSType.
+     * @param x one value
+     * @param y another value
+     * @param type the common type for the values
+     * @return true if they're equal
+     */
+    private static boolean equalSameTypeValues(final Object x, final Object y, final JSType type) {
+        if (type == JSType.UNDEFINED || type == JSType.NULL) {
+            return true;
+        }
+
+        if (type == JSType.NUMBER) {
+            return ((Number)x).doubleValue() == ((Number)y).doubleValue();
+        }
+
+        if (type == JSType.STRING) {
+            // String may be represented by ConsString
+            return x.toString().equals(y.toString());
+        }
+
+        if (type == JSType.BOOLEAN) {
+            return ((Boolean)x).booleanValue() == ((Boolean)y).booleanValue();
+        }
+
+        return x == y;
+    }
+
+    /**
+     * Extracted portion of {@link #equals(Object, Object)} that compares values belonging to different JSTypes.
+     * @param x one value
+     * @param y another value
+     * @param xType the type for the value x
+     * @param yType the type for the value y
+     * @return true if they're equal
+     */
+    private static boolean equalDifferentTypeValues(final Object x, final Object y, final JSType xType, final JSType yType) {
+        if (xType == JSType.UNDEFINED && yType == JSType.NULL || xType == JSType.NULL && yType == JSType.UNDEFINED) {
             return true;
         }
 
         if (xType == JSType.NUMBER && yType == JSType.STRING) {
-            return EQ(x, JSType.toNumber(y));
+            return equals(x, JSType.toNumber(y));
         }
 
         if (xType == JSType.STRING && yType == JSType.NUMBER) {
-            return EQ(JSType.toNumber(x), y);
+            return equals(JSType.toNumber(x), y);
         }
 
         if (xType == JSType.BOOLEAN) {
-            return EQ(JSType.toNumber(x), y);
+            return equals(JSType.toNumber(x), y);
         }
 
         if (yType == JSType.BOOLEAN) {
-            return EQ(x, JSType.toNumber(y));
+            return equals(x, JSType.toNumber(y));
         }
 
-        if ((xType == JSType.STRING || xType == JSType.NUMBER) &&
-             y instanceof ScriptObject)  {
-            return EQ(x, JSType.toPrimitive(y));
+        if ((xType == JSType.STRING || xType == JSType.NUMBER) && y instanceof ScriptObject)  {
+            return equals(x, JSType.toPrimitive(y));
         }
 
-        if (x instanceof ScriptObject &&
-            (yType == JSType.STRING || yType == JSType.NUMBER)) {
-            return EQ(JSType.toPrimitive(x), y);
+        if (x instanceof ScriptObject && (yType == JSType.STRING || yType == JSType.NUMBER)) {
+            return equals(JSType.toPrimitive(x), y);
         }
 
         return false;
@@ -764,6 +801,10 @@ public final class ScriptRuntime {
 
     /** ECMA 11.9.6 The Strict Equality Comparison Algorithm */
     private static boolean strictEquals(final Object x, final Object y) {
+        if(x == y) {
+            return true;
+        }
+
         final JSType xType = JSType.ofNoFunction(x);
         final JSType yType = JSType.ofNoFunction(y);
 
@@ -771,25 +812,7 @@ public final class ScriptRuntime {
             return false;
         }
 
-        if (xType == JSType.UNDEFINED || xType == JSType.NULL) {
-            return true;
-        }
-
-        if (xType == JSType.NUMBER) {
-            return ((Number)x).doubleValue() == ((Number)y).doubleValue();
-        }
-
-        if (xType == JSType.STRING) {
-            // String may be represented by ConsString
-            return x.toString().equals(y.toString());
-        }
-
-        if (xType == JSType.BOOLEAN) {
-            return ((Boolean)x).booleanValue() == ((Boolean)y).booleanValue();
-        }
-
-        // finally, the object identity comparison
-        return x == y;
+        return equalSameTypeValues(x, y, xType);
     }
 
     /**
