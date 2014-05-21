@@ -307,6 +307,9 @@ bool CompilerOracle::should_print(methodHandle method) {
   return (check_predicate(PrintCommand, method));
 }
 
+bool CompilerOracle::should_print_methods() {
+  return lists[PrintCommand] != NULL;
+}
 
 bool CompilerOracle::should_log(methodHandle method) {
   if (!LogCompilation)            return false;
