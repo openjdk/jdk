@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,69 +24,67 @@
  */
 package jdk.nashorn.internal.runtime;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
-import jdk.nashorn.internal.runtime.options.Options;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Simple wallclock timing framework
  */
-public final class Timing {
-    private static final boolean ENABLED = Options.getBooleanProperty("nashorn.time");
-    private static final Map<String, Long> TIMINGS;
-    private static final long START_TIME;
+@Logger(name="time")
+public final class Timing implements Loggable {
 
-    static {
-        if (ENABLED) {
-            TIMINGS    = new LinkedHashMap<>();
-            START_TIME = System.currentTimeMillis();
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    final long t = System.currentTimeMillis();
-                    long knownTime = 0L;
-                    int  maxLength = 0;
+    private DebugLogger log;
+    private TimeSupplier timeSupplier;
+    private final boolean isEnabled;
+    private final long startTime;
 
-                    for (final Map.Entry<String, Long> entry : TIMINGS.entrySet()) {
-                        maxLength = Math.max(maxLength, entry.getKey().length());
-                    }
-                    maxLength++;
+    private static final String LOGGER_NAME = Timing.class.getAnnotation(Logger.class).name();
 
-                    for (final Map.Entry<String, Long> entry : TIMINGS.entrySet()) {
-                        final StringBuilder sb = new StringBuilder();
-
-                        sb.append(entry.getKey());
-                        while (sb.length() < maxLength) {
-                            sb.append(' ');
-                        }
-
-                        final long duration = entry.getValue();
-                        sb.append(duration);
-                        sb.append(' ');
-                        sb.append(" ms");
-
-                        knownTime += duration;
-
-                        System.err.println(sb.toString()); //Context err is gone by shutdown TODO
-                    }
-
-                    final long total = t - START_TIME;
-                    System.err.println("Total runtime: " + total + " ms (Non-runtime: " + knownTime + " ms [" + (int)(knownTime * 100.0 / total) + "%])");
-                }
-            });
-        } else {
-            TIMINGS = null;
-            START_TIME = 0L;
-        }
+    /**
+     * Instantiate singleton timer for ScriptEnvironment
+     * @param isEnabled true if enabled, otherwise we keep the instance around
+     *      for code brevity and "isEnabled" checks, but never instantiate anything
+     *      inside it
+     */
+    public Timing(final boolean isEnabled) {
+        this.isEnabled = isEnabled;
+        this.startTime = System.currentTimeMillis();
     }
 
     /**
-     * Check if timing is inabled
+     * Get the log info accumulated by this Timing instance
+     * @return log info as one string
+     */
+    public String getLogInfo() {
+        assert isEnabled();
+        return timeSupplier.get();
+    }
+
+    /**
+     * Get the log info accumulated by this Timing instance
+     * @return log info as and array of strings, one per line
+     */
+    public String[] getLogInfoLines() {
+        assert isEnabled();
+        return timeSupplier.getStrings();
+    }
+
+    /**
+     * Check if timing is enabled
      * @return true if timing is enabled
      */
-    public static boolean isEnabled() {
-        return ENABLED;
+    boolean isEnabled() {
+        return isEnabled;
     }
 
     /**
@@ -96,14 +94,135 @@ public final class Timing {
      * @param module   module name
      * @param duration duration to add to accumulated time for module
      */
-    public static void accumulateTime(final String module, final long duration) {
-        if (Timing.isEnabled()) {
-            Long accumulatedTime = TIMINGS.get(module);
-            if (accumulatedTime == null) {
-                accumulatedTime = 0L;
-            }
-            TIMINGS.put(module, accumulatedTime + duration);
+    public void accumulateTime(final String module, final long duration) {
+        if (isEnabled()) {
+            ensureInitialized(Context.getContextTrusted());
+            timeSupplier.accumulateTime(module, duration);
         }
     }
 
+    private DebugLogger ensureInitialized(final Context context) {
+        //lazy init, as there is not necessarily a context available when
+        //a ScriptEnvironment gets initialize
+        if (isEnabled() && log == null) {
+            log = initLogger(context);
+            if (log.isEnabled()) {
+                this.timeSupplier = new TimeSupplier();
+                Runtime.getRuntime().addShutdownHook(
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                //System.err.println because the context and the output streams may be gone
+                                //when the shutdown hook executes
+                                final StringBuilder sb = new StringBuilder();
+                                for (final String str : timeSupplier.getStrings()) {
+                                    sb.append('[').
+                                        append(Timing.getLoggerName()).
+                                        append("] ").
+                                        append(str).
+                                        append('\n');
+                                }
+                                System.err.print(sb);
+                            }
+                        });
+            }
+        }
+        return log;
+    }
+
+    static String getLoggerName() {
+        return LOGGER_NAME;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    final class TimeSupplier implements Supplier<String> {
+        private final Map<String, Long> timings;
+
+        TimeSupplier() {
+            timings   = new LinkedHashMap<>();
+        }
+
+        String[] getStrings() {
+            final List<String> strs = new ArrayList<>();
+            final BufferedReader br = new BufferedReader(new StringReader(get()));
+            String line;
+            try {
+                while ((line = br.readLine()) != null) {
+                    strs.add(line);
+                }
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+            return strs.toArray(new String[strs.size()]);
+        }
+
+        @Override
+        public String get() {
+            final long t = System.currentTimeMillis();
+
+            long knownTime = 0L;
+            int  maxKeyLength = 0;
+            int  maxValueLength = 0;
+
+            for (final Map.Entry<String, Long> entry : timings.entrySet()) {
+                maxKeyLength   = Math.max(maxKeyLength, entry.getKey().length());
+                maxValueLength = Math.max(maxValueLength, entry.getValue().toString().length());
+            }
+            maxKeyLength++;
+
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Accumulated complation phase Timings:\n\n");
+            for (final Map.Entry<String, Long> entry : timings.entrySet()) {
+                int len;
+
+                len = sb.length();
+                sb.append(entry.getKey());
+                len = sb.length() - len;
+
+                while (len++ < maxKeyLength) {
+                    sb.append(' ');
+                }
+
+                final Long duration = entry.getValue();
+                len = duration.toString().length();
+                for (int i = 0; i < maxValueLength - len; i++) {
+                    sb.append(' ');
+                }
+
+                sb.append(duration).
+                    append(" ms\n");
+
+                knownTime += duration;
+            }
+
+            final long total = t - startTime;
+            sb.append('\n');
+            sb.append("Total runtime: ").
+                append(total).
+                append(" ms (Non-runtime: ").
+                append(knownTime).
+                append(" ms [").
+                append((int)(knownTime * 100.0 / total)).
+                append("%])");
+
+            return sb.toString();
+        }
+
+        private void accumulateTime(final String module, final long duration) {
+            Long accumulatedTime = timings.get(module);
+            if (accumulatedTime == null) {
+                accumulatedTime = 0L;
+            }
+            timings.put(module, accumulatedTime + duration);
+        }
+    }
 }

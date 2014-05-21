@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
+import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
 
 import java.io.File;
 import java.lang.invoke.MethodType;
@@ -61,7 +62,6 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Source;
-import jdk.nashorn.internal.runtime.Timing;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -80,6 +80,8 @@ public final class Compiler implements Loggable {
 
     /** Name of the objects package */
     public static final String OBJECTS_PACKAGE = "jdk/nashorn/internal/objects";
+
+    private final ScriptEnvironment env;
 
     private final Source source;
 
@@ -263,6 +265,10 @@ public final class Compiler implements Loggable {
             return this == COMPILE_ALL_RESTOF || this == COMPILE_FROM_BYTECODE_RESTOF;
         }
 
+        String getDesc() {
+            return desc;
+        }
+
         String toString(final String prefix) {
             final StringBuilder sb = new StringBuilder();
             for (final CompilationPhase phase : phases) {
@@ -345,6 +351,7 @@ public final class Compiler implements Loggable {
             final int[] continuationEntryPoints,
             final ScriptObject runtimeScope) {
         this.context                  = context;
+        this.env                      = env;
         this.installer                = installer;
         this.constantData             = new ConstantData();
         this.compileUnits             = CompileUnit.createCompileUnitSet();
@@ -359,7 +366,7 @@ public final class Compiler implements Loggable {
         this.invalidatedProgramPoints = invalidatedProgramPoints == null ? new HashMap<Integer, Type>() : invalidatedProgramPoints;
         this.continuationEntryPoints  = continuationEntryPoints == null ? null: continuationEntryPoints.clone();
         this.typeEvaluator            = new TypeEvaluator(this, runtimeScope);
-        this.firstCompileUnitName     = firstCompileUnitName(context.getEnv());
+        this.firstCompileUnitName     = firstCompileUnitName();
         this.strict                   = isStrict;
 
         if (!initialized) {
@@ -389,7 +396,7 @@ public final class Compiler implements Loggable {
         return mangled != null ? mangled : baseName;
     }
 
-    private String firstCompileUnitName(final ScriptEnvironment env) {
+    private String firstCompileUnitName() {
         final StringBuilder sb = new StringBuilder(SCRIPTS_PACKAGE).
                 append('/').
                 append(CompilerConstants.DEFAULT_SCRIPT_NAME.symbolName()).
@@ -425,6 +432,10 @@ public final class Compiler implements Loggable {
     @Override
     public DebugLogger initLogger(final Context ctxt) {
         return ctxt.getLogger(this.getClass());
+    }
+
+    ScriptEnvironment getScriptEnvironment() {
+        return env;
     }
 
     boolean isOnDemandCompilation() {
@@ -474,7 +485,7 @@ public final class Compiler implements Loggable {
      */
     public FunctionNode compile(final FunctionNode functionNode, final CompilationPhases phases) throws CompilationException {
 
-        log.info("Starting compile job for ", DebugLogger.quote(functionNode.getName()), " phases=", phases);
+        log.info("Starting compile job for ", DebugLogger.quote(functionNode.getName()), " phases=", quote(phases.getDesc()));
         log.indent();
 
         final String name = DebugLogger.quote(functionNode.getName());
@@ -485,59 +496,33 @@ public final class Compiler implements Loggable {
             newFunctionNode.uniqueName(reservedName);
         }
 
-        final boolean fine = log.levelFinerThanOrEqual(Level.FINE);
         final boolean info = log.levelFinerThanOrEqual(Level.INFO);
+
+        final DebugLogger timeLogger = env.isTimingEnabled() ? env._timing.getLogger() : null;
 
         long time = 0L;
 
         for (final CompilationPhase phase : phases) {
-            if (fine) {
-                log.fine("Phase ", phase.toString(), " starting for ", name);
-            }
-
+            log.fine(phase, " starting for ", quote(name));
             newFunctionNode = phase.apply(this, phases, newFunctionNode);
+            log.fine(phase, " done for function ", quote(name));
 
-            if (getEnv()._print_mem_usage) {
+            if (env._print_mem_usage) {
                 printMemoryUsage(functionNode, phase.toString());
             }
 
-            final long duration = Timing.isEnabled() ? phase.getEndTime() - phase.getStartTime() : 0L;
-            time += duration;
-
-            if (fine) {
-                final StringBuilder sb = new StringBuilder();
-
-                sb.append("Phase ").
-                    append(phase.toString()).
-                    append(" done for function ").
-                    append(name);
-
-                if (duration > 0L) {
-                    sb.append(" in ").
-                        append(duration).
-                        append(" ms ");
-                }
-
-                log.fine(sb);
-            }
+            time += (env.isTimingEnabled() ? phase.getEndTime() - phase.getStartTime() : 0L);
         }
 
         log.unindent();
 
         if (info) {
             final StringBuilder sb = new StringBuilder();
-            sb.append("Compile job for ").
-                append(newFunctionNode.getSource()).
-                append(':').
-                append(DebugLogger.quote(newFunctionNode.getName())).
-                append(" finished");
-
-            if (time > 0L) {
-                sb.append(" in ").
-                    append(time).
-                    append(" ms");
+            sb.append("Compile job for ").append(newFunctionNode.getSource()).append(':').append(quote(newFunctionNode.getName())).append(" finished");
+            if (time > 0L && timeLogger != null) {
+                assert env.isTimingEnabled();
+                sb.append(" in ").append(time).append(" ms");
             }
-
             log.info(sb);
         }
 
@@ -580,10 +565,6 @@ public final class Compiler implements Loggable {
     void removeClass(final String name) {
         assert bytecode.get(name) != null;
         bytecode.remove(name);
-    }
-
-    ScriptEnvironment getEnv() {
-        return context.getEnv();
     }
 
     String getSourceURL() {

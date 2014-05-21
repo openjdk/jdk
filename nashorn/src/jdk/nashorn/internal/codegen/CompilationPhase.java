@@ -70,7 +70,6 @@ import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
-import jdk.nashorn.internal.runtime.Timing;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 
 /**
@@ -272,7 +271,7 @@ enum CompilationPhase {
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new LocalVariableTypesCalculator(compiler));
 
-            final ScriptEnvironment senv = compiler.getEnv();
+            final ScriptEnvironment senv = compiler.getScriptEnvironment();
             final PrintWriter       err  = senv.getErr();
 
             //TODO separate phase for the debug printouts for abstraction and clarity
@@ -421,7 +420,7 @@ enum CompilationPhase {
 
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            final ScriptEnvironment senv = compiler.getEnv();
+            final ScriptEnvironment senv = compiler.getScriptEnvironment();
 
             FunctionNode newFunctionNode = fn;
 
@@ -659,7 +658,7 @@ enum CompilationPhase {
     protected FunctionNode end(final Compiler compiler, final FunctionNode functionNode) {
         compiler.getLogger().unindent();
         endTime = System.currentTimeMillis();
-        Timing.accumulateTime(toString(), endTime - startTime);
+        compiler.getScriptEnvironment()._timing.accumulateTime(toString(), endTime - startTime);
 
         isFinished = true;
         return functionNode;
