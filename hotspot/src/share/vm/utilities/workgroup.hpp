@@ -359,18 +359,20 @@ class FlexibleWorkGang: public WorkGang {
 class WorkGangBarrierSync : public StackObj {
 protected:
   Monitor _monitor;
-  uint     _n_workers;
-  uint     _n_completed;
+  uint    _n_workers;
+  uint    _n_completed;
   bool    _should_reset;
+  bool    _aborted;
 
   Monitor* monitor()        { return &_monitor; }
   uint     n_workers()      { return _n_workers; }
   uint     n_completed()    { return _n_completed; }
   bool     should_reset()   { return _should_reset; }
+  bool     aborted()        { return _aborted; }
 
   void     zero_completed() { _n_completed = 0; }
   void     inc_completed()  { _n_completed++; }
-
+  void     set_aborted()    { _aborted = true; }
   void     set_should_reset(bool v) { _should_reset = v; }
 
 public:
@@ -383,8 +385,14 @@ public:
 
   // Enter the barrier. A worker that enters the barrier will
   // not be allowed to leave until all other threads have
-  // also entered the barrier.
-  void enter();
+  // also entered the barrier or the barrier is aborted.
+  // Returns false if the barrier was aborted.
+  bool enter();
+
+  // Aborts the barrier and wakes up any threads waiting for
+  // the barrier to complete. The barrier will remain in the
+  // aborted state until the next call to set_n_workers().
+  void abort();
 };
 
 // A class to manage claiming of subtasks within a group of tasks.  The
