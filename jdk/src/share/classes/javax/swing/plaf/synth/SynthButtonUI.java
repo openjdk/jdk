@@ -138,9 +138,7 @@ public class SynthButtonUI extends BasicButtonUI implements
     }
 
     SynthContext getContext(JComponent c, int state) {
-        Region region = SynthLookAndFeel.getRegion(c);
-        return SynthContext.getContext(SynthContext.class, c, region,
-                                       style, state);
+        return SynthContext.getContext(c, style, state);
     }
 
     /**
