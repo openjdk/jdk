@@ -2970,7 +2970,8 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
     assert(!old_method->has_vtable_index(),
            "cannot delete methods with vtable entries");;
 
-    // Mark all deleted methods as old and obsolete
+    // Mark all deleted methods as old, obsolete and deleted
+    old_method->set_is_deleted();
     old_method->set_is_old();
     old_method->set_is_obsolete();
     ++obsolete_count;
@@ -3576,7 +3577,7 @@ void VM_RedefineClasses::CheckClass::do_klass(Klass* k) {
       no_old_methods = false;
     }
 
-    // the constant pool cache should never contain old or obsolete methods
+    // the constant pool cache should never contain non-deleted old or obsolete methods
     if (ik->constants() != NULL &&
         ik->constants()->cache() != NULL &&
         !ik->constants()->cache()->check_no_old_or_obsolete_entries()) {
