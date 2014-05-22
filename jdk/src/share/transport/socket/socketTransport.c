@@ -199,9 +199,11 @@ getLocalHostAddress() {
     // Simple routine to guess localhost address.
     // it looks up "localhost" and returns 127.0.0.1 if lookup
     // fails.
-    struct addrinfo hints = {0}, *res = NULL;
+    struct addrinfo hints, *res = NULL;
     int err;
 
+    // Use portable way to initialize the structure
+    memset((void *)&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
 
     err = getaddrinfo("localhost", NULL, &hints, &res);
