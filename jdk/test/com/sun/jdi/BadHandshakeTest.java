@@ -26,7 +26,7 @@
  * @summary Check that a bad handshake doesn't cause a debuggee to abort
  * @library /lib/testlibrary
  *
- * @build VMConnection BadHandshakeTest Exit0
+ * @build jdk.testlibrary.* VMConnection BadHandshakeTest Exit0
  * @run main BadHandshakeTest
  *
  */
