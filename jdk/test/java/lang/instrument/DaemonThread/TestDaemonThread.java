@@ -26,7 +26,7 @@
  * @summary Assert in java.lang.instrument agents during shutdown when classloading occurs after shutdown
  * @library /lib/testlibrary
  *
- * @build DummyAgent DummyClass TestDaemonThreadLauncher TestDaemonThread
+ * @build jdk.testlibrary.* DummyAgent DummyClass TestDaemonThreadLauncher TestDaemonThread
  * @run shell ../MakeJAR3.sh DummyAgent
  * @run main TestDaemonThreadLauncher /timeout=240
  *

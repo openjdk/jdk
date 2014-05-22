@@ -54,10 +54,7 @@ import jdk.testlibrary.JDKToolLauncher;
  * @test
  * @bug 7110104
  * @library /lib/testlibrary
- * @build jdk.testlibrary.ProcessTools
- * @build jdk.testlibrary.JDKToolLauncher
- * @build jdk.testlibrary.Utils
- * @build JMXStartStopTest JMXStartStopDoSomething
+ * @build jdk.testlibrary.* JMXStartStopTest JMXStartStopDoSomething
  * @run main/othervm JMXStartStopTest
  * @summary Makes sure that enabling/disabling the management agent through
  *          JCMD achieves the desired results
