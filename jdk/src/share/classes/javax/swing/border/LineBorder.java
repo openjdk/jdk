@@ -60,8 +60,11 @@ public class LineBorder extends AbstractBorder
     protected Color lineColor;
     protected boolean roundedCorners;
 
-    /** Convenience method for getting the Color.black LineBorder of thickness 1.
-      */
+    /**
+     * Convenience method for getting the Color.black LineBorder of thickness 1.
+     *
+     * @return a {@code LineBorder} with {@code Color.black} and thickness of 1
+     */
     public static Border createBlackLineBorder() {
         if (blackLine == null) {
             blackLine = new LineBorder(Color.black, 1);
@@ -69,8 +72,11 @@ public class LineBorder extends AbstractBorder
         return blackLine;
     }
 
-    /** Convenience method for getting the Color.gray LineBorder of thickness 1.
-      */
+    /**
+     * Convenience method for getting the Color.gray LineBorder of thickness 1.
+     *
+     * @return a {@code LineBorder} with {@code Color.gray} and thickness of 1
+     */
     public static Border createGrayLineBorder() {
         if (grayLine == null) {
             grayLine = new LineBorder(Color.gray, 1);
@@ -81,6 +87,7 @@ public class LineBorder extends AbstractBorder
     /**
      * Creates a line border with the specified color and a
      * thickness = 1.
+     *
      * @param color the color for the border
      */
     public LineBorder(Color color) {
@@ -89,6 +96,7 @@ public class LineBorder extends AbstractBorder
 
     /**
      * Creates a line border with the specified color and thickness.
+     *
      * @param color the color of the border
      * @param thickness the thickness of the border
      */
@@ -99,6 +107,7 @@ public class LineBorder extends AbstractBorder
     /**
      * Creates a line border with the specified color, thickness,
      * and corner shape.
+     *
      * @param color the color of the border
      * @param thickness the thickness of the border
      * @param roundedCorners whether or not border corners should be round
@@ -114,6 +123,7 @@ public class LineBorder extends AbstractBorder
     /**
      * Paints the border for the specified component with the
      * specified position and size.
+     *
      * @param c the component for which this border is being painted
      * @param g the paint graphics
      * @param x the x position of the painted border
@@ -152,6 +162,7 @@ public class LineBorder extends AbstractBorder
 
     /**
      * Reinitialize the insets parameter with this Border's current Insets.
+     *
      * @param c the component for which this border insets value applies
      * @param insets the object to be reinitialized
      */
@@ -162,6 +173,8 @@ public class LineBorder extends AbstractBorder
 
     /**
      * Returns the color of the border.
+     *
+     * @return a {@code Color} object representing the color of this object
      */
     public Color getLineColor()     {
         return lineColor;
@@ -169,6 +182,8 @@ public class LineBorder extends AbstractBorder
 
     /**
      * Returns the thickness of the border.
+     *
+     * @return the thickness of this border
      */
     public int getThickness()       {
         return thickness;
@@ -176,6 +191,8 @@ public class LineBorder extends AbstractBorder
 
     /**
      * Returns whether this border will be drawn with rounded corners.
+     *
+     * @return {@code true} if this border should have rounded corners
      * @since 1.3
      */
     public boolean getRoundedCorners() {
@@ -184,6 +201,8 @@ public class LineBorder extends AbstractBorder
 
     /**
      * Returns whether or not the border is opaque.
+     *
+     * @return {@code true} if the border is opaque, {@code false} otherwise
      */
     public boolean isBorderOpaque() {
         return !roundedCorners;
