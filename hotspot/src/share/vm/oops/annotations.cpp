@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ typeArrayOop Annotations::make_java_array(AnnotationArray* annotations, TRAPS) {
 
 
 void Annotations::print_value_on(outputStream* st) const {
-  st->print("Anotations(" INTPTR_FORMAT ")", this);
+  st->print("Anotations(" INTPTR_FORMAT ")", p2i(this));
 }
 
 #if INCLUDE_SERVICES

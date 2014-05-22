@@ -29,6 +29,7 @@
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/resolutionErrors.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
@@ -2269,7 +2270,7 @@ static methodHandle unpack_method_and_appendix(Handle mname,
       oop appendix = appendix_box->obj_at(0);
       if (TraceMethodHandles) {
     #ifndef PRODUCT
-        tty->print("Linked method="INTPTR_FORMAT": ", m);
+        tty->print("Linked method=" INTPTR_FORMAT ": ", p2i(m));
         m->print();
         if (appendix != NULL) { tty->print("appendix = "); appendix->print(); }
         tty->cr();

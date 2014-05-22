@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ template <class T> class EventLogBase : public EventLog {
   void print(outputStream* out, EventRecord<T>& e) {
     out->print("Event: %.3f ", e.timestamp);
     if (e.thread != NULL) {
-      out->print("Thread " INTPTR_FORMAT " ", e.thread);
+      out->print("Thread " INTPTR_FORMAT " ", p2i(e.thread));
     }
     print(out, e.data);
   }
@@ -148,7 +148,7 @@ class StringEventLog : public EventLogBase<StringLogMessage> {
  public:
   StringEventLog(const char* name, int count = LogEventsBufferEntries) : EventLogBase<StringLogMessage>(name, count) {}
 
-  void logv(Thread* thread, const char* format, va_list ap) {
+  void logv(Thread* thread, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0) {
     if (!should_log()) return;
 
     double timestamp = fetch_timestamp();
@@ -159,7 +159,7 @@ class StringEventLog : public EventLogBase<StringLogMessage> {
     _records[index].data.printv(format, ap);
   }
 
-  void log(Thread* thread, const char* format, ...) {
+  void log(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(3, 4) {
     va_list ap;
     va_start(ap, format);
     logv(thread, format, ap);
@@ -193,17 +193,16 @@ class Events : AllStatic {
   static void print();
 
   // Logs a generic message with timestamp and format as printf.
-  static void log(Thread* thread, const char* format, ...);
+  static void log(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   // Log exception related message
-  static void log_exception(Thread* thread, const char* format, ...);
+  static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
-  static void log_deopt_message(Thread* thread, const char* format, ...);
+  static void log_deopt_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   // Register default loggers
   static void init();
 };
-
 
 inline void Events::log(Thread* thread, const char* format, ...) {
   if (LogEvents) {
@@ -283,7 +282,7 @@ class EventMark : public StackObj {
 
  public:
   // log a begin event, format as printf
-  EventMark(const char* format, ...);
+  EventMark(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
   // log an end event
   ~EventMark();
 };

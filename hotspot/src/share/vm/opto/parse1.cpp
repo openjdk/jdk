@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,6 +568,9 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Pars
   } else {
     set_map(entry_map);
     do_method_entry();
+    if (depth() == 1 && C->age_code()) {
+      decrement_age();
+    }
   }
   if (depth() == 1) {
     // Add check to deoptimize the nmethod if RTM state was changed
@@ -611,7 +614,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Pars
   set_map(entry_map);
   do_exits();
 
-  if (log)  log->done("parse nodes='%d' live='%d' memory='%d'",
+  if (log)  log->done("parse nodes='%d' live='%d' memory='" SIZE_FORMAT "'",
                       C->unique(), C->live_nodes(), C->node_arena()->used());
 }
 
@@ -1395,7 +1398,7 @@ void Parse::do_one_block() {
       tty->print((( i < ns) ? " %d" : " %d(e)"), b->successor_at(i)->rpo());
     }
     if (b->is_loop_head()) tty->print("  lphd");
-    tty->print_cr("");
+    tty->cr();
   }
 
   assert(block()->is_merged(), "must be merged before being parsed");
@@ -2046,6 +2049,31 @@ void Parse::rtm_deopt() {
     }
   }
 #endif
+}
+
+void Parse::decrement_age() {
+  MethodCounters* mc = method()->ensure_method_counters();
+  if (mc == NULL) {
+    C->record_failure("Must have MCs");
+    return;
+  }
+  assert(!is_osr_parse(), "Not doing this for OSRs");
+
+  // Set starting bci for uncommon trap.
+  set_parse_bci(0);
+
+  const TypePtr* adr_type = TypeRawPtr::make((address)mc);
+  Node* mc_adr = makecon(adr_type);
+  Node* cnt_adr = basic_plus_adr(mc_adr, mc_adr, in_bytes(MethodCounters::nmethod_age_offset()));
+  Node* cnt = make_load(control(), cnt_adr, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
+  Node* decr = _gvn.transform(new (C) SubINode(cnt, makecon(TypeInt::ONE)));
+  store_to_memory(control(), cnt_adr, decr, T_INT, adr_type, MemNode::unordered);
+  Node *chk   = _gvn.transform(new (C) CmpINode(decr, makecon(TypeInt::ZERO)));
+  Node* tst   = _gvn.transform(new (C) BoolNode(chk, BoolTest::gt));
+  { BuildCutout unless(this, tst, PROB_ALWAYS);
+    uncommon_trap(Deoptimization::Reason_tenured,
+                  Deoptimization::Action_make_not_entrant);
+  }
 }
 
 //------------------------------return_current---------------------------------

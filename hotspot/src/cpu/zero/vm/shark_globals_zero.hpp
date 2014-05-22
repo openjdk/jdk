@@ -43,7 +43,6 @@ define_pd_global(intx,     Tier2CompileThreshold,        1500);
 define_pd_global(intx,     Tier3CompileThreshold,        2500);
 define_pd_global(intx,     Tier4CompileThreshold,        4500);
 
-define_pd_global(intx,     BackEdgeThreshold,            100000);
 define_pd_global(intx,     Tier2BackEdgeThreshold,       100000);
 define_pd_global(intx,     Tier3BackEdgeThreshold,       100000);
 define_pd_global(intx,     Tier4BackEdgeThreshold,       100000);

@@ -376,7 +376,7 @@ protected:
 
   // FIXME: How to handle this?
   void print_value_on(outputStream* st) const {
-    st->print("Array<T>(" INTPTR_FORMAT ")", this);
+    st->print("Array<T>(" INTPTR_FORMAT ")", p2i(this));
   }
 
 #ifndef PRODUCT

@@ -34,4 +34,5 @@ void MethodCounters::clear_counters() {
   backedge_counter()->reset();
   set_interpreter_throwout_count(0);
   set_interpreter_invocation_count(0);
+  set_nmethod_age(INT_MAX);
 }

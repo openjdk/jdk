@@ -22,7 +22,13 @@
  *
  */
 
+#if !defined(__clang_major__) && defined(__GNUC__)
+// FIXME, formats have issues.  Disable this macro definition, compile, and study warnings for more information.
+#define ATTRIBUTE_PRINTF(x,y)
+#endif
+
 #include "precompiled.hpp"
+#include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc_implementation/g1/bufferingOopClosure.hpp"
@@ -370,7 +376,7 @@ void YoungList::print() {
     }
   }
 
-  gclog_or_tty->print_cr("");
+  gclog_or_tty->cr();
 }
 
 void G1CollectedHeap::push_dirty_cards_region(HeapRegion* hr)
@@ -3470,7 +3476,7 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
       // help us track down what went wrong. This is why we call
       // print_extended_on() instead of print_on().
       print_extended_on(gclog_or_tty);
-      gclog_or_tty->print_cr("");
+      gclog_or_tty->cr();
 #ifndef PRODUCT
       if (VerifyDuringGC && G1VerifyDuringGCPrintReachable) {
         concurrent_mark()->print_reachable("at-verification-failure",
@@ -3664,7 +3670,7 @@ public:
   PrintRSetsClosure(const char* msg) : _msg(msg), _occupied_sum(0) {
     gclog_or_tty->cr();
     gclog_or_tty->print_cr("========================================");
-    gclog_or_tty->print_cr(msg);
+    gclog_or_tty->print_cr("%s", msg);
     gclog_or_tty->cr();
   }
 
