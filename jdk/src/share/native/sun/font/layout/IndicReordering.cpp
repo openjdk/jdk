@@ -1096,9 +1096,13 @@ void IndicReordering::finalReordering(LEGlyphStorage &glyphStorage, le_int32 cou
 
 
 le_int32 IndicReordering::v2process(const LEUnicode *chars, le_int32 charCount, le_int32 scriptCode,
-                                  LEUnicode *outChars, LEGlyphStorage &glyphStorage)
+                                  LEUnicode *outChars, LEGlyphStorage &glyphStorage, LEErrorCode& success)
 {
     const IndicClassTable *classTable = IndicClassTable::getScriptClassTable(scriptCode);
+    if (classTable == NULL) {
+        success = LE_MEMORY_ALLOCATION_ERROR;
+        return 0;
+    }
 
     DynamicProperties dynProps[INDIC_BLOCK_SIZE];
     IndicReordering::getDynamicProperties(dynProps,classTable);
