@@ -64,6 +64,9 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Create a new element.
+     *
+     * @param name   the name of the element
+     * @param index  the index
      */
     Element(String name, int index) {
         this.name = name;
@@ -84,6 +87,8 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Get the name of the element.
+     *
+     * @return  the name of the element
      */
     public String getName() {
         return name;
@@ -91,6 +96,8 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Return true if the start tag can be omitted.
+     *
+     * @return  {@code true} if the start tag can be omitted
      */
     public boolean omitStart() {
         return oStart;
@@ -98,6 +105,8 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Return true if the end tag can be omitted.
+     *
+     * @return  {@code true} if the end tag can be omitted
      */
     public boolean omitEnd() {
         return oEnd;
@@ -105,6 +114,8 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Get type.
+     *
+     * @return  the type of the element
      */
     public int getType() {
         return type;
@@ -112,6 +123,8 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Get content model
+     *
+     * @return  the content model
      */
     public ContentModel getContent() {
         return content;
@@ -119,6 +132,8 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Get the attributes.
+     *
+     * @return  the {@code AttributeList} specifying the element
      */
     public AttributeList getAttributes() {
         return atts;
@@ -126,6 +141,8 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Get index.
+     *
+     * @return the element index
      */
     public int getIndex() {
         return index;
@@ -133,6 +150,8 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Check if empty
+     *
+     * @return  true if the current element is empty
      */
     public boolean isEmpty() {
         return type == EMPTY;
@@ -140,6 +159,8 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Convert to a string.
+     *
+     * @return  a string representation for the given {@code Element} instance
      */
     public String toString() {
         return name;
@@ -147,6 +168,10 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Get an attribute by name.
+     *
+     * @param name  the attribute name
+     *
+     * @return the {@code AttributeList} for the given {@code name}
      */
     public AttributeList getAttribute(String name) {
         for (AttributeList a = atts ; a != null ; a = a.next) {
@@ -159,10 +184,14 @@ class Element implements DTDConstants, Serializable {
 
     /**
      * Get an attribute by value.
+     *
+     * @param value  the string representation of value
+     *
+     * @return  the {@code AttributeList} for the given {@code value}
      */
-    public AttributeList getAttributeByValue(String name) {
+    public AttributeList getAttributeByValue(String value) {
         for (AttributeList a = atts ; a != null ; a = a.next) {
-            if ((a.values != null) && a.values.contains(name)) {
+            if ((a.values != null) && a.values.contains(value)) {
                 return a;
             }
         }

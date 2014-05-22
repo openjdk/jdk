@@ -370,7 +370,37 @@ public class VM {
     /**
      * Returns {@code true} if we are in a set UID program.
      */
-    public static native boolean isSetUID();
+    public static boolean isSetUID() {
+        long uid = getuid();
+        long euid = geteuid();
+        long gid = getgid();
+        long egid = getegid();
+        return uid != euid  || gid != egid;
+    }
+
+    /**
+     * Returns the real user ID of the calling process,
+     * or -1 if the value is not available.
+     */
+    public static native long getuid();
+
+    /**
+     * Returns the effective user ID of the calling process,
+     * or -1 if the value is not available.
+     */
+    public static native long geteuid();
+
+    /**
+     * Returns the real group ID of the calling process,
+     * or -1 if the value is not available.
+     */
+    public static native long getgid();
+
+    /**
+     * Returns the effective group ID of the calling process,
+     * or -1 if the value is not available.
+     */
+    public static native long getegid();
 
     static {
         initialize();
