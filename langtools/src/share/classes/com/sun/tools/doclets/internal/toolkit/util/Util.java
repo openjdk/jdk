@@ -31,6 +31,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.text.Collator;
 import java.util.*;
+
 import javax.tools.StandardLocation;
 
 import com.sun.javadoc.*;
@@ -783,9 +784,8 @@ public class Util {
     }
 
     /**
-     * A general purpose String comparator, which compares two Strings using a Collator
-     * strength of "SECONDARY", thus providing  optimum case insensitive comparisons in
-     * most Locales.
+     * A general purpose case insensitive String comparator, which compares two Strings using a Collator
+     * strength of "TERTIARY".
      *
      * @param s1 first String to compare.
      * @param s2 second String to compare.
@@ -793,14 +793,32 @@ public class Util {
      *         argument is less than, equal to, or greater than the second.
      */
     public static int compareStrings(String s1, String s2) {
+        return compareStrings(true, s1, s2);
+    }
+    /**
+     * A general purpose case sensitive String comparator, which compares two Strings using a Collator
+     * strength of "SECONDARY".
+     *
+     * @param s1 first String to compare.
+     * @param s2 second String to compare.
+     * @return a negative integer, zero, or a positive integer as the first
+     *         argument is less than, equal to, or greater than the second.
+     */
+    public static int compareCaseCompare(String s1, String s2) {
+        return compareStrings(false, s1, s2);
+    }
+    private static int compareStrings(boolean caseSensitive, String s1, String s2) {
         Collator collator = Collator.getInstance();
-        collator.setStrength(Collator.SECONDARY);
+        collator.setStrength(caseSensitive ? Collator.TERTIARY : Collator.SECONDARY);
         return collator.compare(s1, s2);
     }
-
     /**
-     * A comparator for index file uses, this sorts first on names, then on
-     * parameter types and finally on the fully qualified name.
+     * A comparator for index file uses,
+     *  1. this sorts first on simple names
+     *  2. if equal, case insensitive comparison of Parameter types
+     *  3. if equal, case sensitive comparison of Parameter types
+     *  4. if equal, compare the FQNs of the entities
+     *  5. if equal, then compare the DocKinds ex: Package, Interface etc.
      * @return a comparator for index file use
      */
     public static Comparator<Doc> makeComparatorForIndexUse() {
@@ -816,29 +834,35 @@ public class Util {
              *         argument is less than, equal to, or greater than the second.
              */
             public int compare(Doc d1, Doc d2) {
-                int result = compareStrings(d1.name(), d2.name());
+                int result = compareNames(d1, d2);
                 if (result != 0) {
                     return result;
                 }
                 if (d1 instanceof ExecutableMemberDoc && d2 instanceof ExecutableMemberDoc) {
-                    result = compareExecutableMembers(
-                            (ExecutableMemberDoc) d1,
-                            (ExecutableMemberDoc) d2);
+                    Parameter[] param1 = ((ExecutableMemberDoc) d1).parameters();
+                    Parameter[] param2 = ((ExecutableMemberDoc) d2).parameters();
+                    result = compareParameters(false, param1, param2);
                     if (result != 0) {
                         return result;
                     }
+                    result = compareParameters(true, param1, param2);
                 }
-                if (d1 instanceof ProgramElementDoc && d2 instanceof ProgramElementDoc) {
-                    return compareProgramElementDoc((ProgramElementDoc)d1, (ProgramElementDoc)d2);
+                if (result != 0) {
+                    return result;
                 }
-                return 0;
+                result = compareFullyQualifiedNames(d1, d2);
+                if (result != 0) {
+                    return result;
+                }
+                return compareDocKinds(d1, d2);
             }
         };
     }
 
     /**
      * Comparator for ClassUse representations, this sorts on member names,
-     * fully qualified member names and then the parameter types if applicable.
+     * fully qualified member names and then the parameter types if applicable,
+     * and finally the Doc kinds ie. package, class, interface etc.
      * @return a comparator to sort classes and members for class use
      */
     public static Comparator<Doc> makeComparatorForClassUse() {
@@ -853,23 +877,28 @@ public class Util {
              *         argument is less than, equal to, or greater than the second.
              */
             public int compare(Doc d1, Doc d2) {
-                int result = compareStrings(d1.name(), d2.name());
+                int result = compareNames(d1, d2);
                 if (result != 0) {
                     return result;
                 }
-                if (d1 instanceof ProgramElementDoc && d2 instanceof ProgramElementDoc) {
-                    result = compareProgramElementDoc((ProgramElementDoc) d1, (ProgramElementDoc) d2);
+                result = compareFullyQualifiedNames(d1, d2);
+                if (result != 0) {
+                    return result;
+                }
+                if (d1 instanceof ExecutableMemberDoc && d2 instanceof ExecutableMemberDoc) {
+                    Parameter[] param1 = ((ExecutableMemberDoc) d1).parameters();
+                    Parameter[] param2 = ((ExecutableMemberDoc) d2).parameters();
+                    result = compareParameters(false, param1, param2);
                     if (result != 0) {
                         return result;
                     }
+                    return compareParameters(true, param1, param2);
                 }
-                if (d1 instanceof ExecutableMemberDoc && d2 instanceof ExecutableMemberDoc) {
-                    return compareExecutableMembers((ExecutableMemberDoc)d1, (ExecutableMemberDoc)d2);
-                }
-                return 0;
+                return compareDocKinds(d1, d2);
             }
         };
     }
+
 
     /**
      * A general purpose comparator to sort Doc entities, basically provides the building blocks
@@ -877,22 +906,59 @@ public class Util {
      * @param <T> a Doc entity
      */
     static abstract class DocComparator<T extends Doc> implements Comparator<Doc> {
+        static enum DocKinds {
+           PACKAGE,
+           FIELD,
+           ENUM,
+           ANNOTATION,
+           INTERFACE,
+           CLASS,
+           CONSTRUCTOR,
+           METHOD
+        };
+        private DocKinds getValue(Doc d) {
+            if (d.isAnnotationType() || d.isAnnotationTypeElement()) {
+                return DocKinds.ANNOTATION;
+            } else if (d.isEnum() || d.isEnumConstant()) {
+                return DocKinds.ENUM;
+            } else if (d.isField()) {
+                return DocKinds.FIELD;
+            } else if (d.isInterface()) {
+                return DocKinds.INTERFACE;
+            } else if (d.isClass()) {
+                return DocKinds.CLASS;
+            } else if (d.isConstructor()) {
+                return DocKinds.CONSTRUCTOR;
+            } else if (d.isMethod()) {
+                return DocKinds.METHOD;
+            } else {
+                return DocKinds.PACKAGE;
+            }
+        }
         /**
-         * compares two parameter arrays by comparing each Type of the parameter in the array,
-         * as possible, if the matched strings are identical, and  have mismatched array lengths
-         * then compare the lengths.
+         * Compares two Doc entities' kinds, and these are ordered as defined in
+         * the DocKinds enumeration.
+         * @param d1 the first Doc object
+         * @param d2 the second Doc object
+         * @return a negative integer, zero, or a positive integer as the first
+         *         argument is less than, equal to, or greater than the second.
+         */
+        protected int compareDocKinds(Doc d1, Doc d2) {
+            return getValue(d1).compareTo(getValue(d2));
+        }
+        /**
+         * Compares two parameter arrays by comparing each Type of the parameter in the array,
+         * and as many as possible, otherwise compare their lengths.
+         * @param ignoreCase specifies case sensitive or insensitive comparison.
          * @param params1 the first parameter array.
          * @param params2 the first parameter array.
          * @return a negative integer, zero, or a positive integer as the first
          *         argument is less than, equal to, or greater than the second.
          */
-        protected int compareParameters(Parameter[] params1, Parameter[] params2) {
-            if (params1.length == 0 && params2.length == 0) {
-                return 0;
-            }
+        protected int compareParameters(boolean ignoreCase, Parameter[] params1, Parameter[] params2) {
             // try to compare as many as possible
             for (int i = 0; i < params1.length && i < params2.length; i++) {
-                int result = compareStrings(params1[i].typeName(), params2[i].typeName());
+                int result = compareStrings(ignoreCase, params1[i].typeName(), params2[i].typeName());
                 if (result != 0) {
                     return result;
                 }
@@ -901,41 +967,32 @@ public class Util {
         }
 
         /**
-         * Compares two MemberDocs, typically the name of a method,
-         * field or constructor.
-         * @param e1 the first MemberDoc.
-         * @param e2 the second MemberDoc.
+         * Compares two Doc entities typically the simple name of a method,
+         * field, constructor etc.
+         * @param d1 the first Doc.
+         * @param d2 the second Doc.
          * @return a negative integer, zero, or a positive integer as the first
          *         argument is less than, equal to, or greater than the second.
          */
-        protected int compareMembers(MemberDoc e1, MemberDoc e2) {
-            return compareStrings(e1.name(), e2.name());
-        }
-
-        /**
-         * Compares two ExecutableMemberDocs such as methods and constructors,
-         * as well as the parameters the entity might take.
-         * @param m1 the first ExecutableMemberDoc.
-         * @param m2 the second  ExecutableMemberDoc.
-         * @return a negative integer, zero, or a positive integer as the first
-         *         argument is less than, equal to, or greater than the second.
-         */
-        protected int compareExecutableMembers(ExecutableMemberDoc m1, ExecutableMemberDoc m2) {
-            int result = compareMembers(m1, m2);
-            if (result == 0)
-                result = compareParameters(m1.parameters(), m2.parameters());
-            return result;
+        protected int compareNames(Doc d1, Doc d2) {
+            return compareStrings(d1.name(), d2.name());
         }
 
         /**
          * Compares the fully qualified names of the entities
-         * @param p1 the first ProgramElementDoc.
-         * @param p2 the first ProgramElementDoc.
+         * @param d1 the first entity
+         * @param d2 the second entity
          * @return a negative integer, zero, or a positive integer as the first
          *         argument is less than, equal to, or greater than the second.
          */
-        protected int compareProgramElementDoc(ProgramElementDoc p1, ProgramElementDoc p2) {
-            return compareStrings(p1.qualifiedName(), p2.qualifiedName());
+        protected int compareFullyQualifiedNames(Doc d1, Doc d2) {
+            String name1 = (d1 instanceof ProgramElementDoc)
+                    ? ((ProgramElementDoc)d1).qualifiedName()
+                    : d1.name();
+            String name2 = (d2 instanceof ProgramElementDoc)
+                    ? ((ProgramElementDoc)d2).qualifiedName()
+                    : d2.name();
+            return compareStrings(name1, name2);
         }
     }
 }
