@@ -378,21 +378,22 @@ const char* AbstractGangTask::name() const {
 
 WorkGangBarrierSync::WorkGangBarrierSync()
   : _monitor(Mutex::safepoint, "work gang barrier sync", true),
-    _n_workers(0), _n_completed(0), _should_reset(false) {
+    _n_workers(0), _n_completed(0), _should_reset(false), _aborted(false) {
 }
 
 WorkGangBarrierSync::WorkGangBarrierSync(uint n_workers, const char* name)
   : _monitor(Mutex::safepoint, name, true),
-    _n_workers(n_workers), _n_completed(0), _should_reset(false) {
+    _n_workers(n_workers), _n_completed(0), _should_reset(false), _aborted(false) {
 }
 
 void WorkGangBarrierSync::set_n_workers(uint n_workers) {
-  _n_workers   = n_workers;
-  _n_completed = 0;
+  _n_workers    = n_workers;
+  _n_completed  = 0;
   _should_reset = false;
+  _aborted      = false;
 }
 
-void WorkGangBarrierSync::enter() {
+bool WorkGangBarrierSync::enter() {
   MutexLockerEx x(monitor(), Mutex::_no_safepoint_check_flag);
   if (should_reset()) {
     // The should_reset() was set and we are the first worker to enter
@@ -415,10 +416,17 @@ void WorkGangBarrierSync::enter() {
     set_should_reset(true);
     monitor()->notify_all();
   } else {
-    while (n_completed() != n_workers()) {
+    while (n_completed() != n_workers() && !aborted()) {
       monitor()->wait(/* no_safepoint_check */ true);
     }
   }
+  return !aborted();
+}
+
+void WorkGangBarrierSync::abort() {
+  MutexLockerEx x(monitor(), Mutex::_no_safepoint_check_flag);
+  set_aborted();
+  monitor()->notify_all();
 }
 
 // SubTasksDone functions.

@@ -473,7 +473,7 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 
 void vframeStreamCommon::skip_reflection_related_frames() {
   while (!at_end() &&
-         (JDK_Version::is_gte_jdk14x_version() && UseNewReflection &&
+         (JDK_Version::is_gte_jdk14x_version() &&
           (method()->method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
            method()->method_holder()->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass())))) {
     next();

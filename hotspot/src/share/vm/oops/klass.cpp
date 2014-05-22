@@ -640,7 +640,7 @@ void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
-  assert(ClassLoaderDataGraph::contains((address)this), "Should be");
+  assert(Metaspace::contains((address)this), "Should be");
 
   guarantee(this->is_klass(),"should be klass");
 
