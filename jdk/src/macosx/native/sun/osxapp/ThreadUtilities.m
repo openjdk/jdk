@@ -36,7 +36,7 @@ static JNIEnv *appKitEnv = NULL;
 static jobject appkitThreadGroup = NULL;
 static BOOL awtEmbedded = NO;
 
-inline void attachCurrentThread(void** env) {
+static inline void attachCurrentThread(void** env) {
     if ([NSThread isMainThread]) {
         JavaVMAttachArgs args;
         args.version = JNI_VERSION_1_4;
