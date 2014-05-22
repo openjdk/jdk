@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // Dummy VM operation to act as first element in our circular double-linked list
 class VM_Dummy: public VM_Operation {

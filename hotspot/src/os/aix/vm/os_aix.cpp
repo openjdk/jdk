@@ -1871,7 +1871,7 @@ public:
 // properties.
 
 // ShmBkBlock: base class for all blocks in the shared memory bookkeeping
-class ShmBkBlock {
+class ShmBkBlock : public CHeapObj<mtInternal> {
 
   ShmBkBlock* _next;
 

@@ -2059,6 +2059,7 @@ private:
   // Counter values at the time profiling started.
   int               _invocation_counter_start;
   int               _backedge_counter_start;
+  uint              _tenure_traps;
 
 #if INCLUDE_RTM_OPT
   // State of RTM code generation during compilation of the method
@@ -2397,6 +2398,12 @@ public:
     if (decompile_count() > (uint)PerMethodRecompilationCutoff) {
       method()->set_not_compilable(CompLevel_full_optimization, true, "decompile_count > PerMethodRecompilationCutoff");
     }
+  }
+  uint tenure_traps() const {
+    return _tenure_traps;
+  }
+  void inc_tenure_traps() {
+    _tenure_traps += 1;
   }
 
   // Return pointer to area dedicated to parameters in MDO

@@ -581,6 +581,7 @@ class Parse : public GraphKit {
   void    jump_switch_ranges(Node* a, SwitchRange* lo, SwitchRange* hi, int depth = 0);
   bool    create_jump_tables(Node* a, SwitchRange* lo, SwitchRange* hi);
 
+  void decrement_age();
   // helper functions for methodData style profiling
   void test_counter_against_threshold(Node* cnt, int limit);
   void increment_and_test_invocation_counter(int limit);

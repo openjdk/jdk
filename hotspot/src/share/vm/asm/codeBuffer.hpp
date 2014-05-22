@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
   bool allocates(address pc) const  { return pc >= _start && pc <  _limit; }
   bool allocates2(address pc) const { return pc >= _start && pc <= _limit; }
 
-  void    set_end(address pc)       { assert(allocates2(pc), err_msg("not in CodeBuffer memory: " PTR_FORMAT " <= " PTR_FORMAT " <= " PTR_FORMAT, _start, pc, _limit)); _end = pc; }
+  void    set_end(address pc)       { assert(allocates2(pc), err_msg("not in CodeBuffer memory: " INTPTR_FORMAT " <= " INTPTR_FORMAT " <= " INTPTR_FORMAT, p2i(_start), p2i(pc), p2i(_limit))); _end = pc; }
   void    set_mark(address pc)      { assert(contains2(pc), "not in codeBuffer");
                                       _mark = pc; }
   void    set_mark_off(int offset)  { assert(contains2(offset+_start),"not in codeBuffer");

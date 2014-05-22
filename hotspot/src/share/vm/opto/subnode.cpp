@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,8 +242,8 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 const Type *SubINode::sub( const Type *t1, const Type *t2 ) const {
   const TypeInt *r0 = t1->is_int(); // Handy access
   const TypeInt *r1 = t2->is_int();
-  int32 lo = r0->_lo - r1->_hi;
-  int32 hi = r0->_hi - r1->_lo;
+  int32_t lo = r0->_lo - r1->_hi;
+  int32_t hi = r0->_hi - r1->_lo;
 
   // We next check for 32-bit overflow.
   // If that happens, we just assume all integers are possible.
@@ -1065,7 +1065,7 @@ const Type *BoolTest::cc2logical( const Type *CC ) const {
 #ifndef PRODUCT
 void BoolTest::dump_on(outputStream *st) const {
   const char *msg[] = {"eq","gt","of","lt","ne","le","nof","ge"};
-  st->print(msg[_test]);
+  st->print("%s", msg[_test]);
 }
 #endif
 

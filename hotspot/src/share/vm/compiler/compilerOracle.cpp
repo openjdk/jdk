@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -520,7 +520,7 @@ void CompilerOracle::parse_from_line(char* line) {
     tty->print_cr("CompilerOracle: unrecognized line");
     tty->print_cr("  \"%s\"", original_line);
     if (error_msg != NULL) {
-      tty->print_cr(error_msg);
+      tty->print_cr("%s", error_msg);
     }
   }
 }
@@ -642,7 +642,7 @@ void CompilerOracle::parse_compile_only(char * line) {
   char method_sep = have_colon ? ':' : '.';
 
   if (Verbose) {
-    tty->print_cr(line);
+    tty->print_cr("%s", line);
   }
 
   ResourceMark rm;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 void ciMetadata::print(outputStream* st) {
   st->print("<%s", type_string());
   GUARDED_VM_ENTRY(print_impl(st);)
-  st->print(" ident=%d address=0x%x>", ident(), (address)this);
+  st->print(" ident=%d address=" INTPTR_FORMAT ">", ident(), p2i((address)this));
 }
 
 

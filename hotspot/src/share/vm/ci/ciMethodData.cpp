@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,7 +557,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
             if (round == 0) {
               count++;
             } else {
-              out->print(" %d %s", dp_to_di(vdata->dp() + in_bytes(vdata->receiver_offset(i))) / sizeof(intptr_t), k->name()->as_quoted_ascii());
+              out->print(" %d %s", (int)(dp_to_di(vdata->dp() + in_bytes(vdata->receiver_offset(i))) / sizeof(intptr_t)), k->name()->as_quoted_ascii());
             }
           }
         }
@@ -569,7 +569,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
             if (round == 0) {
               count++;
             } else {
-              out->print(" %d %s", dp_to_di(vdata->dp() + in_bytes(vdata->receiver_offset(i))) / sizeof(intptr_t), k->name()->as_quoted_ascii());
+              out->print(" %d %s", (int)(dp_to_di(vdata->dp() + in_bytes(vdata->receiver_offset(i))) / sizeof(intptr_t)), k->name()->as_quoted_ascii());
             }
           }
         }
