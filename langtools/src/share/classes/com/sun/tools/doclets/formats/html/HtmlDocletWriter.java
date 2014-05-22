@@ -28,6 +28,8 @@ package com.sun.tools.doclets.formats.html;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
@@ -139,42 +141,37 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (index < 0) {
             return htmlstr;
         }
-        String lowerHtml = StringUtils.toLowerCase(htmlstr);
-        final String docroot = "{@docroot}";
-        // Return index of first occurrence of {@docroot}
-        // Note: {@docRoot} is not case sensitive when passed in w/command line option
-        index = lowerHtml.indexOf(docroot, index);
-        if (index < 0) {
+        Matcher docrootMatcher = docrootPattern.matcher(htmlstr);
+        if (!docrootMatcher.find()) {
             return htmlstr;
         }
         StringBuilder buf = new StringBuilder();
-        int previndex = 0;
-        while (true) {
-            // Search for lowercase version of {@docRoot}
-            index = lowerHtml.indexOf(docroot, previndex);
-            // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
-            if (index < 0) {
-                buf.append(htmlstr.substring(previndex));
-                break;
-            }
-            // If next {@docroot} tag found, append htmlstr up to start of tag
-            buf.append(htmlstr.substring(previndex, index));
-            previndex = index + docroot.length();
-            if (configuration.docrootparent.length() > 0 && htmlstr.startsWith("/..", previndex)) {
+        int prevEnd = 0;
+        do {
+            int match = docrootMatcher.start();
+            // append htmlstr up to start of next {@docroot}
+            buf.append(htmlstr.substring(prevEnd, match));
+            prevEnd = docrootMatcher.end();
+            if (configuration.docrootparent.length() > 0 && htmlstr.startsWith("/..", prevEnd)) {
                 // Insert the absolute link if {@docRoot} is followed by "/..".
                 buf.append(configuration.docrootparent);
-                previndex += 3;
+                prevEnd += 3;
             } else {
                 // Insert relative path where {@docRoot} was located
                 buf.append(pathToRoot.isEmpty() ? "." : pathToRoot.getPath());
             }
             // Append slash if next character is not a slash
-            if (previndex < htmlstr.length() && htmlstr.charAt(previndex) != '/') {
+            if (prevEnd < htmlstr.length() && htmlstr.charAt(prevEnd) != '/') {
                 buf.append('/');
             }
-        }
+        } while (docrootMatcher.find());
+        buf.append(htmlstr.substring(prevEnd));
         return buf.toString();
     }
+    //where:
+        // Note: {@docRoot} is not case sensitive when passed in w/command line option:
+        private static final Pattern docrootPattern =
+                Pattern.compile(Pattern.quote("{@docroot}"), Pattern.CASE_INSENSITIVE);
 
     /**
      * Get the script to show or hide the All classes link.
@@ -1690,13 +1687,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
 
         //Redirect all relative links.
-        int end, begin = StringUtils.toLowerCase(text).indexOf("<a");
+        int end, begin = StringUtils.indexOfIgnoreCase(text, "<a");
         if(begin >= 0){
             StringBuilder textBuff = new StringBuilder(text);
 
             while(begin >=0){
                 if (textBuff.length() > begin + 2 && ! Character.isWhitespace(textBuff.charAt(begin+2))) {
-                    begin = StringUtils.toLowerCase(textBuff.toString()).indexOf("<a", begin + 1);
+                    begin = StringUtils.indexOfIgnoreCase(textBuff.toString(), "<a", begin + 1);
                     continue;
                 }
 
@@ -1736,7 +1733,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         + redirectPathFromRoot.resolve(relativeLink).getPath();
                     textBuff.replace(begin, end, relativeLink);
                 }
-                begin = StringUtils.toLowerCase(textBuff.toString()).indexOf("<a", begin + 1);
+                begin = StringUtils.indexOfIgnoreCase(textBuff.toString(), "<a", begin + 1);
             }
             return textBuff.toString();
         }

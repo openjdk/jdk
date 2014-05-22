@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,14 +129,14 @@ public class MethodParametersTest {
         if (out.length() > 0)
             System.err.println(out);
 
-        // Now get the class reader, construct a name for Baz, and load it.
-        com.sun.tools.javac.jvm.ClassReader cr =
-            com.sun.tools.javac.jvm.ClassReader.instance(context);
+        // Now get the class finder, construct a name for Baz, and load it.
+        com.sun.tools.javac.code.ClassFinder cf =
+            com.sun.tools.javac.code.ClassFinder.instance(context);
         Name name = Names.instance(context).fromString(Baz_name);
 
         // Now walk down the language model and check the name of the
         // parameter.
-        final Element baz = cr.loadClass(name);
+        final Element baz = cf.loadClass(name);
         for (Element e : baz.getEnclosedElements()) {
             if (e instanceof ExecutableElement) {
                 final ExecutableElement ee = (ExecutableElement) e;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.tools.javac.util;
 
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** A collection of utilities for String manipulation.
  *
@@ -48,6 +50,21 @@ public class StringUtils {
      */
     public static String toUpperCase(String source) {
         return source.toUpperCase(Locale.US);
+    }
+
+    /**Case insensitive version of {@link String#indexOf(java.lang.String)}. Equivalent to
+     * {@code text.indexOf(str)}, except the matching is case insensitive.
+     */
+    public static int indexOfIgnoreCase(String text, String str) {
+        return indexOfIgnoreCase(text, str, 0);
+    }
+
+    /**Case insensitive version of {@link String#indexOf(java.lang.String, int)}. Equivalent to
+     * {@code text.indexOf(str, startIndex)}, except the matching is case insensitive.
+     */
+    public static int indexOfIgnoreCase(String text, String str, int startIndex) {
+        Matcher m = Pattern.compile(Pattern.quote(str), Pattern.CASE_INSENSITIVE).matcher(text);
+        return m.find(startIndex) ? m.start() : -1;
     }
 
 }
