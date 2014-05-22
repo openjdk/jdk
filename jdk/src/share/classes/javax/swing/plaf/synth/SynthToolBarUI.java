@@ -178,19 +178,17 @@ public class SynthToolBarUI extends BasicToolBarUI
     }
 
     private SynthContext getContext(JComponent c, int state) {
-        return SynthContext.getContext(SynthContext.class, c,
-                    SynthLookAndFeel.getRegion(c), style, state);
+        return SynthContext.getContext(c, style, state);
     }
 
     private SynthContext getContext(JComponent c, Region region, SynthStyle style) {
-        return SynthContext.getContext(SynthContext.class, c, region,
+        return SynthContext.getContext(c, region,
                                        style, getComponentState(c, region));
     }
 
     private SynthContext getContext(JComponent c, Region region,
                                     SynthStyle style, int state) {
-        return SynthContext.getContext(SynthContext.class, c, region,
-                                       style, state);
+        return SynthContext.getContext(c, region, style, state);
     }
 
     private int getComponentState(JComponent c, Region region) {

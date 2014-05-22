@@ -24,9 +24,9 @@
  */
 package javax.swing.plaf.synth;
 
-import javax.swing.*;
-import java.util.*;
-import sun.reflect.misc.ReflectUtil;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import javax.swing.JComponent;
 
 /**
  * An immutable transient object containing contextual information about
@@ -40,58 +40,31 @@ import sun.reflect.misc.ReflectUtil;
  * @author Scott Violet
  */
 public class SynthContext {
-    private static final Map<Class, List<SynthContext>> contextMap;
+    private static final Queue<SynthContext> queue = new ConcurrentLinkedQueue<>();
 
     private JComponent component;
     private Region region;
     private SynthStyle style;
     private int state;
 
-
-    static {
-        contextMap = new HashMap<Class, List<SynthContext>>();
+    static SynthContext getContext(JComponent c, SynthStyle style, int state) {
+        return getContext(c, SynthLookAndFeel.getRegion(c), style, state);
     }
 
-
-    static SynthContext getContext(Class type, JComponent component,
+    static SynthContext getContext(JComponent component,
                                    Region region, SynthStyle style,
                                    int state) {
-        SynthContext context = null;
-
-        synchronized(contextMap) {
-            List<SynthContext> instances = contextMap.get(type);
-
-            if (instances != null) {
-                int size = instances.size();
-
-                if (size > 0) {
-                    context = instances.remove(size - 1);
-                }
-            }
-        }
+        SynthContext context = queue.poll();
         if (context == null) {
-            try {
-                context = (SynthContext) ReflectUtil.newInstance(type);
-            } catch (IllegalAccessException iae) {
-            } catch (InstantiationException ie) {
-            }
+            context = new SynthContext();
         }
         context.reset(component, region, style, state);
         return context;
     }
 
     static void releaseContext(SynthContext context) {
-        synchronized(contextMap) {
-            List<SynthContext> instances = contextMap.get(context.getClass());
-
-            if (instances == null) {
-                instances = new ArrayList<SynthContext>(5);
-                contextMap.put(context.getClass(), instances);
-            }
-            instances.add(context);
-        }
+        queue.offer(context);
     }
-
 
     SynthContext() {
     }
