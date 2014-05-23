@@ -1081,6 +1081,7 @@ enable_freetype_bundling
 with_alsa
 with_alsa_include
 with_alsa_lib
+with_libjpeg
 with_giflib
 with_lcms
 with_libpng
@@ -1938,6 +1939,8 @@ Optional Packages:
                           headers under PATH/include)
   --with-alsa-include     specify directory for the alsa include files
   --with-alsa-lib         specify directory for the alsa library
+  --with-libjpeg          use libjpeg from build system or OpenJDK source
+                          (system, bundled) [bundled]
   --with-giflib           use giflib from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-lcms             use lcms2 from build system or OpenJDK source
@@ -4253,7 +4256,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1398861894
+DATE_WHEN_GENERATED=1400601642
 
 ###############################################################################
 #
@@ -47176,10 +47179,43 @@ done
   # Check for the jpeg library
   #
 
-  USE_EXTERNAL_LIBJPEG=true
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ljpeg" >&5
-$as_echo_n "checking for main in -ljpeg... " >&6; }
-if ${ac_cv_lib_jpeg_main+:} false; then :
+
+# Check whether --with-libjpeg was given.
+if test "${with_libjpeg+set}" = set; then :
+  withval=$with_libjpeg;
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which libjpeg to use" >&5
+$as_echo_n "checking for which libjpeg to use... " >&6; }
+
+  # default is bundled
+  DEFAULT_LIBJPEG=bundled
+
+  #
+  # if user didn't specify, use DEFAULT_LIBJPEG
+  #
+  if test "x${with_libjpeg}" = "x"; then
+    with_libjpeg=${DEFAULT_LIBJPEG}
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${with_libjpeg}" >&5
+$as_echo "${with_libjpeg}" >&6; }
+
+  if test "x${with_libjpeg}" = "xbundled"; then
+    USE_EXTERNAL_LIBJPEG=false
+  elif test "x${with_libjpeg}" = "xsystem"; then
+    ac_fn_cxx_check_header_mongrel "$LINENO" "jpeglib.h" "ac_cv_header_jpeglib_h" "$ac_includes_default"
+if test "x$ac_cv_header_jpeglib_h" = xyes; then :
+
+else
+   as_fn_error $? "--with-libjpeg=system specified, but jpeglib.h not found!" "$LINENO" 5
+fi
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jpeg_CreateDecompress in -ljpeg" >&5
+$as_echo_n "checking for jpeg_CreateDecompress in -ljpeg... " >&6; }
+if ${ac_cv_lib_jpeg_jpeg_CreateDecompress+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -47187,27 +47223,33 @@ LIBS="-ljpeg  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char jpeg_CreateDecompress ();
 int
 main ()
 {
-return main ();
+return jpeg_CreateDecompress ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_jpeg_main=yes
+  ac_cv_lib_jpeg_jpeg_CreateDecompress=yes
 else
-  ac_cv_lib_jpeg_main=no
+  ac_cv_lib_jpeg_jpeg_CreateDecompress=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jpeg_main" >&5
-$as_echo "$ac_cv_lib_jpeg_main" >&6; }
-if test "x$ac_cv_lib_jpeg_main" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jpeg_jpeg_CreateDecompress" >&5
+$as_echo "$ac_cv_lib_jpeg_jpeg_CreateDecompress" >&6; }
+if test "x$ac_cv_lib_jpeg_jpeg_CreateDecompress" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBJPEG 1
 _ACEOF
@@ -47215,11 +47257,14 @@ _ACEOF
   LIBS="-ljpeg $LIBS"
 
 else
-   USE_EXTERNAL_LIBJPEG=false
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Will use jpeg decoder bundled with the OpenJDK source" >&5
-$as_echo "$as_me: Will use jpeg decoder bundled with the OpenJDK source" >&6;}
-
+   as_fn_error $? "--with-libjpeg=system specified, but no libjpeg found" "$LINENO" 5
 fi
+
+
+    USE_EXTERNAL_LIBJPEG=true
+  else
+    as_fn_error $? "Invalid use of --with-libjpeg: ${with_libjpeg}, use 'system' or 'bundled'" "$LINENO" 5
+  fi
 
 
 
