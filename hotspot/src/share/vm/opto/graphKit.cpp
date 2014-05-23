@@ -1509,6 +1509,8 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   Node* ld;
   if (require_atomic_access && bt == T_LONG) {
     ld = LoadLNode::make_atomic(C, ctl, mem, adr, adr_type, t, mo);
+  } else if (require_atomic_access && bt == T_DOUBLE) {
+    ld = LoadDNode::make_atomic(C, ctl, mem, adr, adr_type, t, mo);
   } else {
     ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo);
   }
@@ -1531,6 +1533,8 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   Node* st;
   if (require_atomic_access && bt == T_LONG) {
     st = StoreLNode::make_atomic(C, ctl, mem, adr, adr_type, val, mo);
+  } else if (require_atomic_access && bt == T_DOUBLE) {
+    st = StoreDNode::make_atomic(C, ctl, mem, adr, adr_type, val, mo);
   } else {
     st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo);
   }

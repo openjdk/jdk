@@ -26,18 +26,11 @@ package pkg1;
  * For index and class-use testing
  */
 public class UsedClass {
-    // This is the exact order we expect to see
 
     /**
-     * @param i param
+     * just an empty param method.
      */
-    public void   add(int i){}
-
-    /**
-     * @param i param
-     * @return double
-     */
-    public int    add(Integer i) {return 0;}
+    public void   add(){}
 
     /**
      * @param d param
@@ -45,16 +38,28 @@ public class UsedClass {
     public void   add(double d){}
 
     /**
+     * @param i param
+     * @param f param
+     */
+    public void   add(int i, float f){}
+
+    /**
+     * @param f param
+     * @param i param
+     */
+    public void   add(float f, int i){}
+
+    /**
+     * @param d param
+     * @param b param
+     */
+    public void   add(double d, byte b){}
+
+    /**
      * @param d param
      * @return Double
      */
     public Double add(Double d) {return (double) 22/7;}
-
-    /**
-     * @param f param
-     * @return Float
-     */
-    public Float  add(float f) {return (float) 22/7;}
 
     /**
      * @param d1 param
@@ -69,4 +74,21 @@ public class UsedClass {
      * @return double
      */
     public double add(double d1, Double  d2) {return d1 + d2;}
+
+    /**
+     * @param f param
+     * @return Float
+     */
+    public Float  add(float f) {return (float) 22/7;}
+
+    /**
+     * @param i param
+     */
+    public void   add(int i){}
+
+    /**
+     * @param i param
+     * @return double
+     */
+    public int    add(Integer i) {return 0;}
 }

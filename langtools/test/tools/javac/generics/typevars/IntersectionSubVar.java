@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,29 @@
  * questions.
  */
 
-import java.util.*;
-import java.io.*;
+/*
+ * @test
+ * @bug 8042656
+ * @summary Subtyping for intersection types containing type variables
+ * @compile IntersectionSubVar.java
+ */
 
-public class MyXmlPropertiesProvider
-    extends sun.util.spi.XmlPropertiesProvider
-{
-    private static int createCount;
-    private static int loadCount;
-    private static int storeCount;
+class IntersectionSubVar {
 
-    static int createCount() { return createCount; }
-    static int loadCount() { return loadCount; }
-    static int storeCount() { return storeCount; }
-
-    public MyXmlPropertiesProvider() {
-        createCount++;
+    interface Box<T> {
+        void set(T arg);
+        T get();
     }
 
-    @Override
-    public void load(Properties props, InputStream in)
-        throws IOException, InvalidPropertiesFormatException
-    {
-        loadCount++;
+    <I> Box<I> glb(Box<? super I> arg1, Box<? super I> arg2) {
+        return null;
     }
 
-    @Override
-    public void store(Properties props, OutputStream out,
-                      String comment, String encoding)
-        throws IOException
-    {
-        storeCount++;
+    <E extends Cloneable> void takeBox(Box<? super E> box) {}
+
+    <T> void test(Box<T> arg1, Box<Cloneable> arg2, Box<? super T> arg3) {
+        T t = glb(arg1, arg2).get(); // assign T&Cloneable to T
+        takeBox(arg3); // inference tests Box<CAP> <: Box<? super CAP&Cloneable>
     }
+
 }

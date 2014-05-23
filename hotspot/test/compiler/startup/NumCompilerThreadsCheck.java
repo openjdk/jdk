@@ -30,11 +30,28 @@
 import com.oracle.java.testlibrary.*;
 
 public class NumCompilerThreadsCheck {
+
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:CICompilerCount=-1");
     OutputAnalyzer out = new OutputAnalyzer(pb.start());
 
     String expectedOutput = "CICompilerCount of -1 is invalid";
     out.shouldContain(expectedOutput);
+
+    if (isZeroVm()) {
+      String expectedLowWaterMarkText = "must be at least 0";
+      out.shouldContain(expectedLowWaterMarkText);
+    }
+  }
+
+  private static boolean isZeroVm() {
+    String vmName = System.getProperty("java.vm.name");
+    if (vmName == null) {
+      throw new RuntimeException("No VM name");
+    }
+    if (vmName.toLowerCase().contains("zero")) {
+      return true;
+    }
+    return false;
   }
 }

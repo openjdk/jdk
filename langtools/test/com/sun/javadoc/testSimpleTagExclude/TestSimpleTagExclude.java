@@ -27,31 +27,27 @@
  * @summary Test the parsing of the -tag option.  The user should be able to
  * exclude a simple tag by using -tag tagname:X
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestSimpleTagExclude
  * @run main TestSimpleTagExclude
  */
 
 public class TestSimpleTagExclude extends JavadocTester {
 
-    private static final String[][] NEGATED_TEST = {
-        { "DummyClass.html", "todo"}
-    };
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-tag", "todo:X",
-        SRC_DIR + "/DummyClass.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSimpleTagExclude tester = new TestSimpleTagExclude();
-        if (tester.run(ARGS, NO_TEST, NEGATED_TEST) != 0) {
-            throw new Error("Javadoc failed to execute.");
-        }
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-tag", "todo:X",
+                testSrc("DummyClass.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("DummyClass.html", false,
+                "todo");
     }
 }

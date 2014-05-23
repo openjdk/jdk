@@ -27,6 +27,7 @@
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_implementation/g1/satbQueue.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(MemRegion whole_heap,

@@ -25,31 +25,35 @@
  * @test
  * @summary Determine if proper warning messages are printed when know.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
  * @build TestTagMisuse
  * @run main TestTagMisuse
  */
 public class TestTagMisuse extends JavadocTester {
 
-    private static final String[][] TEST = {
-        {WARNING_OUTPUT, "warning - Tag @param cannot be used in field documentation."},
-        {WARNING_OUTPUT, "warning - Tag @throws cannot be used in field documentation."},
-        {WARNING_OUTPUT, "warning - Tag @return cannot be used in constructor documentation."},
-        {WARNING_OUTPUT, "warning - Tag @throws cannot be used in inline documentation."},
-    };
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR, SRC_DIR + "/TestTagMisuse.java"
-    };
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestTagMisuse tester = new TestTagMisuse();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-Xdoclint:none",
+                "-d", "out",
+                testSrc("TestTagMisuse.java"));
+        checkExit(Exit.OK);
+
+        checkOutput(Output.WARNING, true,
+                "warning - Tag @param cannot be used in field documentation.",
+                "warning - Tag @throws cannot be used in field documentation.",
+                "warning - Tag @return cannot be used in constructor documentation.",
+                "warning - Tag @throws cannot be used in inline documentation.");
     }
 
     /**

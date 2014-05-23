@@ -27,31 +27,30 @@
  * @summary  Make sure that option validation errors and sent to the
  *           DocErrorReporter.
  * @author   jamieh
- * @library  ../lib/
+ * @library ../lib
  * @build    JavadocTester
- * @build    TestDocErrorReporter
  * @run main TestDocErrorReporter
  */
 
 public class TestDocErrorReporter extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-encoding", "xyz",
-            SRC_DIR + "/TestDocErrorReporter.java"
-    };
-
-    //Input for Javadoc return code test.
-    private static final int EXPECTED_EXIT_CODE = 1;
-
     /**
      * The entry point of the test.
-     * @param args the array of command line arguments.
+     * @param args the array of command line arguments
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDocErrorReporter tester = new TestDocErrorReporter();
-        int actualExitCode = tester.run(ARGS, NO_TEST, NO_TEST);
-        tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-encoding", "xyz",
+                testSrc("TestDocErrorReporter.java"));
+
+        checkExit(Exit.FAILED);
     }
 }

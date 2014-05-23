@@ -28,28 +28,25 @@
  * not documented with a throws tag, we generate a link to it in the
  * throws section.  Make sure that the link is below a Throws heading.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestThrowsHead
  * @run main TestThrowsHead
  */
 
 public class TestThrowsHead extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "C.html", "<dt><span class=\"throwsLabel\">Throws:</span>"}
-    };
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, SRC_DIR + "/C.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestThrowsHead tester = new TestThrowsHead();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", true,
+                "<dt><span class=\"throwsLabel\">Throws:</span>");
     }
 }

@@ -32,7 +32,7 @@
 
 
 address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
-  // we don't have fast jni accessors.
+  // We don't have fast jni accessors.
   return (address) -1;
 }
 
@@ -57,12 +57,12 @@ address JNI_FastGetField::generate_fast_get_int_field() {
 }
 
 address JNI_FastGetField::generate_fast_get_long_field() {
-  // we don't have fast jni accessors.
+  // We don't have fast jni accessors.
   return (address) -1;
 }
 
 address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
-  // e don't have fast jni accessors.
+  // We don't have fast jni accessors.
   return (address) -1;
 }
 

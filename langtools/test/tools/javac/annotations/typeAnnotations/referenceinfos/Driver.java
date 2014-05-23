@@ -42,7 +42,7 @@ import com.sun.tools.classfile.TypeAnnotation.TargetType;
 
 public class Driver {
 
-    private static final PrintStream out = System.out;
+    private static final PrintStream out = System.err;
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0 || args.length > 1)

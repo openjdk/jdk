@@ -26,7 +26,6 @@
 #ifndef OS_CPU_AIX_OJDKPPC_VM_ATOMIC_AIX_PPC_INLINE_HPP
 #define OS_CPU_AIX_OJDKPPC_VM_ATOMIC_AIX_PPC_INLINE_HPP
 
-#include "orderAccess_aix_ppc.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "vm_version_ppc.hpp"

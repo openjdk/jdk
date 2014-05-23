@@ -28,41 +28,38 @@
  * are documented properly.  The method should still include "implements" or
  * "overrides" documentation even though the method is external.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester TestExternalOverridenMethod
  * @run main TestExternalOverridenMethod
  */
 
 public class TestExternalOverridenMethod extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "pkg/XReader.html",
-            "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-            "<dd><code><a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/FilterReader.html?is-external=true#read--\" " +
-            "title=\"class or interface in java.io\">read</a></code>&nbsp;in class&nbsp;<code>" +
-            "<a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/FilterReader.html?is-external=true\" " +
-            "title=\"class or interface in java.io\">FilterReader</a></code></dd>"},
-        { "pkg/XReader.html",
-            "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n" +
-            "<dd><code><a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/DataInput.html?is-external=true#readInt--\" " +
-            "title=\"class or interface in java.io\">readInt</a></code>&nbsp;in interface&nbsp;<code>" +
-            "<a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/DataInput.html?is-external=true\" " +
-            "title=\"class or interface in java.io\">DataInput</a></code></dd>"}};
-
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            "-linkoffline", "http://java.sun.com/j2se/1.4.1/docs/api", SRC_DIR,
-            "pkg"
-        };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestExternalOverridenMethod tester = new TestExternalOverridenMethod();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        String uri = "http://java.sun.com/j2se/1.4.1/docs/api";
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-linkoffline", uri, testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/XReader.html", true,
+                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                + "<dd><code><a href=\"" + uri + "/java/io/FilterReader.html?is-external=true#read--\" "
+                + "title=\"class or interface in java.io\">read</a></code>&nbsp;in class&nbsp;<code>"
+                + "<a href=\"" + uri + "/java/io/FilterReader.html?is-external=true\" "
+                + "title=\"class or interface in java.io\">FilterReader</a></code></dd>",
+                "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
+                + "<dd><code><a href=\"" + uri + "/java/io/DataInput.html?is-external=true#readInt--\" "
+                + "title=\"class or interface in java.io\">readInt</a></code>&nbsp;in interface&nbsp;<code>"
+                + "<a href=\"" + uri + "/java/io/DataInput.html?is-external=true\" "
+                + "title=\"class or interface in java.io\">DataInput</a></code></dd>"
+        );
     }
 }

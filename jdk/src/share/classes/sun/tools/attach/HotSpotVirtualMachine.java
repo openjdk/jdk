@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,6 +256,20 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
         return value;
     }
+
+    /*
+     * Utility method to read data into a String.
+     */
+    String readErrorMessage(InputStream sis) throws IOException {
+        byte b[] = new byte[1024];
+        int n;
+        StringBuffer message = new StringBuffer();
+        while ((n = sis.read(b)) != -1) {
+            message.append(new String(b, 0, n, "UTF-8"));
+        }
+        return message.toString();
+    }
+
 
     // -- attach timeout support
 

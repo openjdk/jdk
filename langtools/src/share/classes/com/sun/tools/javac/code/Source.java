@@ -234,7 +234,7 @@ public enum Source {
     public boolean allowGraphInference() {
         return compareTo(JDK1_8) >= 0;
     }
-    public boolean allowStructuralMostSpecific() {
+    public boolean allowFunctionalInterfaceMostSpecific() {
         return compareTo(JDK1_8) >= 0;
     }
     public static SourceVersion toSourceVersion(Source source) {

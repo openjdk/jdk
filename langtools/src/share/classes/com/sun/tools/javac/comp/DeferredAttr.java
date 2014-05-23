@@ -134,10 +134,15 @@ public class DeferredAttr extends JCTree.Visitor {
         SpeculativeCache speculativeCache;
 
         DeferredType(JCExpression tree, Env<AttrContext> env) {
-            super(null);
+            super(null, noAnnotations);
             this.tree = tree;
             this.env = attr.copyEnv(env);
             this.speculativeCache = new SpeculativeCache();
+        }
+
+        @Override
+        public DeferredType annotatedType(List<Attribute.TypeCompound> typeAnnotations) {
+            throw new AssertionError("Cannot annotate a deferred type");
         }
 
         @Override

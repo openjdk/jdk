@@ -27,59 +27,54 @@
  * @summary  Make sure that all inherited methods from multiple extended
  *           interfaces are documented
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestMultiInheritence
  * @run main TestMultiInheritence
  */
 
+// TODO: should be TestMultiInheritance
 public class TestMultiInheritence extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg3"
-    };
-
-    //Method foo() is inherited from BOTH I2 and I3
-    private static final String[][] TEST = {
-       { "pkg3/I1.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">" +
-                "I2</a>"},
-        { "pkg3/I1.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">" +
-                 "I3</a>"},
-        { "pkg3/I0.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">" +
-                 "I2</a>"},
-        { "pkg3/I0.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">" +
-                 "I3</a>"},
-    };
-
-    //Method foo() is NOT inherited from I4 because it is overriden by
-    //I3.
-    private static final String[][] NEGATED_TEST = {
-        { "pkg3/I1.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">" +
-                 "I4</a>"},
-        { "pkg3/I0.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">" +
-                 "I4</a>"},
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestMultiInheritence tester = new TestMultiInheritence();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg3");
+        checkExit(Exit.OK);
+
+        // Method foo() is inherited from BOTH I2 and I3
+
+        checkOutput("pkg3/I1.html", true,
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">"
+                + "I2</a>",
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">"
+                + "I3</a>");
+
+        checkOutput("pkg3/I0.html", true,
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">"
+                + "I2</a>",
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">"
+                + "I3</a>");
+
+        // Method foo() is NOT inherited from I4 because it is overriden by I3.
+
+        checkOutput("pkg3/I1.html", false,
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">"
+                + "I4</a>");
+
+        checkOutput("pkg3/I0.html", false,
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">"
+                + "I4</a>");
     }
 }
