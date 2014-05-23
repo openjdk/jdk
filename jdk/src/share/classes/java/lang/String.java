@@ -2583,6 +2583,9 @@ public final class String
             if (cp == '\u03A3') {                       // GREEK CAPITAL LETTER SIGMA
                 return toLowerCaseEx(result, i, locale, false);
             }
+            if (cp == '\u0130') {                       // LATIN CAPITAL LETTER I WITH DOT ABOVE
+                return toLowerCaseEx(result, i, locale, true);
+            }
             cp = Character.toLowerCase(cp);
             if (!Character.isBmpCodePoint(cp)) {
                 return toLowerCaseEx(result, i, locale, false);

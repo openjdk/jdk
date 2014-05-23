@@ -102,10 +102,11 @@ public class Pool {
      */
     public int put(Object value) {
         value = makePoolValue(value);
-//      assert !(value instanceof Type.TypeVar);
+        Assert.check(!(value instanceof Type.TypeVar));
+        Assert.check(!(value instanceof Types.UniqueType &&
+                       ((UniqueType) value).type instanceof Type.TypeVar));
         Integer index = indices.get(value);
         if (index == null) {
-//          System.err.println("put " + value + " " + value.getClass());//DEBUG
             index = pp;
             indices.put(value, index);
             pool = ArrayUtils.ensureCapacity(pool, pp);

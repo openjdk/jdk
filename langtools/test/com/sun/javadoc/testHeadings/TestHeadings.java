@@ -26,7 +26,7 @@
  * @bug      4905786 6259611
  * @summary  Make sure that headings use the TH tag instead of the TD tag.
  * @author   jamieh
- * @library  ../lib/
+ * @library ../lib
  * @build    JavadocTester
  * @build    TestHeadings
  * @run main TestHeadings
@@ -34,87 +34,82 @@
 
 public class TestHeadings extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-use", "-header", "Test Files",
-        "pkg1", "pkg2"
-    };
-
-    //Input for string search tests.
     private static final String[][] TEST = {
-        //Package summary
-        { "pkg1/package-summary.html",
-            "<th class=\"colFirst\" scope=\"col\">" +
-            "Class</th>\n" +
-            "<th class=\"colLast\" scope=\"col\"" +
-            ">Description</th>"
+
+        {
+        },
+        { "serialized-form.html"
+        },
+        { "serialized-form.html"
         },
 
-        // Class documentation
-        { "pkg1/C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
+        {
         },
-        { "pkg1/C1.html",
-            "<h3>Methods inherited from class&nbsp;java.lang.Object</h3>"
+        { "overview-frame.html"
         },
-
-        // Class use documentation
-        { "pkg1/class-use/C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Package</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Description</th>"
-        },
-        { "pkg1/class-use/C1.html",
-            "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Field and Description</th>"
-        },
-
-        // Deprecated
-        { "deprecated-list.html",
-            "<th class=\"colOne\" scope=\"col\">Method and Description</th>"
-        },
-
-        // Constant values
-        { "constant-values.html",
-            "<th class=\"colFirst\" scope=\"col\">" +
-            "Modifier and Type</th>\n" +
-            "<th scope=\"col\">Constant Field</th>\n" +
-            "<th class=\"colLast\" scope=\"col\">Value</th>"
-        },
-
-        // Serialized Form
-        { "serialized-form.html",
-            "<h2 title=\"Package\">Package&nbsp;pkg1</h2>"
-        },
-        { "serialized-form.html",
-            "<h3>Class <a href=\"pkg1/C1.html\" title=\"class in pkg1\">" +
-            "pkg1.C1</a> extends java.lang.Object implements Serializable</h3>"
-        },
-        { "serialized-form.html",
-            "<h3>Serialized Fields</h3>"
-        },
-
-        // Overview Frame
-        { "overview-frame.html",
-            "<h1 title=\"Test Files\" class=\"bar\">Test Files</h1>"
-        },
-        { "overview-frame.html",
-            "<title>Overview List</title>"
-        },
-
-        // Overview Summary
-        { "overview-summary.html",
-            "<title>Overview</title>"
+        {
         }
     };
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHeadings tester = new TestHeadings();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-use",
+                "-header", "Test Files",
+                "pkg1", "pkg2");
+        checkExit(Exit.OK);
+
+        //Package summary
+        checkOutput("pkg1/package-summary.html", true,
+                "<th class=\"colFirst\" scope=\"col\">"
+                + "Class</th>\n"
+                + "<th class=\"colLast\" scope=\"col\""
+                + ">Description</th>");
+
+        // Class documentation
+        checkOutput("pkg1/C1.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>",
+                "<h3>Methods inherited from class&nbsp;java.lang.Object</h3>");
+
+        // Class use documentation
+        checkOutput("pkg1/class-use/C1.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>",
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Field and Description</th>");
+
+        // Deprecated
+        checkOutput("deprecated-list.html", true,
+                "<th class=\"colOne\" scope=\"col\">Method and Description</th>");
+
+        // Constant values
+        checkOutput("constant-values.html", true,
+                "<th class=\"colFirst\" scope=\"col\">"
+                + "Modifier and Type</th>\n"
+                + "<th scope=\"col\">Constant Field</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Value</th>");
+
+        // Serialized Form
+        checkOutput("serialized-form.html", true,
+                "<h2 title=\"Package\">Package&nbsp;pkg1</h2>",
+                "<h3>Class <a href=\"pkg1/C1.html\" title=\"class in pkg1\">"
+                + "pkg1.C1</a> extends java.lang.Object implements Serializable</h3>",
+                "<h3>Serialized Fields</h3>");
+
+        // Overview Frame
+        checkOutput("overview-frame.html", true,
+                "<h1 title=\"Test Files\" class=\"bar\">Test Files</h1>",
+                "<title>Overview List</title>");
+
+        // Overview Summary
+        checkOutput("overview-summary.html", true,
+                "<title>Overview</title>");
     }
 }

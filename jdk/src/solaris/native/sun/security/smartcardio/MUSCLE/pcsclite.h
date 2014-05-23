@@ -62,6 +62,8 @@ typedef SCARDHANDLE *LPSCARDHANDLE;
 
 #define MAX_ATR_SIZE                    33      /* Maximum ATR size */
 
+#ifndef __APPLE__
+
 typedef struct
 {
         const char *szReader;
@@ -72,6 +74,23 @@ typedef struct
         unsigned char rgbAtr[MAX_ATR_SIZE];
 }
 SCARD_READERSTATE_A;
+
+#else // __APPLE__
+
+#pragma pack(1)
+typedef struct
+{
+        const char *szReader;
+        void *pvUserData;
+        uint32_t dwCurrentState;
+        uint32_t dwEventState;
+        uint32_t cbAtr;
+        unsigned char rgbAtr[MAX_ATR_SIZE];
+}
+SCARD_READERSTATE_A;
+#pragma pack()
+
+#endif // __APPLE__
 
 typedef SCARD_READERSTATE_A SCARD_READERSTATE, *PSCARD_READERSTATE_A,
         *LPSCARD_READERSTATE_A;

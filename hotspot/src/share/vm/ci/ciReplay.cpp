@@ -376,11 +376,15 @@ class CompileReplay : public StackObj {
     int c = getc(_stream);
     while(c != EOF) {
       c = get_line(c);
-      process_command(CHECK);
+      process_command(THREAD);
       if (had_error()) {
         tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
-        tty->print_cr("%s", _buffer);
-        return;
+        if (ReplayIgnoreInitErrors) {
+          CLEAR_PENDING_EXCEPTION;
+          _error_message = NULL;
+        } else {
+          return;
+        }
       }
       line_no++;
     }
@@ -565,10 +569,14 @@ class CompileReplay : public StackObj {
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
-    /* jsut copied from Method, to build interpret data*/
+    /* just copied from Method, to build interpret data*/
     if (InstanceRefKlass::owns_pending_list_lock((JavaThread*)THREAD)) {
       return;
     }
+    // To be properly initialized, some profiling in the MDO needs the
+    // method to be rewritten (number of arguments at a call for
+    // instance)
+    method->method_holder()->link_class(CHECK);
     // methodOopDesc::build_interpreter_method_data(method, CHECK);
     {
       // Grab a lock here to prevent multiple

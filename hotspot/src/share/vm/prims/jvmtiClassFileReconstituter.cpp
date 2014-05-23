@@ -851,7 +851,7 @@ void JvmtiClassFileReconstituter::copy_bytecodes(methodHandle mh,
                "sanity check");
 
         int cpci = Bytes::get_native_u2(bcp+1);
-        bool is_invokedynamic = (EnableInvokeDynamic && code == Bytecodes::_invokedynamic);
+        bool is_invokedynamic = (code == Bytecodes::_invokedynamic);
         ConstantPoolCacheEntry* entry;
         if (is_invokedynamic) {
           cpci = Bytes::get_native_u4(bcp+1);

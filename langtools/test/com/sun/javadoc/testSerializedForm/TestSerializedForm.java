@@ -38,85 +38,76 @@
  * @run main TestSerializedForm
  */
 
-import java.lang.*;
 import java.io.*;
 
 public class TestSerializedForm extends JavadocTester implements Serializable {
+    public static void main(String... args) throws Exception {
+        TestSerializedForm tester = new TestSerializedForm();
+        tester.runTests();
+//        tester.run(ARGS, TEST, NEGATED_TEST);
+//        tester.run(ARGS_PRIVATE, TEST_PRIVATE, NEGATED_TEST_PRIVATE);
+//        tester.printSummary();
+    }
 
-    private static final String[][] TEST = {
-        { "serialized-form.html",
-            "protected&nbsp;java.lang.Object&nbsp;readResolve()"},
-        { "serialized-form.html",
-            "protected&nbsp;java.lang.Object&nbsp;writeReplace()"},
-        { "serialized-form.html",
-            "protected&nbsp;java.lang.Object&nbsp;readObjectNoData()"},
-        { "serialized-form.html",
-            "See Also"},
-        { "serialized-form.html",
-            "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass " +
-            "extends java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class pkg1.PrivateIncludeInnerClass.PriInnerClass extends " +
-            "java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class pkg1.ProtectedInnerClass.ProInnerClass extends " +
-            "java.lang.Object implements Serializable</h3>"}
-    };
+    @Test
+    void testDefault() {
+        javadoc("-d", "out-default",
+                "-sourcepath", testSrc,
+                testSrc("TestSerializedForm.java"), "pkg1");
+        checkExit(Exit.OK);
 
-    private static final String[][] TEST_PRIVATE = {
-        { "serialized-form.html",
-            "<h3>Class <a href=\"pkg1/NestedInnerClass.InnerClass.ProNestedInnerClass.html\" " +
-            "title=\"class in pkg1\">pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass</a> " +
-            "extends java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class <a href=\"pkg1/PrivateIncludeInnerClass.PriInnerClass.html\" title=\"class in pkg1\">" +
-            "pkg1.PrivateIncludeInnerClass.PriInnerClass</a> extends java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class <a href=\"pkg1/ProtectedInnerClass.ProInnerClass.html\" title=\"class in pkg1\">" +
-            "pkg1.ProtectedInnerClass.ProInnerClass</a> extends java.lang.Object implements Serializable</h3>"}
-    };
+        checkOutput("serialized-form.html", true,
+                "protected&nbsp;java.lang.Object&nbsp;readResolve()",
+                "protected&nbsp;java.lang.Object&nbsp;writeReplace()",
+                "protected&nbsp;java.lang.Object&nbsp;readObjectNoData()",
+                "See Also",
+                "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass "
+                + "extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.PrivateIncludeInnerClass.PriInnerClass extends "
+                + "java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.ProtectedInnerClass.ProInnerClass extends "
+                + "java.lang.Object implements Serializable</h3>");
 
-    private static final String[][] NEGATED_TEST = {
-        { "serialized-form.html",
-            "<h3>Class <a href=\"pkg1/NestedInnerClass.InnerClass.ProNestedInnerClass.html\" " +
-            "title=\"class in pkg1\">pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass</a> " +
-            "extends java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class <a href=\"pkg1/PrivateInnerClass.PriInnerClass.html\" title=\"class in pkg1\">" +
-            "pkg1.PrivateInnerClass.PriInnerClass</a> extends java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class <a href=\"pkg1/ProtectedInnerClass.ProInnerClass.html\" title=\"class in pkg1\">" +
-            "pkg1.ProtectedInnerClass.ProInnerClass</a> extends java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class pkg1.PublicExcludeInnerClass.PubInnerClass extends java.lang.Object implements " +
-            "Serializable</h3>"}
-    };
+        checkOutput("serialized-form.html", false,
+                "<h3>Class <a href=\"pkg1/NestedInnerClass.InnerClass.ProNestedInnerClass.html\" "
+                + "title=\"class in pkg1\">pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass</a> "
+                + "extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/PrivateInnerClass.PriInnerClass.html\" title=\"class in pkg1\">"
+                + "pkg1.PrivateInnerClass.PriInnerClass</a> extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/ProtectedInnerClass.ProInnerClass.html\" title=\"class in pkg1\">"
+                + "pkg1.ProtectedInnerClass.ProInnerClass</a> extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.PublicExcludeInnerClass.PubInnerClass extends java.lang.Object implements "
+                + "Serializable</h3>");
+    }
 
-    private static final String[][] NEGATED_TEST_PRIVATE = {
-        { "serialized-form.html",
-            "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass " +
-            "extends java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class pkg1.PrivateInnerClass.PriInnerClass extends " +
-            "java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class pkg1.ProtectedInnerClass.ProInnerClass extends " +
-            "java.lang.Object implements Serializable</h3>"},
-        { "serialized-form.html",
-            "<h3>Class <a href=\"pkg1/PublicExcludeInnerClass.PubInnerClass.html\" " +
-            "title=\"class in pkg1\">pkg1.PublicExcludeInnerClass.PubInnerClass</a> " +
-            "extends java.lang.Object implements Serializable</h3>"}
-    };
+    @Test
+    void testPrivate() {
+        javadoc("-private",
+                "-d", "out-private",
+                "-sourcepath", testSrc,
+                testSrc("TestSerializedForm.java"), "pkg1");
+        checkExit(Exit.OK);
 
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-        SRC_DIR + "/TestSerializedForm.java", "pkg1"
-    };
+        checkOutput("serialized-form.html", true,
+                "<h3>Class <a href=\"pkg1/NestedInnerClass.InnerClass.ProNestedInnerClass.html\" "
+                + "title=\"class in pkg1\">pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass</a> "
+                + "extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/PrivateIncludeInnerClass.PriInnerClass.html\" title=\"class in pkg1\">"
+                + "pkg1.PrivateIncludeInnerClass.PriInnerClass</a> extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/ProtectedInnerClass.ProInnerClass.html\" title=\"class in pkg1\">"
+                + "pkg1.ProtectedInnerClass.ProInnerClass</a> extends java.lang.Object implements Serializable</h3>");
 
-    private static final String[] ARGS_PRIVATE = new String[] {
-        "-private", "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR,
-        SRC_DIR + "/TestSerializedForm.java", "pkg1"
-    };
+        checkOutput("serialized-form.html", false,
+                "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass "
+                + "extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.PrivateInnerClass.PriInnerClass extends "
+                + "java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.ProtectedInnerClass.ProInnerClass extends "
+                + "java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/PublicExcludeInnerClass.PubInnerClass.html\" "
+                + "title=\"class in pkg1\">pkg1.PublicExcludeInnerClass.PubInnerClass</a> "
+                + "extends java.lang.Object implements Serializable</h3>");
+    }
 
     /**
      * @serial
@@ -128,12 +119,6 @@ public class TestSerializedForm extends JavadocTester implements Serializable {
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
-    public static void main(String[] args) {
-        TestSerializedForm tester = new TestSerializedForm();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.run(ARGS_PRIVATE, TEST_PRIVATE, NEGATED_TEST_PRIVATE);
-        tester.printSummary();
-    }
 
     /**
      * @param s ObjectInputStream.

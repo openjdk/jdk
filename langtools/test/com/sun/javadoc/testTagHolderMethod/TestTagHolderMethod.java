@@ -26,7 +26,7 @@
  * @bug 4706525
  * @summary Determine if the new Tag.holder() method works properly.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
  * @build TestTagHolderMethod
  * @run main TestTagHolderMethod
@@ -35,10 +35,6 @@
 import com.sun.javadoc.*;
 
 public class TestTagHolderMethod extends JavadocTester {
-
-    public static final String[] ARGS = new String[] {
-        "-docletpath", SRC_DIR, "-doclet", "TestTagHolderMethod", "-sourcepath",
-                SRC_DIR, "pkg"};
 
     /**
      * Doclet entry point.
@@ -55,14 +51,13 @@ public class TestTagHolderMethod extends JavadocTester {
     }
 
     private static void checkHolders(Doc[] holders) throws Exception {
-        for (int i = 0; i < holders.length; i++) {
-            Doc holder = holders[i];
+        for (Doc holder : holders) {
             Tag[] tags = holder.tags();
-            for (int j = 0; j < tags.length; j++) {
-                if (! tags[j].holder().name().equals(holder.name())) {
+            for (Tag tag : tags) {
+                if (!tag.holder().name().equals(holder.name())) {
                     throw new Exception("The holder method does not return the correct Doc object.");
                 } else {
-                    System.out.println(tags[j].name() + " is held by " + holder.name());
+                    System.out.println(tag.name() + " is held by " + holder.name());
                 }
             }
         }
@@ -71,9 +66,19 @@ public class TestTagHolderMethod extends JavadocTester {
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         JavadocTester tester = new TestTagHolderMethod();
-        tester.run(ARGS, new String[][]{}, new String[][]{});
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-docletpath", testSrc, // unlikely to be effective
+                "-doclet", "TestTagHolderMethod",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
     }
 }

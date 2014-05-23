@@ -27,9 +27,8 @@
  * @summary Test to make sure that "see" tag and "serialField" tag handle supplementary
  *    characters correctly.  This test case needs to be run in en_US locale.
  * @author Naoto Sato
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestSupplementary
  * @run main TestSupplementary
  */
 
@@ -37,33 +36,33 @@ import java.util.Locale;
 
 public class TestSupplementary extends JavadocTester {
 
-    private static final String[][] TEST = {
-        {WARNING_OUTPUT, "C.java:38: warning - Tag @see:illegal character: \"119040\" in \"C#method\ud834\udd00()"},
-        {WARNING_OUTPUT, "C.java:44: warning - illegal character \ud801 in @serialField tag: field\ud801\ud801 int."},
-        {WARNING_OUTPUT, "C.java:44: warning - illegal character \ud834\udd7b in @serialField tag: \ud834\udd7bfield int."},
-    };
-    private static final String[][] NEGATED_TEST = {
-        {WARNING_OUTPUT, "C.java:14: warning - Tag @see:illegal character"},
-        {WARNING_OUTPUT, "C.java:19: warning - Tag @see:illegal character"},
-        {WARNING_OUTPUT, "C.java:24: warning - Tag @see:illegal character"},
-        {WARNING_OUTPUT, "C.java:31: warning - illegal character"},
-    };
-    private static final String[] ARGS = new String[] {
-        "-locale", "en_US", "-d", OUTPUT_DIR, SRC_DIR + "/C.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         Locale saveLocale = Locale.getDefault();
         try {
             TestSupplementary tester = new TestSupplementary();
-            tester.run(ARGS, TEST, NEGATED_TEST);
-            tester.printSummary();
+            tester.runTests();
         } finally {
             Locale.setDefault(saveLocale);
         }
+    }
+
+    @Test
+    void test() {
+        javadoc("-locale", "en_US",
+                "-d", "out",
+                testSrc("C.java"));
+        checkExit(Exit.FAILED);
+
+        checkOutput(Output.WARNING, true,
+            "C.java:38: warning - Tag @see:illegal character: \"119040\" in \"C#method\ud834\udd00()",
+            "C.java:44: warning - illegal character \ud801 in @serialField tag: field\ud801\ud801 int.",
+            "C.java:44: warning - illegal character \ud834\udd7b in @serialField tag: \ud834\udd7bfield int.");
+
+        // TODO: do we need to specify the file and line number in these messages?
+        checkOutput(Output.WARNING,  false,
+            "C.java:14: warning - Tag @see:illegal character",
+            "C.java:19: warning - Tag @see:illegal character",
+            "C.java:24: warning - Tag @see:illegal character",
+            "C.java:31: warning - illegal character");
     }
 }

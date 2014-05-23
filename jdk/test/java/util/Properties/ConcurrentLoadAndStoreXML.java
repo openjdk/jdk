@@ -25,9 +25,6 @@
  * @bug 8005281
  * @summary Test that the Properties storeToXML and loadFromXML methods are
  *   thread safe
- * @run main ConcurrentLoadAndStoreXML
- * @run main/othervm -Dsun.util.spi.XmlPropertiesProvider=jdk.internal.util.xml.BasicXmlPropertiesProvider ConcurrentLoadAndStoreXML
-
  */
 
 import java.io.*;

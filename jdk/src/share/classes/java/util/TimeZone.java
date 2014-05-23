@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -591,8 +591,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
     /**
      * Gets the platform defined TimeZone ID.
      **/
-    private static native String getSystemTimeZoneID(String javaHome,
-                                                     String country);
+    private static native String getSystemTimeZoneID(String javaHome);
 
     /**
      * Gets the custom time zone ID based on the GMT offset of the
@@ -650,12 +649,10 @@ abstract public class TimeZone implements Serializable, Cloneable {
         // if the time zone ID is not set (yet), perform the
         // platform to Java time zone ID mapping.
         if (zoneID == null || zoneID.isEmpty()) {
-            String country = AccessController.doPrivileged(
-                    new GetPropertyAction("user.country"));
             String javaHome = AccessController.doPrivileged(
                     new GetPropertyAction("java.home"));
             try {
-                zoneID = getSystemTimeZoneID(javaHome, country);
+                zoneID = getSystemTimeZoneID(javaHome);
                 if (zoneID == null) {
                     zoneID = GMT_ID;
                 }

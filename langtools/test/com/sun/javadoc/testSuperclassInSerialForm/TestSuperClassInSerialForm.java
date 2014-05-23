@@ -27,30 +27,27 @@
  * @summary Test to make sure link to superclass is generated for
  * each class in serialized form page.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestSuperClassInSerialForm
  * @run main TestSuperClassInSerialForm
  */
 
 public class TestSuperClassInSerialForm extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "serialized-form.html",
-         "<a href=\"pkg/SubClass.html\" title=\"class in pkg\">pkg.SubClass</a> extends <a href=\"pkg/SuperClass.html\" title=\"class in pkg\">SuperClass</a>"}
-    };
-
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSuperClassInSerialForm tester = new TestSuperClassInSerialForm();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("serialized-form.html", true,
+                "<a href=\"pkg/SubClass.html\" title=\"class in pkg\">pkg.SubClass</a>"
+                + " extends <a href=\"pkg/SuperClass.html\" title=\"class in pkg\">SuperClass</a>");
     }
 }
