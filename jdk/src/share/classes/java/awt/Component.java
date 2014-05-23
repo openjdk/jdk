@@ -3411,7 +3411,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 (width > 0) && (height > 0)) {
                 PaintEvent e = new PaintEvent(this, PaintEvent.UPDATE,
                                               new Rectangle(x, y, width, height));
-                Toolkit.getEventQueue().postEvent(e);
+                SunToolkit.postEvent(SunToolkit.targetToAppContext(this), e);
             }
         }
     }
