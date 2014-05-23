@@ -26,9 +26,30 @@
 #include "jni_util.h"
 
 
-JNIEXPORT jboolean JNICALL
-Java_sun_misc_VM_isSetUID(JNIEnv *env, jclass thisclass) {
+JNIEXPORT jlong JNICALL
+Java_sun_misc_VM_getuid(JNIEnv *env, jclass thisclass) {
 
-    /* There is no set UID on Windows. */
-    return JNI_FALSE;
+    /* -1 means function not available. */
+    return -1;
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_misc_VM_geteuid(JNIEnv *env, jclass thisclass) {
+
+    /* -1 means function not available. */
+    return -1;
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_misc_VM_getgid(JNIEnv *env, jclass thisclass) {
+
+    /* -1 means function not available. */
+    return -1;
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_misc_VM_getegid(JNIEnv *env, jclass thisclass) {
+
+    /* -1 means function not available. */
+    return -1;
 }

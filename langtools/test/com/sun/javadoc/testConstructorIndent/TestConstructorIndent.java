@@ -27,37 +27,31 @@
  * @summary  The constructor comments should be surrounded by
  *           <dl></dl>.  Check for this in the output.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestConstructorIndent
  * @run main TestConstructorIndent
  */
 
 public class TestConstructorIndent extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "C.html", "<div class=\"block\">" +
-                 "This is just a simple constructor.</div>\n" +
-                 "<dl>\n" +
-                 "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n" +
-                 "<dd><code>i</code> - a param.</dd>\n" +
-                 "</dl>"
-        }
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestConstructorIndent tester = new TestConstructorIndent();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", true,
+                "<div class=\"block\">"
+                + "This is just a simple constructor.</div>\n"
+                + "<dl>\n"
+                + "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n"
+                + "<dd><code>i</code> - a param.</dd>\n"
+                + "</dl>");
     }
 }

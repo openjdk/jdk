@@ -286,7 +286,6 @@ public class ClassWriter extends ClassFile {
          */
         @Override
         public void assembleSig(Type type) {
-            type = type.unannotatedType();
             switch (type.getTag()) {
                 case UNINITIALIZED_THIS:
                 case UNINITIALIZED_OBJECT:
@@ -354,7 +353,7 @@ public class ClassWriter extends ClassFile {
         } else if (t.hasTag(ARRAY)) {
             return typeSig(types.erasure(t));
         } else {
-            throw new AssertionError("xClassName");
+            throw new AssertionError("xClassName expects class or array type, got " + t);
         }
     }
 

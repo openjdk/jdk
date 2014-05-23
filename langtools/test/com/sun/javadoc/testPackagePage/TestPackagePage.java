@@ -28,69 +28,58 @@
  * passed to Javadoc.  Also test that the proper package links are generated
  * when single or multiple packages are documented.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestPackagePage
  * @run main TestPackagePage
  */
 
 public class TestPackagePage extends JavadocTester {
 
-    private static final String[][] TEST1 = {
-        { "com/pkg/package-summary.html",
-            "This is a package page."
-        },
-        //With just one package, all general pages link to the single package page.
-        { "com/pkg/C.html",
-            "<a href=\"../../com/pkg/package-summary.html\">Package</a>"
-        },
-        { "com/pkg/package-tree.html",
-            "<li><a href=\"../../com/pkg/package-summary.html\">Package</a></li>"
-        },
-        { "deprecated-list.html",
-            "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
-        },
-        { "index-all.html",
-            "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
-        },
-        { "help-doc.html",
-            "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>"
-        },
-    };
-
-    private static final String[][] TEST2 = {
-        //With multiple packages, there is no package link in general pages.
-        { "deprecated-list.html",
-            "<li>Package</li>"
-        },
-        { "index-all.html",
-            "<li>Package</li>"
-        },
-        { "help-doc.html",
-            "<li>Package</li>"
-        },
-    };
-
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR,
-            SRC_DIR + "/com/pkg/C.java"
-        };
-
-    private static final String[] ARGS2 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR,
-            "com.pkg", "pkg2"
-        };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestPackagePage tester = new TestPackagePage();
-        tester.run(ARGS1, TEST1, NO_TEST);
-        tester.run(ARGS2, TEST2, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void testSinglePackage() {
+        javadoc("-d", "out-1",
+                "-sourcepath", testSrc,
+                testSrc("com/pkg/C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("com/pkg/package-summary.html", true,
+            "This is a package page.");
+
+        // With just one package, all general pages link to the single package page.
+        checkOutput("com/pkg/C.html", true,
+            "<a href=\"../../com/pkg/package-summary.html\">Package</a>");
+        checkOutput("com/pkg/package-tree.html", true,
+            "<li><a href=\"../../com/pkg/package-summary.html\">Package</a></li>");
+        checkOutput("deprecated-list.html", true,
+            "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>");
+        checkOutput("index-all.html", true,
+            "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>");
+        checkOutput("help-doc.html", true,
+            "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>");
+    }
+
+    private static final String[][] TEST1 = {
+    };
+
+
+    @Test
+    void testMultiplePackages() {
+        javadoc("-d", "out-2",
+                "-sourcepath", testSrc,
+                "com.pkg", "pkg2");
+        checkExit(Exit.OK);
+
+        //With multiple packages, there is no package link in general pages.
+        checkOutput("deprecated-list.html", true,
+            "<li>Package</li>");
+        checkOutput("index-all.html", true,
+            "<li>Package</li>");
+        checkOutput("help-doc.html", true,
+            "<li>Package</li>");
     }
 }

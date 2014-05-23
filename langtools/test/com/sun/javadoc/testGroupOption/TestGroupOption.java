@@ -27,49 +27,46 @@
  * @summary  Test to make sure the -group option does not cause a bad warning
  *           to be printed.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestGroupOption
  * @run main TestGroupOption
  */
 
 public class TestGroupOption extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS1 = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-        "-group", "Package One", "pkg1",
-        "-group", "Package Two", "pkg2",
-        "-group", "Package Three", "pkg3",
-        "pkg1", "pkg2", "pkg3"
-    };
-
-    private static final String[] ARGS2 = new String[] {
-        "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR,
-        "-group", "Package One", "pkg1",
-        "-group", "Package One", "pkg2",
-        "-group", "Package One", "pkg3",
-        "pkg1", "pkg2", "pkg3"
-    };
-
-    //Input for string search tests.
-    private static final String[][] NEGATED_TEST1 = {{WARNING_OUTPUT, "-group"}};
-
-    private static final String[][] TEST2 = {{WARNING_OUTPUT, "-group"}};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        //Make sure the warning is not printed when -group is used correctly.
+    public static void main(String... args) throws Exception {
         TestGroupOption tester = new TestGroupOption();
-        tester.run(ARGS1, NO_TEST, NEGATED_TEST1);
-        tester.printSummary();
+        tester.runTests();
+    }
 
+    @Test
+    void test1() {
+        //Make sure the warning is not printed when -group is used correctly.
+        javadoc("-d", "out-1",
+                "-sourcepath", testSrc,
+                "-group", "Package One", "pkg1",
+                "-group", "Package Two", "pkg2",
+                "-group", "Package Three", "pkg3",
+                "pkg1", "pkg2", "pkg3");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.WARNING, false,
+                "-group");
+    }
+
+    @Test
+    void test2() {
         //Make sure the warning is printed when -group is not used correctly.
-        tester = new TestGroupOption();
-        tester.run(ARGS2, TEST2, NO_TEST);
-        tester.printSummary();
+        javadoc("-d", "out-2",
+                "-sourcepath", testSrc,
+                "-group", "Package One", "pkg1",
+                "-group", "Package One", "pkg2",
+                "-group", "Package One", "pkg3",
+                "pkg1", "pkg2", "pkg3");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.WARNING, true,
+                "-group");
+
     }
 }

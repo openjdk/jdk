@@ -75,8 +75,8 @@ public class FormatData_es_DO extends ParallelListResourceBundle {
                 new String[] {
                     "EEEE d' de 'MMMM' de 'yyyy", // full date pattern
                     "d' de 'MMMM' de 'yyyy", // long date pattern
-                    "MM/dd/yyyy", // medium date pattern
-                    "MM/dd/yy", // short date pattern
+                    "dd/MM/yyyy", // medium date pattern
+                    "dd/MM/yy", // short date pattern
                 }
             },
             { "DateTimePatterns",

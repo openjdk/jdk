@@ -155,6 +155,8 @@ public class CompoundBorder extends AbstractBorder {
 
     /**
      * Returns the outside border object.
+     *
+     * @return the outside {@code Border} object
      */
     public Border getOutsideBorder() {
         return outsideBorder;
@@ -162,6 +164,8 @@ public class CompoundBorder extends AbstractBorder {
 
     /**
      * Returns the inside border object.
+     *
+     * @return the inside {@code Border} object
      */
     public Border getInsideBorder() {
         return insideBorder;

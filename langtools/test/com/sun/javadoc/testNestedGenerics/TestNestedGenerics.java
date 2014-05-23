@@ -26,35 +26,28 @@
  * @bug      6758050 8025633
  * @summary  Test HTML output for nested generic types.
  * @author   bpatel
- * @library  ../lib/
- * @build    JavadocTester TestNestedGenerics
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestNestedGenerics
  */
 
 public class TestNestedGenerics extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[]{
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-        "pkg"
-    };
+    public static void main(String... args) throws Exception {
+        TestNestedGenerics tester = new TestNestedGenerics();
+        tester.runTests();
+    }
 
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/NestedGenerics.html",
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/NestedGenerics.html", true,
             "<div class=\"block\">Contains <a " +
             "href=\"../pkg/NestedGenerics.html#foo-java.util.Map-\"><code>foo" +
-            "(java.util.Map&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>"
-        }
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestNestedGenerics tester = new TestNestedGenerics();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+            "(java.util.Map&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>");
     }
 }

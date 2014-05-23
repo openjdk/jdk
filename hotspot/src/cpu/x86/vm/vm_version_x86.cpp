@@ -263,6 +263,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // and check upper YMM bits after it.
     //
     VM_Version::set_avx_cpuFeatures(); // Enable temporary to pass asserts
+    intx saved_useavx = UseAVX;
+    intx saved_usesse = UseSSE;
+    UseAVX = 1;
+    UseSSE = 2;
 
     // load value into all 32 bytes of ymm7 register
     __ movl(rcx, VM_Version::ymm_test_value());
@@ -292,6 +296,8 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #endif
 
     VM_Version::clean_cpuFeatures();
+    UseAVX = saved_useavx;
+    UseSSE = saved_usesse;
 
     //
     // cpuid(0x7) Structured Extended Features

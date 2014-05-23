@@ -27,32 +27,26 @@
  * @summary  Make sure that annotations types with optional elements have
  *           element headers
  * @author   Mahmood Ali
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestAnnotationOptional
  * @run main TestAnnotationOptional
  */
 
 public class TestAnnotationOptional extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/AnnotationOptional.html",
-            "<a name=\"annotation.type.element.detail\">"
-        }
-    };
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestAnnotationOptional tester = new TestAnnotationOptional();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/AnnotationOptional.html", true,
+            "<a name=\"annotation.type.element.detail\">");
     }
 }

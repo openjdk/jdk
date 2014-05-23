@@ -26,9 +26,8 @@
  * @bug      4979486
  * @summary  Make sure tool parses CR line separators properly.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestCRLineSeparator
  * @run main TestCRLineSeparator
  */
 
@@ -37,32 +36,27 @@ import java.util.*;
 
 public class TestCRLineSeparator extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", ".", "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/MyClass.html", "Line 1\n" +
-        " Line 2"}
-    };
-
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) throws Exception {
-        initFiles(new File(SRC_DIR), new File("."), "pkg");
+    public static void main(String... args) throws Exception {
         TestCRLineSeparator tester = new TestCRLineSeparator();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() throws IOException {
+        initFiles(new File(testSrc), new File("src"), "pkg");
+        javadoc("-d", "out",
+                "-sourcepath", "src",
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/MyClass.html", true,
+                "Line 1\n"
+                + " Line 2");
     }
 
     // recursively copy files from fromDir to toDir, replacing newlines
     // with \r
-    static void initFiles(File fromDir, File toDir, String f) throws IOException {
+    void initFiles(File fromDir, File toDir, String f) throws IOException {
         File from_f = new File(fromDir, f);
         File to_f = new File(toDir, f);
         if (from_f.isDirectory()) {
@@ -71,23 +65,17 @@ public class TestCRLineSeparator extends JavadocTester {
                 initFiles(from_f, to_f, child);
             }
         } else {
-            List<String> lines = new ArrayList<String>();
-            BufferedReader in = new BufferedReader(new FileReader(from_f));
-            try {
+            List<String> lines = new ArrayList<>();
+            try (BufferedReader in = new BufferedReader(new FileReader(from_f))) {
                 String line;
                 while ((line = in.readLine()) != null)
                     lines.add(line);
-            } finally {
-                in.close();
             }
-            BufferedWriter out = new BufferedWriter(new FileWriter(to_f));
-            try {
+            try (BufferedWriter out = new BufferedWriter(new FileWriter(to_f))) {
                 for (String line: lines) {
                     out.write(line);
                     out.write("\r");
                 }
-            } finally {
-                out.close();
             }
         }
     }

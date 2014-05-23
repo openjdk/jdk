@@ -26,30 +26,28 @@
  * @bug 4525364
  * @summary Determine if duplicate throws tags can be used.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestDupThrowsTags
  * @run main TestDupThrowsTags
  */
 public class TestDupThrowsTags extends JavadocTester {
 
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, SRC_DIR + "/TestDupThrowsTags.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        String[][] tests = new String[4][2];
-        for (int i = 0; i < tests.length; i++) {
-            tests[i][0] = "TestDupThrowsTags.html";
-            tests[i][1] = "Test "+(i+1)+" passes";
-        }
+    public static void main(String... args) throws Exception {
         TestDupThrowsTags tester = new TestDupThrowsTags();
-        tester.run(ARGS, tests, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                testSrc("TestDupThrowsTags.java"));
+        checkExit(Exit.FAILED);
+
+        checkOutput("TestDupThrowsTags.html", true,
+                "Test 1 passes",
+                "Test 2 passes",
+                "Test 3 passes",
+                "Test 4 passes");
     }
 
     /**
@@ -58,6 +56,6 @@ public class TestDupThrowsTags extends JavadocTester {
      * @throws java.lang.NullPointerException Test 3 passes
      * @throws java.io.IOException Test 4 passes
      */
-    public void method(){}
+    public void method() {}
 
 }

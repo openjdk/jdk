@@ -26,141 +26,32 @@
  * @bug 4636655
  * @summary  Add title attribute to <FRAME> tags for accessibility
  * @author dkramer
+ * @library ../lib
+ * @build JavadocTester
  * @run main AccessFrameTitle
  */
 
+public class AccessFrameTitle extends JavadocTester {
 
-import com.sun.javadoc.*;
-import java.util.*;
-import java.io.*;
-
-
-/**
- * Runs javadoc and runs regression tests on the resulting HTML.
- * It reads each file, complete with newlines, into a string to easily
- * find strings that contain newlines.
- */
-public class AccessFrameTitle {
-
-    private static final String BUGID = "4636655";
-    private static final String BUGNAME = "AccessFrameTitle";
-    private static final String TMPDEST_DIR1 = "./docs1/";
-    private static final String TMPDEST_DIR2 = "./docs2/";
-
-    // Subtest number.  Needed because runResultsOnHTML is run twice,
-    // and subtestNum should increment across subtest runs.
-    public static int subtestNum = 0;
-    public static int numSubtestsPassed = 0;
-
-    // Entry point
-    public static void main(String[] args) {
-
-        // Directory that contains source files that javadoc runs on
-        String srcdir = System.getProperty("test.src", ".");
-
-        // Test for all cases except the split index page
-        runJavadoc(new String[] {"-d", TMPDEST_DIR1,
-                                 "-sourcepath", srcdir,
-                                 "p1", "p2"});
-        runTestsOnHTML(testArray);
-
-        printSummary();
+    public static void main(String... args) throws Exception {
+        AccessFrameTitle tester = new AccessFrameTitle();
+        tester.runTests();
     }
 
-    /** Run javadoc */
-    public static void runJavadoc(String[] javadocArgs) {
-        if (com.sun.tools.javadoc.Main.execute(javadocArgs) != 0) {
-            throw new Error("Javadoc failed to execute");
-        }
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "p1", "p2");
+        checkExit(Exit.OK);
 
-    /**
-     * Assign value for [ stringToFind, filename ]
-     * NOTE: The standard doclet uses the same separator "\n" for all OS's
-     */
-    private static final String[][] testArray = {
-
-            // Testing only for the presence of the title attributes.
-            // To make this test more robust, only
-            // the initial part of each title string is tested for,
-            // in case the ending part of the string later changes
-
-            { "title=\"All classes and interfaces (except non-static nested types)\"",
-                     TMPDEST_DIR1 + "index.html" },
-
-            { "title=\"All Packages\"",
-                     TMPDEST_DIR1 + "index.html" },
-
-            { "title=\"Package, class and interface descriptions\"",
-                     TMPDEST_DIR1 + "index.html" },
-
-        };
-
-    public static void runTestsOnHTML(String[][] testArray) {
-
-        for (int i = 0; i < testArray.length; i++) {
-
-            subtestNum += 1;
-
-            // Read contents of file into a string
-            String fileString = readFileToString(testArray[i][1]);
-
-            // Get string to find
-            String stringToFind = testArray[i][0];
-
-            // Find string in file's contents
-            if (findString(fileString, stringToFind) == -1) {
-                System.out.println("\nSub-test " + (subtestNum)
-                    + " for bug " + BUGID + " (" + BUGNAME + ") FAILED\n"
-                    + "when searching for:\n"
-                    + stringToFind);
-            } else {
-                numSubtestsPassed += 1;
-                System.out.println("\nSub-test " + (subtestNum) + " passed:\n" + stringToFind);
-            }
-        }
-    }
-
-    public static void printSummary() {
-        if ( numSubtestsPassed == subtestNum ) {
-            System.out.println("\nAll " + numSubtestsPassed + " subtests passed");
-        } else {
-            throw new Error("\n" + (subtestNum - numSubtestsPassed) + " of " + (subtestNum)
-                             + " subtests failed for bug " + BUGID + " (" + BUGNAME + ")\n");
-        }
-    }
-
-    // Read the file into a String
-    public static String readFileToString(String filename) {
-        try {
-            File file = new File(filename);
-            if ( !file.exists() ) {
-                System.out.println("\nFILE DOES NOT EXIST: " + filename);
-            }
-            BufferedReader in = new BufferedReader(new FileReader(file));
-
-            // Create an array of characters the size of the file
-            char[] allChars = new char[(int)file.length()];
-
-            // Read the characters into the allChars array
-            in.read(allChars, 0, (int)file.length());
-            in.close();
-
-            // Convert to a string
-            String allCharsString = new String(allChars);
-
-            return allCharsString;
-
-        } catch (FileNotFoundException e) {
-            System.err.println(e);
-            return "";
-        } catch (IOException e) {
-            System.err.println(e);
-            return "";
-        }
-    }
-
-    public static int findString(String fileString, String stringToFind) {
-        return fileString.indexOf(stringToFind);
+        // Testing only for the presence of the title attributes.
+        // To make this test more robust, only
+        // the initial part of each title string is tested for,
+        // in case the ending part of the string later changes
+        checkOutput("index.html", true,
+                "title=\"All classes and interfaces (except non-static nested types)\"",
+                "title=\"All Packages\"",
+                "title=\"Package, class and interface descriptions\"");
     }
 }

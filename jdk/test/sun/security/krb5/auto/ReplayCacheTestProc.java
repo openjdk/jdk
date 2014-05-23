@@ -40,7 +40,6 @@ import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.util.*;
 
-import com.sun.security.auth.module.UnixSystem;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.internal.APReq;
 import sun.security.krb5.internal.rcache.AuthTime;
@@ -79,13 +78,7 @@ public class ReplayCacheTestProc {
                 mode = -1;
             }
 
-            try {
-                UnixSystem us = new com.sun.security.auth.module.UnixSystem();
-                uid = us.getUid();
-            } catch (Throwable e) {
-                // Cannot be only Exception, might be UnsatisfiedLinkError
-                uid = -1;
-            }
+            uid = sun.misc.VM.geteuid();
 
             KDC kdc = KDC.create(OneKDC.REALM, HOST, 0, true);
             for (int i=0; i<nu; i++) {

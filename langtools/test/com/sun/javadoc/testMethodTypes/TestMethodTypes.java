@@ -26,97 +26,74 @@
  * @bug      8002304 8024096
  * @summary  Test for various method types in the method summary table
  * @author   Bhavesh Patel
- * @library  ../lib/
- * @build    JavadocTester TestMethodTypes
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestMethodTypes
  */
 
 public class TestMethodTypes extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg1"
-    };
-
-    private static final String[][] TEST = {
-        { "pkg1/A.html",
-            "var methods = {"
-        },
-
-        { "pkg1/A.html",
-            "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All " +
-            "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">" +
-            "Static Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">" +
-            "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">" +
-            "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">" +
-            "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "</caption>"
-        },
-
-        { "pkg1/A.html",
-            "<tr id=\"i0\" class=\"altColor\">"
-        },
-
-        { "pkg1/B.html",
-            "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All " +
-            "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">" +
-            "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t3\" class=\"tableTab\"><span><a href=\"javascript:show(4);\">" +
-            "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "</caption>"
-        },
-
-        { "pkg1/D.html",
-            "var methods = {"
-        },
-
-        { "pkg1/D.html",
-            "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All " +
-            "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">" +
-            "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t3\" class=\"tableTab\"><span><a href=\"javascript:show(4);\">" +
-            "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">" +
-            "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">" +
-            "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "</caption>"
-        },
-
-        { "pkg1/D.html",
-            "<tr id=\"i0\" class=\"altColor\">"
-        },
-    };
-    private static final String[][] NEGATED_TEST = {
-        { "pkg1/A.html",
-            "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>" +
-            "</caption>"
-        },
-
-        { "pkg1/B.html",
-            "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>" +
-            "</caption>"
-        },
-
-        { "pkg1/D.html",
-            "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>" +
-            "</caption>"
-        },
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestMethodTypes tester = new TestMethodTypes();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/A.html", true,
+                "var methods = {",
+                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
+                + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">"
+                + "Static Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
+                + "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">"
+                + "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">"
+                + "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "</caption>",
+                "<tr id=\"i0\" class=\"altColor\">");
+
+        checkOutput("pkg1/B.html", true,
+                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
+                + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
+                + "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t3\" class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
+                + "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "</caption>");
+
+        checkOutput("pkg1/D.html", true,
+                "var methods = {",
+                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
+                + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
+                + "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t3\" class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
+                + "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">"
+                + "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">"
+                + "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "</caption>",
+                "<tr id=\"i0\" class=\"altColor\">");
+
+        checkOutput("pkg1/A.html", false,
+                "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>"
+                + "</caption>");
+
+        checkOutput("pkg1/B.html", false,
+                "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>"
+                + "</caption>");
+
+        checkOutput("pkg1/D.html", false,
+                "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>"
+                + "</caption>");
     }
 }
