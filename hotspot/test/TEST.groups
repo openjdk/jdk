@@ -136,7 +136,8 @@ needs_compact3 = \
   serviceability/threads/TestFalseDeadLock.java \
   compiler/tiered/NonTieredLevelsTest.java \
   compiler/tiered/TieredLevelsTest.java \
-  compiler/intrinsics/bmi/verifycode
+  compiler/intrinsics/bmi/verifycode \
+  runtime/whitebox/WBStackSize.java
 
 # Compact 2 adds full VM tests
 compact2 = \
