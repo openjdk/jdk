@@ -474,7 +474,7 @@ public final class Connection implements Runnable {
         }
 
         if ((rber == null) && waited) {
-            removeRequest(ldr);
+            abandonRequest(ldr, null);
             throw new NamingException("LDAP response read timed out, timeout used:"
                             + readTimeout + "ms." );
 
