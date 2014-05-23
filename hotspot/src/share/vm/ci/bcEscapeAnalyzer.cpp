@@ -158,6 +158,9 @@ void BCEscapeAnalyzer::clear_bits(ArgumentMap vars, VectorSet &bm) {
 
 void BCEscapeAnalyzer::set_method_escape(ArgumentMap vars) {
   clear_bits(vars, _arg_local);
+  if (vars.contains_allocated()) {
+    _allocated_escapes = true;
+  }
 }
 
 void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars, bool merge) {

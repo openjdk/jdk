@@ -28,8 +28,7 @@
  * @library /testlibrary
  * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -verbose:gc TestDynShrinkHeap
  */
-
-import com.oracle.java.testlibrary.TestDynamicVMOption;
+import com.oracle.java.testlibrary.DynamicVMOption;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
@@ -44,12 +43,7 @@ public class TestDynShrinkHeap {
     private static ArrayList<byte[]> list = new ArrayList<>(0);
     private static final int M = 1024 * 1024; // to make heap more manageable by test code
 
-    private final TestDynamicVMOption maxRatioOption;
-    private final TestDynamicVMOption minRatioOption;
-
     public TestDynShrinkHeap() {
-        minRatioOption = new TestDynamicVMOption(MIN_FREE_RATIO_FLAG_NAME);
-        maxRatioOption = new TestDynamicVMOption(MAX_FREE_RATIO_FLAG_NAME);
     }
 
     private final void test() {
@@ -86,7 +80,8 @@ public class TestDynShrinkHeap {
     }
 
     private void free() {
-        maxRatioOption.setIntValue(minRatioOption.getIntValue() + 1);
+        int min = DynamicVMOption.getInt(MIN_FREE_RATIO_FLAG_NAME);
+        DynamicVMOption.setInt(MAX_FREE_RATIO_FLAG_NAME, min);
         System.gc();
         MemoryUsagePrinter.printMemoryUsage("under pressure");
     }
