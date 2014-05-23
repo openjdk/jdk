@@ -26,23 +26,8 @@
 #define OS_LINUX_VM_OS_LINUX_INLINE_HPP
 
 #include "runtime/atomic.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
-
-#ifdef TARGET_OS_ARCH_linux_x86
-# include "orderAccess_linux_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_sparc
-# include "orderAccess_linux_sparc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_zero
-# include "orderAccess_linux_zero.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "orderAccess_linux_arm.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "orderAccess_linux_ppc.inline.hpp"
-#endif
 
 // System includes
 

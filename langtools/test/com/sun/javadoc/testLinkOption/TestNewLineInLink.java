@@ -27,32 +27,27 @@
  * @summary Make sure that a new line may act as a separator between
  * link and label.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestNewLineInLink
  * @run main TestNewLineInLink
  */
 
 public class TestNewLineInLink extends JavadocTester {
 
-    private static final String[][] NEGATED_TEST =
-        new String[][] {
-            {ERROR_OUTPUT,
-                "illegal character"}
-        };
-
-    private static final String[] ARGS = new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-                "-linkoffline", "http://www.java.sun.com/j2se/1.4/docs/api",
-                SRC_DIR, "testNewLineInLink"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestNewLineInLink tester = new TestNewLineInLink();
-        tester.run(ARGS, new String[][] {}, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-linkoffline", "http://www.java.sun.com/j2se/1.4/docs/api", testSrc,
+                "testNewLineInLink");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.ERROR, false,
+                "illegal character");
     }
 }

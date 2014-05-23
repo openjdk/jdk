@@ -27,33 +27,38 @@
  * @test
  * @bug 6851834
  * @summary This test verifies the HTML document generation for javadoc output.
+ * @library ../lib
+ * @build JavadocTester
  * @author Bhavesh Patel
- * @build TestHtmlDocument
  * @run main TestHtmlDocument
  */
 
-import java.io.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * The class reads each file, complete with newlines, into a string to easily
  * compare the existing markup with the generated markup.
  */
-public class TestHtmlDocument {
-
-    protected static final String NL = System.getProperty("line.separator");
-
-    private static final String BUGID = "6851834";
-    private static final String BUGNAME = "TestHtmlDocument";
-    private static String srcdir = System.getProperty("test.src", ".");
+public class TestHtmlDocument extends JavadocTester {
 
     // Entry point
-    public static void main(String[] args) throws IOException {
+    public static void main(String... args) throws Exception {
+        TestHtmlDocument tester = new TestHtmlDocument();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        checking("markup");
         // Check whether the generated markup is same as the existing markup.
-        if (generateHtmlTree().equals(readFileToString(srcdir + "/testMarkup.html"))) {
-            System.out.println("\nTest passed for bug " + BUGID + " (" + BUGNAME + ")\n");
+        String expected = readFile(testSrc, "testMarkup.html").replace("\n", NL);
+        String actual = generateHtmlTree();
+        if (actual.equals(expected)) {
+            passed("");
         } else {
-            throw new Error("\nTest failed for bug " + BUGID + " (" + BUGNAME + ")\n");
+            failed("expected content in " + testSrc("testMarkup.html") + "\n"
+                + "Actual output:\n"
+                + actual);
         }
     }
 
@@ -135,26 +140,5 @@ public class TestHtmlDocument {
         html.addContent(body);
         HtmlDocument htmlDoc = new HtmlDocument(htmlDocType, html);
         return htmlDoc.toString();
-    }
-
-    // Read the file into a String
-    public static String readFileToString(String filename) throws IOException {
-        File file = new File(filename);
-        if ( !file.exists() ) {
-            System.out.println("\nFILE DOES NOT EXIST: " + filename);
-        }
-        BufferedReader in = new BufferedReader(new FileReader(file));
-        StringBuilder fileString = new StringBuilder();
-        // Create an array of characters the size of the file
-        try {
-            String line;
-            while ((line = in.readLine()) != null) {
-                fileString.append(line);
-                fileString.append(NL);
-            }
-        } finally {
-            in.close();
-        }
-        return fileString.toString();
     }
 }

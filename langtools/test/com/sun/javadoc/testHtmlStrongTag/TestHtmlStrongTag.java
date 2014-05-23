@@ -26,44 +26,49 @@
 /*
  * @test
  * @bug 6786028 8026567
- * @summary This test verifys the use of <strong> HTML tag instead of <B> by Javadoc std doclet.
+ * @summary This test verifies the use of <strong> HTML tag instead of <B> by Javadoc std doclet.
  * @author Bhavesh Patel
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestHtmlStrongTag
  * @run main TestHtmlStrongTag
  */
 
 public class TestHtmlStrongTag extends JavadocTester {
 
-    private static final String[][] TEST1 = {
-        { "pkg1/C1.html",
-            "<span class=\"seeLabel\">See Also:</span>"}};
-    private static final String[][] NEGATED_TEST1 = {
-        { "pkg1/C1.html", "<STRONG>Method Summary</STRONG>"},
-        { "pkg1/C1.html", "<B>"},
-        { "pkg1/package-summary.html",
-            "<STRONG>Class Summary</STRONG>"}};
-    private static final String[][] TEST2 = {
-        { "pkg2/C2.html", "<B>Comments:</B>"}};
-    private static final String[][] NEGATED_TEST2 = {
-        { "pkg2/C2.html", "<STRONG>Method Summary</STRONG>"}};
-
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg1"};
-    private static final String[] ARGS2 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR, "pkg2"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHtmlStrongTag tester = new TestHtmlStrongTag();
-        tester.run(ARGS1, TEST1, NEGATED_TEST1);
-        tester.run(ARGS2, TEST2, NEGATED_TEST2);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test1() {
+        javadoc("-d", "out-1",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/C1.html", true,
+            "<span class=\"seeLabel\">See Also:</span>");
+
+        checkOutput("pkg1/C1.html", false,
+            "<STRONG>Method Summary</STRONG>",
+            "<B>");
+
+        checkOutput("pkg1/package-summary.html", false,
+            "<STRONG>Class Summary</STRONG>");
+    }
+
+    @Test
+    void test2() {
+        javadoc("-d", "out-2",
+                "-sourcepath", testSrc,
+                "pkg2");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg2/C2.html", true,
+                "<B>Comments:</B>");
+
+        checkOutput("pkg2/C2.html", false,
+                "<STRONG>Method Summary</STRONG>");
     }
 }

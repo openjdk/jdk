@@ -26017,8 +26017,8 @@ $as_echo "$tool_specified" >&6; }
 
   # Finally, set some other options...
 
-  # When compiling code to be executed by the Boot JDK, force jdk7 compatibility.
-  BOOT_JDK_SOURCETARGET="-source 7 -target 7"
+  # When compiling code to be executed by the Boot JDK, force jdk8 compatibility.
+  BOOT_JDK_SOURCETARGET="-source 8 -target 8"
 
 
 

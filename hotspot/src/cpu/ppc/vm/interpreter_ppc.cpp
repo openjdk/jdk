@@ -139,24 +139,8 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
   // Signature is in R3_RET. Signature is callee saved.
   __ mr(signature, R3_RET);
 
-  // Reload method, it may have moved.
-#ifdef CC_INTERP
-  __ ld(R19_method, state_(_method));
-#else
-  __ ld(R19_method, 0, target_sp);
-  __ ld(R19_method, _ijava_state_neg(method), R19_method);
-#endif
-
   // Get the result handler.
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::get_result_handler), R16_thread, R19_method);
-
-  // Reload method, it may have moved.
-#ifdef CC_INTERP
-  __ ld(R19_method, state_(_method));
-#else
-  __ ld(R19_method, 0, target_sp);
-  __ ld(R19_method, _ijava_state_neg(method), R19_method);
-#endif
 
   {
     Label L;
@@ -164,7 +148,7 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
     // _access_flags._flags must be at offset 0.
     // TODO PPC port: requires change in shared code.
     //assert(in_bytes(AccessFlags::flags_offset()) == 0,
-    //       "MethodOopDesc._access_flags == MethodOopDesc._access_flags._flags");
+    //       "MethodDesc._access_flags == MethodDesc._access_flags._flags");
     // _access_flags must be a 32 bit value.
     assert(sizeof(AccessFlags) == 4, "wrong size");
     __ lwa(R11_scratch1/*access_flags*/, method_(access_flags));

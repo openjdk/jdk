@@ -26,147 +26,125 @@
  * @bug      8005092
  * @summary  Test repeated annotations output.
  * @author   bpatel
- * @library  ../lib/
- * @build    JavadocTester TestRepeatedAnnotations
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestRepeatedAnnotations
  */
 
 public class TestRepeatedAnnotations extends JavadocTester {
 
-    //Test information.
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg", "pkg1"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/C.html",
-            "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeSynthDoc</a> " +
-            "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeSynthDoc</a>"},
-        { "pkg/C.html",
-            "<a href=\"../pkg/ContaineeRegDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeRegDoc</a> " +
-            "<a href=\"../pkg/ContaineeRegDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeRegDoc</a>"},
-        { "pkg/C.html",
-            "<a href=\"../pkg/RegContainerDoc.html\" " +
-            "title=\"annotation in pkg\">@RegContainerDoc</a>" +
-            "(<a href=\"../pkg/RegContainerDoc.html#value--\">value</a>={" +
-            "<a href=\"../pkg/RegContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg\">@RegContaineeNotDoc</a>," +
-            "<a href=\"../pkg/RegContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg\">@RegContaineeNotDoc</a>})"},
-        { "pkg/C.html",
-            "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeSynthDoc</a> " +
-            "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeSynthDoc</a> " +
-            "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeSynthDoc</a>"},
-        { "pkg/C.html",
-            "<a href=\"../pkg/ContainerSynthDoc.html\" " +
-            "title=\"annotation in pkg\">@ContainerSynthDoc</a>(" +
-            "<a href=\"../pkg/ContainerSynthDoc.html#value--\">value</a>=" +
-            "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeSynthDoc</a>)"},
-        { "pkg/C.html",
-            "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeSynthDoc</a> " +
-            "<a href=\"../pkg/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg\">@ContaineeSynthDoc</a>"},
-
-        { "pkg/D.html",
-            "<a href=\"../pkg/RegDoc.html\" title=\"annotation in pkg\">@RegDoc</a>" +
-            "(<a href=\"../pkg/RegDoc.html#x--\">x</a>=1)"},
-        { "pkg/D.html",
-            "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>" +
-            "(<a href=\"../pkg/RegArryDoc.html#y--\">y</a>=1)"},
-        { "pkg/D.html",
-            "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>" +
-            "(<a href=\"../pkg/RegArryDoc.html#y--\">y</a>={1,2})"},
-        { "pkg/D.html",
-            "<a href=\"../pkg/NonSynthDocContainer.html\" " +
-            "title=\"annotation in pkg\">@NonSynthDocContainer</a>" +
-            "(<a href=\"../pkg/NonSynthDocContainer.html#value--\">value</a>=" +
-            "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>)"},
-
-        { "pkg1/C.html",
-            "<a href=\"../pkg1/RegContainerValDoc.html\" " +
-            "title=\"annotation in pkg1\">@RegContainerValDoc</a>" +
-            "(<a href=\"../pkg1/RegContainerValDoc.html#value--\">value</a>={" +
-            "<a href=\"../pkg1/RegContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg1\">@RegContaineeNotDoc</a>," +
-            "<a href=\"../pkg1/RegContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg1\">@RegContaineeNotDoc</a>}," +
-            "<a href=\"../pkg1/RegContainerValDoc.html#y--\">y</a>=3)"},
-        { "pkg1/C.html",
-            "<a href=\"../pkg1/ContainerValDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContainerValDoc</a>" +
-            "(<a href=\"../pkg1/ContainerValDoc.html#value--\">value</a>={" +
-            "<a href=\"../pkg1/ContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContaineeNotDoc</a>," +
-            "<a href=\"../pkg1/ContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContaineeNotDoc</a>}," +
-            "<a href=\"../pkg1/ContainerValDoc.html#x--\">x</a>=1)"}
-    };
-
-    private static final String[][] NEGATED_TEST = {
-        { "pkg/C.html",
-            "<a href=\"../pkg/RegContaineeDoc.html\" " +
-            "title=\"annotation in pkg\">@RegContaineeDoc</a> " +
-            "<a href=\"../pkg/RegContaineeDoc.html\" " +
-            "title=\"annotation in pkg\">@RegContaineeDoc</a>"},
-        { "pkg/C.html",
-            "<a href=\"../pkg/RegContainerNotDoc.html\" " +
-            "title=\"annotation in pkg\">@RegContainerNotDoc</a>" +
-            "(<a href=\"../pkg/RegContainerNotDoc.html#value--\">value</a>={" +
-            "<a href=\"../pkg/RegContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg\">@RegContaineeNotDoc</a>," +
-            "<a href=\"../pkg/RegContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg\">@RegContaineeNotDoc</a>})"},
-
-        { "pkg1/C.html",
-            "<a href=\"../pkg1/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContaineeSynthDoc</a> " +
-            "<a href=\"../pkg1/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContaineeSynthDoc</a>"},
-        { "pkg1/C.html",
-            "<a href=\"../pkg1/RegContainerValNotDoc.html\" " +
-            "title=\"annotation in pkg1\">@RegContainerValNotDoc</a>" +
-            "(<a href=\"../pkg1/RegContainerValNotDoc.html#value--\">value</a>={" +
-            "<a href=\"../pkg1/RegContaineeDoc.html\" " +
-            "title=\"annotation in pkg1\">@RegContaineeDoc</a>," +
-            "<a href=\"../pkg1/RegContaineeDoc.html\" " +
-            "title=\"annotation in pkg1\">@RegContaineeDoc</a>}," +
-            "<a href=\"../pkg1/RegContainerValNotDoc.html#y--\">y</a>=4)"},
-        { "pkg1/C.html",
-            "<a href=\"../pkg1/ContainerValNotDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContainerValNotDoc</a>" +
-            "(<a href=\"../pkg1/ContainerValNotDoc.html#value--\">value</a>={" +
-            "<a href=\"../pkg1/ContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContaineeNotDoc</a>," +
-            "<a href=\"../pkg1/ContaineeNotDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContaineeNotDoc</a>}," +
-            "<a href=\"../pkg1/ContainerValNotDoc.html#x--\">x</a>=2)"},
-        { "pkg1/C.html",
-            "<a href=\"../pkg1/ContainerSynthNotDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContainerSynthNotDoc</a>(" +
-            "<a href=\"../pkg1/ContainerSynthNotDoc.html#value--\">value</a>=" +
-            "<a href=\"../pkg1/ContaineeSynthDoc.html\" " +
-            "title=\"annotation in pkg1\">@ContaineeSynthDoc</a>)"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestRepeatedAnnotations tester = new TestRepeatedAnnotations();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg", "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/C.html", true,
+                "<a href=\"../pkg/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a> "
+                + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a>",
+                "<a href=\"../pkg/ContaineeRegDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeRegDoc</a> "
+                + "<a href=\"../pkg/ContaineeRegDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeRegDoc</a>",
+                "<a href=\"../pkg/RegContainerDoc.html\" "
+                + "title=\"annotation in pkg\">@RegContainerDoc</a>"
+                + "(<a href=\"../pkg/RegContainerDoc.html#value--\">value</a>={"
+                + "<a href=\"../pkg/RegContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg\">@RegContaineeNotDoc</a>,"
+                + "<a href=\"../pkg/RegContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg\">@RegContaineeNotDoc</a>})",
+                "<a href=\"../pkg/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a> "
+                + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a> "
+                + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a>",
+                "<a href=\"../pkg/ContainerSynthDoc.html\" "
+                + "title=\"annotation in pkg\">@ContainerSynthDoc</a>("
+                + "<a href=\"../pkg/ContainerSynthDoc.html#value--\">value</a>="
+                + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a>)",
+                "<a href=\"../pkg/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a> "
+                + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a>");
+
+        checkOutput("pkg/D.html", true,
+                "<a href=\"../pkg/RegDoc.html\" title=\"annotation in pkg\">@RegDoc</a>"
+                + "(<a href=\"../pkg/RegDoc.html#x--\">x</a>=1)",
+                "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>"
+                + "(<a href=\"../pkg/RegArryDoc.html#y--\">y</a>=1)",
+                "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>"
+                + "(<a href=\"../pkg/RegArryDoc.html#y--\">y</a>={1,2})",
+                "<a href=\"../pkg/NonSynthDocContainer.html\" "
+                + "title=\"annotation in pkg\">@NonSynthDocContainer</a>"
+                + "(<a href=\"../pkg/NonSynthDocContainer.html#value--\">value</a>="
+                + "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>)");
+
+        checkOutput("pkg1/C.html", true,
+                "<a href=\"../pkg1/RegContainerValDoc.html\" "
+                + "title=\"annotation in pkg1\">@RegContainerValDoc</a>"
+                + "(<a href=\"../pkg1/RegContainerValDoc.html#value--\">value</a>={"
+                + "<a href=\"../pkg1/RegContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg1\">@RegContaineeNotDoc</a>,"
+                + "<a href=\"../pkg1/RegContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg1\">@RegContaineeNotDoc</a>},"
+                + "<a href=\"../pkg1/RegContainerValDoc.html#y--\">y</a>=3)",
+                "<a href=\"../pkg1/ContainerValDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContainerValDoc</a>"
+                + "(<a href=\"../pkg1/ContainerValDoc.html#value--\">value</a>={"
+                + "<a href=\"../pkg1/ContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContaineeNotDoc</a>,"
+                + "<a href=\"../pkg1/ContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContaineeNotDoc</a>},"
+                + "<a href=\"../pkg1/ContainerValDoc.html#x--\">x</a>=1)");
+
+        checkOutput("pkg/C.html", false,
+                "<a href=\"../pkg/RegContaineeDoc.html\" "
+                + "title=\"annotation in pkg\">@RegContaineeDoc</a> "
+                + "<a href=\"../pkg/RegContaineeDoc.html\" "
+                + "title=\"annotation in pkg\">@RegContaineeDoc</a>",
+                "<a href=\"../pkg/RegContainerNotDoc.html\" "
+                + "title=\"annotation in pkg\">@RegContainerNotDoc</a>"
+                + "(<a href=\"../pkg/RegContainerNotDoc.html#value--\">value</a>={"
+                + "<a href=\"../pkg/RegContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg\">@RegContaineeNotDoc</a>,"
+                + "<a href=\"../pkg/RegContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg\">@RegContaineeNotDoc</a>})");
+
+        checkOutput("pkg1/C.html", false,
+                "<a href=\"../pkg1/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContaineeSynthDoc</a> "
+                + "<a href=\"../pkg1/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContaineeSynthDoc</a>",
+                "<a href=\"../pkg1/RegContainerValNotDoc.html\" "
+                + "title=\"annotation in pkg1\">@RegContainerValNotDoc</a>"
+                + "(<a href=\"../pkg1/RegContainerValNotDoc.html#value--\">value</a>={"
+                + "<a href=\"../pkg1/RegContaineeDoc.html\" "
+                + "title=\"annotation in pkg1\">@RegContaineeDoc</a>,"
+                + "<a href=\"../pkg1/RegContaineeDoc.html\" "
+                + "title=\"annotation in pkg1\">@RegContaineeDoc</a>},"
+                + "<a href=\"../pkg1/RegContainerValNotDoc.html#y--\">y</a>=4)",
+                "<a href=\"../pkg1/ContainerValNotDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContainerValNotDoc</a>"
+                + "(<a href=\"../pkg1/ContainerValNotDoc.html#value--\">value</a>={"
+                + "<a href=\"../pkg1/ContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContaineeNotDoc</a>,"
+                + "<a href=\"../pkg1/ContaineeNotDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContaineeNotDoc</a>},"
+                + "<a href=\"../pkg1/ContainerValNotDoc.html#x--\">x</a>=2)",
+                "<a href=\"../pkg1/ContainerSynthNotDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContainerSynthNotDoc</a>("
+                + "<a href=\"../pkg1/ContainerSynthNotDoc.html#value--\">value</a>="
+                + "<a href=\"../pkg1/ContaineeSynthDoc.html\" "
+                + "title=\"annotation in pkg1\">@ContaineeSynthDoc</a>)");
     }
 }

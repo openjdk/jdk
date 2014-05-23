@@ -27,26 +27,22 @@
  * @summary Determine if Hrefs are processed properly when they
  * appear in doc comments.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestHrefInDocComment
  * @run main TestHrefInDocComment
  */
 
 public class TestHrefInDocComment extends JavadocTester {
 
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHrefInDocComment tester = new TestHrefInDocComment();
-        if (tester.run(ARGS, NO_TEST, NO_TEST) != 0) {
-            throw new Error("Javadoc failed to execute properly with given source.");
-        }
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc, "pkg");
+        checkExit(Exit.OK);
     }
 }

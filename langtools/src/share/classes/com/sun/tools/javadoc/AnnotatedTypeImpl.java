@@ -65,7 +65,7 @@ public class AnnotatedTypeImpl
 
     @Override
     public com.sun.javadoc.Type underlyingType() {
-        return TypeMaker.getType(env, type.unannotatedType(), true, false);
+        return TypeMaker.getType(env, type, true, false);
     }
 
     @Override

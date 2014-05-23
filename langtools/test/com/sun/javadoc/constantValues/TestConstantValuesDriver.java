@@ -26,42 +26,30 @@
  * @bug 4504730 4526070 5077317
  * @summary Test the generation of constant-values.html.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestConstantValuesDriver
  * @run main TestConstantValuesDriver
  */
 public class TestConstantValuesDriver extends JavadocTester {
 
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, SRC_DIR + "/TestConstantValues.java",
-        SRC_DIR + "/TestConstantValues2.java",
-        SRC_DIR + "/A.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        String[][] tests = new String[5][2];
-        for (int i = 0; i < tests.length-1; i++) {
-            tests[i][0] = "constant-values.html";
-            tests[i][1] = "TEST"+(i+1)+"PASSES";
-        }
-        tests[tests.length-1][0] = "constant-values.html";
-        tests[tests.length-1][1] = "<code>\"&lt;Hello World&gt;\"</code>";
+    public static void main(String... args) throws Exception {
         TestConstantValuesDriver tester = new TestConstantValuesDriver();
-        tester.run(ARGS, tests, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * @throws java.io.IOException Test 1 passes
-     * @throws java.io.IOException Test 2 passes
-     * @throws java.lang.NullPointerException comment three
-     * @throws java.io.IOException Test 3 passes
-     */
-    public void method(){}
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                testSrc("TestConstantValues.java"),
+                testSrc("TestConstantValues2.java"),
+                testSrc("A.java"));
+        checkExit(Exit.OK);
 
+        checkOutput("constant-values.html", true,
+                "TEST1PASSES",
+                "TEST2PASSES",
+                "TEST3PASSES",
+                "TEST4PASSES",
+                "<code>\"&lt;Hello World&gt;\"</code>");
+    }
 }

@@ -62,25 +62,6 @@ GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/sun/tools/jconsole/Version.java
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS_API), posix)
-  UPSUFFIX := $(OPENJDK_TARGET_OS)
-  ifeq ($(OPENJDK_TARGET_OS), macosx)
-    UPSUFFIX := bsd
-  endif
-  # UNIXProcess.java is different for solaris and linux. We need to copy
-  # the correct UNIXProcess.java over to $(JDK_OUTPUTDIR)/gensrc/java/lang/.
-
-  $(JDK_OUTPUTDIR)/gensrc/java/lang/UNIXProcess.java: \
-      $(JDK_TOPDIR)/src/solaris/classes/java/lang/UNIXProcess.java.$(UPSUFFIX)
-	$(ECHO) $(LOG_INFO) Copying UNIXProcess.java.$(OPENJDK_TARGET_OS) to java/lang/UNIXProcess.java
-	$(call install-file)
-	$(CHMOD) u+rw $@
-
-  GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/java/lang/UNIXProcess.java
-endif
-
-##########################################################################################
-
 GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/sun/nio/ch/SocketOptionRegistry.java
 
 GENSRC_SOR_SRC := $(JDK_TOPDIR)/make/src/native/genconstants/ch

@@ -27,31 +27,26 @@
  * @summary  Verify that packages.html is no longer generated since it is no
  *           longer used.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestNoPackagesFile
  * @run main TestNoPackagesFile
  */
 
 public class TestNoPackagesFile extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-        SRC_DIR + "/C.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestNoPackagesFile tester = new TestNoPackagesFile();
-        tester.run(ARGS, NO_TEST, NO_TEST);
-        if ((new java.io.File(OUTPUT_DIR + "/packages.html")).exists()) {
-            throw new Error("Test Fails: packages file should not be " +                "generated anymore.");
-        } else {
-            System.out.println("Test passes:  packages.html not found.");
-        }
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        // packages.html file should not be generated anymore.
+        checkFiles(false, "packages.html");
     }
 }

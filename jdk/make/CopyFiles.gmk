@@ -367,8 +367,24 @@ COPY_FILES += $(PROPS_DST)
 POLICY_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.policy
 POLICY_DST := $(JDK_OUTPUTDIR)/lib/security/java.policy
 
-$(POLICY_DST): $(POLICY_SRC)
-	$(call install-file)
+POLICY_SRC_LIST :=
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  POLICY_SRC_LIST += $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS)/lib/security/java.policy
+endif
+ifndef OPENJDK
+  ifneq (, $(filter $(OPENJDK_TARGET_OS), windows solaris))
+    POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS)/lib/security/java.policy
+  endif
+endif
+
+POLICY_SRC_LIST += $(POLICY_SRC)
+
+$(POLICY_DST): $(POLICY_SRC_LIST)
+	$(MKDIR) -p $(@D)
+	$(RM) $@ $@.tmp
+	$(foreach f,$(POLICY_SRC_LIST),$(CAT) $(f) >> $@.tmp;)
+	$(MV) $@.tmp $@
 
 COPY_FILES += $(POLICY_DST)
 

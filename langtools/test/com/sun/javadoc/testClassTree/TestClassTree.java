@@ -29,64 +29,52 @@
  *           Make sure class tree includes heirarchy for enums and annotation
  *           types.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestClassTree
  * @run main TestClassTree
  */
 
 public class TestClassTree extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/package-tree.html",
-            "<ul>\n" +
-            "<li type=\"circle\">pkg.<a href=\"../pkg/ParentClass.html\" " +
-            "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a>"},
-
-        { "pkg/package-tree.html",
-            "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>\n" +
-            "<ul>\n" +
-            "<li type=\"circle\">pkg.<a href=\"../pkg/AnnotationType.html\" " +
-            "title=\"annotation in pkg\"><span class=\"typeNameLink\">AnnotationType</span></a> " +
-            "(implements java.lang.annotation.Annotation)</li>\n" +
-            "</ul>"},
-
-        { "pkg/package-tree.html",
-            "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>\n" +
-            "<ul>\n" +
-            "<li type=\"circle\">java.lang.Object\n" +
-            "<ul>\n" +
-            "<li type=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang." +
-            "Comparable&lt;T&gt;, java.io.Serializable)\n" +
-            "<ul>\n" +
-            "<li type=\"circle\">pkg.<a href=\"../pkg/Coin.html\" " +
-            "title=\"enum in pkg\"><span class=\"typeNameLink\">Coin</span></a></li>\n" +
-            "</ul>\n" +
-            "</li>\n" +
-            "</ul>\n" +
-            "</li>\n" +
-            "</ul>"
-        },
-    };
-    private static final String[][] NEGATED_TEST = {
-        { "pkg/package-tree.html",
-            "<li type=\"circle\">class pkg.<a href=\"../pkg/ParentClass.html\" " +
-            "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a></li>"}
-        };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestClassTree tester = new TestClassTree();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/package-tree.html", true,
+                "<ul>\n"
+                + "<li type=\"circle\">pkg.<a href=\"../pkg/ParentClass.html\" "
+                + "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a>",
+                "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>\n"
+                + "<ul>\n"
+                + "<li type=\"circle\">pkg.<a href=\"../pkg/AnnotationType.html\" "
+                + "title=\"annotation in pkg\"><span class=\"typeNameLink\">AnnotationType</span></a> "
+                + "(implements java.lang.annotation.Annotation)</li>\n"
+                + "</ul>",
+                "<h2 title=\"Enum Hierarchy\">Enum Hierarchy</h2>\n"
+                + "<ul>\n"
+                + "<li type=\"circle\">java.lang.Object\n"
+                + "<ul>\n"
+                + "<li type=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang."
+                + "Comparable&lt;T&gt;, java.io.Serializable)\n"
+                + "<ul>\n"
+                + "<li type=\"circle\">pkg.<a href=\"../pkg/Coin.html\" "
+                + "title=\"enum in pkg\"><span class=\"typeNameLink\">Coin</span></a></li>\n"
+                + "</ul>\n"
+                + "</li>\n"
+                + "</ul>\n"
+                + "</li>\n"
+                + "</ul>");
+
+        checkOutput("pkg/package-tree.html", false,
+                "<li type=\"circle\">class pkg.<a href=\"../pkg/ParentClass.html\" "
+                + "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a></li>");
     }
 }

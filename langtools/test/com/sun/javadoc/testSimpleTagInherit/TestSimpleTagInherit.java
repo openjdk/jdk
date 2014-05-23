@@ -25,8 +25,8 @@
  * @test
  * @bug      8008768 8026567
  * @summary  Using {@inheritDoc} in simple tag defined via -tag fails
- * @library  ../lib/
- * @build    JavadocTester TestSimpleTagInherit
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestSimpleTagInherit
  */
 
@@ -34,28 +34,31 @@ public class TestSimpleTagInherit extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-        "-tag", "custom:optcm:<em>Custom:</em>",
-        "p"
+
     };
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        { "p/TestClass.html",
-          "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n" +
-          "<dd>doc for BaseClass class</dd>" },
-        { "p/TestClass.html",
-          "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n" +
-          "<dd>doc for BaseClass method</dd>" }
+        {  }
     };
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSimpleTagInherit tester = new TestSimpleTagInherit();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-tag", "custom:optcm:<em>Custom:</em>",
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/TestClass.html", true,
+                "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n"
+                + "<dd>doc for BaseClass class</dd>",
+                "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>\n"
+                + "<dd>doc for BaseClass method</dd>");
     }
 }

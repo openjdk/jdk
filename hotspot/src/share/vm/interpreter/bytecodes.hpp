@@ -224,7 +224,7 @@ class Bytecodes: AllStatic {
     _invokespecial        = 183, // 0xb7
     _invokestatic         = 184, // 0xb8
     _invokeinterface      = 185, // 0xb9
-    _invokedynamic        = 186, // 0xba     // if EnableInvokeDynamic
+    _invokedynamic        = 186, // 0xba
     _new                  = 187, // 0xbb
     _newarray             = 188, // 0xbc
     _anewarray            = 189, // 0xbd

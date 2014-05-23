@@ -21,114 +21,94 @@
  * questions.
  */
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 /*
  * @test
  * @bug      4034096 4764726 6235799
  * @summary  Add support for HTML keywords via META tag for
  *           class and member names to improve API search
  * @author   dkramer
- * @library  ../lib/
+ * @library ../lib
  * @build    JavadocTester
- * @build    MetaTag
  * @run main MetaTag
  */
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class MetaTag extends JavadocTester {
-
-    //Test information.
-    private static final SimpleDateFormat m_dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR,
-        "-sourcepath", SRC_DIR,
-        "-keywords",
-        "-doctitle", "Sample Packages",
-        "p1", "p2"
-    };
-
-    private static final String[] ARGS_NO_TIMESTAMP_NO_KEYWORDS = new String[] {
-        "-d", OUTPUT_DIR + "-2",
-        "-sourcepath", SRC_DIR,
-        "-notimestamp",
-        "-doctitle", "Sample Packages",
-        "p1", "p2"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-
-        { "p1/C1.html",
-           "<meta name=\"keywords\" content=\"p1.C1 class\">" },
-
-        { "p1/C1.html",
-           "<meta name=\"keywords\" content=\"field1\">" },
-
-        { "p1/C1.html",
-           "<meta name=\"keywords\" content=\"field2\">" },
-
-        { "p1/C1.html",
-           "<meta name=\"keywords\" content=\"method1()\">" },
-
-        { "p1/C1.html",
-           "<meta name=\"keywords\" content=\"method2()\">" },
-
-        { "p1/package-summary.html",
-           "<meta name=\"keywords\" content=\"p1 package\">" },
-
-        { "overview-summary.html",
-           "<meta name=\"keywords\" content=\"Overview, Sample Packages\">" },
-
-        //NOTE: Hopefully, this regression test is not run at midnight.  If the output
-        //was generated yesterday and this test is run today, the test will fail.
-        { "overview-summary.html",
-           "<meta name=\"date\" "
-                            + "content=\"" + m_dateFormat.format(new Date()) + "\">"},
-    };
-
-    private static final String[][] NEGATED_TEST2 = {
-        //No keywords when -keywords is not used.
-        { "p1/C1.html",
-           "<META NAME=\"keywords\" CONTENT=\"p1.C1 class\">" },
-
-        { "p1/C1.html",
-           "<META NAME=\"keywords\" CONTENT=\"field1\">" },
-
-        { "p1/C1.html",
-           "<META NAME=\"keywords\" CONTENT=\"field2\">" },
-
-        { "p1/C1.html",
-           "<META NAME=\"keywords\" CONTENT=\"method1()\">" },
-
-        { "p1/C1.html",
-           "<META NAME=\"keywords\" CONTENT=\"method2()\">" },
-
-        { "p1/package-summary.html",
-           "<META NAME=\"keywords\" CONTENT=\"p1 package\">" },
-
-        { "overview-summary.html",
-           "<META NAME=\"keywords\" CONTENT=\"Overview Summary, Sample Packages\">" },
-
-        //The date metatag should not show up when -notimestamp is used.
-
-        //NOTE: Hopefully, this regression test is not run at midnight.  If the output
-        //was generated yesterday and this test is run today, the test will fail.
-        { "overview-summary.html",
-           "<META NAME=\"date\" "
-                            + "CONTENT=\"" + m_dateFormat.format(new Date()) + "\">"},
-    };
 
     /**
      * The entry point of the test.
-     * @param args the array of command line arguments.
+     * @param args the array of command line arguments
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         MetaTag tester = new MetaTag();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.run(ARGS_NO_TIMESTAMP_NO_KEYWORDS, NO_TEST, NEGATED_TEST2);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void testStandard() {
+        javadoc("-d", "out-1",
+                "-sourcepath", testSrc,
+                "-keywords",
+                "-doctitle", "Sample Packages",
+                "p1", "p2");
+
+        checkExit(Exit.OK);
+
+        checkOutput("p1/C1.html", true,
+                "<meta name=\"keywords\" content=\"p1.C1 class\">",
+                "<meta name=\"keywords\" content=\"field1\">",
+                "<meta name=\"keywords\" content=\"field2\">",
+                "<meta name=\"keywords\" content=\"method1()\">",
+                "<meta name=\"keywords\" content=\"method2()\">");
+
+        checkOutput("p1/package-summary.html", true,
+                "<meta name=\"keywords\" content=\"p1 package\">");
+
+        checkOutput("overview-summary.html", true,
+                "<meta name=\"keywords\" content=\"Overview, Sample Packages\">");
+
+        // NOTE: Hopefully, this regression test is not run at midnight.  If the output
+        // was generated yesterday and this test is run today, the test will fail.
+        checkOutput("overview-summary.html", true,
+                "<meta name=\"date\" content=\"" + date() + "\">");
+    }
+
+    @Test
+    void testNoTimestamp() {
+        javadoc("-d", "out-2",
+                "-sourcepath", testSrc,
+                "-notimestamp",
+                "-doctitle", "Sample Packages",
+                "p1", "p2");
+        checkExit(Exit.OK);
+
+        // No keywords when -keywords is not used.
+        checkOutput("p1/C1.html", false,
+                "<META NAME=\"keywords\" CONTENT=\"p1.C1 class\">",
+                "<META NAME=\"keywords\" CONTENT=\"field1\">",
+                "<META NAME=\"keywords\" CONTENT=\"field2\">",
+                "<META NAME=\"keywords\" CONTENT=\"method1()\">",
+                "<META NAME=\"keywords\" CONTENT=\"method2()\">");
+
+        checkOutput("p1/package-summary.html", false,
+                "<META NAME=\"keywords\" CONTENT=\"p1 package\">");
+
+        checkOutput("overview-summary.html", false,
+                "<META NAME=\"keywords\" CONTENT=\"Overview Summary, Sample Packages\">");
+
+        // The date metatag should not show up when -notimestamp is used.
+        // NOTE: Hopefully, this regression test is not run at midnight.  If the output
+        // was generated yesterday and this test is run today, the test will fail.
+        checkOutput("overview-summary.html", false,
+                "<META NAME=\"date\" CONTENT=\"" + date() + "\">");
+    }
+
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+    String date() {
+        return dateFormat.format(new Date());
     }
 }

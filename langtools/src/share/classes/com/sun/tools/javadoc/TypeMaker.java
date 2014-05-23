@@ -140,9 +140,6 @@ public class TypeMaker {
      */
     static String getTypeString(DocEnv env, Type t, boolean full) {
         // TODO: should annotations be included here?
-        if (t.isAnnotated()) {
-            t = t.unannotatedType();
-        }
         switch (t.getTag()) {
         case ARRAY:
             StringBuilder s = new StringBuilder();

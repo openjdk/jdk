@@ -58,6 +58,7 @@
 #include "runtime/memprofiler.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1197,6 +1198,13 @@ void NamedThread::set_name(const char* format, ...) {
   jio_vsnprintf(_name, max_name_len, format, ap);
   va_end(ap);
 }
+
+void NamedThread::print_on(outputStream* st) const {
+  st->print("\"%s\" ", name());
+  Thread::print_on(st);
+  st->cr();
+}
+
 
 // ======= WatcherThread ========
 
@@ -3602,9 +3610,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // It is done after compilers are initialized, because otherwise compilations of
   // signature polymorphic MH intrinsics can be missed
   // (see SystemDictionary::find_method_handle_intrinsic).
-  if (EnableInvokeDynamic) {
-    initialize_jsr292_core_classes(CHECK_JNI_ERR);
-  }
+  initialize_jsr292_core_classes(CHECK_JNI_ERR);
 
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
