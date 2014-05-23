@@ -1408,10 +1408,10 @@ public class BytePackedRaster extends SunWritableRaster {
             }
         }
 
-        int lastbit = (dataBitOffset
-                       + (height-1) * scanlineStride * 8
-                       + (width-1) * pixelBitStride
-                       + pixelBitStride - 1);
+        long lastbit = (long) dataBitOffset
+                       + (long) (height - 1) * (long) scanlineStride * 8
+                       + (long) (width - 1) * (long) pixelBitStride
+                       + (long) pixelBitStride - 1;
         if (lastbit < 0 || lastbit / 8 >= data.length) {
             throw new RasterFormatException("raster dimensions overflow " +
                                             "array bounds");
