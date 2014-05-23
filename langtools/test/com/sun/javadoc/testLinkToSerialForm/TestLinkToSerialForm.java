@@ -27,29 +27,28 @@
  * @summary Test to make sure that there is a link with a proper anchor
  * from a serializable class to serialized-form.html.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestLinkToSerialForm
  * @run main TestLinkToSerialForm
  */
 
 public class TestLinkToSerialForm extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "serialized-form.html", "<a name=\"pkg.C\">"},
-        { "pkg/C.html", "<a href=\"../serialized-form.html#pkg.C\">"}
-    };
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestLinkToSerialForm tester = new TestLinkToSerialForm();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("serialized-form.html", true,
+                "<a name=\"pkg.C\">");
+        checkOutput("pkg/C.html", true,
+                "<a href=\"../serialized-form.html#pkg.C\">");
     }
 }

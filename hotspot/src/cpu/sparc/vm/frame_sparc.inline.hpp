@@ -226,6 +226,13 @@ inline Method** frame::interpreter_frame_method_addr() const {
   return (Method**)sp_addr_at( Lmethod->sp_offset_in_saved_window());
 }
 
+inline BasicObjectLock* frame::interpreter_frame_monitors() const {
+  return *interpreter_frame_monitors_addr();
+}
+
+inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
+  *interpreter_frame_monitors_addr() = monitors;
+}
 
 // Constant pool cache
 

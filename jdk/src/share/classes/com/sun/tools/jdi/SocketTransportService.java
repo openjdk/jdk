@@ -198,11 +198,15 @@ public class SocketTransportService extends TransportService {
         String host;
         String portStr;
         if (splitIndex < 0) {
-            host = InetAddress.getLocalHost().getHostName();
+            host = "localhost";
             portStr = address;
         } else {
             host = address.substring(0, splitIndex);
             portStr = address.substring(splitIndex+1);
+        }
+
+        if (host.equals("*")) {
+            host = InetAddress.getLocalHost().getHostName();
         }
 
         int port;
@@ -215,7 +219,6 @@ public class SocketTransportService extends TransportService {
 
 
         // open TCP connection to VM
-
         InetSocketAddress sa = new InetSocketAddress(host, port);
         Socket s = new Socket();
         try {

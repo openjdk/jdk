@@ -661,7 +661,7 @@ class Method : public Metadata {
   // this operates only on invoke methods:
   // presize interpreter frames for extra interpreter stack entries, if needed
   // Account for the extra appendix argument for invokehandle/invokedynamic
-  static int extra_stack_entries() { return EnableInvokeDynamic ? extra_stack_entries_for_jsr292 : 0; }
+  static int extra_stack_entries() { return extra_stack_entries_for_jsr292; }
   static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize
 
   // RedefineClasses() support:

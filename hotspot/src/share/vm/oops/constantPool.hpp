@@ -413,9 +413,9 @@ class ConstantPool : public Metadata {
   // Version that can be used before string oop array is created.
   oop uncached_string_at(int which, TRAPS);
 
-  // A "pseudo-string" is an non-string oop that has found is way into
+  // A "pseudo-string" is an non-string oop that has found its way into
   // a String entry.
-  // Under EnableInvokeDynamic this can happen if the user patches a live
+  // This can happen if the user patches a live
   // object into a CONSTANT_String entry of an anonymous class.
   // Method oops internally created for method handles may also
   // use pseudo-strings to link themselves to related metaobjects.
@@ -441,7 +441,6 @@ class ConstantPool : public Metadata {
   }
 
   void pseudo_string_at_put(int which, int obj_index, oop x) {
-    assert(EnableInvokeDynamic, "");
     assert(tag_at(which).is_string(), "Corrupted constant pool");
     unresolved_string_at_put(which, NULL); // indicates patched string
     string_at_put(which, obj_index, x);    // this works just fine
@@ -823,8 +822,12 @@ class ConstantPool : public Metadata {
   static void resolve_string_constants_impl(constantPoolHandle this_cp, TRAPS);
 
   static oop resolve_constant_at_impl(constantPoolHandle this_cp, int index, int cache_index, TRAPS);
-  static void save_and_throw_exception(constantPoolHandle this_cp, int which, int tag_value, TRAPS);
   static oop resolve_bootstrap_specifier_at_impl(constantPoolHandle this_cp, int index, TRAPS);
+
+  // Exception handling
+  static void throw_resolution_error(constantPoolHandle this_cp, int which, TRAPS);
+  static Symbol* exception_message(constantPoolHandle this_cp, int which, constantTag tag, oop pending_exception);
+  static void save_and_throw_exception(constantPoolHandle this_cp, int which, constantTag tag, TRAPS);
 
  public:
   // Merging ConstantPool* support:

@@ -26,44 +26,38 @@
  * @bug 7010342
  * @summary Test for correct sub title generation.
  * @author Bhavesh Patel
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestSubTitle
  * @run main TestSubTitle
  */
 
 public class TestSubTitle extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "pkg/package-summary.html",
-            "<div class=\"block\">This is the description of package pkg.</div>"
-        },
-        { "pkg/C.html",
-            "<div class=\"subTitle\">pkg</div>"
-        }
-    };
-    private static final String[][] NEG_TEST = {
-        { "pkg/package-summary.html",
+    public static void main(String... args) throws Exception {
+        TestSubTitle tester = new TestSubTitle();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/package-summary.html", true,
+            "<div class=\"block\">This is the description of package pkg.</div>");
+
+        checkOutput("pkg/C.html", true,
+            "<div class=\"subTitle\">pkg</div>");
+
+        checkOutput("pkg/package-summary.html", false,
             "<p class=\"subTitle\">\n" +
             "<div class=\"block\">This is the " +
             "description of package pkg.</div>\n" +
-            "</p>"
-        },
-        { "pkg/C.html",
-            "<p class=\"subTitle\">pkg</p>"
-        }
-    };
-    private static final String[] ARGS = new String[]{
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
+            "</p>");
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestSubTitle tester = new TestSubTitle();
-        tester.run(ARGS, TEST, NEG_TEST);
-        tester.printSummary();
+        checkOutput("pkg/C.html", false,
+            "<p class=\"subTitle\">pkg</p>");
     }
 }

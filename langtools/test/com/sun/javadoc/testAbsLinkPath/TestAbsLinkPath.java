@@ -26,33 +26,31 @@
  * @bug 4640745
  * @summary This test verifys that the -link option handles absolute paths.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestAbsLinkPath
  * @run main TestAbsLinkPath
  */
 
 public class TestAbsLinkPath extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "pkg1/C1.html", "C2.html"}};
-
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", "tmp2", "-sourcepath", SRC_DIR, "pkg2"};
-    private static final String[] ARGS2 =
-        new String[] {
-            "-d", "tmp", "-sourcepath", SRC_DIR,
-            "-link", "../tmp2", "pkg1"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestAbsLinkPath tester = new TestAbsLinkPath();
-        tester.run(ARGS1, NO_TEST, NO_TEST);
-        tester.run(ARGS2,  TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test1() {
+        String out1 = "out1";
+        javadoc("-d", out1, "-sourcepath", testSrc, "pkg2");
+        checkExit(Exit.OK);
+
+        javadoc("-d", "out2",
+                "-sourcepath", testSrc,
+                "-link", "../" + out1,
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/C1.html", true,
+                "C2.html");
     }
 }

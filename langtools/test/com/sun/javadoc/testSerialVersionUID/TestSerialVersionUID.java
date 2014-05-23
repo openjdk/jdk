@@ -27,32 +27,25 @@
  * @summary  Test to make sure that the serialVersionUID is properly
  * documented in the serialized form.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestSerialVersionUID
  * @run main TestSerialVersionUID
  */
 
 public class TestSerialVersionUID extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR,
-        SRC_DIR + "/C.java"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "serialized-form.html", "-111111111111111L"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSerialVersionUID tester = new TestSerialVersionUID();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("serialized-form.html", true,
+                "-111111111111111L");
     }
 }

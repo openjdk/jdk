@@ -66,15 +66,6 @@ class Test {
 public class Agent implements ClassFileTransformer {
 
 
-    static class MemoryChunk {
-        MemoryChunk other;
-        long[] array;
-        MemoryChunk(MemoryChunk other) {
-            other = other;
-            array = new long[1024 * 1024 * 1024];
-        }
-    }
-
     static public boolean m2(A a) {
         boolean res = false;
         if (a.getClass() == B.class) {

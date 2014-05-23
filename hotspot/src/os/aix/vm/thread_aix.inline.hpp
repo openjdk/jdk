@@ -26,13 +26,10 @@
 #ifndef OS_AIX_VM_THREAD_AIX_INLINE_HPP
 #define OS_AIX_VM_THREAD_AIX_INLINE_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/prefetch.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadLocalStorage.hpp"
 
-#include "atomic_aix_ppc.inline.hpp"
-#include "orderAccess_aix_ppc.inline.hpp"
 #include "prefetch_aix_ppc.inline.hpp"
 
 // Contains inlined functions for class Thread and ThreadLocalStorage

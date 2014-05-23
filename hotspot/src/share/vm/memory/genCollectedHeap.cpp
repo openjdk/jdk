@@ -197,9 +197,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
 
 void GenCollectedHeap::post_initialize() {
   SharedHeap::post_initialize();
-  TwoGenerationCollectorPolicy *policy =
-    (TwoGenerationCollectorPolicy *)collector_policy();
-  guarantee(policy->is_two_generation_policy(), "Illegal policy type");
+  GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
+  guarantee(policy->is_generation_policy(), "Illegal policy type");
   DefNewGeneration* def_new_gen = (DefNewGeneration*) get_gen(0);
   assert(def_new_gen->kind() == Generation::DefNew ||
          def_new_gen->kind() == Generation::ParNew ||

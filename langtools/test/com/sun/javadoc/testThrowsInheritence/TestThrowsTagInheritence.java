@@ -28,36 +28,35 @@
  * override the throws tags in interface. This test also verifies that throws tags are inherited properly
  * the case where the name of one exception is not fully qualified.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestThrowsTagInheritence
  * @run main TestThrowsTagInheritence
  */
 
+// TODO: should be TestThrowsInheritance!
 public class TestThrowsTagInheritence extends JavadocTester {
 
-    private static final String[][] TEST = {
-        //The class should not inherit the tag from the interface.
-        { "Foo.html", "Test 1 passes."}
-    };
-    private static final String[][] NEGATED_TEST = {
-        //The class should not inherit the tag from the interface.
-        { "C.html", "Test 1 fails."}
-
-    };
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java",
-        SRC_DIR + "/I.java", SRC_DIR + "/Foo.java",
-        SRC_DIR + "/Iface.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestThrowsTagInheritence tester = new TestThrowsTagInheritence();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                testSrc("C.java"),
+                testSrc("I.java"),
+                testSrc("Foo.java"),
+                testSrc("Iface.java"));
+        checkExit(Exit.OK);
+
+        // The class should not inherit the tag from the interface.
+        checkOutput("Foo.html", true,
+                "Test 1 passes.");
+
+        //The class should not inherit the tag from the interface.
+        checkOutput("C.html", false,
+                "Test 1 fails.");
     }
 }

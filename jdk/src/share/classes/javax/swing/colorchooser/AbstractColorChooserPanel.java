@@ -145,7 +145,8 @@ public abstract class AbstractColorChooserPanel extends JPanel {
     /**
      * Invoked when the panel is added to the chooser.
      * If you override this, be sure to call <code>super</code>.
-     * @param enclosingChooser  the panel to be added
+     *
+     * @param enclosingChooser the chooser to which the panel is to be added
      * @exception RuntimeException  if the chooser panel has already been
      *                          installed
      */
@@ -163,6 +164,8 @@ public abstract class AbstractColorChooserPanel extends JPanel {
     /**
      * Invoked when the panel is removed from the chooser.
      * If override this, be sure to call <code>super</code>.
+     *
+     * @param enclosingChooser the chooser from which the panel is to be removed
      */
   public void uninstallChooserPanel(JColorChooser enclosingChooser) {
         chooser.removePropertyChangeListener("enabled", enabledListener);

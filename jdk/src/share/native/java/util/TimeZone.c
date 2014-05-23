@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,42 +38,28 @@
  */
 JNIEXPORT jstring JNICALL
 Java_java_util_TimeZone_getSystemTimeZoneID(JNIEnv *env, jclass ign,
-                                            jstring java_home, jstring country)
+                                            jstring java_home)
 {
-    const char *cname;
     const char *java_home_dir;
     char *javaTZ;
+    jstring jstrJavaTZ = NULL;
 
-    if (java_home == NULL)
-        return NULL;
+    CHECK_NULL_RETURN(java_home, NULL);
 
     java_home_dir = JNU_GetStringPlatformChars(env, java_home, 0);
-    if (java_home_dir == NULL)
-        return NULL;
-
-    if (country != NULL) {
-        cname = JNU_GetStringPlatformChars(env, country, 0);
-        /* ignore error cases for cname */
-    } else {
-        cname = NULL;
-    }
+    CHECK_NULL_RETURN(java_home_dir, NULL);
 
     /*
      * Invoke platform dependent mapping function
      */
-    javaTZ = findJavaTZ_md(java_home_dir, cname);
-
-    free((void *)java_home_dir);
-    if (cname != NULL) {
-        free((void *)cname);
-    }
-
+    javaTZ = findJavaTZ_md(java_home_dir);
     if (javaTZ != NULL) {
-        jstring jstrJavaTZ = JNU_NewStringPlatform(env, javaTZ);
+        jstrJavaTZ = JNU_NewStringPlatform(env, javaTZ);
         free((void *)javaTZ);
-        return jstrJavaTZ;
     }
-    return NULL;
+
+    JNU_ReleaseStringPlatformChars(env, java_home, java_home_dir);
+    return jstrJavaTZ;
 }
 
 /*

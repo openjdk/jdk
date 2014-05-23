@@ -704,6 +704,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 #endif
   set_print_inlining(PrintInlining || method()->has_option("PrintInlining") NOT_PRODUCT( || PrintOptoInlining));
   set_print_intrinsics(PrintIntrinsics || method()->has_option("PrintIntrinsics"));
+  set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
   if (ProfileTraps RTM_OPT_ONLY( || UseRTMLocking )) {
     // Make sure the method being compiled gets its own MDO,
@@ -988,6 +989,8 @@ Compile::Compile( ciEnv* ci_env,
   set_print_assembly(PrintFrameConverterAssembly);
   set_parsed_irreducible_loop(false);
 #endif
+  set_has_irreducible_loop(false); // no loops
+
   CompileWrapper cw(this);
   Init(/*AliasLevel=*/ 0);
   init_tf((*generator)());
@@ -1158,7 +1161,7 @@ StartNode* Compile::start() const {
     if( start->is_Start() )
       return start->as_Start();
   }
-  ShouldNotReachHere();
+  fatal("Did not find Start node!");
   return NULL;
 }
 

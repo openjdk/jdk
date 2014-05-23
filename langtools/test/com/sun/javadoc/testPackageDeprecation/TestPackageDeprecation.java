@@ -33,53 +33,46 @@
 
 public class TestPackageDeprecation extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS1 = new String[]{
-        "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "-use", "pkg", "pkg1",
-        SRC_DIR + "/C2.java", SRC_DIR + "/FooDepr.java"
-    };
-    private static final String[] ARGS2 = new String[]{
-        "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR, "-use", "-nodeprecated",
-        "pkg", "pkg1", SRC_DIR + "/C2.java", SRC_DIR + "/FooDepr.java"
-    };
+    public static void main(String... args) throws Exception {
+        TestPackageDeprecation tester = new TestPackageDeprecation();
+        tester.runTests();
+    }
 
-    //Input for string search tests.
-    private static final String[][] TEST1 = {
-        { "pkg1/package-summary.html",
+    @Test
+    void testDefault() {
+        javadoc("-d", "out-default",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg", "pkg1", testSrc("C2.java"), testSrc("FooDepr.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/package-summary.html", true,
             "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>\n" +
             "<div class=\"block\"><span class=\"deprecationComment\">This package is Deprecated." +
             "</span></div>"
-        },
-        { "deprecated-list.html",
-            "<li><a href=\"#package\">Deprecated Packages</a></li>"
-        }
-    };
-    private static final String[][] NEGATED_TEST2 = {
-        { "overview-summary.html", "pkg1"},
-        { "allclasses-frame.html", "FooDepr"}
-    };
+        );
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestPackageDeprecation tester = new TestPackageDeprecation();
-        tester.run(ARGS1, TEST1, NO_TEST);
-        tester.run(ARGS2, NO_TEST, NEGATED_TEST2);
-        if ((new java.io.File(OUTPUT_DIR + "-2/pkg1/" +
-                "package-summary.html")).exists()) {
-            throw new Error("Test Fails: packages summary should not be" +
-                    "generated for deprecated package.");
-        } else {
-            System.out.println("Test passes:  package-summary.html not found.");
-        }
-        if ((new java.io.File(OUTPUT_DIR + "-2/FooDepr.html")).exists()) {
-            throw new Error("Test Fails: FooDepr should not be" +
-                    "generated as it is deprecated.");
-        } else {
-            System.out.println("Test passes:  FooDepr.html not found.");
-        }
-        tester.printSummary();
+        checkOutput("deprecated-list.html", true,
+            "<li><a href=\"#package\">Deprecated Packages</a></li>"
+        );
+    }
+
+    @Test
+    void testNoDeprecated() {
+        javadoc("-d", "out-nodepr",
+                "-sourcepath", testSrc,
+                "-use",
+                "-nodeprecated",
+                "pkg", "pkg1", testSrc("C2.java"), testSrc("FooDepr.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("overview-summary.html", false,
+                "pkg1");
+        checkOutput("allclasses-frame.html", false,
+                "FooDepr");
+
+        checkFiles(false,
+                "pkg1/package-summary.html",
+                "FooDepr.html");
     }
 }

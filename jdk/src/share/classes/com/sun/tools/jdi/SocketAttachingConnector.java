@@ -44,12 +44,7 @@ public class SocketAttachingConnector extends GenericAttachingConnector {
     public SocketAttachingConnector() {
         super(new SocketTransportService());
 
-        String defaultHostName;
-        try {
-            defaultHostName = InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            defaultHostName = "";
-        }
+        String defaultHostName = "localhost";
 
         addStringArgument(
             ARG_HOST,
