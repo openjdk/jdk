@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class FilteredImageSource implements ImageProducer {
         filter = imgf;
     }
 
-    private Hashtable proxies;
+    private Hashtable<ImageConsumer, ImageFilter> proxies;
 
     /**
      * Adds the specified <code>ImageConsumer</code>
@@ -94,7 +94,7 @@ public class FilteredImageSource implements ImageProducer {
      */
     public synchronized void addConsumer(ImageConsumer ic) {
         if (proxies == null) {
-            proxies = new Hashtable();
+            proxies = new Hashtable<>();
         }
         if (!proxies.containsKey(ic)) {
             ImageFilter imgf = filter.getFilterInstance(ic);
@@ -137,7 +137,7 @@ public class FilteredImageSource implements ImageProducer {
      */
     public synchronized void removeConsumer(ImageConsumer ic) {
         if (proxies != null) {
-            ImageFilter imgf = (ImageFilter) proxies.get(ic);
+            ImageFilter imgf =  proxies.get(ic);
             if (imgf != null) {
                 src.removeConsumer(imgf);
                 proxies.remove(ic);
@@ -173,9 +173,9 @@ public class FilteredImageSource implements ImageProducer {
      */
     public void startProduction(ImageConsumer ic) {
         if (proxies == null) {
-            proxies = new Hashtable();
+            proxies = new Hashtable<>();
         }
-        ImageFilter imgf = (ImageFilter) proxies.get(ic);
+        ImageFilter imgf = proxies.get(ic);
         if (imgf == null) {
             imgf = filter.getFilterInstance(ic);
             proxies.put(ic, imgf);
@@ -200,7 +200,7 @@ public class FilteredImageSource implements ImageProducer {
      */
     public void requestTopDownLeftRightResend(ImageConsumer ic) {
         if (proxies != null) {
-            ImageFilter imgf = (ImageFilter) proxies.get(ic);
+            ImageFilter imgf = proxies.get(ic);
             if (imgf != null) {
                 imgf.resendTopDownLeftRight(src);
             }

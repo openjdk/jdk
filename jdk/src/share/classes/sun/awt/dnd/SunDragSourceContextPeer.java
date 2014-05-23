@@ -146,7 +146,7 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
     }
 
     protected abstract void startDrag(Transferable trans,
-                                      long[] formats, Map formatMap);
+                                      long[] formats, Map<Long, DataFlavor> formatMap);
 
     /**
      * set cursor

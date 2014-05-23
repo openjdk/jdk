@@ -36,8 +36,8 @@ import java.util.List;
  * @since 1.5
  */
 final class XDragAndDropProtocols {
-    private final static List dragProtocols;
-    private final static List dropProtocols;
+    private final static List<XDragSourceProtocol> dragProtocols;
+    private final static List<XDropTargetProtocol> dropProtocols;
 
     public static final String XDnD = "XDnD";
     public static final String MotifDnD = "MotifDnD";
@@ -50,7 +50,7 @@ final class XDragAndDropProtocols {
         XDropTargetProtocolListener dropTargetProtocolListener =
             XDropTargetContextPeer.getXDropTargetProtocolListener();
 
-        List tDragSourceProtocols = new ArrayList();
+        List<XDragSourceProtocol> tDragSourceProtocols = new ArrayList<>();
         XDragSourceProtocol xdndDragSourceProtocol =
             XDnDDragSourceProtocol.createInstance(dragSourceProtocolListener);
         tDragSourceProtocols.add(xdndDragSourceProtocol);
@@ -58,7 +58,7 @@ final class XDragAndDropProtocols {
             MotifDnDDragSourceProtocol.createInstance(dragSourceProtocolListener);
         tDragSourceProtocols.add(motifdndDragSourceProtocol);
 
-        List tDropTargetProtocols = new ArrayList();
+        List<XDropTargetProtocol> tDropTargetProtocols = new ArrayList<>();
         XDropTargetProtocol xdndDropTargetProtocol =
             XDnDDropTargetProtocol.createInstance(dropTargetProtocolListener);
         tDropTargetProtocols.add(xdndDropTargetProtocol);
@@ -70,11 +70,11 @@ final class XDragAndDropProtocols {
         dropProtocols = Collections.unmodifiableList(tDropTargetProtocols);
     }
 
-    static Iterator getDragSourceProtocols() {
+    static Iterator<XDragSourceProtocol> getDragSourceProtocols() {
         return dragProtocols.iterator();
     }
 
-    static Iterator getDropTargetProtocols() {
+    static Iterator<XDropTargetProtocol> getDropTargetProtocols() {
         return dropProtocols.iterator();
     }
 
@@ -88,10 +88,10 @@ final class XDragAndDropProtocols {
             return null;
         }
 
-        Iterator dragProtocols = XDragAndDropProtocols.getDragSourceProtocols();
+        Iterator<XDragSourceProtocol> dragProtocols =
+            XDragAndDropProtocols.getDragSourceProtocols();
         while (dragProtocols.hasNext()) {
-            XDragSourceProtocol dragProtocol =
-                (XDragSourceProtocol)dragProtocols.next();
+            XDragSourceProtocol dragProtocol = dragProtocols.next();
             if (dragProtocol.getProtocolName().equals(name)) {
                 return dragProtocol;
             }
@@ -110,10 +110,10 @@ final class XDragAndDropProtocols {
             return null;
         }
 
-        Iterator dropProtocols = XDragAndDropProtocols.getDropTargetProtocols();
+        Iterator<XDropTargetProtocol> dropProtocols =
+            XDragAndDropProtocols.getDropTargetProtocols();
         while (dropProtocols.hasNext()) {
-            XDropTargetProtocol dropProtocol =
-                (XDropTargetProtocol)dropProtocols.next();
+            XDropTargetProtocol dropProtocol = dropProtocols.next();
             if (dropProtocol.getProtocolName().equals(name)) {
                 return dropProtocol;
             }

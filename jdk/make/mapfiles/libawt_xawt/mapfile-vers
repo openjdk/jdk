@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -449,12 +449,6 @@ SUNWprivate_1.1 {
         awt_Lock;
         awt_GetComponent;
 
-        # Java Plugin
-        # This is in awt_LoadLibrary.c and falls through to libmawt.
-        # Evidently plugin needs this for backward compatability.
-        getAwtLockFunctions;
-        getAwtData;
-        getAwtDisplay;
         #XAWT entry point for CDE
         Java_sun_awt_motif_XsessionWMcommand;
         Java_sun_awt_motif_XsessionWMcommand_New;

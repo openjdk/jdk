@@ -27,6 +27,7 @@
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
+#import "jni_util.h"
 
 #import "ThreadUtilities.h"
 #import "AWTView.h"
@@ -391,14 +392,12 @@ AWT_ASSERT_APPKIT_THREAD;
                                   (jint)absP.x, (jint)absP.y,
                                   [event deltaY],
                                   [event deltaX]);
-    if (jEvent == nil) {
-        // Unable to create event by some reason.
-        return;
-    }
+    CHECK_NULL(jEvent);
 
     static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
     static JNF_MEMBER_CACHE(jm_deliverMouseEvent, jc_PlatformView, "deliverMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
     JNFCallVoidMethod(env, m_cPlatformView, jm_deliverMouseEvent, jEvent);
+    (*env)->DeleteLocalRef(env, jEvent);
 }
 
 - (void) resetTrackingArea {
@@ -447,20 +446,22 @@ AWT_ASSERT_APPKIT_THREAD;
 
     static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
     static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IISLjava/lang/String;)V");
-    jobject jevent = JNFNewObject(env, jctor_NSEvent,
+    jobject jEvent = JNFNewObject(env, jctor_NSEvent,
                                   [event type],
                                   [event modifierFlags],
                                   [event keyCode],
                                   characters);
+    CHECK_NULL(jEvent);
 
     static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
     static JNF_MEMBER_CACHE(jm_deliverKeyEvent, jc_PlatformView,
                             "deliverKeyEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
-    JNFCallVoidMethod(env, m_cPlatformView, jm_deliverKeyEvent, jevent);
+    JNFCallVoidMethod(env, m_cPlatformView, jm_deliverKeyEvent, jEvent);
 
     if (characters != NULL) {
         (*env)->DeleteLocalRef(env, characters);
     }
+    (*env)->DeleteLocalRef(env, jEvent);
 }
 
 -(void) deliverResize: (NSRect) rect {

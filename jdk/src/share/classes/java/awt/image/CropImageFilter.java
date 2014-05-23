@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ public class CropImageFilter extends ImageFilter {
      * with the filtering operation.
      */
     public void setProperties(Hashtable<?,?> props) {
+        @SuppressWarnings("unchecked")
         Hashtable<Object,Object> p = (Hashtable<Object,Object>)props.clone();
         p.put("croprect", new Rectangle(cropX, cropY, cropW, cropH));
         super.setProperties(p);

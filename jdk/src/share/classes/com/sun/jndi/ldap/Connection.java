@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,10 +459,10 @@ public final class Connection implements Runnable {
                             // will be woken up before readTimeout only if reply is
                             // available
                             ldr.wait(readTimeout);
-                            waited = true;
                         } else {
                             ldr.wait(15 * 1000); // 15 second timeout
                         }
+                        waited = true;
                     } else {
                         break;
                     }
@@ -474,7 +474,7 @@ public final class Connection implements Runnable {
         }
 
         if ((rber == null) && waited) {
-            removeRequest(ldr);
+            abandonRequest(ldr, null);
             throw new NamingException("LDAP response read timed out, timeout used:"
                             + readTimeout + "ms." );
 

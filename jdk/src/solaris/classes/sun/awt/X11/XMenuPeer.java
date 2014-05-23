@@ -143,7 +143,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
      * Access to target's fields
      *
      ************************************************/
-    Vector getTargetItems() {
+    Vector<MenuItem> getTargetItems() {
         return AWTAccessor.getMenuAccessor().getItems((Menu)getTarget());
     }
 

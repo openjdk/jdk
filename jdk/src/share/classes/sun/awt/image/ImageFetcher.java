@@ -152,7 +152,7 @@ class ImageFetcher extends Thread {
                         info.numWaiting--;
                     }
                 }
-                src = (ImageFetchable) info.waitList.elementAt(0);
+                src = info.waitList.elementAt(0);
                 info.waitList.removeElement(src);
             }
             return src;
@@ -303,26 +303,25 @@ class ImageFetcher extends Thread {
        final ThreadGroup fetcherGroup = fetcherThreadGroup;
 
        java.security.AccessController.doPrivileged(
-         new java.security.PrivilegedAction() {
-         public Object run() {
-             for (int i = 0; i < info.fetchers.length; i++) {
-               if (info.fetchers[i] == null) {
-                   ImageFetcher f = new ImageFetcher(
-                           fetcherGroup, i);
-                   try {
-                       f.start();
-                       info.fetchers[i] = f;
-                       info.numFetchers++;
-                       break;
-                   } catch (Error e) {
+           new java.security.PrivilegedAction<Object>() {
+               public Object run() {
+                   for (int i = 0; i < info.fetchers.length; i++) {
+                       if (info.fetchers[i] == null) {
+                           ImageFetcher f = new ImageFetcher(fetcherGroup, i);
+                       try {
+                           f.start();
+                           info.fetchers[i] = f;
+                           info.numFetchers++;
+                           break;
+                       } catch (Error e) {
+                       }
                    }
+                 }
+                 return null;
                }
-             }
-          return null;
-        }
-       });
-      return;
-    }
+           });
+       return;
+   }
 
 }
 
@@ -337,13 +336,13 @@ class FetcherInfo {
     Thread[] fetchers;
     int numFetchers;
     int numWaiting;
-    Vector waitList;
+    Vector<ImageFetchable> waitList;
 
     private FetcherInfo() {
         fetchers = new Thread[MAX_NUM_FETCHERS_PER_APPCONTEXT];
         numFetchers = 0;
         numWaiting = 0;
-        waitList = new Vector();
+        waitList = new Vector<>();
     }
 
     /* The key to put()/get() the FetcherInfo into/from the AppContext. */
