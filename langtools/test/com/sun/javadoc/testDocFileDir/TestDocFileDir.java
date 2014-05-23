@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.File;
-
 /*
  * @test
  * @bug 4258405 4973606 8024096
@@ -31,68 +29,59 @@ import java.io.File;
  *          directory.
  *          Also test that -docfilessubdirs and -excludedocfilessubdir both work.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestDocFileDir
  * @run main TestDocFileDir
  */
 
 public class TestDocFileDir extends JavadocTester {
 
-    private static final String[][] TEST1 = {
-        { "pkg/doc-files/testfile.txt",
-            "This doc file did not get trashed."}
-        };
-
-    private static final String[] FILE_TEST2 = {
-        "pkg/doc-files/subdir-used1/testfile.txt",
-        "pkg/doc-files/subdir-used2/testfile.txt"
-    };
-    private static final String[] FILE_NEGATED_TEST2 = {
-        "pkg/doc-files/subdir-excluded1/testfile.txt",
-        "pkg/doc-files/subdir-excluded2/testfile.txt"
-    };
-
-    private static final String[][] TEST0 = {
-        {"pkg/doc-files/testfile.txt",
-            "This doc file did not get trashed."}
-        };
-
-    //Output dir = Input Dir
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-1",
-            "-sourcepath",
-            "blah" + File.pathSeparator + OUTPUT_DIR + "-1" +
-            File.pathSeparator + "blah", "pkg"};
-
-    //Exercising -docfilessubdirs and -excludedocfilessubdir
-    private static final String[] ARGS2 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-2",
-            "-sourcepath", SRC_DIR,
-            "-docfilessubdirs",
-            "-excludedocfilessubdir", "subdir-excluded1:subdir-excluded2",
-            "pkg"};
-
-    //Output dir = "", Input dir = ""
-    private static final String[] ARGS0 =
-        new String[] {"pkg/C.java"};
-
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDocFileDir tester = new TestDocFileDir();
-        tester.setCheckOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
-        copyDir(SRC_DIR + "/pkg", ".");
-        tester.run(ARGS0, TEST0, NO_TEST);
-        copyDir(SRC_DIR + "/pkg", OUTPUT_DIR + "-1");
-        tester.run(ARGS1, TEST1, NO_TEST);
-        tester.setCheckOutputDirectoryCheck(DirectoryCheck.NONE);
-        tester.run(ARGS2, NO_TEST, NO_TEST, FILE_TEST2, FILE_NEGATED_TEST2);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    // Output dir = "", Input dir = ""
+    @Test
+    void test1() {
+        copyDir(testSrc("pkg"), ".");
+        setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
+        javadoc("pkg/C.java");
+        checkExit(Exit.OK);
+        checkOutput("pkg/doc-files/testfile.txt", true,
+            "This doc file did not get trashed.");
+    }
+
+    // Output dir = Input Dir
+    @Test
+    void test2() {
+        String outdir = "out2";
+        copyDir(testSrc("pkg"), outdir);
+        setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
+        javadoc("-d", outdir,
+            "-sourcepath", "blah" + PS + outdir + PS + "blah",
+            "pkg");
+        checkExit(Exit.OK);
+        checkOutput("pkg/doc-files/testfile.txt", true,
+            "This doc file did not get trashed.");
+    }
+
+    // Exercising -docfilessubdirs and -excludedocfilessubdir
+    @Test
+    void test3() {
+        String outdir = "out3";
+        setOutputDirectoryCheck(DirectoryCheck.NONE);
+        javadoc("-d", outdir,
+                "-sourcepath", testSrc,
+                "-docfilessubdirs",
+                "-excludedocfilessubdir", "subdir-excluded1:subdir-excluded2",
+                "pkg");
+        checkExit(Exit.OK);
+        checkFiles(true,
+                "pkg/doc-files/subdir-used1/testfile.txt",
+                "pkg/doc-files/subdir-used2/testfile.txt");
+        checkFiles(false,
+                "pkg/doc-files/subdir-excluded1/testfile.txt",
+                "pkg/doc-files/subdir-excluded2/testfile.txt");
     }
 }

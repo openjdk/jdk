@@ -27,28 +27,27 @@
  * @summary Test to make sure that the link to source documentation
  * has a forward slash.  It would be wrong to use a back slash.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestBackSlashInLink
  * @run main TestBackSlashInLink
  */
 
 public class TestBackSlashInLink extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "C.html", "src-html/C.html#line.7"}};
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            "-linksource",  SRC_DIR + "/C.java"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestBackSlashInLink tester = new TestBackSlashInLink();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-linksource",
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", true,
+                "src-html/C.html#line.7");
     }
 }

@@ -36,7 +36,8 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline2.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/stack.hpp"
 #include "utilities/macros.hpp"
@@ -544,7 +545,6 @@ const char* Klass::external_name() const {
   if (oop_is_instance()) {
     InstanceKlass* ik = (InstanceKlass*) this;
     if (ik->is_anonymous()) {
-      assert(EnableInvokeDynamic, "");
       intptr_t hash = 0;
       if (ik->java_mirror() != NULL) {
         // java_mirror might not be created yet, return 0 as hash.

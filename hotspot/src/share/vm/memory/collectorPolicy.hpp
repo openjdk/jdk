@@ -47,7 +47,6 @@
 
 // Forward declarations.
 class GenCollectorPolicy;
-class TwoGenerationCollectorPolicy;
 class AdaptiveSizePolicy;
 #if INCLUDE_ALL_GCS
 class ConcurrentMarkSweepPolicy;
@@ -114,7 +113,7 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
   enum Name {
     CollectorPolicyKind,
-    TwoGenerationCollectorPolicyKind,
+    GenCollectorPolicyKind,
     ConcurrentMarkSweepPolicyKind,
     ASConcurrentMarkSweepPolicyKind,
     G1CollectorPolicyKind
@@ -135,7 +134,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
   // Identification methods.
   virtual GenCollectorPolicy*           as_generation_policy()            { return NULL; }
-  virtual TwoGenerationCollectorPolicy* as_two_generation_policy()        { return NULL; }
   virtual MarkSweepPolicy*              as_mark_sweep_policy()            { return NULL; }
 #if INCLUDE_ALL_GCS
   virtual ConcurrentMarkSweepPolicy*    as_concurrent_mark_sweep_policy() { return NULL; }
@@ -143,7 +141,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 #endif // INCLUDE_ALL_GCS
   // Note that these are not virtual.
   bool is_generation_policy()            { return as_generation_policy() != NULL; }
-  bool is_two_generation_policy()        { return as_two_generation_policy() != NULL; }
   bool is_mark_sweep_policy()            { return as_mark_sweep_policy() != NULL; }
 #if INCLUDE_ALL_GCS
   bool is_concurrent_mark_sweep_policy() { return as_concurrent_mark_sweep_policy() != NULL; }
@@ -225,6 +222,9 @@ friend class TestGenCollectorPolicy;
   size_t _min_gen0_size;
   size_t _initial_gen0_size;
   size_t _max_gen0_size;
+  size_t _min_gen1_size;
+  size_t _initial_gen1_size;
+  size_t _max_gen1_size;
 
   // _gen_alignment and _space_alignment will have the same value most of the
   // time. When using large pages they can differ.
@@ -264,8 +264,11 @@ friend class TestGenCollectorPolicy;
   size_t initial_gen0_size() { return _initial_gen0_size; }
   size_t max_gen0_size()     { return _max_gen0_size; }
   size_t gen_alignment()     { return _gen_alignment; }
+  size_t min_gen1_size()     { return _min_gen1_size; }
+  size_t initial_gen1_size() { return _initial_gen1_size; }
+  size_t max_gen1_size()     { return _max_gen1_size; }
 
-  virtual int number_of_generations() = 0;
+  int number_of_generations() { return 2; }
 
   virtual GenerationSpec **generations() {
     assert(_generations != NULL, "Sanity check");
@@ -297,47 +300,15 @@ friend class TestGenCollectorPolicy;
   virtual void post_heap_initialize() {
     assert(_max_gen0_size == MaxNewSize, "Should be taken care of by initialize_size_info");
   }
-};
 
-// All of hotspot's current collectors are subtypes of this
-// class. Currently, these collectors all use the same gen[0],
-// but have different gen[1] types. If we add another subtype
-// of CollectorPolicy, this class should be broken out into
-// its own file.
-
-class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
- protected:
-  size_t _min_gen1_size;
-  size_t _initial_gen1_size;
-  size_t _max_gen1_size;
-
-  void initialize_flags();
-  void initialize_size_info();
-
-  DEBUG_ONLY(void assert_flags();)
-  DEBUG_ONLY(void assert_size_info();)
-
- public:
-  TwoGenerationCollectorPolicy() : GenCollectorPolicy(), _min_gen1_size(0),
-    _initial_gen1_size(0), _max_gen1_size(0) {}
-
-  // Accessors
-  size_t min_gen1_size()     { return _min_gen1_size; }
-  size_t initial_gen1_size() { return _initial_gen1_size; }
-  size_t max_gen1_size()     { return _max_gen1_size; }
-
-  // Inherited methods
-  TwoGenerationCollectorPolicy* as_two_generation_policy() { return this; }
-
-  int number_of_generations()          { return 2; }
   BarrierSet::Name barrier_set_name()  { return BarrierSet::CardTableModRef; }
 
   virtual CollectorPolicy::Name kind() {
-    return CollectorPolicy::TwoGenerationCollectorPolicyKind;
+    return CollectorPolicy::GenCollectorPolicyKind;
   }
 };
 
-class MarkSweepPolicy : public TwoGenerationCollectorPolicy {
+class MarkSweepPolicy : public GenCollectorPolicy {
  protected:
   void initialize_alignments();
   void initialize_generations();

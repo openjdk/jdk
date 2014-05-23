@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,12 @@ public class LdapTimeoutTest {
         env.put(Context.SECURITY_PRINCIPAL, "user");
         env.put(Context.SECURITY_CREDENTIALS, "password");
 
-        env.put("com.sun.jndi.ldap.connect.timeout", "10");
-        env.put("com.sun.jndi.ldap.read.timeout", "3000");
-
         InitialContext ctx = null;
         try {
+            new LdapTimeoutTest().deadServerNoTimeout(env);
+
+            env.put("com.sun.jndi.ldap.connect.timeout", "10");
+            env.put("com.sun.jndi.ldap.read.timeout", "3000");
             new LdapTimeoutTest().ldapReadTimeoutTest(env, false);
             new LdapTimeoutTest().ldapReadTimeoutTest(env, true);
             new LdapTimeoutTest().simpleAuthConnectTest(env);
@@ -84,7 +85,7 @@ public class LdapTimeoutTest {
     void ldapReadTimeoutTest(Hashtable env, boolean ssl) {
         InitialContext ctx = null;
         if (ssl) env.put(Context.SECURITY_PROTOCOL, "ssl");
-        ScheduledFuture killer = killSwitch();
+        ScheduledFuture killer = killSwitch(5000);
         long start = System.nanoTime();
         try {
             ctx = new InitialDirContext(env);
@@ -112,7 +113,7 @@ public class LdapTimeoutTest {
 
     void simpleAuthConnectTest(Hashtable env) {
         InitialContext ctx = null;
-        ScheduledFuture killer = killSwitch();
+        ScheduledFuture killer = killSwitch(5000);
         long start = System.nanoTime();
         try {
             ctx = new InitialDirContext(env);
@@ -139,6 +140,32 @@ public class LdapTimeoutTest {
         }
     }
 
+    void deadServerNoTimeout(Hashtable env) {
+        InitialContext ctx = null;
+        ScheduledFuture killer = killSwitch(30000);
+        long start = System.nanoTime();
+        try {
+            ctx = new InitialDirContext(env);
+            SearchControls scl = new SearchControls();
+            scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            NamingEnumeration<SearchResult> answer = ((InitialDirContext)ctx)
+                .search("ou=People,o=JNDITutorial", "(objectClass=*)", scl);
+            // shouldn't reach here
+            fail();
+        } catch (NamingException e) {
+            long end = System.nanoTime();
+            if (TimeUnit.NANOSECONDS.toMillis(end - start) < 14000) {
+                System.err.println("fail: timeout should be at least 15 seconds, actual time: "
+                                   + TimeUnit.NANOSECONDS.toMillis(end - start));
+                fail();
+            } else {
+                pass();
+            }
+        } finally {
+            if (!shutItDown(killer, ctx)) fail();
+        }
+    }
+
     boolean shutItDown(ScheduledFuture killer, InitialContext ctx) {
         killer.cancel(true);
         try {
@@ -149,15 +176,15 @@ public class LdapTimeoutTest {
         }
     }
 
-    ScheduledFuture killSwitch() {
+    ScheduledFuture killSwitch(int ms) {
         final Thread current = Thread.currentThread();
         return LdapTimeoutTest.pool.schedule(new Callable<Void>() {
             public Void call() throws Exception {
                 System.err.println("Fail: killSwitch()");
-                current.interrupt();
+                System.exit(0);
                 return null;
             }
-        }, 5000, TimeUnit.MILLISECONDS);
+        }, ms, TimeUnit.MILLISECONDS);
     }
 
     static class Server extends Thread {

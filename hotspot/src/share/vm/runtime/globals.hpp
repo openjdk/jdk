@@ -3784,10 +3784,6 @@ class CommandLineFlags {
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
           "Address to allocate shared memory region for class data")        \
                                                                             \
-  diagnostic(bool, EnableInvokeDynamic, true,                               \
-          "support JSR 292 (method handles, invokedynamic, "                \
-          "anonymous classes")                                              \
-                                                                            \
   diagnostic(bool, PrintMethodHandleStubs, false,                           \
           "Print generated stub code for method handles")                   \
                                                                             \

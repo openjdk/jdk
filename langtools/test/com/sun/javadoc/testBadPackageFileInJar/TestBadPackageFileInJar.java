@@ -27,33 +27,27 @@
  * @summary Test to make sure that Javadoc emits a useful warning
  * when a bad package.html file is in the JAR.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestBadPackageFileInJar
  * @run main TestBadPackageFileInJar
  */
 
 public class TestBadPackageFileInJar extends JavadocTester {
 
-    private static final String[][] TEST =
-        new String[][] {
-            {ERROR_OUTPUT,
-                "badPackageFileInJar.jar" + FS + "pkg/package.html: error - Body tag missing from HTML"}
-        };
-
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "-classpath",
-            SRC_DIR + "/badPackageFileInJar.jar", "pkg"};
-
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestBadPackageFileInJar tester = new TestBadPackageFileInJar();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-classpath",  testSrc("badPackageFileInJar.jar"),
+                "pkg");
+        checkExit(Exit.FAILED);
+
+        checkOutput(Output.ERROR, true,
+                "badPackageFileInJar.jar" + FS + "pkg/package.html: error - Body tag missing from HTML");
     }
 }

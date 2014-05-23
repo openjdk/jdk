@@ -29,37 +29,35 @@
  *    begin their comment without a leading star without leading
  *    spaces stripped
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build LeadingSpaces
  * @run main LeadingSpaces
  */
 
 public class LeadingSpaces extends JavadocTester {
-
-    private static final String[][] TEST = {
-        { "LeadingSpaces.html",
-"        1\n" +
-"          2\n" +
-"            3\n" +
-"              4\n" +
-"                5\n" +
-"                  6\n" +
-"                    7"}
-    };
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-        SRC_DIR + "/LeadingSpaces.java"};
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         LeadingSpaces tester = new LeadingSpaces();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void testLeadingSpaces() {
+        javadoc("-d", "out", "-sourcepath", testSrc,
+                testSrc("LeadingSpaces.java"));
+        checkExit(Exit.OK);
+        checkOutput("LeadingSpaces.html", true,
+                  "        1\n"
+                + "          2\n"
+                + "            3\n"
+                + "              4\n"
+                + "                5\n"
+                + "                  6\n"
+                + "                    7");
     }
 
     /**

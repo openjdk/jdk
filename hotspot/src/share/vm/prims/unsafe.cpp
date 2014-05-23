@@ -33,6 +33,7 @@
 #include "prims/jvm.h"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
 #include "services/threadService.hpp"
@@ -1727,14 +1728,10 @@ JVM_ENTRY(void, JVM_RegisterUnsafeMethods(JNIEnv *env, jclass unsafecls))
     }
 
     // Unsafe.defineAnonymousClass
-    if (EnableInvokeDynamic) {
-      register_natives("1.7 define anonymous class method", env, unsafecls, anonk_methods, sizeof(anonk_methods)/sizeof(JNINativeMethod));
-    }
+    register_natives("1.7 define anonymous class method", env, unsafecls, anonk_methods, sizeof(anonk_methods)/sizeof(JNINativeMethod));
 
     // Unsafe.shouldBeInitialized
-    if (EnableInvokeDynamic) {
-      register_natives("1.7 LambdaForm support", env, unsafecls, lform_methods, sizeof(lform_methods)/sizeof(JNINativeMethod));
-    }
+    register_natives("1.7 LambdaForm support", env, unsafecls, lform_methods, sizeof(lform_methods)/sizeof(JNINativeMethod));
 
     // Fence methods
     register_natives("1.8 fence methods", env, unsafecls, fence_methods, sizeof(fence_methods)/sizeof(JNINativeMethod));

@@ -28,9 +28,8 @@
  * @bug 6786682
  * @summary This test verifies the use of lang attribute by <HTML>.
  * @author Bhavesh Patel
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestHtmlTag
  * @run main TestHtmlTag
  */
 
@@ -38,43 +37,65 @@ import java.util.Locale;
 
 public class TestHtmlTag extends JavadocTester {
 
-    private static final String[][] TEST1 = {
-        { "pkg1/C1.html",
-            "<html lang=\"" + Locale.getDefault().getLanguage() + "\">"},
-        { "pkg1/package-summary.html",
-            "<html lang=\"" + Locale.getDefault().getLanguage() + "\">"}};
-    private static final String[][] NEGATED_TEST1 = {
-        { "pkg1/C1.html", "<html>"}};
-    private static final String[][] TEST2 = {
-        { "pkg2/C2.html", "<html lang=\"ja\">"},
-        { "pkg2/package-summary.html", "<html lang=\"ja\">"}};
-    private static final String[][] NEGATED_TEST2 = {
-        { "pkg2/C2.html", "<html>"}};
-    private static final String[][] TEST3 = {
-        { "pkg1/C1.html", "<html lang=\"en\">"},
-        { "pkg1/package-summary.html", "<html lang=\"en\">"}};
-    private static final String[][] NEGATED_TEST3 = {
-        { "pkg1/C1.html", "<html>"}};
-
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", OUTPUT_DIR + "-1", "-sourcepath", SRC_DIR, "pkg1"};
-    private static final String[] ARGS2 =
-        new String[] {
-            "-locale", "ja", "-d", OUTPUT_DIR + "-2", "-sourcepath", SRC_DIR, "pkg2"};
-    private static final String[] ARGS3 =
-        new String[] {
-            "-locale", "en_US", "-d", OUTPUT_DIR + "-3", "-sourcepath", SRC_DIR, "pkg1"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHtmlTag tester = new TestHtmlTag();
-        tester.run(ARGS1, TEST1, NEGATED_TEST1);
-        tester.run(ARGS2, TEST2, NEGATED_TEST2);
-        tester.run(ARGS3, TEST3, NEGATED_TEST3);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test_default() {
+        javadoc("-d", "out-default",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.OK);
+
+        String defaultLanguage = Locale.getDefault().getLanguage();
+
+        checkOutput("pkg1/C1.html", true,
+            "<html lang=\"" + defaultLanguage + "\">");
+
+        checkOutput("pkg1/package-summary.html", true,
+            "<html lang=\"" + defaultLanguage + "\">");
+
+        checkOutput("pkg1/C1.html", false,
+                "<html>");
+    }
+
+    @Test
+    void test_ja() {
+        // TODO: why does this test need/use pkg2; why can't it use pkg1
+        // like the other two tests, so that we can share the check methods?
+        javadoc("-locale", "ja",
+                "-d", "out-ja",
+                "-sourcepath", testSrc,
+                "pkg2");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg2/C2.html", true,
+                "<html lang=\"ja\">");
+
+        checkOutput("pkg2/package-summary.html", true,
+                "<html lang=\"ja\">");
+
+        checkOutput("pkg2/C2.html", false,
+                "<html>");
+    }
+
+    @Test
+    void test_en_US() {
+        javadoc("-locale", "en_US",
+                "-d", "out-en_US",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/C1.html", true,
+                "<html lang=\"en\">");
+
+        checkOutput("pkg1/package-summary.html", true,
+                "<html lang=\"en\">");
+
+        checkOutput("pkg1/C1.html", false,
+                "<html>");
     }
 }

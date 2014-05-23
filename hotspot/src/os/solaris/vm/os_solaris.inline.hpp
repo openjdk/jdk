@@ -26,14 +26,8 @@
 #define OS_SOLARIS_VM_OS_SOLARIS_INLINE_HPP
 
 #include "runtime/atomic.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
-
-#ifdef TARGET_OS_ARCH_solaris_x86
-# include "orderAccess_solaris_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_sparc
-# include "orderAccess_solaris_sparc.inline.hpp"
-#endif
 
 // System includes
 #include <sys/param.h>

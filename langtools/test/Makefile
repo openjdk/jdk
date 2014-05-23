@@ -186,6 +186,12 @@ ifdef JTREG_TIMEOUT_FACTOR
   JTREG_OPTIONS += -timeoutFactor:$(JTREG_TIMEOUT_FACTOR)
 endif
 
+# Default verbosity setting for jtreg
+JTREG_VERBOSE = fail,error,nopass
+
+# Default verbosity setting for jck
+JCK_VERBOSE = non-pass
+
 # Assertions: some tests show failures when assertions are enabled.
 # Since javac is typically loaded via the bootclassloader (either via TESTJAVA
 # or TESTBOOTCLASSPATH), you may need -esa to enable assertions in javac.
@@ -256,6 +262,8 @@ jdeps:		JTREG_TESTDIRS = tools/jdeps
 #	Version of java used to run jtreg.  Should normally be the same as TESTJAVA
 # TESTJAVA
 # 	Version of java to be tested.
+# JTREG_VERBOSE
+# Verbosity setting for jtreg
 # JTREG_OPTIONS
 #	Additional options for jtreg
 # JTREG_TESTDIRS
@@ -273,7 +281,7 @@ jtreg-tests: check-jtreg FRC
 	JT_JAVA=$(JT_JAVA) $(JTREG) \
 	  -J-Xmx512m \
 	  -vmoption:-Xmx768m \
-	  -a -ignore:quiet -v:fail,error,nopass \
+	  -a -ignore:quiet $(if $(JTREG_VERBOSE),-v:$(JTREG_VERBOSE)) \
           -r:$(JTREG_OUTPUT_DIR)/JTreport \
           -w:$(JTREG_OUTPUT_DIR)/JTwork \
           -jdk:$(TESTJAVA) \
@@ -312,6 +320,8 @@ check-jtreg: $(PRODUCT_HOME) $(JTREG)
 #       Default is JDK 7
 # TESTJAVA
 # 	Version of java to be tested.
+# JCK_VERBOSE
+#	Verbosity setting for jtjck
 # JCK_COMPILER_OPTIONS
 #	Additional options for JCK-compiler
 # JCK_COMPILER_TESTDIRS
@@ -325,9 +335,9 @@ jck-compiler-tests: check-jck FRC
 	@rm -f -r $(JCK_COMPILER_OUTPUT_DIR)/work $(JCK_COMPILER_OUTPUT_DIR)/report \
 	    $(JCK_COMPILER_OUTPUT_DIR)/diff.html $(JCK_COMPILER_OUTPUT_DIR)/status.txt
 	@mkdir -p $(JCK_COMPILER_OUTPUT_DIR)
-	$(JT_JAVA)/bin/java -XX:MaxPermSize=256m -Xmx512m \
+	$(JT_JAVA)/bin/java -Xmx512m \
 	    -jar $(JCK_HOME)/JCK-compiler-8/lib/jtjck.jar \
-	    -v:non-pass \
+	    $(if $(JCK_VERBOSE),-v:$(JCK_VERBOSE)) \
             -r:$(JCK_COMPILER_OUTPUT_DIR)/report \
             -w:$(JCK_COMPILER_OUTPUT_DIR)/work \
             -jdk:$(TESTJAVA) \
@@ -361,6 +371,8 @@ jck-compiler-summary: FRC
 #	Version of java used to run JCK.  Should normally be the same as TESTJAVA
 # TESTJAVA
 # 	Version of java to be tested.
+# JCK_VERBOSE
+#	Verbosity setting for jtjck
 # JCK_RUNTIME_OPTIONS
 #	Additional options for JCK-runtime
 # JCK_RUNTIME_TESTDIRS
@@ -374,9 +386,9 @@ jck-runtime-tests: check-jck FRC
 	@rm -f -r $(JCK_RUNTIME_OUTPUT_DIR)/work $(JCK_RUNTIME_OUTPUT_DIR)/report \
 	    $(JCK_RUNTIME_OUTPUT_DIR)/diff.html $(JCK_RUNTIME_OUTPUT_DIR)/status.txt
 	@mkdir -p $(JCK_RUNTIME_OUTPUT_DIR)
-	$(JT_JAVA)/bin/java -XX:MaxPermSize=256m -Xmx512m \
+	$(JT_JAVA)/bin/java -Xmx512m \
 	    -jar $(JCK_HOME)/JCK-runtime-8/lib/jtjck.jar \
-	    -v:non-pass \
+	    $(if $(JCK_VERBOSE),-v:$(JCK_VERBOSE)) \
             -r:$(JCK_RUNTIME_OUTPUT_DIR)/report \
             -w:$(JCK_RUNTIME_OUTPUT_DIR)/work \
             -jdk:$(TESTJAVA) \
