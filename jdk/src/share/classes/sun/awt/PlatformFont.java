@@ -143,7 +143,7 @@ public abstract class PlatformFont implements FontPeer {
         if (len < 1) {
             return new CharsetString[0];
         }
-        Vector mcs = null;
+        Vector<CharsetString> mcs = null;
         char[] tmpStr = new char[len];
         char tmpChar = defaultChar;
         boolean encoded = false;
@@ -198,7 +198,7 @@ public abstract class PlatformFont implements FontPeer {
             }
             if (currentFont != fd){
                 if (mcs == null) {
-                    mcs = new Vector(3);
+                    mcs = new Vector<>(3);
                 }
                 mcs.addElement(new CharsetString(tmpStr, lastIndex,
                                                  i-lastIndex, currentFont));
@@ -209,16 +209,13 @@ public abstract class PlatformFont implements FontPeer {
         }
         CharsetString[] result;
         CharsetString cs = new CharsetString(tmpStr, lastIndex,
-                                            len-lastIndex, currentFont);
+                                             len-lastIndex, currentFont);
         if (mcs == null) {
             result = new CharsetString[1];
             result[0] = cs;
         } else {
             mcs.addElement(cs);
-            result = new CharsetString[mcs.size()];
-            for (int i = 0; i < mcs.size(); i++){
-                result[i] = (CharsetString)mcs.elementAt(i);
-            }
+            result = mcs.toArray(new CharsetString[mcs.size()]);
         }
         return result;
     }

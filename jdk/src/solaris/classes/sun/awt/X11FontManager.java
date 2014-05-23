@@ -59,7 +59,7 @@ public class X11FontManager extends SunFontManager {
      * E.g., the -0-0-0-0-p-0- reported by X is -*-%d-*-*-p-*- in the font
      * configuration files. We need to remove that part for comparisons.
      */
-    private static Map fontNameMap = new HashMap();
+    private static Map<String, String> fontNameMap = new HashMap<>();
 
     /*
      * xlfdMap is a map from a platform path like
@@ -72,7 +72,7 @@ public class X11FontManager extends SunFontManager {
      * the full XLFD string like :-
      * "-ricoh-hg gothic b-medium-r-normal--0-0-0-0-m-0-jisx0201.1976-0"
      */
-    private static Map xlfdMap = new HashMap();
+    private static Map<String, Vector<String>> xlfdMap = new HashMap<>();
 
     /* xFontDirsMap is also a map from a font ID to a font filepath.
      * The difference from fontNameMap is just that it does not have
@@ -88,7 +88,7 @@ public class X11FontManager extends SunFontManager {
      * X11 font directory, then precautions must be taken to include both
      * directories.
      */
-     private static Map xFontDirsMap;
+     private static Map<String, String> xFontDirsMap;
 
      /*
       * This is the set of font directories needed to be on the X font path
@@ -121,7 +121,7 @@ public class X11FontManager extends SunFontManager {
      * of the singleton GE instance is already synchronised and that is
      * the only code path that accesses this map.
      */
-     private static HashMap registeredDirs = new HashMap();
+     private static HashMap<String, Object> registeredDirs = new HashMap<>();
 
      /* Array of directories to be added to the X11 font path.
       * Used by static method called from Toolkits which use X11 fonts.
@@ -183,7 +183,7 @@ public class X11FontManager extends SunFontManager {
                  * Add this XLFD (platform name) to the list of known
                  * ones for this file.
                  */
-                Vector xVal = (Vector) xlfdMap.get(fileName);
+                Vector<String> xVal = xlfdMap.get(fileName);
                 if (xVal == null) {
                     /* Try to be robust on Linux distros which move fonts
                      * around by verifying that the fileName represents a
@@ -194,7 +194,7 @@ public class X11FontManager extends SunFontManager {
                         fileName = null;
                     }
                     if (fileName != null) {
-                        xVal = new Vector();
+                        xVal = new Vector<>();
                         xVal.add(platName);
                         xlfdMap.put(fileName, xVal);
                     }
@@ -211,7 +211,7 @@ public class X11FontManager extends SunFontManager {
         }
 
         if (fontID != null) {
-            fileName = (String)fontNameMap.get(fontID);
+            fileName = fontNameMap.get(fontID);
             /* On Linux check for the Lucida Oblique fonts */
             if (fileName == null && FontUtilities.isLinux && !isOpenJDK()) {
                 if (oblmap == null) {
@@ -235,7 +235,7 @@ public class X11FontManager extends SunFontManager {
                     FontUtilities.getLogger()
                             .warning("** Finished registering all font paths");
                 }
-                fileName = (String)fontNameMap.get(fontID);
+                fileName = fontNameMap.get(fontID);
             }
             if (fileName == null && !isHeadless()) {
                 /* Query X11 directly to see if this font is available
@@ -245,7 +245,7 @@ public class X11FontManager extends SunFontManager {
             }
             if (fileName == null) {
                 fontID = switchFontIDForName(platName);
-                fileName = (String)fontNameMap.get(fontID);
+                fileName = fontNameMap.get(fontID);
             }
             if (fileName != null) {
                 fontNameMap.put(fontID, fileName);
@@ -257,8 +257,8 @@ public class X11FontManager extends SunFontManager {
     @Override
     protected String[] getNativeNames(String fontFileName,
             String platformName) {
-        Vector nativeNames;
-        if ((nativeNames=(Vector)xlfdMap.get(fontFileName))==null) {
+        Vector<String> nativeNames;
+        if ((nativeNames=xlfdMap.get(fontFileName))==null) {
             if (platformName == null) {
                 return null;
             } else {
@@ -271,7 +271,7 @@ public class X11FontManager extends SunFontManager {
             }
         } else {
             int len = nativeNames.size();
-            return (String[])nativeNames.toArray(new String[len]);
+            return nativeNames.toArray(new String[len]);
         }
     }
 
@@ -366,7 +366,7 @@ public class X11FontManager extends SunFontManager {
                             }
                             String fontPart = st.sval.substring(breakPos+1);
                             String fontID = specificFontIDForName(fontPart);
-                            String sVal = (String) fontNameMap.get(fontID);
+                            String sVal = fontNameMap.get(fontID);
 
                             if (FontUtilities.debugFonts()) {
                                 PlatformLogger logger = FontUtilities.getLogger();
@@ -386,14 +386,14 @@ public class X11FontManager extends SunFontManager {
                                  * wants to use the native rasteriser.
                                  */
                                 if (xFontDirsMap == null) {
-                                    xFontDirsMap = new HashMap();
+                                    xFontDirsMap = new HashMap<>();
                                 }
                                 xFontDirsMap.put(fontID, path);
                                 fullPath = file.getCanonicalPath();
                             } catch (IOException e) {
                                 fullPath = path + File.separator + fileName;
                             }
-                            Vector xVal = (Vector) xlfdMap.get(fullPath);
+                            Vector<String> xVal = xlfdMap.get(fullPath);
                             if (FontUtilities.debugFonts()) {
                                 FontUtilities.getLogger()
                                       .info("fullPath=" + fullPath +
@@ -408,7 +408,7 @@ public class X11FontManager extends SunFontManager {
                                 }
                                 fontNameMap.put(fontID, fullPath);
                                 if (xVal == null) {
-                                    xVal = new Vector();
+                                    xVal = new Vector<>();
                                     xlfdMap.put (fullPath, xVal);
                                 }
                                 xVal.add(fontPart);
@@ -447,8 +447,8 @@ public class X11FontManager extends SunFontManager {
          * will typically not ever need to initialise it so it can be null.
          */
         xFontDirsMap = null;
-        xlfdMap = new HashMap(1);
-        fontNameMap = new HashMap(1);
+        xlfdMap = new HashMap<>(1);
+        fontNameMap = new HashMap<>(1);
     }
 
     private String getObliqueLucidaFontID(String fontID) {
@@ -579,10 +579,10 @@ public class X11FontManager extends SunFontManager {
         String fileName = null;
         String fontID = specificFontIDForName(name);
         if (fontID != null) {
-            fileName = (String)fontNameMap.get(fontID);
+            fileName = fontNameMap.get(fontID);
             if (fileName == null) {
                 fontID = switchFontIDForName(name);
-                fileName = (String)fontNameMap.get(fontID);
+                fileName = fontNameMap.get(fontID);
             }
             if (fileName == null) {
                 fileName = getDefaultFontFile();
@@ -685,7 +685,7 @@ public class X11FontManager extends SunFontManager {
         getPlatformFontPathFromFontConfig();
         if (xFontDirsMap != null) {
             String fontID = specificFontIDForName(platformName);
-            String dirName = (String)xFontDirsMap.get(fontID);
+            String dirName = xFontDirsMap.get(fontID);
             if (dirName != null) {
                 fontConfigDirs.add(dirName);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class BufferedImage extends java.awt.Image
     ColorModel colorModel;
     WritableRaster raster;
     OffScreenImageSource osis;
-    Hashtable properties;
+    Hashtable<?, ?> properties;
 
     boolean    isAlphaPremultiplied;// If true, alpha has been premultiplied in
     // color channels
@@ -1106,7 +1106,7 @@ public class BufferedImage extends java.awt.Image
     public ImageProducer getSource() {
         if (osis == null) {
             if (properties == null) {
-                properties = new Hashtable();
+                properties = new Hashtable<>();
             }
             osis = new OffScreenImageSource(this, properties);
         }
