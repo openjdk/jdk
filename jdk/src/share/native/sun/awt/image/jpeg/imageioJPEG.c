@@ -51,7 +51,7 @@
 
 /* headers from the JPEG library */
 #include <jpeglib.h>
-#include "jerror.h"
+#include <jerror.h>
 
 #undef MAX
 #define MAX(a,b)        ((a) > (b) ? (a) : (b))

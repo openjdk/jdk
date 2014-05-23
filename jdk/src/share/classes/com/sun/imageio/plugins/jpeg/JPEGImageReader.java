@@ -89,7 +89,7 @@ public class JPEGImageReader extends ImageReader {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {
-                    System.loadLibrary("jpeg");
+                    System.loadLibrary("javajpeg");
                     return null;
                 }
             });
