@@ -45,6 +45,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
 
 // Concurrent marking bit map wrapper
@@ -819,7 +820,7 @@ void ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurren
     // false before we start remark. At this point we should also be
     // in a STW phase.
     assert(!concurrent_marking_in_progress(), "invariant");
-    assert(_finger == _heap_end,
+    assert(out_of_regions(),
            err_msg("only way to get here: _finger: "PTR_FORMAT", _heap_end: "PTR_FORMAT,
                    p2i(_finger), p2i(_heap_end)));
     update_g1_committed(true);
@@ -978,7 +979,9 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
   if (concurrent()) {
     SuspendibleThreadSet::leave();
   }
-  _first_overflow_barrier_sync.enter();
+
+  bool barrier_aborted = !_first_overflow_barrier_sync.enter();
+
   if (concurrent()) {
     SuspendibleThreadSet::join();
   }
@@ -986,7 +989,17 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
   // more work
 
   if (verbose_low()) {
-    gclog_or_tty->print_cr("[%u] leaving first barrier", worker_id);
+    if (barrier_aborted) {
+      gclog_or_tty->print_cr("[%u] aborted first barrier", worker_id);
+    } else {
+      gclog_or_tty->print_cr("[%u] leaving first barrier", worker_id);
+    }
+  }
+
+  if (barrier_aborted) {
+    // If the barrier aborted we ignore the overflow condition and
+    // just abort the whole marking phase as quickly as possible.
+    return;
   }
 
   // If we're executing the concurrent phase of marking, reset the marking
@@ -1026,14 +1039,20 @@ void ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
   if (concurrent()) {
     SuspendibleThreadSet::leave();
   }
-  _second_overflow_barrier_sync.enter();
+
+  bool barrier_aborted = !_second_overflow_barrier_sync.enter();
+
   if (concurrent()) {
     SuspendibleThreadSet::join();
   }
   // at this point everything should be re-initialized and ready to go
 
   if (verbose_low()) {
-    gclog_or_tty->print_cr("[%u] leaving second barrier", worker_id);
+    if (barrier_aborted) {
+      gclog_or_tty->print_cr("[%u] aborted second barrier", worker_id);
+    } else {
+      gclog_or_tty->print_cr("[%u] leaving second barrier", worker_id);
+    }
   }
 }
 
@@ -3240,6 +3259,8 @@ void ConcurrentMark::abort() {
   for (uint i = 0; i < _max_worker_id; ++i) {
     _tasks[i]->clear_region_fields();
   }
+  _first_overflow_barrier_sync.abort();
+  _second_overflow_barrier_sync.abort();
   _has_aborted = true;
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();

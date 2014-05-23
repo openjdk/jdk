@@ -1393,6 +1393,15 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
           _worklist.push(u);
       }
     }
+    // If changed AddI/SubI inputs, check CmpU for range check optimization.
+    if (use_op == Op_AddI || use_op == Op_SubI) {
+      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+        Node* u = use->fast_out(i2);
+        if (u->is_Cmp() && (u->Opcode() == Op_CmpU)) {
+          _worklist.push(u);
+        }
+      }
+    }
     // If changed AddP inputs, check Stores for loop invariant
     if( use_op == Op_AddP ) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {

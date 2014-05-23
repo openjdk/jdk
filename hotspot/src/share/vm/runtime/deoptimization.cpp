@@ -1340,7 +1340,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         if (xtty != NULL)
           xtty->name(class_name);
       }
-      if (xtty != NULL && trap_mdo != NULL) {
+      if (xtty != NULL && trap_mdo != NULL && (int)reason < (int)MethodData::_trap_hist_limit) {
         // Dump the relevant MDO state.
         // This is the deopt count for the current reason, any previous
         // reasons or recompiles seen at this point.
@@ -1818,7 +1818,7 @@ const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
 
 
 //--------------------------------statics--------------------------------------
-const char* Deoptimization::_trap_reason_name[Reason_LIMIT] = {
+const char* Deoptimization::_trap_reason_name[] = {
   // Note:  Keep this in sync. with enum DeoptReason.
   "none",
   "null_check",
@@ -1839,9 +1839,10 @@ const char* Deoptimization::_trap_reason_name[Reason_LIMIT] = {
   "loop_limit_check",
   "speculate_class_check",
   "speculate_null_check",
-  "rtm_state_change"
+  "rtm_state_change",
+  "tenured"
 };
-const char* Deoptimization::_trap_action_name[Action_LIMIT] = {
+const char* Deoptimization::_trap_action_name[] = {
   // Note:  Keep this in sync. with enum DeoptAction.
   "none",
   "maybe_recompile",
@@ -1851,6 +1852,9 @@ const char* Deoptimization::_trap_action_name[Action_LIMIT] = {
 };
 
 const char* Deoptimization::trap_reason_name(int reason) {
+  // Check that every reason has a name
+  STATIC_ASSERT(sizeof(_trap_reason_name)/sizeof(const char*) == Reason_LIMIT);
+
   if (reason == Reason_many)  return "many";
   if ((uint)reason < Reason_LIMIT)
     return _trap_reason_name[reason];
@@ -1859,6 +1863,9 @@ const char* Deoptimization::trap_reason_name(int reason) {
   return buf;
 }
 const char* Deoptimization::trap_action_name(int action) {
+  // Check that every action has a name
+  STATIC_ASSERT(sizeof(_trap_action_name)/sizeof(const char*) == Action_LIMIT);
+
   if ((uint)action < Action_LIMIT)
     return _trap_action_name[action];
   static char buf[20];

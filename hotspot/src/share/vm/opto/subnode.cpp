@@ -80,7 +80,7 @@ Node *SubNode::Identity( PhaseTransform *phase ) {
 
 //------------------------------Value------------------------------------------
 // A subtract node differences it's two inputs.
-const Type *SubNode::Value( PhaseTransform *phase ) const {
+const Type* SubNode::Value_common(PhaseTransform *phase) const {
   const Node* in1 = in(1);
   const Node* in2 = in(2);
   // Either input is TOP ==> the result is TOP
@@ -97,6 +97,16 @@ const Type *SubNode::Value( PhaseTransform *phase ) const {
   if( t1 == Type::BOTTOM || t2 == Type::BOTTOM )
     return bottom_type();
 
+  return NULL;
+}
+
+const Type* SubNode::Value(PhaseTransform *phase) const {
+  const Type* t = Value_common(phase);
+  if (t != NULL) {
+    return t;
+  }
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
   return sub(t1,t2);            // Local flavor of type subtraction
 
 }
@@ -568,6 +578,81 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
   if ((jint)lo0 >= 0 && (jint)lo1 >= 0 && is_index_range_check())
     return TypeInt::CC_LT;
   return TypeInt::CC;                   // else use worst case results
+}
+
+const Type* CmpUNode::Value(PhaseTransform *phase) const {
+  const Type* t = SubNode::Value_common(phase);
+  if (t != NULL) {
+    return t;
+  }
+  const Node* in1 = in(1);
+  const Node* in2 = in(2);
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  assert(t1->isa_int(), "CmpU has only Int type inputs");
+  if (t2 == TypeInt::INT) { // Compare to bottom?
+    return bottom_type();
+  }
+  uint in1_op = in1->Opcode();
+  if (in1_op == Op_AddI || in1_op == Op_SubI) {
+    // The problem rise when result of AddI(SubI) may overflow
+    // signed integer value. Let say the input type is
+    // [256, maxint] then +128 will create 2 ranges due to
+    // overflow: [minint, minint+127] and [384, maxint].
+    // But C2 type system keep only 1 type range and as result
+    // it use general [minint, maxint] for this case which we
+    // can't optimize.
+    //
+    // Make 2 separate type ranges based on types of AddI(SubI) inputs
+    // and compare results of their compare. If results are the same
+    // CmpU node can be optimized.
+    const Node* in11 = in1->in(1);
+    const Node* in12 = in1->in(2);
+    const Type* t11 = (in11 == in1) ? Type::TOP : phase->type(in11);
+    const Type* t12 = (in12 == in1) ? Type::TOP : phase->type(in12);
+    // Skip cases when input types are top or bottom.
+    if ((t11 != Type::TOP) && (t11 != TypeInt::INT) &&
+        (t12 != Type::TOP) && (t12 != TypeInt::INT)) {
+      const TypeInt *r0 = t11->is_int();
+      const TypeInt *r1 = t12->is_int();
+      jlong lo_r0 = r0->_lo;
+      jlong hi_r0 = r0->_hi;
+      jlong lo_r1 = r1->_lo;
+      jlong hi_r1 = r1->_hi;
+      if (in1_op == Op_SubI) {
+        jlong tmp = hi_r1;
+        hi_r1 = -lo_r1;
+        lo_r1 = -tmp;
+        // Note, for substructing [minint,x] type range
+        // long arithmetic provides correct overflow answer.
+        // The confusion come from the fact that in 32-bit
+        // -minint == minint but in 64-bit -minint == maxint+1.
+      }
+      jlong lo_long = lo_r0 + lo_r1;
+      jlong hi_long = hi_r0 + hi_r1;
+      int lo_tr1 = min_jint;
+      int hi_tr1 = (int)hi_long;
+      int lo_tr2 = (int)lo_long;
+      int hi_tr2 = max_jint;
+      bool underflow = lo_long != (jlong)lo_tr2;
+      bool overflow  = hi_long != (jlong)hi_tr1;
+      // Use sub(t1, t2) when there is no overflow (one type range)
+      // or when both overflow and underflow (too complex).
+      if ((underflow != overflow) && (hi_tr1 < lo_tr2)) {
+        // Overflow only on one boundary, compare 2 separate type ranges.
+        int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
+        const TypeInt* tr1 = TypeInt::make(lo_tr1, hi_tr1, w);
+        const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
+        const Type* cmp1 = sub(tr1, t2);
+        const Type* cmp2 = sub(tr2, t2);
+        if (cmp1 == cmp2) {
+          return cmp1; // Hit!
+        }
+      }
+    }
+  }
+
+  return sub(t1, t2);            // Local flavor of type subtraction
 }
 
 bool CmpUNode::is_index_range_check() const {
