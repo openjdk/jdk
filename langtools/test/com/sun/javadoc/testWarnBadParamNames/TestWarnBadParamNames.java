@@ -24,33 +24,31 @@
 /*
  * @test
  * @bug 4693440
- * @summary Test to make sure that warning is printed when bad paramenter
+ * @summary Test to make sure that warning is printed when bad parameter
  * name is used with param.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestWarnBadParamNames
  * @run main TestWarnBadParamNames
  */
 
 public class TestWarnBadParamNames extends JavadocTester {
 
-    private static final String[][] TEST = {
-        {WARNING_OUTPUT, "warning - @param argument \"int\" is not a parameter name."},
-        {WARNING_OUTPUT, "warning - @param argument \"IDontExist\" is not a parameter name."},
-        {WARNING_OUTPUT, "warning - Parameter \"arg\" is documented more than once."},
-    };
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", OUTPUT_DIR, SRC_DIR + "/C.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestWarnBadParamNames tester = new TestWarnBadParamNames();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-Xdoclint:none",
+                "-d", "out",
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput(Output.WARNING, true,
+                "warning - @param argument \"int\" is not a parameter name.",
+                "warning - @param argument \"IDontExist\" is not a parameter name.",
+                "warning - Parameter \"arg\" is documented more than once.");
     }
 }

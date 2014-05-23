@@ -27,34 +27,37 @@
  * @summary Test to make sure that hidden overriden members are not
  * documented as inherited.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestHiddenMembers
  * @run main TestHiddenMembers
  */
 
 public class TestHiddenMembers extends JavadocTester {
 
-
-    //We should not inherit any members from BaseClass because they are all overriden and hidden
-    //(declared as private).
     private static final String[][] NEGATED_TEST = {
-        { "pkg/SubClass.html",
-            "inherited from class pkg.<A HREF=\"../pkg/BaseClass.html\">BaseClass</A>"}
+        { }
         };
     private static final String[] ARGS =
         new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            "pkg"
+
         };
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHiddenMembers tester = new TestHiddenMembers();
-        tester.run(ARGS, NO_TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        // We should not inherit any members from BaseClass because they are all overriden and hidden
+        // (declared as private).
+        // TODO: check normal case of generated tags: upper case of lower case
+        checkOutput("pkg/SubClass.html", false,
+            "inherited from class pkg.<A HREF=\"../pkg/BaseClass.html\">BaseClass</A>");
     }
 }

@@ -4253,7 +4253,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1398861894
+DATE_WHEN_GENERATED=1399969244
 
 ###############################################################################
 #
@@ -26014,8 +26014,8 @@ $as_echo "$tool_specified" >&6; }
 
   # Finally, set some other options...
 
-  # When compiling code to be executed by the Boot JDK, force jdk7 compatibility.
-  BOOT_JDK_SOURCETARGET="-source 7 -target 7"
+  # When compiling code to be executed by the Boot JDK, force jdk8 compatibility.
+  BOOT_JDK_SOURCETARGET="-source 8 -target 8"
 
 
 

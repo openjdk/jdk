@@ -26,76 +26,65 @@
  * @bug      4927552 8026567
  * @summary  <DESC>
  * @author   jamieh
- * @library  ../lib/
- * @build    JavadocTester TestDeprecatedDocs
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestDeprecatedDocs
  */
 
 public class TestDeprecatedDocs extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    private static final String TARGET_FILE  =
-        "deprecated-list.html";
-
-    private static final String TARGET_FILE2  =
-        "pkg/DeprecatedClassByAnnotation.html";
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {TARGET_FILE, "annotation_test1 passes"},
-        {TARGET_FILE, "annotation_test2 passes"},
-        {TARGET_FILE, "annotation_test3 passes"},
-        {TARGET_FILE, "class_test1 passes"},
-        {TARGET_FILE, "class_test2 passes"},
-        {TARGET_FILE, "class_test3 passes"},
-        {TARGET_FILE, "class_test4 passes"},
-        {TARGET_FILE, "enum_test1 passes"},
-        {TARGET_FILE, "enum_test2 passes"},
-        {TARGET_FILE, "error_test1 passes"},
-        {TARGET_FILE, "error_test2 passes"},
-        {TARGET_FILE, "error_test3 passes"},
-        {TARGET_FILE, "error_test4 passes"},
-        {TARGET_FILE, "exception_test1 passes"},
-        {TARGET_FILE, "exception_test2 passes"},
-        {TARGET_FILE, "exception_test3 passes"},
-        {TARGET_FILE, "exception_test4 passes"},
-        {TARGET_FILE, "interface_test1 passes"},
-        {TARGET_FILE, "interface_test2 passes"},
-        {TARGET_FILE, "interface_test3 passes"},
-        {TARGET_FILE, "interface_test4 passes"},
-        {TARGET_FILE, "pkg.DeprecatedClassByAnnotation"},
-        {TARGET_FILE, "pkg.DeprecatedClassByAnnotation()"},
-        {TARGET_FILE, "pkg.DeprecatedClassByAnnotation.method()"},
-        {TARGET_FILE, "pkg.DeprecatedClassByAnnotation.field"},
-
-        {TARGET_FILE2, "<pre>@Deprecated\n" +
-                 "public class <span class=\"typeNameLabel\">DeprecatedClassByAnnotation</span>\n" +
-                 "extends java.lang.Object</pre>"},
-
-        {TARGET_FILE2, "<pre>@Deprecated\n" +
-                 "public&nbsp;int field</pre>\n" +
-                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
-
-        {TARGET_FILE2, "<pre>@Deprecated\n" +
-                 "public&nbsp;DeprecatedClassByAnnotation()</pre>\n" +
-                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
-
-        {TARGET_FILE2, "<pre>@Deprecated\n" +
-                 "public&nbsp;void&nbsp;method()</pre>\n" +
-                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDeprecatedDocs tester = new TestDeprecatedDocs();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("deprecated-list.html", true,
+                "annotation_test1 passes",
+                "annotation_test2 passes",
+                "annotation_test3 passes",
+                "class_test1 passes",
+                "class_test2 passes",
+                "class_test3 passes",
+                "class_test4 passes",
+                "enum_test1 passes",
+                "enum_test2 passes",
+                "error_test1 passes",
+                "error_test2 passes",
+                "error_test3 passes",
+                "error_test4 passes",
+                "exception_test1 passes",
+                "exception_test2 passes",
+                "exception_test3 passes",
+                "exception_test4 passes",
+                "interface_test1 passes",
+                "interface_test2 passes",
+                "interface_test3 passes",
+                "interface_test4 passes",
+                "pkg.DeprecatedClassByAnnotation",
+                "pkg.DeprecatedClassByAnnotation()",
+                "pkg.DeprecatedClassByAnnotation.method()",
+                "pkg.DeprecatedClassByAnnotation.field"
+        );
+
+        checkOutput("pkg/DeprecatedClassByAnnotation.html", true,
+                "<pre>@Deprecated\n"
+                + "public class <span class=\"typeNameLabel\">DeprecatedClassByAnnotation</span>\n"
+                + "extends java.lang.Object</pre>",
+                "<pre>@Deprecated\n"
+                + "public&nbsp;int field</pre>\n"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>",
+                "<pre>@Deprecated\n"
+                + "public&nbsp;DeprecatedClassByAnnotation()</pre>\n"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>",
+                "<pre>@Deprecated\n"
+                + "public&nbsp;void&nbsp;method()</pre>\n"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ import java.security.Permission;
  * </ul>
  *
  * <p>In a comma-separated list of actions, spaces are allowed before
- * and after each action.</p>
+ * and after each action.
  *
  * @since 1.5
  */
@@ -1129,7 +1129,7 @@ public class MBeanPermission extends Permission {
      * Checks two MBeanPermission objects for equality. Checks
      * that <i>obj</i> is an MBeanPermission, and has the same
      * name and actions as this object.
-     * <P>
+     *
      * @param obj the object we are testing for equality with this object.
      * @return true if obj is an MBeanPermission, and has the
      * same name and actions as this MBeanPermission object.

@@ -878,8 +878,9 @@ public class Util {
      */
     static abstract class DocComparator<T extends Doc> implements Comparator<Doc> {
         /**
-         * compares two parameter arrays by first comparing the length of the arrays, and
-         * then each Type of the parameter in the array.
+         * compares two parameter arrays by comparing each Type of the parameter in the array,
+         * as possible, if the matched strings are identical, and  have mismatched array lengths
+         * then compare the lengths.
          * @param params1 the first parameter array.
          * @param params2 the first parameter array.
          * @return a negative integer, zero, or a positive integer as the first
@@ -889,17 +890,14 @@ public class Util {
             if (params1.length == 0 && params2.length == 0) {
                 return 0;
             }
-            int result = Integer.compare(params1.length, params2.length);
-            if (result != 0) {
-                return result;
-            }
-            for (int i = 0; i < params1.length; i++) {
-                result = compareStrings(params1[i].typeName(), params2[i].typeName());
+            // try to compare as many as possible
+            for (int i = 0; i < params1.length && i < params2.length; i++) {
+                int result = compareStrings(params1[i].typeName(), params2[i].typeName());
                 if (result != 0) {
                     return result;
                 }
             }
-            return 0;
+            return Integer.compare(params1.length, params2.length);
         }
 
         /**

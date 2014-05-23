@@ -41,7 +41,7 @@ static bool returns_to_call_stub(address return_pc)   {
 enum /* platform_dependent_constants */ {
   // %%%%%%%% May be able to shrink this a lot
   code_size1 = 20000,           // simply increase if too small (assembler will crash if too small)
-  code_size2 = 20000            // simply increase if too small (assembler will crash if too small)
+  code_size2 = 22000            // simply increase if too small (assembler will crash if too small)
 };
 
 class Sparc {

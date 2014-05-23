@@ -26,7 +26,7 @@
  * @bug 4652655 4857717 8025633 8026567
  * @summary This test verifies that class cross references work properly.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
  * @build TestClassCrossReferences
  * @run main TestClassCrossReferences
@@ -34,37 +34,34 @@
 
 public class TestClassCrossReferences extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "C.html",
-            "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/math/package-summary.html?is-external=true\"><code>Link to math package</code></a>"},
-        { "C.html",
-            "<a href=\"http://java.sun.com/j2se/1.4/docs/api/javax/swing/text/AbstractDocument.AttributeContext.html?is-external=true\" " +
-            "title=\"class or interface in javax.swing.text\"><code>Link to AttributeContext innerclass</code></a>"},
-        { "C.html",
-            "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/math/BigDecimal.html?is-external=true\" " +
-                "title=\"class or interface in java.math\"><code>Link to external class BigDecimal</code></a>"},
-        { "C.html",
-            "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/math/BigInteger.html?is-external=true#gcd-java.math.BigInteger-\" " +
-                "title=\"class or interface in java.math\"><code>Link to external member gcd</code></a>"},
-        { "C.html",
-            "<dl>\n" +
-            "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-            "<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>\n" +
-            "</dl>"}
-    };
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR,
-            "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api/",
-            SRC_DIR, SRC_DIR + "/C.java"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestClassCrossReferences tester = new TestClassCrossReferences();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
+
+    @Test
+    void test() {
+        final String uri = "http://java.sun.com/j2se/1.4/docs/api/";
+
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-linkoffline", uri, testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", true,
+                "<a href=\"" + uri + "java/math/package-summary.html?is-external=true\">"
+                + "<code>Link to math package</code></a>",
+                "<a href=\"" + uri + "javax/swing/text/AbstractDocument.AttributeContext.html?is-external=true\" "
+                + "title=\"class or interface in javax.swing.text\"><code>Link to AttributeContext innerclass</code></a>",
+                "<a href=\"" + uri + "java/math/BigDecimal.html?is-external=true\" "
+                + "title=\"class or interface in java.math\"><code>Link to external class BigDecimal</code></a>",
+                "<a href=\"" + uri + "java/math/BigInteger.html?is-external=true#gcd-java.math.BigInteger-\" "
+                + "title=\"class or interface in java.math\"><code>Link to external member gcd</code></a>",
+                "<dl>\n"
+                + "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                + "<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>\n"
+                + "</dl>");
+    }
+
 }

@@ -27,83 +27,63 @@
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritence labels are correct.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestMemberInheritence
  * @run main TestMemberInheritence
  */
 
 public class TestMemberInheritence extends JavadocTester {
 
-    private static final String[][] TEST = {
-        //Public field should be inherited
-        { "pkg/SubClass.html",
-         "<a href=\"../pkg/BaseClass.html#pubField\">"},
-
-        //Public method should be inherited
-        { "pkg/SubClass.html",
-         "<a href=\"../pkg/BaseClass.html#pubMethod--\">"},
-
-        //Public inner class should be inherited.
-        { "pkg/SubClass.html",
-         "<a href=\"../pkg/BaseClass.pubInnerClass.html\" title=\"class in pkg\">"},
-
-        //Protected field should be inherited
-        { "pkg/SubClass.html",
-         "<a href=\"../pkg/BaseClass.html#proField\">"},
-
-        //Protected method should be inherited
-        { "pkg/SubClass.html",
-         "<a href=\"../pkg/BaseClass.html#proMethod--\">"},
-
-        //Protected inner class should be inherited.
-        { "pkg/SubClass.html",
-         "<a href=\"../pkg/BaseClass.proInnerClass.html\" title=\"class in pkg\">"},
-
-        // New labels as of 1.5.0
-        { "pkg/SubClass.html",
-         "Nested classes/interfaces inherited from class&nbsp;pkg." +
-                 "<a href=\"../pkg/BaseClass.html\" title=\"class in pkg\">BaseClass</a>"},
-        { "pkg/SubClass.html",
-         "Nested classes/interfaces inherited from interface&nbsp;pkg." +
-                 "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">BaseInterface</a>"},
-
-         // Test overriding/implementing methods with generic parameters.
-                 { "pkg/BaseClass.html",
-         "<dl>\n" +
-         "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n" +
-                          "<dd><code><a href=\"../pkg/BaseInterface.html#getAnnotation-java.lang.Class-\">" +
-                          "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>" +
-                          "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">" +
-                          "BaseInterface</a></code></dd>\n" +
-                          "</dl>"},
-
-         // Test diamond inheritence member summary (6256068)
-                 { "diamond/Z.html",
-                 "<code><a href=\"../diamond/A.html#aMethod--\">aMethod</a></code>"},
-
-         // Test that doc is inherited from closed parent (6270645)
-                 { "inheritDist/C.html",
-                 "<div class=\"block\">m1-B</div>"},
-
-    };
-
-    private static final String[][] NEGATED_TEST = {
-        { "pkg/SubClass.html",
-        "<a href=\"../pkg/BaseClass.html#staticMethod--\">staticMethod</a></code>"},
-    };
-    private static final String[] ARGS =
-        new String[] {
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg", "diamond",
-            "inheritDist"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestMemberInheritence tester = new TestMemberInheritence();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg", "diamond", "inheritDist");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/SubClass.html", true,
+                // Public field should be inherited
+                "<a href=\"../pkg/BaseClass.html#pubField\">",
+                // Public method should be inherited
+                "<a href=\"../pkg/BaseClass.html#pubMethod--\">",
+                // Public inner class should be inherited.
+                "<a href=\"../pkg/BaseClass.pubInnerClass.html\" title=\"class in pkg\">",
+                // Protected field should be inherited
+                "<a href=\"../pkg/BaseClass.html#proField\">",
+                // Protected method should be inherited
+                "<a href=\"../pkg/BaseClass.html#proMethod--\">",
+                // Protected inner class should be inherited.
+                "<a href=\"../pkg/BaseClass.proInnerClass.html\" title=\"class in pkg\">",
+                // New labels as of 1.5.0
+                "Nested classes/interfaces inherited from class&nbsp;pkg."
+                + "<a href=\"../pkg/BaseClass.html\" title=\"class in pkg\">BaseClass</a>",
+                "Nested classes/interfaces inherited from interface&nbsp;pkg."
+                + "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">BaseInterface</a>");
+
+        checkOutput("pkg/BaseClass.html", true,
+                // Test overriding/implementing methods with generic parameters.
+                "<dl>\n"
+                + "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
+                + "<dd><code><a href=\"../pkg/BaseInterface.html#getAnnotation-java.lang.Class-\">"
+                + "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>"
+                + "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">"
+                + "BaseInterface</a></code></dd>\n"
+                + "</dl>");
+
+        checkOutput("diamond/Z.html", true,
+                // Test diamond inheritence member summary (6256068)
+                "<code><a href=\"../diamond/A.html#aMethod--\">aMethod</a></code>");
+
+        checkOutput("inheritDist/C.html", true,
+                // Test that doc is inherited from closed parent (6270645)
+                "<div class=\"block\">m1-B</div>");
+
+        checkOutput("pkg/SubClass.html", false,
+                "<a href=\"../pkg/BaseClass.html#staticMethod--\">staticMethod</a></code>");
     }
 }

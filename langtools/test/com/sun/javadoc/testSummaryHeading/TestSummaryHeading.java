@@ -28,31 +28,26 @@
  *           "Method Summary" heading should still show up since the class
  *           inherits methods.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestSummaryHeading
  * @run main TestSummaryHeading
  */
 
 public class TestSummaryHeading extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "C.html",  "<h3>Method Summary</h3>"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSummaryHeading tester = new TestSummaryHeading();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", true,
+                "<h3>Method Summary</h3>");
     }
 }

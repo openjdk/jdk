@@ -32,7 +32,6 @@ import javax.lang.model.type.TypeKind;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute.TypeCompound;
-import com.sun.tools.javac.code.Type.AnnotatedType;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.CapturedType;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -331,7 +330,6 @@ public class TypeAnnotations {
                 // Note that we don't use the result, the call to
                 // typeWithAnnotations side-effects the type annotation positions.
                 // This is important for constructors of nested classes.
-
                 sym.appendUniqueTypeAttributes(typeAnnotations);
                 return;
             }
@@ -391,14 +389,15 @@ public class TypeAnnotations {
         private Type typeWithAnnotations(final JCTree typetree, final Type type,
                 final List<Attribute.TypeCompound> annotations,
                 final List<Attribute.TypeCompound> onlyTypeAnnotations) {
-            // System.out.printf("typeWithAnnotations(typetree: %s, type: %s, annotations: %s, onlyTypeAnnotations: %s)%n",
+            //System.err.printf("typeWithAnnotations(typetree: %s, type: %s, annotations: %s, onlyTypeAnnotations: %s)%n",
             //         typetree, type, annotations, onlyTypeAnnotations);
             if (annotations.isEmpty()) {
                 return type;
             }
             if (type.hasTag(TypeTag.ARRAY)) {
-                Type.ArrayType arType = (Type.ArrayType) type.unannotatedType();
-                Type.ArrayType tomodify = new Type.ArrayType(null, arType.tsym);
+                Type.ArrayType arType = (Type.ArrayType) type;
+                Type.ArrayType tomodify = new Type.ArrayType(null, arType.tsym,
+                                                             Type.noAnnotations);
                 Type toreturn;
                 if (type.isAnnotated()) {
                     toreturn = tomodify.annotatedType(type.getAnnotationMirrors());
@@ -413,13 +412,15 @@ public class TypeAnnotations {
                 while (arType.elemtype.hasTag(TypeTag.ARRAY)) {
                     if (arType.elemtype.isAnnotated()) {
                         Type aelemtype = arType.elemtype;
-                        arType = (Type.ArrayType) aelemtype.unannotatedType();
+                        arType = (Type.ArrayType) aelemtype;
                         ArrayType prevToMod = tomodify;
-                        tomodify = new Type.ArrayType(null, arType.tsym);
+                        tomodify = new Type.ArrayType(null, arType.tsym,
+                                                      Type.noAnnotations);
                         prevToMod.elemtype = tomodify.annotatedType(arType.elemtype.getAnnotationMirrors());
                     } else {
                         arType = (Type.ArrayType) arType.elemtype;
-                        tomodify.elemtype = new Type.ArrayType(null, arType.tsym);
+                        tomodify.elemtype = new Type.ArrayType(null, arType.tsym,
+                                                               Type.noAnnotations);
                         tomodify = (Type.ArrayType) tomodify.elemtype;
                     }
                     arTree = arrayTypeTree(arTree.elemtype);
@@ -569,6 +570,7 @@ public class TypeAnnotations {
         private Type typeWithAnnotations(final Type type,
                 final Type stopAt,
                 final List<Attribute.TypeCompound> annotations) {
+            //System.err.println("typeWithAnnotations " + type + " " + annotations + " stopAt " + stopAt);
             Visitor<Type, List<TypeCompound>> visitor =
                     new Type.Visitor<Type, List<Attribute.TypeCompound>>() {
                 @Override
@@ -579,7 +581,8 @@ public class TypeAnnotations {
                         return t.annotatedType(s);
                     } else {
                         ClassType ret = new ClassType(t.getEnclosingType().accept(this, s),
-                                t.typarams_field, t.tsym);
+                                                      t.typarams_field, t.tsym,
+                                                      t.getAnnotationMirrors());
                         ret.all_interfaces_field = t.all_interfaces_field;
                         ret.allparams_field = t.allparams_field;
                         ret.interfaces_field = t.interfaces_field;
@@ -590,18 +593,14 @@ public class TypeAnnotations {
                 }
 
                 @Override
-                public Type visitAnnotatedType(AnnotatedType t, List<TypeCompound> s) {
-                    return t.unannotatedType().accept(this, s).annotatedType(t.getAnnotationMirrors());
-                }
-
-                @Override
                 public Type visitWildcardType(WildcardType t, List<TypeCompound> s) {
                     return t.annotatedType(s);
                 }
 
                 @Override
                 public Type visitArrayType(ArrayType t, List<TypeCompound> s) {
-                    ArrayType ret = new ArrayType(t.elemtype.accept(this, s), t.tsym);
+                    ArrayType ret = new ArrayType(t.elemtype.accept(this, s), t.tsym,
+                                                  t.getAnnotationMirrors());
                     return ret;
                 }
 

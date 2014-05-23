@@ -52,7 +52,6 @@ public:
   static G1StringDedupThread* thread();
 
   virtual void run();
-  virtual void print_on(outputStream* st) const;
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1STRINGDEDUPTHREAD_HPP

@@ -28,6 +28,7 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 

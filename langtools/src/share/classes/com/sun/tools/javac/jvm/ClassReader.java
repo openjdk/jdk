@@ -624,18 +624,18 @@ public class ClassReader {
         case '+': {
             sigp++;
             Type t = sigToType();
-            return new WildcardType(t, BoundKind.EXTENDS,
-                                    syms.boundClass);
+            return new WildcardType(t, BoundKind.EXTENDS, syms.boundClass,
+                                    Type.noAnnotations);
         }
         case '*':
             sigp++;
             return new WildcardType(syms.objectType, BoundKind.UNBOUND,
-                                    syms.boundClass);
+                                    syms.boundClass, Type.noAnnotations);
         case '-': {
             sigp++;
             Type t = sigToType();
-            return new WildcardType(t, BoundKind.SUPER,
-                                    syms.boundClass);
+            return new WildcardType(t, BoundKind.SUPER, syms.boundClass,
+                                    Type.noAnnotations);
         }
         case 'B':
             sigp++;
@@ -680,7 +680,8 @@ public class ClassReader {
             return syms.booleanType;
         case '[':
             sigp++;
-            return new ArrayType(sigToType(), syms.arrayClass);
+            return new ArrayType(sigToType(), syms.arrayClass,
+                                 Type.noAnnotations);
         case '(':
             sigp++;
             List<Type> argtypes = sigToTypes(')');
@@ -735,7 +736,8 @@ public class ClassReader {
                 try {
                     return (outer == Type.noType) ?
                             t.erasure(types) :
-                            new ClassType(outer, List.<Type>nil(), t);
+                        new ClassType(outer, List.<Type>nil(), t,
+                                      Type.noAnnotations);
                 } finally {
                     sbp = startSbp;
                 }
@@ -745,7 +747,8 @@ public class ClassReader {
                 ClassSymbol t = syms.enterClass(names.fromUtf(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
-                outer = new ClassType(outer, sigToTypes('>'), t) {
+                outer = new ClassType(outer, sigToTypes('>'), t,
+                                      Type.noAnnotations) {
                         boolean completed = false;
                         @Override
                         public Type getEnclosingType() {
@@ -808,7 +811,8 @@ public class ClassReader {
                     t = syms.enterClass(names.fromUtf(signatureBuffer,
                                                  startSbp,
                                                  sbp - startSbp));
-                    outer = new ClassType(outer, List.<Type>nil(), t);
+                    outer = new ClassType(outer, List.<Type>nil(), t,
+                                          Type.noAnnotations);
                 }
                 signatureBuffer[sbp++] = (byte)'$';
                 continue;
@@ -871,7 +875,8 @@ public class ClassReader {
         Name name = names.fromUtf(signature, start, sigp - start);
         TypeVar tvar;
         if (sigEnterPhase) {
-            tvar = new TypeVar(name, currentOwner, syms.botType);
+            tvar = new TypeVar(name, currentOwner, syms.botType,
+                               Type.noAnnotations);
             typevars.enter(tvar.tsym);
         } else {
             tvar = (TypeVar)findTypeVar(name);
@@ -910,7 +915,8 @@ public class ClassReader {
                 // we don't know for sure if this owner is correct.  It could
                 // be a method and there is no way to tell before reading the
                 // enclosing method attribute.
-                TypeVar t = new TypeVar(name, currentOwner, syms.botType);
+                TypeVar t = new TypeVar(name, currentOwner, syms.botType,
+                                        Type.noAnnotations);
                 missingTypeVariables = missingTypeVariables.prepend(t);
                 // System.err.println("Missing type var " + name);
                 return t;
@@ -1534,35 +1540,41 @@ public class ClassReader {
         // local variable
         case LOCAL_VARIABLE: {
             final int table_length = nextChar();
-            final TypeAnnotationPosition position =
-                TypeAnnotationPosition.localVariable(readTypePath());
-
-            position.lvarOffset = new int[table_length];
-            position.lvarLength = new int[table_length];
-            position.lvarIndex = new int[table_length];
+            final int[] newLvarOffset = new int[table_length];
+            final int[] newLvarLength = new int[table_length];
+            final int[] newLvarIndex = new int[table_length];
 
             for (int i = 0; i < table_length; ++i) {
-                position.lvarOffset[i] = nextChar();
-                position.lvarLength[i] = nextChar();
-                position.lvarIndex[i] = nextChar();
+                newLvarOffset[i] = nextChar();
+                newLvarLength[i] = nextChar();
+                newLvarIndex[i] = nextChar();
             }
+
+            final TypeAnnotationPosition position =
+                    TypeAnnotationPosition.localVariable(readTypePath());
+            position.lvarOffset = newLvarOffset;
+            position.lvarLength = newLvarLength;
+            position.lvarIndex = newLvarIndex;
             return position;
         }
         // resource variable
         case RESOURCE_VARIABLE: {
             final int table_length = nextChar();
-            final TypeAnnotationPosition position =
-                TypeAnnotationPosition.resourceVariable(readTypePath());
-
-            position.lvarOffset = new int[table_length];
-            position.lvarLength = new int[table_length];
-            position.lvarIndex = new int[table_length];
+            final int[] newLvarOffset = new int[table_length];
+            final int[] newLvarLength = new int[table_length];
+            final int[] newLvarIndex = new int[table_length];
 
             for (int i = 0; i < table_length; ++i) {
-                position.lvarOffset[i] = nextChar();
-                position.lvarLength[i] = nextChar();
-                position.lvarIndex[i] = nextChar();
+                newLvarOffset[i] = nextChar();
+                newLvarLength[i] = nextChar();
+                newLvarIndex[i] = nextChar();
             }
+
+            final TypeAnnotationPosition position =
+                    TypeAnnotationPosition.resourceVariable(readTypePath());
+            position.lvarOffset = newLvarOffset;
+            position.lvarLength = newLvarLength;
+            position.lvarIndex = newLvarIndex;
             return position;
         }
         // exception parameter

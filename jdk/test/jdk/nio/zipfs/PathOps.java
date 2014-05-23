@@ -29,8 +29,11 @@ import java.io.IOException;
 /**
  *
  * @test
- * @bug 8038500
+ * @bug 8038500 8040059
  * @summary Tests path operations for zip provider.
+ *
+ * @run main PathOps
+ * @run main/othervm/policy=test.policy.readonly PathOps
  */
 
 public class PathOps {

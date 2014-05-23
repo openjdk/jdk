@@ -28,7 +28,6 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 
 import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Type.AnnotatedType;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.tree.*;
@@ -452,7 +451,8 @@ public class Lower extends TreeTranslator {
             ClassSymbol outerCacheClass = outerCacheClass();
             this.mapVar = new VarSymbol(STATIC | SYNTHETIC | FINAL,
                                         varName,
-                                        new ArrayType(syms.intType, syms.arrayClass),
+                                        new ArrayType(syms.intType, syms.arrayClass,
+                                                      Type.noAnnotations),
                                         outerCacheClass);
             enterSynthetic(pos, mapVar, outerCacheClass.members());
         }
@@ -493,7 +493,8 @@ public class Lower extends TreeTranslator {
                         syms.lengthVar);
             JCExpression mapVarInit = make
                 .NewArray(make.Type(syms.intType), List.of(size), null)
-                .setType(new ArrayType(syms.intType, syms.arrayClass));
+                .setType(new ArrayType(syms.intType, syms.arrayClass,
+                                       Type.noAnnotations));
 
             // try { $SwitchMap$Color[red.ordinal()] = 1; } catch (java.lang.NoSuchFieldError ex) {}
             ListBuffer<JCStatement> stmts = new ListBuffer<>();
@@ -1979,7 +1980,7 @@ public class Lower extends TreeTranslator {
                          List.<JCExpression>of(make.Literal(INT, 0).setType(syms.intType)),
                          null);
             newcache.type = new ArrayType(types.erasure(outerCacheClass.type),
-                                          syms.arrayClass);
+                                          syms.arrayClass, Type.noAnnotations);
 
             // forNameSym := java.lang.Class.forName(
             //     String s,boolean init,ClassLoader loader)
@@ -2568,7 +2569,8 @@ public class Lower extends TreeTranslator {
         Name valuesName = names.fromString(target.syntheticNameChar() + "VALUES");
         while (tree.sym.members().lookup(valuesName).scope != null) // avoid name clash
             valuesName = names.fromString(valuesName + "" + target.syntheticNameChar());
-        Type arrayType = new ArrayType(types.erasure(tree.type), syms.arrayClass);
+        Type arrayType = new ArrayType(types.erasure(tree.type),
+                                       syms.arrayClass, Type.noAnnotations);
         VarSymbol valuesVar = new VarSymbol(PRIVATE|FINAL|STATIC|SYNTHETIC,
                                             valuesName,
                                             arrayType,
@@ -2841,7 +2843,7 @@ public class Lower extends TreeTranslator {
         tree.underlyingType = translate(tree.underlyingType);
         // but maintain type annotations in the type.
         if (tree.type.isAnnotated()) {
-            tree.type = tree.underlyingType.type.unannotatedType().annotatedType(tree.type.getAnnotationMirrors());
+            tree.type = tree.underlyingType.type.annotatedType(tree.type.getAnnotationMirrors());
         } else if (tree.underlyingType.type.isAnnotated()) {
             tree.type = tree.underlyingType.type;
         }
@@ -3145,7 +3147,8 @@ public class Lower extends TreeTranslator {
             JCNewArray boxedArgs = make.NewArray(make.Type(varargsElement),
                                                List.<JCExpression>nil(),
                                                elems.toList());
-            boxedArgs.type = new ArrayType(varargsElement, syms.arrayClass);
+            boxedArgs.type = new ArrayType(varargsElement, syms.arrayClass,
+                                           Type.noAnnotations);
             result.append(boxedArgs);
         } else {
             if (args.length() != 1) throw new AssertionError(args);

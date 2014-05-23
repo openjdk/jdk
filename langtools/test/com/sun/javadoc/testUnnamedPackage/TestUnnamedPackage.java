@@ -27,49 +27,40 @@
  * @summary  Reference unnamed package as "Unnamed", not empty string.
  *           Generate a package summary for the unnamed package.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestUnnamedPackage
  * @run main TestUnnamedPackage
  */
 
 public class TestUnnamedPackage extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, SRC_DIR + "/C.java"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "package-summary.html",
-            "<h1 title=\"Package\" class=\"title\">Package&nbsp;&lt;Unnamed&gt;</h1>"
-        },
-        { "package-summary.html",
-            "This is a package comment for the unnamed package."
-        },
-        { "package-summary.html",
-            "This is a class in the unnamed package."
-        },
-        { "package-tree.html",
-            "<h1 class=\"title\">Hierarchy For Package &lt;Unnamed&gt;</h1>"
-        },
-        { "index-all.html",
-            "title=\"class in &lt;Unnamed&gt;\""
-        },
-        { "C.html", "<a href=\"package-summary.html\">"}
-    };
-    private static final String[][] NEGATED_TEST = {
-        {ERROR_OUTPUT, "BadSource"},
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestUnnamedPackage tester = new TestUnnamedPackage();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("package-summary.html", true,
+                "<h1 title=\"Package\" class=\"title\">Package&nbsp;&lt;Unnamed&gt;</h1>",
+                "This is a package comment for the unnamed package.",
+                "This is a class in the unnamed package.");
+
+        checkOutput("package-tree.html", true,
+                "<h1 class=\"title\">Hierarchy For Package &lt;Unnamed&gt;</h1>");
+
+        checkOutput("index-all.html", true,
+                "title=\"class in &lt;Unnamed&gt;\"");
+
+        checkOutput("C.html", true,
+                "<a href=\"package-summary.html\">");
+
+        checkOutput(Output.ERROR, false,
+                "BadSource");
     }
 }
