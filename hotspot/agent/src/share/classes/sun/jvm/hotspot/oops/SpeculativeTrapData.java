@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,49 @@
  *
  */
 
-package sun.jvm.hotspot.ci;
+package sun.jvm.hotspot.oops;
 
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
 
-public class ciReceiverTypeData extends ReceiverTypeData {
-  public ciReceiverTypeData(DataLayout data) {
-    super(data);
+// SpeculativeTrapData
+//
+// A SpeculativeTrapData is used to record traps due to type
+// speculation. It records the root of the compilation.
+public class SpeculativeTrapData<K, M> extends ProfileData {
+  static final int speculativeTrapMethod = 0;
+  static final int speculativeTrapCellCount = 1;
+  final MethodDataInterface<K, M> methodData;
+
+  public SpeculativeTrapData(MethodDataInterface<K,M> methodData, DataLayout layout) {
+    super(layout);
+    this.methodData = methodData;
   }
 
-  public Klass receiver(int row) {
-      throw new InternalError("should not call");
+  static int staticCellCount() {
+    return speculativeTrapCellCount;
   }
 
-  public ciKlass receiverAt(int row) {
-    //assert((uint)row < rowLimit(), "oob");
-    ciMetadata recv = ciObjectFactory.getMetadata(addressAt(receiverCellIndex(row)));
-    if (recv != null && !(recv instanceof ciKlass)) {
-      System.err.println(recv);
-    }
-    //assert(recv == NULL || recv->isKlass(), "wrong type");
-    return (ciKlass)recv;
+  public int cellCount() {
+    return staticCellCount();
   }
 
+  public M method() {
+    return methodData.getMethodAtAddress(addressAt(speculativeTrapMethod));
+  }
+
+  static public int methodIndex() {
+    return speculativeTrapMethod;
+  }
+
+  public void printDataOn(PrintStream st) {
+    printShared(st, "SpeculativeTrapData");
+    tab(st);
+    methodData.printMethodValueOn(method(), st);
+    st.println();
+  }
 }

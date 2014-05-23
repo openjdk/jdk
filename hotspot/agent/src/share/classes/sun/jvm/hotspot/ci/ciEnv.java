@@ -64,7 +64,11 @@ public class ciEnv extends VMObject {
   }
 
   public Compile compilerData() {
-    return new Compile(compilerDataField.getValue(this.getAddress()));
+    Address addr = compilerDataField.getValue(this.getAddress());
+    if (addr == null) {
+      return null;
+    }
+    return new Compile(addr);
   }
 
   public ciObjectFactory factory() {
@@ -94,10 +98,7 @@ public class ciEnv extends VMObject {
     Method method = task.method();
     int entryBci = task.osrBci();
     int compLevel = task.compLevel();
-    Klass holder = method.getMethodHolder();
-    out.print("compile " + holder.getName().asString() + " " +
-              OopUtilities.escapeString(method.getName().asString()) + " " +
-              method.getSignature().asString() + " " +
+    out.print("compile " + method.nameAsAscii() + " " +
               entryBci + " " + compLevel);
     Compile compiler = compilerData();
     if (compiler != null) {

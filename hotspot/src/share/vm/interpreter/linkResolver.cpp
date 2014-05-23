@@ -950,7 +950,6 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
     // reflection implementation, not just those associated with
     // sun/reflect/SerializationConstructorAccessor.
     bool is_reflect = JDK_Version::is_gte_jdk14x_version() &&
-                      UseNewReflection &&
                       klass_to_check->is_subclass_of(
                         SystemDictionary::reflect_MagicAccessorImpl_klass());
 

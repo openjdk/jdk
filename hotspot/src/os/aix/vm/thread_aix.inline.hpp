@@ -26,11 +26,8 @@
 #ifndef OS_AIX_VM_THREAD_AIX_INLINE_HPP
 #define OS_AIX_VM_THREAD_AIX_INLINE_HPP
 
-#include "runtime/prefetch.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadLocalStorage.hpp"
-
-#include "prefetch_aix_ppc.inline.hpp"
 
 // Contains inlined functions for class Thread and ThreadLocalStorage
 

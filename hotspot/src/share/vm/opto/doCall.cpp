@@ -364,7 +364,7 @@ bool Compile::should_delay_string_inlining(ciMethod* call_method, JVMState* jvms
 bool Compile::should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms) {
   if (eliminate_boxing() && call_method->is_boxing_method()) {
     set_has_boxed_value(true);
-    return true;
+    return aggressive_unboxing();
   }
   return false;
 }

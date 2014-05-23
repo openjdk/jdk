@@ -6362,7 +6362,9 @@ void CMSCollector::sweep(bool asynch) {
   verify_overflow_empty();
 
   if (should_unload_classes()) {
-    ClassLoaderDataGraph::purge();
+    // Delay purge to the beginning of the next safepoint.  Metaspace::contains
+    // requires that the virtual spaces are stable and not deleted.
+    ClassLoaderDataGraph::set_should_purge(true);
   }
 
   _intra_sweep_timer.stop();

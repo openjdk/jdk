@@ -30,6 +30,7 @@
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.psgc.inline.hpp"
+#include "runtime/prefetch.inline.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
