@@ -26,6 +26,7 @@
  * @bug 8028994
  * @author Staffan Larsen
  * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
  * @run main CheckOrigin
  */
 

@@ -27,49 +27,44 @@
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @author   jamieh
- * @library  ../lib/
- * @build    JavadocTester TestNavigation
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestNavigation
  */
 
 public class TestNavigation extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/A.html", "<li>Prev&nbsp;Class</li>"},
-        { "pkg/A.html",
-            "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>"},
-        { "pkg/C.html",
-            "<a href=\"../pkg/A.html\" title=\"annotation in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>"},
-        { "pkg/C.html",
-            "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>"},
-        { "pkg/E.html",
-            "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>"},
-        { "pkg/E.html",
-            "<a href=\"../pkg/I.html\" title=\"interface in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>"},
-        { "pkg/I.html",
-            "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>"},
-        { "pkg/I.html", "<li>Next&nbsp;Class</li>"},
-        // Test for 4664607
-        { "pkg/I.html",
-            "<div class=\"skipNav\"><a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a></div>\n" +
-            "<a name=\"navbar.top.firstrow\">\n" +
-            "<!--   -->\n" +
-            "</a>"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestNavigation tester = new TestNavigation();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/A.html", true,
+                "<li>Prev&nbsp;Class</li>",
+                "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>");
+
+        checkOutput("pkg/C.html", true,
+                "<a href=\"../pkg/A.html\" title=\"annotation in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
+                "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>");
+
+        checkOutput("pkg/E.html", true,
+                "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
+                "<a href=\"../pkg/I.html\" title=\"interface in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>");
+
+        checkOutput("pkg/I.html", true,
+                "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
+                "<li>Next&nbsp;Class</li>",
+                // Test for 4664607
+                "<div class=\"skipNav\"><a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a></div>\n"
+                + "<a name=\"navbar.top.firstrow\">\n"
+                + "<!--   -->\n"
+                + "</a>");
     }
 }

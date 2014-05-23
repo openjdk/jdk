@@ -26,31 +26,28 @@
  * @bug 7001086
  * @summary Test Non-frame warning.
  * @author Bhavesh Patel
- * @library ../lib/
- * @build JavadocTester TestNonFrameWarning
+ * @library ../lib
+ * @build JavadocTester
  * @run main TestNonFrameWarning
  */
 
 public class TestNonFrameWarning extends JavadocTester {
 
-    private static final String[][] TEST = {
-        { "index.html",
-            "<p>This document is designed to be viewed using the frames feature. " +
-            "If you see this message, you are using a non-frame-capable web client. " +
-            "Link to <a href=\"pkg/package-summary.html\">Non-frame version</a>.</p>"
-        }
-    };
-    private static final String[] ARGS = new String[]{
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestNonFrameWarning tester = new TestNonFrameWarning();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("index.html", true,
+                "<p>This document is designed to be viewed using the frames feature. "
+                + "If you see this message, you are using a non-frame-capable web client. "
+                + "Link to <a href=\"pkg/package-summary.html\">Non-frame version</a>.</p>");
     }
 }

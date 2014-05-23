@@ -27,80 +27,72 @@
  * @summary  Make sure that the abstract method is identified correctly
  *           if the abstract modifier is present explicitly or implicitly.
  * @author   bpatel
- * @library  ../lib/
- * @build    JavadocTester TestAbstractMethod
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestAbstractMethod
  */
 
 public class TestAbstractMethod extends JavadocTester {
 
-    //Test information.
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/A.html",
-            "<td class=\"colFirst\"><code>default void</code></td>"},
-        { "pkg/A.html",
-            "<caption><span id=\"t0\" class=\"activeTableTab\"><span>" +
-            "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t2\" class=\"tableTab\"><span>" +
-            "<a href=\"javascript:show(2);\">Instance Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" " +
-            "class=\"tableTab\"><span><a href=\"javascript:show(4);\">" +
-            "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span>" +
-            "</span><span id=\"t5\" class=\"tableTab\"><span>" +
-            "<a href=\"javascript:show(16);\">Default Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span></span></caption>"},
-        { "pkg/B.html",
-            "<caption><span id=\"t0\" class=\"activeTableTab\"><span>" +
-            "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t2\" class=\"tableTab\"><span>" +
-            "<a href=\"javascript:show(2);\">Instance Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" " +
-            "class=\"tableTab\"><span><a href=\"javascript:show(4);\">Abstract " +
-            "Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t4\" class=\"tableTab\"><span>" +
-            "<a href=\"javascript:show(8);\">Concrete Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span></span></caption>"},
-        { "pkg/B.html",
-            "<td class=\"colFirst\"><code>abstract void</code></td>"},
-        { "pkg/C.html",
-            "<caption><span id=\"t0\" class=\"activeTableTab\"><span>" +
-            "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t2\" class=\"tableTab\"><span>" +
-            "<a href=\"javascript:show(2);\">Instance Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t5\" class=\"tableTab\"><span>" +
-            "<a href=\"javascript:show(16);\">Default Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span></span></caption>"},
-        { "pkg/C.html",
-            "<td class=\"colFirst\"><code>default void</code></td>"}
-    };
-    private static final String[][] NEGATED_TEST = {
-        { "pkg/A.html",
-            "<td class=\"colFirst\"><code>abstract void</code></td>"},
-        { "pkg/B.html",
-            "<span><a href=\"javascript:show(16);\">Default Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span>"},
-        { "pkg/B.html",
-            "<td class=\"colFirst\"><code>default void</code></td>"},
-        { "pkg/C.html",
-            "<span><a href=\"javascript:show(4);\">Abstract Methods</a></span>" +
-            "<span class=\"tabEnd\">&nbsp;</span>"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestAbstractMethod tester = new TestAbstractMethod();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/A.html", true,
+                "<td class=\"colFirst\"><code>default void</code></td>",
+                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>"
+                + "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t2\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:show(2);\">Instance Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" "
+                + "class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
+                + "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span>"
+                + "</span><span id=\"t5\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:show(16);\">Default Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span></caption>");
+
+        checkOutput("pkg/B.html", true,
+                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>"
+                + "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t2\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:show(2);\">Instance Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" "
+                + "class=\"tableTab\"><span><a href=\"javascript:show(4);\">Abstract "
+                + "Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t4\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:show(8);\">Concrete Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                "<td class=\"colFirst\"><code>abstract void</code></td>");
+
+        checkOutput("pkg/C.html", true,
+                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>"
+                + "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t2\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:show(2);\">Instance Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t5\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:show(16);\">Default Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                "<td class=\"colFirst\"><code>default void</code></td>");
+
+        checkOutput("pkg/A.html", false,
+                "<td class=\"colFirst\"><code>abstract void</code></td>");
+
+        checkOutput("pkg/B.html", false,
+                "<span><a href=\"javascript:show(16);\">Default Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span>",
+                "<td class=\"colFirst\"><code>default void</code></td>");
+
+        checkOutput("pkg/C.html", false,
+                "<span><a href=\"javascript:show(4);\">Abstract Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span>");
     }
 }

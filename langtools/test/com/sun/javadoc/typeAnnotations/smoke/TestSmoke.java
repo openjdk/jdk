@@ -27,91 +27,84 @@
  * @summary  Smoke test for ensuring that annotations are emitted to javadoc
  *
  * @author   Mahmood Ali <mali>
- * @library  ../../lib/
+ * @library  ../../lib
  * @ignore
  * @build    JavadocTester
- * @build    TestSmoke
  * @run main TestSmoke
  */
 
 public class TestSmoke extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-private", "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/T0x1C.html", "@DA"},
-        { "pkg/T0x1D.html", "@DA"},
-        { "pkg/T0x0D.html", "@DA"},
-        { "pkg/T0x06.html", "@DA"},
-        { "pkg/T0x0B.html", "@DA"},
-        { "pkg/T0x0F.html", "@DA"},
-        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
-        { "pkg/T0x20.html", "@DA"},
-        */
-        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
-        { "pkg/T0x20A.html", "@DTPA"},
-        */
-        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
-        { "pkg/T0x20B.html", "@DA"},
-        */
-        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
-        { "pkg/T0x22.html", "@DA"},
-        */
-        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
-        { "pkg/T0x22A.html", "@DTPA"},
-        */
-        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
-        { "pkg/T0x22B.html", "@DA"},
-        */
-        { "pkg/T0x10.html", "@DA"},
-        { "pkg/T0x10A.html", "@DA"},
-        { "pkg/T0x12.html", "@DA"},
-        { "pkg/T0x11.html", "@DA"},
-        { "pkg/T0x13.html", "@DA"},
-        { "pkg/T0x15.html", "@DA"},
-        { "pkg/T0x14.html", "@DA"},
-        { "pkg/T0x16.html", "@DA"}
-    };
-
-    private static final String[][] NEGATED_TEST = {
-        { "pkg/T0x1C.html", "@A"},
-        { "pkg/T0x1D.html", "@A"},
-        { "pkg/T0x00.html", "@A"},
-        { "pkg/T0x01.html", "@A"},
-        { "pkg/T0x02.html", "@A"},
-        { "pkg/T0x04.html", "@A"},
-        { "pkg/T0x08.html", "@A"},
-        { "pkg/T0x0D.html", "@A"},
-        { "pkg/T0x06.html", "@A"},
-        { "pkg/T0x0B.html", "@A"},
-        { "pkg/T0x0F.html", "@A"},
-        { "pkg/T0x20.html", "@A"},
-        { "pkg/T0x20A.html", "@A"},
-        { "pkg/T0x20B.html", "@A"},
-        { "pkg/T0x22.html", "@A"},
-        { "pkg/T0x22A.html", "@A"},
-        { "pkg/T0x22B.html", "@A"},
-        { "pkg/T0x10.html", "@A"},
-        { "pkg/T0x10A.html", "@A"},
-        { "pkg/T0x12.html", "@A"},
-        { "pkg/T0x11.html", "@A"},
-        { "pkg/T0x13.html", "@A"},
-        { "pkg/T0x15.html", "@A"},
-        { "pkg/T0x14.html", "@A"},
-        { "pkg/T0x16.html", "@A"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSmoke tester = new TestSmoke();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-private",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/T0x1C.html", true, "@DA");
+        checkOutput("pkg/T0x1D.html", true, "@DA");
+        checkOutput("pkg/T0x0D.html", true, "@DA");
+        checkOutput("pkg/T0x06.html", true, "@DA");
+        checkOutput("pkg/T0x0B.html", true, "@DA");
+        checkOutput("pkg/T0x0F.html", true, "@DA");
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        checkOutput("pkg/T0x20.html", true, "@DA");
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        checkOutput("pkg/T0x20A.html", true, "@DTPA");
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        checkOutput("pkg/T0x20B.html", true, "@DA");
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        checkOutput("pkg/T0x22.html", true, "@DA");
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        checkOutput("pkg/T0x22A.html", true, "@DTPA");
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        checkOutput("pkg/T0x22B.html", true, "@DA");
+        */
+        checkOutput("pkg/T0x10.html", true, "@DA");
+        checkOutput("pkg/T0x10A.html", true, "@DA");
+        checkOutput("pkg/T0x12.html", true, "@DA");
+        checkOutput("pkg/T0x11.html", true, "@DA");
+        checkOutput("pkg/T0x13.html", true, "@DA");
+        checkOutput("pkg/T0x15.html", true, "@DA");
+        checkOutput("pkg/T0x14.html", true, "@DA");
+        checkOutput("pkg/T0x16.html", true, "@DA");
+
+        checkOutput("pkg/T0x1C.html", false, "@A");
+        checkOutput("pkg/T0x1D.html", false, "@A");
+        checkOutput("pkg/T0x00.html", false, "@A");
+        checkOutput("pkg/T0x01.html", false, "@A");
+        checkOutput("pkg/T0x02.html", false, "@A");
+        checkOutput("pkg/T0x04.html", false, "@A");
+        checkOutput("pkg/T0x08.html", false, "@A");
+        checkOutput("pkg/T0x0D.html", false, "@A");
+        checkOutput("pkg/T0x06.html", false, "@A");
+        checkOutput("pkg/T0x0B.html", false, "@A");
+        checkOutput("pkg/T0x0F.html", false, "@A");
+        checkOutput("pkg/T0x20.html", false, "@A");
+        checkOutput("pkg/T0x20A.html", false, "@A");
+        checkOutput("pkg/T0x20B.html", false, "@A");
+        checkOutput("pkg/T0x22.html", false, "@A");
+        checkOutput("pkg/T0x22A.html", false, "@A");
+        checkOutput("pkg/T0x22B.html", false, "@A");
+        checkOutput("pkg/T0x10.html", false, "@A");
+        checkOutput("pkg/T0x10A.html", false, "@A");
+        checkOutput("pkg/T0x12.html", false, "@A");
+        checkOutput("pkg/T0x11.html", false, "@A");
+        checkOutput("pkg/T0x13.html", false, "@A");
+        checkOutput("pkg/T0x15.html", false, "@A");
+        checkOutput("pkg/T0x14.html", false, "@A");
+        checkOutput("pkg/T0x16.html", false, "@A");
     }
 }

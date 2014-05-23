@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.net.URISyntaxException;
 
+import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
+
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.jstat.JStatLogger;
 import sun.jvmstat.monitor.Monitor;
@@ -119,6 +121,7 @@ public class JCmd {
             pids.add(arg.getPid() + "");
         }
 
+        boolean success = true;
         for (String pid : pids) {
             System.out.println(pid + ":");
             if (arg.isListCounters()) {
@@ -126,11 +129,16 @@ public class JCmd {
             } else {
                 try {
                     executeCommandForPid(pid, arg.getCommand());
+                } catch(AttachOperationFailedException ex) {
+                    System.err.println(ex.getMessage());
+                    success = false;
                 } catch(Exception ex) {
                     ex.printStackTrace();
+                    success = false;
                 }
             }
         }
+        System.exit(success ? 0 : 1);
     }
 
     private static void executeCommandForPid(String pid, String command)
@@ -150,13 +158,18 @@ public class JCmd {
                 // read to EOF and just print output
                 byte b[] = new byte[256];
                 int n;
+                boolean messagePrinted = false;
                 do {
                     n = in.read(b);
                     if (n > 0) {
                         String s = new String(b, 0, n, "UTF-8");
                         System.out.print(s);
+                        messagePrinted = true;
                     }
                 } while (n > 0);
+                if (!messagePrinted) {
+                    System.out.println("Command executed successfully");
+                }
             }
         }
         vm.detach();

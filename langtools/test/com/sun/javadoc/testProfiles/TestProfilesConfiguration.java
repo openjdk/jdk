@@ -26,97 +26,98 @@
  * @bug      8006124 8009684 8015663 8015496 8026567
  * @summary  Test javadoc options support for profiles.
  * @author   Evgeniya Stepanova
- * @library  ../lib/
- * @build    JavadocTester TestProfilesConfiguration
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestProfilesConfiguration
  */
 public class TestProfilesConfiguration extends JavadocTester {
 
-    //Test information.
-    private static final String PROFILE_CONFIGURATION_OUTPUT_DIR = OUTPUT_DIR + "-3";
-    private static final String NODEPR_NOPKGS_OUTPUT_DIR = OUTPUT_DIR + "-4";
-    //Javadoc arguments.
-    private static final String[] ARGS3 = new String[]{
-        "-d", PROFILE_CONFIGURATION_OUTPUT_DIR, "-sourcepath", SRC_DIR,
-        "-nocomment", "-keywords", "-Xprofilespath", SRC_DIR +
-        "/profile-rtjar-includes.txt", "-doctitle", "Simple doctitle",
-        "-use", "pkg3", "pkg1", "pkg2", "pkg4",
-        "pkg5", "-packagesheader", "Simple packages header","pkgDeprecated"
-    };
-    private static final String[] ARGS4 = new String[]{
-        "-d", NODEPR_NOPKGS_OUTPUT_DIR, "-sourcepath", SRC_DIR, "-nocomment",
-        "-nodeprecated", "-keywords", "-Xprofilespath", SRC_DIR +
-        "/profile-rtjar-includes-nopkgs.txt", "-doctitle", "Simple doctitle",
-        "-use", "-packagesheader", "Simple packages header",
-        "pkg1", "pkg2", "pkg3", "pkg4", "pkg5", "pkgDeprecated"
-    };
-    private static final String[][] NODEPR_NOPKGS_TEST = {
-        { "overview-summary.html",
-            "<ul>\n" +
-            "<li><a href=\"compact2-summary.html\" target=\"classFrame\">" +
-            "compact2</a></li>\n" +
-            "<li><a href=\"compact3-summary.html\" target=\"" +
-            "classFrame\">compact3</a></li>\n" +
-            "</ul>"
-        },
-        { "profile-overview-frame.html",
-            "<ul title=\"Profiles\">\n" +
-            "<li><a href=\"compact2-frame.html\" target=\"packageListFrame\">" +
-            "compact2</a></li>\n" +
-            "<li><a href=\"compact3-frame.html\" target=\"" +
-            "packageListFrame\">compact3</a></li>\n" +
-            "</ul>"
-        }
-    };
-    private static final String[][] NODEPR_NOPKGS_NEGATED_TEST = {
-        { "overview-summary.html",
-            "compact1"
-        }
-    };
-
-    private static final String[][] PROFILES_CONFIGURATION_TEST = {
-        //-use option test string fo profile view page
-        { "compact1-summary.html","<li>Use</li>"
-        },
-        //-doctitle option test string
-        { "overview-summary.html",
-            "<div class=\"header\">\n" +
-            "<h1 class=\"title\">Simple doctitle</h1>"
-        },
-        //-packagesheader option test string fo profiles
-        { "profile-overview-frame.html",
-            "<h1 title=\"Simple packages header\" class=\"bar\">Simple packages header</h1>"
-        },
-        //-keywords option test string for profiles
-        { "compact1-summary.html",
-            "<meta name=\"keywords\" content=\"compact1 profile\">"
-        },
-        //Deprecated information on a package
-        { "compact1-summary.html",
-            "<h3><a href=\"pkgDeprecated/compact1-package-summary.html\" target=\"" +
-            "classFrame\">pkgDeprecated</a></h3>\n" +
-            "<div class=\"deprecatedContent\">" +
-            "<span class=\"deprecatedLabel\">Deprecated.</span></div>"
-        }
-    };
-    private static final String[][] PROFILES_CONFIGURATION_NEGATED_TEST = {
-        //-nocomments option test string
-        { "compact1-summary.html",
-            "<div class=\"block\"><i>Class1Pkg2.</i></div>"
-        }
-    };
-
-    /**
-     * The entry point of the test.
-     *
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestProfilesConfiguration tester = new TestProfilesConfiguration();
-        tester.run(ARGS3, PROFILES_CONFIGURATION_TEST,
-        PROFILES_CONFIGURATION_NEGATED_TEST);
-        tester.run(ARGS4, NODEPR_NOPKGS_TEST,
-        NODEPR_NOPKGS_NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
+//        tester.run(ARGS3, PROFILES_CONFIGURATION_TEST, PROFILES_CONFIGURATION_NEGATED_TEST);
+//        tester.run(ARGS4, NODEPR_NOPKGS_TEST, NODEPR_NOPKGS_NEGATED_TEST);
+//        tester.printSummary();
+    }
+
+    @Test
+    void testProfiles() {
+        javadoc("-d", "out-profiles",
+                "-sourcepath", testSrc,
+                "-nocomment",
+                "-keywords",
+                "-Xprofilespath", testSrc("profile-rtjar-includes.txt"),
+                "-doctitle", "Simple doctitle",
+                "-use",
+                "-packagesheader", "Simple packages header",
+                "pkg3", "pkg1", "pkg2", "pkg4", "pkg5", "pkgDeprecated");
+        checkExit(Exit.OK);
+
+        checkOutput("compact1-summary.html", true,
+                //-use option test string fo profile view page
+                "<li>Use</li>",
+                // -keywords option test string for profiles
+                "<meta name=\"keywords\" content=\"compact1 profile\">",
+                // Deprecated information on a package
+                "<h3><a href=\"pkgDeprecated/compact1-package-summary.html\" target=\""
+                + "classFrame\">pkgDeprecated</a></h3>\n"
+                + "<div class=\"deprecatedContent\">"
+                + "<span class=\"deprecatedLabel\">Deprecated.</span></div>"
+        );
+
+        //-nocomments option test string
+        checkOutput("compact1-summary.html", false,
+                "<div class=\"block\"><i>Class1Pkg2.</i></div>"
+        );
+
+        // -doctitle option test string
+        checkOutput("overview-summary.html", true,
+                "<div class=\"header\">\n"
+                + "<h1 class=\"title\">Simple doctitle</h1>"
+        );
+
+        // -packagesheader option test string fo profiles
+        checkOutput("profile-overview-frame.html", true,
+                "<h1 title=\"Simple packages header\" class=\"bar\">Simple packages header</h1>"
+        );
+    }
+
+
+    @Test
+    void testNoDeprNoPackages() {
+        javadoc("-d", "out-noDeprNoPackages",
+                "-sourcepath", testSrc,
+                "-nocomment",
+                "-nodeprecated",
+                "-keywords",
+                "-Xprofilespath", testSrc("profile-rtjar-includes-nopkgs.txt"),
+                "-doctitle", "Simple doctitle",
+                "-use",
+                "-packagesheader", "Simple packages header",
+                "pkg1", "pkg2", "pkg3", "pkg4", "pkg5", "pkgDeprecated");
+        checkExit(Exit.OK);
+
+        checkOutput("overview-summary.html", true,
+                "<ul>\n"
+                + "<li><a href=\"compact2-summary.html\" target=\"classFrame\">"
+                + "compact2</a></li>\n"
+                + "<li><a href=\"compact3-summary.html\" target=\""
+                + "classFrame\">compact3</a></li>\n"
+                + "</ul>"
+        );
+
+        checkOutput("profile-overview-frame.html", true,
+                "<ul title=\"Profiles\">\n"
+                + "<li><a href=\"compact2-frame.html\" target=\"packageListFrame\">"
+                + "compact2</a></li>\n"
+                + "<li><a href=\"compact3-frame.html\" target=\""
+                + "packageListFrame\">compact3</a></li>\n"
+                + "</ul>"
+        );
+
+        checkOutput("overview-summary.html", false,
+                "compact1"
+        );
+
     }
 }

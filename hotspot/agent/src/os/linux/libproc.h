@@ -34,19 +34,7 @@
 #include "libproc_md.h"
 #endif
 
-#if defined(sparc) || defined(sparcv9)
-/*
-  If _LP64 is defined ptrace.h should be taken from /usr/include/asm-sparc64
-  otherwise it should be from /usr/include/asm-sparc
-  These two files define pt_regs structure differently
-*/
-#ifdef _LP64
-#include "asm-sparc64/ptrace.h"
-#else
-#include "asm-sparc/ptrace.h"
-#endif
-
-#endif //sparc or sparcv9
+#include <linux/ptrace.h>
 
 /************************************************************************************
 

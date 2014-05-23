@@ -31,7 +31,7 @@
  * @author  Mandy Chung
  *
  * @library /lib/testlibrary/
- * @build LowMemoryTest MemoryUtil RunUtil
+ * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
  * @run main/timeout=600 LowMemoryTest
  */
 

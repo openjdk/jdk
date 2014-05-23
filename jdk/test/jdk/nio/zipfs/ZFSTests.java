@@ -22,8 +22,11 @@
  */
 
 /* @test
-   @bug 7156873
-   @summary ZipFileSystem regression tests
+ * @bug 7156873 8040059
+ * @summary ZipFileSystem regression tests
+ *
+ * @run main ZFSTests
+ * @run main/othervm/policy=test.policy ZFSTests
  */
 
 

@@ -267,9 +267,9 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 
   // Counted loop head must be a good RegionNode with only 3 not NULL
   // control input edges: Self, Entry, LoopBack.
-  if (x->in(LoopNode::Self) == NULL || x->req() != 3)
+  if (x->in(LoopNode::Self) == NULL || x->req() != 3 || loop->_irreducible) {
     return false;
-
+  }
   Node *init_control = x->in(LoopNode::EntryControl);
   Node *back_control = x->in(LoopNode::LoopBackControl);
   if (init_control == NULL || back_control == NULL)    // Partially dead
@@ -1523,11 +1523,11 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
 
   // If I have one hot backedge, peel off myself loop.
   // I better be the outermost loop.
-  if( _head->req() > 3 ) {
+  if (_head->req() > 3 && !_irreducible) {
     split_outer_loop( phase );
     result = true;
 
-  } else if( !_head->is_Loop() && !_irreducible ) {
+  } else if (!_head->is_Loop() && !_irreducible) {
     // Make a new LoopNode to replace the old loop head
     Node *l = new (phase->C) LoopNode( _head->in(1), _head->in(2) );
     l = igvn.register_new_node_with_optimizer(l, _head);
@@ -2939,6 +2939,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           return pre_order;
         }
       }
+      C->set_has_irreducible_loop(_has_irreducible_loops);
     }
 
     // This Node might be a decision point for loops.  It is only if

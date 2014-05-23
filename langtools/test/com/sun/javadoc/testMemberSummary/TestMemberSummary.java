@@ -28,50 +28,40 @@
  *           type than the method in the child class.  Make sure the
  *           documentation is inherited but the return type isn't.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestMemberSummary
  * @run main TestMemberSummary
  */
 
 public class TestMemberSummary extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR, "pkg","pkg2"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        // Check return type in member summary.
-        { "pkg/PublicChild.html",
-            "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n" +
-            "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">" +
-            "returnTypeTest</a></span>()</code>"
-        },
-        // Check return type in member detail.
-        { "pkg/PublicChild.html",
-            "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">" +
-            "PublicChild</a>&nbsp;returnTypeTest()</pre>"
-        },
-
-         // Legacy anchor dimensions (6290760)
-        { "pkg2/A.html",
-            "<a name=\"f-java.lang.Object:A-\">\n" +
-            "<!--   -->\n" +
-            "</a><a name=\"f-T:A-\">\n" +
-            "<!--   -->\n" +
-            "</a>"
-        },
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestMemberSummary tester = new TestMemberSummary();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg","pkg2");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/PublicChild.html", true,
+                // Check return type in member summary.
+                "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n"
+                + "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">"
+                + "returnTypeTest</a></span>()</code>",
+                // Check return type in member detail.
+                "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">"
+                + "PublicChild</a>&nbsp;returnTypeTest()</pre>");
+
+        // Legacy anchor dimensions (6290760)
+        checkOutput("pkg2/A.html", true,
+                "<a name=\"f-java.lang.Object:A-\">\n"
+                + "<!--   -->\n"
+                + "</a><a name=\"f-T:A-\">\n"
+                + "<!--   -->\n"
+                + "</a>");
     }
 }

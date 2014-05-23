@@ -26,7 +26,6 @@
 #ifndef OS_CPU_LINUX_PPC_VM_ATOMIC_LINUX_PPC_INLINE_HPP
 #define OS_CPU_LINUX_PPC_VM_ATOMIC_LINUX_PPC_INLINE_HPP
 
-#include "orderAccess_linux_ppc.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "vm_version_ppc.hpp"
@@ -53,41 +52,41 @@ inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *
 
 inline jlong Atomic::load(volatile jlong* src) { return *src; }
 
-/*
-  machine barrier instructions:
-
-  - sync            two-way memory barrier, aka fence
-  - lwsync          orders  Store|Store,
-                             Load|Store,
-                             Load|Load,
-                    but not Store|Load
-  - eieio           orders memory accesses for device memory (only)
-  - isync           invalidates speculatively executed instructions
-                    From the POWER ISA 2.06 documentation:
-                     "[...] an isync instruction prevents the execution of
-                    instructions following the isync until instructions
-                    preceding the isync have completed, [...]"
-                    From IBM's AIX assembler reference:
-                     "The isync [...] instructions causes the processor to
-                    refetch any instructions that might have been fetched
-                    prior to the isync instruction. The instruction isync
-                    causes the processor to wait for all previous instructions
-                    to complete. Then any instructions already fetched are
-                    discarded and instruction processing continues in the
-                    environment established by the previous instructions."
-
-  semantic barrier instructions:
-  (as defined in orderAccess.hpp)
-
-  - release         orders Store|Store,       (maps to lwsync)
-                            Load|Store
-  - acquire         orders  Load|Store,       (maps to lwsync)
-                            Load|Load
-  - fence           orders Store|Store,       (maps to sync)
-                            Load|Store,
-                            Load|Load,
-                           Store|Load
-*/
+//
+// machine barrier instructions:
+//
+// - sync            two-way memory barrier, aka fence
+// - lwsync          orders  Store|Store,
+//                            Load|Store,
+//                            Load|Load,
+//                   but not Store|Load
+// - eieio           orders memory accesses for device memory (only)
+// - isync           invalidates speculatively executed instructions
+//                   From the POWER ISA 2.06 documentation:
+//                    "[...] an isync instruction prevents the execution of
+//                   instructions following the isync until instructions
+//                   preceding the isync have completed, [...]"
+//                   From IBM's AIX assembler reference:
+//                    "The isync [...] instructions causes the processor to
+//                   refetch any instructions that might have been fetched
+//                   prior to the isync instruction. The instruction isync
+//                   causes the processor to wait for all previous instructions
+//                   to complete. Then any instructions already fetched are
+//                   discarded and instruction processing continues in the
+//                   environment established by the previous instructions."
+//
+// semantic barrier instructions:
+// (as defined in orderAccess.hpp)
+//
+// - release         orders Store|Store,       (maps to lwsync)
+//                           Load|Store
+// - acquire         orders  Load|Store,       (maps to lwsync)
+//                           Load|Load
+// - fence           orders Store|Store,       (maps to sync)
+//                           Load|Store,
+//                           Load|Load,
+//                          Store|Load
+//
 
 #define strasm_sync                       "\n  sync    \n"
 #define strasm_lwsync                     "\n  lwsync  \n"

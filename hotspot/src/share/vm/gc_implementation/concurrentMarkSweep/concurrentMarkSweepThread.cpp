@@ -223,12 +223,6 @@ void ConcurrentMarkSweepThread::threads_do(ThreadClosure* tc) {
   }
 }
 
-void ConcurrentMarkSweepThread::print_on(outputStream* st) const {
-  st->print("\"%s\" ", name());
-  Thread::print_on(st);
-  st->cr();
-}
-
 void ConcurrentMarkSweepThread::print_all_on(outputStream* st) {
   if (_cmst != NULL) {
     _cmst->print_on(st);

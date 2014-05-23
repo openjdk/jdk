@@ -26,55 +26,44 @@
  * @bug      6227616
  * @summary  Test the new -top option.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestTopOption
  * @run main TestTopOption
  */
 
 public class TestTopOption extends JavadocTester {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-overview", "SRC_DIR + '/' + overview.html", "-use", "-top",
-        "TOP TEXT", "-d", OUTPUT_DIR, "-sourcepath",
-        SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        { "pkg/AnnotationType.html",
-            "TOP TEXT"},
-        { "pkg/class-use/AnnotationType.html",
-            "TOP TEXT"},
-
-        { "pkg/Cl.html",
-            "TOP TEXT"},
-        { "pkg/class-use/Cl.html",
-            "TOP TEXT"},
-
-        { "pkg/package-summary.html",
-            "TOP TEXT"},
-        { "pkg/package-use.html",
-           "TOP TEXT"},
-
-        { "overview-summary.html",
-            "TOP TEXT"},
-        { "overview-tree.html",
-            "TOP TEXT"},
-        { "constant-values.html",
-            "TOP TEXT"},
-        { "help-doc.html",
-            "TOP TEXT"},
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestTopOption tester = new TestTopOption();
-        tester.run(ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-overview", testSrc("overview.html"),
+                "-use",
+                "-top", "TOP TEXT",
+                "-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkTopText(
+                "pkg/AnnotationType.html",
+                "pkg/class-use/AnnotationType.html",
+                "pkg/Cl.html",
+                "pkg/class-use/Cl.html",
+                "pkg/package-summary.html",
+                "pkg/package-use.html",
+                "overview-summary.html",
+                "overview-tree.html",
+                "constant-values.html",
+                "help-doc.html");
+    }
+
+    void checkTopText(String... files) {
+        for (String file : files) {
+            checkOutput(file, true, "TOP TEXT");
+        }
     }
 }
