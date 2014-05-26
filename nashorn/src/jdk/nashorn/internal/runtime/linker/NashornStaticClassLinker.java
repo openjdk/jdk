@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import java.lang.reflect.Modifier;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
@@ -65,10 +66,15 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
             return null;
         }
         final Class<?> receiverClass = ((StaticClass) self).getRepresentedClass();
+
         Bootstrap.checkReflectionAccess(receiverClass, true);
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
         // We intercept "new" on StaticClass instances to provide additional capabilities
         if ("new".equals(desc.getNameToken(CallSiteDescriptor.OPERATOR))) {
+            if (! Modifier.isPublic(receiverClass.getModifiers())) {
+                throw ECMAErrors.typeError("new.on.nonpublic.javatype", receiverClass.getName());
+            }
+
             // make sure new is on accessible Class
             Context.checkPackageAccess(receiverClass);
 
