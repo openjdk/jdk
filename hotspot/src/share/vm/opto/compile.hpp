@@ -420,6 +420,7 @@ class Compile : public Phase {
   stringStream* _print_inlining_stream;
   GrowableArray<PrintInliningBuffer>* _print_inlining_list;
   int _print_inlining_idx;
+  char* _print_inlining_output;
 
   // Only keep nodes in the expensive node list that need to be optimized
   void cleanup_expensive_nodes(PhaseIterGVN &igvn);
@@ -917,7 +918,8 @@ class Compile : public Phase {
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
 
-  void dump_inlining();
+  void process_print_inlining();
+  void dump_print_inlining();
 
   bool over_inlining_cutoff() const {
     if (!inlining_incrementally()) {
