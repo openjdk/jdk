@@ -226,7 +226,9 @@ public class MediaTracker implements java.io.Serializable {
         addImageImpl(image, id, w, h);
         Image rvImage = getResolutionVariant(image);
         if (rvImage != null) {
-            addImageImpl(rvImage, id, 2 * w, 2 * h);
+            addImageImpl(rvImage, id,
+                    w == -1 ? -1 : 2 * w,
+                    h == -1 ? -1 : 2 * h);
         }
     }
 
@@ -810,8 +812,9 @@ public class MediaTracker implements java.io.Serializable {
         removeImageImpl(image, id, width, height);
         Image rvImage = getResolutionVariant(image);
         if (rvImage != null) {
-            removeImageImpl(rvImage, id, 2 * width, 2 * height);
-
+            removeImageImpl(rvImage, id,
+                    width == -1 ? -1 : 2 * width,
+                    height == -1 ? -1 : 2 * height);
         }
         notifyAll();    // Notify in case remaining images are "done".
     }
