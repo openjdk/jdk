@@ -26,7 +26,7 @@
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
- *      4947220 7018606 7034570 4244896 5049299
+ *      4947220 7018606 7034570 4244896 5049299 8003488
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm/timeout=300 Basic
  * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=fork Basic
@@ -1136,6 +1136,53 @@ public class Basic {
         }
     }
 
+    static void checkProcessPid() {
+        long actualPid = 0;
+        long expectedPid = -1;
+        if (Windows.is()) {
+            String[] argsTasklist = {"tasklist.exe",  "/NH", "/FI",  "\"IMAGENAME eq tasklist.exe\""};
+            ProcessBuilder pb = new ProcessBuilder(argsTasklist);
+            try {
+                Process proc = pb.start();
+                expectedPid = proc.getPid();
+
+                String output = commandOutput(proc);
+                String[] splits = output.split("\\s+");
+                actualPid = Integer.valueOf(splits[2]);
+            } catch (Throwable t) {
+                unexpected(t);
+            }
+        } else if (Unix.is() || MacOSX.is()) {
+            String[]  shArgs = {"sh", "-c", "echo $$"};
+            ProcessBuilder pb = new ProcessBuilder(shArgs);
+            try {
+                Process proc = pb.start();
+                expectedPid = proc.getPid();
+
+                String output = commandOutput(proc);
+                String[] splits = output.split("\\s+");
+                actualPid = Integer.valueOf(splits[0]);
+            } catch (Throwable t) {
+                unexpected(t);
+            }
+        } else {
+            fail("No test for checkProcessPid on platform: " + System.getProperty("os.name"));
+            return;
+        }
+
+        equal(actualPid, expectedPid);
+
+        // Test the default implementation of Process.getPid
+        try {
+            DelegatingProcess p = new DelegatingProcess(null);
+            p.getPid();
+            fail("non-overridden Process.getPid method should throw UOE");
+        } catch (UnsupportedOperationException uoe) {
+            // correct
+        }
+
+    }
+
     private static void realMain(String[] args) throws Throwable {
         if (Windows.is())
             System.out.println("This appears to be a Windows system.");
@@ -1146,6 +1193,11 @@ public class Basic {
 
         try { testIORedirection(); }
         catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Basic tests for getPid()
+        //----------------------------------------------------------------
+        checkProcessPid();
 
         //----------------------------------------------------------------
         // Basic tests for setting, replacing and deleting envvars
