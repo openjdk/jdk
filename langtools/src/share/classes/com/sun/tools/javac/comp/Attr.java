@@ -1176,7 +1176,7 @@ public class Attr extends JCTree.Visitor {
             //the Formal Parameter of a for-each loop is not in the scope when
             //attributing the for-each expression; we mimick this by attributing
             //the for-each expression first (against original scope).
-            Type exprType = types.upperBound(attribExpr(tree.expr, loopEnv));
+            Type exprType = types.cvarUpperBound(attribExpr(tree.expr, loopEnv));
             attribStat(tree.var, loopEnv);
             chk.checkNonVoid(tree.pos(), exprType);
             Type elemtype = types.elemtype(exprType); // perhaps expr is an array?
@@ -1193,7 +1193,7 @@ public class Attr extends JCTree.Visitor {
                     List<Type> iterableParams = base.allparams();
                     elemtype = iterableParams.isEmpty()
                         ? syms.objectType
-                        : types.upperBound(iterableParams.head);
+                        : types.wildUpperBound(iterableParams.head);
                 }
             }
             chk.checkType(tree.expr.pos(), elemtype, tree.var.sym.type);

@@ -347,7 +347,7 @@ public class Resolve {
 
     boolean isAccessible(Env<AttrContext> env, Type t, boolean checkInner) {
         return (t.hasTag(ARRAY))
-            ? isAccessible(env, types.upperBound(types.elemtype(t)))
+            ? isAccessible(env, types.cvarUpperBound(types.elemtype(t)))
             : isAccessible(env, t.tsym, checkInner);
     }
 
@@ -1014,7 +1014,7 @@ public class Resolve {
          */
         private Type U(Type found) {
             return found == pt ?
-                    found : types.upperBound(found);
+                    found : types.cvarUpperBound(found);
         }
 
         @Override
