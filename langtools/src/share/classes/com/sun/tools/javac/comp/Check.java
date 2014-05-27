@@ -621,10 +621,10 @@ public class Check {
          if (a.isUnbound()) {
              return true;
          } else if (!a.hasTag(WILDCARD)) {
-             a = types.upperBound(a);
+             a = types.cvarUpperBound(a);
              return types.isSubtype(a, bound);
          } else if (a.isExtendsBound()) {
-             return types.isCastable(bound, types.upperBound(a), types.noWarnings);
+             return types.isCastable(bound, types.wildUpperBound(a), types.noWarnings);
          } else if (a.isSuperBound()) {
              return !types.notSoftSubtype(types.wildLowerBound(a), bound);
          }
