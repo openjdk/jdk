@@ -32,9 +32,10 @@
 #define kInternalError "java/lang/InternalError"
 
 #define AWT_DEBUG_LOG(str) \
-    NSLog(@"Cocoa AWT: %@ %@", str, [NSThread callStackSymbols])
+    NSLog(@"\tCocoa AWT: %@ %@", str, [NSThread callStackSymbols])
 
 #define AWT_DEBUG_BUG_REPORT_MESSAGE \
-    NSLog(@"\tPlease file a bug report at http://java.net/jira/browse/MACOSX_PORT with this message and a reproducible test case.")
+    NSLog(@"\tPlease file a bug report at http://bugreport.java.com/bugreport \
+with this message and a reproducible test case.")
 
 #endif

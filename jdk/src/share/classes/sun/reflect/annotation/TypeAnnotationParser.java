@@ -75,7 +75,7 @@ public final class TypeAnnotationParser {
             if (ti.getTarget() == filter)
                 l.add(t);
         }
-        TypeAnnotation[] typeAnnotations = l.toArray(new TypeAnnotation[0]);
+        TypeAnnotation[] typeAnnotations = l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY);
         return AnnotatedTypeFactory.buildAnnotatedType(type,
                                                        LocationInfo.BASE_LOCATION,
                                                        typeAnnotations,
@@ -245,7 +245,6 @@ public final class TypeAnnotationParser {
         if (bounds != null) {
             int startIndex = 0;
             AnnotatedType[] res = new AnnotatedType[bounds.length];
-            Arrays.fill(res, AnnotatedTypeFactory.EMPTY_ANNOTATED_TYPE);
 
             // Adjust bounds index
             //
@@ -276,12 +275,12 @@ public final class TypeAnnotationParser {
                             tInfo.getCount() == typeVarIndex) {
                         l.add(t);
                     }
-                    res[i] = AnnotatedTypeFactory.buildAnnotatedType(bounds[i],
-                                                                     loc,
-                                                                     l.toArray(new TypeAnnotation[0]),
-                                                                     candidates.toArray(new TypeAnnotation[0]),
-                                                                     (AnnotatedElement)decl);
                 }
+                res[i] = AnnotatedTypeFactory.buildAnnotatedType(bounds[i],
+                        loc,
+                        l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
+                        candidates.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
+                        (AnnotatedElement)decl);
             }
             return res;
         }

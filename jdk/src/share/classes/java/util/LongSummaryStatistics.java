@@ -42,7 +42,7 @@ import java.util.stream.Collector;
  * }</pre>
  *
  * <p>{@code LongSummaryStatistics} can be used as a
- * {@linkplain java.util.stream.Stream#collect(Collector)} reduction}
+ * {@linkplain java.util.stream.Stream#collect(Collector) reduction}
  * target for a {@linkplain java.util.stream.Stream stream}. For example:
  *
  * <pre> {@code
@@ -55,7 +55,7 @@ import java.util.stream.Collector;
  *
  * @implNote This implementation is not thread safe. However, it is safe to use
  * {@link java.util.stream.Collectors#summarizingLong(java.util.function.ToLongFunction)
- * Collectors.toLongStatistics()} on a parallel stream, because the parallel
+ * Collectors.summarizingLong()} on a parallel stream, because the parallel
  * implementation of {@link java.util.stream.Stream#collect Stream.collect()}
  * provides the necessary partitioning, isolation, and merging of results for
  * safe and efficient parallel execution.

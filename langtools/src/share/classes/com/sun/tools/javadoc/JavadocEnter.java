@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import com.sun.tools.javac.util.List;
  *  @author Neal Gafter
  */
 public class JavadocEnter extends Enter {
-    public static JavadocEnter instance0(Context context) {
+    public static JavadocEnter instance(Context context) {
         Enter instance = context.get(enterKey);
         if (instance == null)
             instance = new JavadocEnter(context);

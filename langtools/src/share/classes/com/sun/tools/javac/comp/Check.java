@@ -282,7 +282,7 @@ public class Check {
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
         log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, pos, "cant.access", ex.sym, ex.getDetailValue());
-        if (ex instanceof ClassReader.BadClassFile
+        if (ex instanceof ClassFinder.BadClassFile
                 && !suppressAbortOnBadClassFile) throw new Abort();
         else return syms.errType;
     }
@@ -621,10 +621,10 @@ public class Check {
          if (a.isUnbound()) {
              return true;
          } else if (!a.hasTag(WILDCARD)) {
-             a = types.upperBound(a);
+             a = types.cvarUpperBound(a);
              return types.isSubtype(a, bound);
          } else if (a.isExtendsBound()) {
-             return types.isCastable(bound, types.upperBound(a), types.noWarnings);
+             return types.isCastable(bound, types.wildUpperBound(a), types.noWarnings);
          } else if (a.isSuperBound()) {
              return !types.notSoftSubtype(types.wildLowerBound(a), bound);
          }

@@ -38,7 +38,7 @@ EXCLUDES :=
 
 ##########################################################################################
 
-EXCLUDES += com/sun/pept \
+EXCLUDES += \
     com/sun/tools/example/trace \
     com/sun/tools/example/debug/bdi \
     com/sun/tools/example/debug/event \

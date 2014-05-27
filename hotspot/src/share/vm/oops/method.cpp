@@ -56,6 +56,7 @@
 #include "utilities/quickSort.hpp"
 #include "utilities/xmlstream.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // Implementation of Method
 
@@ -1018,13 +1019,11 @@ bool Method::should_not_be_cached() const {
  *  security related stack walks (like Reflection.getCallerClass).
  */
 bool Method::is_ignored_by_security_stack_walk() const {
-  const bool use_new_reflection = JDK_Version::is_gte_jdk14x_version() && UseNewReflection;
-
   if (intrinsic_id() == vmIntrinsics::_invoke) {
     // This is Method.invoke() -- ignore it
     return true;
   }
-  if (use_new_reflection &&
+  if (JDK_Version::is_gte_jdk14x_version() &&
       method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
     // This is an auxilary frame -- ignore it
     return true;
@@ -1425,7 +1424,7 @@ class SignatureTypePrinter : public SignatureTypeNames {
 
   void type_name(const char* name) {
     if (_use_separator) _st->print(", ");
-    _st->print(name);
+    _st->print("%s", name);
     _use_separator = true;
   }
 
@@ -1867,6 +1866,14 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
   loader_data->jmethod_ids()->clear_all_methods();
 }
 
+bool Method::has_method_vptr(const void* ptr) {
+  Method m;
+  // This assumes that the vtbl pointer is the first word of a C++ object.
+  // This assumption is also in universe.cpp patch_klass_vtble
+  void* vtbl2 = dereference_vptr((const void*)&m);
+  void* this_vtbl = dereference_vptr(ptr);
+  return vtbl2 == this_vtbl;
+}
 
 // Check that this pointer is valid by checking that the vtbl pointer matches
 bool Method::is_valid_method() const {
@@ -1875,12 +1882,7 @@ bool Method::is_valid_method() const {
   } else if (!is_metaspace_object()) {
     return false;
   } else {
-    Method m;
-    // This assumes that the vtbl pointer is the first word of a C++ object.
-    // This assumption is also in universe.cpp patch_klass_vtble
-    void* vtbl2 = dereference_vptr((void*)&m);
-    void* this_vtbl = dereference_vptr((void*)this);
-    return vtbl2 == this_vtbl;
+    return has_method_vptr((const void*)this);
   }
 }
 
@@ -1898,7 +1900,7 @@ void Method::print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) 
 void Method::print_on(outputStream* st) const {
   ResourceMark rm;
   assert(is_method(), "must be method");
-  st->print_cr(internal_name());
+  st->print_cr("%s", internal_name());
   // get the effect of PrintOopAddress, always, for methods:
   st->print_cr(" - this oop:          "INTPTR_FORMAT, (intptr_t)this);
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
@@ -1981,7 +1983,7 @@ void Method::print_on(outputStream* st) const {
 
 void Method::print_value_on(outputStream* st) const {
   assert(is_method(), "must be method");
-  st->print(internal_name());
+  st->print("%s", internal_name());
   print_address_on(st);
   st->print(" ");
   name()->print_value_on(st);

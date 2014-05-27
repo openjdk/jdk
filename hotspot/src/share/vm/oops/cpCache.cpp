@@ -39,8 +39,9 @@
 # include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
 #endif // INCLUDE_ALL_GCS
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
-// Implememtation of ConstantPoolCacheEntry
+// Implementation of ConstantPoolCacheEntry
 
 void ConstantPoolCacheEntry::initialize_entry(int index) {
   assert(0 < index && index < 0x10000, "sanity check");
@@ -497,9 +498,10 @@ bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
     // _f1 == NULL || !_f1->is_method() are OK here
     return true;
   }
-  // return false if _f1 refers to an old or an obsolete method
+  // return false if _f1 refers to a non-deleted old or obsolete method
   return (NOT_PRODUCT(_f1->is_valid() &&) _f1->is_method() &&
-          !((Method*)_f1)->is_old() && !((Method*)_f1)->is_obsolete());
+          (f1_as_method()->is_deleted() ||
+          (!f1_as_method()->is_old() && !f1_as_method()->is_obsolete())));
 }
 
 bool ConstantPoolCacheEntry::is_interesting_method_entry(Klass* k) {
@@ -668,7 +670,7 @@ void ConstantPoolCache::dump_cache() {
 
 void ConstantPoolCache::print_on(outputStream* st) const {
   assert(is_constantPoolCache(), "obj must be constant pool cache");
-  st->print_cr(internal_name());
+  st->print_cr("%s", internal_name());
   // print constant pool cache entries
   for (int i = 0; i < length(); i++) entry_at(i)->print(st, i);
 }

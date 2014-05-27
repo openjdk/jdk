@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ void ciConstant::print() {
     tty->print("%d", _value._int);
     break;
   case T_LONG:
-    tty->print(INT64_FORMAT, _value._long);
+    tty->print(INT64_FORMAT, (int64_t)(_value._long));
     break;
   case T_FLOAT:
     tty->print("%f", _value._float);

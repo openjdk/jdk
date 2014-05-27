@@ -27,6 +27,7 @@ package sun.awt;
 
 import sun.misc.Unsafe;
 
+import javax.accessibility.AccessibleContext;
 import java.awt.*;
 import java.awt.KeyboardFocusManager;
 import java.awt.DefaultKeyboardFocusManager;
@@ -620,7 +621,7 @@ public final class AWTAccessor {
         /**
          * Returns menus
          */
-        Vector getMenus(MenuBar menuBar);
+        Vector<Menu> getMenus(MenuBar menuBar);
     }
 
     /**
@@ -662,7 +663,7 @@ public final class AWTAccessor {
         /**
          * Returns vector of the items that are part of the Menu
          */
-        Vector getItems(Menu menu);
+        Vector<MenuItem> getItems(Menu menu);
     }
 
     /**
@@ -762,6 +763,14 @@ public final class AWTAccessor {
     }
 
     /*
+     * An accessor object for the AccessibleContext class
+     */
+    public interface AccessibleContextAccessor {
+        void setAppContext(AccessibleContext accessibleContext, AppContext appContext);
+        AppContext getAppContext(AccessibleContext accessibleContext);
+    }
+
+    /*
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
      */
@@ -791,6 +800,7 @@ public final class AWTAccessor {
     private static ToolkitAccessor toolkitAccessor;
     private static InvocationEventAccessor invocationEventAccessor;
     private static SystemColorAccessor systemColorAccessor;
+    private static AccessibleContextAccessor accessibleContextAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -1234,4 +1244,21 @@ public final class AWTAccessor {
      public static void setSystemColorAccessor(SystemColorAccessor systemColorAccessor) {
          AWTAccessor.systemColorAccessor = systemColorAccessor;
      }
+
+    /*
+     * Get the accessor object for the javax.accessibility.AccessibleContext class.
+     */
+    public static AccessibleContextAccessor getAccessibleContextAccessor() {
+        if (accessibleContextAccessor == null) {
+            unsafe.ensureClassInitialized(AccessibleContext.class);
+        }
+        return accessibleContextAccessor;
+    }
+
+   /*
+    * Set the accessor object for the javax.accessibility.AccessibleContext class.
+    */
+    public static void setAccessibleContextAccessor(AccessibleContextAccessor accessor) {
+        AWTAccessor.accessibleContextAccessor = accessor;
+    }
 }

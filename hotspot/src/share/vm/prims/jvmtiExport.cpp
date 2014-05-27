@@ -56,6 +56,8 @@
 #include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
 #endif // INCLUDE_ALL_GCS
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 #ifdef JVMTI_TRACE
 #define EVT_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_SENT) != 0) { SafeResourceMark rm; tty->print_cr out; }
 #define EVT_TRIG_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_TRIGGER) != 0) { SafeResourceMark rm; tty->print_cr out; }

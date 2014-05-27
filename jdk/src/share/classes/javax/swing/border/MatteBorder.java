@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,9 @@ public class MatteBorder extends EmptyBorder
     /**
      * Returns the color used for tiling the border or null
      * if a tile icon is being used.
+     *
+     * @return the {@code Color} object used to render the border or {@code null}
+     *         if a tile icon is used
      * @since 1.3
      */
     public Color getMatteColor() {
@@ -205,6 +208,9 @@ public class MatteBorder extends EmptyBorder
    /**
      * Returns the icon used for tiling the border or null
      * if a solid color is being used.
+     *
+     * @return the {@code Icon} used to tile the border or {@code null} if a
+     *         solid color is used to fill the border
      * @since 1.3
      */
     public Icon getTileIcon() {
@@ -213,6 +219,8 @@ public class MatteBorder extends EmptyBorder
 
     /**
      * Returns whether or not the border is opaque.
+     *
+     * @return {@code true} if the border is opaque, {@code false} otherwise
      */
     public boolean isBorderOpaque() {
         // If a tileIcon is set, then it may contain transparent bits

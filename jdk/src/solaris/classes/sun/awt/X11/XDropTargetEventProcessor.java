@@ -79,12 +79,11 @@ final class XDropTargetEventProcessor {
         }
 
         if (protocol == null) {
-            Iterator dropTargetProtocols =
+            Iterator<XDropTargetProtocol> dropTargetProtocols =
                 XDragAndDropProtocols.getDropTargetProtocols();
 
             while (dropTargetProtocols.hasNext()) {
-                XDropTargetProtocol dropTargetProtocol =
-                    (XDropTargetProtocol)dropTargetProtocols.next();
+                XDropTargetProtocol dropTargetProtocol = dropTargetProtocols.next();
                 // Don't try to process it again with the current protocol.
                 if (dropTargetProtocol == curProtocol) {
                     continue;

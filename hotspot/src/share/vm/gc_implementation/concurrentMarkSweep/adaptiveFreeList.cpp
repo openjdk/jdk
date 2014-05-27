@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ void AdaptiveFreeList<Chunk>::verify_stats() const {
                  " split_deaths(" SIZE_FORMAT ")"
                  " coal_deaths(" SIZE_FORMAT ")"
                  " + count(" SSIZE_FORMAT ")",
-                 this, size(), _allocation_stats.prev_sweep(), _allocation_stats.split_births(),
+                 p2i(this), size(), _allocation_stats.prev_sweep(), _allocation_stats.split_births(),
                  _allocation_stats.coal_births(), _allocation_stats.split_deaths(),
                  _allocation_stats.coal_deaths(), count()));
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
     out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
     stringStream ss;
     prof_klass->name()->print_symbol_on(&ss);
-    out->print(ss.as_string());
+    out->print("%s", ss.as_string());
     out->cr();
   }
 }
@@ -364,7 +364,7 @@ bool Compile::should_delay_string_inlining(ciMethod* call_method, JVMState* jvms
 bool Compile::should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms) {
   if (eliminate_boxing() && call_method->is_boxing_method()) {
     set_has_boxed_value(true);
-    return true;
+    return aggressive_unboxing();
   }
   return false;
 }

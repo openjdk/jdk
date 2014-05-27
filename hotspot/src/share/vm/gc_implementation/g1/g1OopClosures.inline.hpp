@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "runtime/prefetch.inline.hpp"
 
 /*
  * This really ought to be an inline function, but apparently the C++
@@ -114,7 +115,7 @@ inline void G1CMOopClosure::do_oop_nv(T* p) {
   if (_cm->verbose_high()) {
     gclog_or_tty->print_cr("[%u] we're looking at location "
                            "*"PTR_FORMAT" = "PTR_FORMAT,
-                           _task->worker_id(), p, (void*) obj);
+                           _task->worker_id(), p2i(p), p2i((void*) obj));
   }
   _task->deal_with_reference(obj);
 }

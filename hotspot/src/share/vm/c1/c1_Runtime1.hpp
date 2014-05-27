@@ -156,7 +156,7 @@ class Runtime1: public AllStatic {
   static void monitorenter(JavaThread* thread, oopDesc* obj, BasicObjectLock* lock);
   static void monitorexit (JavaThread* thread, BasicObjectLock* lock);
 
-  static void deoptimize(JavaThread* thread);
+  static void deoptimize(JavaThread* thread, jint trap_request);
 
   static int access_field_patching(JavaThread* thread);
   static int move_klass_patching(JavaThread* thread);

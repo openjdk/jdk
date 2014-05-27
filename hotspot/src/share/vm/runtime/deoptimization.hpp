@@ -62,6 +62,7 @@ class Deoptimization : AllStatic {
     Reason_speculate_class_check, // saw unexpected object class from type speculation
     Reason_speculate_null_check,  // saw unexpected null from type speculation
     Reason_rtm_state_change,      // rtm state change detected
+    Reason_tenured,               // age of the code has reached the limit
     Reason_LIMIT,
     // Note:  Keep this enum in sync. with _trap_reason_name.
     Reason_RECORDED_LIMIT = Reason_bimorphic  // some are not recorded per bc
@@ -357,8 +358,8 @@ class Deoptimization : AllStatic {
   // returning to a deoptimized caller
   static void popframe_preserve_args(JavaThread* thread, int bytes_to_save, void* start_address);
 
- private:
   static MethodData* get_method_data(JavaThread* thread, methodHandle m, bool create_if_missing);
+ private:
   // Update the mdo's count and per-BCI reason bits, returning previous state:
   static ProfileData* query_update_method_data(MethodData* trap_mdo,
                                                int trap_bci,
@@ -375,8 +376,8 @@ class Deoptimization : AllStatic {
   static UnrollBlock* fetch_unroll_info_helper(JavaThread* thread);
 
   static DeoptAction _unloaded_action; // == Action_reinterpret;
-  static const char* _trap_reason_name[Reason_LIMIT];
-  static const char* _trap_action_name[Action_LIMIT];
+  static const char* _trap_reason_name[];
+  static const char* _trap_action_name[];
 
   static juint _deoptimization_hist[Reason_LIMIT][1+Action_LIMIT][BC_CASE_LIMIT];
   // Note:  Histogram array size is 1-2 Kb.

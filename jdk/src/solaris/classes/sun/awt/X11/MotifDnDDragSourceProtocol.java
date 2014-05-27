@@ -26,6 +26,7 @@
 package sun.awt.X11;
 
 import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.DataFlavor;
 
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.InvalidDnDOperationException;
@@ -65,7 +66,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
     }
 
     protected void initializeDragImpl(int actions, Transferable contents,
-                                      Map formatMap, long[] formats)
+                                      Map<Long, DataFlavor> formatMap, long[] formats)
       throws InvalidDnDOperationException,
         IllegalArgumentException, XException {
 

@@ -34,9 +34,9 @@
 #include "jni_util.h"
 #include "debug_util.h"
 
-#ifndef HEADLESS
+#if !defined(HEADLESS) && !defined(MACOSX)
 #include <X11/Intrinsic.h>
-#endif /* !HEADLESS */
+#endif /* !HEADLESS && !MACOSX */
 
 
 /* The JVM instance: defined in awt_MToolkit.c */
@@ -110,9 +110,9 @@ extern void awt_output_flush();
 #define AWT_NOTIFY()         AWT_NOTIFY_IMPL()
 #define AWT_NOTIFY_ALL()     AWT_NOTIFY_ALL_IMPL()
 
-#ifndef HEADLESS
+#if !defined(HEADLESS) && !defined(MACOSX)
 extern Display         *awt_display; /* awt_GraphicsEnv.c */
 extern Boolean          awt_ModLockIsShiftLock; /* XToolkit.c */
-#endif /* !HEADLESS */
+#endif /* !HEADLESS && !MACOSX */
 
 #endif /* ! _AWT_ */

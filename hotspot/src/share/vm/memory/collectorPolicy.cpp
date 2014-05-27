@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -736,7 +736,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
           warning("TwoGenerationCollectorPolicy::mem_allocate_work retries %d times \n\t"
-                  " size=%d %s", try_count, size, is_tlab ? "(TLAB)" : "");
+                  " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
     }
   }
 }
@@ -903,7 +903,7 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
     if ((QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
       warning("satisfy_failed_metadata_allocation() retries %d times \n\t"
-              " size=%d", loop_count, word_size);
+              " size=" SIZE_FORMAT, loop_count, word_size);
     }
   } while (true);  // Until a GC is done
 }

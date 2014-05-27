@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,12 @@ BlockOffsetSharedArray::BlockOffsetSharedArray(MemRegion reserved,
                   "  rs.base(): " INTPTR_FORMAT
                   "  rs.size(): " INTPTR_FORMAT
                   "  rs end(): " INTPTR_FORMAT,
-                  rs.base(), rs.size(), rs.base() + rs.size());
+                  p2i(rs.base()), rs.size(), p2i(rs.base() + rs.size()));
     gclog_or_tty->print_cr("  "
                   "  _vs.low_boundary(): " INTPTR_FORMAT
                   "  _vs.high_boundary(): " INTPTR_FORMAT,
-                  _vs.low_boundary(),
-                  _vs.high_boundary());
+                  p2i(_vs.low_boundary()),
+                  p2i(_vs.high_boundary()));
   }
 }
 
@@ -537,10 +537,10 @@ HeapWord* BlockOffsetArrayNonContigSpace::block_start_unsafe(
     q -= (N_words * n_cards_back);
     assert(q >= _sp->bottom(),
            err_msg("q = " PTR_FORMAT " crossed below bottom = " PTR_FORMAT,
-                   q, _sp->bottom()));
+                   p2i(q), p2i(_sp->bottom())));
     assert(q < _sp->end(),
            err_msg("q = " PTR_FORMAT " crossed above end = " PTR_FORMAT,
-                   q, _sp->end()));
+                   p2i(q), p2i(_sp->end())));
     index -= n_cards_back;
     offset = _array->offset_array(index);
   }
@@ -549,10 +549,10 @@ HeapWord* BlockOffsetArrayNonContigSpace::block_start_unsafe(
   q -= offset;
   assert(q >= _sp->bottom(),
          err_msg("q = " PTR_FORMAT " crossed below bottom = " PTR_FORMAT,
-                 q, _sp->bottom()));
+                 p2i(q), p2i(_sp->bottom())));
   assert(q < _sp->end(),
          err_msg("q = " PTR_FORMAT " crossed above end = " PTR_FORMAT,
-                 q, _sp->end()));
+                 p2i(q), p2i(_sp->end())));
   HeapWord* n = q;
 
   while (n <= addr) {
@@ -563,14 +563,14 @@ HeapWord* BlockOffsetArrayNonContigSpace::block_start_unsafe(
            err_msg("Looping at n = " PTR_FORMAT " with last = " PTR_FORMAT","
                    " while querying blk_start(" PTR_FORMAT ")"
                    " on _sp = [" PTR_FORMAT "," PTR_FORMAT ")",
-                   n, last, addr, _sp->bottom(), _sp->end()));
+                   p2i(n), p2i(last), p2i(addr), p2i(_sp->bottom()), p2i(_sp->end())));
   }
   assert(q <= addr,
          err_msg("wrong order for current (" INTPTR_FORMAT ")" " <= arg (" INTPTR_FORMAT ")",
-                 q, addr));
+                 p2i(q), p2i(addr)));
   assert(addr <= n,
          err_msg("wrong order for arg (" INTPTR_FORMAT ") <= next (" INTPTR_FORMAT ")",
-                 addr, n));
+                 p2i(addr), p2i(n)));
   return q;
 }
 
