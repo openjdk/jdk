@@ -23,9 +23,7 @@
 -->
 <project name="nashorn" default="test" basedir="..">
   <import file="build-nasgen.xml"/>
-  <import file="build-benchmark.xml"/>
   <import file="code_coverage.xml"/>
-
 
   <target name="init-conditions">
     <!-- loading locally defined resources and properties. NB they owerwrite default ones defined later -->
@@ -615,5 +613,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   </target>
 
   <target name="alltests" depends="exit-if-no-testng, externals, update-externals, test, test262parallel, perf"/>
+
+  <import file="build-benchmark.xml"/>
 
 </project>

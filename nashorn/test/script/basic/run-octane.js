@@ -25,13 +25,6 @@
  * @subtest
  */
 
-var read;
-try {
-    read = readFully;
-} catch (e) {
-    print("ABORTING: Cannot find 'readFully'. You must have scripting enabled to use this test harness. (-scripting)");
-    throw e;
-}
 
 function initZlib() {
     zlib = new BenchmarkSuite('zlib', [152815148], [
@@ -62,7 +55,7 @@ var dir = (typeof(__DIR__) == 'undefined') ? "test/script/basic/" : __DIR__;
 // TODO: why is this path hard coded when it's defined in project properties?
 var path = dir + "../external/octane/";
 
-var runtime = "";
+var runtime = undefined;
 var verbose = false;
 
 var numberOfIterations = 5;
@@ -133,7 +126,7 @@ function run_one_benchmark(arg, iters) {
 	    benchmarks[x].Setup();
 	}
 	BenchmarkSuite.ResetRNG();
-	print_verbose(arg, "running '" + arg.name + "' for " + iters + " iterations of no less than " + min_time + " seconds (" + runtime + ")");
+	print_verbose(arg, "running '" + arg.name + "' for " + iters + " iterations of no less than " + min_time + " seconds");
 	
 	var scores = [];
 	
@@ -188,8 +181,12 @@ function run_one_benchmark(arg, iters) {
     print_always(arg, res);
 }
 
+function runtime_string() {
+    return runtime == undefined ? "" : ("[" + runtime + "] ");
+}
+
 function print_always(arg, x) {
-    print("[" + arg.name + "] " + x);
+    print(runtime_string() + "[" + arg.name + "] " + x);
 }
 
 function print_verbose(arg, x) {
@@ -203,8 +200,6 @@ function run_suite(tests, iters) {
 	run_one_benchmark(tests[idx], iters);
     }
 }
-
-runtime = "command line";
 
 var args = [];
 
@@ -281,7 +276,30 @@ if (tests_found.length == 0) {
     }
 } 
 
-tests_found.sort();
+// returns false for rhino, v8 and all other javascript runtimes, true for Nashorn
+function is_this_nashorn() {
+    return typeof Error.dumpStack == 'function'
+}
+
+if (is_this_nashorn()) {
+    try {
+	read = readFully;
+    } catch (e) {
+	print("ABORTING: Cannot find 'readFully'. You must have scripting enabled to use this test harness. (-scripting)");
+	throw e;
+    }
+}
+
+// run tests in alphabetical order by name
+tests_found.sort(function(a, b) {
+    if (a.name < b.name) {
+	return -1;
+    } else if (a.name > b.name) {
+	return 1;
+    } else {
+	return 0;
+    }
+});
 
 load(path + 'base.js');
 run_suite(tests_found, iters);
