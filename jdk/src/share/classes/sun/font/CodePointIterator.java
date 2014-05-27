@@ -33,7 +33,7 @@
  * patents. This notice and attribution to IBM may not be removed.
  */
 
-package sun.text;
+package sun.font;
 
 import java.text.CharacterIterator;
 
