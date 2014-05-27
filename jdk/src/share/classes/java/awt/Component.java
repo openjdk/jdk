@@ -6184,7 +6184,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Parameter types of coalesceEvents(AWTEvent,AWTEVent).
      */
-    private static final Class[] coalesceEventsParams = {
+    private static final Class<?>[] coalesceEventsParams = {
         AWTEvent.class, AWTEvent.class
     };
 

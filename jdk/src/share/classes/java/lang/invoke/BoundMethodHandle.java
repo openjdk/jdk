@@ -26,11 +26,10 @@
 package java.lang.invoke;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import static java.lang.invoke.LambdaForm.basicTypes;
-import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
+import static java.lang.invoke.LambdaForm.*;
+import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 
-import java.lang.invoke.LambdaForm.Name;
 import java.lang.invoke.LambdaForm.NamedFunction;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
@@ -61,22 +60,22 @@ import jdk.internal.org.objectweb.asm.Type;
     // BMH API and internals
     //
 
-    static MethodHandle bindSingle(MethodType type, LambdaForm form, char xtype, Object x) {
+    static MethodHandle bindSingle(MethodType type, LambdaForm form, BasicType xtype, Object x) {
         // for some type signatures, there exist pre-defined concrete BMH classes
         try {
             switch (xtype) {
-            case 'L':
+            case L_TYPE:
                 if (true)  return bindSingle(type, form, x);  // Use known fast path.
-                return (BoundMethodHandle) SpeciesData.EMPTY.extendWithType('L').constructor[0].invokeBasic(type, form, x);
-            case 'I':
-                return (BoundMethodHandle) SpeciesData.EMPTY.extendWithType('I').constructor[0].invokeBasic(type, form, ValueConversions.widenSubword(x));
-            case 'J':
-                return (BoundMethodHandle) SpeciesData.EMPTY.extendWithType('J').constructor[0].invokeBasic(type, form, (long) x);
-            case 'F':
-                return (BoundMethodHandle) SpeciesData.EMPTY.extendWithType('F').constructor[0].invokeBasic(type, form, (float) x);
-            case 'D':
-                return (BoundMethodHandle) SpeciesData.EMPTY.extendWithType('D').constructor[0].invokeBasic(type, form, (double) x);
-            default : throw new InternalError("unexpected xtype: " + xtype);
+                return (BoundMethodHandle) SpeciesData.EMPTY.extendWith(L_TYPE).constructor[0].invokeBasic(type, form, x);
+            case I_TYPE:
+                return (BoundMethodHandle) SpeciesData.EMPTY.extendWith(I_TYPE).constructor[0].invokeBasic(type, form, ValueConversions.widenSubword(x));
+            case J_TYPE:
+                return (BoundMethodHandle) SpeciesData.EMPTY.extendWith(J_TYPE).constructor[0].invokeBasic(type, form, (long) x);
+            case F_TYPE:
+                return (BoundMethodHandle) SpeciesData.EMPTY.extendWith(F_TYPE).constructor[0].invokeBasic(type, form, (float) x);
+            case D_TYPE:
+                return (BoundMethodHandle) SpeciesData.EMPTY.extendWith(D_TYPE).constructor[0].invokeBasic(type, form, (double) x);
+            default : throw newInternalError("unexpected xtype: " + xtype);
             }
         } catch (Throwable t) {
             throw newInternalError(t);
@@ -87,23 +86,23 @@ import jdk.internal.org.objectweb.asm.Type;
             return new Species_L(type, form, x);
     }
 
-    MethodHandle cloneExtend(MethodType type, LambdaForm form, char xtype, Object x) {
+    MethodHandle cloneExtend(MethodType type, LambdaForm form, BasicType xtype, Object x) {
         try {
             switch (xtype) {
-            case 'L': return cloneExtendL(type, form, x);
-            case 'I': return cloneExtendI(type, form, ValueConversions.widenSubword(x));
-            case 'J': return cloneExtendJ(type, form, (long) x);
-            case 'F': return cloneExtendF(type, form, (float) x);
-            case 'D': return cloneExtendD(type, form, (double) x);
+            case L_TYPE: return copyWithExtendL(type, form, x);
+            case I_TYPE: return copyWithExtendI(type, form, ValueConversions.widenSubword(x));
+            case J_TYPE: return copyWithExtendJ(type, form, (long) x);
+            case F_TYPE: return copyWithExtendF(type, form, (float) x);
+            case D_TYPE: return copyWithExtendD(type, form, (double) x);
             }
         } catch (Throwable t) {
             throw newInternalError(t);
         }
-        throw new InternalError("unexpected type: " + xtype);
+        throw newInternalError("unexpected type: " + xtype);
     }
 
     @Override
-    MethodHandle bindArgument(int pos, char basicType, Object value) {
+    MethodHandle bindArgument(int pos, BasicType basicType, Object value) {
         MethodType type = type().dropParameterTypes(pos, pos+1);
         LambdaForm form = internalForm().bind(1+pos, speciesData());
         return cloneExtend(type, form, basicType, value);
@@ -111,9 +110,9 @@ import jdk.internal.org.objectweb.asm.Type;
 
     @Override
     MethodHandle dropArguments(MethodType srcType, int pos, int drops) {
-        LambdaForm form = internalForm().addArguments(pos, srcType.parameterList().subList(pos, pos+drops));
+        LambdaForm form = internalForm().addArguments(pos, srcType.parameterList().subList(pos, pos + drops));
         try {
-             return clone(srcType, form);
+             return copyWith(srcType, form);
          } catch (Throwable t) {
              throw newInternalError(t);
          }
@@ -122,18 +121,10 @@ import jdk.internal.org.objectweb.asm.Type;
     @Override
     MethodHandle permuteArguments(MethodType newType, int[] reorder) {
         try {
-             return clone(newType, form.permuteArguments(1, reorder, basicTypes(newType.parameterList())));
+             return copyWith(newType, form.permuteArguments(1, reorder, basicTypes(newType.parameterList())));
          } catch (Throwable t) {
              throw newInternalError(t);
          }
-    }
-
-    static final String EXTENSION_TYPES = "LIJFD";
-    static final byte INDEX_L = 0, INDEX_I = 1, INDEX_J = 2, INDEX_F = 3, INDEX_D = 4;
-    static byte extensionIndex(char type) {
-        int i = EXTENSION_TYPES.indexOf(type);
-        if (i < 0)  throw new InternalError();
-        return (byte) i;
     }
 
     /**
@@ -141,6 +132,11 @@ import jdk.internal.org.objectweb.asm.Type;
      * static field containing this value, and they must accordingly implement this method.
      */
     /*non-public*/ abstract SpeciesData speciesData();
+
+    /**
+     * Return the number of fields in this BMH.  Equivalent to speciesData().fieldCount().
+     */
+    /*non-public*/ abstract int fieldCount();
 
     @Override
     final Object internalProperties() {
@@ -159,38 +155,33 @@ import jdk.internal.org.objectweb.asm.Type;
     /*non-public*/ final Object arg(int i) {
         try {
             switch (speciesData().fieldType(i)) {
-            case 'L': return argL(i);
-            case 'I': return argI(i);
-            case 'F': return argF(i);
-            case 'D': return argD(i);
-            case 'J': return argJ(i);
+            case L_TYPE: return          speciesData().getters[i].invokeBasic(this);
+            case I_TYPE: return (int)    speciesData().getters[i].invokeBasic(this);
+            case J_TYPE: return (long)   speciesData().getters[i].invokeBasic(this);
+            case F_TYPE: return (float)  speciesData().getters[i].invokeBasic(this);
+            case D_TYPE: return (double) speciesData().getters[i].invokeBasic(this);
             }
         } catch (Throwable ex) {
             throw newInternalError(ex);
         }
-        throw new InternalError("unexpected type: " + speciesData().types+"."+i);
+        throw new InternalError("unexpected type: " + speciesData().typeChars+"."+i);
     }
-    /*non-public*/ final Object argL(int i) throws Throwable { return          speciesData().getters[i].invokeBasic(this); }
-    /*non-public*/ final int    argI(int i) throws Throwable { return (int)    speciesData().getters[i].invokeBasic(this); }
-    /*non-public*/ final float  argF(int i) throws Throwable { return (float)  speciesData().getters[i].invokeBasic(this); }
-    /*non-public*/ final double argD(int i) throws Throwable { return (double) speciesData().getters[i].invokeBasic(this); }
-    /*non-public*/ final long   argJ(int i) throws Throwable { return (long)   speciesData().getters[i].invokeBasic(this); }
 
     //
     // cloning API
     //
 
-    /*non-public*/ abstract BoundMethodHandle clone(MethodType mt, LambdaForm lf) throws Throwable;
-    /*non-public*/ abstract BoundMethodHandle cloneExtendL(MethodType mt, LambdaForm lf, Object narg) throws Throwable;
-    /*non-public*/ abstract BoundMethodHandle cloneExtendI(MethodType mt, LambdaForm lf, int    narg) throws Throwable;
-    /*non-public*/ abstract BoundMethodHandle cloneExtendJ(MethodType mt, LambdaForm lf, long   narg) throws Throwable;
-    /*non-public*/ abstract BoundMethodHandle cloneExtendF(MethodType mt, LambdaForm lf, float  narg) throws Throwable;
-    /*non-public*/ abstract BoundMethodHandle cloneExtendD(MethodType mt, LambdaForm lf, double narg) throws Throwable;
+    /*non-public*/ abstract BoundMethodHandle copyWith(MethodType mt, LambdaForm lf);
+    /*non-public*/ abstract BoundMethodHandle copyWithExtendL(MethodType mt, LambdaForm lf, Object narg);
+    /*non-public*/ abstract BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int    narg);
+    /*non-public*/ abstract BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long   narg);
+    /*non-public*/ abstract BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float  narg);
+    /*non-public*/ abstract BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg);
 
     // The following is a grossly irregular hack:
     @Override MethodHandle reinvokerTarget() {
         try {
-            return (MethodHandle) argL(0);
+            return (MethodHandle) arg(0);
         } catch (Throwable ex) {
             throw newInternalError(ex);
         }
@@ -203,7 +194,7 @@ import jdk.internal.org.objectweb.asm.Type;
     private  // make it private to force users to access the enclosing class first
     static final class Species_L extends BoundMethodHandle {
         final Object argL0;
-        /*non-public*/ Species_L(MethodType mt, LambdaForm lf, Object argL0) {
+        private Species_L(MethodType mt, LambdaForm lf, Object argL0) {
             super(mt, lf);
             this.argL0 = argL0;
         }
@@ -213,140 +204,95 @@ import jdk.internal.org.objectweb.asm.Type;
         /*non-public*/ SpeciesData speciesData() {
             return SPECIES_DATA;
         }
-        /*non-public*/ static final SpeciesData SPECIES_DATA = SpeciesData.getForClass("L", Species_L.class);
         @Override
-        /*non-public*/ final BoundMethodHandle clone(MethodType mt, LambdaForm lf) throws Throwable {
+        /*non-public*/ int fieldCount() {
+            return 1;
+        }
+        /*non-public*/ static final SpeciesData SPECIES_DATA = SpeciesData.getForClass("L", Species_L.class);
+        /*non-public*/ static BoundMethodHandle make(MethodType mt, LambdaForm lf, Object argL0) {
             return new Species_L(mt, lf, argL0);
         }
         @Override
-        /*non-public*/ final BoundMethodHandle cloneExtendL(MethodType mt, LambdaForm lf, Object narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_L).constructor[0].invokeBasic(mt, lf, argL0, narg);
+        /*non-public*/ final BoundMethodHandle copyWith(MethodType mt, LambdaForm lf) {
+            return new Species_L(mt, lf, argL0);
         }
         @Override
-        /*non-public*/ final BoundMethodHandle cloneExtendI(MethodType mt, LambdaForm lf, int narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_I).constructor[0].invokeBasic(mt, lf, argL0, narg);
+        /*non-public*/ final BoundMethodHandle copyWithExtendL(MethodType mt, LambdaForm lf, Object narg) {
+            try {
+                return (BoundMethodHandle) SPECIES_DATA.extendWith(L_TYPE).constructor[0].invokeBasic(mt, lf, argL0, narg);
+            } catch (Throwable ex) {
+                throw uncaughtException(ex);
+            }
         }
         @Override
-        /*non-public*/ final BoundMethodHandle cloneExtendJ(MethodType mt, LambdaForm lf, long narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_J).constructor[0].invokeBasic(mt, lf, argL0, narg);
+        /*non-public*/ final BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int narg) {
+            try {
+                return (BoundMethodHandle) SPECIES_DATA.extendWith(I_TYPE).constructor[0].invokeBasic(mt, lf, argL0, narg);
+            } catch (Throwable ex) {
+                throw uncaughtException(ex);
+            }
         }
         @Override
-        /*non-public*/ final BoundMethodHandle cloneExtendF(MethodType mt, LambdaForm lf, float narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_F).constructor[0].invokeBasic(mt, lf, argL0, narg);
+        /*non-public*/ final BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long narg) {
+            try {
+                return (BoundMethodHandle) SPECIES_DATA.extendWith(J_TYPE).constructor[0].invokeBasic(mt, lf, argL0, narg);
+            } catch (Throwable ex) {
+                throw uncaughtException(ex);
+            }
         }
         @Override
-        /*non-public*/ final BoundMethodHandle cloneExtendD(MethodType mt, LambdaForm lf, double narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_D).constructor[0].invokeBasic(mt, lf, argL0, narg);
+        /*non-public*/ final BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float narg) {
+            try {
+                return (BoundMethodHandle) SPECIES_DATA.extendWith(F_TYPE).constructor[0].invokeBasic(mt, lf, argL0, narg);
+            } catch (Throwable ex) {
+                throw uncaughtException(ex);
+            }
+        }
+        @Override
+        /*non-public*/ final BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg) {
+            try {
+                return (BoundMethodHandle) SPECIES_DATA.extendWith(D_TYPE).constructor[0].invokeBasic(mt, lf, argL0, narg);
+            } catch (Throwable ex) {
+                throw uncaughtException(ex);
+            }
         }
     }
-
-/*
-    static final class Species_LL extends BoundMethodHandle {
-        final Object argL0;
-        final Object argL1;
-        public Species_LL(MethodType mt, LambdaForm lf, Object argL0, Object argL1) {
-            super(mt, lf);
-            this.argL0 = argL0;
-            this.argL1 = argL1;
-        }
-        @Override
-        public SpeciesData speciesData() {
-            return SPECIES_DATA;
-        }
-        public static final SpeciesData SPECIES_DATA = SpeciesData.getForClass("LL", Species_LL.class);
-        @Override
-        public final BoundMethodHandle clone(MethodType mt, LambdaForm lf) throws Throwable {
-            return new Species_LL(mt, lf, argL0, argL1);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendL(MethodType mt, LambdaForm lf, Object narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_L).constructor[0].invokeBasic(mt, lf, argL0, argL1, narg);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendI(MethodType mt, LambdaForm lf, int narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_I).constructor[0].invokeBasic(mt, lf, argL0, argL1, narg);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendJ(MethodType mt, LambdaForm lf, long narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_J).constructor[0].invokeBasic(mt, lf, argL0, argL1, narg);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendF(MethodType mt, LambdaForm lf, float narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_F).constructor[0].invokeBasic(mt, lf, argL0, argL1, narg);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendD(MethodType mt, LambdaForm lf, double narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_D).constructor[0].invokeBasic(mt, lf, argL0, argL1, narg);
-        }
-    }
-
-    static final class Species_JL extends BoundMethodHandle {
-        final long argJ0;
-        final Object argL1;
-        public Species_JL(MethodType mt, LambdaForm lf, long argJ0, Object argL1) {
-            super(mt, lf);
-            this.argJ0 = argJ0;
-            this.argL1 = argL1;
-        }
-        @Override
-        public SpeciesData speciesData() {
-            return SPECIES_DATA;
-        }
-        public static final SpeciesData SPECIES_DATA = SpeciesData.getForClass("JL", Species_JL.class);
-        @Override public final long   argJ0() { return argJ0; }
-        @Override public final Object argL1() { return argL1; }
-        @Override
-        public final BoundMethodHandle clone(MethodType mt, LambdaForm lf) throws Throwable {
-            return new Species_JL(mt, lf, argJ0, argL1);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendL(MethodType mt, LambdaForm lf, Object narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_L).constructor[0].invokeBasic(mt, lf, argJ0, argL1, narg);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendI(MethodType mt, LambdaForm lf, int narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_I).constructor[0].invokeBasic(mt, lf, argJ0, argL1, narg);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendJ(MethodType mt, LambdaForm lf, long narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_J).constructor[0].invokeBasic(mt, lf, argJ0, argL1, narg);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendF(MethodType mt, LambdaForm lf, float narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_F).constructor[0].invokeBasic(mt, lf, argJ0, argL1, narg);
-        }
-        @Override
-        public final BoundMethodHandle cloneExtendD(MethodType mt, LambdaForm lf, double narg) throws Throwable {
-            return (BoundMethodHandle) SPECIES_DATA.extendWithIndex(INDEX_D).constructor[0].invokeBasic(mt, lf, argJ0, argL1, narg);
-        }
-    }
-*/
 
     //
     // BMH species meta-data
     //
 
     /**
-     * Meta-data wrapper for concrete BMH classes.
+     * Meta-data wrapper for concrete BMH types.
+     * Each BMH type corresponds to a given sequence of basic field types (LIJFD).
+     * The fields are immutable; their values are fully specified at object construction.
+     * Each BMH type supplies an array of getter functions which may be used in lambda forms.
+     * A BMH is constructed by cloning a shorter BMH and adding one or more new field values.
+     * As a degenerate and common case, the "shorter BMH" can be missing, and contributes zero prior fields.
      */
     static class SpeciesData {
-        final String                             types;
+        final String                             typeChars;
+        final BasicType[]                        typeCodes;
         final Class<? extends BoundMethodHandle> clazz;
         // Bootstrapping requires circular relations MH -> BMH -> SpeciesData -> MH
         // Therefore, we need a non-final link in the chain.  Use array elements.
         final MethodHandle[]                     constructor;
         final MethodHandle[]                     getters;
+        final NamedFunction[]                    nominalGetters;
         final SpeciesData[]                      extensions;
 
         /*non-public*/ int fieldCount() {
-            return types.length();
+            return typeCodes.length;
         }
-        /*non-public*/ char fieldType(int i) {
-            return types.charAt(i);
+        /*non-public*/ BasicType fieldType(int i) {
+            return typeCodes[i];
+        }
+        /*non-public*/ char fieldTypeChar(int i) {
+            return typeChars.charAt(i);
         }
 
         public String toString() {
-            return "SpeciesData["+(isPlaceholder() ? "<placeholder>" : clazz.getSimpleName())+":"+types+"]";
+            return "SpeciesData["+(isPlaceholder() ? "<placeholder>" : clazz.getSimpleName())+":"+typeChars+"]";
         }
 
         /**
@@ -354,45 +300,46 @@ import jdk.internal.org.objectweb.asm.Type;
          * represents a MH bound to a generic invoker, which in turn forwards to the corresponding
          * getter.
          */
-        Name getterName(Name mhName, int i) {
-            MethodHandle mh = getters[i];
-            assert(mh != null) : this+"."+i;
-            return new Name(mh, mhName);
-        }
-
         NamedFunction getterFunction(int i) {
-            return new NamedFunction(getters[i]);
+            return nominalGetters[i];
         }
 
         static final SpeciesData EMPTY = new SpeciesData("", BoundMethodHandle.class);
 
         private SpeciesData(String types, Class<? extends BoundMethodHandle> clazz) {
-            this.types = types;
+            this.typeChars = types;
+            this.typeCodes = basicTypes(types);
             this.clazz = clazz;
             if (!INIT_DONE) {
-                this.constructor = new MethodHandle[1];
+                this.constructor = new MethodHandle[1];  // only one ctor
                 this.getters = new MethodHandle[types.length()];
+                this.nominalGetters = new NamedFunction[types.length()];
             } else {
                 this.constructor = Factory.makeCtors(clazz, types, null);
                 this.getters = Factory.makeGetters(clazz, types, null);
+                this.nominalGetters = Factory.makeNominalGetters(types, null, this.getters);
             }
-            this.extensions = new SpeciesData[EXTENSION_TYPES.length()];
+            this.extensions = new SpeciesData[ARG_TYPE_LIMIT];
         }
 
         private void initForBootstrap() {
             assert(!INIT_DONE);
             if (constructor[0] == null) {
+                String types = typeChars;
                 Factory.makeCtors(clazz, types, this.constructor);
                 Factory.makeGetters(clazz, types, this.getters);
+                Factory.makeNominalGetters(types, this.nominalGetters, this.getters);
             }
         }
 
-        private SpeciesData(String types) {
+        private SpeciesData(String typeChars) {
             // Placeholder only.
-            this.types = types;
+            this.typeChars = typeChars;
+            this.typeCodes = basicTypes(typeChars);
             this.clazz = null;
             this.constructor = null;
             this.getters = null;
+            this.nominalGetters = null;
             this.extensions = null;
         }
         private boolean isPlaceholder() { return clazz == null; }
@@ -401,18 +348,15 @@ import jdk.internal.org.objectweb.asm.Type;
         static { CACHE.put("", EMPTY); }  // make bootstrap predictable
         private static final boolean INIT_DONE;  // set after <clinit> finishes...
 
-        SpeciesData extendWithType(char type) {
-            int i = extensionIndex(type);
-            SpeciesData d = extensions[i];
-            if (d != null)  return d;
-            extensions[i] = d = get(types+type);
-            return d;
+        SpeciesData extendWith(byte type) {
+            return extendWith(BasicType.basicType(type));
         }
 
-        SpeciesData extendWithIndex(byte index) {
-            SpeciesData d = extensions[index];
+        SpeciesData extendWith(BasicType type) {
+            int ord = type.ordinal();
+            SpeciesData d = extensions[ord];
             if (d != null)  return d;
-            extensions[index] = d = get(types+EXTENSION_TYPES.charAt(index));
+            extensions[ord] = d = get(typeChars+type.basicTypeChar());
             return d;
         }
 
@@ -456,8 +400,6 @@ import jdk.internal.org.objectweb.asm.Type;
         static {
             // pre-fill the BMH speciesdata cache with BMH's inner classes
             final Class<BoundMethodHandle> rootCls = BoundMethodHandle.class;
-            SpeciesData d0 = BoundMethodHandle.SPECIES_DATA;  // trigger class init
-            assert(d0 == null || d0 == lookupCache("")) : d0;
             try {
                 for (Class<?> c : rootCls.getDeclaredClasses()) {
                     if (rootCls.isAssignableFrom(c)) {
@@ -465,7 +407,7 @@ import jdk.internal.org.objectweb.asm.Type;
                         SpeciesData d = Factory.speciesDataFromConcreteBMHClass(cbmh);
                         assert(d != null) : cbmh.getName();
                         assert(d.clazz == cbmh);
-                        assert(d == lookupCache(d.types));
+                        assert(d == lookupCache(d.typeChars));
                     }
                 }
             } catch (Throwable e) {
@@ -516,10 +458,9 @@ import jdk.internal.org.objectweb.asm.Type;
         static final String BMHSPECIES_DATA_GFC_SIG = "(" + JLS_SIG + JLC_SIG + ")" + SPECIES_DATA_SIG;
         static final String MYSPECIES_DATA_SIG = "()" + SPECIES_DATA_SIG;
         static final String VOID_SIG   = "()V";
+        static final String INT_SIG    = "()I";
 
         static final String SIG_INCIPIT = "(Ljava/lang/invoke/MethodType;Ljava/lang/invoke/LambdaForm;";
-
-        static final Class<?>[] TYPES = new Class<?>[] { Object.class, int.class, long.class, float.class, double.class };
 
         static final String[] E_THROWABLE = new String[] { "java/lang/Throwable" };
 
@@ -551,31 +492,35 @@ import jdk.internal.org.objectweb.asm.Type;
          *     final Object argL0;
          *     final Object argL1;
          *     final int argI2;
-         *     Species_LLI(MethodType mt, LambdaForm lf, Object argL0, Object argL1, int argI2) {
+         *     private Species_LLI(MethodType mt, LambdaForm lf, Object argL0, Object argL1, int argI2) {
          *         super(mt, lf);
          *         this.argL0 = argL0;
          *         this.argL1 = argL1;
          *         this.argI2 = argI2;
          *     }
          *     final SpeciesData speciesData() { return SPECIES_DATA; }
+         *     final int fieldCount() { return 3; }
          *     static final SpeciesData SPECIES_DATA = SpeciesData.getForClass("LLI", Species_LLI.class);
-         *     final BoundMethodHandle clone(MethodType mt, LambdaForm lf) {
-         *         return SPECIES_DATA.constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2);
+         *     static BoundMethodHandle make(MethodType mt, LambdaForm lf, Object argL0, Object argL1, int argI2) {
+         *         return new Species_LLI(mt, lf, argL0, argL1, argI2);
          *     }
-         *     final BoundMethodHandle cloneExtendL(MethodType mt, LambdaForm lf, Object narg) {
-         *         return SPECIES_DATA.extendWithIndex(INDEX_L).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
+         *     final BoundMethodHandle copyWith(MethodType mt, LambdaForm lf) {
+         *         return new Species_LLI(mt, lf, argL0, argL1, argI2);
          *     }
-         *     final BoundMethodHandle cloneExtendI(MethodType mt, LambdaForm lf, int narg) {
-         *         return SPECIES_DATA.extendWithIndex(INDEX_I).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
+         *     final BoundMethodHandle copyWithExtendL(MethodType mt, LambdaForm lf, Object narg) {
+         *         return SPECIES_DATA.extendWith(L_TYPE).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
          *     }
-         *     final BoundMethodHandle cloneExtendJ(MethodType mt, LambdaForm lf, long narg) {
-         *         return SPECIES_DATA.extendWithIndex(INDEX_J).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
+         *     final BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int narg) {
+         *         return SPECIES_DATA.extendWith(I_TYPE).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
          *     }
-         *     final BoundMethodHandle cloneExtendF(MethodType mt, LambdaForm lf, float narg) {
-         *         return SPECIES_DATA.extendWithIndex(INDEX_F).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
+         *     final BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long narg) {
+         *         return SPECIES_DATA.extendWith(J_TYPE).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
          *     }
-         *     final BoundMethodHandle cloneExtendD(MethodType mt, LambdaForm lf, double narg) {
-         *         return SPECIES_DATA.extendWithIndex(INDEX_D).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
+         *     final BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float narg) {
+         *         return SPECIES_DATA.extendWith(F_TYPE).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
+         *     }
+         *     public final BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg) {
+         *         return SPECIES_DATA.extendWith(D_TYPE).constructor[0].invokeBasic(mt, lf, argL0, argL1, argI2, narg);
          *     }
          * }
          * </pre>
@@ -586,8 +531,9 @@ import jdk.internal.org.objectweb.asm.Type;
         static Class<? extends BoundMethodHandle> generateConcreteBMHClass(String types) {
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
 
-            final String className  = SPECIES_PREFIX_PATH + types;
-            final String sourceFile = SPECIES_PREFIX_NAME + types;
+            String shortTypes = LambdaForm.shortenSignature(types);
+            final String className  = SPECIES_PREFIX_PATH + shortTypes;
+            final String sourceFile = SPECIES_PREFIX_NAME + shortTypes;
             final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
             cw.visit(V1_6, NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, BMH, null);
             cw.visitSource(sourceFile, null);
@@ -606,11 +552,11 @@ import jdk.internal.org.objectweb.asm.Type;
             MethodVisitor mv;
 
             // emit constructor
-            mv = cw.visitMethod(NOT_ACC_PUBLIC, "<init>", makeSignature(types, true), null, null);
+            mv = cw.visitMethod(ACC_PRIVATE, "<init>", makeSignature(types, true), null, null);
             mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitVarInsn(ALOAD, 2);
+            mv.visitVarInsn(ALOAD, 0); // this
+            mv.visitVarInsn(ALOAD, 1); // type
+            mv.visitVarInsn(ALOAD, 2); // form
 
             mv.visitMethodInsn(INVOKESPECIAL, BMH, "<init>", makeSignature("", true), false);
 
@@ -647,39 +593,73 @@ import jdk.internal.org.objectweb.asm.Type;
             mv.visitMaxs(0, 0);
             mv.visitEnd();
 
-            // emit clone()
-            mv = cw.visitMethod(NOT_ACC_PUBLIC + ACC_FINAL, "clone", makeSignature("", false), null, E_THROWABLE);
+            // emit implementation of fieldCount()
+            mv = cw.visitMethod(NOT_ACC_PUBLIC + ACC_FINAL, "fieldCount", INT_SIG, null, null);
             mv.visitCode();
-            // return speciesData().constructor[0].invokeBasic(mt, lf, argL0, ...)
-            // obtain constructor
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitFieldInsn(GETSTATIC, className, "SPECIES_DATA", SPECIES_DATA_SIG);
-            mv.visitFieldInsn(GETFIELD, SPECIES_DATA, "constructor", "[" + MH_SIG);
-            mv.visitInsn(ICONST_0);
-            mv.visitInsn(AALOAD);
+            int fc = types.length();
+            if (fc <= (ICONST_5 - ICONST_0)) {
+                mv.visitInsn(ICONST_0 + fc);
+            } else {
+                mv.visitIntInsn(SIPUSH, fc);
+            }
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+            // emit make()  ...factory method wrapping constructor
+            mv = cw.visitMethod(NOT_ACC_PUBLIC + ACC_STATIC, "make", makeSignature(types, false), null, null);
+            mv.visitCode();
+            // make instance
+            mv.visitTypeInsn(NEW, className);
+            mv.visitInsn(DUP);
+            // load mt, lf
+            mv.visitVarInsn(ALOAD, 0);  // type
+            mv.visitVarInsn(ALOAD, 1);  // form
+            // load factory method arguments
+            for (int i = 0, j = 0; i < types.length(); ++i, ++j) {
+                // i counts the arguments, j counts corresponding argument slots
+                char t = types.charAt(i);
+                mv.visitVarInsn(typeLoadOp(t), j + 2); // parameters start at 3
+                if (t == 'J' || t == 'D') {
+                    ++j; // adjust argument register access
+                }
+            }
+
+            // finally, invoke the constructor and return
+            mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", makeSignature(types, true), false);
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+
+            // emit copyWith()
+            mv = cw.visitMethod(NOT_ACC_PUBLIC + ACC_FINAL, "copyWith", makeSignature("", false), null, null);
+            mv.visitCode();
+            // make instance
+            mv.visitTypeInsn(NEW, className);
+            mv.visitInsn(DUP);
             // load mt, lf
             mv.visitVarInsn(ALOAD, 1);
             mv.visitVarInsn(ALOAD, 2);
             // put fields on the stack
             emitPushFields(types, className, mv);
             // finally, invoke the constructor and return
-            mv.visitMethodInsn(INVOKEVIRTUAL, MH, "invokeBasic", makeSignature(types, false), false);
+            mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", makeSignature(types, true), false);
             mv.visitInsn(ARETURN);
             mv.visitMaxs(0, 0);
             mv.visitEnd();
 
-            // for each type, emit cloneExtendT()
-            for (Class<?> c : TYPES) {
-                char t = Wrapper.basicTypeChar(c);
-                mv = cw.visitMethod(NOT_ACC_PUBLIC + ACC_FINAL, "cloneExtend" + t, makeSignature(String.valueOf(t), false), null, E_THROWABLE);
+            // for each type, emit copyWithExtendT()
+            for (BasicType type : BasicType.ARG_TYPES) {
+                int ord = type.ordinal();
+                char btChar = type.basicTypeChar();
+                mv = cw.visitMethod(NOT_ACC_PUBLIC + ACC_FINAL, "copyWithExtend" + btChar, makeSignature(String.valueOf(btChar), false), null, E_THROWABLE);
                 mv.visitCode();
-                // return SPECIES_DATA.extendWithIndex(extensionIndex(t)).constructor[0].invokeBasic(mt, lf, argL0, ..., narg)
+                // return SPECIES_DATA.extendWith(t).constructor[0].invokeBasic(mt, lf, argL0, ..., narg)
                 // obtain constructor
                 mv.visitFieldInsn(GETSTATIC, className, "SPECIES_DATA", SPECIES_DATA_SIG);
-                int iconstInsn = ICONST_0 + extensionIndex(t);
+                int iconstInsn = ICONST_0 + ord;
                 assert(iconstInsn <= ICONST_5);
                 mv.visitInsn(iconstInsn);
-                mv.visitMethodInsn(INVOKEVIRTUAL, SPECIES_DATA, "extendWithIndex", BMHSPECIES_DATA_EWI_SIG, false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, SPECIES_DATA, "extendWith", BMHSPECIES_DATA_EWI_SIG, false);
                 mv.visitFieldInsn(GETFIELD, SPECIES_DATA, "constructor", "[" + MH_SIG);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
@@ -689,9 +669,9 @@ import jdk.internal.org.objectweb.asm.Type;
                 // put fields on the stack
                 emitPushFields(types, className, mv);
                 // put narg on stack
-                mv.visitVarInsn(typeLoadOp(t), 3);
+                mv.visitVarInsn(typeLoadOp(btChar), 3);
                 // finally, invoke the constructor and return
-                mv.visitMethodInsn(INVOKEVIRTUAL, MH, "invokeBasic", makeSignature(types + t, false), false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, MH, "invokeBasic", makeSignature(types + btChar, false), false);
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(0, 0);
                 mv.visitEnd();
@@ -730,7 +710,7 @@ import jdk.internal.org.objectweb.asm.Type;
             case 'J': return LLOAD;
             case 'F': return FLOAD;
             case 'D': return DLOAD;
-            default : throw new InternalError("unrecognized type " + t);
+            default : throw newInternalError("unrecognized type " + t);
             }
         }
 
@@ -771,8 +751,17 @@ import jdk.internal.org.objectweb.asm.Type;
 
         static MethodHandle[] makeCtors(Class<? extends BoundMethodHandle> cbmh, String types, MethodHandle mhs[]) {
             if (mhs == null)  mhs = new MethodHandle[1];
+            if (types.equals(""))  return mhs;  // hack for empty BMH species
             mhs[0] = makeCbmhCtor(cbmh, types);
             return mhs;
+        }
+
+        static NamedFunction[] makeNominalGetters(String types, NamedFunction[] nfs, MethodHandle[] getters) {
+            if (nfs == null)  nfs = new NamedFunction[types.length()];
+            for (int i = 0; i < nfs.length; ++i) {
+                nfs[i] = new NamedFunction(getters[i]);
+            }
+            return nfs;
         }
 
         //
@@ -808,52 +797,11 @@ import jdk.internal.org.objectweb.asm.Type;
 
         static MethodHandle makeCbmhCtor(Class<? extends BoundMethodHandle> cbmh, String types) {
             try {
-                return linkConstructor(LOOKUP.findConstructor(cbmh, MethodType.fromMethodDescriptorString(makeSignature(types, true), null)));
+                return LOOKUP.findStatic(cbmh, "make", MethodType.fromMethodDescriptorString(makeSignature(types, false), null));
             } catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | TypeNotPresentException e) {
                 throw newInternalError(e);
             }
         }
-
-        /**
-         * Wrap a constructor call in a {@link LambdaForm}.
-         *
-         * If constructors ({@code <init>} methods) are called in LFs, problems might arise if the LFs
-         * are turned into bytecode, because the call to the allocator is routed through an MH, and the
-         * verifier cannot find a {@code NEW} instruction preceding the {@code INVOKESPECIAL} to
-         * {@code <init>}. To avoid this, we add an indirection by invoking {@code <init>} through
-         * {@link MethodHandle#linkToSpecial}.
-         *
-         * The last {@link LambdaForm.Name Name} in the argument's form is expected to be the {@code void}
-         * result of the {@code <init>} invocation. This entry is replaced.
-         */
-        private static MethodHandle linkConstructor(MethodHandle cmh) {
-            final LambdaForm lf = cmh.form;
-            final int initNameIndex = lf.names.length - 1;
-            final Name initName = lf.names[initNameIndex];
-            final MemberName ctorMN = initName.function.member;
-            final MethodType ctorMT = ctorMN.getInvocationType();
-
-            // obtain function member (call target)
-            // linker method type replaces initial parameter (BMH species) with BMH to avoid naming a species (anonymous class!)
-            final MethodType linkerMT = ctorMT.changeParameterType(0, BoundMethodHandle.class).appendParameterTypes(MemberName.class);
-            MemberName linkerMN = new MemberName(MethodHandle.class, "linkToSpecial", linkerMT, REF_invokeStatic);
-            try {
-                linkerMN = MemberName.getFactory().resolveOrFail(REF_invokeStatic, linkerMN, null, NoSuchMethodException.class);
-                assert(linkerMN.isStatic());
-            } catch (ReflectiveOperationException ex) {
-                throw newInternalError(ex);
-            }
-            // extend arguments array
-            Object[] newArgs = Arrays.copyOf(initName.arguments, initName.arguments.length + 1);
-            newArgs[newArgs.length - 1] = ctorMN;
-            // replace function
-            final NamedFunction nf = new NamedFunction(linkerMN);
-            final Name linkedCtor = new Name(nf, newArgs);
-            linkedCtor.initIndex(initNameIndex);
-            lf.names[initNameIndex] = linkedCtor;
-            return cmh;
-        }
-
     }
 
     private static final Lookup LOOKUP = Lookup.IMPL_LOOKUP;

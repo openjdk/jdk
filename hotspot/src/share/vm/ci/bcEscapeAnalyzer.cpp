@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,9 @@ void BCEscapeAnalyzer::clear_bits(ArgumentMap vars, VectorSet &bm) {
 
 void BCEscapeAnalyzer::set_method_escape(ArgumentMap vars) {
   clear_bits(vars, _arg_local);
+  if (vars.contains_allocated()) {
+    _allocated_escapes = true;
+  }
 }
 
 void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars, bool merge) {
@@ -1287,10 +1290,10 @@ void BCEscapeAnalyzer::compute_escape_info() {
         tty->print_cr("class of method is not initialized.");
       else if (_level > MaxBCEAEstimateLevel)
         tty->print_cr("level (%d) exceeds MaxBCEAEstimateLevel (%d).",
-                      _level, MaxBCEAEstimateLevel);
+                      _level, (int) MaxBCEAEstimateLevel);
       else if (method()->code_size() > MaxBCEAEstimateSize)
-        tty->print_cr("code size (%d) exceeds MaxBCEAEstimateSize.",
-                      method()->code_size(), MaxBCEAEstimateSize);
+        tty->print_cr("code size (%d) exceeds MaxBCEAEstimateSize (%d).",
+                      method()->code_size(), (int) MaxBCEAEstimateSize);
       else
         ShouldNotReachHere();
     }

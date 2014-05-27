@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ class CompilationLog : public StringEventLog {
   void log_nmethod(JavaThread* thread, nmethod* nm) {
     log(thread, "nmethod %d%s " INTPTR_FORMAT " code ["INTPTR_FORMAT ", " INTPTR_FORMAT "]",
         nm->compile_id(), nm->is_osr_method() ? "%" : "",
-        nm, nm->code_begin(), nm->code_end());
+        p2i(nm), p2i(nm->code_begin()), p2i(nm->code_end()));
   }
 
   void log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
@@ -704,13 +704,39 @@ CompileTask* CompileQueue::get() {
     return NULL;
   }
 
-  CompileTask* task = CompilationPolicy::policy()->select_task(this);
+  CompileTask* task;
+  {
+    No_Safepoint_Verifier nsv;
+    task = CompilationPolicy::policy()->select_task(this);
+  }
   remove(task);
+  purge_stale_tasks(); // may temporarily release MCQ lock
   return task;
 }
 
-void CompileQueue::remove(CompileTask* task)
-{
+// Clean & deallocate stale compile tasks.
+// Temporarily releases MethodCompileQueue lock.
+void CompileQueue::purge_stale_tasks() {
+  assert(lock()->owned_by_self(), "must own lock");
+  if (_first_stale != NULL) {
+    // Stale tasks are purged when MCQ lock is released,
+    // but _first_stale updates are protected by MCQ lock.
+    // Once task processing starts and MCQ lock is released,
+    // other compiler threads can reuse _first_stale.
+    CompileTask* head = _first_stale;
+    _first_stale = NULL;
+    {
+      MutexUnlocker ul(lock());
+      for (CompileTask* task = head; task != NULL; ) {
+        CompileTask* next_task = task->next();
+        CompileTaskWrapper ctw(task); // Frees the task
+        task = next_task;
+      }
+    }
+  }
+}
+
+void CompileQueue::remove(CompileTask* task) {
    assert(lock()->owned_by_self(), "must own lock");
   if (task->prev() != NULL) {
     task->prev()->set_next(task->next());
@@ -728,6 +754,16 @@ void CompileQueue::remove(CompileTask* task)
     _last = task->prev();
   }
   --_size;
+}
+
+void CompileQueue::remove_and_mark_stale(CompileTask* task) {
+  assert(lock()->owned_by_self(), "must own lock");
+  remove(task);
+
+  // Enqueue the task for reclamation (should be done outside MCQ lock)
+  task->set_next(_first_stale);
+  task->set_prev(NULL);
+  _first_stale = task;
 }
 
 // methods in the compile queue need to be marked as used on the stack
@@ -1786,7 +1822,7 @@ void CompileBroker::init_compiler_thread_log() {
         if (xtty != NULL) {
           ttyLocker ttyl;
           // Record any per thread log files
-          xtty->elem("thread_logfile thread='%d' filename='%s'", thread_id, file_name);
+          xtty->elem("thread_logfile thread='" INTX_FORMAT "' filename='%s'", thread_id, file_name);
         }
         return;
       }
@@ -1817,7 +1853,7 @@ void CompileBroker::maybe_block() {
   if (_should_block) {
 #ifndef PRODUCT
     if (PrintCompilation && (Verbose || WizardMode))
-      tty->print_cr("compiler thread " INTPTR_FORMAT " poll detects block request", Thread::current());
+      tty->print_cr("compiler thread " INTPTR_FORMAT " poll detects block request", p2i(Thread::current()));
 #endif
     ThreadInVMfromNative tivfn(JavaThread::current());
   }
@@ -1834,7 +1870,7 @@ static void codecache_print(bool detailed)
     CodeCache::print_summary(&s, detailed);
   }
   ttyLocker ttyl;
-  tty->print(s.as_string());
+  tty->print("%s", s.as_string());
 }
 
 // ------------------------------------------------------------------
@@ -2006,7 +2042,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   // Note that the queued_for_compilation bits are cleared without
   // protection of a mutex. [They were set by the requester thread,
-  // when adding the task to the complie queue -- at which time the
+  // when adding the task to the compile queue -- at which time the
   // compile queue lock was held. Subsequently, we acquired the compile
   // queue lock to get this task off the compile queue; thus (to belabour
   // the point somewhat) our clearing of the bits must be occurring
@@ -2039,7 +2075,7 @@ void CompileBroker::handle_full_code_cache() {
       // Lock to prevent tearing
       ttyLocker ttyl;
       xtty->begin_elem("code_cache_full");
-      xtty->print(s.as_string());
+      xtty->print("%s", s.as_string());
       xtty->stamp();
       xtty->end_elem();
     }

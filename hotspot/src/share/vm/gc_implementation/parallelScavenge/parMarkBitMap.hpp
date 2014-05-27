@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ public:
   static inline idx_t bits_required(MemRegion covered_region);
 
   void print_on_error(outputStream* st) const {
-    st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, this);
+    st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, p2i(this));
     _beg_bits.print_on_error(st, " Begin Bits: ");
     _end_bits.print_on_error(st, " End Bits:   ");
   }
@@ -390,9 +390,9 @@ inline void ParMarkBitMap::verify_bit(idx_t bit) const {
 inline void ParMarkBitMap::verify_addr(HeapWord* addr) const {
   // Allow one past the last valid address; useful for loop bounds.
   assert(addr >= region_start(),
-      err_msg("addr too small, addr: " PTR_FORMAT " region start: " PTR_FORMAT, addr, region_start()));
+      err_msg("addr too small, addr: " PTR_FORMAT " region start: " PTR_FORMAT, p2i(addr), p2i(region_start())));
   assert(addr <= region_end(),
-      err_msg("addr too big, addr: " PTR_FORMAT " region end: " PTR_FORMAT, addr, region_end()));
+      err_msg("addr too big, addr: " PTR_FORMAT " region end: " PTR_FORMAT, p2i(addr), p2i(region_end())));
 }
 #endif  // #ifdef ASSERT
 

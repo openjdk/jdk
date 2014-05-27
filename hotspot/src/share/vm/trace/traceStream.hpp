@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ class TraceStream : public StackObj {
   }
 
   void print_val(const char* label, s8 val) {
-    _st.print("%s = "INT64_FORMAT, label, val);
+    _st.print("%s = "INT64_FORMAT, label, (int64_t) val);
   }
 
   void print_val(const char* label, bool val) {
@@ -113,7 +113,7 @@ class TraceStream : public StackObj {
   }
 
   void print(const char* val) {
-    _st.print(val);
+    _st.print("%s", val);
   }
 };
 

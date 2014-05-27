@@ -70,7 +70,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
     ListPainter painter;
 
     // TODO: ick - Vector?
-    Vector                      items;
+    Vector<String>              items;
     boolean                     multipleSelections;
     int                         active = NONE;
 
@@ -139,7 +139,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         super.preInit(params);
 
         // Stuff that must be initialized before layout() is called
-        items = new Vector();
+        items = new Vector<>();
         createVerScrollbar();
         createHorScrollbar();
 
@@ -281,7 +281,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         int m = 0;
         int end = items.size();
         for(int i = 0 ; i < end ; i++) {
-            int l = fm.stringWidth(((String)items.elementAt(i)));
+            int l = fm.stringWidth(items.elementAt(i));
             m = Math.max(m, l);
         }
         return m;
@@ -292,7 +292,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      */
     int getItemWidth(int i) {
         FontMetrics fm = getFontMetrics(getFont());
-        return fm.stringWidth((String)items.elementAt(i));
+        return fm.stringWidth(items.elementAt(i));
     }
 
     /**
@@ -659,7 +659,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
                         ( clickCount % 2 == 0 ) ) {
                 postEvent(new ActionEvent(target,
                                           ActionEvent.ACTION_PERFORMED,
-                                          (String)items.elementAt(currentIndex),
+                                          items.elementAt(currentIndex),
                                           mouseEvent.getWhen(),
                                           mouseEvent.getModifiers()));  // No ext mods
             } else if (active == WINDOW) {
@@ -986,7 +986,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
               if (selected.length > 0) {
                   postEvent(new ActionEvent((List)target,
                                             ActionEvent.ACTION_PERFORMED,
-                                            (String)items.elementAt(getFocusIndex()),
+                                            items.elementAt(getFocusIndex()),
                                             e.getWhen(),
                                             e.getModifiers()));  // ActionEvent doesn't have
                   // extended modifiers.
@@ -1343,7 +1343,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      */
     public void clear() {
         selected = new int[0];
-        items = new Vector();
+        items = new Vector<>();
         currentIndex = -1;
         // Fixed 6291736: ITEM_STATE_CHANGED triggered after List.removeAll(), XToolkit
         // We should update 'focusIndex' variable more carefully
@@ -1926,7 +1926,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
                     } else {
                         g.setColor(getListForeground());
                     }
-                    String str = (String)items.elementAt(index);
+                    String str = items.elementAt(index);
                     g.drawString(str, x - hsb.getValue(), y + fontAscent);
                 } else {
                     // Clear the remaining area around the item - focus area and the rest of border

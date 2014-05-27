@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,6 +281,47 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define PRAGMA_INTERFACE             #pragma interface
 #define PRAGMA_IMPLEMENTATION        #pragma implementation
 #define VALUE_OBJ_CLASS_SPEC
+
+#ifndef ATTRIBUTE_PRINTF
+// Diagnostic pragmas like the ones defined below in PRAGMA_FORMAT_NONLITERAL_IGNORED
+// were only introduced in GCC 4.2. Because we have no other possibility to ignore
+// these warnings for older versions of GCC, we simply don't decorate our printf-style
+// functions with __attribute__(format) in that case.
+#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)) || (__GNUC__ > 4)
+#define ATTRIBUTE_PRINTF(fmt,vargs)  __attribute__((format(printf, fmt, vargs)))
+#else
+#define ATTRIBUTE_PRINTF(fmt,vargs)
+#endif
+#endif
+
+#define PRAGMA_FORMAT_NONLITERAL_IGNORED _Pragma("GCC diagnostic ignored \"-Wformat-nonliteral\"") \
+                                         _Pragma("GCC diagnostic ignored \"-Wformat-security\"")
+#define PRAGMA_FORMAT_IGNORED _Pragma("GCC diagnostic ignored \"-Wformat\"")
+
+#if defined(__clang_major__) && \
+      (__clang_major__ >= 4 || \
+      (__clang_major__ >= 3 && __clang_minor__ >= 1)) || \
+    ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ > 4)
+// Tested to work with clang version 3.1 and better.
+#define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
+#define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
+#define PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
+#define PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL PRAGMA_FORMAT_NONLITERAL_IGNORED
+
+// Hack to deal with gcc yammering about non-security format stuff
+#else
+// Old versions of gcc don't do push/pop, also do not cope with this pragma within a function
+// One method does so much varied printing that it is decorated with both internal and external
+// versions of the macro-pragma to obtain better checking with newer compilers.
+#define PRAGMA_DIAG_PUSH
+#define PRAGMA_DIAG_POP
+#define PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL PRAGMA_FORMAT_NONLITERAL_IGNORED
+#define PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
+#endif
+
+#ifndef __clang_major__
+#define PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC _Pragma("GCC diagnostic ignored \"-Wformat\"") _Pragma("GCC diagnostic error \"-Wformat-nonliteral\"") _Pragma("GCC diagnostic error \"-Wformat-security\"")
+#endif
 
 #if (__GNUC__ == 2) && (__GNUC_MINOR__ < 95)
 #define TEMPLATE_TABLE_BUG

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,8 @@ static CFMutableArrayRef getAllValidDisplayModes(jint displayID){
             CFArrayAppendValue(validModes, cRef);
         }
     }
-
+    CFRelease(allModes);
+    
     CGDisplayModeRef currentMode = CGDisplayCopyDisplayMode(displayID);
 
     BOOL containsCurrentMode = NO;
@@ -81,6 +82,7 @@ static CFMutableArrayRef getAllValidDisplayModes(jint displayID){
     if (!containsCurrentMode) {
         CFArrayAppendValue(validModes, currentMode);
     }
+    CGDisplayModeRelease(currentMode);
 
     return validModes;
 }
@@ -154,14 +156,12 @@ JNIEXPORT jdouble JNICALL
 Java_sun_awt_CGraphicsDevice_nativeGetXResolution
   (JNIEnv *env, jclass class, jint displayID)
 {
-    // TODO: this is the physically correct answer, but we probably want
-    // to use NSScreen API instead...
+    // CGDisplayScreenSize can return 0 if displayID is invalid
     CGSize size = CGDisplayScreenSize(displayID);
     CGRect rect = CGDisplayBounds(displayID);
     // 1 inch == 25.4 mm
     jfloat inches = size.width / 25.4f;
-    jfloat dpi = rect.size.width / inches;
-    return dpi;
+    return inches > 0 ? rect.size.width / inches : 72;
 }
 
 /*
@@ -173,14 +173,12 @@ JNIEXPORT jdouble JNICALL
 Java_sun_awt_CGraphicsDevice_nativeGetYResolution
   (JNIEnv *env, jclass class, jint displayID)
 {
-    // TODO: this is the physically correct answer, but we probably want
-    // to use NSScreen API instead...
+    // CGDisplayScreenSize can return 0 if displayID is invalid
     CGSize size = CGDisplayScreenSize(displayID);
     CGRect rect = CGDisplayBounds(displayID);
     // 1 inch == 25.4 mm
     jfloat inches = size.height / 25.4f;
-    jfloat dpi = rect.size.height / inches;
-    return dpi;
+    return inches > 0 ? rect.size.height / inches : 72;
 }
 
 /*
@@ -235,17 +233,19 @@ Java_sun_awt_CGraphicsDevice_nativeSetDisplayMode
 {
     JNF_COCOA_ENTER(env);
     CFArrayRef allModes = getAllValidDisplayModes(displayID);
-
     CGDisplayModeRef closestMatch = getBestModeForParameters(allModes, (int)w, (int)h, (int)bpp, (int)refrate);
+    
     __block CGError retCode = kCGErrorSuccess;
     if (closestMatch != NULL) {
-        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+        CGDisplayModeRetain(closestMatch);
+        [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
             CGDisplayConfigRef config;
             retCode = CGBeginDisplayConfiguration(&config);
             if (retCode == kCGErrorSuccess) {
                 CGConfigureDisplayWithDisplayMode(config, displayID, closestMatch, NULL);
                 retCode = CGCompleteDisplayConfiguration(config, kCGConfigureForAppOnly);
             }
+            CGDisplayModeRelease(closestMatch);
         }];
     } else {
         [JNFException raise:env as:kIllegalArgumentException reason:"Invalid display mode"];
@@ -253,8 +253,7 @@ Java_sun_awt_CGraphicsDevice_nativeSetDisplayMode
 
     if (retCode != kCGErrorSuccess){
         [JNFException raise:env as:kIllegalArgumentException reason:"Unable to set display mode!"];
-    }    
-
+    }
     CFRelease(allModes);
     JNF_COCOA_EXIT(env);
 }

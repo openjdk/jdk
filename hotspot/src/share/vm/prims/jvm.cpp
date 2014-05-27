@@ -26,7 +26,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
@@ -215,7 +215,7 @@ void trace_class_resolution(Klass* to_class) {
 #ifdef ASSERT
   class JVMTraceWrapper : public StackObj {
    public:
-    JVMTraceWrapper(const char* format, ...) {
+    JVMTraceWrapper(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
       if (TraceJVMCalls) {
         va_list ap;
         va_start(ap, format);
@@ -1854,7 +1854,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 
     if (!publicOnly || fs.access_flags().is_public()) {
       fd.reinitialize(k(), fs.index());
-      oop field = Reflection::new_field(&fd, UseNewReflection, CHECK_NULL);
+      oop field = Reflection::new_field(&fd, CHECK_NULL);
       result->obj_at_put(out_idx, field);
       ++out_idx;
     }
@@ -1932,7 +1932,7 @@ static jobjectArray get_class_declared_methods_helper(
       if (want_constructor) {
         m = Reflection::new_constructor(method, CHECK_NULL);
       } else {
-        m = Reflection::new_method(method, UseNewReflection, false, CHECK_NULL);
+        m = Reflection::new_method(method, false, CHECK_NULL);
       }
       result->obj_at_put(i, m);
     }
@@ -2055,7 +2055,7 @@ static jobject get_method_at_helper(constantPoolHandle cp, jint index, bool forc
   }
   oop method;
   if (!m->is_initializer() || m->is_static()) {
-    method = Reflection::new_method(m, true, true, CHECK_NULL);
+    method = Reflection::new_method(m, true, CHECK_NULL);
   } else {
     method = Reflection::new_constructor(m, CHECK_NULL);
   }
@@ -2105,7 +2105,7 @@ static jobject get_field_at_helper(constantPoolHandle cp, jint index, bool force
   if (target_klass == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_RuntimeException(), "Unable to look up field in target class");
   }
-  oop field = Reflection::new_field(&fd, true, CHECK_NULL);
+  oop field = Reflection::new_field(&fd, CHECK_NULL);
   return JNIHandles::make_local(field);
 }
 
@@ -2736,14 +2736,14 @@ JVM_END
 
 
 JVM_LEAF(jlong, JVM_Lseek(jint fd, jlong offset, jint whence))
-  JVMWrapper4("JVM_Lseek (0x%x, %Ld, %d)", fd, offset, whence);
+  JVMWrapper4("JVM_Lseek (0x%x, " INT64_FORMAT ", %d)", fd, (int64_t) offset, whence);
   //%note jvm_r6
   return os::lseek(fd, offset, whence);
 JVM_END
 
 
 JVM_LEAF(jint, JVM_SetLength(jint fd, jlong length))
-  JVMWrapper3("JVM_SetLength (0x%x, %Ld)", fd, length);
+  JVMWrapper3("JVM_SetLength (0x%x, " INT64_FORMAT ")", fd, (int64_t) length);
   return os::ftruncate(fd, length);
 JVM_END
 
@@ -2758,13 +2758,14 @@ JVM_END
 // Printing support //////////////////////////////////////////////////
 extern "C" {
 
+ATTRIBUTE_PRINTF(3, 0)
 int jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
   // see bug 4399518, 4417214
   if ((intptr_t)count <= 0) return -1;
   return vsnprintf(str, count, fmt, args);
 }
 
-
+ATTRIBUTE_PRINTF(3, 0)
 int jio_snprintf(char *str, size_t count, const char *fmt, ...) {
   va_list args;
   int len;
@@ -2774,7 +2775,7 @@ int jio_snprintf(char *str, size_t count, const char *fmt, ...) {
   return len;
 }
 
-
+ATTRIBUTE_PRINTF(2,3)
 int jio_fprintf(FILE* f, const char *fmt, ...) {
   int len;
   va_list args;
@@ -2784,7 +2785,7 @@ int jio_fprintf(FILE* f, const char *fmt, ...) {
   return len;
 }
 
-
+ATTRIBUTE_PRINTF(2, 0)
 int jio_vfprintf(FILE* f, const char *fmt, va_list args) {
   if (Arguments::vfprintf_hook() != NULL) {
      return Arguments::vfprintf_hook()(f, fmt, args);
@@ -2793,7 +2794,7 @@ int jio_vfprintf(FILE* f, const char *fmt, va_list args) {
   }
 }
 
-
+ATTRIBUTE_PRINTF(1, 2)
 JNIEXPORT int jio_printf(const char *fmt, ...) {
   int len;
   va_list args;
@@ -2930,7 +2931,7 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
   JavaThread* receiver = java_lang_Thread::thread(java_thread);
   Events::log_exception(JavaThread::current(),
                         "JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]",
-                        receiver, (address)java_thread, throwable);
+                        p2i(receiver), p2i((address)java_thread), p2i(throwable));
   // First check if thread is alive
   if (receiver != NULL) {
     // Check if exception is getting thrown at self (use oop equality, since the
@@ -3520,7 +3521,6 @@ JVM_END
 
 JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
   for (vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
-    // UseNewReflection
     vfst.skip_reflection_related_frames(); // Only needed for 1.4 reflection
     oop loader = vfst.method()->method_holder()->class_loader();
     if (loader != NULL) {

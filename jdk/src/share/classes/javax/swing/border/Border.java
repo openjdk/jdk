@@ -66,6 +66,7 @@ public interface Border
     /**
      * Paints the border for the specified component with the specified
      * position and size.
+     *
      * @param c the component for which this border is being painted
      * @param g the paint graphics
      * @param x the x position of the painted border
@@ -77,7 +78,10 @@ public interface Border
 
     /**
      * Returns the insets of the border.
+     *
      * @param c the component for which this border insets value applies
+     * @return an {@code Insets} object containing the insets from top, left,
+     *         bottom and right of this {@code Border}
      */
     Insets getBorderInsets(Component c);
 
@@ -85,6 +89,8 @@ public interface Border
      * Returns whether or not the border is opaque.  If the border
      * is opaque, it is responsible for filling in it's own
      * background when painting.
+     *
+     * @return true if this {@code Border} is opaque
      */
     boolean isBorderOpaque();
 }

@@ -2782,7 +2782,10 @@ void LIRGenerator::do_Base(Base* x) {
       __ lock_object(syncTempOpr(), obj, lock, new_register(T_OBJECT), slow_path, NULL);
     }
   }
-
+  if (compilation()->age_code()) {
+    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, 0), NULL, false);
+    decrement_age(info);
+  }
   // increment invocation counters if needed
   if (!method()->is_accessor()) { // Accessors do not have MDOs, so no counting.
     profile_parameters(x);
@@ -3327,6 +3330,27 @@ void LIRGenerator::increment_event_counter(CodeEmitInfo* info, int bci, bool bac
   // Increment the appropriate invocation/backedge counter and notify the runtime.
   increment_event_counter_impl(info, info->scope()->method(), (1 << freq_log) - 1, bci, backedge, true);
 }
+
+void LIRGenerator::decrement_age(CodeEmitInfo* info) {
+  ciMethod* method = info->scope()->method();
+  MethodCounters* mc_adr = method->ensure_method_counters();
+  if (mc_adr != NULL) {
+    LIR_Opr mc = new_pointer_register();
+    __ move(LIR_OprFact::intptrConst(mc_adr), mc);
+    int offset = in_bytes(MethodCounters::nmethod_age_offset());
+    LIR_Address* counter = new LIR_Address(mc, offset, T_INT);
+    LIR_Opr result = new_register(T_INT);
+    __ load(counter, result);
+    __ sub(result, LIR_OprFact::intConst(1), result);
+    __ store(result, counter);
+    // DeoptimizeStub will reexecute from the current state in code info.
+    CodeStub* deopt = new DeoptimizeStub(info, Deoptimization::Reason_tenured,
+                                         Deoptimization::Action_make_not_entrant);
+    __ cmp(lir_cond_lessEqual, result, LIR_OprFact::intConst(0));
+    __ branch(lir_cond_lessEqual, T_INT, deopt);
+  }
+}
+
 
 void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
                                                 ciMethod *method, int frequency,

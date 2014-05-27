@@ -106,12 +106,12 @@ class IndexSet : public ResourceObj {
     // is used by IndexSet to mainting this free list.
 
     union {
-      uint32 _words[words_per_block];
+      uint32_t _words[words_per_block];
       BitBlock *_next;
     } _data;
 
     // accessors
-    uint32 *words() { return _data._words; }
+    uint32_t* words() { return _data._words; }
     void set_next(BitBlock *next) { _data._next = next; }
     BitBlock *next() { return _data._next; }
 
@@ -120,22 +120,22 @@ class IndexSet : public ResourceObj {
     // not assume that the block index has been masked out.
 
     void clear() {
-      memset(words(), 0, sizeof(uint32) * words_per_block);
+      memset(words(), 0, sizeof(uint32_t) * words_per_block);
     }
 
     bool member(uint element) {
       uint word_index = IndexSet::get_word_index(element);
       uint bit_index = IndexSet::get_bit_index(element);
 
-      return ((words()[word_index] & (uint32)(0x1 << bit_index)) != 0);
+      return ((words()[word_index] & (uint32_t)(0x1 << bit_index)) != 0);
     }
 
     bool insert(uint element) {
       uint word_index = IndexSet::get_word_index(element);
       uint bit_index = IndexSet::get_bit_index(element);
 
-      uint32 bit = (0x1 << bit_index);
-      uint32 before = words()[word_index];
+      uint32_t bit = (0x1 << bit_index);
+      uint32_t before = words()[word_index];
       words()[word_index] = before | bit;
       return ((before & bit) != 0);
     }
@@ -144,8 +144,8 @@ class IndexSet : public ResourceObj {
       uint word_index = IndexSet::get_word_index(element);
       uint bit_index = IndexSet::get_bit_index(element);
 
-      uint32 bit = (0x1 << bit_index);
-      uint32 before = words()[word_index];
+      uint32_t bit = (0x1 << bit_index);
+      uint32_t before = words()[word_index];
       words()[word_index] = before & ~bit;
       return ((before & bit) != 0);
     }
@@ -404,14 +404,14 @@ class IndexSetIterator VALUE_OBJ_CLASS_SPEC {
          table_size  = (1 << window_size) };
 
   // For an integer of length window_size, what is the first set bit?
-  static const byte _first_bit[table_size];
+  static const uint8_t _first_bit[table_size];
 
   // For an integer of length window_size, what is the second set bit?
-  static const byte _second_bit[table_size];
+  static const uint8_t _second_bit[table_size];
 
  private:
   // The current word we are inspecting
-  uint32                _current;
+  uint32_t              _current;
 
   // What element number are we currently on?
   uint                  _value;
@@ -420,7 +420,7 @@ class IndexSetIterator VALUE_OBJ_CLASS_SPEC {
   uint                  _next_word;
 
   // A pointer to the contents of the current block
-  uint32               *_words;
+  uint32_t             *_words;
 
   // The index of the next block we will inspect
   uint                  _next_block;

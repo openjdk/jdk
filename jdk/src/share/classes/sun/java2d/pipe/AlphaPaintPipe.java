@@ -48,16 +48,16 @@ import sun.java2d.loops.GraphicsPrimitiveMgr;
  * SunGraphics2D.
  */
 public class AlphaPaintPipe implements CompositePipe {
-    static WeakReference cachedLastRaster;
-    static WeakReference cachedLastColorModel;
-    static WeakReference cachedLastData;
+    static WeakReference<Raster> cachedLastRaster;
+    static WeakReference<ColorModel> cachedLastColorModel;
+    static WeakReference<SurfaceData> cachedLastData;
 
     static class TileContext {
         SunGraphics2D sunG2D;
         PaintContext paintCtxt;
         ColorModel paintModel;
-        WeakReference lastRaster;
-        WeakReference lastData;
+        WeakReference<Raster> lastRaster;
+        WeakReference<SurfaceData> lastData;
         MaskBlit lastMask;
         Blit     lastBlit;
         SurfaceData dstData;
@@ -105,8 +105,8 @@ public class AlphaPaintPipe implements CompositePipe {
         SurfaceData srcData = null;
         Raster lastRas = null;
         if (context.lastData != null && context.lastRaster != null) {
-            srcData = (SurfaceData) context.lastData.get();
-            lastRas = (Raster) context.lastRaster.get();
+            srcData = context.lastData.get();
+            lastRas = context.lastRaster.get();
             if (srcData == null || lastRas == null) {
                 srcData = null;
                 lastRas = null;
@@ -127,7 +127,7 @@ public class AlphaPaintPipe implements CompositePipe {
                 }
                 if (lastRas != srcRaster) {
                     lastRas = srcRaster;
-                    context.lastRaster = new WeakReference(lastRas);
+                    context.lastRaster = new WeakReference<>(lastRas);
                     // REMIND: This will fail for a non-Writable raster!
                     BufferedImage bImg =
                         new BufferedImage(paintModel,
@@ -135,7 +135,7 @@ public class AlphaPaintPipe implements CompositePipe {
                                           paintModel.isAlphaPremultiplied(),
                                           null);
                     srcData = BufImgSurfaceData.createData(bImg);
-                    context.lastData = new WeakReference(srcData);
+                    context.lastData = new WeakReference<>(srcData);
                     context.lastMask = null;
                     context.lastBlit = null;
                 }
@@ -197,7 +197,7 @@ public class AlphaPaintPipe implements CompositePipe {
                 {
                     // Avoid creating new WeakReference if possible
                     cachedLastColorModel =
-                        new WeakReference(context.paintModel);
+                        new WeakReference<>(context.paintModel);
                 }
                 cachedLastData = context.lastData;
             }

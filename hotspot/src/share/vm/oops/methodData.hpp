@@ -851,11 +851,10 @@ private:
     return _base_off + stack_slot_local_offset(i);
   }
 
-protected:
   const int _number_of_entries;
 
   // offset of cell for type for entry i within ProfileData object
-  int type_offset(int i) const {
+  int type_offset_in_cells(int i) const {
     return _base_off + type_local_offset(i);
   }
 
@@ -867,6 +866,8 @@ public:
   static int compute_cell_count(Symbol* signature, bool include_receiver, int max);
 
   void post_initialize(Symbol* signature, bool has_receiver, bool include_receiver);
+
+  int number_of_entries() const { return _number_of_entries; }
 
   // offset of cell for stack slot for entry i within this block of cells for a TypeStackSlotEntries
   static int stack_slot_local_offset(int i) {
@@ -893,13 +894,13 @@ public:
   // type for entry i
   intptr_t type(int i) const {
     assert(i >= 0 && i < _number_of_entries, "oob");
-    return _pd->intptr_at(type_offset(i));
+    return _pd->intptr_at(type_offset_in_cells(i));
   }
 
   // set type for entry i
   void set_type(int i, intptr_t k) {
     assert(i >= 0 && i < _number_of_entries, "oob");
-    _pd->set_intptr_at(type_offset(i), k);
+    _pd->set_intptr_at(type_offset_in_cells(i), k);
   }
 
   static ByteSize per_arg_size() {
@@ -907,7 +908,11 @@ public:
   }
 
   static int per_arg_count() {
-    return per_arg_cell_count ;
+    return per_arg_cell_count;
+  }
+
+  ByteSize type_offset(int i) const {
+    return DataLayout::cell_offset(type_offset_in_cells(i));
   }
 
   // GC support
@@ -973,7 +978,7 @@ private:
   }
 
   static int argument_type_local_offset(int i) {
-    return header_cell_count() + TypeStackSlotEntries::type_local_offset(i);;
+    return header_cell_count() + TypeStackSlotEntries::type_local_offset(i);
   }
 
 public:
@@ -1127,6 +1132,14 @@ public:
   // Code generation support
   static ByteSize args_data_offset() {
     return cell_offset(CounterData::static_cell_count()) + TypeEntriesAtCall::args_data_offset();
+  }
+
+  ByteSize argument_type_offset(int i) {
+    return _args.type_offset(i);
+  }
+
+  ByteSize return_type_offset() {
+    return _ret.type_offset();
   }
 
   // GC support
@@ -1434,6 +1447,14 @@ public:
   // Code generation support
   static ByteSize args_data_offset() {
     return cell_offset(VirtualCallData::static_cell_count()) + TypeEntriesAtCall::args_data_offset();
+  }
+
+  ByteSize argument_type_offset(int i) {
+    return _args.type_offset(i);
+  }
+
+  ByteSize return_type_offset() {
+    return _ret.type_offset();
   }
 
   // GC support
@@ -1926,7 +1947,7 @@ public:
 class SpeculativeTrapData : public ProfileData {
 protected:
   enum {
-    method_offset,
+    speculative_trap_method,
     speculative_trap_cell_count
   };
 public:
@@ -1946,11 +1967,15 @@ public:
 
   // Direct accessor
   Method* method() const {
-    return (Method*)intptr_at(method_offset);
+    return (Method*)intptr_at(speculative_trap_method);
   }
 
   void set_method(Method* m) {
-    set_intptr_at(method_offset, (intptr_t)m);
+    set_intptr_at(speculative_trap_method, (intptr_t)m);
+  }
+
+  static ByteSize method_offset() {
+    return cell_offset(speculative_trap_method);
   }
 
   virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
@@ -2059,6 +2084,7 @@ private:
   // Counter values at the time profiling started.
   int               _invocation_counter_start;
   int               _backedge_counter_start;
+  uint              _tenure_traps;
 
 #if INCLUDE_RTM_OPT
   // State of RTM code generation during compilation of the method
@@ -2397,6 +2423,12 @@ public:
     if (decompile_count() > (uint)PerMethodRecompilationCutoff) {
       method()->set_not_compilable(CompLevel_full_optimization, true, "decompile_count > PerMethodRecompilationCutoff");
     }
+  }
+  uint tenure_traps() const {
+    return _tenure_traps;
+  }
+  void inc_tenure_traps() {
+    _tenure_traps += 1;
   }
 
   // Return pointer to area dedicated to parameters in MDO

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1250,8 +1250,7 @@ void ciEnv::dump_replay_data(int compile_id) {
       if (replay_data_file != NULL) {
         fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
         dump_replay_data(&replay_data_stream);
-        tty->print("# Compiler replay data is saved as: ");
-        tty->print_cr(buffer);
+        tty->print_cr("# Compiler replay data is saved as: %s", buffer);
       } else {
         tty->print_cr("# Can't open file to dump replay data.");
       }
@@ -1274,7 +1273,7 @@ void ciEnv::dump_inline_data(int compile_id) {
         )
         replay_data_stream.flush();
         tty->print("# Compiler inline data is saved as: ");
-        tty->print_cr(buffer);
+        tty->print_cr("%s", buffer);
       } else {
         tty->print_cr("# Can't open file to dump inline data.");
       }

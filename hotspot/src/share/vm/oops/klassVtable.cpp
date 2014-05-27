@@ -39,6 +39,8 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/copy.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 inline InstanceKlass* klassVtable::ik() const {
   Klass* k = _klass();
   assert(k->oop_is_instance(), "not an InstanceKlass");

@@ -28,8 +28,7 @@
  * @summary Test checks case when target application finishes execution and jstat didn't complete work.
             jstat is started with interval = 100 (jstat -compiler 100) and monitored application finishes
             after 500ms. This shouldn't cause crash or hang in target application or in jstat.
- * @build jdk.testlibrary.ProcessTools jdk.testlibrary.JDKToolLauncher
- * @build JStatInterval
+ * @build jdk.testlibrary.* JStatInterval
  * @run main JStatInterval
  */
 
