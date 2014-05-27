@@ -1,372 +1,291 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
- Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
- DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- 
- This code is free software; you can redistribute it and/or modify it
- under the terms of the GNU General Public License version 2 only, as
- published by the Free Software Foundation.
- 
- This code is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- version 2 for more details (a copy is included in the LICENSE file that
- accompanied this code).
- 
- You should have received a copy of the GNU General Public License version
- 2 along with this work; if not, write to the Free Software Foundation,
- Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- 
- Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- or visit www.oracle.com if you need additional information or have any
- questions.
+    Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+    DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+    This code is free software; you can redistribute it and/or modify it
+    under the terms of the GNU General Public License version 2 only, as
+    published by the Free Software Foundation.
+    
+    This code is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    version 2 for more details (a copy is included in the LICENSE file that
+    accompanied this code).
+    
+    You should have received a copy of the GNU General Public License version
+    2 along with this work; if not, write to the Free Software Foundation,
+    Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+    
+    Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+    or visit www.oracle.com if you need additional information or have any
+    questions.
 -->
-<project name="nashorn-benchmarks" default="all" basedir="..">
 
-  <target name="octane-init" depends="jar">
-    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes mandreel pdfjs raytrace regexp richards splay typescript zlib"/>
-  </target>
-  
-  <!-- ignore benchmarks where rhino crashes - the test harness should do this now -->
-  <target name="octane-init-rhino" depends="jar">
-    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes mandreel pdfjs raytrace regexp richards splay typescript zlib"/>
-  </target>
 
+<project 
+    name="nashorn-benchmarks" 
+    default="all" 
+    basedir=".." 
+    xmlns:if="ant:if">
+
+  <!-- 
+       Below are the octane benchmarks that should be run. 
+       The ones that are excluded, as Nashorn currently has
+       some issues with them (functionality or performance) 
+       are commented out
+  -->
+    
   <!-- box2d -->
   <target name="octane-box2d" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="box2d"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.box2d" runtime="nashorn"/>
+  </target> 
   <target name="octane-box2d-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="box2d"/>
-    </antcall>
+    <run-one cond="octane.benchmark.box2d" runtime="v8"/>
   </target>
-
   <target name="octane-box2d-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="box2d"/>
-    </antcall>
+    <run-one cond="octane.benchmark.box2d" runtime="rhino"/>
   </target>
-
 
   <!-- code-load -->  
   <target name="octane-code-load" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="code-load"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.code-load" runtime="nashorn"/>
+  </target> 
   <target name="octane-code-load-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="code-load"/>
-    </antcall>
+    <run-one cond="octane.benchmark.code-load" runtime="v8"/>
   </target>
-
   <target name="octane-code-load-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="code-load"/>
-    </antcall>
+    <run-one cond="octane.benchmark.code-load" runtime="rhino"/>
   </target>
-
 
   <!-- crypto -->
   <target name="octane-crypto" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="crypto"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.crypto" runtime="nashorn"/>
+  </target> 
   <target name="octane-crypto-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="crypto"/>
-    </antcall>
+    <run-one cond="octane.benchmark.crypto" runtime="v8"/>
   </target>
-
   <target name="octane-crypto-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="crypto"/>
-    </antcall>
+    <run-one cond="octane.benchmark.crypto" runtime="rhino"/>
   </target>
-
 
   <!-- deltablue -->
   <target name="octane-deltablue" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="deltablue"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.deltablue" runtime="nashorn"/>
+  </target> 
   <target name="octane-deltablue-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="deltablue"/>
-    </antcall>
+    <run-one cond="octane.benchmark.deltablue" runtime="v8"/>
   </target>
-
   <target name="octane-deltablue-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="deltablue"/>
-    </antcall>
+    <run-one cond="octane.benchmark.deltablue" runtime="rhino"/>
   </target>
-
 
   <!-- earley-boyer -->
   <target name="octane-earley-boyer" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="earley-boyer"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.earley-boyer" runtime="nashorn"/>
+  </target> 
   <target name="octane-earley-boyer-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="earley-boyer"/>
-    </antcall>
+    <run-one cond="octane.benchmark.earley-boyer" runtime="v8"/>
   </target>
-
   <target name="octane-earley-boyer-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="earley-boyer"/>
-    </antcall>
+    <run-one cond="octane.benchmark.earley-boyer" runtime="rhino"/>
   </target>
-
 
   <!-- gbemu -->  
   <target name="octane-gbemu" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="gbemu"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.gbemu" runtime="nashorn"/>
+  </target> 
   <target name="octane-gbemu-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="gbemu"/>
-    </antcall>
+    <run-one cond="octane.benchmark.gbemu" runtime="v8"/>
   </target>
-
   <target name="octane-gbemu-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="gbemu"/>
-    </antcall>
+    <run-one cond="octane.benchmark.gbemu" runtime="rhino"/>
   </target>
 
   <!-- mandreel -->  
   <target name="octane-mandreel" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="mandreel"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.mandreel" runtime="nashorn"/>
+  </target> 
   <target name="octane-mandreel-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="mandreel"/>
-    </antcall>
+    <run-one cond="octane.benchmark.mandreel" runtime="v8"/>
   </target>
-
   <target name="octane-mandreel-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="mandreel"/>
-    </antcall>
+    <run-one cond="octane.benchmark.mandreel" runtime="rhino"/>
   </target>
-
 
   <!-- navier-stokes -->
   <target name="octane-navier-stokes" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="navier-stokes"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.navier-stokes" runtime="nashorn"/>
+  </target> 
   <target name="octane-navier-stokes-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="navier-stokes"/>
-    </antcall>
+    <run-one cond="octane.benchmark.navier-stokes" runtime="v8"/>
   </target>
-
   <target name="octane-navier-stokes-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="navier-stokes"/>
-    </antcall>
+    <run-one cond="octane.benchmark.navier-stokes" runtime="rhino"/>
   </target>
 
-
-  <!-- pdfjs -->  
+  <!-- pdfjs -->
   <target name="octane-pdfjs" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="pdfjs"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.pdfjs" runtime="nashorn"/>
+  </target> 
   <target name="octane-pdfjs-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="pdfjs"/>
-    </antcall>
+    <run-one cond="octane.benchmark.pdfjs" runtime="v8"/>
   </target>
-
   <target name="octane-pdfjs-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="pdfjs"/>
-    </antcall>
+    <run-one cond="octane.benchmark.pdfjs" runtime="rhino"/>
   </target>
-
 
   <!-- raytrace -->
   <target name="octane-raytrace" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="raytrace"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.raytrace" runtime="nashorn"/>
+  </target> 
   <target name="octane-raytrace-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="raytrace"/>
-    </antcall>
+    <run-one cond="octane.benchmark.raytrace" runtime="v8"/>
   </target>
-
   <target name="octane-raytrace-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="raytrace"/>
-    </antcall>
+    <run-one cond="octane.benchmark.raytrace" runtime="rhino"/>
   </target>
-
 
   <!-- regexp -->
   <target name="octane-regexp" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="regexp"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.regexp" runtime="nashorn"/>
+  </target> 
   <target name="octane-regexp-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="regexp"/>
-    </antcall>
+    <run-one cond="octane.benchmark.regexp" runtime="v8"/>
   </target>
-
   <target name="octane-regexp-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="regexp"/>
-    </antcall>
+    <run-one cond="octane.benchmark.regexp" runtime="rhino"/>
   </target>
-
 
   <!-- richards -->
   <target name="octane-richards" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="richards"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.richards" runtime="nashorn"/>
+  </target> 
   <target name="octane-richards-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="richards"/>
-    </antcall>
+    <run-one cond="octane.benchmark.richards" runtime="v8"/>
   </target>
-
   <target name="octane-richards-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="richards"/>
-    </antcall>
+    <run-one cond="octane.benchmark.richards" runtime="rhino"/>
   </target>
-
 
   <!-- splay -->
   <target name="octane-splay" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="splay"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.splay" runtime="nashorn"/>
+  </target> 
   <target name="octane-splay-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-tests" value="splay"/>
-    </antcall>
+    <run-one cond="octane.benchmark.splay" runtime="v8"/>
   </target>
-
   <target name="octane-splay-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="splay"/>
-    </antcall>
+    <run-one cond="octane.benchmark.splay" runtime="rhino"/>
   </target>
 
-  <!-- splay -->
+  <!-- typescript -->
   <target name="octane-typescript" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="typescript"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.typescript" runtime="nashorn"/>
+  </target> 
   <target name="octane-typescript-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-typescript" value="typescript"/>
-    </antcall>
+    <run-one cond="octane.benchmark.typescript" runtime="v8"/>
   </target>
-
   <target name="octane-typescript-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="typescript"/>
-    </antcall>
+    <run-one cond="octane.benchmark.typescript" runtime="rhino"/>
   </target>
 
   <!-- zlib -->
   <target name="octane-zlib" depends="jar">
-    <antcall target="run-octane">
-      <param name="octane-tests" value="zlib"/>
-    </antcall>
-  </target>
-
+    <run-one cond="octane.benchmark.zlib" runtime="nashorn"/>
+  </target> 
   <target name="octane-zlib-v8" depends="jar">
-    <antcall target="run-octane-v8">
-      <param name="octane-typescript" value="zlib"/>
-    </antcall>
+    <run-one cond="octane.benchmark.zlib" runtime="v8"/>
   </target>
-
   <target name="octane-zlib-rhino" depends="jar">
-    <antcall target="run-octane-rhino">
-      <param name="octane-tests" value="zlib"/>
-    </antcall>
+    <run-one cond="octane.benchmark.zlib" runtime="rhino"/>
   </target>
 
-  <!-- run octane benchmarks in a single process  -->
-  <target name="octane-single-process" depends="octane-init">
-    <antcall target="run-octane"/>
-  </target>
- 
-  <target name="octane-separate-process" depends=
-     "octane-box2d, octane-code-load, octane-crypto, 
-      octane-deltablue, octane-earley-boyer, octane-gbemu,
-      octane-mandreel, octane-navier-stokes, octane-pdfjs, 
-      octane-raytrace, octane-regexp, octane-richards, 
-      octane-splay, octane-typescript, octane-zlib"/>
+  <!--
+      Benchmark runners for one or more benchmarks, single
+      or multiple process
+  -->
 
-  <target name="--single-process" unless="${octane-test-sys-prop.separate.process}">
-    <antcall target="octane-single-process"/>
-  </target>
-  <target name="--separate-process" if="${octane-test-sys-prop.separate.process}">
-    <antcall target="octane-separate-process"/>
-  </target>
-
-  <!-- run 'octane' in single or separate processes based on config -->
-  <target name="octane" depends="init, --single-process, --separate-process"/>
-
-  <!-- run octane benchmarks using octane as runtime -->
-  <target name="octane-v8" depends="octane-init">
-    <antcall target="run-octane-v8"/>
-  </target>
-
-  <!-- run octane benchmarks using Rhino as runtime -->
-  <target name="octane-rhino" depends="octane-init-rhino">
-    <antcall target="run-octane-rhino"/>
+  <target name="octane-process-separate" if="${octane-test-sys-prop.separate.process}">
+    <echo message="Running each benchmark in separate processes, starting new JVMs for each."/>
+    <!-- TODO: possibly turn this into a loop with ant.contrib -->
+    <run-one cond="octane.benchmark.box2d" runtime="${runtime}"/>
+    <!--run-one cond="octane.benchmark.crypto" runtime="${runtime}"/>-->
+    <run-one cond="octane.benchmark.code-load" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.deltablue" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.earley-boyer" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.gbemu" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.navier-stokes" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.mandreel" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.pdfjs" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.raytrace" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.regexp" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.richards" runtime="${runtime}"/>
+    <run-one cond="octane.benchmark.splay" runtime="${runtime}"/>
+    <!--<run-one cond="octane.benchmark.typescript" runtime="${runtime}"/>-->
+    <!--<run-one cond="octane.benchmark.zlib" runtime="${runtime}"/>-->
   </target>
   
-  <target name="run-octane">
+  <target name="octane-process-single" unless="${octane-test-sys-prop.separate.process}"> 
+    <echo message="Running all benchmarks in the same process."/>
+    <echo message="multiple -- ${octane.benchmarks}"/>
+    <pathconvert property="octane.benchmarks" pathsep=" ">
+      <propertyset>
+	<propertyref prefix="octane.benchmark."/>
+      </propertyset>
+    </pathconvert>
+    <echo message="monkey= ${octane.benchmarks}"/>
+    <antcall target="run-octane${runtime}">
+      <param name="octane-tests" value="${octane.benchmarks}"/>
+    </antcall>	
+  </target>
+  
+  <!-- 
+       run 'octane' in single or separate processes based on config 
+       This uses nashorn as the default runtime
+  -->
+  <target name="octane-nashorn" depends="jar">
+    <property name="runtime" value="nashorn"/>    
+    <antcall target="octane-process-separate"/>
+    <antcall target="octane-process-single"/>
+  </target>
+
+  <!-- alias for 'octane' -->
+  <target name="octane" depends="octane-nashorn"/>
+  
+  <!-- run octane benchmarks using octane as runtime -->
+  <target name="octane-v8" depends="jar">
+    <property name="runtime" value="v8"/>    
+    <antcall target="octane-process-separate"/>
+    <antcall target="octane-process-single"/>
+  </target>
+  
+  <!-- run octane benchmarks using Rhino as runtime -->
+  <target name="octane-rhino" depends="jar">
+    <property name="runtime" value="rhino"/>    
+    <antcall target="octane-process-separate"/>
+    <antcall target="octane-process-single"/>
+  </target>
+  
+  <macrodef name="run-one">
+    <attribute name="cond"/>
+    <attribute name="runtime" default=""/>
+    <sequential>
+      <antcall target="run-octane-@{runtime}" if:set="@{cond}">
+	<param name="octane-tests" value="${@{cond}}"/>
+      </antcall>
+    </sequential>
+  </macrodef>
+
+  <target name="run-octane-nashorn" if="octane-tests">
     <java classname="${nashorn.shell.tool}"
           classpath="${run.test.classpath}"
           fork="true"
           dir=".">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs.octane} -Xms${run.test.xms} -Xmx${run.test.xmx}"/>
+      <!-- pass on all properties prefixed with 'nashorn' to the runtime -->
       <syspropertyset>
         <propertyref prefix="nashorn."/>
       </syspropertyset>
@@ -375,9 +294,9 @@
       <arg value="--"/>
       <arg value="${octane-tests}"/>
       <arg value="--runtime"/>
-      <arg value="Nashorn"/>
+      <arg value="nashorn"/>
       <arg value="--verbose"/>
-      <arg value="--iterations 10"/>
+      <arg value="--iterations ${octane.iterations}"/>
     </java>
   </target>
 
@@ -389,7 +308,7 @@
       <arg value="--runtime"/>
       <arg value="v8"/>
       <arg value="--verbose"/>
-      <arg value="--iterations 10"/>
+      <arg value="--iterations ${octane.iterations}"/>
     </exec>
   </target>
 
@@ -404,9 +323,9 @@
       <arg value="${octane-test-sys-prop.test.js.framework}"/>
       <arg value="${octane-tests}"/>
       <arg value="--runtime"/>
-      <arg value="Rhino"/>
+      <arg value="rhino"/>
       <arg value="--verbose"/>
-      <arg value="--iterations 10"/>
+      <arg value="--iterations ${octane.iterations}"/>
     </java>
   </target>
 
@@ -426,6 +345,8 @@
     </fileset>
     <pathconvert pathsep=" " property="sunspider-tests" refid="sunspider-set"/>
   </target>
+
+  <!--- SUNSPIDER JOB BELOW -->
 
   <!-- run sunspider with Nashorn -->
   <target name="sunspider" depends="sunspider-init">
@@ -459,6 +380,8 @@
           fork="true"
           dir=".">
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
+      <arg value="-opt"/>
+      <arg value="9"/>
       <arg value="${sunspider-test-sys-prop.test.js.framework}"/>
       <arg value="${sunspider-tests}/"/>
     </java>
