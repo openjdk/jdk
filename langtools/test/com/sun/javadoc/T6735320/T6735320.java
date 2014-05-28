@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,24 @@
  * @test
  * @bug 6735320
  * @summary javadoc throws exception if serialField value is missing
- * @library  ../lib/
- * @build    JavadocTester T6735320
+ * @library ../lib
+ * @build JavadocTester
  * @run main T6735320
  */
+
 public class T6735320 extends JavadocTester {
 
-    private static final String BUG_ID = "6735320";
-    private static final String[] ARGS = new String[]{
-        "-d", BUG_ID + ".out",
-        SRC_DIR + FS + "SerialFieldTest.java"
-    };
-
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    public String getBugName() {
-        return getClass().getName();
-    }
-
-    public static void main(String... args) {
+    public static void main(String... args) throws Exception {
         T6735320 tester = new T6735320();
-        if (tester.runJavadoc(ARGS) == 0) {
-            throw new AssertionError("zero return code from javadoc");
-        }
-        if (tester.getErrorOutput().contains("StringIndexOutOfBoundsException")) {
-            throw new AssertionError("javadoc threw StringIndexOutOfBoundsException");
-        }
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                testSrc("SerialFieldTest.java"));
+        checkExit(Exit.FAILED);
+        checkOutput(Output.STDERR, false,
+                "StringIndexOutOfBoundsException");
     }
 }

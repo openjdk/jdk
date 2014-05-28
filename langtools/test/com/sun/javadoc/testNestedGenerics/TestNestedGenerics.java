@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,53 +26,28 @@
  * @bug      6758050 8025633
  * @summary  Test HTML output for nested generic types.
  * @author   bpatel
- * @library  ../lib/
- * @build    JavadocTester TestNestedGenerics
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestNestedGenerics
  */
 
 public class TestNestedGenerics extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "6758050";
+    public static void main(String... args) throws Exception {
+        TestNestedGenerics tester = new TestNestedGenerics();
+        tester.runTests();
+    }
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[]{
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-        "pkg"
-    };
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "NestedGenerics.html",
+        checkOutput("pkg/NestedGenerics.html", true,
             "<div class=\"block\">Contains <a " +
             "href=\"../pkg/NestedGenerics.html#foo-java.util.Map-\"><code>foo" +
-            "(java.util.Map&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>"
-        }
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestNestedGenerics tester = new TestNestedGenerics();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+            "(java.util.Map&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,50 +26,33 @@
  * @bug 4074234
  * @summary Make Javadoc capable of traversing/recursing all of given subpackages.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestRecurseSubPackages
  * @run main TestRecurseSubPackages
  */
 
 public class TestRecurseSubPackages extends JavadocTester {
 
-    private static final String BUG_ID = "4074234";
-    private static final String[] ARGS =
-        new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            "-subpackages", "pkg1", "-exclude", "pkg1.pkg2.packageToExclude"
-        };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        String[][] tests = new String[6][2];
-        for (int i = 0; i < tests.length; i++) {
-            tests[i][0] = BUG_ID + FS + "allclasses-frame.html";
-            tests[i][1] = "C" + (i+1) + ".html";
-        }
-        String[][] negatedTests = new String[][] {
-            {BUG_ID + FS + "allclasses-frame.html", "DummyClass.html"}
-        };
+    public static void main(String... args) throws Exception {
         TestRecurseSubPackages tester = new TestRecurseSubPackages();
-        run(tester, ARGS, tests, negatedTests);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-subpackages", "pkg1",
+                "-exclude", "pkg1.pkg2.packageToExclude");
+        checkExit(Exit.OK);
+
+        for (int i = 1; i <= 6; i++) {
+            checkOutput("allclasses-frame.html", true,
+                    "C" + i + ".html");
+        }
+
+        checkOutput("allclasses-frame.html", false,
+                "DummyClass.html");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
-    }
 }

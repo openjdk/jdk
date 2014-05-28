@@ -1826,7 +1826,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * doing an on-demand ("just-in-time") compilation, then we aren't generating code for inner functions.
      */
     private boolean compileOutermostOnly() {
-        return RecompilableScriptFunctionData.LAZY_COMPILATION || compiler.isOnDemandCompilation();
+        return compiler.isOnDemandCompilation() || compiler.getScriptEnvironment()._lazy_compilation;
     }
 
     @Override
@@ -2296,7 +2296,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             if (value == null) {
                 gettersSetters.add(propertyNode);
-            } else if (key.equals(ScriptObject.PROTO_PROPERTY_NAME)) {
+            } else if (propertyNode.getKey() instanceof IdentNode &&
+                       key.equals(ScriptObject.PROTO_PROPERTY_NAME)) {
+                // ES6 draft compliant __proto__ inside object literal
+                // Identifier key and name is __proto__
                 protoNode = value;
                 continue;
             }

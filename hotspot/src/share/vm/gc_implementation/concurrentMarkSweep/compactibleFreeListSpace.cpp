@@ -39,6 +39,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 
@@ -564,11 +565,11 @@ void CompactibleFreeListSpace::reportIndexedFreeListStatistics() const {
                       "--------------------------------\n");
   size_t total_size = totalSizeInIndexedFreeLists();
   size_t   free_blocks = numFreeBlocksInIndexedFreeLists();
-  gclog_or_tty->print("Total Free Space: %d\n", total_size);
-  gclog_or_tty->print("Max   Chunk Size: %d\n", maxChunkSizeInIndexedFreeLists());
-  gclog_or_tty->print("Number of Blocks: %d\n", free_blocks);
+  gclog_or_tty->print("Total Free Space: " SIZE_FORMAT "\n", total_size);
+  gclog_or_tty->print("Max   Chunk Size: " SIZE_FORMAT "\n", maxChunkSizeInIndexedFreeLists());
+  gclog_or_tty->print("Number of Blocks: " SIZE_FORMAT "\n", free_blocks);
   if (free_blocks != 0) {
-    gclog_or_tty->print("Av.  Block  Size: %d\n", total_size/free_blocks);
+    gclog_or_tty->print("Av.  Block  Size: " SIZE_FORMAT "\n", total_size/free_blocks);
   }
 }
 
@@ -793,53 +794,6 @@ void CompactibleFreeListSpace::oop_iterate(ExtendedOopClosure* cl) {
   }
 }
 
-// Apply the given closure to each oop in the space \intersect memory region.
-void CompactibleFreeListSpace::oop_iterate(MemRegion mr, ExtendedOopClosure* cl) {
-  assert_lock_strong(freelistLock());
-  if (is_empty()) {
-    return;
-  }
-  MemRegion cur = MemRegion(bottom(), end());
-  mr = mr.intersection(cur);
-  if (mr.is_empty()) {
-    return;
-  }
-  if (mr.equals(cur)) {
-    oop_iterate(cl);
-    return;
-  }
-  assert(mr.end() <= end(), "just took an intersection above");
-  HeapWord* obj_addr = block_start(mr.start());
-  HeapWord* t = mr.end();
-
-  SpaceMemRegionOopsIterClosure smr_blk(cl, mr);
-  if (block_is_obj(obj_addr)) {
-    // Handle first object specially.
-    oop obj = oop(obj_addr);
-    obj_addr += adjustObjectSize(obj->oop_iterate(&smr_blk));
-  } else {
-    FreeChunk* fc = (FreeChunk*)obj_addr;
-    obj_addr += fc->size();
-  }
-  while (obj_addr < t) {
-    HeapWord* obj = obj_addr;
-    obj_addr += block_size(obj_addr);
-    // If "obj_addr" is not greater than top, then the
-    // entire object "obj" is within the region.
-    if (obj_addr <= t) {
-      if (block_is_obj(obj)) {
-        oop(obj)->oop_iterate(cl);
-      }
-    } else {
-      // "obj" extends beyond end of region
-      if (block_is_obj(obj)) {
-        oop(obj)->oop_iterate(&smr_blk);
-      }
-      break;
-    }
-  }
-}
-
 // NOTE: In the following methods, in order to safely be able to
 // apply the closure to an object, we need to be sure that the
 // object has been initialized. We are guaranteed that an object
@@ -898,42 +852,60 @@ void CompactibleFreeListSpace::object_iterate_mem(MemRegion mr,
                                                   UpwardsObjectClosure* cl) {
   assert_locked(freelistLock());
   NOT_PRODUCT(verify_objects_initialized());
-  Space::object_iterate_mem(mr, cl);
+  assert(!mr.is_empty(), "Should be non-empty");
+  // We use MemRegion(bottom(), end()) rather than used_region() below
+  // because the two are not necessarily equal for some kinds of
+  // spaces, in particular, certain kinds of free list spaces.
+  // We could use the more complicated but more precise:
+  // MemRegion(used_region().start(), round_to(used_region().end(), CardSize))
+  // but the slight imprecision seems acceptable in the assertion check.
+  assert(MemRegion(bottom(), end()).contains(mr),
+         "Should be within used space");
+  HeapWord* prev = cl->previous();   // max address from last time
+  if (prev >= mr.end()) { // nothing to do
+    return;
+  }
+  // This assert will not work when we go from cms space to perm
+  // space, and use same closure. Easy fix deferred for later. XXX YSR
+  // assert(prev == NULL || contains(prev), "Should be within space");
+
+  bool last_was_obj_array = false;
+  HeapWord *blk_start_addr, *region_start_addr;
+  if (prev > mr.start()) {
+    region_start_addr = prev;
+    blk_start_addr    = prev;
+    // The previous invocation may have pushed "prev" beyond the
+    // last allocated block yet there may be still be blocks
+    // in this region due to a particular coalescing policy.
+    // Relax the assertion so that the case where the unallocated
+    // block is maintained and "prev" is beyond the unallocated
+    // block does not cause the assertion to fire.
+    assert((BlockOffsetArrayUseUnallocatedBlock &&
+            (!is_in(prev))) ||
+           (blk_start_addr == block_start(region_start_addr)), "invariant");
+  } else {
+    region_start_addr = mr.start();
+    blk_start_addr    = block_start(region_start_addr);
+  }
+  HeapWord* region_end_addr = mr.end();
+  MemRegion derived_mr(region_start_addr, region_end_addr);
+  while (blk_start_addr < region_end_addr) {
+    const size_t size = block_size(blk_start_addr);
+    if (block_is_obj(blk_start_addr)) {
+      last_was_obj_array = cl->do_object_bm(oop(blk_start_addr), derived_mr);
+    } else {
+      last_was_obj_array = false;
+    }
+    blk_start_addr += size;
+  }
+  if (!last_was_obj_array) {
+    assert((bottom() <= blk_start_addr) && (blk_start_addr <= end()),
+           "Should be within (closed) used space");
+    assert(blk_start_addr > prev, "Invariant");
+    cl->set_previous(blk_start_addr); // min address for next time
+  }
 }
 
-// Callers of this iterator beware: The closure application should
-// be robust in the face of uninitialized objects and should (always)
-// return a correct size so that the next addr + size below gives us a
-// valid block boundary. [See for instance,
-// ScanMarkedObjectsAgainCarefullyClosure::do_object_careful()
-// in ConcurrentMarkSweepGeneration.cpp.]
-HeapWord*
-CompactibleFreeListSpace::object_iterate_careful(ObjectClosureCareful* cl) {
-  assert_lock_strong(freelistLock());
-  HeapWord *addr, *last;
-  size_t size;
-  for (addr = bottom(), last  = end();
-       addr < last; addr += size) {
-    FreeChunk* fc = (FreeChunk*)addr;
-    if (fc->is_free()) {
-      // Since we hold the free list lock, which protects direct
-      // allocation in this generation by mutators, a free object
-      // will remain free throughout this iteration code.
-      size = fc->size();
-    } else {
-      // Note that the object need not necessarily be initialized,
-      // because (for instance) the free list lock does NOT protect
-      // object initialization. The closure application below must
-      // therefore be correct in the face of uninitialized objects.
-      size = cl->do_object_careful(oop(addr));
-      if (size == 0) {
-        // An unparsable object found. Signal early termination.
-        return addr;
-      }
-    }
-  }
-  return NULL;
-}
 
 // Callers of this iterator beware: The closure application should
 // be robust in the face of uninitialized objects and should (always)
@@ -2181,7 +2153,7 @@ void CompactibleFreeListSpace::beginSweepFLCensus(
   for (i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
     AdaptiveFreeList<FreeChunk>* fl    = &_indexedFreeList[i];
     if (PrintFLSStatistics > 1) {
-      gclog_or_tty->print("size[%d] : ", i);
+      gclog_or_tty->print("size[" SIZE_FORMAT "] : ", i);
     }
     fl->compute_desired(inter_sweep_current, inter_sweep_estimate, intra_sweep_estimate);
     fl->set_coal_desired((ssize_t)((double)fl->desired() * CMSSmallCoalSurplusPercent));
@@ -2712,7 +2684,8 @@ void CFLS_LAB::compute_desired_plab_size() {
       _global_num_workers[i] = 0;
       _global_num_blocks[i] = 0;
       if (PrintOldPLAB) {
-        gclog_or_tty->print_cr("[%d]: %d", i, (size_t)_blocks_to_claim[i].average());
+        gclog_or_tty->print_cr("[" SIZE_FORMAT "]: " SIZE_FORMAT,
+                               i, (size_t)_blocks_to_claim[i].average());
       }
     }
   }
@@ -2751,7 +2724,7 @@ void CFLS_LAB::retire(int tid) {
         }
       }
       if (PrintOldPLAB) {
-        gclog_or_tty->print_cr("%d[%d]: %d/%d/%d",
+        gclog_or_tty->print_cr("%d[" SIZE_FORMAT "]: " SIZE_FORMAT "/" SIZE_FORMAT "/" SIZE_FORMAT,
                                tid, i, num_retire, _num_blocks[i], (size_t)_blocks_to_claim[i].average());
       }
       // Reset stats for next round

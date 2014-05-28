@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,95 +26,65 @@
  * @bug      4927552 8026567
  * @summary  <DESC>
  * @author   jamieh
- * @library  ../lib/
- * @build    JavadocTester TestDeprecatedDocs
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestDeprecatedDocs
  */
 
 public class TestDeprecatedDocs extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4927552";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    private static final String TARGET_FILE  =
-        BUG_ID + FS + "deprecated-list.html";
-
-    private static final String TARGET_FILE2  =
-        BUG_ID + FS + "pkg" + FS + "DeprecatedClassByAnnotation.html";
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {TARGET_FILE, "annotation_test1 passes"},
-        {TARGET_FILE, "annotation_test2 passes"},
-        {TARGET_FILE, "annotation_test3 passes"},
-        {TARGET_FILE, "class_test1 passes"},
-        {TARGET_FILE, "class_test2 passes"},
-        {TARGET_FILE, "class_test3 passes"},
-        {TARGET_FILE, "class_test4 passes"},
-        {TARGET_FILE, "enum_test1 passes"},
-        {TARGET_FILE, "enum_test2 passes"},
-        {TARGET_FILE, "error_test1 passes"},
-        {TARGET_FILE, "error_test2 passes"},
-        {TARGET_FILE, "error_test3 passes"},
-        {TARGET_FILE, "error_test4 passes"},
-        {TARGET_FILE, "exception_test1 passes"},
-        {TARGET_FILE, "exception_test2 passes"},
-        {TARGET_FILE, "exception_test3 passes"},
-        {TARGET_FILE, "exception_test4 passes"},
-        {TARGET_FILE, "interface_test1 passes"},
-        {TARGET_FILE, "interface_test2 passes"},
-        {TARGET_FILE, "interface_test3 passes"},
-        {TARGET_FILE, "interface_test4 passes"},
-        {TARGET_FILE, "pkg.DeprecatedClassByAnnotation"},
-        {TARGET_FILE, "pkg.DeprecatedClassByAnnotation()"},
-        {TARGET_FILE, "pkg.DeprecatedClassByAnnotation.method()"},
-        {TARGET_FILE, "pkg.DeprecatedClassByAnnotation.field"},
-
-        {TARGET_FILE2, "<pre>@Deprecated" + NL +
-                 "public class <span class=\"typeNameLabel\">DeprecatedClassByAnnotation</span>" + NL +
-                 "extends java.lang.Object</pre>"},
-
-        {TARGET_FILE2, "<pre>@Deprecated" + NL +
-                 "public&nbsp;int field</pre>" + NL +
-                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
-
-        {TARGET_FILE2, "<pre>@Deprecated" + NL +
-                 "public&nbsp;DeprecatedClassByAnnotation()</pre>" + NL +
-                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
-
-        {TARGET_FILE2, "<pre>@Deprecated" + NL +
-                 "public&nbsp;void&nbsp;method()</pre>" + NL +
-                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
-    };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDeprecatedDocs tester = new TestDeprecatedDocs();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("deprecated-list.html", true,
+                "annotation_test1 passes",
+                "annotation_test2 passes",
+                "annotation_test3 passes",
+                "class_test1 passes",
+                "class_test2 passes",
+                "class_test3 passes",
+                "class_test4 passes",
+                "enum_test1 passes",
+                "enum_test2 passes",
+                "error_test1 passes",
+                "error_test2 passes",
+                "error_test3 passes",
+                "error_test4 passes",
+                "exception_test1 passes",
+                "exception_test2 passes",
+                "exception_test3 passes",
+                "exception_test4 passes",
+                "interface_test1 passes",
+                "interface_test2 passes",
+                "interface_test3 passes",
+                "interface_test4 passes",
+                "pkg.DeprecatedClassByAnnotation",
+                "pkg.DeprecatedClassByAnnotation()",
+                "pkg.DeprecatedClassByAnnotation.method()",
+                "pkg.DeprecatedClassByAnnotation.field"
+        );
+
+        checkOutput("pkg/DeprecatedClassByAnnotation.html", true,
+                "<pre>@Deprecated\n"
+                + "public class <span class=\"typeNameLabel\">DeprecatedClassByAnnotation</span>\n"
+                + "extends java.lang.Object</pre>",
+                "<pre>@Deprecated\n"
+                + "public&nbsp;int field</pre>\n"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>",
+                "<pre>@Deprecated\n"
+                + "public&nbsp;DeprecatedClassByAnnotation()</pre>\n"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>",
+                "<pre>@Deprecated\n"
+                + "public&nbsp;void&nbsp;method()</pre>\n"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>");
     }
 }

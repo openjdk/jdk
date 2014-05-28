@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ awtJNI_GetFontDescriptorNumber(JNIEnv * env
     jobject temp = NULL;
     jboolean validRet = JNI_FALSE;
 
-    if ((*env)->EnsureLocalCapacity(env, 2) < 0)
+    if ((*env)->EnsureLocalCapacity(env, 2) < 0 || (*env)->ExceptionCheck(env))
         goto done;
 
     peer = (*env)->CallObjectMethod(env,font,fontIDs.getPeer);
@@ -162,7 +162,7 @@ awtJNI_IsMultiFontMetrics(JNIEnv * env, jobject this)
 
     font = JNU_CallMethodByName(env, NULL, this, "getFont_NoClientCode",
                                 "()Ljava/awt/Font;").l;
-    if (JNU_IsNull(env, font)) {
+    if (JNU_IsNull(env, font) || (*env)->ExceptionCheck(env)) {
         return JNI_FALSE;
     }
 
@@ -318,6 +318,10 @@ awtJNI_GetMFStringWidth(JNIEnv * env, jcharArray s, int offset, int sLength, job
     }
 
     fdata = awtJNI_GetFontData(env, font, &err);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->DeleteLocalRef(env, dataArray);
+        return 0;
+    }
 
     stringCount = (*env)->GetArrayLength(env, dataArray);
 
@@ -336,6 +340,11 @@ awtJNI_GetMFStringWidth(JNIEnv * env, jcharArray s, int offset, int sLength, job
         }
 
         j = awtJNI_GetFontDescriptorNumber(env, font, fontDescriptor);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->DeleteLocalRef(env, fontDescriptor);
+            (*env)->DeleteLocalRef(env, data);
+            break;
+        }
 
         if (fdata->flist[j].load == 0) {
             xf = loadFont(awt_display,
@@ -356,6 +365,14 @@ awtJNI_GetMFStringWidth(JNIEnv * env, jcharArray s, int offset, int sLength, job
 
         stringData =
             (unsigned char *)(*env)->GetPrimitiveArrayCritical(env, data,NULL);
+        if (stringData == NULL) {
+            (*env)->DeleteLocalRef(env, fontDescriptor);
+            (*env)->DeleteLocalRef(env, data);
+            (*env)->ExceptionClear(env);
+            JNU_ThrowOutOfMemoryError(env, "Could not get string data");
+            break;
+        }
+
         length = (stringData[0] << 24) | (stringData[1] << 16) |
             (stringData[2] << 8) | stringData[3];
         offsetStringData = (char *)(stringData + (4 * sizeof(char)));

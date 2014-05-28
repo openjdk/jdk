@@ -82,6 +82,39 @@ static long eventCount;
 
 @end
 
+@interface JavaRunnable : NSObject { }
+@property jobject runnable;
+- (id)initWithRunnable:(jobject)gRunnable;
+- (void)perform;
+@end
+
+@implementation JavaRunnable
+@synthesize runnable = _runnable;
+
+- (id)initWithRunnable:(jobject)gRunnable {
+    if (self = [super init]) {
+        self.runnable = gRunnable;
+    }
+    return self;
+}
+
+- (void)dealloc {
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    if (self.runnable) {
+        (*env)->DeleteGlobalRef(env, self.runnable);
+    }
+    [super dealloc];
+}
+
+- (void)perform {
+    JNIEnv* env = [ThreadUtilities getJNIEnv];
+    static JNF_CLASS_CACHE(sjc_Runnable, "java/lang/Runnable");
+    static JNF_MEMBER_CACHE(jm_Runnable_run, sjc_Runnable, "run", "()V");
+    JNFCallVoidMethod(env, self.runnable, jm_Runnable_run);
+    [self release];
+}
+@end
+
 /*
  * Class:     sun_lwawt_macosx_LWCToolkit
  * Method:    nativeSyncQueue
@@ -111,6 +144,18 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_LWCToolkit_nativeSyncQueue
     return JNI_FALSE;
 }
 
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    flushNativeSelectors
+ * Signature: ()J
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_flushNativeSelectors
+(JNIEnv *env, jclass clz)
+{
+JNF_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThreadWaiting:YES block:^(){}];
+JNF_COCOA_EXIT(env);
+}
 
 static JNF_CLASS_CACHE(jc_Component, "java/awt/Component");
 static JNF_MEMBER_CACHE(jf_Component_appContext, jc_Component, "appContext", "Lsun/awt/AppContext;");
@@ -188,25 +233,30 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_LWCToolkit_initIDs
 (JNIEnv *env, jclass klass) {
     // set thread names
-    dispatch_async(dispatch_get_main_queue(), ^(void){
-        [[NSThread currentThread] setName:@"AppKit Thread"];
-
-        JNIEnv *env = [ThreadUtilities getJNIEnv];
-        static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
-        static JNF_STATIC_MEMBER_CACHE(jsm_installToolkitThreadNameInJava, jc_LWCToolkit, "installToolkitThreadNameInJava", "()V");
-        JNFCallStaticVoidMethod(env, jsm_installToolkitThreadNameInJava);
-    });
-
+    if (![ThreadUtilities isAWTEmbedded]) {
+        dispatch_async(dispatch_get_main_queue(), ^(void){
+            [[NSThread currentThread] setName:@"AppKit Thread"];
+            JNIEnv *env = [ThreadUtilities getJNIEnv];
+            static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
+            static JNF_STATIC_MEMBER_CACHE(jsm_installToolkitThreadInJava, jc_LWCToolkit, "installToolkitThreadInJava", "()V");
+            JNFCallStaticVoidMethod(env, jsm_installToolkitThreadInJava);
+        });
+    }
+    
     gNumberOfButtons = sun_lwawt_macosx_LWCToolkit_BUTTONS;
 
     jclass inputEventClazz = (*env)->FindClass(env, "java/awt/event/InputEvent");
+    CHECK_NULL(inputEventClazz);
     jmethodID getButtonDownMasksID = (*env)->GetStaticMethodID(env, inputEventClazz, "getButtonDownMasks", "()[I");
+    CHECK_NULL(getButtonDownMasksID);
     jintArray obj = (jintArray)(*env)->CallStaticObjectMethod(env, inputEventClazz, getButtonDownMasksID);
     jint * tmp = (*env)->GetIntArrayElements(env, obj, JNI_FALSE);
+    CHECK_NULL(tmp);
 
     gButtonDownMasks = (jint*)SAFE_SIZE_ARRAY_ALLOC(malloc, sizeof(jint), gNumberOfButtons);
     if (gButtonDownMasks == NULL) {
         gNumberOfButtons = 0;
+        (*env)->ReleaseIntArrayElements(env, obj, tmp, JNI_ABORT);
         JNU_ThrowOutOfMemoryError(env, NULL);
         return;
     }
@@ -240,7 +290,7 @@ static UInt32 RGB(NSColor *c) {
     return ((ia & 0xFF) << 24) | ((ir & 0xFF) << 16) | ((ig & 0xFF) << 8) | ((ib & 0xFF) << 0);
 }
 
-void doLoadNativeColors(JNIEnv *env, jintArray jColors, BOOL useAppleColors) {
+BOOL doLoadNativeColors(JNIEnv *env, jintArray jColors, BOOL useAppleColors) {
     jint len = (*env)->GetArrayLength(env, jColors);
 
     UInt32 colorsArray[len];
@@ -254,8 +304,12 @@ void doLoadNativeColors(JNIEnv *env, jintArray jColors, BOOL useAppleColors) {
     }];
 
     jint *_colors = (*env)->GetPrimitiveArrayCritical(env, jColors, 0);
+    if (_colors == NULL) {
+        return NO;
+    }
     memcpy(_colors, colors, len * sizeof(UInt32));
     (*env)->ReleasePrimitiveArrayCritical(env, jColors, _colors, 0);
+    return YES;
 }
 
 /**
@@ -267,8 +321,9 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_loadNativeColors
 (JNIEnv *env, jobject peer, jintArray jSystemColors, jintArray jAppleColors)
 {
 JNF_COCOA_ENTER(env);
-    doLoadNativeColors(env, jSystemColors, NO);
-    doLoadNativeColors(env, jAppleColors, YES);
+    if (doLoadNativeColors(env, jSystemColors, NO)) {
+        doLoadNativeColors(env, jAppleColors, YES);
+    }
 JNF_COCOA_EXIT(env);
 }
 
@@ -282,17 +337,15 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_LWCToolkit_createAWTRunLoopMediato
 {
 AWT_ASSERT_APPKIT_THREAD;
 
-    AWTRunLoopObject *o = nil;
+    jlong result;
 
+JNF_COCOA_ENTER(env);
     // We double retain because this object is owned by both main thread and "other" thread
     // We release in both doAWTRunLoop and stopAWTRunLoop
-    o = [[AWTRunLoopObject alloc] init];
-    if (o) {
-        CFRetain(o); // GC
-        CFRetain(o); // GC
-        [o release];
-    }
-    return ptr_to_jlong(o);
+    result = ptr_to_jlong([[[AWTRunLoopObject alloc] init] retain]);
+JNF_COCOA_EXIT(env);
+
+    return result;
 }
 
 /*
@@ -327,10 +380,7 @@ JNF_COCOA_ENTER(env);
 
         }
     }
-
-   
-    CFRelease(mediatorObject);
-
+    [mediatorObject release];
 JNF_COCOA_EXIT(env);
 }
 
@@ -348,10 +398,29 @@ JNF_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThread:@selector(endRunLoop) on:mediatorObject withObject:nil waitUntilDone:NO];
 
-    CFRelease(mediatorObject);
+    [mediatorObject release];
 
 JNF_COCOA_EXIT(env);
 }
+
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    performOnMainThreadAfterDelay
+ * Signature: (Ljava/lang/Runnable;J)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_performOnMainThreadAfterDelay
+(JNIEnv *env, jclass clz, jobject runnable, jlong delay)
+{
+JNF_COCOA_ENTER(env);
+    jobject gRunnable = (*env)->NewGlobalRef(env, runnable);
+    CHECK_NULL(gRunnable);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^() {
+        JavaRunnable* performer = [[JavaRunnable alloc] initWithRunnable:gRunnable];
+        [performer performSelector:@selector(perform) withObject:nil afterDelay:(delay/1000.0)];
+    }];
+JNF_COCOA_EXIT(env);
+}
+
 
 /*
  * Class:     sun_lwawt_macosx_LWCToolkit
@@ -429,4 +498,3 @@ Java_sun_font_FontManager_populateFontFileNameMap
 {
 
 }
-

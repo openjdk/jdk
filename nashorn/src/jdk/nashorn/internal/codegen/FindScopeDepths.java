@@ -210,9 +210,8 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         // Generate the object class and property map in case this function is ever used as constructor
         final int         fieldCount         = getPaddedFieldCount(newFunctionNode.getThisProperties());
         final String      allocatorClassName = Compiler.binaryName(getClassName(fieldCount));
-        final PropertyMap allocatorMap       = PropertyMap.newMap(null, 0, fieldCount, 0);
+        final PropertyMap allocatorMap       = PropertyMap.newMap(null, allocatorClassName, 0, fieldCount, 0);
         final RecompilableScriptFunctionData data = new RecompilableScriptFunctionData(
-                compiler.getContext(),
                 newFunctionNode,
                 compiler.getCodeInstaller(),
                 allocatorClassName,

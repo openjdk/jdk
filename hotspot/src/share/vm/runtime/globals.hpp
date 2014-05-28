@@ -535,6 +535,9 @@ class CommandLineFlags {
   develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
           "Clean the chunk pool asynchronously")                            \
                                                                             \
+  experimental(bool, AlwaysSafeConstructors, false,                         \
+          "Force safe construction, as if all fields are final.")           \
+                                                                            \
   /* Temporary: See 6948537 */                                              \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \
@@ -811,8 +814,8 @@ class CommandLineFlags {
   product(bool, PrintOopAddress, false,                                     \
           "Always print the location of the oop")                           \
                                                                             \
-  notproduct(bool, VerifyCodeCacheOften, false,                             \
-          "Verify compiled-code cache often")                               \
+  notproduct(bool, VerifyCodeCache, false,                                  \
+          "Verify code cache on memory allocation/deallocation")            \
                                                                             \
   develop(bool, ZapDeadCompiledLocals, false,                               \
           "Zap dead locals in compiler frames")                             \
@@ -1928,6 +1931,10 @@ class CommandLineFlags {
           "not just one of the generations (e.g., G1). A value of 0 "       \
           "denotes 'do constant GC cycles'.")                               \
                                                                             \
+  manageable(intx, CMSTriggerInterval, -1,                                  \
+          "Commence a CMS collection cycle (at least) every so many "       \
+          "milliseconds (0 permanently, -1 disabled)")                      \
+                                                                            \
   product(bool, UseCMSInitiatingOccupancyOnly, false,                       \
           "Only use occupancy as a criterion for starting a CMS collection")\
                                                                             \
@@ -2420,9 +2427,9 @@ class CommandLineFlags {
           "Number of gclog files in rotation "                              \
           "(default: 0, no rotation)")                                      \
                                                                             \
-  product(uintx, GCLogFileSize, 0,                                          \
-          "GC log file size (default: 0 bytes, no rotation). "              \
-          "It requires UseGCLogFileRotation")                               \
+  product(uintx, GCLogFileSize, 8*K,                                        \
+          "GC log file size, requires UseGCLogFileRotation. "               \
+          "Set to 0 to only trigger rotation via jcmd")                     \
                                                                             \
   /* JVMTI heap profiling */                                                \
                                                                             \
@@ -2829,7 +2836,7 @@ class CommandLineFlags {
           "number of method invocations/branches (expressed as % of "       \
           "CompileThreshold) before using the method's profile")            \
                                                                             \
-  develop(bool, PrintMethodData, false,                                     \
+  diagnostic(bool, PrintMethodData, false,                                  \
           "Print the results of +ProfileInterpreter at end of run")         \
                                                                             \
   develop(bool, VerifyDataPointer, trueInDebug,                             \
@@ -2984,7 +2991,8 @@ class CommandLineFlags {
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
   develop(intx, MaxForceInlineLevel, 100,                                   \
-          "maximum number of nested @ForceInline calls that are inlined")   \
+          "maximum number of nested calls that are forced for inlining "    \
+          "(using CompilerOracle or marked w/ @ForceInline)")               \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \
@@ -3292,8 +3300,8 @@ class CommandLineFlags {
           "disable this feature")                                           \
                                                                             \
   /* code cache parameters */                                               \
-  /* ppc64 has large code-entry alignment. */                               \
-  develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64),                  \
+  /* ppc64/tiered compilation has large code-entry alignment. */            \
+  develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),\
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
                                                                             \
@@ -3776,10 +3784,6 @@ class CommandLineFlags {
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
           "Address to allocate shared memory region for class data")        \
                                                                             \
-  diagnostic(bool, EnableInvokeDynamic, true,                               \
-          "support JSR 292 (method handles, invokedynamic, "                \
-          "anonymous classes")                                              \
-                                                                            \
   diagnostic(bool, PrintMethodHandleStubs, false,                           \
           "Print generated stub code for method handles")                   \
                                                                             \
@@ -3795,8 +3799,8 @@ class CommandLineFlags {
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
                                                                             \
-  experimental(bool, FoldStableValues, false,                               \
-          "Private flag to control optimizations for stable variables")     \
+  diagnostic(bool, FoldStableValues, true,                                  \
+          "Optimize loads from stable fields (marked w/ @Stable)")          \
                                                                             \
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \
@@ -3836,16 +3840,27 @@ class CommandLineFlags {
   experimental(uintx, SymbolTableSize, defaultSymbolTableSize,              \
           "Number of buckets in the JVM internal Symbol table")             \
                                                                             \
+  product(bool, UseStringDeduplication, false,                              \
+          "Use string deduplication")                                       \
+                                                                            \
+  product(bool, PrintStringDeduplicationStatistics, false,                  \
+          "Print string deduplication statistics")                          \
+                                                                            \
+  product(uintx, StringDeduplicationAgeThreshold, 3,                        \
+          "A string must reach this age (or be promoted to an old region) " \
+          "to be considered for deduplication")                             \
+                                                                            \
+  diagnostic(bool, StringDeduplicationResizeALot, false,                    \
+          "Force table resize every time the table is scanned")             \
+                                                                            \
+  diagnostic(bool, StringDeduplicationRehashALot, false,                    \
+          "Force table rehash every time the table is scanned")             \
+                                                                            \
   develop(bool, TraceDefaultMethods, false,                                 \
           "Trace the default method processing steps")                      \
                                                                             \
   develop(bool, VerifyGenericSignatures, false,                             \
           "Abort VM on erroneous or inconsistent generic signatures")       \
-                                                                            \
-  product(bool, UseVMInterruptibleIO, false,                                \
-          "(Unstable, Solaris-specific) Thread interrupt before or with "   \
-          "EINTR for I/O operations results in OS_INTRPT. The default "     \
-          "value of this flag is true for JDK 6 and earlier")               \
                                                                             \
   diagnostic(bool, WhiteBoxAPI, false,                                      \
           "Enable internal testing APIs")                                   \
@@ -3863,6 +3878,9 @@ class CommandLineFlags {
           SOLARIS_ONLY(64*K) NOT_SOLARIS(max_uintx),                        \
           "Allocation less than this value will be allocated "              \
           "using malloc. Larger allocations will use mmap.")                \
+                                                                            \
+  experimental(bool, AlwaysAtomicAccesses, false,                           \
+          "Accesses to all variables should always be atomic")              \
                                                                             \
   product(bool, EnableTracing, false,                                       \
           "Enable event-based tracing")                                     \

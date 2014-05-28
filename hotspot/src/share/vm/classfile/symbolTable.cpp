@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@
 #include "oops/oop.inline2.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1StringDedup.hpp"
+#endif
 
 // --------------------------------------------------------------------------
 
@@ -728,6 +731,15 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
     string = java_lang_String::create_from_unicode(name, len, CHECK_NULL);
   }
 
+#if INCLUDE_ALL_GCS
+  if (G1StringDedup::is_enabled()) {
+    // Deduplicate the string before it is interned. Note that we should never
+    // deduplicate a string after it has been interned. Doing so will counteract
+    // compiler optimizations done on e.g. interned string literals.
+    G1StringDedup::deduplicate(string());
+  }
+#endif
+
   // Grab the StringTable_lock before getting the_table() because it could
   // change at safepoint.
   MutexLocker ml(StringTable_lock, THREAD);
@@ -798,11 +810,11 @@ void StringTable::buckets_oops_do(OopClosure* f, int start_idx, int end_idx) {
   const int limit = the_table()->table_size();
 
   assert(0 <= start_idx && start_idx <= limit,
-         err_msg("start_idx (" INT32_FORMAT ") is out of bounds", start_idx));
+         err_msg("start_idx (%d) is out of bounds", start_idx));
   assert(0 <= end_idx && end_idx <= limit,
-         err_msg("end_idx (" INT32_FORMAT ") is out of bounds", end_idx));
+         err_msg("end_idx (%d) is out of bounds", end_idx));
   assert(start_idx <= end_idx,
-         err_msg("Index ordering: start_idx=" INT32_FORMAT", end_idx=" INT32_FORMAT,
+         err_msg("Index ordering: start_idx=%d, end_idx=%d",
                  start_idx, end_idx));
 
   for (int i = start_idx; i < end_idx; i += 1) {
@@ -821,11 +833,11 @@ void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClos
   const int limit = the_table()->table_size();
 
   assert(0 <= start_idx && start_idx <= limit,
-         err_msg("start_idx (" INT32_FORMAT ") is out of bounds", start_idx));
+         err_msg("start_idx (%d) is out of bounds", start_idx));
   assert(0 <= end_idx && end_idx <= limit,
-         err_msg("end_idx (" INT32_FORMAT ") is out of bounds", end_idx));
+         err_msg("end_idx (%d) is out of bounds", end_idx));
   assert(start_idx <= end_idx,
-         err_msg("Index ordering: start_idx=" INT32_FORMAT", end_idx=" INT32_FORMAT,
+         err_msg("Index ordering: start_idx=%d, end_idx=%d",
                  start_idx, end_idx));
 
   for (int i = start_idx; i < end_idx; ++i) {

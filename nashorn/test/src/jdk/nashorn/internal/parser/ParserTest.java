@@ -25,6 +25,9 @@
 
 package jdk.nashorn.internal.parser;
 
+import static jdk.nashorn.internal.runtime.Source.readFully;
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
+
 import java.io.File;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
@@ -62,6 +65,7 @@ public class ParserTest {
         options.set("anon.functions", true);
         options.set("parse.only", true);
         options.set("scripting", true);
+        options.set("const.as.var", true);
 
         final ErrorManager errors = new ErrorManager();
         this.context = new Context(options, errors, Thread.currentThread().getContextClassLoader());
@@ -131,7 +135,7 @@ public class ParserTest {
         }
 
         try {
-            final char[] buffer = Source.readFully(file);
+            final char[] buffer = readFully(file);
             boolean excluded = false;
             if (filter != null) {
                 final String content = new String(buffer);
@@ -153,7 +157,7 @@ public class ParserTest {
                 }
             };
             errors.setLimit(0);
-            final Source source = new Source(file.getAbsolutePath(), buffer);
+            final Source source = sourceFor(file.getAbsolutePath(), buffer);
             new Parser(context.getEnv(), source, errors, context.getEnv()._strict, null).parse();
             if (errors.getNumberOfErrors() > 0) {
                 log("Parse failed: " + file.getAbsolutePath());

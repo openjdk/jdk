@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,66 +28,38 @@
  *           match up with a real parameters.
  *           Make sure inheritDoc cannot be used in an invalid param tag.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestParamTaglet
  * @run main TestParamTaglet
  */
 
 public class TestParamTaglet extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4802275-4967243";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        //Regular param tags.
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<span class=\"paramLabel\">Parameters:</span></dt>" + NL + "<dd><code>param1</code> - testing 1 2 3.</dd>" +
-                NL + "<dd><code>param2</code> - testing 1 2 3."
-        },
-        //Param tags that don't match with any real parameters.
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<span class=\"paramLabel\">Parameters:</span></dt>" + NL + "<dd><code><I>p1</I></code> - testing 1 2 3.</dd>" +
-                NL + "<dd><code><I>p2</I></code> - testing 1 2 3."
-        },
-        //{@inherit} doc misuse does not cause doclet to throw exception.
-        // Param is printed with nothing inherited.
-        //XXX: in the future when Configuration is available during doc inheritence,
-        //print a warning for this mistake.
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<code><I>inheritBug</I></code> -"
-        },
-
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestParamTaglet tester = new TestParamTaglet();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.FAILED);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg/C.html", true,
+                //Regular param tags.
+                "<span class=\"paramLabel\">Parameters:</span></dt>\n"
+                + "<dd><code>param1</code> - testing 1 2 3.</dd>\n"
+                + "<dd><code>param2</code> - testing 1 2 3.",
+                //Param tags that don't match with any real parameters.
+                "<span class=\"paramLabel\">Parameters:</span></dt>\n"
+                + "<dd><code><I>p1</I></code> - testing 1 2 3.</dd>\n"
+                + "<dd><code><I>p2</I></code> - testing 1 2 3.",
+                //{@inherit} doc misuse does not cause doclet to throw exception.
+                // Param is printed with nothing inherited.
+                //XXX: in the future when Configuration is available during doc inheritence,
+                //print a warning for this mistake.
+                "<code><I>inheritBug</I></code> -");
     }
 }

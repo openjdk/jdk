@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,8 @@
  * @bug 6786682
  * @summary This test verifies the use of lang attribute by <HTML>.
  * @author Bhavesh Patel
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestHtmlTag
  * @run main TestHtmlTag
  */
 
@@ -38,56 +37,65 @@ import java.util.Locale;
 
 public class TestHtmlTag extends JavadocTester {
 
-    private static final String BUG_ID = "6786682";
-    private static final String[][] TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<html lang=\"" + Locale.getDefault().getLanguage() + "\">"},
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<html lang=\"" + Locale.getDefault().getLanguage() + "\">"}};
-    private static final String[][] NEGATED_TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<html>"}};
-    private static final String[][] TEST2 = {
-        {BUG_ID + FS + "pkg2" + FS + "C2.html", "<html lang=\"ja\">"},
-        {BUG_ID + FS + "pkg2" + FS + "package-summary.html", "<html lang=\"ja\">"}};
-    private static final String[][] NEGATED_TEST2 = {
-        {BUG_ID + FS + "pkg2" + FS + "C2.html", "<html>"}};
-    private static final String[][] TEST3 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<html lang=\"en\">"},
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<html lang=\"en\">"}};
-    private static final String[][] NEGATED_TEST3 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<html>"}};
-
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"};
-    private static final String[] ARGS2 =
-        new String[] {
-            "-locale", "ja", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg2"};
-    private static final String[] ARGS3 =
-        new String[] {
-            "-locale", "en_US", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHtmlTag tester = new TestHtmlTag();
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
-        run(tester, ARGS3, TEST3, NEGATED_TEST3);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
+    @Test
+    void test_default() {
+        javadoc("-d", "out-default",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.OK);
+
+        String defaultLanguage = Locale.getDefault().getLanguage();
+
+        checkOutput("pkg1/C1.html", true,
+            "<html lang=\"" + defaultLanguage + "\">");
+
+        checkOutput("pkg1/package-summary.html", true,
+            "<html lang=\"" + defaultLanguage + "\">");
+
+        checkOutput("pkg1/C1.html", false,
+                "<html>");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+    @Test
+    void test_ja() {
+        // TODO: why does this test need/use pkg2; why can't it use pkg1
+        // like the other two tests, so that we can share the check methods?
+        javadoc("-locale", "ja",
+                "-d", "out-ja",
+                "-sourcepath", testSrc,
+                "pkg2");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg2/C2.html", true,
+                "<html lang=\"ja\">");
+
+        checkOutput("pkg2/package-summary.html", true,
+                "<html lang=\"ja\">");
+
+        checkOutput("pkg2/C2.html", false,
+                "<html>");
+    }
+
+    @Test
+    void test_en_US() {
+        javadoc("-locale", "en_US",
+                "-d", "out-en_US",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/C1.html", true,
+                "<html lang=\"en\">");
+
+        checkOutput("pkg1/package-summary.html", true,
+                "<html lang=\"en\">");
+
+        checkOutput("pkg1/C1.html", false,
+                "<html>");
     }
 }

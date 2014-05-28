@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,19 +85,25 @@ GCHeapSummary CollectedHeap::create_heap_summary() {
 
 MetaspaceSummary CollectedHeap::create_metaspace_summary() {
   const MetaspaceSizes meta_space(
-      MetaspaceAux::allocated_capacity_bytes(),
-      MetaspaceAux::allocated_used_bytes(),
+      MetaspaceAux::committed_bytes(),
+      MetaspaceAux::used_bytes(),
       MetaspaceAux::reserved_bytes());
   const MetaspaceSizes data_space(
-      MetaspaceAux::allocated_capacity_bytes(Metaspace::NonClassType),
-      MetaspaceAux::allocated_used_bytes(Metaspace::NonClassType),
+      MetaspaceAux::committed_bytes(Metaspace::NonClassType),
+      MetaspaceAux::used_bytes(Metaspace::NonClassType),
       MetaspaceAux::reserved_bytes(Metaspace::NonClassType));
   const MetaspaceSizes class_space(
-      MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType),
-      MetaspaceAux::allocated_used_bytes(Metaspace::ClassType),
+      MetaspaceAux::committed_bytes(Metaspace::ClassType),
+      MetaspaceAux::used_bytes(Metaspace::ClassType),
       MetaspaceAux::reserved_bytes(Metaspace::ClassType));
 
-  return MetaspaceSummary(meta_space, data_space, class_space);
+  const MetaspaceChunkFreeListSummary& ms_chunk_free_list_summary =
+    MetaspaceAux::chunk_free_list_summary(Metaspace::NonClassType);
+  const MetaspaceChunkFreeListSummary& class_chunk_free_list_summary =
+    MetaspaceAux::chunk_free_list_summary(Metaspace::ClassType);
+
+  return MetaspaceSummary(MetaspaceGC::capacity_until_GC(), meta_space, data_space, class_space,
+                          ms_chunk_free_list_summary, class_chunk_free_list_summary);
 }
 
 void CollectedHeap::print_heap_before_gc() {
@@ -128,8 +134,10 @@ void CollectedHeap::unregister_nmethod(nmethod* nm) {
 
 void CollectedHeap::trace_heap(GCWhen::Type when, GCTracer* gc_tracer) {
   const GCHeapSummary& heap_summary = create_heap_summary();
+  gc_tracer->report_gc_heap_summary(when, heap_summary);
+
   const MetaspaceSummary& metaspace_summary = create_metaspace_summary();
-  gc_tracer->report_gc_heap_summary(when, heap_summary, metaspace_summary);
+  gc_tracer->report_metaspace_summary(when, metaspace_summary);
 }
 
 void CollectedHeap::trace_heap_before_gc(GCTracer* gc_tracer) {
@@ -572,36 +580,6 @@ void CollectedHeap::post_full_gc_dump(GCTimer* timer) {
     VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */);
     inspector.doit();
   }
-}
-
-oop CollectedHeap::Class_obj_allocate(KlassHandle klass, int size, KlassHandle real_klass, TRAPS) {
-  debug_only(check_for_valid_allocation_state());
-  assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
-  assert(size >= 0, "int won't convert to size_t");
-  HeapWord* obj;
-    assert(ScavengeRootsInCode > 0, "must be");
-    obj = common_mem_allocate_init(real_klass, size, CHECK_NULL);
-  post_allocation_setup_common(klass, obj);
-  assert(Universe::is_bootstrapping() ||
-         !((oop)obj)->is_array(), "must not be an array");
-  NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
-  oop mirror = (oop)obj;
-
-  java_lang_Class::set_oop_size(mirror, size);
-
-  // Setup indirections
-  if (!real_klass.is_null()) {
-    java_lang_Class::set_klass(mirror, real_klass());
-    real_klass->set_java_mirror(mirror);
-  }
-
-  InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
-  assert(size == mk->instance_size(real_klass), "should have been set");
-
-  // notify jvmti and dtrace
-  post_allocation_notify(klass, (oop)obj);
-
-  return mirror;
 }
 
 /////////////// Unit tests ///////////////

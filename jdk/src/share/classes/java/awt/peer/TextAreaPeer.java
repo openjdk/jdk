@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public interface TextAreaPeer extends TextComponentPeer {
     void insert(String text, int pos);
 
     /**
-     * Replaces a range of text by the specified string
+     * Replaces a range of text by the specified string.
      *
      * @param text the replacement string
      * @param start the begin of the range to replace

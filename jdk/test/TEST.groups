@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -97,13 +97,14 @@ jdk_io = \
 
 jdk_nio = \
     java/nio \
-    sun/nio
+    sun/nio \
+    jdk/nio
 
 jdk_net = \
     java/net \
     com/sun/net/httpserver \
-    com/oracle/net \
-    sun/net
+    sun/net \
+    jdk/net
 
 jdk_time = \
     java/time
@@ -155,6 +156,15 @@ jdk_jmx = \
 jdk_jdi = \
     com/sun/jdi
 
+# java launcher specific tests, Note: do not include this group into any groups
+# that potentially could be included into a jprt test rule, as the complementary
+# closed  group includes awt SplashScreen and these tests may not run 
+# satisfacotorily on all platforms and  profiles thus this group must always 
+# be a stand-alone group
+jdk_launcher = \
+    tools/launcher \
+    sun/tools
+    
 #
 # Tool (and tool API) tests are split into core and svc groups
 #
@@ -194,7 +204,6 @@ jdk_other = \
     com/sun/jndi \
     com/sun/corba \
     lib/testlibrary \
-    demo/zipfs \
     sample
 
 #
@@ -285,7 +294,7 @@ jdk_stable = \
     javax/accessibility \
     com/sun/java/swing \
     sun/pisces \
-    com/sun/awt  
+    com/sun/awt
 
 
 ###############################################################################
@@ -295,7 +304,7 @@ jdk_stable = \
 # - compact1, compact2, compact3, full JRE, JDK
 #
 # In addition they support testing of the minimal VM on compact1 and compact2.
-# Essentially this defines groups based around the specified API's and VM 
+# Essentially this defines groups based around the specified API's and VM
 # services available in the runtime.
 #
 # The groups are defined hierarchically in two forms:
@@ -507,7 +516,7 @@ compact2 = \
  -:needs_jdk
 
 # Tests that require compact2 API's and a full VM
-#  
+#
 needs_full_vm_compact2 =
 
 # Minimal VM on Compact 2 adds in some compact2 tests
@@ -591,7 +600,7 @@ needs_compact2 = \
   javax/crypto/Cipher/CipherStreamClose.java \
   sun/misc/URLClassPath/ClassnameCharTest.java \
   sun/net/www/protocol/https/HttpsURLConnection/HttpsCreateSockTest.java \
-  sun/net/www/protocol/https/HttpsURLConnection/HttpsSocketFacTest.java 
+  sun/net/www/protocol/https/HttpsURLConnection/HttpsSocketFacTest.java
 
 # Compact 1 adds full VM tests
 #

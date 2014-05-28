@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
  * @test
  * @bug 6659990
  * @summary test the immutability of the Date fields in KerberosTicket class.
- * @ignore Must set up KDC and setup Kerberos configuration file
+ */
+
+/*
+ * Must setup KDC and Kerberos configuration file
  */
 
 import java.net.InetAddress;
@@ -60,8 +63,8 @@ public class KerberosTixDateTest {
 
     public static void main(String[] args) throws Exception {
         byte[] asn1Bytes = "asn1".getBytes();
-        KerberosPrincipal client = new KerberosPrincipal("client");
-        KerberosPrincipal server = new KerberosPrincipal("server");
+        KerberosPrincipal client = new KerberosPrincipal("client@JLABS.SFBAY.SUN.COM");
+        KerberosPrincipal server = new KerberosPrincipal("server@JLABS.SFBAY.SUN.COM");
         byte[] keyBytes = "sessionKey".getBytes();
         long originalTime = 12345678L;
         Date inDate = new Date(originalTime);

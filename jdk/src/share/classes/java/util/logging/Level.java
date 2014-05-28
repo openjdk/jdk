@@ -195,7 +195,7 @@ public class Level implements java.io.Serializable {
     /**
      * Create a named Level with a given integer value and a
      * given localization resource name.
-     * <p>
+     *
      * @param name  the name of the Level, for example "SEVERE".
      * @param value an integer value for the level.
      * @param resourceBundleName name of a resource bundle to use in

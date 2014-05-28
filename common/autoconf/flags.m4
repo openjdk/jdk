@@ -119,6 +119,32 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
     # FIXME: likely bug, should be CCXXFLAGS_JDK? or one for C or CXX.
     CCXXFLAGS="$CCXXFLAGS -nologo"
   fi
+
+  if test "x$SYSROOT" != "x"; then
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+        # Solaris Studio does not have a concept of sysroot. Instead we must
+        # make sure the default include and lib dirs are appended to each 
+        # compile and link command line.
+        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
+        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+      SYSROOT_CFLAGS="--sysroot=\"$SYSROOT\""
+      SYSROOT_LDFLAGS="--sysroot=\"$SYSROOT\""
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\""
+      SYSROOT_LDFLAGS="-isysroot \"$SYSROOT\""
+    fi
+    # Propagate the sysroot args to hotspot
+    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
+  fi
+  AC_SUBST(SYSROOT_CFLAGS)
+  AC_SUBST(SYSROOT_LDFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
@@ -130,6 +156,26 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     PICFLAG="-fPIC"
+    C_FLAG_REORDER=''
+    CXX_FLAG_REORDER=''
+
+    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      # Linking is different on MacOSX
+      SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
+      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/[$]1'
+      SET_SHARED_LIBRARY_MAPFILE=''
+    else
+      # Default works for linux, might work on other platforms as well.
+      SHARED_LIBRARY_FLAGS='-shared'
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN[$]1'
+      SET_SHARED_LIBRARY_ORIGIN="-Xlinker -z -Xlinker origin $SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=[$]1'
+      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=[$]1'
+    fi
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    PICFLAG=''
     C_FLAG_REORDER=''
     CXX_FLAG_REORDER=''
 
@@ -242,6 +288,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
   # Generate make dependency files
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     C_FLAG_DEPS="-MMD -MF"
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    C_FLAG_DEPS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     C_FLAG_DEPS="-xMMD -xMF"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
@@ -260,6 +308,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       CFLAGS_DEBUG_SYMBOLS="-g"
       CXXFLAGS_DEBUG_SYMBOLS="-g"
     fi
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    CFLAGS_DEBUG_SYMBOLS="-g"
+    CXXFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     CFLAGS_DEBUG_SYMBOLS="-g -xs"
     CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
@@ -302,6 +353,20 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
     # The remaining toolchains share opt flags between CC and CXX;
     # setup for C and duplicate afterwards.
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        # On MacOSX we optimize for size, something
+        # we should do for all platforms?
+        C_O_FLAG_HIGHEST="-Os"
+        C_O_FLAG_HI="-Os"
+        C_O_FLAG_NORM="-Os"
+        C_O_FLAG_NONE=""
+      else
+        C_O_FLAG_HIGHEST="-O3"
+        C_O_FLAG_HI="-O3"
+        C_O_FLAG_NORM="-O2"
+        C_O_FLAG_NONE="-O0"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then
         # On MacOSX we optimize for size, something
         # we should do for all platforms?
@@ -382,9 +447,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   LDFLAGS_JDK="${LDFLAGS_JDK} $with_extra_ldflags"
 
   # Hotspot needs these set in their legacy form
-  LEGACY_EXTRA_CFLAGS=$with_extra_cflags
-  LEGACY_EXTRA_CXXFLAGS=$with_extra_cxxflags
-  LEGACY_EXTRA_LDFLAGS=$with_extra_ldflags
+  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $with_extra_cflags"
+  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $with_extra_cxxflags"
+  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $with_extra_ldflags"
 
   AC_SUBST(LEGACY_EXTRA_CFLAGS)
   AC_SUBST(LEGACY_EXTRA_CXXFLAGS)
@@ -408,7 +473,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
       ppc )
-        # on ppc we don't prevent gcc to omit frame pointer nor strict-aliasing
+        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
       * )
         CCXXFLAGS_JDK="$CCXXFLAGS_JDK -fno-omit-frame-pointer"
@@ -482,7 +548,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
       CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_LITTLE_ENDIAN"
     fi
   else
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN"
+    # Same goes for _BIG_ENDIAN. Do we really need to set *ENDIAN on Solaris if they
+    # are defined in the system?
+    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN="
+    else
+      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN"
+    fi
   fi
   
   # Setup target OS define. Use OS target name but in upper case.
@@ -696,4 +768,20 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
+
+  case "${TOOLCHAIN_TYPE}" in
+    microsoft)
+      CFLAGS_WARNINGS_ARE_ERRORS="/WX"
+      ;;
+    solstudio)
+      CFLAGS_WARNINGS_ARE_ERRORS="-errtags -errwarn=%all"
+      ;;
+    gcc)
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      ;;
+    clang)
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      ;;
+  esac
+  AC_SUBST(CFLAGS_WARNINGS_ARE_ERRORS)
 ])

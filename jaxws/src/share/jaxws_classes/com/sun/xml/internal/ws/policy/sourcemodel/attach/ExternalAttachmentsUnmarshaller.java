@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,13 @@ public class ExternalAttachmentsUnmarshaller {
     private static final QName POLICY = new QName("http://www.w3.org/ns/ws-policy", "Policy");
     private static final QName URI = new QName("http://www.w3.org/ns/ws-policy", "URI");
     private static final QName POLICIES = new QName(PolicyConstants.SUN_MANAGEMENT_NAMESPACE, "Policies");
-    private static final XMLInputFactory XML_INPUT_FACTORY = XMLInputFactory.newInstance();
+    private static final ContextClassloaderLocal<XMLInputFactory> XML_INPUT_FACTORY = new ContextClassloaderLocal<XMLInputFactory>() {
+        @Override
+        protected XMLInputFactory initialValue() throws Exception {
+            return XMLInputFactory.newInstance();
+        }
+    };
+
     private static final PolicyModelUnmarshaller POLICY_UNMARSHALLER = PolicyModelUnmarshaller.getXmlUnmarshaller();
 
     private final Map<URI, Policy> map = new HashMap<URI, Policy>();
@@ -93,7 +99,7 @@ public class ExternalAttachmentsUnmarshaller {
     public static Map<URI, Policy> unmarshal(final Reader source) throws PolicyException {
         LOGGER.entering(source);
         try {
-            XMLEventReader reader = XML_INPUT_FACTORY.createXMLEventReader(source);
+            XMLEventReader reader = XML_INPUT_FACTORY.get().createXMLEventReader(source);
             ExternalAttachmentsUnmarshaller instance = new ExternalAttachmentsUnmarshaller();
             final Map<URI, Policy> map = instance.unmarshal(reader, null);
             LOGGER.exiting(map);

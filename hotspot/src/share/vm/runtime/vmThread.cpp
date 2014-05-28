@@ -305,6 +305,9 @@ void VMThread::run() {
     _terminate_lock->notify();
   }
 
+  // Thread destructor usually does this.
+  ThreadLocalStorage::set_thread(NULL);
+
   // Deletion must be done synchronously by the JNI DestroyJavaVM thread
   // so that the VMThread deletion completes before the main thread frees
   // up the CodeHeap.
@@ -334,12 +337,6 @@ void VMThread::wait_for_vm_thread_exit() {
         _terminate_lock->wait(Mutex::_no_safepoint_check_flag);
     }
   }
-}
-
-void VMThread::print_on(outputStream* st) const {
-  st->print("\"%s\" ", name());
-  Thread::print_on(st);
-  st->cr();
 }
 
 void VMThread::evaluate_operation(VM_Operation* op) {

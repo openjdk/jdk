@@ -94,11 +94,6 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
             // is too conservative a check. However, isConstructor(mh) always implies isConstructor param
             assert isConstructor();
             code.add(CompiledFunction.createBuiltInConstructor(mh));
-/*=======
-            final MethodHandle invoker = MH.insertArguments(mh, 0, false);
-            final MethodHandle constructor = composeConstructor(MH.insertArguments(mh, 0, true));
-            code.add(new CompiledFunction(mh.type(), invoker, constructor));
->>>>>>> theirs*/
         } else {
             code.add(new CompiledFunction(mh));
         }

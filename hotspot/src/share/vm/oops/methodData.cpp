@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -33,6 +34,7 @@
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 
 // ==================================================================
 // DataLayout
@@ -114,7 +116,6 @@ void ProfileData::print_data_on(outputStream* st, const MethodData* md) const {
   print_data_on(st, print_data_on_helper(md));
 }
 
-#ifndef PRODUCT
 void ProfileData::print_shared(outputStream* st, const char* name, const char* extra) const {
   st->print("bci: %d", bci());
   st->fill_to(tab_width_one);
@@ -137,7 +138,6 @@ void ProfileData::print_shared(outputStream* st, const char* name, const char* e
 void ProfileData::tab(outputStream* st, bool first) const {
   st->fill_to(first ? tab_width_one : tab_width_two);
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // BitData
@@ -146,23 +146,19 @@ void ProfileData::tab(outputStream* st, bool first) const {
 // whether a checkcast bytecode has seen a null value.
 
 
-#ifndef PRODUCT
 void BitData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "BitData", extra);
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // CounterData
 //
 // A CounterData corresponds to a simple counter.
 
-#ifndef PRODUCT
 void CounterData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "CounterData", extra);
   st->print_cr("count(%u)", count());
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // JumpData
@@ -187,12 +183,10 @@ void JumpData::post_initialize(BytecodeStream* stream, MethodData* mdo) {
   set_displacement(offset);
 }
 
-#ifndef PRODUCT
 void JumpData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "JumpData", extra);
   st->print_cr("taken(%u) displacement(%d)", taken(), displacement());
 }
-#endif // !PRODUCT
 
 int TypeStackSlotEntries::compute_cell_count(Symbol* signature, bool include_receiver, int max) {
   // Parameter profiling include the receiver
@@ -341,7 +335,6 @@ bool TypeEntriesAtCall::arguments_profiling_enabled() {
   return MethodData::profile_arguments();
 }
 
-#ifndef PRODUCT
 void TypeEntries::print_klass(outputStream* st, intptr_t k) {
   if (is_type_none(k)) {
     st->print("none");
@@ -397,7 +390,6 @@ void VirtualCallTypeData::print_data_on(outputStream* st, const char* extra) con
     _ret.print_data_on(st);
   }
 }
-#endif
 
 // ==================================================================
 // ReceiverTypeData
@@ -416,7 +408,6 @@ void ReceiverTypeData::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
   }
 }
 
-#ifndef PRODUCT
 void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   uint row;
   int entries = 0;
@@ -446,7 +437,6 @@ void VirtualCallData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "VirtualCallData", extra);
   print_receiver_data_on(st);
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // RetData
@@ -498,7 +488,6 @@ DataLayout* RetData::advance(MethodData *md, int bci) {
 }
 #endif // CC_INTERP
 
-#ifndef PRODUCT
 void RetData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "RetData", extra);
   uint row;
@@ -515,7 +504,6 @@ void RetData::print_data_on(outputStream* st, const char* extra) const {
     }
   }
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // BranchData
@@ -533,7 +521,6 @@ void BranchData::post_initialize(BytecodeStream* stream, MethodData* mdo) {
   set_displacement(offset);
 }
 
-#ifndef PRODUCT
 void BranchData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "BranchData", extra);
   st->print_cr("taken(%u) displacement(%d)",
@@ -541,7 +528,6 @@ void BranchData::print_data_on(outputStream* st, const char* extra) const {
   tab(st);
   st->print_cr("not taken(%u)", not_taken());
 }
-#endif
 
 // ==================================================================
 // MultiBranchData
@@ -607,7 +593,6 @@ void MultiBranchData::post_initialize(BytecodeStream* stream,
   }
 }
 
-#ifndef PRODUCT
 void MultiBranchData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "MultiBranchData", extra);
   st->print_cr("default_count(%u) displacement(%d)",
@@ -619,9 +604,7 @@ void MultiBranchData::print_data_on(outputStream* st, const char* extra) const {
                  count_at(i), displacement_at(i));
   }
 }
-#endif
 
-#ifndef PRODUCT
 void ArgInfoData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "ArgInfoData", extra);
   int nargs = number_of_args();
@@ -630,8 +613,6 @@ void ArgInfoData::print_data_on(outputStream* st, const char* extra) const {
   }
   st->cr();
 }
-
-#endif
 
 int ParametersTypeData::compute_cell_count(Method* m) {
   if (!MethodData::profile_parameters_for_method(m)) {
@@ -653,7 +634,6 @@ bool ParametersTypeData::profiling_enabled() {
   return MethodData::profile_parameters();
 }
 
-#ifndef PRODUCT
 void ParametersTypeData::print_data_on(outputStream* st, const char* extra) const {
   st->print("parameter types", extra);
   _parameters.print_data_on(st);
@@ -665,7 +645,6 @@ void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) con
   method()->print_short_name(st);
   st->cr();
 }
-#endif
 
 // ==================================================================
 // MethodData*
@@ -800,6 +779,8 @@ bool MethodData::is_speculative_trap_bytecode(Bytecodes::Code code) {
   case Bytecodes::_invokeinterface:
   case Bytecodes::_if_acmpeq:
   case Bytecodes::_if_acmpne:
+  case Bytecodes::_ifnull:
+  case Bytecodes::_ifnonnull:
   case Bytecodes::_invokestatic:
 #ifdef COMPILER2
     return UseTypeSpeculation;
@@ -1071,7 +1052,8 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 }
 
 // Initialize the MethodData* corresponding to a given method.
-MethodData::MethodData(methodHandle method, int size, TRAPS) {
+MethodData::MethodData(methodHandle method, int size, TRAPS)
+  : _extra_data_lock(Monitor::leaf, "MDO extra data lock") {
   No_Safepoint_Verifier no_safepoint;  // init function atomic wrt GC
   ResourceMark rm;
   // Set the method back-pointer.
@@ -1151,6 +1133,21 @@ void MethodData::init() {
   _highest_comp_level = 0;
   _highest_osr_comp_level = 0;
   _would_profile = true;
+
+#if INCLUDE_RTM_OPT
+  _rtm_state = NoRTM; // No RTM lock eliding by default
+  if (UseRTMLocking &&
+      !CompilerOracle::has_option_string(_method, "NoRTMLockEliding")) {
+    if (CompilerOracle::has_option_string(_method, "UseRTMLockEliding") || !UseRTMDeopt) {
+      // Generate RTM lock eliding code without abort ratio calculation code.
+      _rtm_state = UseRTM;
+    } else if (UseRTMDeopt) {
+      // Generate RTM lock eliding code and include abort ratio calculation
+      // code if UseRTMDeopt is on.
+      _rtm_state = ProfileRTM;
+    }
+  }
+#endif
 
   // Initialize flags and trap history.
   _nof_decompiles = 0;
@@ -1235,7 +1232,7 @@ DataLayout* MethodData::next_extra(DataLayout* dp) {
   return (DataLayout*)((address)dp + DataLayout::compute_size_in_bytes(nb_cells));
 }
 
-ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp) {
+ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent) {
   DataLayout* end = extra_data_limit();
 
   for (;; dp = next_extra(dp)) {
@@ -1257,10 +1254,11 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
       if (m != NULL) {
         SpeculativeTrapData* data = new SpeculativeTrapData(dp);
         // data->method() may be null in case of a concurrent
-        // allocation. Assume it's for the same method and use that
+        // allocation. Maybe it's for the same method. Try to use that
         // entry in that case.
         if (dp->bci() == bci) {
           if (data->method() == NULL) {
+            assert(concurrent, "impossible because no concurrent allocation");
             return NULL;
           } else if (data->method() == m) {
             return data;
@@ -1289,40 +1287,40 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   // Allocation in the extra data space has to be atomic because not
   // all entries have the same size and non atomic concurrent
   // allocation would result in a corrupted extra data space.
-  while (true) {
-    ProfileData* result = bci_to_extra_data_helper(bci, m, dp);
-    if (result != NULL) {
+  ProfileData* result = bci_to_extra_data_helper(bci, m, dp, true);
+  if (result != NULL) {
+    return result;
+  }
+
+  if (create_if_missing && dp < end) {
+    MutexLocker ml(&_extra_data_lock);
+    // Check again now that we have the lock. Another thread may
+    // have added extra data entries.
+    ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
+    if (result != NULL || dp >= end) {
       return result;
     }
 
-    if (create_if_missing && dp < end) {
-      assert(dp->tag() == DataLayout::no_tag || (dp->tag() == DataLayout::speculative_trap_data_tag && m != NULL), "should be free");
-      assert(next_extra(dp)->tag() == DataLayout::no_tag || next_extra(dp)->tag() == DataLayout::arg_info_data_tag, "should be free or arg info");
-      u1 tag = m == NULL ? DataLayout::bit_data_tag : DataLayout::speculative_trap_data_tag;
-      // SpeculativeTrapData is 2 slots. Make sure we have room.
-      if (m != NULL && next_extra(dp)->tag() != DataLayout::no_tag) {
-        return NULL;
-      }
-      DataLayout temp;
-      temp.initialize(tag, bci, 0);
-      // May have been set concurrently
-      if (dp->header() != temp.header() && !dp->atomic_set_header(temp.header())) {
-        // Allocation failure because of concurrent allocation. Try
-        // again.
-        continue;
-      }
-      assert(dp->tag() == tag, "sane");
-      assert(dp->bci() == bci, "no concurrent allocation");
-      if (tag == DataLayout::bit_data_tag) {
-        return new BitData(dp);
-      } else {
-        // If being allocated concurrently, one trap may be lost
-        SpeculativeTrapData* data = new SpeculativeTrapData(dp);
-        data->set_method(m);
-        return data;
-      }
+    assert(dp->tag() == DataLayout::no_tag || (dp->tag() == DataLayout::speculative_trap_data_tag && m != NULL), "should be free");
+    assert(next_extra(dp)->tag() == DataLayout::no_tag || next_extra(dp)->tag() == DataLayout::arg_info_data_tag, "should be free or arg info");
+    u1 tag = m == NULL ? DataLayout::bit_data_tag : DataLayout::speculative_trap_data_tag;
+    // SpeculativeTrapData is 2 slots. Make sure we have room.
+    if (m != NULL && next_extra(dp)->tag() != DataLayout::no_tag) {
+      return NULL;
     }
-    return NULL;
+    DataLayout temp;
+    temp.initialize(tag, bci, 0);
+
+    dp->set_header(temp.header());
+    assert(dp->tag() == tag, "sane");
+    assert(dp->bci() == bci, "no concurrent allocation");
+    if (tag == DataLayout::bit_data_tag) {
+      return new BitData(dp);
+    } else {
+      SpeculativeTrapData* data = new SpeculativeTrapData(dp);
+      data->set_method(m);
+      return data;
+    }
   }
   return NULL;
 }
@@ -1339,8 +1337,6 @@ ArgInfoData *MethodData::arg_info() {
 
 // Printing
 
-#ifndef PRODUCT
-
 void MethodData::print_on(outputStream* st) const {
   assert(is_methodData(), "should be method data");
   st->print("method data for ");
@@ -1349,15 +1345,12 @@ void MethodData::print_on(outputStream* st) const {
   print_data_on(st);
 }
 
-#endif //PRODUCT
-
 void MethodData::print_value_on(outputStream* st) const {
   assert(is_methodData(), "should be method data");
   st->print("method data for ");
   method()->print_value_on(st);
 }
 
-#ifndef PRODUCT
 void MethodData::print_data_on(outputStream* st) const {
   ResourceMark rm;
   ProfileData* data = first_data();
@@ -1398,7 +1391,6 @@ void MethodData::print_data_on(outputStream* st) const {
     if (dp >= end) return;
   }
 }
-#endif
 
 #if INCLUDE_SERVICES
 // Size Statistics
@@ -1540,9 +1532,35 @@ void MethodData::clean_extra_data_helper(DataLayout* dp, int shift, bool reset) 
   }
 }
 
-// Remove SpeculativeTrapData entries that reference an unloaded
-// method
-void MethodData::clean_extra_data(BoolObjectClosure* is_alive) {
+class CleanExtraDataClosure : public StackObj {
+public:
+  virtual bool is_live(Method* m) = 0;
+};
+
+// Check for entries that reference an unloaded method
+class CleanExtraDataKlassClosure : public CleanExtraDataClosure {
+private:
+  BoolObjectClosure* _is_alive;
+public:
+  CleanExtraDataKlassClosure(BoolObjectClosure* is_alive) : _is_alive(is_alive) {}
+  bool is_live(Method* m) {
+    return m->method_holder()->is_loader_alive(_is_alive);
+  }
+};
+
+// Check for entries that reference a redefined method
+class CleanExtraDataMethodClosure : public CleanExtraDataClosure {
+public:
+  CleanExtraDataMethodClosure() {}
+  bool is_live(Method* m) {
+    return m->on_stack();
+  }
+};
+
+
+// Remove SpeculativeTrapData entries that reference an unloaded or
+// redefined method
+void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
   DataLayout* dp  = extra_data_base();
   DataLayout* end = extra_data_limit();
 
@@ -1553,7 +1571,7 @@ void MethodData::clean_extra_data(BoolObjectClosure* is_alive) {
       SpeculativeTrapData* data = new SpeculativeTrapData(dp);
       Method* m = data->method();
       assert(m != NULL, "should have a method");
-      if (!m->method_holder()->is_loader_alive(is_alive)) {
+      if (!cl->is_live(m)) {
         // "shift" accumulates the number of cells for dead
         // SpeculativeTrapData entries that have been seen so
         // far. Following entries must be shifted left by that many
@@ -1584,9 +1602,9 @@ void MethodData::clean_extra_data(BoolObjectClosure* is_alive) {
   }
 }
 
-// Verify there's no unloaded method referenced by a
+// Verify there's no unloaded or redefined method referenced by a
 // SpeculativeTrapData entry
-void MethodData::verify_extra_data_clean(BoolObjectClosure* is_alive) {
+void MethodData::verify_extra_data_clean(CleanExtraDataClosure* cl) {
 #ifdef ASSERT
   DataLayout* dp  = extra_data_base();
   DataLayout* end = extra_data_limit();
@@ -1596,7 +1614,7 @@ void MethodData::verify_extra_data_clean(BoolObjectClosure* is_alive) {
     case DataLayout::speculative_trap_data_tag: {
       SpeculativeTrapData* data = new SpeculativeTrapData(dp);
       Method* m = data->method();
-      assert(m != NULL && m->method_holder()->is_loader_alive(is_alive), "Method should exist");
+      assert(m != NULL && cl->is_live(m), "Method should exist");
       break;
     }
     case DataLayout::bit_data_tag:
@@ -1622,6 +1640,19 @@ void MethodData::clean_method_data(BoolObjectClosure* is_alive) {
     parameters->clean_weak_klass_links(is_alive);
   }
 
-  clean_extra_data(is_alive);
-  verify_extra_data_clean(is_alive);
+  CleanExtraDataKlassClosure cl(is_alive);
+  clean_extra_data(&cl);
+  verify_extra_data_clean(&cl);
+}
+
+void MethodData::clean_weak_method_links() {
+  for (ProfileData* data = first_data();
+       is_valid(data);
+       data = next_data(data)) {
+    data->clean_weak_method_links();
+  }
+
+  CleanExtraDataMethodClosure cl;
+  clean_extra_data(&cl);
+  verify_extra_data_clean(&cl);
 }

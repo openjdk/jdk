@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import sun.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 
 import com.sun.java.swing.SwingUtilities3;
+import sun.swing.SwingAccessor;
+import sun.swing.SwingUtilities2.RepaintListener;
 
 /**
  * This class manages repaint requests, allowing the number
@@ -184,6 +186,17 @@ public class RepaintManager
 
 
     static {
+        SwingAccessor.setRepaintManagerAccessor(new SwingAccessor.RepaintManagerAccessor() {
+            @Override
+            public void addRepaintListener(RepaintManager rm, RepaintListener l) {
+                rm.addRepaintListener(l);
+            }
+            @Override
+            public void removeRepaintListener(RepaintManager rm, RepaintListener l) {
+                rm.removeRepaintListener(l);
+            }
+        });
+
         volatileImageBufferEnabled = "true".equals(AccessController.
                 doPrivileged(new GetPropertyAction(
                 "swing.volatileImageBufferEnabled", "true")));
@@ -1265,6 +1278,33 @@ public class RepaintManager
     void copyArea(JComponent c, Graphics g, int x, int y, int w, int h,
                   int deltaX, int deltaY, boolean clip) {
         getPaintManager().copyArea(c, g, x, y, w, h, deltaX, deltaY, clip);
+    }
+
+    private java.util.List<RepaintListener> repaintListeners = new ArrayList<>(1);
+
+    private void addRepaintListener(RepaintListener l) {
+        repaintListeners.add(l);
+    }
+
+    private void removeRepaintListener(RepaintListener l) {
+        repaintListeners.remove(l);
+    }
+
+    /**
+     * Notify the attached repaint listeners that an area of the {@code c} component
+     * has been immediately repainted, that is without scheduling a repaint runnable,
+     * due to performing a "blit" (via calling the {@code copyArea} method).
+     *
+     * @param c the component
+     * @param x the x coordinate of the area
+     * @param y the y coordinate of the area
+     * @param w the width of the area
+     * @param h the height of the area
+     */
+    void notifyRepaintPerformed(JComponent c, int x, int y, int w, int h) {
+        for (RepaintListener l : repaintListeners) {
+            l.repaintPerformed(c, x, y, w, h);
+        }
     }
 
     /**

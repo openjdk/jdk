@@ -512,14 +512,15 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   Compile* C = ra_->C;
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
+  int bangsize = C->bang_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove wordSize for return addr which is already pushed.
   framesize -= wordSize;
 
-  if (C->need_stack_bang(framesize)) {
+  if (C->need_stack_bang(bangsize)) {
     framesize -= wordSize;
-    st->print("# stack bang");
+    st->print("# stack bang (%d bytes)", bangsize);
     st->print("\n\t");
     st->print("PUSH   EBP\t# Save EBP");
     if (framesize) {
@@ -563,9 +564,10 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   MacroAssembler _masm(&cbuf);
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
+  int bangsize = C->bang_size_in_bytes();
 
-  __ verified_entry(framesize, C->need_stack_bang(framesize), C->in_24_bit_fp_mode());
+  __ verified_entry(framesize, C->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode());
 
   C->set_frame_complete(cbuf.insts_size());
 
@@ -589,7 +591,7 @@ int MachPrologNode::reloc() const {
 #ifndef PRODUCT
 void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   Compile *C = ra_->C;
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;
@@ -629,7 +631,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
   }
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;
@@ -663,7 +665,7 @@ uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
   if (C->max_vector_size() > 16) size += 3; // vzeroupper
   if (do_polling() && C->is_method_compilation()) size += 6;
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;
@@ -1297,59 +1299,6 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 
 //=============================================================================
-uint size_exception_handler() {
-  // NativeCall instruction size is the same as NativeJump.
-  // exception handler starts out as jump and can be patched to
-  // a call be deoptimization.  (4932387)
-  // Note that this value is also credited (in output.cpp) to
-  // the size of the code section.
-  return NativeJump::instruction_size;
-}
-
-// Emit exception handler code.  Stuff framesize into a register
-// and call a VM stub routine.
-int emit_exception_handler(CodeBuffer& cbuf) {
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  MacroAssembler _masm(&cbuf);
-  address base =
-  __ start_a_stub(size_exception_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
-  int offset = __ offset();
-  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
-
-uint size_deopt_handler() {
-  // NativeCall instruction size is the same as NativeJump.
-  // exception handler starts out as jump and can be patched to
-  // a call be deoptimization.  (4932387)
-  // Note that this value is also credited (in output.cpp) to
-  // the size of the code section.
-  return 5 + NativeJump::instruction_size; // pushl(); jmp;
-}
-
-// Emit deopt handler code.
-int emit_deopt_handler(CodeBuffer& cbuf) {
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  MacroAssembler _masm(&cbuf);
-  address base =
-  __ start_a_stub(size_exception_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
-  int offset = __ offset();
-  InternalAddress here(__ pc());
-  __ pushptr(here.addr());
-
-  __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-  assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
 
 int Matcher::regnum_to_fpu_offset(int regnum) {
   return regnum - 32; // The FP registers are in the second chunk
@@ -5163,6 +5112,19 @@ instruct countLeadingZerosL_bsr(rRegI dst, eRegL src, eFlagsReg cr) %{
 %}
 
 instruct countTrailingZerosI(rRegI dst, rRegI src, eFlagsReg cr) %{
+  predicate(UseCountTrailingZerosInstruction);
+  match(Set dst (CountTrailingZerosI src));
+  effect(KILL cr);
+
+  format %{ "TZCNT    $dst, $src\t# count trailing zeros (int)" %}
+  ins_encode %{
+    __ tzcntl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosI_bsf(rRegI dst, rRegI src, eFlagsReg cr) %{
+  predicate(!UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI src));
   effect(KILL cr);
 
@@ -5182,6 +5144,30 @@ instruct countTrailingZerosI(rRegI dst, rRegI src, eFlagsReg cr) %{
 %}
 
 instruct countTrailingZerosL(rRegI dst, eRegL src, eFlagsReg cr) %{
+  predicate(UseCountTrailingZerosInstruction);
+  match(Set dst (CountTrailingZerosL src));
+  effect(TEMP dst, KILL cr);
+
+  format %{ "TZCNT  $dst, $src.lo\t# count trailing zeros (long) \n\t"
+            "JNC    done\n\t"
+            "TZCNT  $dst, $src.hi\n\t"
+            "ADD    $dst, 32\n"
+            "done:" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    Label done;
+    __ tzcntl(Rdst, Rsrc);
+    __ jccb(Assembler::carryClear, done);
+    __ tzcntl(Rdst, HIGH_FROM_LOW(Rsrc));
+    __ addl(Rdst, BitsPerInt);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosL_bsf(rRegI dst, eRegL src, eFlagsReg cr) %{
+  predicate(!UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosL src));
   effect(TEMP dst, KILL cr);
 
@@ -8027,6 +8013,123 @@ instruct andI_mem_imm(memory dst, immI src, eFlagsReg cr) %{
   ins_pipe( ialu_mem_imm );
 %}
 
+// BMI1 instructions
+instruct andnI_rReg_rReg_rReg(rRegI dst, rRegI src1, rRegI src2, immI_M1 minus_1, eFlagsReg cr) %{
+  match(Set dst (AndI (XorI src1 minus_1) src2));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "ANDNL  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ andnl($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct andnI_rReg_rReg_mem(rRegI dst, rRegI src1, memory src2, immI_M1 minus_1, eFlagsReg cr) %{
+  match(Set dst (AndI (XorI src1 minus_1) (LoadI src2) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "ANDNL  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ andnl($dst$$Register, $src1$$Register, $src2$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI0 imm_zero, eFlagsReg cr) %{
+  match(Set dst (AndI (SubI imm_zero src) src));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "BLSIL  $dst, $src" %}
+
+  ins_encode %{
+    __ blsil($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsiI_rReg_mem(rRegI dst, memory src, immI0 imm_zero, eFlagsReg cr) %{
+  match(Set dst (AndI (SubI imm_zero (LoadI src) ) (LoadI src) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "BLSIL  $dst, $src" %}
+
+  ins_encode %{
+    __ blsil($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsmskI_rReg_rReg(rRegI dst, rRegI src, immI_M1 minus_1, eFlagsReg cr)
+%{
+  match(Set dst (XorI (AddI src minus_1) src));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "BLSMSKL $dst, $src" %}
+
+  ins_encode %{
+    __ blsmskl($dst$$Register, $src$$Register);
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsmskI_rReg_mem(rRegI dst, memory src, immI_M1 minus_1, eFlagsReg cr)
+%{
+  match(Set dst (XorI (AddI (LoadI src) minus_1) (LoadI src) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "BLSMSKL $dst, $src" %}
+
+  ins_encode %{
+    __ blsmskl($dst$$Register, $src$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsrI_rReg_rReg(rRegI dst, rRegI src, immI_M1 minus_1, eFlagsReg cr)
+%{
+  match(Set dst (AndI (AddI src minus_1) src) );
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  format %{ "BLSRL  $dst, $src" %}
+
+  ins_encode %{
+    __ blsrl($dst$$Register, $src$$Register);
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsrI_rReg_mem(rRegI dst, memory src, immI_M1 minus_1, eFlagsReg cr)
+%{
+  match(Set dst (AndI (AddI (LoadI src) minus_1) (LoadI src) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr);
+
+  ins_cost(125);
+  format %{ "BLSRL  $dst, $src" %}
+
+  ins_encode %{
+    __ blsrl($dst$$Register, $src$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Or Instructions
 // Or Register with Register
 instruct orI_eReg(rRegI dst, rRegI src, eFlagsReg cr) %{
@@ -8647,6 +8750,210 @@ instruct andL_eReg_mem(eRegL dst, load_long_memory mem, eFlagsReg cr) %{
   opcode(0x23, 0x23);
   ins_encode( OpcP, RegMem( dst, mem), OpcS, RegMem_Hi(dst,mem) );
   ins_pipe( ialu_reg_long_mem );
+%}
+
+// BMI1 instructions
+instruct andnL_eReg_eReg_eReg(eRegL dst, eRegL src1, eRegL src2, immL_M1 minus_1, eFlagsReg cr) %{
+  match(Set dst (AndL (XorL src1 minus_1) src2));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr, TEMP dst);
+
+  format %{ "ANDNL  $dst.lo, $src1.lo, $src2.lo\n\t"
+            "ANDNL  $dst.hi, $src1.hi, $src2.hi"
+         %}
+
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc1 = $src1$$Register;
+    Register Rsrc2 = $src2$$Register;
+    __ andnl(Rdst, Rsrc1, Rsrc2);
+    __ andnl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rsrc1), HIGH_FROM_LOW(Rsrc2));
+  %}
+  ins_pipe(ialu_reg_reg_long);
+%}
+
+instruct andnL_eReg_eReg_mem(eRegL dst, eRegL src1, memory src2, immL_M1 minus_1, eFlagsReg cr) %{
+  match(Set dst (AndL (XorL src1 minus_1) (LoadL src2) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr, TEMP dst);
+
+  ins_cost(125);
+  format %{ "ANDNL  $dst.lo, $src1.lo, $src2\n\t"
+            "ANDNL  $dst.hi, $src1.hi, $src2+4"
+         %}
+
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc1 = $src1$$Register;
+    Address src2_hi = Address::make_raw($src2$$base, $src2$$index, $src2$$scale, $src2$$disp + 4, relocInfo::none);
+
+    __ andnl(Rdst, Rsrc1, $src2$$Address);
+    __ andnl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rsrc1), src2_hi);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsiL_eReg_eReg(eRegL dst, eRegL src, immL0 imm_zero, eFlagsReg cr) %{
+  match(Set dst (AndL (SubL imm_zero src) src));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr, TEMP dst);
+
+  format %{ "MOVL   $dst.hi, 0\n\t"
+            "BLSIL  $dst.lo, $src.lo\n\t"
+            "JNZ    done\n\t"
+            "BLSIL  $dst.hi, $src.hi\n"
+            "done:"
+         %}
+
+  ins_encode %{
+    Label done;
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    __ movl(HIGH_FROM_LOW(Rdst), 0);
+    __ blsil(Rdst, Rsrc);
+    __ jccb(Assembler::notZero, done);
+    __ blsil(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rsrc));
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsiL_eReg_mem(eRegL dst, memory src, immL0 imm_zero, eFlagsReg cr) %{
+  match(Set dst (AndL (SubL imm_zero (LoadL src) ) (LoadL src) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr, TEMP dst);
+
+  ins_cost(125);
+  format %{ "MOVL   $dst.hi, 0\n\t"
+            "BLSIL  $dst.lo, $src\n\t"
+            "JNZ    done\n\t"
+            "BLSIL  $dst.hi, $src+4\n"
+            "done:"
+         %}
+
+  ins_encode %{
+    Label done;
+    Register Rdst = $dst$$Register;
+    Address src_hi = Address::make_raw($src$$base, $src$$index, $src$$scale, $src$$disp + 4, relocInfo::none);
+
+    __ movl(HIGH_FROM_LOW(Rdst), 0);
+    __ blsil(Rdst, $src$$Address);
+    __ jccb(Assembler::notZero, done);
+    __ blsil(HIGH_FROM_LOW(Rdst), src_hi);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsmskL_eReg_eReg(eRegL dst, eRegL src, immL_M1 minus_1, eFlagsReg cr)
+%{
+  match(Set dst (XorL (AddL src minus_1) src));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr, TEMP dst);
+
+  format %{ "MOVL    $dst.hi, 0\n\t"
+            "BLSMSKL $dst.lo, $src.lo\n\t"
+            "JNC     done\n\t"
+            "BLSMSKL $dst.hi, $src.hi\n"
+            "done:"
+         %}
+
+  ins_encode %{
+    Label done;
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    __ movl(HIGH_FROM_LOW(Rdst), 0);
+    __ blsmskl(Rdst, Rsrc);
+    __ jccb(Assembler::carryClear, done);
+    __ blsmskl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rsrc));
+    __ bind(done);
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsmskL_eReg_mem(eRegL dst, memory src, immL_M1 minus_1, eFlagsReg cr)
+%{
+  match(Set dst (XorL (AddL (LoadL src) minus_1) (LoadL src) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr, TEMP dst);
+
+  ins_cost(125);
+  format %{ "MOVL    $dst.hi, 0\n\t"
+            "BLSMSKL $dst.lo, $src\n\t"
+            "JNC     done\n\t"
+            "BLSMSKL $dst.hi, $src+4\n"
+            "done:"
+         %}
+
+  ins_encode %{
+    Label done;
+    Register Rdst = $dst$$Register;
+    Address src_hi = Address::make_raw($src$$base, $src$$index, $src$$scale, $src$$disp + 4, relocInfo::none);
+
+    __ movl(HIGH_FROM_LOW(Rdst), 0);
+    __ blsmskl(Rdst, $src$$Address);
+    __ jccb(Assembler::carryClear, done);
+    __ blsmskl(HIGH_FROM_LOW(Rdst), src_hi);
+    __ bind(done);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct blsrL_eReg_eReg(eRegL dst, eRegL src, immL_M1 minus_1, eFlagsReg cr)
+%{
+  match(Set dst (AndL (AddL src minus_1) src) );
+  predicate(UseBMI1Instructions);
+  effect(KILL cr, TEMP dst);
+
+  format %{ "MOVL   $dst.hi, $src.hi\n\t"
+            "BLSRL  $dst.lo, $src.lo\n\t"
+            "JNC    done\n\t"
+            "BLSRL  $dst.hi, $src.hi\n"
+            "done:"
+  %}
+
+  ins_encode %{
+    Label done;
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    __ movl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rsrc));
+    __ blsrl(Rdst, Rsrc);
+    __ jccb(Assembler::carryClear, done);
+    __ blsrl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rsrc));
+    __ bind(done);
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct blsrL_eReg_mem(eRegL dst, memory src, immL_M1 minus_1, eFlagsReg cr)
+%{
+  match(Set dst (AndL (AddL (LoadL src) minus_1) (LoadL src) ));
+  predicate(UseBMI1Instructions);
+  effect(KILL cr, TEMP dst);
+
+  ins_cost(125);
+  format %{ "MOVL   $dst.hi, $src+4\n\t"
+            "BLSRL  $dst.lo, $src\n\t"
+            "JNC    done\n\t"
+            "BLSRL  $dst.hi, $src+4\n"
+            "done:"
+  %}
+
+  ins_encode %{
+    Label done;
+    Register Rdst = $dst$$Register;
+    Address src_hi = Address::make_raw($src$$base, $src$$index, $src$$scale, $src$$disp + 4, relocInfo::none);
+    __ movl(HIGH_FROM_LOW(Rdst), src_hi);
+    __ blsrl(Rdst, $src$$Address);
+    __ jccb(Assembler::carryClear, done);
+    __ blsrl(HIGH_FROM_LOW(Rdst), src_hi);
+    __ bind(done);
+  %}
+
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Or Long Register with Register
@@ -12567,13 +12874,31 @@ instruct RethrowException()
 
 // inlined locking and unlocking
 
+instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eDXRegI scr, rRegI cx1, rRegI cx2) %{
+  predicate(Compile::current()->use_rtm());
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, USE_KILL box);
+  ins_cost(300);
+  format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
+                 $scr$$Register, $cx1$$Register, $cx2$$Register,
+                 _counters, _rtm_counters, _stack_rtm_counters,
+                 ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
+                 true, ra_->C->profile_rtm());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr) %{
+  predicate(!Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $scr$$Register, _counters);
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
+                 $scr$$Register, noreg, noreg, _counters, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -12584,7 +12909,7 @@ instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
   ins_cost(300);
   format %{ "FASTUNLOCK $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register);
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
   %}
   ins_pipe(pipe_slow);
 %}

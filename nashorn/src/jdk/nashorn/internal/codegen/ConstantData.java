@@ -27,12 +27,9 @@ package jdk.nashorn.internal.codegen;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 
@@ -207,10 +204,6 @@ final class ConstantData {
         objectMap.put(entry, index);
 
         return index;
-    }
-
-    Collection<Object> getConstants() {
-        return Collections.unmodifiableList(constants);
     }
 
     Object[] toArray() {

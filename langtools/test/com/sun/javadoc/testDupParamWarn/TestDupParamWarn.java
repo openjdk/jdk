@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,41 +27,26 @@
  * @summary Test to ensure that the doclet does not print out bad
  * warning messages about duplicate param tags.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestDupParamWarn
  * @run main TestDupParamWarn
  */
 
 public class TestDupParamWarn extends JavadocTester {
 
-    private static final String BUG_ID = "4745855";
-    private static final String[] ARGS =
-        new String[] {"-d", BUG_ID, "-sourcepath",
-                SRC_DIR + FS, "pkg"};
-    private static final String[][] NEGATED_TEST =
-        new String[][] {{WARNING_OUTPUT,
-            "Parameter \"a\" is documented more than once."}};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        run(new TestDupParamWarn(), ARGS, NO_TEST, NEGATED_TEST);
+    public static void main(String... args) throws Exception {
+        JavadocTester tester = new TestDupParamWarn();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput(Output.WARNING, false,
+            "Parameter \"a\" is documented more than once.");
     }
 }

@@ -24,18 +24,16 @@
  */
 package javax.swing.text;
 
-import java.lang.reflect.Method;
+import com.sun.beans.util.Cache;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import java.beans.Transient;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.Map;
 
 import java.util.concurrent.*;
 
@@ -1191,47 +1189,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                 map.addActionForKeyStroke(binding.key, a);
             }
         }
-    }
-
-    /**
-     * Returns true if <code>klass</code> is NOT a JTextComponent and it or
-     * one of its superclasses (stoping at JTextComponent) overrides
-     * <code>processInputMethodEvent</code>. It is assumed this will be
-     * invoked from within a <code>doPrivileged</code>, and it is also
-     * assumed <code>klass</code> extends <code>JTextComponent</code>.
-     */
-    private static Boolean isProcessInputMethodEventOverridden(Class<?> klass) {
-        if (klass == JTextComponent.class) {
-            return Boolean.FALSE;
-        }
-        Boolean retValue = overrideMap.get(klass.getName());
-
-        if (retValue != null) {
-            return retValue;
-        }
-        Boolean sOverriden = isProcessInputMethodEventOverridden(
-                                       klass.getSuperclass());
-
-        if (sOverriden.booleanValue()) {
-            // If our superclass has overriden it, then by definition klass
-            // overrides it.
-            overrideMap.put(klass.getName(), sOverriden);
-            return sOverriden;
-        }
-        // klass's superclass didn't override it, check for an override in
-        // klass.
-        try {
-            Class[] classes = new Class[1];
-            classes[0] = InputMethodEvent.class;
-
-            Method m = klass.getDeclaredMethod("processInputMethodEvent",
-                                               classes);
-            retValue = Boolean.TRUE;
-        } catch (NoSuchMethodException nsme) {
-            retValue = Boolean.FALSE;
-        }
-        overrideMap.put(klass.getName(), retValue);
-        return retValue;
     }
 
     /**
@@ -3916,7 +3873,33 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Maps from class name to Boolean indicating if
      * <code>processInputMethodEvent</code> has been overriden.
      */
-    private static Map<String, Boolean> overrideMap;
+    private static Cache<Class<?>,Boolean> METHOD_OVERRIDDEN
+            = new Cache<Class<?>,Boolean>(Cache.Kind.WEAK, Cache.Kind.STRONG) {
+        /**
+         * Returns {@code true} if the specified {@code type} extends {@link JTextComponent}
+         * and the {@link JTextComponent#processInputMethodEvent} method is overridden.
+         */
+        @Override
+        public Boolean create(final Class<?> type) {
+            if (JTextComponent.class == type) {
+                return Boolean.FALSE;
+            }
+            if (get(type.getSuperclass())) {
+                return Boolean.TRUE;
+            }
+            return AccessController.doPrivileged(
+                    new PrivilegedAction<Boolean>() {
+                        public Boolean run() {
+                            try {
+                                type.getDeclaredMethod("processInputMethodEvent", InputMethodEvent.class);
+                                return Boolean.TRUE;
+                            } catch (NoSuchMethodException exception) {
+                                return Boolean.FALSE;
+                            }
+                        }
+                    });
+        }
+    };
 
     /**
      * Returns a string representation of this <code>JTextComponent</code>.
@@ -4941,36 +4924,13 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      */
     private boolean shouldSynthensizeKeyEvents() {
         if (!checkedInputOverride) {
+            // Checks whether the client code overrides processInputMethodEvent.
+            // If it is overridden, need not to generate KeyTyped events for committed text.
+            // If it's not, behave as an passive input method client.
+            needToSendKeyTypedEvent = !METHOD_OVERRIDDEN.get(getClass());
             checkedInputOverride = true;
-            needToSendKeyTypedEvent =
-                             !isProcessInputMethodEventOverridden();
         }
         return needToSendKeyTypedEvent;
-    }
-
-    //
-    // Checks whether the client code overrides processInputMethodEvent.  If it is overridden,
-    // need not to generate KeyTyped events for committed text. If it's not, behave as an
-    // passive input method client.
-    //
-    private boolean isProcessInputMethodEventOverridden() {
-        if (overrideMap == null) {
-            overrideMap = Collections.synchronizedMap(new HashMap<String, Boolean>());
-        }
-        Boolean retValue = overrideMap.get(getClass().getName());
-
-        if (retValue != null) {
-            return retValue.booleanValue();
-        }
-        Boolean ret = AccessController.doPrivileged(new
-                       PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return isProcessInputMethodEventOverridden(
-                                JTextComponent.this.getClass());
-            }
-        });
-
-        return ret.booleanValue();
     }
 
     //

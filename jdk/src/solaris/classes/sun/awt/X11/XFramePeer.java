@@ -284,6 +284,11 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
             if (stateLog.isLoggable(PlatformLogger.Level.FINER)) {
                 stateLog.finer("DeIconifying " + this);
             }
+
+            XNETProtocol net_protocol = XWM.getWM().getNETProtocol();
+            if (net_protocol != null) {
+                net_protocol.setActiveWindow(this);
+            }
             xSetVisible(true);
         }
     }

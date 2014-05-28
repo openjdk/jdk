@@ -52,6 +52,7 @@ import javax.swing.plaf.FontUIResource;
 import sun.awt.AppContext;
 import sun.awt.FontConfiguration;
 import sun.awt.SunToolkit;
+import sun.misc.ThreadGroupUtils;
 import sun.java2d.FontSupport;
 import sun.util.logging.PlatformLogger;
 
@@ -197,9 +198,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     private static HashSet<String> missingFontFiles = null;
     private String defaultFontName;
     private String defaultFontFileName;
-    protected HashSet registeredFontFiles = new HashSet();
+    protected HashSet<String> registeredFontFiles = new HashSet<>();
 
-    private ArrayList badFonts;
+    private ArrayList<String> badFonts;
     /* fontPath is the location of all fonts on the system, excluding the
      * JRE's own font directory but including any path specified using the
      * sun.java2d.fontpath property. Together with that property,  it is
@@ -332,7 +333,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     static {
 
         java.security.AccessController.doPrivileged(
-                                    new java.security.PrivilegedAction() {
+                                    new java.security.PrivilegedAction<Object>() {
 
            public Object run() {
                FontManagerNativeLibrary.load();
@@ -373,7 +374,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
         initJREFontMap();
         java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
+                new java.security.PrivilegedAction<Object>() {
                     public Object run() {
                         File badFontFile =
                             new File(jreFontDirName + File.separator +
@@ -381,7 +382,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                         if (badFontFile.exists()) {
                             FileInputStream fis = null;
                             try {
-                                badFonts = new ArrayList();
+                                badFonts = new ArrayList<>();
                                 fis = new FileInputStream(badFontFile);
                                 InputStreamReader isr = new InputStreamReader(fis);
                                 BufferedReader br = new BufferedReader(isr);
@@ -762,7 +763,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             if (family == null) {
                 family = new FontFamily(familyName, false, rank);
                 family.setFont(f, f.style);
-            } else if (family.getRank() >= rank) {
+            } else {
                 family.setFont(f, f.style);
             }
             fullNameToFont.put(fontName.toLowerCase(Locale.ENGLISH), f);
@@ -853,7 +854,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 if (family == null) {
                     family = new FontFamily(familyName, false, rank);
                     family.setFont(newFont, newFont.style);
-                } else if (family.getRank() >= rank) {
+                } else {
                     family.setFont(newFont, newFont.style);
                 }
                 return newFont;
@@ -1227,9 +1228,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                  * and I don't know how to recover from there being absolutely
                  * no fonts anywhere on the system.
                  */
-                Iterator i = physicalFonts.values().iterator();
+                Iterator<PhysicalFont> i = physicalFonts.values().iterator();
                 if (i.hasNext()) {
-                    defaultPhysicalFont = (PhysicalFont)i.next();
+                    defaultPhysicalFont = i.next();
                 } else {
                     throw new Error("Probable fatal error:No fonts found.");
                 }
@@ -1303,7 +1304,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         } else {
             filter = new TTorT1Filter();
         }
-        return (String[])AccessController.doPrivileged(new PrivilegedAction() {
+        return (String[])AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 if (pathDirs.length == 1) {
                     File dir = new File(pathDirs[0]);
@@ -1419,6 +1420,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
              * them "MS UI Gothic" has no JA name whereas the other two do.
              * So not every font in these files is unmapped or new.
              */
+            @SuppressWarnings("unchecked")
             HashMap<String,String> ffmapCopy =
                 (HashMap<String,String>)(fontToFileMap.clone());
             for (String key : fontToFamilyNameMap.keySet()) {
@@ -1470,7 +1472,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                     String name = unmappedFontNames.get(i);
                     String familyName = fontToFamilyNameMap.get(name);
                     if (familyName != null) {
-                        ArrayList family = familyToFontListMap.get(familyName);
+                        ArrayList<String> family = familyToFontListMap.get(familyName);
                         if (family != null) {
                             if (family.size() <= 1) {
                                 familyToFontListMap.remove(familyName);
@@ -1896,7 +1898,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * to register those again, but we do want to register other registry
      * installed fonts.
      */
-    protected void registerOtherFontFiles(HashSet registeredFontFiles) {
+    protected void registerOtherFontFiles(HashSet<String> registeredFontFiles) {
         if (getFullNameToFileMap().size() == 0) {
             return;
         }
@@ -2080,6 +2082,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
          * name.
          */
         if (_usingPerAppContextComposites) {
+            @SuppressWarnings("unchecked")
             ConcurrentHashMap<String, Font2D> altNameCache =
                 (ConcurrentHashMap<String, Font2D>)
                 AppContext.getAppContext().get(CompositeFont.class);
@@ -2304,10 +2307,15 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 nameTable = createdByFullName;
             } else {
                 AppContext appContext = AppContext.getAppContext();
-                familyTable =
+                @SuppressWarnings("unchecked")
+                Hashtable<String,FontFamily> tmp1 =
                     (Hashtable<String,FontFamily>)appContext.get(regFamilyKey);
-                nameTable =
+                familyTable = tmp1;
+
+                @SuppressWarnings("unchecked")
+                Hashtable<String, Font2D> tmp2 =
                     (Hashtable<String,Font2D>)appContext.get(regFullNameKey);
+                nameTable = tmp2;
             }
 
             family = familyTable.get(lowerCaseName);
@@ -2467,7 +2475,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         } catch (FontFormatException e) {
             if (isCopy) {
                 java.security.AccessController.doPrivileged(
-                     new java.security.PrivilegedAction() {
+                     new java.security.PrivilegedAction<Object>() {
                           public Object run() {
                               if (_tracker != null) {
                                   _tracker.subBytes((int)fFile.length());
@@ -2492,7 +2500,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                     final Runnable fileCloserRunnable = new Runnable() {
                       public void run() {
                          java.security.AccessController.doPrivileged(
-                         new java.security.PrivilegedAction() {
+                         new java.security.PrivilegedAction<Object>() {
                          public Object run() {
 
                             for (int i=0;i<CHANNELPOOLSIZE;i++) {
@@ -2520,24 +2528,18 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                           });
                       }
                     };
-                    java.security.AccessController.doPrivileged(
-                       new java.security.PrivilegedAction() {
-                          public Object run() {
-                              /* The thread must be a member of a thread group
-                               * which will not get GCed before VM exit.
-                               * Make its parent the top-level thread group.
-                               */
-                              ThreadGroup tg =
-                                  Thread.currentThread().getThreadGroup();
-                              for (ThreadGroup tgn = tg;
-                                   tgn != null;
-                                   tg = tgn, tgn = tg.getParent());
-                              fileCloser = new Thread(tg, fileCloserRunnable);
-                              fileCloser.setContextClassLoader(null);
-                              Runtime.getRuntime().addShutdownHook(fileCloser);
-                              return null;
-                          }
-                    });
+                    AccessController.doPrivileged(
+                            (PrivilegedAction<Void>) () -> {
+                                /* The thread must be a member of a thread group
+                                 * which will not get GCed before VM exit.
+                                 * Make its parent the top-level thread group.
+                                 */
+                                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                                fileCloser = new Thread(rootTG, fileCloserRunnable);
+                                fileCloser.setContextClassLoader(null);
+                                Runtime.getRuntime().addShutdownHook(fileCloser);
+                                return null;
+                            });
                 }
             }
         }
@@ -2627,15 +2629,17 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         fullNameToFont.remove(oldFont.fullName.toLowerCase(Locale.ENGLISH));
         FontFamily.remove(oldFont);
         if (localeFullNamesToFont != null) {
-            Map.Entry[] mapEntries = localeFullNamesToFont.entrySet().
-                toArray(new Map.Entry[0]);
+            Map.Entry<?, ?>[] mapEntries = localeFullNamesToFont.entrySet().
+                toArray(new Map.Entry<?, ?>[0]);
             /* Should I be replacing these, or just I just remove
              * the names from the map?
              */
             for (int i=0; i<mapEntries.length;i++) {
                 if (mapEntries[i].getValue() == oldFont) {
                     try {
-                        mapEntries[i].setValue(newFont);
+                        @SuppressWarnings("unchecked")
+                        Map.Entry<String, PhysicalFont> tmp = (Map.Entry<String, PhysicalFont>)mapEntries[i];
+                        tmp.setValue(newFont);
                     } catch (Exception e) {
                         /* some maps don't support this operation.
                          * In this case just give up and remove the entry.
@@ -2864,7 +2868,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     private static boolean maybeMultiAppContext() {
         Boolean appletSM = (Boolean)
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
+                new java.security.PrivilegedAction<Object>() {
                         public Object run() {
                             SecurityManager sm = System.getSecurityManager();
                             return new Boolean
@@ -3055,10 +3059,15 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             fontsAreRegistered = true;
         } else {
             AppContext appContext = AppContext.getAppContext();
-            familyTable =
+            @SuppressWarnings("unchecked")
+            Hashtable<String,FontFamily> tmp1 =
                 (Hashtable<String,FontFamily>)appContext.get(regFamilyKey);
-            fullNameTable =
+            familyTable = tmp1;
+            @SuppressWarnings("unchecked")
+            Hashtable<String,Font2D> tmp2 =
                 (Hashtable<String,Font2D>)appContext.get(regFullNameKey);
+            fullNameTable = tmp2;
+
             if (familyTable == null) {
                 familyTable = new Hashtable<String,FontFamily>();
                 fullNameTable = new Hashtable<String,Font2D>();
@@ -3114,8 +3123,10 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             familyTable = createdByFamilyName;
         } else if (fontsAreRegisteredPerAppContext) {
             AppContext appContext = AppContext.getAppContext();
-            familyTable =
+            @SuppressWarnings("unchecked")
+            Hashtable<String,FontFamily> tmp =
                 (Hashtable<String,FontFamily>)appContext.get(regFamilyKey);
+            familyTable = tmp;
         } else {
             return null;
         }
@@ -3142,8 +3153,10 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             nameTable = createdByFullName;
         } else if (fontsAreRegisteredPerAppContext) {
             AppContext appContext = AppContext.getAppContext();
-            nameTable =
+            @SuppressWarnings("unchecked")
+            Hashtable<String,Font2D> tmp =
                 (Hashtable<String,Font2D>)appContext.get(regFullNameKey);
+            nameTable = tmp;
         } else {
             return null;
         }
@@ -3305,7 +3318,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             initialiseDeferredFonts();
 
             java.security.AccessController.doPrivileged(
-                                    new java.security.PrivilegedAction() {
+                                    new java.security.PrivilegedAction<Object>() {
                 public Object run() {
                     if (fontPath == null) {
                         fontPath = getPlatformFontPath(noType1Font);
@@ -3440,7 +3453,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 FontUtilities.getLogger().info("loadAllFontFiles() called");
             }
             java.security.AccessController.doPrivileged(
-                                    new java.security.PrivilegedAction() {
+                                    new java.security.PrivilegedAction<Object>() {
                 public Object run() {
                     if (fontPath == null) {
                         fontPath = getPlatformFontPath(noType1Font);
@@ -3682,7 +3695,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     public Font[] getAllInstalledFonts() {
         if (allFonts == null) {
             loadFonts();
-            TreeMap fontMapNames = new TreeMap();
+            TreeMap<String, Font2D> fontMapNames = new TreeMap<>();
             /* warning: the number of composite fonts could change dynamically
              * if applications are allowed to create them. "allfonts" could
              * then be stale.
@@ -3715,7 +3728,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             Font[] fonts = new Font[fontNames.length];
             for (int i=0; i < fontNames.length; i++) {
                 fonts[i] = new Font(fontNames[i], Font.PLAIN, 1);
-                Font2D f2d = (Font2D)fontMapNames.get(fontNames[i]);
+                Font2D f2d = fontMapNames.get(fontNames[i]);
                 if (f2d  != null) {
                     FontAccess.getFontAccess().setFont2D(fonts[i], f2d.handle);
                 }
@@ -3798,7 +3811,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
     public void register1dot0Fonts() {
         java.security.AccessController.doPrivileged(
-                            new java.security.PrivilegedAction() {
+                            new java.security.PrivilegedAction<Object>() {
             public Object run() {
                 String type1Dir = "/usr/openwin/lib/X11/fonts/Type1";
                 registerFontsInDir(type1Dir, true, Font2D.TYPE1_RANK,
@@ -3840,7 +3853,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         if (systemLocale == null) {
             systemLocale = (Locale)
                 java.security.AccessController.doPrivileged(
-                                    new java.security.PrivilegedAction() {
+                                    new java.security.PrivilegedAction<Object>() {
             public Object run() {
                 /* On windows the system locale may be different than the
                  * user locale. This is an unsupported configuration, but

@@ -772,6 +772,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     }
 
     //This class is for getting all pre-defined Finishings
+    @SuppressWarnings("serial") // JDK implementation class
     private class ExtFinishing extends Finishings {
         ExtFinishing(int value) {
             super(100); // 100 to avoid any conflicts with predefined values.
@@ -1904,9 +1905,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                   new HashMap[respList.size()]);
             } else {
                 debug_println(debugPrefix+
-                              "readIPPResponse client error, IPP status code-"
-                                   +Integer.toHexString(response[2])+" & "
-                                   +Integer.toHexString(response[3]));
+                          "readIPPResponse client error, IPP status code: 0x"+
+                          toHex(response[2]) + toHex(response[3]));
                 return null;
             }
 
@@ -1919,6 +1919,10 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         }
     }
 
+    private static String toHex(byte v) {
+        String s = Integer.toHexString(v&0xff);
+        return (s.length() == 2) ? s :  "0"+s;
+    }
 
     public String toString() {
         return "IPP Printer : " + getName();

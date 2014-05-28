@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,11 @@ package sun.awt.windows;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-
 import java.io.IOException;
-
-import java.util.Iterator;
 import java.util.Map;
 
-import sun.awt.datatransfer.SunClipboard;
 import sun.awt.datatransfer.DataTransferer;
+import sun.awt.datatransfer.SunClipboard;
 
 
 /**
@@ -50,20 +47,21 @@ import sun.awt.datatransfer.DataTransferer;
  *
  * @since JDK1.1
  */
-public class WClipboard extends SunClipboard {
+final class WClipboard extends SunClipboard {
 
     private boolean isClipboardViewerRegistered;
 
-    public WClipboard() {
+    WClipboard() {
         super("System");
     }
 
+    @Override
     public long getID() {
         return 0;
     }
 
+    @Override
     protected void setContentsNative(Transferable contents) {
-
         // Don't use delayed Clipboard rendering for the Transferable's data.
         // If we did that, we would call Transferable.getTransferData on
         // the Toolkit thread, which is a security hole.
@@ -72,7 +70,7 @@ public class WClipboard extends SunClipboard {
         // translated. Then, for each format, translate the data and post
         // it to the Clipboard.
         Map <Long, DataFlavor> formatMap = WDataTransferer.getInstance().
-            getFormatsForTransferable(contents, flavorMap);
+            getFormatsForTransferable(contents, getDefaultFlavorTable());
 
         openClipboard(this);
 
@@ -107,6 +105,7 @@ public class WClipboard extends SunClipboard {
      * Currently delayed data rendering is not used for the Windows clipboard,
      * so there is no native context to clear.
      */
+    @Override
     protected void clearNativeContext() {}
 
     /**
@@ -115,11 +114,13 @@ public class WClipboard extends SunClipboard {
      *
      * @throws IllegalStateException if the clipboard has not been opened
      */
+    @Override
     public native void openClipboard(SunClipboard newOwner) throws IllegalStateException;
     /**
      * Call the Win32 CloseClipboard function if we have clipboard ownership,
      * does nothing if we have not ownership.
      */
+    @Override
     public native void closeClipboard();
     /**
      * Call the Win32 SetClipboardData function.
@@ -131,9 +132,12 @@ public class WClipboard extends SunClipboard {
         init();
     }
 
+    @Override
     protected native long[] getClipboardFormats();
+    @Override
     protected native byte[] getClipboardData(long format) throws IOException;
 
+    @Override
     protected void registerClipboardViewerChecked() {
         if (!isClipboardViewerRegistered) {
             registerClipboardViewer();
@@ -148,6 +152,7 @@ public class WClipboard extends SunClipboard {
      * until the toolkit window disposing since MSDN suggests removing
      * the window from the clipboard viewer chain just before it is destroyed.
      */
+    @Override
     protected void unregisterClipboardViewerChecked() {}
 
     /**
@@ -175,6 +180,7 @@ public class WClipboard extends SunClipboard {
      *
      * @since 1.5
      */
+    @Override
     protected Transferable createLocaleTransferable(long[] formats) throws IOException {
         boolean found = false;
         for (int i = 0; i < formats.length; i++) {
@@ -197,12 +203,15 @@ public class WClipboard extends SunClipboard {
         final byte[] localeDataFinal = localeData;
 
         return new Transferable() {
+                @Override
                 public DataFlavor[] getTransferDataFlavors() {
                     return new DataFlavor[] { DataTransferer.javaTextEncodingFlavor };
                 }
+                @Override
                 public boolean isDataFlavorSupported(DataFlavor flavor) {
                     return flavor.equals(DataTransferer.javaTextEncodingFlavor);
                 }
+                @Override
                 public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
                     if (isDataFlavorSupported(flavor)) {
                         return localeDataFinal;
@@ -211,5 +220,4 @@ public class WClipboard extends SunClipboard {
                 }
             };
     }
-
 }

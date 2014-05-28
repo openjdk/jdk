@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
 
-#include "gc_implementation/g1/heapRegionSets.hpp"
+#include "gc_implementation/g1/heapRegionSet.hpp"
 #include "utilities/taskqueue.hpp"
 
 class G1CollectedHeap;
@@ -814,7 +814,6 @@ public:
   }
 
   inline bool do_yield_check(uint worker_i = 0);
-  inline bool should_yield();
 
   // Called to abort the marking cycle after a Full GC takes place.
   void abort();

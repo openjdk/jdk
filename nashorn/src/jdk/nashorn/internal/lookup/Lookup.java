@@ -146,6 +146,9 @@ public final class Lookup {
         if (from == int.class) {
             //fallthru
         } else if (from == long.class) {
+            if (to == int.class) {
+                return MH.filterArguments(mh, n, JSType.TO_INT32_L.methodHandle());
+            }
             //fallthru
         } else if (from == double.class) {
             if (to == int.class) {
@@ -169,7 +172,7 @@ public final class Lookup {
         }
 
         //use a standard cast - we don't need to check JavaScript special cases
-        return MH.explicitCastArguments(mh, mh.type().changeParameterType(2, to));
+        return MH.explicitCastArguments(mh, mh.type().changeParameterType(n, from));
     }
 
     /**
@@ -189,6 +192,9 @@ public final class Lookup {
         if (retType == int.class) {
             //fallthru
         } else if (retType == long.class) {
+            if (type == int.class) {
+                return MH.filterReturnValue(mh, JSType.TO_INT32_L.methodHandle());
+            }
             //fallthru
         } else if (retType == double.class) {
             if (type == int.class) {

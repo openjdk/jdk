@@ -137,7 +137,6 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <li>ChronologyText - the name of the chronology</li>
  * <li>Literal - a text literal</li>
  * <li>Nested and Optional - formats can be nested or made optional</li>
- * <li>Other - the printer and parser interfaces can be used to add user supplied formatting</li>
  * </ul>
  * In addition, any of the elements may be decorated by padding, either with spaces or any other character.
  * <p>
@@ -194,8 +193,8 @@ public final class DateTimeFormatterBuilder {
      * The locale and chronology are used to lookup the locale specific format
      * for the requested dateStyle and/or timeStyle.
      *
-     * @param dateStyle  the FormatStyle for the date
-     * @param timeStyle  the FormatStyle for the time
+     * @param dateStyle  the FormatStyle for the date, null for time-only pattern
+     * @param timeStyle  the FormatStyle for the time, null for date-only pattern
      * @param chrono  the Chronology, non-null
      * @param locale  the locale, non-null
      * @return the locale and Chronology specific formatting pattern
@@ -747,9 +746,9 @@ public final class DateTimeFormatterBuilder {
      * defines the connection between each value and the text:
      * <pre>
      * Map&lt;Long, String&gt; map = new HashMap&lt;&gt;();
-     * map.put(1, "JNY");
-     * map.put(2, "FBY");
-     * map.put(3, "MCH");
+     * map.put(1L, "JNY");
+     * map.put(2L, "FBY");
+     * map.put(3L, "MCH");
      * ...
      * builder.appendText(MONTH_OF_YEAR, map);
      * </pre>
@@ -841,7 +840,7 @@ public final class DateTimeFormatterBuilder {
      * <p>
      * The {@linkplain ResolverStyle resolver style} has no effect on instant parsing.
      * The end-of-day time of '24:00' is handled as midnight at the start of the following day.
-     * The leap-second time of '23:59:59' is handled to some degree, see
+     * The leap-second time of '23:59:60' is handled to some degree, see
      * {@link DateTimeFormatter#parsedLeapSecond()} for full details.
      * <p>
      * An alternative to this method is to format/parse the instant as a single
@@ -864,7 +863,7 @@ public final class DateTimeFormatterBuilder {
      * Appends the zone offset, such as '+01:00', to the formatter.
      * <p>
      * This appends an instruction to format/parse the offset ID to the builder.
-     * This is equivalent to calling {@code appendOffset("HH:MM:ss", "Z")}.
+     * This is equivalent to calling {@code appendOffset("+HH:MM:ss", "Z")}.
      *
      * @return this, for chaining, not null
      */
@@ -939,7 +938,7 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the offset is parsed using the format defined above.
      * If the offset cannot be parsed then an exception is thrown unless the
      * section of the formatter is optional.
-     * <p>
+     *
      * @param style  the format style to use, not null
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if style is neither {@link TextStyle#FULL
@@ -1049,7 +1048,7 @@ public final class DateTimeFormatterBuilder {
      *   "GMT+01:30"               -- ZoneOffset.of("+01:30")
      * </pre>
      * <p>
-     * Note that this method is is identical to {@code appendZoneId()} except
+     * Note that this method is identical to {@code appendZoneId()} except
      * in the mechanism used to obtain the zone.
      * Note also that parsing accepts offsets, whereas formatting will never
      * produce one.
@@ -1107,7 +1106,7 @@ public final class DateTimeFormatterBuilder {
      *   "GMT+01:30"               -- ZoneOffset.of("GMT+01:30")
      * </pre>
      * <p>
-     * Note that this method is is identical to {@code appendZoneId()} except
+     * Note that this method is identical to {@code appendZoneId()} except
      * in the mechanism used to obtain the zone.
      *
      * @return this, for chaining, not null
@@ -1132,7 +1131,7 @@ public final class DateTimeFormatterBuilder {
      * for the locale set in the {@link DateTimeFormatter}.
      * If the temporal object being printed represents an instant, then the text
      * will be the summer or winter time text as appropriate.
-     * If the lookup for text does not find any suitable reuslt, then the
+     * If the lookup for text does not find any suitable result, then the
      * {@link ZoneId#getId() ID} will be printed instead.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -1168,7 +1167,7 @@ public final class DateTimeFormatterBuilder {
      * for the locale set in the {@link DateTimeFormatter}.
      * If the temporal object being printed represents an instant, then the text
      * will be the summer or winter time text as appropriate.
-     * If the lookup for text does not find any suitable reuslt, then the
+     * If the lookup for text does not find any suitable result, then the
      * {@link ZoneId#getId() ID} will be printed instead.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -1182,7 +1181,7 @@ public final class DateTimeFormatterBuilder {
      * zone. This method also allows a set of preferred {@link ZoneId} to be
      * specified for parsing. The matched preferred zone id will be used if the
      * textural zone name being parsed is not unique.
-     *
+     * <p>
      * If the zone cannot be parsed then an exception is thrown unless the
      * section of the formatter is optional.
      *
@@ -1227,7 +1226,6 @@ public final class DateTimeFormatterBuilder {
      * <p>
      * The calendar system name will be output during a format.
      * If the chronology cannot be obtained then an exception will be thrown.
-     * The calendar system name is obtained from the Chronology.
      *
      * @param textStyle  the text style to use, not null
      * @return this, for chaining, not null
@@ -1453,7 +1451,7 @@ public final class DateTimeFormatterBuilder {
      *    LLLLL   5      appendText(ChronoField.MONTH_OF_YEAR, TextStyle.NARROW_STANDALONE)
      *
      *    w       1      append special localized WeekFields element for numeric week-of-year
-     *    ww      1      append special localized WeekFields element for numeric week-of-year, zero-padded
+     *    ww      2      append special localized WeekFields element for numeric week-of-year, zero-padded
      *    W       1      append special localized WeekFields element for numeric week-of-month
      *    d       1      appendValue(ChronoField.DAY_OF_MONTH)
      *    dd      2      appendValue(ChronoField.DAY_OF_MONTH, 2)
@@ -1880,7 +1878,6 @@ public final class DateTimeFormatterBuilder {
      * <p>
      * During parsing, the padding and decorated element are parsed.
      * If parsing is lenient, then the pad width is treated as a maximum.
-     * If parsing is case insensitive, then the pad character is matched ignoring case.
      * The padding is parsed greedily. Thus, if the decorated element starts with
      * the pad character, it will not be parsed.
      *
@@ -2596,8 +2593,16 @@ public final class DateTimeFormatterBuilder {
             return value;
         }
 
-        boolean isFixedWidth() {
-            return subsequentWidth == -1;
+        /**
+         * For NumberPrinterParser, the width is fixed depending on the
+         * minWidth, maxWidth, signStyle and whether subsequent fields are fixed.
+         * @param context the context
+         * @return true if the field is fixed width
+         * @see DateTimeFormatterBuilder#appendValue(java.time.temporal.TemporalField, int)
+         */
+        boolean isFixedWidth(DateTimeParseContext context) {
+            return subsequentWidth == -1 ||
+                (subsequentWidth > 0 && minWidth == maxWidth && signStyle == SignStyle.NOT_NEGATIVE);
         }
 
         @Override
@@ -2626,12 +2631,12 @@ public final class DateTimeFormatterBuilder {
                     return ~position;
                 }
             }
-            int effMinWidth = (context.isStrict() || isFixedWidth() ? minWidth : 1);
+            int effMinWidth = (context.isStrict() || isFixedWidth(context) ? minWidth : 1);
             int minEndPos = position + effMinWidth;
             if (minEndPos > length) {
                 return ~position;
             }
-            int effMaxWidth = (context.isStrict() || isFixedWidth() ? maxWidth : 9) + Math.max(subsequentWidth, 0);
+            int effMaxWidth = (context.isStrict() || isFixedWidth(context) ? maxWidth : 9) + Math.max(subsequentWidth, 0);
             long total = 0;
             BigInteger totalBig = null;
             int pos = position;
@@ -2864,6 +2869,21 @@ public final class DateTimeFormatterBuilder {
         ReducedPrinterParser withSubsequentWidth(int subsequentWidth) {
             return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate,
                     this.subsequentWidth + subsequentWidth);
+        }
+
+        /**
+         * For a ReducedPrinterParser, fixed width is false if the mode is strict,
+         * otherwise it is set as for NumberPrinterParser.
+         * @param context the context
+         * @return if the field is fixed width
+         * @see DateTimeFormatterBuilder#appendValueReduced(java.time.temporal.TemporalField, int, int, int)
+         */
+        @Override
+        boolean isFixedWidth(DateTimeParseContext context) {
+           if (context.isStrict() == false) {
+               return false;
+           }
+           return super.isFixedWidth(context);
         }
 
         @Override

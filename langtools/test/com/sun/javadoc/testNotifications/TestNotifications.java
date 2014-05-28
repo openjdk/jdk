@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,65 +28,43 @@
  *           be created.
  *           Make sure classname is not include in javadoc usage message.
  * @author   jamieh
- * @library  ../lib/
+ * @library ../lib
  * @build    JavadocTester
- * @build    TestNotifications
  * @run main TestNotifications
  */
 
 public class TestNotifications extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4657239";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    private static final String[] ARGS2 = new String[] {
-        "-help"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {NOTICE_OUTPUT, "Creating destination directory: \"4657239"}
-    };
-    private static final String[][] NEGATED_TEST = {
-        {NOTICE_OUTPUT, "Creating destination directory: \"4657239"}
-    };
-
-    private static final String[][] NEGATED_TEST2 = {
-        {NOTICE_OUTPUT, "[classnames]"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestNotifications tester = new TestNotifications();
+        tester.runTests();
+    }
+
+    @Test
+    void test1() {
+        String outDir = "out";
+
         // Notify that the destination directory must be created.
-        run(tester, ARGS, TEST, NO_TEST);
+        javadoc("-d", outDir, "-sourcepath", testSrc, "pkg");
+        checkExit(Exit.OK);
+        checkOutput(Output.NOTICE, true,
+                "Creating destination directory: \"" + outDir);
+
         // No need to notify that the destination must be created because
         // it already exists.
-        run(tester, ARGS, NO_TEST, NEGATED_TEST);
+        setOutputDirectoryCheck(DirectoryCheck.NONE);
+        javadoc("-d", outDir, "-sourcepath", testSrc, "pkg");
+        checkExit(Exit.OK);
+        checkOutput(Output.NOTICE, false,
+                "Creating destination directory: \"" + outDir);
+    }
+
+    @Test
+    void test() {
         //Make sure classname is not include in javadoc usage message.
-        run(tester, ARGS2, NO_TEST, NEGATED_TEST2);
-        tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
+        javadoc("-help");
+        checkOutput(Output.NOTICE, false,
+                "[classnames]");
     }
 }

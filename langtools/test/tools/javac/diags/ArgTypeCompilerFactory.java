@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,12 +135,7 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
                 args.add(f.getPath());
 
             Main main = new Main("javac", out);
-            Context c = new Context() {
-                @Override public void clear() {
-                    ((JavacFileManager) get(JavaFileManager.class)).close();
-                    super.clear();
-                }
-            };
+            Context c = new Context();
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
             ArgTypeJavaCompiler.preRegister(c);
             ArgTypeMessages.preRegister(c);

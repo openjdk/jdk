@@ -26,6 +26,7 @@
 package com.sun.tools.javac.jvm;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.code.TypeTag.UNINITIALIZED_OBJECT;
 import static com.sun.tools.javac.code.TypeTag.UNINITIALIZED_THIS;
@@ -41,17 +42,25 @@ import static com.sun.tools.javac.code.TypeTag.UNINITIALIZED_THIS;
 class UninitializedType extends Type.DelegatedType {
 
     public static UninitializedType uninitializedThis(Type qtype) {
-        return new UninitializedType(UNINITIALIZED_THIS, qtype, -1);
+        return new UninitializedType(UNINITIALIZED_THIS, qtype, -1,
+                                     qtype.getAnnotationMirrors());
     }
 
     public static UninitializedType uninitializedObject(Type qtype, int offset) {
-        return new UninitializedType(UNINITIALIZED_OBJECT, qtype, offset);
+        return new UninitializedType(UNINITIALIZED_OBJECT, qtype, offset,
+                                     qtype.getAnnotationMirrors());
     }
 
     public final int offset; // PC where allocation took place
-    private UninitializedType(TypeTag tag, Type qtype, int offset) {
-        super(tag, qtype);
+    private UninitializedType(TypeTag tag, Type qtype, int offset,
+                              List<Attribute.TypeCompound> typeAnnotations) {
+        super(tag, qtype, typeAnnotations);
         this.offset = offset;
+    }
+
+    @Override
+    public UninitializedType annotatedType(List<Attribute.TypeCompound> typeAnnotations) {
+        return new UninitializedType(tag, qtype, offset, typeAnnotations);
     }
 
     Type initializedType() {

@@ -205,7 +205,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
   if (index_size == sizeof(u2)) {
     load_unsigned_short(index, Address(r13, bcp_offset));
   } else if (index_size == sizeof(u4)) {
-    assert(EnableInvokeDynamic, "giant index used only for JSR 292");
     movl(index, Address(r13, bcp_offset));
     // Check if the secondary index definition is still ~x, otherwise
     // we have to change the following assembler code to calculate the
@@ -269,20 +268,6 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
   // skip past the header
   addptr(cache, in_bytes(ConstantPoolCache::base_offset()));
   addptr(cache, tmp);  // construct pointer to cache entry
-}
-
-void InterpreterMacroAssembler::get_method_counters(Register method,
-                                                    Register mcs, Label& skip) {
-  Label has_counters;
-  movptr(mcs, Address(method, Method::method_counters_offset()));
-  testptr(mcs, mcs);
-  jcc(Assembler::notZero, has_counters);
-  call_VM(noreg, CAST_FROM_FN_PTR(address,
-          InterpreterRuntime::build_method_counters), method);
-  movptr(mcs, Address(method,Method::method_counters_offset()));
-  testptr(mcs, mcs);
-  jcc(Assembler::zero, skip); // No MethodCounters allocated, OutOfMemory
-  bind(has_counters);
 }
 
 // Load object from cpool->resolved_references(index)
@@ -675,6 +660,21 @@ void InterpreterMacroAssembler::remove_activation(
 }
 
 #endif // C_INTERP
+
+void InterpreterMacroAssembler::get_method_counters(Register method,
+                                                    Register mcs, Label& skip) {
+  Label has_counters;
+  movptr(mcs, Address(method, Method::method_counters_offset()));
+  testptr(mcs, mcs);
+  jcc(Assembler::notZero, has_counters);
+  call_VM(noreg, CAST_FROM_FN_PTR(address,
+          InterpreterRuntime::build_method_counters), method);
+  movptr(mcs, Address(method,Method::method_counters_offset()));
+  testptr(mcs, mcs);
+  jcc(Assembler::zero, skip); // No MethodCounters allocated, OutOfMemory
+  bind(has_counters);
+}
+
 
 // Lock object
 //
@@ -1423,6 +1423,20 @@ void InterpreterMacroAssembler::verify_oop(Register reg, TosState state) {
 
 void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
 }
+
+// Jump if ((*counter_addr += increment) & mask) satisfies the condition.
+void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
+                                                        int increment, int mask,
+                                                        Register scratch, bool preloaded,
+                                                        Condition cond, Label* where) {
+  if (!preloaded) {
+    movl(scratch, counter_addr);
+  }
+  incrementl(scratch, increment);
+  movl(counter_addr, scratch);
+  andl(scratch, mask);
+  jcc(cond, *where);
+}
 #endif // !CC_INTERP
 
 
@@ -1491,16 +1505,3 @@ void InterpreterMacroAssembler::notify_method_exit(
   }
 }
 
-// Jump if ((*counter_addr += increment) & mask) satisfies the condition.
-void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
-                                                        int increment, int mask,
-                                                        Register scratch, bool preloaded,
-                                                        Condition cond, Label* where) {
-  if (!preloaded) {
-    movl(scratch, counter_addr);
-  }
-  incrementl(scratch, increment);
-  movl(counter_addr, scratch);
-  andl(scratch, mask);
-  jcc(cond, *where);
-}

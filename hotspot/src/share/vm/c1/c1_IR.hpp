@@ -150,6 +150,7 @@ class IRScope: public CompilationResourceObj {
   int           _number_of_locks;                // the number of monitor lock slots needed
   bool          _monitor_pairing_ok;             // the monitor pairing info
   bool          _wrote_final;                    // has written final field
+  bool          _wrote_fields;                   // has written fields
   BlockBegin*   _start;                          // the start block, successsors are method entries
 
   BitMap        _requires_phi_function;          // bit is set if phi functions at loop headers are necessary for a local variable
@@ -184,6 +185,9 @@ class IRScope: public CompilationResourceObj {
   BlockBegin*   start() const                    { return _start; }
   void          set_wrote_final()                { _wrote_final = true; }
   bool          wrote_final    () const          { return _wrote_final; }
+  void          set_wrote_fields()               { _wrote_fields = true; }
+  bool          wrote_fields    () const         { return _wrote_fields; }
+
 };
 
 
@@ -280,6 +284,8 @@ class CodeEmitInfo: public CompilationResourceObj {
 
   bool     is_method_handle_invoke() const { return _is_method_handle_invoke;     }
   void set_is_method_handle_invoke(bool x) {        _is_method_handle_invoke = x; }
+
+  int interpreter_frame_size() const;
 };
 
 
@@ -287,7 +293,6 @@ class IR: public CompilationResourceObj {
  private:
   Compilation*     _compilation;                 // the current compilation
   IRScope*         _top_scope;                   // the root of the scope hierarchy
-  WordSize         _locals_size;                 // the space required for all locals
   int              _num_loops;                   // Total number of loops
   BlockList*       _code;                        // the blocks in code generation order w/ use counts
 
@@ -304,8 +309,6 @@ class IR: public CompilationResourceObj {
   BlockBegin*      start() const                 { return top_scope()->start(); }
   BlockBegin*      std_entry() const             { return start()->end()->as_Base()->std_entry(); }
   BlockBegin*      osr_entry() const             { return start()->end()->as_Base()->osr_entry(); }
-  WordSize         locals_size() const           { return _locals_size; }
-  int              locals_size_in_words() const  { return in_words(_locals_size); }
   BlockList*       code() const                  { return _code; }
   int              num_loops() const             { return _num_loops; }
   int              max_stack() const             { return top_scope()->max_stack(); } // expensive

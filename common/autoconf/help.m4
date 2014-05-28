@@ -200,6 +200,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "\n"
   printf "Configuration summary:\n"
   printf "* Debug level:    $DEBUG_LEVEL\n"
+  printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
   printf "* JDK variant:    $JDK_VARIANT\n"
   printf "* JVM variants:   $with_jvm_variants\n"
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"

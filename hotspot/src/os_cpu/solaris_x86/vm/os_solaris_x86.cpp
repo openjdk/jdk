@@ -256,30 +256,6 @@ frame os::current_frame() {
   }
 }
 
-static int threadgetstate(thread_t tid, int *flags, lwpid_t *lwp, stack_t *ss, gregset_t rs, lwpstatus_t *lwpstatus) {
-  char lwpstatusfile[PROCFILE_LENGTH];
-  int lwpfd, err;
-
-  if (err = os::Solaris::thr_getstate(tid, flags, lwp, ss, rs))
-    return (err);
-  if (*flags == TRS_LWPID) {
-    sprintf(lwpstatusfile, "/proc/%d/lwp/%d/lwpstatus", getpid(),
-            *lwp);
-    if ((lwpfd = open(lwpstatusfile, O_RDONLY)) < 0) {
-      perror("thr_mutator_status: open lwpstatus");
-      return (EINVAL);
-    }
-    if (pread(lwpfd, lwpstatus, sizeof (lwpstatus_t), (off_t)0) !=
-        sizeof (lwpstatus_t)) {
-      perror("thr_mutator_status: read lwpstatus");
-      (void) close(lwpfd);
-      return (EINVAL);
-    }
-    (void) close(lwpfd);
-  }
-  return (0);
-}
-
 #ifndef AMD64
 
 // Detecting SSE support by OS
@@ -457,6 +433,11 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
         thread->disable_stack_red_zone();
         tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
       }
+    }
+
+    if ((sig == SIGSEGV) && VM_Version::is_cpuinfo_segv_addr(pc)) {
+      // Verify that OS save/restore AVX registers.
+      stub = VM_Version::cpuinfo_cont_addr();
     }
 
     if (thread->thread_state() == _thread_in_vm) {

@@ -168,16 +168,16 @@ final class LWChoicePeer extends LWComponentPeer<Choice, JComboBox<String>>
         @Override
         public void firePopupMenuWillBecomeVisible() {
             super.firePopupMenuWillBecomeVisible();
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    JPopupMenu popupMenu = getPopupMenu();
-                    if (popupMenu != null) {
-                        if (popupMenu.getInvoker() != LWChoicePeer.this.getTarget()) {
-                            popupMenu.setVisible(false);
-                            popupMenu.show(LWChoicePeer.this.getTarget(), 0, 0);
-                        }
-                    }
+            SwingUtilities.invokeLater(() -> {
+                JPopupMenu popupMenu = getPopupMenu();
+                // Need to override the invoker for proper grab handling
+                if (popupMenu != null && popupMenu.getInvoker() != getTarget()) {
+                    // The popup is now visible with correct location
+                    // Save it and restore after toggling visibility and changing invoker
+                    Point loc = popupMenu.getLocationOnScreen();
+                    SwingUtilities.convertPointFromScreen(loc, this);
+                    popupMenu.setVisible(false);
+                    popupMenu.show(getTarget(), loc.x, loc.y);
                 }
             });
         }

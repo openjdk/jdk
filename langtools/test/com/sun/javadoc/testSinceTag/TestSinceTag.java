@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,59 +26,49 @@
  * @bug      7180906 8026567
  * @summary  Test to make sure that the since tag works correctly
  * @author   Bhavesh Patel
- * @library  ../lib/
- * @build    JavadocTester TestSinceTag
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestSinceTag
  */
 
 public class TestSinceTag extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "7180906";
-
-    //Javadoc arguments.
-    private static final String[] ARGS1 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"
-    };
-
-    private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-nosince", "pkg1"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<dl>" + NL + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>" + NL +
-            "<dd>JDK1.0</dd>"
-        },
-        {BUG_ID + FS + "serialized-form.html",
-            "<dl>" + NL + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>" + NL +
-            "<dd>1.4</dd>"
-        }
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSinceTag tester = new TestSinceTag();
-        run(tester, ARGS1, TEST, NO_TEST);
-        run(tester, ARGS2, NO_TEST, TEST);
+        tester.runTests();
         tester.printSummary();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
+    @Test
+    void testSince() {
+        javadoc("-d", "out-since",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.FAILED); // TODO: investigate
+
+        checkSince(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+    @Test
+    void testNoSince() {
+        javadoc("-d", "out-nosince",
+                "-sourcepath", testSrc,
+                "-nosince",
+                "pkg1");
+        checkExit(Exit.FAILED); // TODO: investigate
+
+        checkSince(false);
+    }
+
+    void checkSince(boolean on) {
+        checkOutput("pkg1/C1.html", on,
+                "<dl>\n"
+                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dd>JDK1.0</dd>");
+
+        checkOutput("serialized-form.html", on,
+                "<dl>\n"
+                + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
+                + "<dd>1.4</dd>");
     }
 }

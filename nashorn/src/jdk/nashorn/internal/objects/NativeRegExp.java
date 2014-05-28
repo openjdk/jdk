@@ -124,7 +124,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return new NativeRegExp
      */
     @Constructor(arity = 2)
-    public static Object constructor(final boolean isNew, final Object self, final Object... args) {
+    public static NativeRegExp constructor(final boolean isNew, final Object self, final Object... args) {
         if (args.length > 1) {
             return newRegExp(args[0], args[1]);
         } else if (args.length > 0) {
@@ -144,7 +144,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return new NativeRegExp
      */
     @SpecializedConstructor
-    public static Object constructor(final boolean isNew, final Object self) {
+    public static NativeRegExp constructor(final boolean isNew, final Object self) {
         return new NativeRegExp("", "");
     }
 
@@ -159,7 +159,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return new NativeRegExp
      */
     @SpecializedConstructor
-    public static Object constructor(final boolean isNew, final Object self, final Object pattern) {
+    public static NativeRegExp constructor(final boolean isNew, final Object self, final Object pattern) {
         return newRegExp(pattern, UNDEFINED);
     }
 
@@ -175,7 +175,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return new NativeRegExp
      */
     @SpecializedConstructor
-    public static Object constructor(final boolean isNew, final Object self, final Object pattern, final Object flags) {
+    public static NativeRegExp constructor(final boolean isNew, final Object self, final Object pattern, final Object flags) {
         return newRegExp(pattern, flags);
     }
 
@@ -285,7 +285,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return new NativeRegExp
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object compile(final Object self, final Object pattern, final Object flags) {
+    public static ScriptObject compile(final Object self, final Object pattern, final Object flags) {
         final NativeRegExp regExp   = checkRegExp(self);
         final NativeRegExp compiled = newRegExp(pattern, flags);
         // copy over regexp to 'self'
@@ -304,7 +304,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return array containing the matches or {@code null} if no match
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object exec(final Object self, final Object string) {
+    public static ScriptObject exec(final Object self, final Object string) {
         return checkRegExp(self).exec(JSType.toString(string));
     }
 
@@ -316,7 +316,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return true if matches found, false otherwise
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object test(final Object self, final Object string) {
+    public static boolean test(final Object self, final Object string) {
         return checkRegExp(self).test(JSType.toString(string));
     }
 
@@ -327,7 +327,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return string version of regexp
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toString(final Object self) {
+    public static String toString(final Object self) {
         return checkRegExp(self).toString();
     }
 
@@ -620,7 +620,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param string String to match.
      * @return NativeArray of matches, string or null.
      */
-    public Object exec(final String string) {
+    public NativeRegExpExecResult exec(final String string) {
         final RegExpResult match = execInner(string);
 
         if (match == null) {
@@ -637,7 +637,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param string String to match.
      * @return True if a match is found.
      */
-    public Object test(final String string) {
+    public boolean test(final String string) {
         return execInner(string) != null;
     }
 
@@ -651,7 +651,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param replacement Replacement string.
      * @return String with substitutions.
      */
-    Object replace(final String string, final String replacement, final ScriptFunction function) throws Throwable {
+    String replace(final String string, final String replacement, final ScriptFunction function) throws Throwable {
         final RegExpMatcher matcher = regexp.match(string);
 
         if (matcher == null) {
@@ -820,7 +820,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param limit  Split limit.
      * @return Array of substrings.
      */
-    Object split(final String string, final long limit) {
+    NativeArray split(final String string, final long limit) {
         if (limit == 0L) {
             return new NativeArray();
         }
@@ -883,7 +883,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param string String to match.
      * @return Index of match.
      */
-    Object search(final String string) {
+    int search(final String string) {
         final RegExpResult match = execInner(string);
 
         if (match == null) {

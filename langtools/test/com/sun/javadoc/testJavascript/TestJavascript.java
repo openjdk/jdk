@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,116 +26,93 @@
  * @bug      4665566 4855876 7025314 8012375 8015997 8016328 8024756
  * @summary  Verify that the output has the right javascript.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestJavascript
  * @run main TestJavascript
  */
 
 public class TestJavascript extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4665566-4855876-8012375";
+    public static void main(String... args) throws Exception {
+        TestJavascript tester = new TestJavascript();
+        tester.runTests();
+    }
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", SRC_DIR + FS + "TestJavascript.java"
-    };
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg", testSrc("TestJavascript.java"));
+        checkExit(Exit.OK);
 
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<a href=\"../index.html?pkg/C.html\" target=\"_top\">Frames</a>"},
-        {BUG_ID + FS + "TestJavascript.html",
-            "<a href=\"index.html?TestJavascript.html\" target=\"_top\">Frames</a>"},
-        {BUG_ID + FS + "index.html",
-            "<script type=\"text/javascript\">" + NL +
-                        "    targetPage = \"\" + window.location.search;" + NL +
-            "    if (targetPage != \"\" && targetPage != \"undefined\")" + NL +
-            "        targetPage = targetPage.substring(1);" + NL +
-            "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))" + NL +
-            "        targetPage = \"undefined\";" + NL +
-            "    function validURL(url) {" + NL +
-            "        try {" + NL +
-            "            url = decodeURIComponent(url);" + NL +
-            "        }" + NL +
-            "        catch (error) {" + NL +
-            "            return false;" + NL +
-            "        }" + NL +
-            "        var pos = url.indexOf(\".html\");" + NL +
-            "        if (pos == -1 || pos != url.length - 5)" + NL +
-            "            return false;" + NL +
-            "        var allowNumber = false;" + NL +
-            "        var allowSep = false;" + NL +
-            "        var seenDot = false;" + NL +
-            "        for (var i = 0; i < url.length - 5; i++) {" + NL +
-            "            var ch = url.charAt(i);" + NL +
-            "            if ('a' <= ch && ch <= 'z' ||" + NL +
-            "                    'A' <= ch && ch <= 'Z' ||" + NL +
-            "                    ch == '$' ||" + NL +
-            "                    ch == '_' ||" + NL +
-            "                    ch.charCodeAt(0) > 127) {" + NL +
-            "                allowNumber = true;" + NL +
-            "                allowSep = true;" + NL +
-            "            } else if ('0' <= ch && ch <= '9'" + NL +
-            "                    || ch == '-') {" + NL +
-            "                if (!allowNumber)" + NL +
-            "                     return false;" + NL +
-            "            } else if (ch == '/' || ch == '.') {" + NL +
-            "                if (!allowSep)" + NL +
-            "                    return false;" + NL +
-            "                allowNumber = false;" + NL +
-            "                allowSep = false;" + NL +
-            "                if (ch == '.')" + NL +
-            "                     seenDot = true;" + NL +
-            "                if (ch == '/' && seenDot)" + NL +
-            "                     return false;" + NL +
-            "            } else {" + NL +
-            "                return false;" + NL +
-            "            }" + NL +
-            "        }" + NL +
-            "        return true;" + NL +
-            "    }" + NL +
-            "    function loadFrames() {" + NL +
-            "        if (targetPage != \"\" && targetPage != \"undefined\")" + NL +
-            "             top.classFrame.location = top.targetPage;" + NL +
-            "    }" + NL +
-            "</script>"},
+        checkOutput("pkg/C.html", true,
+                "<a href=\"../index.html?pkg/C.html\" target=\"_top\">Frames</a>");
+
+        checkOutput("TestJavascript.html", true,
+                "<a href=\"index.html?TestJavascript.html\" target=\"_top\">Frames</a>");
+
+        checkOutput("index.html", true,
+                "<script type=\"text/javascript\">\n"
+                + "    targetPage = \"\" + window.location.search;\n"
+                + "    if (targetPage != \"\" && targetPage != \"undefined\")\n"
+                + "        targetPage = targetPage.substring(1);\n"
+                + "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))\n"
+                + "        targetPage = \"undefined\";\n"
+                + "    function validURL(url) {\n"
+                + "        try {\n"
+                + "            url = decodeURIComponent(url);\n"
+                + "        }\n"
+                + "        catch (error) {\n"
+                + "            return false;\n"
+                + "        }\n"
+                + "        var pos = url.indexOf(\".html\");\n"
+                + "        if (pos == -1 || pos != url.length - 5)\n"
+                + "            return false;\n"
+                + "        var allowNumber = false;\n"
+                + "        var allowSep = false;\n"
+                + "        var seenDot = false;\n"
+                + "        for (var i = 0; i < url.length - 5; i++) {\n"
+                + "            var ch = url.charAt(i);\n"
+                + "            if ('a' <= ch && ch <= 'z' ||\n"
+                + "                    'A' <= ch && ch <= 'Z' ||\n"
+                + "                    ch == '$' ||\n"
+                + "                    ch == '_' ||\n"
+                + "                    ch.charCodeAt(0) > 127) {\n"
+                + "                allowNumber = true;\n"
+                + "                allowSep = true;\n"
+                + "            } else if ('0' <= ch && ch <= '9'\n"
+                + "                    || ch == '-') {\n"
+                + "                if (!allowNumber)\n"
+                + "                     return false;\n"
+                + "            } else if (ch == '/' || ch == '.') {\n"
+                + "                if (!allowSep)\n"
+                + "                    return false;\n"
+                + "                allowNumber = false;\n"
+                + "                allowSep = false;\n"
+                + "                if (ch == '.')\n"
+                + "                     seenDot = true;\n"
+                + "                if (ch == '/' && seenDot)\n"
+                + "                     return false;\n"
+                + "            } else {\n"
+                + "                return false;\n"
+                + "            }\n"
+                + "        }\n"
+                + "        return true;\n"
+                + "    }\n"
+                + "    function loadFrames() {\n"
+                + "        if (targetPage != \"\" && targetPage != \"undefined\")\n"
+                + "             top.classFrame.location = top.targetPage;\n"
+                + "    }\n"
+                + "</script>");
 
         //Make sure title javascript only runs if is-external is not true
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "    try {" + NL +
-            "        if (location.href.indexOf('is-external=true') == -1) {" + NL +
-            "            parent.document.title=\"C\";" + NL +
-            "        }" + NL +
-            "    }" + NL +
-            "    catch(err) {" + NL +
-            "    }"},
-    };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestJavascript tester = new TestJavascript();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg/C.html", true,
+                "    try {\n"
+                + "        if (location.href.indexOf('is-external=true') == -1) {\n"
+                + "            parent.document.title=\"C\";\n"
+                + "        }\n"
+                + "    }\n"
+                + "    catch(err) {\n"
+                + "    }");
     }
 }

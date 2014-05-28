@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,58 +28,38 @@
  * If docRoot performs as documented, the test passes.
  * Make sure that the docRoot tag works with the -bottom option.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestDocRootInlineTag
  * @run main TestDocRootInlineTag
  */
 
 public class TestDocRootInlineTag extends JavadocTester {
 
-    private static final String BUG_ID = "4369014-4851991";
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "TestDocRootTag.html",
-            "<a href=\"http://www.java.sun.com/j2se/1.4/docs/api/java/io/File.html?is-external=true\" " +
-            "title=\"class or interface in java.io\"><code>File</code></a>"},
-        {BUG_ID + FS + "TestDocRootTag.html",
-            "<a href=\"./glossary.html\">glossary</a>"},
-        {BUG_ID + FS + "TestDocRootTag.html",
-            "<a href=\"http://www.java.sun.com/j2se/1.4/docs/api/java/io/File.html?is-external=true\" " +
-            "title=\"class or interface in java.io\"><code>Second File Link</code></a>"},
-        {BUG_ID + FS + "TestDocRootTag.html", "The value of @docRoot is \"./\""},
-        {BUG_ID + FS + "index-all.html", "My package page is " +
-            "<a href=\"./pkg/package-summary.html\">here</a>"}
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-    private static final String[] ARGS =
-        new String[] {
-            "-bottom", "The value of @docRoot is \"{@docRoot}\"",
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            "-linkoffline", "http://www.java.sun.com/j2se/1.4/docs/api",
-            SRC_DIR, SRC_DIR + FS + "TestDocRootTag.java", "pkg"
-        };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDocRootInlineTag tester = new TestDocRootInlineTag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        String uri = "http://www.java.sun.com/j2se/1.4/docs/api";
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        javadoc("-bottom", "The value of @docRoot is \"{@docRoot}\"",
+                "-d", "out",
+                "-sourcepath", testSrc,
+                "-linkoffline", uri, testSrc,
+                testSrc("TestDocRootTag.java"), "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("TestDocRootTag.html", true,
+                "<a href=\"" + uri + "/java/io/File.html?is-external=true\" "
+                + "title=\"class or interface in java.io\"><code>File</code></a>",
+                "<a href=\"./glossary.html\">glossary</a>",
+                "<a href=\"" + uri + "/java/io/File.html?is-external=true\" "
+                + "title=\"class or interface in java.io\"><code>Second File Link</code></a>",
+                "The value of @docRoot is \"./\"");
+
+        checkOutput("index-all.html", true,
+                "My package page is <a href=\"./pkg/package-summary.html\">here</a>");
     }
 }

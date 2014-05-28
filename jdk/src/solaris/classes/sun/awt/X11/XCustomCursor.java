@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.awt.*;
  * @author      Thomas Ball
  * @author      Bino George
  */
+@SuppressWarnings("serial") // JDK-implementation class
 public class XCustomCursor extends X11CustomCursor {
 
     public XCustomCursor(Image cursor, Point hotSpot, String name)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.File;
-
 /*
  * @test
  * @bug 4258405 4973606 8024096
@@ -31,88 +29,59 @@ import java.io.File;
  *          directory.
  *          Also test that -docfilessubdirs and -excludedocfilessubdir both work.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestDocFileDir
  * @run main TestDocFileDir
  */
 
 public class TestDocFileDir extends JavadocTester {
 
-    private static final String BUG_ID = "4258405-4973606";
-
-    private static final String[][] TEST1 = {
-        {BUG_ID + "-1" + FS + "pkg" + FS + "doc-files" + FS + "testfile.txt",
-            "This doc file did not get trashed."}
-        };
-    private static final String[][] NEGATED_TEST1 = NO_TEST;
-
-    private static final String[] FILE_TEST2 = {
-        BUG_ID + "-2" + FS + "pkg" + FS + "doc-files" + FS + "subdir-used1" +
-            FS + "testfile.txt",
-        BUG_ID + "-2" + FS + "pkg" + FS + "doc-files" + FS + "subdir-used2" +
-            FS + "testfile.txt"
-    };
-    private static final String[] FILE_NEGATED_TEST2 = {
-        BUG_ID + "-2" + FS + "pkg" + FS + "doc-files" + FS + "subdir-excluded1" +
-            FS + "testfile.txt",
-        BUG_ID + "-2" + FS + "pkg" + FS + "doc-files" + FS + "subdir-excluded2" +
-            FS + "testfile.txt"
-    };
-
-    private static final String[][] TEST0 = {
-        {"pkg" + FS + "doc-files" + FS + "testfile.txt",
-            "This doc file did not get trashed."}
-        };
-    private static final String[][] NEGATED_TEST0 = {};
-
-    //Output dir = Input Dir
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", BUG_ID + "-1",
-            "-sourcepath",
-                "blah" + File.pathSeparator + BUG_ID + "-1" + File.pathSeparator + "blah",
-            "pkg"};
-
-    //Exercising -docfilessubdirs and -excludedocfilessubdir
-    private static final String[] ARGS2 =
-        new String[] {
-            "-d", BUG_ID + "-2",
-            "-sourcepath", SRC_DIR,
-            "-docfilessubdirs",
-            "-excludedocfilessubdir", "subdir-excluded1:subdir-excluded2",
-            "pkg"};
-
-    //Output dir = "", Input dir = ""
-    private static final String[] ARGS0 =
-        new String[] {"pkg" + FS + "C.java"};
-
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDocFileDir tester = new TestDocFileDir();
-        copyDir(SRC_DIR + FS + "pkg", ".");
-        run(tester, ARGS0, TEST0, NEGATED_TEST0);
-        copyDir(SRC_DIR + FS + "pkg", BUG_ID + "-1");
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, NO_TEST, NO_TEST, FILE_TEST2, FILE_NEGATED_TEST2);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
+    // Output dir = "", Input dir = ""
+    @Test
+    void test1() {
+        copyDir(testSrc("pkg"), ".");
+        setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
+        javadoc("pkg/C.java");
+        checkExit(Exit.OK);
+        checkOutput("pkg/doc-files/testfile.txt", true,
+            "This doc file did not get trashed.");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+    // Output dir = Input Dir
+    @Test
+    void test2() {
+        String outdir = "out2";
+        copyDir(testSrc("pkg"), outdir);
+        setOutputDirectoryCheck(DirectoryCheck.NO_HTML_FILES);
+        javadoc("-d", outdir,
+            "-sourcepath", "blah" + PS + outdir + PS + "blah",
+            "pkg");
+        checkExit(Exit.OK);
+        checkOutput("pkg/doc-files/testfile.txt", true,
+            "This doc file did not get trashed.");
+    }
+
+    // Exercising -docfilessubdirs and -excludedocfilessubdir
+    @Test
+    void test3() {
+        String outdir = "out3";
+        setOutputDirectoryCheck(DirectoryCheck.NONE);
+        javadoc("-d", outdir,
+                "-sourcepath", testSrc,
+                "-docfilessubdirs",
+                "-excludedocfilessubdir", "subdir-excluded1:subdir-excluded2",
+                "pkg");
+        checkExit(Exit.OK);
+        checkFiles(true,
+                "pkg/doc-files/subdir-used1/testfile.txt",
+                "pkg/doc-files/subdir-used2/testfile.txt");
+        checkFiles(false,
+                "pkg/doc-files/subdir-excluded1/testfile.txt",
+                "pkg/doc-files/subdir-excluded2/testfile.txt");
     }
 }

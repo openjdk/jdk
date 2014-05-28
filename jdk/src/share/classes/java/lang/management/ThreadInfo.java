@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,12 +429,12 @@ public class ThreadInfo {
      *     <br>The thread is in the {@link java.lang.Thread.State#BLOCKED BLOCKED}
      *     state waiting to enter the <tt>synchronized</tt> statement
      *     or method.
-     *     <p></li>
+     *     </li>
      * <li>an object monitor to be notified by another thread.
      *     <br>The thread is in the {@link java.lang.Thread.State#WAITING WAITING}
      *     or {@link java.lang.Thread.State#TIMED_WAITING TIMED_WAITING} state
      *     due to a call to the {@link Object#wait Object.wait} method.
-     *     <p></li>
+     *     </li>
      * <li>a synchronization object responsible for the thread parking.
      *     <br>The thread is in the {@link java.lang.Thread.State#WAITING WAITING}
      *     or {@link java.lang.Thread.State#TIMED_WAITING TIMED_WAITING} state

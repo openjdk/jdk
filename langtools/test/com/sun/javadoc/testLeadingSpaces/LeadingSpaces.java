@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,53 +29,35 @@
  *    begin their comment without a leading star without leading
  *    spaces stripped
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build LeadingSpaces
  * @run main LeadingSpaces
  */
 
 public class LeadingSpaces extends JavadocTester {
-
-    private static final String BUG_ID = "4232882-8014636";
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "LeadingSpaces.html",
-"        1" + NL +
-"          2" + NL +
-"            3" + NL +
-"              4" + NL +
-"                5" + NL +
-"                  6" + NL +
-"                    7"}
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-    private static final String[] ARGS =
-        new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
-        SRC_DIR + FS + "LeadingSpaces.java"};
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         LeadingSpaces tester = new LeadingSpaces();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+    @Test
+    void testLeadingSpaces() {
+        javadoc("-d", "out", "-sourcepath", testSrc,
+                testSrc("LeadingSpaces.java"));
+        checkExit(Exit.OK);
+        checkOutput("LeadingSpaces.html", true,
+                  "        1\n"
+                + "          2\n"
+                + "            3\n"
+                + "              4\n"
+                + "                5\n"
+                + "                  6\n"
+                + "                    7");
     }
 
     /**

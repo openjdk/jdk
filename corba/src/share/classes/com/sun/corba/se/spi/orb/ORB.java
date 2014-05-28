@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,16 +42,13 @@ import com.sun.corba.se.pept.transport.ByteBufferPool;
 import com.sun.corba.se.spi.protocol.RequestDispatcherRegistry ;
 import com.sun.corba.se.spi.protocol.ClientDelegateFactory ;
 import com.sun.corba.se.spi.protocol.CorbaServerRequestDispatcher ;
-import com.sun.corba.se.spi.protocol.CorbaMessageMediator ;
 import com.sun.corba.se.spi.protocol.PIHandler ;
 import com.sun.corba.se.spi.resolver.LocalResolver ;
 import com.sun.corba.se.spi.resolver.Resolver ;
 import com.sun.corba.se.spi.transport.CorbaContactInfoListFactory ;
-import com.sun.corba.se.spi.legacy.connection.LegacyServerSocketEndPointInfo;
 import com.sun.corba.se.spi.legacy.connection.LegacyServerSocketManager;
 import com.sun.corba.se.spi.monitoring.MonitoringConstants;
 import com.sun.corba.se.spi.monitoring.MonitoringManager;
-import com.sun.corba.se.spi.monitoring.MonitoringManagerFactory;
 import com.sun.corba.se.spi.monitoring.MonitoringFactories;
 
 import com.sun.corba.se.spi.ior.IdentifiableFactoryFinder ;
@@ -60,11 +57,6 @@ import com.sun.corba.se.spi.ior.ObjectKey ;
 import com.sun.corba.se.spi.ior.ObjectKeyFactory ;
 import com.sun.corba.se.spi.ior.IOR ;
 
-import com.sun.corba.se.spi.orbutil.closure.Closure ;
-
-import com.sun.corba.se.spi.orb.Operation ;
-import com.sun.corba.se.spi.orb.ORBData ;
-import com.sun.corba.se.spi.orb.ORBVersion ;
 import com.sun.corba.se.spi.orbutil.threadpool.ThreadPoolManager;
 
 import com.sun.corba.se.spi.oa.OAInvocationInfo ;
@@ -96,9 +88,6 @@ import com.sun.corba.se.impl.logging.ORBUtilSystemException ;
 import com.sun.corba.se.impl.logging.OMGSystemException ;
 
 import com.sun.corba.se.impl.presentation.rmi.PresentationManagerImpl ;
-
-import sun.awt.AppContext;
-import sun.corba.SharedSecrets;
 
 public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     implements Broker, TypeCodeFactory
@@ -145,9 +134,9 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     // This map is needed for resolving recursive type code placeholders
     // based on the unique repository id.
     // XXX Should this be a WeakHashMap for GC?
-    private Map typeCodeMap ;
+    private Map<String, TypeCodeImpl> typeCodeMap;
 
-    private TypeCodeImpl[] primitiveTypeCodeConstants ;
+    private TypeCodeImpl[] primitiveTypeCodeConstants;
 
     // ByteBufferPool - needed by both ORBImpl and ORBSingleton
     ByteBufferPool byteBufferPool;
@@ -168,9 +157,18 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     // wrapperMap maintains a table of LogWrapper instances used by
     // different classes to log exceptions.  The key is a StringPair
     // representing LogDomain and ExceptionGroup.
-    private Map wrapperMap ;
+    private Map<StringPair, LogWrapperBase> wrapperMap;
 
-    private static Map staticWrapperMap = new ConcurrentHashMap();
+    static class Holder {
+        static final PresentationManager defaultPresentationManager =
+            setupPresentationManager();
+    }
+
+    private static final Map<Object, PresentationManager> pmContexts =
+            new ConcurrentHashMap<>();
+
+    private static Map<StringPair, LogWrapperBase> staticWrapperMap =
+            new ConcurrentHashMap<>();
 
     protected MonitoringManager monitoringManager;
 
@@ -201,8 +199,9 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
 
                         try {
                             // First try the configured class name, if any
-                            Class<?> cls = SharedSecrets.getJavaCorbaAccess().loadClass( className ) ;
-                            sff = (PresentationManager.StubFactoryFactory)cls.newInstance() ;
+                            Class<?> cls =
+                                sun.corba.SharedSecrets.getJavaCorbaAccess().loadClass(className);
+                            sff = (PresentationManager.StubFactoryFactory)cls.newInstance();
                         } catch (Exception exc) {
                             // Use the default. Log the error as a warning.
                             staticWrapper.errorInSettingDynamicStubFactoryFactory(
@@ -235,13 +234,18 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
      */
     public static PresentationManager getPresentationManager()
     {
-        AppContext ac = AppContext.getAppContext();
-        PresentationManager pm = (PresentationManager) ac.get(PresentationManager.class);
-        if (pm == null) {
-            pm = setupPresentationManager();
-            ac.put(PresentationManager.class, pm);
+        SecurityManager sm = System.getSecurityManager();
+        sun.misc.JavaAWTAccess javaAwtAccess = sun.misc.SharedSecrets.getJavaAWTAccess();
+        if (sm != null && javaAwtAccess != null) {
+            final Object appletContext = javaAwtAccess.getAppletContext();
+            if (appletContext != null) {
+                return pmContexts.computeIfAbsent(appletContext,
+                    x -> setupPresentationManager());
+            }
         }
-        return pm;
+
+        // No security manager or AppletAppContext
+        return Holder.defaultPresentationManager;
     }
 
     /** Get the appropriate StubFactoryFactory.  This
@@ -260,13 +264,13 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     {
         // Initialize logging first, since it is needed nearly
         // everywhere (for example, in TypeCodeImpl).
-        wrapperMap = new ConcurrentHashMap();
+        wrapperMap = new ConcurrentHashMap<>();
         wrapper = ORBUtilSystemException.get( this,
             CORBALogDomains.RPC_PRESENTATION ) ;
         omgWrapper = OMGSystemException.get( this,
             CORBALogDomains.RPC_PRESENTATION ) ;
 
-        typeCodeMap = new HashMap();
+        typeCodeMap = new HashMap<>();
 
         primitiveTypeCodeConstants = new TypeCodeImpl[] {
             new TypeCodeImpl(this, TCKind._tk_null),
@@ -333,7 +337,7 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     public synchronized TypeCodeImpl getTypeCode(String id)
     {
         checkShutdownState();
-        return (TypeCodeImpl)typeCodeMap.get(id);
+        return typeCodeMap.get(id);
     }
 
     public MonitoringManager getMonitoringManager( ) {
@@ -496,35 +500,23 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     /** get the log wrapper class (its type is dependent on the exceptionGroup) for the
      * given log domain and exception group in this ORB instance.
      */
-    public LogWrapperBase getLogWrapper( String logDomain,
-        String exceptionGroup, LogWrapperFactory factory )
+    public LogWrapperBase getLogWrapper(String logDomain,
+        String exceptionGroup, LogWrapperFactory factory)
     {
-        StringPair key = new StringPair( logDomain, exceptionGroup ) ;
-
-        LogWrapperBase logWrapper = (LogWrapperBase)wrapperMap.get( key );
-        if (logWrapper == null) {
-            logWrapper = factory.create( getLogger( logDomain ) );
-            wrapperMap.put( key, logWrapper );
-        }
-
-        return logWrapper;
+        return wrapperMap.computeIfAbsent(
+            new StringPair(logDomain, exceptionGroup),
+            x -> factory.create(getLogger(logDomain)));
     }
 
     /** get the log wrapper class (its type is dependent on the exceptionGroup) for the
      * given log domain and exception group in this ORB instance.
      */
-    public static LogWrapperBase staticGetLogWrapper( String logDomain,
-        String exceptionGroup, LogWrapperFactory factory )
+    public static LogWrapperBase staticGetLogWrapper(String logDomain,
+        String exceptionGroup, LogWrapperFactory factory)
     {
-        StringPair key = new StringPair( logDomain, exceptionGroup ) ;
-
-        LogWrapperBase logWrapper = (LogWrapperBase)staticWrapperMap.get( key );
-        if (logWrapper == null) {
-            logWrapper = factory.create( staticGetLogger( logDomain ) );
-            staticWrapperMap.put( key, logWrapper );
-        }
-
-        return logWrapper;
+        return staticWrapperMap.computeIfAbsent(
+            new StringPair(logDomain, exceptionGroup),
+            x -> factory.create(staticGetLogger(logDomain)));
     }
 
     // get a reference to a ByteBufferPool, a pool of NIO ByteBuffers

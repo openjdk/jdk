@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,8 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     protected void addIndex(Content body) {
         for (String groupname : groupList) {
             List<PackageDoc> list = groupPackageMap.get(groupname);
-            if (list != null && list.size() > 0) {
-                addIndexContents(list.toArray(new PackageDoc[list.size()]),
+            if (list != null && !list.isEmpty()) {
+                addIndexContents(list,
                                  groupname, configuration.getText("doclet.Member_Table_Summary",
                                                                   groupname, configuration.getText("doclet.packages")), body);
             }
@@ -146,7 +146,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     /**
      * {@inheritDoc}
      */
-    protected void addPackagesList(PackageDoc[] packages, String text,
+    protected void addPackagesList(Collection<PackageDoc> packages, String text,
             String tableSummary, Content body) {
         Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0, tableSummary,
                 getTableCaption(new RawHtml(text)));
@@ -164,25 +164,23 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @param packages Packages to which link is to be generated
      * @param tbody the documentation tree to which the list will be added
      */
-    protected void addPackagesList(PackageDoc[] packages, Content tbody) {
-        for (int i = 0; i < packages.length; i++) {
-            if (packages[i] != null && packages[i].name().length() > 0) {
-                if (configuration.nodeprecated && Util.isDeprecated(packages[i]))
-                    continue;
-                Content packageLinkContent = getPackageLink(packages[i],
-                        getPackageName(packages[i]));
-                Content tdPackage = HtmlTree.TD(HtmlStyle.colFirst, packageLinkContent);
-                HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
-                tdSummary.addStyle(HtmlStyle.colLast);
-                addSummaryComment(packages[i], tdSummary);
-                HtmlTree tr = HtmlTree.TR(tdPackage);
-                tr.addContent(tdSummary);
-                if (i%2 == 0)
-                    tr.addStyle(HtmlStyle.altColor);
-                else
-                    tr.addStyle(HtmlStyle.rowColor);
-                tbody.addContent(tr);
+    protected void addPackagesList(Collection<PackageDoc> packages, Content tbody) {
+        boolean altColor = true;
+        for (PackageDoc pkg : packages) {
+            if (pkg != null && !pkg.name().isEmpty()) {
+                if (!(configuration.nodeprecated && Util.isDeprecated(pkg))) {
+                    Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
+                    Content tdPackage = HtmlTree.TD(HtmlStyle.colFirst, packageLinkContent);
+                    HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
+                    tdSummary.addStyle(HtmlStyle.colLast);
+                    addSummaryComment(pkg, tdSummary);
+                    HtmlTree tr = HtmlTree.TR(tdPackage);
+                    tr.addContent(tdSummary);
+                    tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
+                    tbody.addContent(tr);
+                }
             }
+            altColor = !altColor;
         }
     }
 

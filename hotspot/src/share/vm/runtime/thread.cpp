@@ -58,6 +58,7 @@
 #include "runtime/memprofiler.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -106,6 +107,9 @@
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#endif
+#if INCLUDE_RTM_OPT
+#include "runtime/rtmLocking.hpp"
 #endif
 
 #ifdef DTRACE_ENABLED
@@ -211,7 +215,6 @@ Thread::Thread() {
   debug_only(_allow_allocation_count = 0;)
   NOT_PRODUCT(_allow_safepoint_count = 0;)
   NOT_PRODUCT(_skip_gcalot = false;)
-  CHECK_UNHANDLED_OOPS_ONLY(_gc_locked_out_count = 0;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
   _vm_operation_started_count = 0;
@@ -910,7 +913,7 @@ void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
               cur != VMOperationRequest_lock &&
               cur != VMOperationQueue_lock) ||
               cur->rank() == Mutex::special) {
-          warning("Thread holding lock at safepoint that vm can block on: %s", cur->name());
+          fatal(err_msg("Thread holding lock at safepoint that vm can block on: %s", cur->name()));
         }
       }
     }
@@ -1196,6 +1199,13 @@ void NamedThread::set_name(const char* format, ...) {
   va_end(ap);
 }
 
+void NamedThread::print_on(outputStream* st) const {
+  st->print("\"%s\" ", name());
+  Thread::print_on(st);
+  st->cr();
+}
+
+
 // ======= WatcherThread ========
 
 // The watcher thread exists to simulate timer interrupts.  It should
@@ -1392,8 +1402,8 @@ void WatcherThread::print_on(outputStream* st) const {
 void JavaThread::initialize() {
   // Initialize fields
 
-  // Set the claimed par_id to -1 (ie not claiming any par_ids)
-  set_claimed_par_id(-1);
+  // Set the claimed par_id to UINT_MAX (ie not claiming any par_ids)
+  set_claimed_par_id(UINT_MAX);
 
   set_saved_exception_pc(NULL);
   set_threadObj(NULL);
@@ -3600,9 +3610,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // It is done after compilers are initialized, because otherwise compilations of
   // signature polymorphic MH intrinsics can be missed
   // (see SystemDictionary::find_method_handle_intrinsic).
-  if (EnableInvokeDynamic) {
-    initialize_jsr292_core_classes(CHECK_JNI_ERR);
-  }
+  initialize_jsr292_core_classes(CHECK_JNI_ERR);
 
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
@@ -3621,6 +3629,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
   BiasedLocking::init();
+
+#if INCLUDE_RTM_OPT
+  RTMLockingCounters::init();
+#endif
 
   if (JDK_Version::current().post_vm_init_hook_enabled()) {
     call_postVMInitHook(THREAD);

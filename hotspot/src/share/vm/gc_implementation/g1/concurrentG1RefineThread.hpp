@@ -28,6 +28,7 @@
 #include "gc_implementation/shared/concurrentGCThread.hpp"
 
 // Forward Decl.
+class CardTableEntryClosure;
 class ConcurrentG1Refine;
 
 // The G1 Concurrent Refinement Thread (could be several in the future).
@@ -38,8 +39,8 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
 
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Initial virtual time.
-  int _worker_id;
-  int _worker_id_offset;
+  uint _worker_id;
+  uint _worker_id_offset;
 
   // The refinement threads collection is linked list. A predecessor can activate a successor
   // when the number of the rset update buffer crosses a certain threshold. A successor
@@ -48,6 +49,9 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   ConcurrentG1RefineThread* _next;
   Monitor* _monitor;
   ConcurrentG1Refine* _cg1r;
+
+  // The closure applied to completed log buffers.
+  CardTableEntryClosure* _refine_closure;
 
   int _thread_threshold_step;
   // This thread activation threshold
@@ -64,28 +68,20 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   void activate();
   void deactivate();
 
-  // For use by G1CollectedHeap, which is a friend.
-  static SuspendibleThreadSet* sts() { return &_sts; }
-
 public:
   virtual void run();
   // Constructor
   ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next,
-                           int worker_id_offset, int worker_id);
+                           CardTableEntryClosure* refine_closure,
+                           uint worker_id_offset, uint worker_id);
 
   void initialize();
-
-  // Printing
-  void print() const;
-  void print_on(outputStream* st) const;
 
   // Total virtual time so far.
   double vtime_accum() { return _vtime_accum; }
 
   ConcurrentG1Refine* cg1r() { return _cg1r;     }
 
-  // Yield for GC
-  void yield();
   // shutdown
   void stop();
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.lang.model.element.*;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -153,10 +152,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
     }
 
-    public void appendTypeAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.TypeCompound> ctx) {
-        initedMetadata().appendTypeAttributesWithCompletion(ctx);
-    }
-
     public void appendUniqueTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.nonEmpty()) {
             initedMetadata().appendUniqueTypes(l);
@@ -209,10 +204,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         if (metadata != null || a.nonEmpty()) {
             initedMetadata().setDeclarationAttributes(a);
         }
-    }
-
-    public void setDeclarationAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.Compound> ctx) {
-        initedMetadata().setDeclarationAttributesWithCompletion(ctx);
     }
 
     public void setTypeAttributes(List<Attribute.TypeCompound> a) {
@@ -392,7 +383,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     /** A class is an inner class if it it has an enclosing instance class.
      */
     public boolean isInner() {
-        return type.getEnclosingType().hasTag(CLASS);
+        return kind == TYP && type.getEnclosingType().hasTag(CLASS);
     }
 
     /** An inner class has an outer instance if it is not an interface
@@ -467,11 +458,24 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     private boolean hiddenIn(ClassSymbol clazz, Types types) {
         Symbol sym = hiddenInInternal(clazz, types);
-        return sym != null && sym != this;
+        Assert.check(sym != null, "the result of hiddenInInternal() can't be null");
+        /* If we find the current symbol then there is no symbol hiding it
+         */
+        return sym != this;
     }
 
-    private Symbol hiddenInInternal(ClassSymbol c, Types types) {
-        Scope.Entry e = c.members().lookup(name);
+    /** This method looks in the supertypes graph that has the current class as the
+     * initial node, till it finds the current symbol or another symbol that hides it.
+     * If the current class has more than one supertype (extends one class and
+     * implements one or more interfaces) then null can be returned, meaning that
+     * a wrong path in the supertypes graph was selected. Null can only be returned
+     * as a temporary value, as a result of the recursive call.
+     */
+    private Symbol hiddenInInternal(ClassSymbol currentClass, Types types) {
+        if (currentClass == owner) {
+            return this;
+        }
+        Scope.Entry e = currentClass.members().lookup(name);
         while (e.scope != null) {
             if (e.sym.kind == kind &&
                     (kind != MTH ||
@@ -481,18 +485,19 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             }
             e = e.next();
         }
-        List<Symbol> hiddenSyms = List.nil();
-        for (Type st : types.interfaces(c.type).prepend(types.supertype(c.type))) {
+        Symbol hiddenSym = null;
+        for (Type st : types.interfaces(currentClass.type)
+                .prepend(types.supertype(currentClass.type))) {
             if (st != null && (st.hasTag(CLASS))) {
                 Symbol sym = hiddenInInternal((ClassSymbol)st.tsym, types);
-                if (sym != null) {
-                    hiddenSyms = hiddenSyms.prepend(hiddenInInternal((ClassSymbol)st.tsym, types));
+                if (sym == this) {
+                    return this;
+                } else if (sym != null) {
+                    hiddenSym = sym;
                 }
             }
         }
-        return hiddenSyms.contains(this) ?
-                this :
-                (hiddenSyms.isEmpty() ? null : hiddenSyms.head);
+        return hiddenSym;
     }
 
     /** Is this symbol inherited into a given class?
@@ -689,10 +694,10 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         /**
-         * A total ordering between type symbols that refines the
+         * A partial ordering between type symbols that refines the
          * class inheritance graph.
          *
-         * Typevariables always precede other kinds of symbols.
+         * Type variables always precede other kinds of symbols.
          */
         public final boolean precedes(TypeSymbol that, Types types) {
             if (this == that)
@@ -891,6 +896,12 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitPackageSymbol(this, p);
         }
+
+        /**Resets the Symbol into the state good for next round of annotation processing.*/
+        public void reset() {
+            metadata = null;
+        }
+
     }
 
     /** A class for class symbols
@@ -945,7 +956,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             this(
                 flags,
                 name,
-                new ClassType(Type.noType, null, null),
+                new ClassType(Type.noType, null, null, Type.noAnnotations),
                 owner);
             this.type.tsym = this;
         }
@@ -981,7 +992,8 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public Type erasure(Types types) {
             if (erasure_field == null)
                 erasure_field = new ClassType(types.erasure(type.getEnclosingType()),
-                                              List.<Type>nil(), this);
+                                              List.<Type>nil(), this,
+                                              type.getAnnotationMirrors());
             return erasure_field;
         }
 
@@ -1140,6 +1152,26 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitClassSymbol(this, p);
         }
+
+        /**Resets the Symbol into the state good for next round of annotation processing.*/
+        public void reset() {
+            kind = TYP;
+            erasure_field = null;
+            members_field = null;
+            flags_field = 0;
+            if (type instanceof ClassType) {
+                ClassType t = (ClassType)type;
+                t.setEnclosingType(Type.noType);
+                t.rank_field = -1;
+                t.typarams_field = null;
+                t.allparams_field = null;
+                t.supertype_field = null;
+                t.interfaces_field = null;
+                t.all_interfaces_field = null;
+            }
+            metadata = null;
+        }
+
     }
 
 

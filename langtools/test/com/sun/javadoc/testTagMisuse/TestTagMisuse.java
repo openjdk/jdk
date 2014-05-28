@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,47 +25,35 @@
  * @test
  * @summary Determine if proper warning messages are printed when know.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
  * @build TestTagMisuse
  * @run main TestTagMisuse
  */
 public class TestTagMisuse extends JavadocTester {
 
-    private static final String BUG_ID = "no-bug-id";
-    private static final String[][] TEST = {
-        {WARNING_OUTPUT, "warning - Tag @param cannot be used in field documentation."},
-        {WARNING_OUTPUT, "warning - Tag @throws cannot be used in field documentation."},
-        {WARNING_OUTPUT, "warning - Tag @return cannot be used in constructor documentation."},
-        {WARNING_OUTPUT, "warning - Tag @throws cannot be used in inline documentation."},
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, SRC_DIR + FS + "TestTagMisuse.java"
-    };
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestTagMisuse tester = new TestTagMisuse();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-Xdoclint:none",
+                "-d", "out",
+                testSrc("TestTagMisuse.java"));
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput(Output.WARNING, true,
+                "warning - Tag @param cannot be used in field documentation.",
+                "warning - Tag @throws cannot be used in field documentation.",
+                "warning - Tag @return cannot be used in constructor documentation.",
+                "warning - Tag @throws cannot be used in inline documentation.");
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/signature.hpp"
@@ -75,7 +76,7 @@
 #endif
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
-#include "gc_implementation/shared/concurrentGCThread.hpp"
+#include "gc_implementation/shared/suspendibleThreadSet.hpp"
 #endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
@@ -110,7 +111,7 @@ void SafepointSynchronize::begin() {
     // more-general mechanism below.  DLD (01/05).
     ConcurrentMarkSweepThread::synchronize(false);
   } else if (UseG1GC) {
-    ConcurrentGCThread::safepoint_synchronize();
+    SuspendibleThreadSet::synchronize();
   }
 #endif // INCLUDE_ALL_GCS
 
@@ -319,7 +320,7 @@ void SafepointSynchronize::begin() {
       if (steps < DeferThrSuspendLoopCount) {
         os::NakedYield() ;
       } else {
-        os::yield_all(steps) ;
+        os::yield_all() ;
         // Alternately, the VM thread could transiently depress its scheduling priority or
         // transiently increase the priority of the tardy mutator(s).
       }
@@ -486,7 +487,7 @@ void SafepointSynchronize::end() {
   if (UseConcMarkSweepGC) {
     ConcurrentMarkSweepThread::desynchronize(false);
   } else if (UseG1GC) {
-    ConcurrentGCThread::safepoint_desynchronize();
+    SuspendibleThreadSet::desynchronize();
   }
 #endif // INCLUDE_ALL_GCS
   // record this time so VMThread can keep track how much time has elapsed
@@ -535,7 +536,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   // rotate log files?
   if (UseGCLogFileRotation) {
-    gclog_or_tty->rotate_log();
+    gclog_or_tty->rotate_log(false);
   }
 
   if (MemTracker::is_on()) {

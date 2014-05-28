@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,10 +317,6 @@ public class Gen extends JCTree.Visitor {
     int makeRef(DiagnosticPosition pos, Type type) {
         checkDimension(pos, type);
         if (type.isAnnotated()) {
-            // Treat annotated types separately - we don't want
-            // to collapse all of them - at least for annotated
-            // exceptions.
-            // TODO: review this.
             return pool.put((Object)type);
         } else {
             return pool.put(type.hasTag(CLASS) ? (Object)type.tsym : (Object)type);
@@ -1647,7 +1643,7 @@ public class Gen extends JCTree.Visitor {
                         if (subCatch.type.isAnnotated()) {
                             for (Attribute.TypeCompound tc :
                                      subCatch.type.getAnnotationMirrors()) {
-                                tc.position.type_index = catchType;
+                                tc.position.setCatchInfo(catchType, startpc);
                             }
                         }
                     }
@@ -1664,7 +1660,7 @@ public class Gen extends JCTree.Visitor {
                         if (subCatch.type.isAnnotated()) {
                             for (Attribute.TypeCompound tc :
                                      subCatch.type.getAnnotationMirrors()) {
-                                tc.position.type_index = catchType;
+                                tc.position.setCatchInfo(catchType, startpc);
                             }
                         }
                     }
@@ -1910,6 +1906,7 @@ public class Gen extends JCTree.Visitor {
         if (!c.isFalse()) {
             code.resolve(c.trueJumps);
             int startpc = genCrt ? code.curCP() : 0;
+            code.statBegin(tree.truepart.pos);
             genExpr(tree.truepart, pt).load();
             code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.truepart, CRT_FLOW_TARGET,
@@ -1919,6 +1916,7 @@ public class Gen extends JCTree.Visitor {
         if (elseChain != null) {
             code.resolve(elseChain);
             int startpc = genCrt ? code.curCP() : 0;
+            code.statBegin(tree.falsepart.pos);
             genExpr(tree.falsepart, pt).load();
             code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.falsepart, CRT_FLOW_TARGET,
@@ -2810,7 +2808,7 @@ public class Gen extends JCTree.Visitor {
         }
 
         private LVTAssignAnalyzer(LVTRanges lvtRanges, Symtab syms, Names names) {
-            super(new LVTBits(), syms, names);
+            super(new LVTBits(), syms, names, false);
             lvtInits = (LVTBits)inits;
             this.lvtRanges = lvtRanges;
         }

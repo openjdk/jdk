@@ -153,7 +153,7 @@ public class StandardGlyphVector extends GlyphVector {
     private AffineTransform invdtx; // inverse of dtx or null if dtx is identity
     private AffineTransform frctx; // font render context transform, wish we could just share it
     private Font2D font2D;         // basic strike-independent stuff
-    private SoftReference fsref;   // font strike reference for glyphs with no per-glyph transform
+    private SoftReference<GlyphStrike> fsref;   // font strike reference for glyphs with no per-glyph transform
 
     /////////////////////////////
     // Constructors and Factory methods
@@ -526,9 +526,9 @@ public class StandardGlyphVector extends GlyphVector {
         }
 
         Shape[] lbcache;
-        if (lbcacheRef == null || (lbcache = (Shape[])lbcacheRef.get()) == null) {
+        if (lbcacheRef == null || (lbcache = lbcacheRef.get()) == null) {
             lbcache = new Shape[glyphs.length];
-            lbcacheRef = new SoftReference(lbcache);
+            lbcacheRef = new SoftReference<>(lbcache);
         }
 
         Shape result = lbcache[ix];
@@ -568,7 +568,7 @@ public class StandardGlyphVector extends GlyphVector {
 
         return result;
     }
-    private SoftReference lbcacheRef;
+    private SoftReference<Shape[]> lbcacheRef;
 
     public Shape getGlyphVisualBounds(int ix) {
         if (ix < 0 || ix >= glyphs.length) {
@@ -576,9 +576,9 @@ public class StandardGlyphVector extends GlyphVector {
         }
 
         Shape[] vbcache;
-        if (vbcacheRef == null || (vbcache = (Shape[])vbcacheRef.get()) == null) {
+        if (vbcacheRef == null || (vbcache = vbcacheRef.get()) == null) {
             vbcache = new Shape[glyphs.length];
-            vbcacheRef = new SoftReference(vbcache);
+            vbcacheRef = new SoftReference<>(vbcache);
         }
 
         Shape result = vbcache[ix];
@@ -589,7 +589,7 @@ public class StandardGlyphVector extends GlyphVector {
 
         return result;
     }
-    private SoftReference vbcacheRef;
+    private SoftReference<Shape[]> vbcacheRef;
 
     public Rectangle getGlyphPixelBounds(int index, FontRenderContext renderFRC, float x, float y) {
       return getGlyphsPixelBounds(renderFRC, x, y, index, 1);
@@ -1230,14 +1230,14 @@ public class StandardGlyphVector extends GlyphVector {
 
     private void clearCaches(int ix) {
         if (lbcacheRef != null) {
-            Shape[] lbcache = (Shape[])lbcacheRef.get();
+            Shape[] lbcache = lbcacheRef.get();
             if (lbcache != null) {
                 lbcache[ix] = null;
             }
         }
 
         if (vbcacheRef != null) {
-            Shape[] vbcache = (Shape[])vbcacheRef.get();
+            Shape[] vbcache = vbcacheRef.get();
             if (vbcache != null) {
                 vbcache[ix] = null;
             }
@@ -1357,11 +1357,11 @@ public class StandardGlyphVector extends GlyphVector {
     private GlyphStrike getDefaultStrike() {
         GlyphStrike gs = null;
         if (fsref != null) {
-            gs = (GlyphStrike)fsref.get();
+            gs = fsref.get();
         }
         if (gs == null) {
             gs = GlyphStrike.create(this, dtx, null);
-            fsref = new SoftReference(gs);
+            fsref = new SoftReference<>(gs);
         }
         return gs;
     }
@@ -1379,7 +1379,7 @@ public class StandardGlyphVector extends GlyphVector {
         StandardGlyphVector sgv;  // reference back to glyph vector - yuck
         int[] indices;            // index into unique strikes
         double[] transforms;      // six doubles per unique transform, because AT is a pain to manipulate
-        SoftReference strikesRef; // ref to unique strikes, one per transform
+        SoftReference<GlyphStrike[]> strikesRef; // ref to unique strikes, one per transform
         boolean haveAllStrikes;   // true if the strike array has been filled by getStrikes().
 
         // used when first setting a transform
@@ -1653,12 +1653,12 @@ public class StandardGlyphVector extends GlyphVector {
         private GlyphStrike[] getStrikeArray() {
             GlyphStrike[] strikes = null;
             if (strikesRef != null) {
-                strikes = (GlyphStrike[])strikesRef.get();
+                strikes = strikesRef.get();
             }
             if (strikes == null) {
                 haveAllStrikes = false;
                 strikes = new GlyphStrike[transformCount() + 1];
-                strikesRef = new SoftReference(strikes);
+                strikesRef = new SoftReference<>(strikes);
             }
 
             return strikes;

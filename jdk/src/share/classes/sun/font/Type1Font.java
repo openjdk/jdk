@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class Type1Font extends FileFont {
 
         public synchronized void dispose() {
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
+                new java.security.PrivilegedAction<Object>() {
                     public Object run() {
 
                         if (fileName != null) {
@@ -98,16 +98,16 @@ public class Type1Font extends FileFont {
         }
     }
 
-    WeakReference bufferRef = new WeakReference(null);
+    WeakReference<Object> bufferRef = new WeakReference<>(null);
 
     private String psName = null;
 
-    static private HashMap styleAbbreviationsMapping;
-    static private HashSet styleNameTokes;
+    static private HashMap<String, String> styleAbbreviationsMapping;
+    static private HashSet<String> styleNameTokes;
 
     static {
-        styleAbbreviationsMapping = new HashMap();
-        styleNameTokes = new HashSet();
+        styleAbbreviationsMapping = new HashMap<>();
+        styleNameTokes = new HashSet<>();
 
         /* These abbreviation rules are taken from Appendix 1 of Adobe Technical Note #5088 */
         /* NB: this list is not complete - we did not include abbreviations which contain
@@ -192,7 +192,7 @@ public class Type1Font extends FileFont {
             try {
                 RandomAccessFile raf = (RandomAccessFile)
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
+                    new java.security.PrivilegedAction<Object>() {
                         public Object run() {
                             try {
                                 return new RandomAccessFile(platName, "r");
@@ -205,7 +205,7 @@ public class Type1Font extends FileFont {
                 fileSize = (int)fc.size();
                 mapBuf = fc.map(FileChannel.MapMode.READ_ONLY, 0, fileSize);
                 mapBuf.position(0);
-                bufferRef = new WeakReference(mapBuf);
+                bufferRef = new WeakReference<>(mapBuf);
                 fc.close();
             } catch (NullPointerException e) {
                 throw new FontFormatException(e.toString());
@@ -232,7 +232,7 @@ public class Type1Font extends FileFont {
         try {
             raf = (RandomAccessFile)
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
+                    new java.security.PrivilegedAction<Object>() {
                         public Object run() {
                             try {
                                 return new RandomAccessFile(platName, "r");
@@ -474,7 +474,7 @@ public class Type1Font extends FileFont {
 
     private String expandAbbreviation(String abbr) {
         if (styleAbbreviationsMapping.containsKey(abbr))
-                        return (String) styleAbbreviationsMapping.get(abbr);
+                        return styleAbbreviationsMapping.get(abbr);
         return abbr;
     }
 

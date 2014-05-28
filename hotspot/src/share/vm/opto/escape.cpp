@@ -33,6 +33,7 @@
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/movenode.hpp"
 #include "opto/rootnode.hpp"
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn) :
@@ -710,7 +711,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
         Node *val = n->in(MemNode::ValueIn);
         PointsToNode* ptn = ptnode_adr(val->_idx);
         assert(ptn != NULL, "node should be registered");
-        ptn->set_escape_state(PointsToNode::GlobalEscape);
+        set_escape_state(ptn, PointsToNode::GlobalEscape);
         // Add edge to object for unsafe access with offset.
         PointsToNode* adr_ptn = ptnode_adr(adr->_idx);
         assert(adr_ptn != NULL, "node should be registered");

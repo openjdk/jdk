@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,16 +289,16 @@ public abstract class Configuration {
     public Profiles profiles;
 
     /**
-     * An map of the profiles to packages.
+     * A map of the profiles to packages.
      */
-    public Map<String,PackageDoc[]> profilePackages;
+    public Map<String, List<PackageDoc>> profilePackages;
 
     /**
-     * An array of the packages specified on the command-line merged
-     * with the array of packages that contain the classes specified on the
-     * command-line.  The array is sorted.
+     * A sorted set of packages specified on the command-line merged with a
+     * collection of packages that contain the classes specified on the
+     * command-line.
      */
-    public PackageDoc[] packages;
+    public SortedSet<PackageDoc> packages;
 
     /**
      * Constructor. Constructs the message retriever with resource file.
@@ -423,7 +423,7 @@ public abstract class Configuration {
             // For a profile, if there are no packages to be documented, do not add
             // it to profilePackages map.
             if (size > 0)
-                profilePackages.put(p.name, pkgs.toArray(new PackageDoc[pkgs.size()]));
+                profilePackages.put(p.name, pkgs);
             prev = pkgs;
         }
 
@@ -432,14 +432,11 @@ public abstract class Configuration {
         showProfiles = !prev.isEmpty();
     }
 
-    private void initPackageArray() {
-        Set<PackageDoc> set = new HashSet<>(Arrays.asList(root.specifiedPackages()));
+    private void initPackages() {
+        packages = new TreeSet<>(Arrays.asList(root.specifiedPackages()));
         for (ClassDoc aClass : root.specifiedClasses()) {
-            set.add(aClass.containingPackage());
+            packages.add(aClass.containingPackage());
         }
-        ArrayList<PackageDoc> results = new ArrayList<>(set);
-        Collections.sort(results);
-        packages = results.toArray(new PackageDoc[] {});
     }
 
     /**
@@ -547,7 +544,7 @@ public abstract class Configuration {
      * @throws DocletAbortException
      */
     public void setOptions() throws Fault {
-        initPackageArray();
+        initPackages();
         setOptions(root.options());
         try {
             initProfiles();

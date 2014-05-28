@@ -648,6 +648,7 @@ public class Environment implements Constants {
      * Return true if an implicit cast from this type to
      * the given type is allowed.
      */
+    @SuppressWarnings("fallthrough")
     public boolean implicitCast(Type from, Type to) throws ClassNotFound {
         if (from == to)
             return true;

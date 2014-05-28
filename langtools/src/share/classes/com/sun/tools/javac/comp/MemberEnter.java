@@ -457,7 +457,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      *  to the symbol table.
      */
     private void addEnumMembers(JCClassDecl tree, Env<AttrContext> env) {
-        JCExpression valuesType = make.Type(new ArrayType(tree.sym.type, syms.arrayClass));
+        JCExpression valuesType = make.Type(new ArrayType(tree.sym.type, syms.arrayClass,
+                                                          Type.noAnnotations));
 
         // public static T[] values() { return ???; }
         JCMethodDecl values = make.
@@ -493,10 +494,26 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             return;
         }
 
+        DiagnosticPosition prevLintPos = deferredLintHandler.immediate();
+        Lint prevLint = chk.setLint(lint);
+
+        try {
+            // Import-on-demand java.lang.
+            importAll(tree.pos, syms.enterPackage(names.java_lang), env);
+
+            // Process the package def and all import clauses.
+            memberEnter(tree.defs, env);
+        } finally {
+            chk.setLint(prevLint);
+            deferredLintHandler.setPos(prevLintPos);
+        }
+    }
+
+    public void visitPackageDef(JCPackageDecl tree) {
         // check that no class exists with same fully qualified name as
         // toplevel package
         if (checkClash && tree.pid != null) {
-            Symbol p = tree.packge;
+            Symbol p = env.toplevel.packge;
             while (p.owner != syms.rootPackage) {
                 p.owner.complete(); // enter all class members of p
                 if (syms.classes.get(p.getQualifiedName()) != null) {
@@ -507,23 +524,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 p = p.owner;
             }
         }
-
         // process package annotations
-        annotate.annotateLater(tree.packageAnnotations, env, tree.packge, null);
-
-        DiagnosticPosition prevLintPos = deferredLintHandler.immediate();
-        Lint prevLint = chk.setLint(lint);
-
-        try {
-            // Import-on-demand java.lang.
-            importAll(tree.pos, syms.enterPackage(names.java_lang), env);
-
-            // Process all import clauses.
-            memberEnter(tree.defs, env);
-        } finally {
-            chk.setLint(prevLint);
-            deferredLintHandler.setPos(prevLintPos);
-        }
+        annotate.annotateLater(tree.annotations, env, env.toplevel.packge, null);
     }
 
     // process the non-static imports and the static imports of types.
@@ -676,7 +678,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 //because varargs is represented in the tree as a
                 //modifier on the parameter declaration, and not as a
                 //distinct type of array node.
-                ArrayType atype = (ArrayType)tree.vartype.type.unannotatedType();
+                ArrayType atype = (ArrayType)tree.vartype.type;
                 tree.vartype.type = atype.makeVarargs();
             }
             Scope enclScope = enter.enterScope(env);
@@ -1254,11 +1256,13 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             ClassType ct = (ClassType) sym.type;
             Assert.check(ct.typarams_field.isEmpty());
             if (n == 1) {
-                TypeVar v = new TypeVar(names.fromString("T"), sym, syms.botType);
+                TypeVar v = new TypeVar(names.fromString("T"), sym, syms.botType,
+                                        Type.noAnnotations);
                 ct.typarams_field = ct.typarams_field.prepend(v);
             } else {
                 for (int i = n; i > 0; i--) {
-                    TypeVar v = new TypeVar(names.fromString("T" + i), sym, syms.botType);
+                    TypeVar v = new TypeVar(names.fromString("T" + i), sym,
+                                            syms.botType, Type.noAnnotations);
                     ct.typarams_field = ct.typarams_field.prepend(v);
                 }
             }
@@ -1309,8 +1313,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }
         Type mType = new MethodType(argtypes, null, thrown, c);
         Type initType = typarams.nonEmpty() ?
-                new ForAll(typarams, mType) :
-                mType;
+            new ForAll(typarams, mType) :
+            mType;
         MethodSymbol init = new MethodSymbol(flags, names.init,
                 initType, c);
         init.params = createDefaultConstructorParams(make, baseInit, init,

@@ -96,6 +96,10 @@ public final class SpNegoMechFactory implements MechanismFactory {
         return result;
     }
 
+    public SpNegoMechFactory() {
+        this(GSSCaller.CALLER_UNKNOWN);
+    }
+
     public SpNegoMechFactory(GSSCaller caller) {
         manager = new GSSManagerImpl(caller, false);
         Oid[] mechs = manager.getMechs();

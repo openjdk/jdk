@@ -58,7 +58,13 @@ class Bsd {
   // For signal flags diagnostics
   static int sigflags[MAXSIGNUM];
 
+#ifdef __APPLE__
+  // mach_absolute_time
+  static mach_timebase_info_data_t _timebase_info;
+  static volatile uint64_t         _max_abstime;
+#else
   static int (*_clock_gettime)(clockid_t, struct timespec *);
+#endif
 
   static GrowableArray<int>* _cpu_to_node;
 
@@ -133,10 +139,6 @@ class Bsd {
 
   // Real-time clock functions
   static void clock_init(void);
-
-  static int clock_gettime(clockid_t clock_id, struct timespec *tp) {
-    return _clock_gettime ? _clock_gettime(clock_id, tp) : -1;
-  }
 
   // Stack repair handling
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,14 +55,19 @@ public class SaajStaxWriter implements XMLStreamWriter {
     static final protected String Body = "Body";
     static final protected String xmlns = "xmlns";
 
-    public SaajStaxWriter(final SOAPMessage msg) throws SOAPException {
+    private boolean isHeaderSeen = false;
+
+    public SaajStaxWriter(final SOAPMessage msg, String uri) throws SOAPException {
         soap = msg;
-        currentElement = soap.getSOAPPart().getEnvelope();
-        envURI = currentElement.getNamespaceURI();
+        this.envURI = uri;
     }
 
     public SOAPMessage getSOAPMessage() {
         return soap;
+    }
+
+    protected SOAPElement getEnvelope() throws SOAPException {
+        return soap.getSOAPPart().getEnvelope();
     }
 
     @Override
@@ -84,10 +89,11 @@ public class SaajStaxWriter implements XMLStreamWriter {
         try {
             if (envURI.equals(ns)) {
                 if (Envelope.equals(ln)) {
-                    currentElement = soap.getSOAPPart().getEnvelope();
+                    currentElement = getEnvelope();
                     fixPrefix(prefix);
                     return;
                 } else if (Header.equals(ln)) {
+                    isHeaderSeen = true;
                     currentElement = soap.getSOAPHeader();
                     fixPrefix(prefix);
                     return;
@@ -106,9 +112,13 @@ public class SaajStaxWriter implements XMLStreamWriter {
     }
 
     private void fixPrefix(final String prfx) throws XMLStreamException {
-        String oldPrfx = currentElement.getPrefix();
+        fixPrefix(prfx, currentElement);
+    }
+
+    private void fixPrefix(final String prfx, SOAPElement element) throws XMLStreamException {
+        String oldPrfx = element.getPrefix();
         if (prfx != null && !prfx.equals(oldPrfx)) {
-            currentElement.setPrefix(prfx);
+            element.setPrefix(prfx);
         }
     }
 
@@ -134,6 +144,21 @@ public class SaajStaxWriter implements XMLStreamWriter {
 
     @Override
     public void writeEndDocument() throws XMLStreamException {
+        try {
+            if (!isHeaderSeen) {
+                SOAPElement header = soap.getSOAPHeader();
+                if (header != null) {
+                    String prefixAtHeader = header.getPrefix();
+                    SOAPElement env = getEnvelope();
+                    header.detachNode();
+                    if (prefixAtHeader != null && !prefixAtHeader.equals(env.getPrefix())) {
+                        env.removeNamespaceDeclaration(prefixAtHeader);
+                    }
+                }
+            }
+        } catch (SOAPException e) {
+            throw new XMLStreamException(e);
+        }
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,51 +21,32 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4530727 8026567
  * @summary When an exception is declared in the method signature but
  * not documented with a throws tag, we generate a link to it in the
  * throws section.  Make sure that the link is below a Throws heading.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestThrowsHead
  * @run main TestThrowsHead
  */
 
 public class TestThrowsHead extends JavadocTester {
 
-    private static final String BUG_ID = "4530727";
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "C.html", "<dt><span class=\"throwsLabel\">Throws:</span>"}
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, SRC_DIR + FS + "C.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestThrowsHead tester = new TestThrowsHead();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                testSrc("C.java"));
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("C.html", true,
+                "<dt><span class=\"throwsLabel\">Throws:</span>");
     }
 }

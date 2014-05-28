@@ -33,6 +33,7 @@
 #include "runtime/init.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vframe.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/threadService.hpp"

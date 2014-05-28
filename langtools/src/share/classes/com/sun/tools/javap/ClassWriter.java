@@ -202,7 +202,6 @@ public class ClassWriter extends BasicWriter {
         if (options.verbose) {
             println();
             indent(+1);
-            attrWriter.write(cf, cf.attributes, constant_pool);
             println("minor version: " + cf.minor_version);
             println("major version: " + cf.major_version);
             writeList("flags: ", flags.getClassFlags(), "\n");
@@ -218,6 +217,10 @@ public class ClassWriter extends BasicWriter {
         writeMethods();
         indent(-1);
         println("}");
+
+        if (options.verbose) {
+            attrWriter.write(cf, cf.attributes, constant_pool);
+        }
     }
     // where
         class JavaTypePrinter implements Type.Visitor<StringBuilder,StringBuilder> {

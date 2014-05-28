@@ -37,6 +37,8 @@ import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
 import static jdk.nashorn.internal.runtime.JSType.getNumberOfAccessorTypes;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.SwitchPoint;
@@ -60,6 +62,7 @@ public class AccessorProperty extends Property {
     private static final SwitchPoint NO_CHANGE_CALLBACK = new SwitchPoint();
 
     private static final int NOOF_TYPES = getNumberOfAccessorTypes();
+    private static final long serialVersionUID = 3371720170182154920L;
 
     /**
      * Properties in different maps for the same structure class will share their field getters and setters. This could
@@ -133,16 +136,16 @@ public class AccessorProperty extends Property {
     }
 
     /** Seed getter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
-    protected final MethodHandle primitiveGetter;
+    private transient MethodHandle primitiveGetter;
 
     /** Seed setter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
-    protected final MethodHandle primitiveSetter;
+    private transient MethodHandle primitiveSetter;
 
     /** Seed getter for the Object version of this field */
-    protected final MethodHandle objectGetter;
+    private transient MethodHandle objectGetter;
 
     /** Seed setter for the Object version of this field */
-    protected final MethodHandle objectSetter;
+    private transient MethodHandle objectSetter;
 
     /**
      * Current type of this object, in object only mode, this is an Object.class. In dual-fields mode
@@ -263,6 +266,11 @@ public class AccessorProperty extends Property {
     public AccessorProperty(final String key, final int flags, final Class<?> structure, final int slot) {
         super(key, flags, slot);
 
+        initGetterSetter(structure);
+    }
+
+    private void initGetterSetter(final Class<?> structure) {
+        final int slot = getSlot();
         /*
          * primitiveGetter and primitiveSetter are only used in dual fields mode. Setting them to null also
          * works in dual field mode, it only means that the property never has a primitive
@@ -367,6 +375,12 @@ public class AccessorProperty extends Property {
      */
     protected final void initializeType() {
         setCurrentType(OBJECT_FIELDS_ONLY ? Object.class : null);
+    }
+
+    private void readObject(final ObjectInputStream s) throws IOException, ClassNotFoundException {
+        s.defaultReadObject();
+        // Restore getters array
+        GETTER_CACHE = new MethodHandle[NOOF_TYPES];
     }
 
     private static MethodHandle bindTo(final MethodHandle mh, final Object receiver) {
@@ -513,6 +527,16 @@ public class AccessorProperty extends Property {
     public void setValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict)  {
         //this is sometimes used for bootstrapping, hence no assert. ugly.
         invokeSetter(self, value);
+    }
+
+    @Override
+    void initMethodHandles(final Class<?> structure) {
+        if (!ScriptObject.class.isAssignableFrom(structure) || !StructureLoader.isStructureClass(structure.getName())) {
+            throw new IllegalArgumentException();
+        }
+        if (!isSpill()) {
+            initGetterSetter(structure);
+        }
     }
 
     @Override

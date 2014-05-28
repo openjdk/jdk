@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,13 +272,13 @@ public class Label extends Component implements Accessible {
      * @return     the parameter string of this label
      */
     protected String paramString() {
-        String str = ",align=";
+        String align = "";
         switch (alignment) {
-          case LEFT:   str += "left"; break;
-          case CENTER: str += "center"; break;
-          case RIGHT:  str += "right"; break;
+            case LEFT:   align = "left"; break;
+            case CENTER: align = "center"; break;
+            case RIGHT:  align = "right"; break;
         }
-        return super.paramString() + str + ",text=" + text;
+        return super.paramString() + ",align=" + align + ",text=" + text;
     }
 
     /**

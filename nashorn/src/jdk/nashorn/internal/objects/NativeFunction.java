@@ -28,6 +28,7 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -47,7 +48,6 @@ import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * ECMA 15.3 Function Objects
@@ -78,7 +78,7 @@ public final class NativeFunction {
      * @return string representation of Function
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toString(final Object self) {
+    public static String toString(final Object self) {
         if (!(self instanceof ScriptFunction)) {
             throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
@@ -204,7 +204,7 @@ public final class NativeFunction {
      * @return function with bound arguments
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static Object bind(final Object self, final Object... args) {
+    public static ScriptFunction bind(final Object self, final Object... args) {
         if (!(self instanceof ScriptFunction)) {
             throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
@@ -229,7 +229,7 @@ public final class NativeFunction {
      * @return source for function
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toSource(final Object self) {
+    public static String toSource(final Object self) {
         if (!(self instanceof ScriptFunction)) {
             throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
@@ -247,7 +247,7 @@ public final class NativeFunction {
      * @return new NativeFunction
      */
     @Constructor(arity = 1)
-    public static Object function(final boolean newObj, final Object self, final Object... args) {
+    public static ScriptFunction function(final boolean newObj, final Object self, final Object... args) {
         final StringBuilder sb = new StringBuilder();
 
         sb.append("(function (");
@@ -283,13 +283,11 @@ public final class NativeFunction {
 
         final Global global = Global.instance();
 
-        return Global.directEval(global, sb.toString(), global, "<function>", global.isStrictContext());
+        return (ScriptFunction)Global.directEval(global, sb.toString(), global, "<function>", global.isStrictContext());
     }
 
     private static void checkFunctionParameters(final String params) {
-        final Source            src    = new Source("<function>", params);
-        final ScriptEnvironment env    = Global.getEnv();
-        final Parser            parser = new Parser(env, src, new Context.ThrowErrorManager(), env._strict, null);
+        final Parser parser = getParser(params);
         try {
             parser.parseFormalParameterList();
         } catch (final ParserException pe) {
@@ -298,13 +296,16 @@ public final class NativeFunction {
     }
 
     private static void checkFunctionBody(final String funcBody) {
-        final Source            src    = new Source("<function>", funcBody);
-        final ScriptEnvironment env    = Global.getEnv();
-        final Parser            parser = new Parser(env, src, new Context.ThrowErrorManager(), env._strict, null);
+        final Parser parser = getParser(funcBody);
         try {
             parser.parseFunctionBody();
         } catch (final ParserException pe) {
             pe.throwAsEcmaException();
         }
+    }
+
+    private static Parser getParser(final String sourceText) {
+        final ScriptEnvironment env = Global.getEnv();
+        return new Parser(env, sourceFor("<function>", sourceText), new Context.ThrowErrorManager(), env._strict, null);
     }
 }

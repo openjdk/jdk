@@ -25,10 +25,14 @@
 
 package sun.java2d;
 
+import sun.misc.ThreadGroupUtils;
+
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.WeakReference;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -47,8 +51,9 @@ import java.util.Hashtable;
  * @see DisposerRecord
  */
 public class Disposer implements Runnable {
-    private static final ReferenceQueue queue = new ReferenceQueue();
-    private static final Hashtable records = new Hashtable();
+    private static final ReferenceQueue<Object> queue = new ReferenceQueue<>();
+    private static final Hashtable<java.lang.ref.Reference<Object>, DisposerRecord> records =
+        new Hashtable<>();
 
     private static Disposer disposerInstance;
     public static final int WEAK = 0;
@@ -76,27 +81,21 @@ public class Disposer implements Runnable {
             }
         }
         disposerInstance = new Disposer();
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                public Object run() {
-                    /* The thread must be a member of a thread group
-                     * which will not get GCed before VM exit.
-                     * Make its parent the top-level thread group.
-                     */
-                    ThreadGroup tg = Thread.currentThread().getThreadGroup();
-                    for (ThreadGroup tgn = tg;
-                         tgn != null;
-                         tg = tgn, tgn = tg.getParent());
-                    Thread t =
-                        new Thread(tg, disposerInstance, "Java2D Disposer");
-                    t.setContextClassLoader(null);
-                    t.setDaemon(true);
-                    t.setPriority(Thread.MAX_PRIORITY);
-                    t.start();
-                    return null;
-                }
-            }
-        );
+        AccessController.doPrivileged(
+                (PrivilegedAction<Void>) () -> {
+                     /* The thread must be a member of a thread group
+                      * which will not get GCed before VM exit.
+                      * Make its parent the top-level thread group.
+                      */
+                     ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                     Thread t = new Thread(rootTG, disposerInstance, "Java2D Disposer");
+                     t.setContextClassLoader(null);
+                     t.setDaemon(true);
+                     t.setPriority(Thread.MAX_PRIORITY);
+                     t.start();
+                     return null;
+                 }
+         );
     }
 
     /**
@@ -135,11 +134,11 @@ public class Disposer implements Runnable {
         if (target instanceof DisposerTarget) {
             target = ((DisposerTarget)target).getDisposerReferent();
         }
-        java.lang.ref.Reference ref;
+        java.lang.ref.Reference<Object> ref;
         if (refType == PHANTOM) {
-            ref = new PhantomReference(target, queue);
+            ref = new PhantomReference<>(target, queue);
         } else {
-            ref = new WeakReference(target, queue);
+            ref = new WeakReference<>(target, queue);
         }
         records.put(ref, rec);
     }
@@ -149,7 +148,7 @@ public class Disposer implements Runnable {
             try {
                 Object obj = queue.remove();
                 ((Reference)obj).clear();
-                DisposerRecord rec = (DisposerRecord)records.remove(obj);
+                DisposerRecord rec = records.remove(obj);
                 rec.dispose();
                 obj = null;
                 rec = null;
@@ -214,7 +213,7 @@ public class Disposer implements Runnable {
                    && freed < 10000 && deferred < 100) {
                 freed++;
                 ((Reference)obj).clear();
-                DisposerRecord rec = (DisposerRecord)records.remove(obj);
+                DisposerRecord rec = records.remove(obj);
                 if (rec instanceof PollDisposable) {
                     rec.dispose();
                     obj = null;
@@ -247,17 +246,18 @@ public class Disposer implements Runnable {
      * so will clutter the records hashmap and no one will be cleaning up
      * the reference queue.
      */
-    public static void addReference(Reference ref, DisposerRecord rec) {
+    @SuppressWarnings("unchecked")
+    public static void addReference(Reference<Object> ref, DisposerRecord rec) {
         records.put(ref, rec);
     }
 
     public static void addObjectRecord(Object obj, DisposerRecord rec) {
-        records.put(new WeakReference(obj, queue) , rec);
+        records.put(new WeakReference<>(obj, queue) , rec);
     }
 
     /* This is intended for use in conjunction with addReference(..)
      */
-    public static ReferenceQueue getQueue() {
+    public static ReferenceQueue<Object> getQueue() {
         return queue;
     }
 

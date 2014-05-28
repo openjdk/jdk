@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,7 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
      * Action that activates the menu (e.g. when F10 is pressed).
      * Unlike BasicMenuBarUI.TakeFocus, this Action will not show menu popup.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class TakeFocus extends AbstractAction {
         public void actionPerformed(ActionEvent e) {
             JMenuBar menuBar = (JMenuBar)e.getSource();

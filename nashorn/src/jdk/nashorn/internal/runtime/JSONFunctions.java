@@ -39,6 +39,8 @@ import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
+
 /**
  * Utilities used by "JSON" object implementation.
  */
@@ -77,9 +79,7 @@ public final class JSONFunctions {
      */
     public static Object parse(final Object text, final Object reviver) {
         final String     str     = JSType.toString(text);
-        final JSONParser parser  = new JSONParser(
-                new Source("<json>", str),
-                new Context.ThrowErrorManager());
+        final JSONParser parser  = new JSONParser(sourceFor("<json>", str), new Context.ThrowErrorManager());
 
         Node node;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,56 +27,32 @@
  * @summary Test to make sure that Javadoc behaves properly when
  * run on a completely empty class (no comments or members).
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestEmptyClass
  * @run main TestEmptyClass
  */
 
 public class TestEmptyClass extends JavadocTester {
 
-    private static final String OUTPUT_DIR = "tmp";
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = {
+    public static void main(String... args) throws Exception {
+        TestEmptyClass tester = new TestEmptyClass();
+        tester.runTests();
+    }
+
+    @Test
+    void test() {
+        javadoc("-classpath", testSrc("src"),
+                "-d", "out",
+                "-sourcepath", testSrc("src"),
+                testSrc("src/Empty.java"));
+        checkExit(Exit.OK);
 
         //The overview tree should not link to classes that were not documented
-        {OUTPUT_DIR + FS + "overview-tree.html", "<A HREF=\"TestEmptyClass.html\">"},
+        checkOutput("overview-tree.html", false,
+                "<A HREF=\"TestEmptyClass.html\">");
 
         //The index page should not link to classes that were not documented
-        {OUTPUT_DIR + FS + "index-all.html", "<A HREF=\"TestEmptyClass.html\">"},
-    };
-    private static final String[] ARGS =
-        new String[] {
-            "-classpath", SRC_DIR + FS + "src",
-            "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR + FS + "src",
-            SRC_DIR + FS + "src" + FS + "Empty.java"
-        };
-    private static final String BUG_ID = "4483401 4483407 4483409 4483413 4494343";
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestEmptyClass tester = new TestEmptyClass();
-        int exitCode = run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
-        if (exitCode != 0) {
-            throw new Error("Error found while executing Javadoc");
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("index-all.html", false,
+                "<A HREF=\"TestEmptyClass.html\">");
     }
 }

@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
@@ -109,8 +110,10 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprint) {
+#if !defined(ABI_ELFv2)
   // Emit fd for current codebuffer. Needs patching!
   __ emit_fd();
+#endif
 
   // Generate code to handle arguments.
   iterate(fingerprint);
@@ -127,11 +130,13 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
 // Implementation of SignatureHandlerLibrary
 
 void SignatureHandlerLibrary::pd_set_handler(address handler) {
+#if !defined(ABI_ELFv2)
   // patch fd here.
   FunctionDescriptor* fd = (FunctionDescriptor*) handler;
 
   fd->set_entry(handler + (int)sizeof(FunctionDescriptor));
   assert(fd->toc() == (address)0xcafe, "need to adjust TOC here");
+#endif
 }
 
 

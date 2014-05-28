@@ -27,11 +27,14 @@
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 
@@ -1263,8 +1266,9 @@ void SuperWord::co_locate_pack(Node_List* pk) {
     memops.clear();
     for (DUIterator i = upper_insert_pt->outs(); upper_insert_pt->has_out(i); i++) {
       Node* use = upper_insert_pt->out(i);
-      if (!use->is_Store())
+      if (use->is_Mem() && !use->is_Store()) {
         memops.push(use);
+      }
     }
 
     MemNode* lower_insert_pt = last;

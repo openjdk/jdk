@@ -67,6 +67,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -2420,7 +2421,7 @@ JNI_END
 
 DEFINE_SETSTATICFIELD(jboolean, bool,   Boolean, 'Z', z
                       , HOTSPOT_JNI_SETSTATICBOOLEANFIELD_ENTRY(env, clazz, (uintptr_t)fieldID, value),
-                      HOTSPOT_JNI_SETBOOLEANFIELD_RETURN())
+                      HOTSPOT_JNI_SETSTATICBOOLEANFIELD_RETURN())
 DEFINE_SETSTATICFIELD(jbyte,    byte,   Byte,    'B', b
                       , HOTSPOT_JNI_SETSTATICBYTEFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICBYTEFIELD_RETURN())
@@ -3150,11 +3151,9 @@ JNI_ENTRY(void, jni_GetStringUTFRegion(JNIEnv *env, jstring string, jsize start,
   } else {
     //%note jni_7
     if (len > 0) {
-      ResourceMark rm(THREAD);
-      char *utf_region = java_lang_String::as_utf8_string(s, start, len);
-      int utf_len = (int)strlen(utf_region);
-      memcpy(buf, utf_region, utf_len);
-      buf[utf_len] = 0;
+      // Assume the buffer is large enough as the JNI spec. does not require user error checking
+      java_lang_String::as_utf8_string(s, start, len, buf, INT_MAX);
+      // as_utf8_string null-terminates the result string
     } else {
       // JDK null-terminates the buffer even in len is zero
       if (buf != NULL) {
@@ -3877,11 +3876,15 @@ void TestMetaspaceAux_test();
 void TestMetachunk_test();
 void TestVirtualSpaceNode_test();
 void TestNewSize_test();
+void TestOldSize_test();
 void TestKlass_test();
+void TestBitMap_test();
+void TestAsUtf8();
 #if INCLUDE_ALL_GCS
 void TestOldFreeSpaceCalculation_test();
 void TestG1BiasedArray_test();
 void TestBufferingOopClosure_test();
+void TestCodeCacheRemSet_test();
 #endif
 
 void execute_internal_vm_tests() {
@@ -3901,7 +3904,10 @@ void execute_internal_vm_tests() {
     run_unit_test(AltHashing::test_alt_hash());
     run_unit_test(test_loggc_filename());
     run_unit_test(TestNewSize_test());
+    run_unit_test(TestOldSize_test());
     run_unit_test(TestKlass_test());
+    run_unit_test(TestBitMap_test());
+    run_unit_test(TestAsUtf8());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif
@@ -3910,6 +3916,7 @@ void execute_internal_vm_tests() {
     run_unit_test(TestG1BiasedArray_test());
     run_unit_test(HeapRegionRemSet::test_prt());
     run_unit_test(TestBufferingOopClosure_test());
+    run_unit_test(TestCodeCacheRemSet_test());
 #endif
     tty->print_cr("All internal VM tests passed");
   }
@@ -3999,7 +4006,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
     }
 
 #ifndef PRODUCT
-  #ifndef TARGET_OS_FAMILY_windows
+  #ifndef CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED
     #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) f()
   #endif
 

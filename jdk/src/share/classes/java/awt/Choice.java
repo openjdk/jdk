@@ -65,7 +65,7 @@ import javax.accessibility.*;
  * Native GUI <code>Choice</code> components' size are often bound by such
  * attributes as font size and length of items contained within
  * the <code>Choice</code>.
- * <p>
+ *
  * @author      Sami Shaio
  * @author      Arthur van Hoff
  * @since       JDK1.0

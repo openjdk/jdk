@@ -36,6 +36,7 @@ import java.awt.event.InputEvent;
 
 import java.awt.datatransfer.Transferable;
 
+import java.io.InvalidObjectException;
 import java.util.EventObject;
 
 import java.util.Collections;
@@ -81,14 +82,14 @@ public class DragGestureEvent extends EventObject {
      * the user's preferred action, an {@code ori} parameter
      * indicating the origin of the drag, and a {@code List} of
      * events that comprise the gesture({@code evs} parameter).
-     * <P>
+     *
      * @param dgr The <code>DragGestureRecognizer</code> firing this event
      * @param act The user's preferred action.
      *            For information on allowable values, see
      *            the class description for {@link DragGestureEvent}
      * @param ori The origin of the drag
      * @param evs The <code>List</code> of events that comprise the gesture
-     * <P>
+     *
      * @throws IllegalArgumentException if any parameter equals {@code null}
      * @throws IllegalArgumentException if the act parameter does not comply with
      *                                  the values given in the class
@@ -123,7 +124,7 @@ public class DragGestureEvent extends EventObject {
 
     /**
      * Returns the source as a <code>DragGestureRecognizer</code>.
-     * <P>
+     *
      * @return the source as a <code>DragGestureRecognizer</code>
      */
 
@@ -134,7 +135,7 @@ public class DragGestureEvent extends EventObject {
     /**
      * Returns the <code>Component</code> associated
      * with this <code>DragGestureEvent</code>.
-     * <P>
+     *
      * @return the Component
      */
 
@@ -142,7 +143,7 @@ public class DragGestureEvent extends EventObject {
 
     /**
      * Returns the <code>DragSource</code>.
-     * <P>
+     *
      * @return the <code>DragSource</code>
      */
 
@@ -151,7 +152,7 @@ public class DragGestureEvent extends EventObject {
     /**
      * Returns a <code>Point</code> in the coordinates
      * of the <code>Component</code> over which the drag originated.
-     * <P>
+     *
      * @return the Point where the drag originated in Component coords.
      */
 
@@ -162,7 +163,7 @@ public class DragGestureEvent extends EventObject {
     /**
      * Returns an <code>Iterator</code> for the events
      * comprising the gesture.
-     * <P>
+     *
      * @return an Iterator for the events comprising the gesture
      */
     @SuppressWarnings("unchecked")
@@ -171,7 +172,7 @@ public class DragGestureEvent extends EventObject {
     /**
      * Returns an <code>Object</code> array of the
      * events comprising the drag gesture.
-     * <P>
+     *
      * @return an array of the events comprising the gesture
      */
 
@@ -179,9 +180,9 @@ public class DragGestureEvent extends EventObject {
 
     /**
      * Returns an array of the events comprising the drag gesture.
-     * <P>
+     *
      * @param array the array of <code>EventObject</code> sub(types)
-     * <P>
+     *
      * @return an array of the events comprising the gesture
      */
     @SuppressWarnings("unchecked")
@@ -190,7 +191,7 @@ public class DragGestureEvent extends EventObject {
     /**
      * Returns an <code>int</code> representing the
      * action selected by the user.
-     * <P>
+     *
      * @return the action selected by the user
      */
 
@@ -198,7 +199,7 @@ public class DragGestureEvent extends EventObject {
 
     /**
      * Returns the initial event that triggered the gesture.
-     * <P>
+     *
      * @return the first "triggering" event in the sequence of the gesture
      */
 
@@ -241,7 +242,7 @@ public class DragGestureEvent extends EventObject {
      * Starts the drag given the initial <code>Cursor</code> to display,
      * the <code>Transferable</code> object,
      * and the <code>DragSourceListener</code> to use.
-     * <P>
+     *
      * @param dragCursor     The initial {@code Cursor} for this drag operation
      *                       or {@code null} for the default cursor handling;
      *                       see
@@ -250,7 +251,7 @@ public class DragGestureEvent extends EventObject {
      *                       during drag and drop
      * @param transferable The source's Transferable
      * @param dsl          The source's DragSourceListener
-     * <P>
+     *
      * @throws InvalidDnDOperationException if
      * the Drag and Drop system is unable to
      * initiate a drag operation, or if the user
@@ -268,7 +269,7 @@ public class DragGestureEvent extends EventObject {
      * the <code>Image</code>,
      * the <code>Transferable</code> object, and
      * the <code>DragSourceListener</code> to use.
-     * <P>
+     *
      * @param dragCursor     The initial {@code Cursor} for this drag operation
      *                       or {@code null} for the default cursor handling;
      *                       see
@@ -279,7 +280,7 @@ public class DragGestureEvent extends EventObject {
      * @param imageOffset  The dragImage's offset
      * @param transferable The source's Transferable
      * @param dsl          The source's DragSourceListener
-     * <P>
+     *
      * @throws InvalidDnDOperationException if
      * the Drag and Drop system is unable to
      * initiate a drag operation, or if the user
@@ -329,22 +330,50 @@ public class DragGestureEvent extends EventObject {
     {
         ObjectInputStream.GetField f = s.readFields();
 
-        dragSource = (DragSource)f.get("dragSource", null);
-        component = (Component)f.get("component", null);
-        origin = (Point)f.get("origin", null);
-        action = f.get("action", 0);
+        DragSource newDragSource = (DragSource)f.get("dragSource", null);
+        if (newDragSource == null) {
+            throw new InvalidObjectException("null DragSource");
+        }
+        dragSource = newDragSource;
+
+        Component newComponent = (Component)f.get("component", null);
+        if (newComponent == null) {
+            throw new InvalidObjectException("null component");
+        }
+        component = newComponent;
+
+        Point newOrigin = (Point)f.get("origin", null);
+        if (newOrigin == null) {
+            throw new InvalidObjectException("null origin");
+        }
+        origin = newOrigin;
+
+        int newAction = f.get("action", 0);
+        if (newAction != DnDConstants.ACTION_COPY &&
+                newAction != DnDConstants.ACTION_MOVE &&
+                newAction != DnDConstants.ACTION_LINK) {
+            throw new InvalidObjectException("bad action");
+        }
+        action = newAction;
+
         // Pre-1.4 support. 'events' was previously non-transient
+        List newEvents;
         try {
-            events = (List)f.get("events", null);
+            newEvents = (List)f.get("events", null);
         } catch (IllegalArgumentException e) {
             // 1.4-compatible byte stream. 'events' was written explicitly
-            events = (List)s.readObject();
+            newEvents = (List)s.readObject();
         }
 
         // Implementation assumes 'events' is never null.
-        if (events == null) {
-            events = Collections.EMPTY_LIST;
+        if (newEvents != null && newEvents.isEmpty()) {
+            // Constructor treats empty events list as invalid value
+            // Throw exception if serialized list is empty
+            throw new InvalidObjectException("empty list of events");
+        } else if (newEvents == null) {
+            newEvents = Collections.emptyList();
         }
+        events = newEvents;
     }
 
     /*

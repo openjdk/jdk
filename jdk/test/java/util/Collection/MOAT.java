@@ -54,6 +54,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import static java.util.Collections.*;
+import java.lang.reflect.*;
 
 public class MOAT {
     public static void realMain(String[] args) {
@@ -721,6 +722,28 @@ public class MOAT {
 
         equal(l instanceof RandomAccess,
               l.subList(0,0) instanceof RandomAccess);
+
+        l.iterator();
+        l.listIterator();
+        l.listIterator(0);
+        l.listIterator(l.size());
+        THROWS(IndexOutOfBoundsException.class,
+               new Fun(){void f(){l.listIterator(-1);}},
+               new Fun(){void f(){l.listIterator(l.size() + 1);}});
+
+        if (l instanceof AbstractList) {
+            try {
+                int size = l.size();
+                AbstractList<Integer> abList = (AbstractList<Integer>) l;
+                Method m = AbstractList.class.getDeclaredMethod("removeRange", new Class[] { int.class, int.class });
+                m.setAccessible(true);
+                m.invoke(abList, new Object[] { 0, 0 });
+                m.invoke(abList, new Object[] { size, size });
+                equal(size, l.size());
+            }
+            catch (UnsupportedOperationException ignored) {/* OK */}
+            catch (Throwable t) { unexpected(t); }
+        }
     }
 
     private static void testCollection(Collection<Integer> c) {

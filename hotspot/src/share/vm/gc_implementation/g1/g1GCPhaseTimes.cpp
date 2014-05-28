@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1GCPhaseTimes.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 
 // Helper class for avoiding interleaved logging
 class LineBuffer: public StackObj {
@@ -146,7 +147,7 @@ template <class T>
 void WorkerDataArray<T>::verify() {
   for (uint i = 0; i < _length; i++) {
     assert(_data[i] != _uninitialized,
-        err_msg("Invalid data for worker " UINT32_FORMAT ", data: %lf, uninitialized: %lf",
+        err_msg("Invalid data for worker %u, data: %lf, uninitialized: %lf",
             i, (double)_data[i], (double)_uninitialized));
   }
 }
@@ -168,7 +169,11 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _last_termination_attempts(_max_gc_threads, SIZE_FORMAT),
   _last_gc_worker_end_times_ms(_max_gc_threads, "%.1lf", false),
   _last_gc_worker_times_ms(_max_gc_threads, "%.1lf"),
-  _last_gc_worker_other_times_ms(_max_gc_threads, "%.1lf")
+  _last_gc_worker_other_times_ms(_max_gc_threads, "%.1lf"),
+  _last_redirty_logged_cards_time_ms(_max_gc_threads, "%.1lf"),
+  _last_redirty_logged_cards_processed_cards(_max_gc_threads, SIZE_FORMAT),
+  _cur_string_dedup_queue_fixup_worker_times_ms(_max_gc_threads, "%.1lf"),
+  _cur_string_dedup_table_fixup_worker_times_ms(_max_gc_threads, "%.1lf")
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
 }
@@ -192,6 +197,10 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
   _last_gc_worker_end_times_ms.reset();
   _last_gc_worker_times_ms.reset();
   _last_gc_worker_other_times_ms.reset();
+
+  _last_redirty_logged_cards_time_ms.reset();
+  _last_redirty_logged_cards_processed_cards.reset();
+
 }
 
 void G1GCPhaseTimes::note_gc_end() {
@@ -227,14 +236,27 @@ void G1GCPhaseTimes::note_gc_end() {
 
   _last_gc_worker_times_ms.verify();
   _last_gc_worker_other_times_ms.verify();
+
+  _last_redirty_logged_cards_time_ms.verify();
+  _last_redirty_logged_cards_processed_cards.verify();
+}
+
+void G1GCPhaseTimes::note_string_dedup_fixup_start() {
+  _cur_string_dedup_queue_fixup_worker_times_ms.reset();
+  _cur_string_dedup_table_fixup_worker_times_ms.reset();
+}
+
+void G1GCPhaseTimes::note_string_dedup_fixup_end() {
+  _cur_string_dedup_queue_fixup_worker_times_ms.verify();
+  _cur_string_dedup_table_fixup_worker_times_ms.verify();
 }
 
 void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
   LineBuffer(level).append_and_print_cr("[%s: %.1lf ms]", str, value);
 }
 
-void G1GCPhaseTimes::print_stats(int level, const char* str, double value, int workers) {
-  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %d]", str, value, workers);
+void G1GCPhaseTimes::print_stats(int level, const char* str, double value, uint workers) {
+  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %u]", str, value, workers);
 }
 
 double G1GCPhaseTimes::accounted_time_ms() {
@@ -249,6 +271,14 @@ double G1GCPhaseTimes::accounted_time_ms() {
 
     // Strong code root migration time
     misc_time_ms += _cur_strong_code_root_migration_time_ms;
+
+    // Strong code root purge time
+    misc_time_ms += _cur_strong_code_root_purge_time_ms;
+
+    if (G1StringDedup::is_enabled()) {
+      // String dedup fixup time
+      misc_time_ms += _cur_string_dedup_fixup_time_ms;
+    }
 
     // Subtract the time taken to clean the card table from the
     // current value of "other time"
@@ -299,20 +329,47 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   }
   print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
   print_stats(1, "Code Root Migration", _cur_strong_code_root_migration_time_ms);
+  print_stats(1, "Code Root Purge", _cur_strong_code_root_purge_time_ms);
+  if (G1StringDedup::is_enabled()) {
+    print_stats(1, "String Dedup Fixup", _cur_string_dedup_fixup_time_ms, _active_gc_threads);
+    _cur_string_dedup_queue_fixup_worker_times_ms.print(2, "Queue Fixup (ms)");
+    _cur_string_dedup_table_fixup_worker_times_ms.print(2, "Table Fixup (ms)");
+  }
   print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
   double misc_time_ms = pause_time_sec * MILLIUNITS - accounted_time_ms();
   print_stats(1, "Other", misc_time_ms);
   if (_cur_verify_before_time_ms > 0.0) {
     print_stats(2, "Verify Before", _cur_verify_before_time_ms);
   }
+  if (G1CollectedHeap::heap()->evacuation_failed()) {
+    double evac_fail_handling = _cur_evac_fail_recalc_used + _cur_evac_fail_remove_self_forwards +
+      _cur_evac_fail_restore_remsets;
+    print_stats(2, "Evacuation Failure", evac_fail_handling);
+    if (G1Log::finest()) {
+      print_stats(3, "Recalculate Used", _cur_evac_fail_recalc_used);
+      print_stats(3, "Remove Self Forwards", _cur_evac_fail_remove_self_forwards);
+      print_stats(3, "Restore RemSet", _cur_evac_fail_restore_remsets);
+    }
+  }
   print_stats(2, "Choose CSet",
     (_recorded_young_cset_choice_time_ms +
     _recorded_non_young_cset_choice_time_ms));
   print_stats(2, "Ref Proc", _cur_ref_proc_time_ms);
   print_stats(2, "Ref Enq", _cur_ref_enq_time_ms);
+  if (G1DeferredRSUpdate) {
+    print_stats(2, "Redirty Cards", _recorded_redirty_logged_cards_time_ms);
+    if (G1Log::finest()) {
+      _last_redirty_logged_cards_time_ms.print(3, "Parallel Redirty");
+      _last_redirty_logged_cards_processed_cards.print(3, "Redirtied Cards");
+    }
+  }
   print_stats(2, "Free CSet",
     (_recorded_young_free_cset_time_ms +
     _recorded_non_young_free_cset_time_ms));
+  if (G1Log::finest()) {
+    print_stats(3, "Young Free CSet", _recorded_young_free_cset_time_ms);
+    print_stats(3, "Non-Young Free CSet", _recorded_non_young_free_cset_time_ms);
+  }
   if (_cur_verify_after_time_ms > 0.0) {
     print_stats(2, "Verify After", _cur_verify_after_time_ms);
   }

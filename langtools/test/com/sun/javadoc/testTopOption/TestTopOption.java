@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,72 +26,44 @@
  * @bug      6227616
  * @summary  Test the new -top option.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestTopOption
  * @run main TestTopOption
  */
 
 public class TestTopOption extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "6227616";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-overview", "SRC_DIR + FS + overview.html", "-use", "-top", "TOP TEXT", "-d", BUG_ID, "-sourcepath",
-        SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-            "TOP TEXT"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-            "TOP TEXT"},
-
-        {BUG_ID + FS + "pkg" + FS + "Cl.html",
-            "TOP TEXT"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "Cl.html",
-            "TOP TEXT"},
-
-        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
-            "TOP TEXT"},
-        {BUG_ID + FS + "pkg" + FS + "package-use.html",
-           "TOP TEXT"},
-
-        {BUG_ID + FS + "overview-summary.html",
-            "TOP TEXT"},
-        {BUG_ID + FS + "overview-tree.html",
-            "TOP TEXT"},
-        {BUG_ID + FS + "constant-values.html",
-            "TOP TEXT"},
-        {BUG_ID + FS + "help-doc.html",
-            "TOP TEXT"},
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestTopOption tester = new TestTopOption();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
+    @Test
+    void test() {
+        javadoc("-overview", testSrc("overview.html"),
+                "-use",
+                "-top", "TOP TEXT",
+                "-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkTopText(
+                "pkg/AnnotationType.html",
+                "pkg/class-use/AnnotationType.html",
+                "pkg/Cl.html",
+                "pkg/class-use/Cl.html",
+                "pkg/package-summary.html",
+                "pkg/package-use.html",
+                "overview-summary.html",
+                "overview-tree.html",
+                "constant-values.html",
+                "help-doc.html");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+    void checkTopText(String... files) {
+        for (String file : files) {
+            checkOutput(file, true, "TOP TEXT");
+        }
     }
 }

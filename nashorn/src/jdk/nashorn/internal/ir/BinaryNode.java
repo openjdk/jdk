@@ -242,6 +242,12 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         case INSTANCEOF: {
             return Type.BOOLEAN;
         }
+        case COMMALEFT: {
+            return lhs.getType(localVariableTypes);
+        }
+        case COMMARIGHT: {
+            return rhs.getType(localVariableTypes);
+        }
         default:
             if (isComparison()) {
                 return Type.BOOLEAN;

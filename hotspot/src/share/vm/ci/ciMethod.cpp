@@ -80,6 +80,7 @@ ciMethod::ciMethod(methodHandle h_m) : ciMetadata(h_m()) {
   _code_size          = h_m()->code_size();
   _intrinsic_id       = h_m()->intrinsic_id();
   _handler_count      = h_m()->exception_table_length();
+  _size_of_parameters = h_m()->size_of_parameters();
   _uses_monitors      = h_m()->access_flags().has_monitor_bytecodes();
   _balanced_monitors  = !_uses_monitors || h_m()->access_flags().is_monitor_matching();
   _is_c1_compilable   = !h_m()->is_not_c1_compilable();
@@ -581,14 +582,14 @@ void ciMethod::assert_call_type_ok(int bci) {
  * Check whether profiling provides a type for the argument i to the
  * call at bci bci
  *
- * @param bci  bci of the call
- * @param i    argument number
- * @return     profiled type
+ * @param [in]bci         bci of the call
+ * @param [in]i           argument number
+ * @param [out]type       profiled type of argument, NULL if none
+ * @param [out]maybe_null true if null was seen for argument
+ * @return                true if profiling exists
  *
- * If the profile reports that the argument may be null, return false
- * at least for now.
  */
-ciKlass* ciMethod::argument_profiled_type(int bci, int i) {
+bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, bool& maybe_null) {
   if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != NULL) {
@@ -596,82 +597,77 @@ ciKlass* ciMethod::argument_profiled_type(int bci, int i) {
         assert_virtual_call_type_ok(bci);
         ciVirtualCallTypeData* call = (ciVirtualCallTypeData*)data->as_VirtualCallTypeData();
         if (i >= call->number_of_arguments()) {
-          return NULL;
+          return false;
         }
-        ciKlass* type = call->valid_argument_type(i);
-        if (type != NULL && !call->argument_maybe_null(i)) {
-          return type;
-        }
+        type = call->valid_argument_type(i);
+        maybe_null = call->argument_maybe_null(i);
+        return true;
       } else if (data->is_CallTypeData()) {
         assert_call_type_ok(bci);
         ciCallTypeData* call = (ciCallTypeData*)data->as_CallTypeData();
         if (i >= call->number_of_arguments()) {
-          return NULL;
+          return false;
         }
-        ciKlass* type = call->valid_argument_type(i);
-        if (type != NULL && !call->argument_maybe_null(i)) {
-          return type;
-        }
+        type = call->valid_argument_type(i);
+        maybe_null = call->argument_maybe_null(i);
+        return true;
       }
     }
   }
-  return NULL;
+  return false;
 }
 
 /**
  * Check whether profiling provides a type for the return value from
  * the call at bci bci
  *
- * @param bci  bci of the call
- * @return     profiled type
+ * @param [in]bci         bci of the call
+ * @param [out]type       profiled type of argument, NULL if none
+ * @param [out]maybe_null true if null was seen for argument
+ * @return                true if profiling exists
  *
- * If the profile reports that the argument may be null, return false
- * at least for now.
  */
-ciKlass* ciMethod::return_profiled_type(int bci) {
+bool ciMethod::return_profiled_type(int bci, ciKlass*& type, bool& maybe_null) {
   if (MethodData::profile_return() && method_data() != NULL && method_data()->is_mature()) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != NULL) {
       if (data->is_VirtualCallTypeData()) {
         assert_virtual_call_type_ok(bci);
         ciVirtualCallTypeData* call = (ciVirtualCallTypeData*)data->as_VirtualCallTypeData();
-        ciKlass* type = call->valid_return_type();
-        if (type != NULL && !call->return_maybe_null()) {
-          return type;
-        }
+        type = call->valid_return_type();
+        maybe_null = call->return_maybe_null();
+        return true;
       } else if (data->is_CallTypeData()) {
         assert_call_type_ok(bci);
         ciCallTypeData* call = (ciCallTypeData*)data->as_CallTypeData();
-        ciKlass* type = call->valid_return_type();
-        if (type != NULL && !call->return_maybe_null()) {
-          return type;
-        }
+        type = call->valid_return_type();
+        maybe_null = call->return_maybe_null();
+        return true;
       }
     }
   }
-  return NULL;
+  return false;
 }
 
 /**
  * Check whether profiling provides a type for the parameter i
  *
- * @param i    parameter number
- * @return     profiled type
+ * @param [in]i           parameter number
+ * @param [out]type       profiled type of parameter, NULL if none
+ * @param [out]maybe_null true if null was seen for parameter
+ * @return                true if profiling exists
  *
- * If the profile reports that the argument may be null, return false
- * at least for now.
  */
-ciKlass* ciMethod::parameter_profiled_type(int i) {
+bool ciMethod::parameter_profiled_type(int i, ciKlass*& type, bool& maybe_null) {
   if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
     ciParametersTypeData* parameters = method_data()->parameters_type_data();
     if (parameters != NULL && i < parameters->number_of_parameters()) {
-      ciKlass* type = parameters->valid_parameter_type(i);
-      if (type != NULL && !parameters->parameter_maybe_null(i)) {
-        return type;
-      }
+      type = parameters->valid_parameter_type(i);
+      maybe_null = parameters->parameter_maybe_null(i);
+      return true;
     }
   }
-  return NULL;
+  return false;
 }
 
 
@@ -723,6 +719,11 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   if (!UseCHA)  return NULL;
 
   VM_ENTRY_MARK;
+
+  // Disable CHA for default methods for now
+  if (root_m->get_Method()->is_default_method()) {
+    return NULL;
+  }
 
   methodHandle target;
   {

@@ -162,8 +162,9 @@ class SparseArrayData extends ArrayData {
             underlying = underlying.set(index, value, strict);
             setLength(Math.max(underlying.length(), length()));
         } else {
-            sparseMap.put(indexToKey(index), value);
-            setLength(Math.max(index + 1, length()));
+            final Long longIndex = indexToKey(index);
+            sparseMap.put(longIndex, value);
+            setLength(Math.max(longIndex + 1, length()));
         }
 
         return this;
@@ -176,8 +177,9 @@ class SparseArrayData extends ArrayData {
             underlying = underlying.set(index, value, strict);
             setLength(Math.max(underlying.length(), length()));
         } else {
-            sparseMap.put(indexToKey(index), value);
-            setLength(Math.max(index + 1, length()));
+            final Long longIndex = indexToKey(index);
+            sparseMap.put(longIndex, value);
+            setLength(Math.max(longIndex + 1, length()));
         }
         return this;
     }
@@ -189,8 +191,9 @@ class SparseArrayData extends ArrayData {
             underlying = underlying.set(index, value, strict);
             setLength(Math.max(underlying.length(), length()));
         } else {
-            sparseMap.put(indexToKey(index), value);
-            setLength(Math.max(index + 1, length()));
+            final Long longIndex = indexToKey(index);
+            sparseMap.put(longIndex, value);
+            setLength(Math.max(longIndex + 1, length()));
         }
         return this;
     }
@@ -202,8 +205,9 @@ class SparseArrayData extends ArrayData {
             underlying = underlying.set(index, value, strict);
             setLength(Math.max(underlying.length(), length()));
         } else {
-            sparseMap.put(indexToKey(index), value);
-            setLength(Math.max(index + 1, length()));
+            final Long longIndex = indexToKey(index);
+            sparseMap.put(longIndex, value);
+            setLength(Math.max(longIndex + 1, length()));
         }
         return this;
     }
@@ -321,7 +325,7 @@ class SparseArrayData extends ArrayData {
     }
 
     private static Long indexToKey(final int index) {
-        return Long.valueOf(index & JSType.MAX_UINT);
+        return Long.valueOf(ArrayIndex.toLongIndex(index));
     }
 
     @Override

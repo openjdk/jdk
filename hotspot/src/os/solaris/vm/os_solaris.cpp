@@ -48,6 +48,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -311,33 +312,6 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
   return localtime_r(clock, res);
 }
 
-// interruptible infrastructure
-
-// setup_interruptible saves the thread state before going into an
-// interruptible system call.
-// The saved state is used to restore the thread to
-// its former state whether or not an interrupt is received.
-// Used by classloader os::read
-// os::restartable_read calls skip this layer and stay in _thread_in_native
-
-void os::Solaris::setup_interruptible(JavaThread* thread) {
-
-  JavaThreadState thread_state = thread->thread_state();
-
-  assert(thread_state != _thread_blocked, "Coming from the wrong thread");
-  assert(thread_state != _thread_in_native, "Native threads skip setup_interruptible");
-  OSThread* osthread = thread->osthread();
-  osthread->set_saved_interrupt_thread_state(thread_state);
-  thread->frame_anchor()->make_walkable(thread);
-  ThreadStateTransition::transition(thread, thread_state, _thread_blocked);
-}
-
-JavaThread* os::Solaris::setup_interruptible() {
-  JavaThread* thread = (JavaThread*)ThreadLocalStorage::thread();
-  setup_interruptible(thread);
-  return thread;
-}
-
 void os::Solaris::try_enable_extended_io() {
   typedef int (*enable_extended_FILE_stdio_t)(int, int);
 
@@ -351,41 +325,6 @@ void os::Solaris::try_enable_extended_io() {
   if (enabler) {
     enabler(-1, -1);
   }
-}
-
-
-#ifdef ASSERT
-
-JavaThread* os::Solaris::setup_interruptible_native() {
-  JavaThread* thread = (JavaThread*)ThreadLocalStorage::thread();
-  JavaThreadState thread_state = thread->thread_state();
-  assert(thread_state == _thread_in_native, "Assumed thread_in_native");
-  return thread;
-}
-
-void os::Solaris::cleanup_interruptible_native(JavaThread* thread) {
-  JavaThreadState thread_state = thread->thread_state();
-  assert(thread_state == _thread_in_native, "Assumed thread_in_native");
-}
-#endif
-
-// cleanup_interruptible reverses the effects of setup_interruptible
-// setup_interruptible_already_blocked() does not need any cleanup.
-
-void os::Solaris::cleanup_interruptible(JavaThread* thread) {
-  OSThread* osthread = thread->osthread();
-
-  ThreadStateTransition::transition(thread, _thread_blocked, osthread->saved_interrupt_thread_state());
-}
-
-// I/O interruption related counters called in _INTERRUPTIBLE
-
-void os::Solaris::bump_interrupted_before_count() {
-  RuntimeService::record_interrupted_before_count();
-}
-
-void os::Solaris::bump_interrupted_during_count() {
-  RuntimeService::record_interrupted_during_count();
 }
 
 static int _processors_online = 0;
@@ -409,11 +348,7 @@ julong os::physical_memory() {
 
 static hrtime_t first_hrtime = 0;
 static const hrtime_t hrtime_hz = 1000*1000*1000;
-const int LOCK_BUSY = 1;
-const int LOCK_FREE = 0;
-const int LOCK_INVALID = -1;
 static volatile hrtime_t max_hrtime = 0;
-static volatile int max_hrtime_lock = LOCK_FREE;     // Update counter with LSB as lock-in-progress
 
 
 void os::Solaris::initialize_system_info() {
@@ -642,9 +577,6 @@ bool os::have_special_privileges() {
 
 
 void os::init_system_properties_values() {
-  char arch[12];
-  sysinfo(SI_ARCHITECTURE, arch, sizeof(arch));
-
   // The next steps are taken in the product version:
   //
   // Obtain the JAVA_HOME value from the location of libjvm.so.
@@ -671,218 +603,174 @@ void os::init_system_properties_values() {
   // Important note: if the location of libjvm.so changes this
   // code needs to be changed accordingly.
 
-  // The next few definitions allow the code to be verbatim:
-#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n), mtInternal)
-#define free(p) FREE_C_HEAP_ARRAY(char, p, mtInternal)
-#define getenv(n) ::getenv(n)
-
+// Base path of extensions installed on the system.
+#define SYS_EXT_DIR     "/usr/jdk/packages"
 #define EXTENSIONS_DIR  "/lib/ext"
 #define ENDORSED_DIR    "/lib/endorsed"
-#define COMMON_DIR      "/usr/jdk/packages"
 
+  char cpu_arch[12];
+  // Buffer that fits several sprintfs.
+  // Note that the space for the colon and the trailing null are provided
+  // by the nulls included by the sizeof operator.
+  const size_t bufsize =
+    MAX4((size_t)MAXPATHLEN,  // For dll_dir & friends.
+         sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch), // invariant ld_library_path
+         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + sizeof(SYS_EXT_DIR) + sizeof(EXTENSIONS_DIR), // extensions dir
+         (size_t)MAXPATHLEN + sizeof(ENDORSED_DIR)); // endorsed dir
+  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+
+  // sysclasspath, java_home, dll_dir
   {
-    /* sysclasspath, java_home, dll_dir */
-    {
-        char *home_path;
-        char *dll_path;
-        char *pslash;
-        char buf[MAXPATHLEN];
-        os::jvm_path(buf, sizeof(buf));
+    char *pslash;
+    os::jvm_path(buf, bufsize);
 
-        // Found the full path to libjvm.so.
-        // Now cut the path to <java_home>/jre if we can.
-        *(strrchr(buf, '/')) = '\0';  /* get rid of /libjvm.so */
+    // Found the full path to libjvm.so.
+    // Now cut the path to <java_home>/jre if we can.
+    *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
+    pslash = strrchr(buf, '/');
+    if (pslash != NULL) {
+      *pslash = '\0';            // Get rid of /{client|server|hotspot}.
+    }
+    Arguments::set_dll_dir(buf);
+
+    if (pslash != NULL) {
+      pslash = strrchr(buf, '/');
+      if (pslash != NULL) {
+        *pslash = '\0';          // Get rid of /<arch>.
         pslash = strrchr(buf, '/');
-        if (pslash != NULL)
-            *pslash = '\0';           /* get rid of /{client|server|hotspot} */
-        dll_path = malloc(strlen(buf) + 1);
-        if (dll_path == NULL)
-            return;
-        strcpy(dll_path, buf);
-        Arguments::set_dll_dir(dll_path);
-
         if (pslash != NULL) {
-            pslash = strrchr(buf, '/');
-            if (pslash != NULL) {
-                *pslash = '\0';       /* get rid of /<arch> */
-                pslash = strrchr(buf, '/');
-                if (pslash != NULL)
-                    *pslash = '\0';   /* get rid of /lib */
-            }
+          *pslash = '\0';        // Get rid of /lib.
         }
-
-        home_path = malloc(strlen(buf) + 1);
-        if (home_path == NULL)
-            return;
-        strcpy(home_path, buf);
-        Arguments::set_java_home(home_path);
-
-        if (!set_boot_path('/', ':'))
-            return;
+      }
     }
-
-    /*
-     * Where to look for native libraries
-     */
-    {
-      // Use dlinfo() to determine the correct java.library.path.
-      //
-      // If we're launched by the Java launcher, and the user
-      // does not set java.library.path explicitly on the commandline,
-      // the Java launcher sets LD_LIBRARY_PATH for us and unsets
-      // LD_LIBRARY_PATH_32 and LD_LIBRARY_PATH_64.  In this case
-      // dlinfo returns LD_LIBRARY_PATH + crle settings (including
-      // /usr/lib), which is exactly what we want.
-      //
-      // If the user does set java.library.path, it completely
-      // overwrites this setting, and always has.
-      //
-      // If we're not launched by the Java launcher, we may
-      // get here with any/all of the LD_LIBRARY_PATH[_32|64]
-      // settings.  Again, dlinfo does exactly what we want.
-
-      Dl_serinfo     _info, *info = &_info;
-      Dl_serpath     *path;
-      char*          library_path;
-      char           *common_path;
-      int            i;
-
-      // determine search path count and required buffer size
-      if (dlinfo(RTLD_SELF, RTLD_DI_SERINFOSIZE, (void *)info) == -1) {
-        vm_exit_during_initialization("dlinfo SERINFOSIZE request", dlerror());
-      }
-
-      // allocate new buffer and initialize
-      info = (Dl_serinfo*)malloc(_info.dls_size);
-      if (info == NULL) {
-        vm_exit_out_of_memory(_info.dls_size, OOM_MALLOC_ERROR,
-                              "init_system_properties_values info");
-      }
-      info->dls_size = _info.dls_size;
-      info->dls_cnt = _info.dls_cnt;
-
-      // obtain search path information
-      if (dlinfo(RTLD_SELF, RTLD_DI_SERINFO, (void *)info) == -1) {
-        free(info);
-        vm_exit_during_initialization("dlinfo SERINFO request", dlerror());
-      }
-
-      path = &info->dls_serpath[0];
-
-      // Note: Due to a legacy implementation, most of the library path
-      // is set in the launcher.  This was to accomodate linking restrictions
-      // on legacy Solaris implementations (which are no longer supported).
-      // Eventually, all the library path setting will be done here.
-      //
-      // However, to prevent the proliferation of improperly built native
-      // libraries, the new path component /usr/jdk/packages is added here.
-
-      // Determine the actual CPU architecture.
-      char cpu_arch[12];
-      sysinfo(SI_ARCHITECTURE, cpu_arch, sizeof(cpu_arch));
-#ifdef _LP64
-      // If we are a 64-bit vm, perform the following translations:
-      //   sparc   -> sparcv9
-      //   i386    -> amd64
-      if (strcmp(cpu_arch, "sparc") == 0)
-        strcat(cpu_arch, "v9");
-      else if (strcmp(cpu_arch, "i386") == 0)
-        strcpy(cpu_arch, "amd64");
-#endif
-
-      // Construct the invariant part of ld_library_path. Note that the
-      // space for the colon and the trailing null are provided by the
-      // nulls included by the sizeof operator.
-      size_t bufsize = sizeof(COMMON_DIR) + sizeof("/lib/") + strlen(cpu_arch);
-      common_path = malloc(bufsize);
-      if (common_path == NULL) {
-        free(info);
-        vm_exit_out_of_memory(bufsize, OOM_MALLOC_ERROR,
-                              "init_system_properties_values common_path");
-      }
-      sprintf(common_path, COMMON_DIR "/lib/%s", cpu_arch);
-
-      // struct size is more than sufficient for the path components obtained
-      // through the dlinfo() call, so only add additional space for the path
-      // components explicitly added here.
-      bufsize = info->dls_size + strlen(common_path);
-      library_path = malloc(bufsize);
-      if (library_path == NULL) {
-        free(info);
-        free(common_path);
-        vm_exit_out_of_memory(bufsize, OOM_MALLOC_ERROR,
-                              "init_system_properties_values library_path");
-      }
-      library_path[0] = '\0';
-
-      // Construct the desired Java library path from the linker's library
-      // search path.
-      //
-      // For compatibility, it is optimal that we insert the additional path
-      // components specific to the Java VM after those components specified
-      // in LD_LIBRARY_PATH (if any) but before those added by the ld.so
-      // infrastructure.
-      if (info->dls_cnt == 0) { // Not sure this can happen, but allow for it
-        strcpy(library_path, common_path);
-      } else {
-        int inserted = 0;
-        for (i = 0; i < info->dls_cnt; i++, path++) {
-          uint_t flags = path->dls_flags & LA_SER_MASK;
-          if (((flags & LA_SER_LIBPATH) == 0) && !inserted) {
-            strcat(library_path, common_path);
-            strcat(library_path, os::path_separator());
-            inserted = 1;
-          }
-          strcat(library_path, path->dls_name);
-          strcat(library_path, os::path_separator());
-        }
-        // eliminate trailing path separator
-        library_path[strlen(library_path)-1] = '\0';
-      }
-
-      // happens before argument parsing - can't use a trace flag
-      // tty->print_raw("init_system_properties_values: native lib path: ");
-      // tty->print_raw_cr(library_path);
-
-      // callee copies into its own buffer
-      Arguments::set_library_path(library_path);
-
-      free(common_path);
-      free(library_path);
-      free(info);
-    }
-
-    /*
-     * Extensions directories.
-     *
-     * Note that the space for the colon and the trailing null are provided
-     * by the nulls included by the sizeof operator (so actually one byte more
-     * than necessary is allocated).
-     */
-    {
-        char *buf = (char *) malloc(strlen(Arguments::get_java_home()) +
-            sizeof(EXTENSIONS_DIR) + sizeof(COMMON_DIR) +
-            sizeof(EXTENSIONS_DIR));
-        sprintf(buf, "%s" EXTENSIONS_DIR ":" COMMON_DIR EXTENSIONS_DIR,
-            Arguments::get_java_home());
-        Arguments::set_ext_dirs(buf);
-    }
-
-    /* Endorsed standards default directory. */
-    {
-        char * buf = malloc(strlen(Arguments::get_java_home()) + sizeof(ENDORSED_DIR));
-        sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
-        Arguments::set_endorsed_dirs(buf);
-    }
+    Arguments::set_java_home(buf);
+    set_boot_path('/', ':');
   }
 
-#undef malloc
-#undef free
-#undef getenv
+  // Where to look for native libraries.
+  {
+    // Use dlinfo() to determine the correct java.library.path.
+    //
+    // If we're launched by the Java launcher, and the user
+    // does not set java.library.path explicitly on the commandline,
+    // the Java launcher sets LD_LIBRARY_PATH for us and unsets
+    // LD_LIBRARY_PATH_32 and LD_LIBRARY_PATH_64.  In this case
+    // dlinfo returns LD_LIBRARY_PATH + crle settings (including
+    // /usr/lib), which is exactly what we want.
+    //
+    // If the user does set java.library.path, it completely
+    // overwrites this setting, and always has.
+    //
+    // If we're not launched by the Java launcher, we may
+    // get here with any/all of the LD_LIBRARY_PATH[_32|64]
+    // settings.  Again, dlinfo does exactly what we want.
+
+    Dl_serinfo     info_sz, *info = &info_sz;
+    Dl_serpath     *path;
+    char           *library_path;
+    char           *common_path = buf;
+
+    // Determine search path count and required buffer size.
+    if (dlinfo(RTLD_SELF, RTLD_DI_SERINFOSIZE, (void *)info) == -1) {
+      FREE_C_HEAP_ARRAY(char, buf,  mtInternal);
+      vm_exit_during_initialization("dlinfo SERINFOSIZE request", dlerror());
+    }
+
+    // Allocate new buffer and initialize.
+    info = (Dl_serinfo*)NEW_C_HEAP_ARRAY(char, info_sz.dls_size, mtInternal);
+    info->dls_size = info_sz.dls_size;
+    info->dls_cnt = info_sz.dls_cnt;
+
+    // Obtain search path information.
+    if (dlinfo(RTLD_SELF, RTLD_DI_SERINFO, (void *)info) == -1) {
+      FREE_C_HEAP_ARRAY(char, buf,  mtInternal);
+      FREE_C_HEAP_ARRAY(char, info, mtInternal);
+      vm_exit_during_initialization("dlinfo SERINFO request", dlerror());
+    }
+
+    path = &info->dls_serpath[0];
+
+    // Note: Due to a legacy implementation, most of the library path
+    // is set in the launcher. This was to accomodate linking restrictions
+    // on legacy Solaris implementations (which are no longer supported).
+    // Eventually, all the library path setting will be done here.
+    //
+    // However, to prevent the proliferation of improperly built native
+    // libraries, the new path component /usr/jdk/packages is added here.
+
+    // Determine the actual CPU architecture.
+    sysinfo(SI_ARCHITECTURE, cpu_arch, sizeof(cpu_arch));
+#ifdef _LP64
+    // If we are a 64-bit vm, perform the following translations:
+    //   sparc   -> sparcv9
+    //   i386    -> amd64
+    if (strcmp(cpu_arch, "sparc") == 0) {
+      strcat(cpu_arch, "v9");
+    } else if (strcmp(cpu_arch, "i386") == 0) {
+      strcpy(cpu_arch, "amd64");
+    }
+#endif
+
+    // Construct the invariant part of ld_library_path.
+    sprintf(common_path, SYS_EXT_DIR "/lib/%s", cpu_arch);
+
+    // Struct size is more than sufficient for the path components obtained
+    // through the dlinfo() call, so only add additional space for the path
+    // components explicitly added here.
+    size_t library_path_size = info->dls_size + strlen(common_path);
+    library_path = (char *)NEW_C_HEAP_ARRAY(char, library_path_size, mtInternal);
+    library_path[0] = '\0';
+
+    // Construct the desired Java library path from the linker's library
+    // search path.
+    //
+    // For compatibility, it is optimal that we insert the additional path
+    // components specific to the Java VM after those components specified
+    // in LD_LIBRARY_PATH (if any) but before those added by the ld.so
+    // infrastructure.
+    if (info->dls_cnt == 0) { // Not sure this can happen, but allow for it.
+      strcpy(library_path, common_path);
+    } else {
+      int inserted = 0;
+      int i;
+      for (i = 0; i < info->dls_cnt; i++, path++) {
+        uint_t flags = path->dls_flags & LA_SER_MASK;
+        if (((flags & LA_SER_LIBPATH) == 0) && !inserted) {
+          strcat(library_path, common_path);
+          strcat(library_path, os::path_separator());
+          inserted = 1;
+        }
+        strcat(library_path, path->dls_name);
+        strcat(library_path, os::path_separator());
+      }
+      // Eliminate trailing path separator.
+      library_path[strlen(library_path)-1] = '\0';
+    }
+
+    // happens before argument parsing - can't use a trace flag
+    // tty->print_raw("init_system_properties_values: native lib path: ");
+    // tty->print_raw_cr(library_path);
+
+    // Callee copies into its own buffer.
+    Arguments::set_library_path(library_path);
+
+    FREE_C_HEAP_ARRAY(char, library_path, mtInternal);
+    FREE_C_HEAP_ARRAY(char, info, mtInternal);
+  }
+
+  // Extensions directories.
+  sprintf(buf, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
+  Arguments::set_ext_dirs(buf);
+
+  // Endorsed standards default directory.
+  sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
+  Arguments::set_endorsed_dirs(buf);
+
+  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+
+#undef SYS_EXT_DIR
 #undef EXTENSIONS_DIR
 #undef ENDORSED_DIR
-#undef COMMON_DIR
-
 }
 
 void os::breakpoint() {
@@ -1078,9 +966,6 @@ bool os::create_main_thread(JavaThread* thread) {
   return true;
 }
 
-// _T2_libthread is true if we believe we are running with the newer
-// SunSoft lwp/libthread.so (2.8 patch, 2.9 default)
-bool os::Solaris::_T2_libthread = false;
 
 bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
   // Allocate the OSThread object
@@ -1165,70 +1050,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
   thread->set_osthread(osthread);
 
   // Create the Solaris thread
-  // explicit THR_BOUND for T2_libthread case in case
-  // that assumption is not accurate, but our alternate signal stack
-  // handling is based on it which must have bound threads
   thread_t tid = 0;
-  long     flags = (UseDetachedThreads ? THR_DETACHED : 0) | THR_SUSPENDED
-                   | ((UseBoundThreads || os::Solaris::T2_libthread() ||
-                       (thr_type == vm_thread) ||
-                       (thr_type == cgc_thread) ||
-                       (thr_type == pgc_thread) ||
-                       (thr_type == compiler_thread && BackgroundCompilation)) ?
-                      THR_BOUND : 0);
+  long     flags = (UseDetachedThreads ? THR_DETACHED : 0) | THR_SUSPENDED;
   int      status;
-
-  // 4376845 -- libthread/kernel don't provide enough LWPs to utilize all CPUs.
-  //
-  // On multiprocessors systems, libthread sometimes under-provisions our
-  // process with LWPs.  On a 30-way systems, for instance, we could have
-  // 50 user-level threads in ready state and only 2 or 3 LWPs assigned
-  // to our process.  This can result in under utilization of PEs.
-  // I suspect the problem is related to libthread's LWP
-  // pool management and to the kernel's SIGBLOCKING "last LWP parked"
-  // upcall policy.
-  //
-  // The following code is palliative -- it attempts to ensure that our
-  // process has sufficient LWPs to take advantage of multiple PEs.
-  // Proper long-term cures include using user-level threads bound to LWPs
-  // (THR_BOUND) or using LWP-based synchronization.  Note that there is a
-  // slight timing window with respect to sampling _os_thread_count, but
-  // the race is benign.  Also, we should periodically recompute
-  // _processors_online as the min of SC_NPROCESSORS_ONLN and the
-  // the number of PEs in our partition.  You might be tempted to use
-  // THR_NEW_LWP here, but I'd recommend against it as that could
-  // result in undesirable growth of the libthread's LWP pool.
-  // The fix below isn't sufficient; for instance, it doesn't take into count
-  // LWPs parked on IO.  It does, however, help certain CPU-bound benchmarks.
-  //
-  // Some pathologies this scheme doesn't handle:
-  // *  Threads can block, releasing the LWPs.  The LWPs can age out.
-  //    When a large number of threads become ready again there aren't
-  //    enough LWPs available to service them.  This can occur when the
-  //    number of ready threads oscillates.
-  // *  LWPs/Threads park on IO, thus taking the LWP out of circulation.
-  //
-  // Finally, we should call thr_setconcurrency() periodically to refresh
-  // the LWP pool and thwart the LWP age-out mechanism.
-  // The "+3" term provides a little slop -- we want to slightly overprovision.
-
-  if (AdjustConcurrency && os::Solaris::_os_thread_count < (_processors_online+3)) {
-    if (!(flags & THR_BOUND)) {
-      thr_setconcurrency (os::Solaris::_os_thread_count);       // avoid starvation
-    }
-  }
-  // Although this doesn't hurt, we should warn of undefined behavior
-  // when using unbound T1 threads with schedctl().  This should never
-  // happen, as the compiler and VM threads are always created bound
-  DEBUG_ONLY(
-      if ((VMThreadHintNoPreempt || CompilerThreadHintNoPreempt) &&
-          (!os::Solaris::T2_libthread() && (!(flags & THR_BOUND))) &&
-          ((thr_type == vm_thread) || (thr_type == cgc_thread) ||
-           (thr_type == pgc_thread) || (thr_type == compiler_thread && BackgroundCompilation))) {
-         warning("schedctl behavior undefined when Compiler/VM/GC Threads are Unbound");
-      }
-  );
-
 
   // Mark that we don't have an lwp or thread id yet.
   // In case we attempt to set the priority before the thread starts.
@@ -1253,13 +1077,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
 
   // Remember that we created this thread so we can set priority on it
   osthread->set_vm_created();
-
-  // Set the default thread priority.  If using bound threads, setting
-  // lwp priority will be delayed until thread start.
-  set_native_priority(thread,
-                      DefaultThreadPriority == -1 ?
-                        java_to_os_priority[NormPriority] :
-                        DefaultThreadPriority);
 
   // Initial thread state is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
@@ -1442,39 +1259,8 @@ void os::initialize_thread(Thread* thr) {
     jt->set_stack_size(stack_size);
   }
 
-   // 5/22/01: Right now alternate signal stacks do not handle
-   // throwing stack overflow exceptions, see bug 4463178
-   // Until a fix is found for this, T2 will NOT imply alternate signal
-   // stacks.
-   // If using T2 libthread threads, install an alternate signal stack.
-   // Because alternate stacks associate with LWPs on Solaris,
-   // see sigaltstack(2), if using UNBOUND threads, or if UseBoundThreads
-   // we prefer to explicitly stack bang.
-   // If not using T2 libthread, but using UseBoundThreads any threads
-   // (primordial thread, jni_attachCurrentThread) we do not create,
-   // probably are not bound, therefore they can not have an alternate
-   // signal stack. Since our stack banging code is generated and
-   // is shared across threads, all threads must be bound to allow
-   // using alternate signal stacks.  The alternative is to interpose
-   // on _lwp_create to associate an alt sig stack with each LWP,
-   // and this could be a problem when the JVM is embedded.
-   // We would prefer to use alternate signal stacks with T2
-   // Since there is currently no accurate way to detect T2
-   // we do not. Assuming T2 when running T1 causes sig 11s or assertions
-   // on installing alternate signal stacks
-
-
-   // 05/09/03: removed alternate signal stack support for Solaris
-   // The alternate signal stack mechanism is no longer needed to
-   // handle stack overflow. This is now handled by allocating
-   // guard pages (red zone) and stackbanging.
-   // Initially the alternate signal stack mechanism was removed because
-   // it did not work with T1 llibthread. Alternate
-   // signal stacks MUST have all threads bound to lwps. Applications
-   // can create their own threads and attach them without their being
-   // bound under T1. This is frequently the case for the primordial thread.
-   // If we were ever to reenable this mechanism we would need to
-   // use the dynamic check for T2 libthread.
+  // With the T2 libthread (T1 is no longer supported) threads are always bound
+  // and we use stackbanging in all cases.
 
   os::Solaris::init_thread_fpu_state();
   std::set_terminate(_handle_uncaught_cxx_exception);
@@ -1575,58 +1361,31 @@ void* os::thread_local_storage_at(int index) {
 }
 
 
-// gethrtime can move backwards if read from one cpu and then a different cpu
-// getTimeNanos is guaranteed to not move backward on Solaris
-// local spinloop created as faster for a CAS on an int than
-// a CAS on a 64bit jlong. Also Atomic::cmpxchg for jlong is not
-// supported on sparc v8 or pre supports_cx8 intel boxes.
-// oldgetTimeNanos for systems which do not support CAS on 64bit jlong
-// i.e. sparc v8 and pre supports_cx8 (i486) intel boxes
-inline hrtime_t oldgetTimeNanos() {
-  int gotlock = LOCK_INVALID;
-  hrtime_t newtime = gethrtime();
-
-  for (;;) {
-// grab lock for max_hrtime
-    int curlock = max_hrtime_lock;
-    if (curlock & LOCK_BUSY)  continue;
-    if (gotlock = Atomic::cmpxchg(LOCK_BUSY, &max_hrtime_lock, LOCK_FREE) != LOCK_FREE) continue;
-    if (newtime > max_hrtime) {
-      max_hrtime = newtime;
-    } else {
-      newtime = max_hrtime;
-    }
-    // release lock
-    max_hrtime_lock = LOCK_FREE;
-    return newtime;
-  }
-}
-// gethrtime can move backwards if read from one cpu and then a different cpu
-// getTimeNanos is guaranteed to not move backward on Solaris
+// gethrtime() should be monotonic according to the documentation,
+// but some virtualized platforms are known to break this guarantee.
+// getTimeNanos() must be guaranteed not to move backwards, so we
+// are forced to add a check here.
 inline hrtime_t getTimeNanos() {
-  if (VM_Version::supports_cx8()) {
-    const hrtime_t now = gethrtime();
-    // Use atomic long load since 32-bit x86 uses 2 registers to keep long.
-    const hrtime_t prev = Atomic::load((volatile jlong*)&max_hrtime);
-    if (now <= prev)  return prev;   // same or retrograde time;
-    const hrtime_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&max_hrtime, prev);
-    assert(obsv >= prev, "invariant");   // Monotonicity
-    // If the CAS succeeded then we're done and return "now".
-    // If the CAS failed and the observed value "obs" is >= now then
-    // we should return "obs".  If the CAS failed and now > obs > prv then
-    // some other thread raced this thread and installed a new value, in which case
-    // we could either (a) retry the entire operation, (b) retry trying to install now
-    // or (c) just return obs.  We use (c).   No loop is required although in some cases
-    // we might discard a higher "now" value in deference to a slightly lower but freshly
-    // installed obs value.   That's entirely benign -- it admits no new orderings compared
-    // to (a) or (b) -- and greatly reduces coherence traffic.
-    // We might also condition (c) on the magnitude of the delta between obs and now.
-    // Avoiding excessive CAS operations to hot RW locations is critical.
-    // See http://blogs.sun.com/dave/entry/cas_and_cache_trivia_invalidate
-    return (prev == obsv) ? now : obsv ;
-  } else {
-    return oldgetTimeNanos();
+  const hrtime_t now = gethrtime();
+  const hrtime_t prev = max_hrtime;
+  if (now <= prev) {
+    return prev;   // same or retrograde time;
   }
+  const hrtime_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&max_hrtime, prev);
+  assert(obsv >= prev, "invariant");   // Monotonicity
+  // If the CAS succeeded then we're done and return "now".
+  // If the CAS failed and the observed value "obsv" is >= now then
+  // we should return "obsv".  If the CAS failed and now > obsv > prv then
+  // some other thread raced this thread and installed a new value, in which case
+  // we could either (a) retry the entire operation, (b) retry trying to install now
+  // or (c) just return obsv.  We use (c).   No loop is required although in some cases
+  // we might discard a higher "now" value in deference to a slightly lower but freshly
+  // installed obsv value.   That's entirely benign -- it admits no new orderings compared
+  // to (a) or (b) -- and greatly reduces coherence traffic.
+  // We might also condition (c) on the magnitude of the delta between obsv and now.
+  // Avoiding excessive CAS operations to hot RW locations is critical.
+  // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
+  return (prev == obsv) ? now : obsv;
 }
 
 // Time since start-up in seconds to a fine granularity.
@@ -2201,12 +1960,7 @@ void os::Solaris::print_distro_info(outputStream* st) {
 }
 
 void os::Solaris::print_libversion_info(outputStream* st) {
-  if (os::Solaris::T2_libthread()) {
-    st->print("  (T2 libthread)");
-  }
-  else {
-    st->print("  (T1 libthread)");
-  }
+  st->print("  (T2 libthread)");
   st->cr();
 }
 
@@ -3366,11 +3120,20 @@ bool os::can_execute_large_page_memory() {
 
 // Read calls from inside the vm need to perform state transitions
 size_t os::read(int fd, void *buf, unsigned int nBytes) {
-  INTERRUPTIBLE_RETURN_INT_VM(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
+  size_t res;
+  JavaThread* thread = (JavaThread*)Thread::current();
+  assert(thread->thread_state() == _thread_in_vm, "Assumed _thread_in_vm");
+  ThreadBlockInVM tbiv(thread);
+  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
+  return res;
 }
 
 size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
-  INTERRUPTIBLE_RETURN_INT(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
+  size_t res;
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE(::read(fd, buf, (size_t) nBytes), res);
+  return res;
 }
 
 void os::naked_short_sleep(jlong ms) {
@@ -3423,47 +3186,19 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { thr_yield(); return os::YIELD_UNKNOWN; }
 
-
-// On Solaris we found that yield_all doesn't always yield to all other threads.
-// There have been cases where there is a thread ready to execute but it doesn't
-// get an lwp as the VM thread continues to spin with sleeps of 1 millisecond.
-// The 1 millisecond wait doesn't seem long enough for the kernel to issue a
-// SIGWAITING signal which will cause a new lwp to be created. So we count the
-// number of times yield_all is called in the one loop and increase the sleep
-// time after 8 attempts. If this fails too we increase the concurrency level
-// so that the starving thread would get an lwp
-
-void os::yield_all(int attempts) {
+void os::yield_all() {
   // Yields to all threads, including threads with lower priorities
-  if (attempts == 0) {
-    os::sleep(Thread::current(), 1, false);
-  } else {
-    int iterations = attempts % 30;
-    if (iterations == 0 && !os::Solaris::T2_libthread()) {
-      // thr_setconcurrency and _getconcurrency make sense only under T1.
-      int noofLWPS = thr_getconcurrency();
-      if (noofLWPS < (Threads::number_of_threads() + 2)) {
-        thr_setconcurrency(thr_getconcurrency() + 1);
-      }
-    } else if (iterations < 25) {
-      os::sleep(Thread::current(), 1, false);
-    } else {
-      os::sleep(Thread::current(), 10, false);
-    }
-  }
+  os::sleep(Thread::current(), 1, false);
 }
-
-// Called from the tight loops to possibly influence time-sharing heuristics
-void os::loop_breaker(int attempts) {
-  os::yield_all(attempts);
-}
-
 
 // Interface for setting lwp priorities.  If we are using T2 libthread,
 // which forces the use of BoundThreads or we manually set UseBoundThreads,
 // all of our threads will be assigned to real lwp's.  Using the thr_setprio
 // function is meaningless in this mode so we must adjust the real lwp's priority
 // The routines below implement the getting and setting of lwp priorities.
+//
+// Note: T2 is now the only supported libthread. UseBoundThreads flag is
+//       being deprecated and all threads are now BoundThreads
 //
 // Note: There are three priority scales used on Solaris.  Java priotities
 //       which range from 1 to 10, libthread "thr_setprio" scale which range
@@ -3537,29 +3272,19 @@ static int lwp_priocntl_init () {
 
   if (!UseThreadPriorities) return 0;
 
-  // We are using Bound threads, we need to determine our priority ranges
-  if (os::Solaris::T2_libthread() || UseBoundThreads) {
-    // If ThreadPriorityPolicy is 1, switch tables
-    if (ThreadPriorityPolicy == 1) {
-      for (i = 0 ; i < CriticalPriority+1; i++)
-        os::java_to_os_priority[i] = prio_policy1[i];
-    }
-    if (UseCriticalJavaThreadPriority) {
-      // MaxPriority always maps to the FX scheduling class and criticalPrio.
-      // See set_native_priority() and set_lwp_class_and_priority().
-      // Save original MaxPriority mapping in case attempt to
-      // use critical priority fails.
-      java_MaxPriority_to_os_priority = os::java_to_os_priority[MaxPriority];
-      // Set negative to distinguish from other priorities
-      os::java_to_os_priority[MaxPriority] = -criticalPrio;
-    }
-  }
-  // Not using Bound Threads, set to ThreadPolicy 1
-  else {
-    for ( i = 0 ; i < CriticalPriority+1; i++ ) {
+  // If ThreadPriorityPolicy is 1, switch tables
+  if (ThreadPriorityPolicy == 1) {
+    for (i = 0 ; i < CriticalPriority+1; i++)
       os::java_to_os_priority[i] = prio_policy1[i];
-    }
-    return 0;
+  }
+  if (UseCriticalJavaThreadPriority) {
+    // MaxPriority always maps to the FX scheduling class and criticalPrio.
+    // See set_native_priority() and set_lwp_class_and_priority().
+    // Save original MaxPriority mapping in case attempt to
+    // use critical priority fails.
+    java_MaxPriority_to_os_priority = os::java_to_os_priority[MaxPriority];
+    // Set negative to distinguish from other priorities
+    os::java_to_os_priority[MaxPriority] = -criticalPrio;
   }
 
   // Get IDs for a set of well-known scheduling classes.
@@ -3683,10 +3408,6 @@ int     scale_to_lwp_priority (int rMin, int rMax, int x)
 
 
 // set_lwp_class_and_priority
-//
-// Set the class and priority of the lwp.  This call should only
-// be made when using bound threads (T2 threads are bound by default).
-//
 int set_lwp_class_and_priority(int ThreadID, int lwpid,
                                int newPrio, int new_class, bool scale) {
   int rslt;
@@ -3912,23 +3633,20 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
     status = thr_setprio(thread->osthread()->thread_id(), newpri);
   }
 
-  if (os::Solaris::T2_libthread() ||
-      (UseBoundThreads && osthread->is_vm_created())) {
-    int lwp_status =
-      set_lwp_class_and_priority(osthread->thread_id(),
-                                 osthread->lwp_id(),
-                                 newpri,
-                                 fxcritical ? fxLimits.schedPolicy : myClass,
-                                 !fxcritical);
-    if (lwp_status != 0 && fxcritical) {
-      // Try again, this time without changing the scheduling class
-      newpri = java_MaxPriority_to_os_priority;
-      lwp_status = set_lwp_class_and_priority(osthread->thread_id(),
-                                              osthread->lwp_id(),
-                                              newpri, myClass, false);
-    }
-    status |= lwp_status;
+  int lwp_status =
+          set_lwp_class_and_priority(osthread->thread_id(),
+          osthread->lwp_id(),
+          newpri,
+          fxcritical ? fxLimits.schedPolicy : myClass,
+          !fxcritical);
+  if (lwp_status != 0 && fxcritical) {
+    // Try again, this time without changing the scheduling class
+    newpri = java_MaxPriority_to_os_priority;
+    lwp_status = set_lwp_class_and_priority(osthread->thread_id(),
+            osthread->lwp_id(),
+            newpri, myClass, false);
   }
+  status |= lwp_status;
   return (status == 0) ? OS_OK : OS_ERR;
 }
 
@@ -4471,6 +4189,11 @@ void os::Solaris::check_signal_handler(int sig) {
     tty->print_cr("  found:%s", get_signal_handler_name(thisHandler, buf, O_BUFLEN));
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
+    // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
+    if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
+      tty->print_cr("Running in non-interactive shell, %s handler is replaced by shell",
+                    exception_name(sig, buf, O_BUFLEN));
+    }
   } else if(os::Solaris::get_our_sigflags(sig) != 0 && act.sa_flags != os::Solaris::get_our_sigflags(sig)) {
     tty->print("Warning: %s handler flags ", exception_name(sig, buf, O_BUFLEN));
     tty->print("expected:" PTR32_FORMAT, os::Solaris::get_our_sigflags(sig));
@@ -4590,13 +4313,6 @@ const char* os::exception_name(int exception_code, char* buf, size_t size) {
   }
 }
 
-// (Static) wrappers for the new libthread API
-int_fnP_thread_t_iP_uP_stack_tP_gregset_t os::Solaris::_thr_getstate;
-int_fnP_thread_t_i_gregset_t os::Solaris::_thr_setstate;
-int_fnP_thread_t_i os::Solaris::_thr_setmutator;
-int_fnP_thread_t os::Solaris::_thr_suspend_mutator;
-int_fnP_thread_t os::Solaris::_thr_continue_mutator;
-
 // (Static) wrapper for getisax(2) call.
 os::Solaris::getisax_func_t os::Solaris::_getisax = 0;
 
@@ -4631,77 +4347,8 @@ static address resolve_symbol(const char* name) {
   return addr;
 }
 
-
-
-// isT2_libthread()
-//
-// Routine to determine if we are currently using the new T2 libthread.
-//
-// We determine if we are using T2 by reading /proc/self/lstatus and
-// looking for a thread with the ASLWP bit set.  If we find this status
-// bit set, we must assume that we are NOT using T2.  The T2 team
-// has approved this algorithm.
-//
-// We need to determine if we are running with the new T2 libthread
-// since setting native thread priorities is handled differently
-// when using this library.  All threads created using T2 are bound
-// threads. Calling thr_setprio is meaningless in this case.
-//
-bool isT2_libthread() {
-  static prheader_t * lwpArray = NULL;
-  static int lwpSize = 0;
-  static int lwpFile = -1;
-  lwpstatus_t * that;
-  char lwpName [128];
-  bool isT2 = false;
-
-#define ADR(x)  ((uintptr_t)(x))
-#define LWPINDEX(ary,ix)   ((lwpstatus_t *)(((ary)->pr_entsize * (ix)) + (ADR((ary) + 1))))
-
-  lwpFile = ::open("/proc/self/lstatus", O_RDONLY, 0);
-  if (lwpFile < 0) {
-      if (ThreadPriorityVerbose) warning ("Couldn't open /proc/self/lstatus\n");
-      return false;
-  }
-  lwpSize = 16*1024;
-  for (;;) {
-    ::lseek64 (lwpFile, 0, SEEK_SET);
-    lwpArray = (prheader_t *)NEW_C_HEAP_ARRAY(char, lwpSize, mtInternal);
-    if (::read(lwpFile, lwpArray, lwpSize) < 0) {
-      if (ThreadPriorityVerbose) warning("Error reading /proc/self/lstatus\n");
-      break;
-    }
-    if ((lwpArray->pr_nent * lwpArray->pr_entsize) <= lwpSize) {
-       // We got a good snapshot - now iterate over the list.
-      int aslwpcount = 0;
-      for (int i = 0; i < lwpArray->pr_nent; i++ ) {
-        that = LWPINDEX(lwpArray,i);
-        if (that->pr_flags & PR_ASLWP) {
-          aslwpcount++;
-        }
-      }
-      if (aslwpcount == 0) isT2 = true;
-      break;
-    }
-    lwpSize = lwpArray->pr_nent * lwpArray->pr_entsize;
-    FREE_C_HEAP_ARRAY(char, lwpArray, mtInternal);  // retry.
-  }
-
-  FREE_C_HEAP_ARRAY(char, lwpArray, mtInternal);
-  ::close (lwpFile);
-  if (ThreadPriorityVerbose) {
-    if (isT2) tty->print_cr("We are running with a T2 libthread\n");
-    else tty->print_cr("We are not running with a T2 libthread\n");
-  }
-  return isT2;
-}
-
-
 void os::Solaris::libthread_init() {
   address func = (address)dlsym(RTLD_DEFAULT, "_thr_suspend_allmutators");
-
-  // Determine if we are running with the new T2 libthread
-  os::Solaris::set_T2_libthread(isT2_libthread());
 
   lwp_priocntl_init();
 
@@ -4712,22 +4359,6 @@ void os::Solaris::libthread_init() {
     // later) that it will have a new enough libthread.so.
     guarantee(func != NULL, "libthread.so is too old.");
   }
-
-  // Initialize the new libthread getstate API wrappers
-  func = resolve_symbol("thr_getstate");
-  os::Solaris::set_thr_getstate(CAST_TO_FN_PTR(int_fnP_thread_t_iP_uP_stack_tP_gregset_t, func));
-
-  func = resolve_symbol("thr_setstate");
-  os::Solaris::set_thr_setstate(CAST_TO_FN_PTR(int_fnP_thread_t_i_gregset_t, func));
-
-  func = resolve_symbol("thr_setmutator");
-  os::Solaris::set_thr_setmutator(CAST_TO_FN_PTR(int_fnP_thread_t_i, func));
-
-  func = resolve_symbol("thr_suspend_mutator");
-  os::Solaris::set_thr_suspend_mutator(CAST_TO_FN_PTR(int_fnP_thread_t, func));
-
-  func = resolve_symbol("thr_continue_mutator");
-  os::Solaris::set_thr_continue_mutator(CAST_TO_FN_PTR(int_fnP_thread_t, func));
 
   int size;
   void (*handler_info_func)(address *, int *);
@@ -5305,6 +4936,8 @@ int os::fsync(int fd)  {
 }
 
 int os::available(int fd, jlong *bytes) {
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
   jlong cur, end;
   int mode;
   struct stat64 buf64;
@@ -5312,14 +4945,9 @@ int os::available(int fd, jlong *bytes) {
   if (::fstat64(fd, &buf64) >= 0) {
     mode = buf64.st_mode;
     if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      /*
-      * XXX: is the following call interruptible? If so, this might
-      * need to go through the INTERRUPT_IO() wrapper as for other
-      * blocking, interruptible calls in this file.
-      */
       int n,ioctl_return;
 
-      INTERRUPTIBLE(::ioctl(fd, FIONREAD, &n),ioctl_return,os::Solaris::clear_interrupted);
+      RESTARTABLE(::ioctl(fd, FIONREAD, &n), ioctl_return);
       if (ioctl_return>= 0) {
           *bytes = n;
         return 1;
@@ -5634,11 +5262,7 @@ void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
 }
 
 bool os::is_thread_cpu_time_supported() {
-  if ( os::Solaris::T2_libthread() || UseBoundThreads ) {
-    return true;
-  } else {
-    return false;
-  }
+  return true;
 }
 
 // System loadavg support.  Returns -1 if load average cannot be obtained.
@@ -6250,7 +5874,11 @@ bool os::is_headless_jre() {
 }
 
 size_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  INTERRUPTIBLE_RETURN_INT(::write(fd, buf, nBytes), os::Solaris::clear_interrupted);
+  size_t res;
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+  return res;
 }
 
 int os::close(int fd) {
@@ -6262,11 +5890,15 @@ int os::socket_close(int fd) {
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
-  INTERRUPTIBLE_RETURN_INT((int)::recv(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::recv(fd, buf, nBytes, flags));
 }
 
 int os::send(int fd, char* buf, size_t nBytes, uint flags) {
-  INTERRUPTIBLE_RETURN_INT((int)::send(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::send(fd, buf, nBytes, flags));
 }
 
 int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
@@ -6287,11 +5919,14 @@ int os::timeout(int fd, long timeout) {
   pfd.fd = fd;
   pfd.events = POLLIN;
 
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+
   gettimeofday(&t, &aNull);
   prevtime = ((julong)t.tv_sec * 1000)  +  t.tv_usec / 1000;
 
   for(;;) {
-    INTERRUPTIBLE_NORESTART(::poll(&pfd, 1, timeout), res, os::Solaris::clear_interrupted);
+    res = ::poll(&pfd, 1, timeout);
     if(res == OS_ERR && errno == EINTR) {
         if(timeout != -1) {
           gettimeofday(&t, &aNull);
@@ -6307,17 +5942,30 @@ int os::timeout(int fd, long timeout) {
 
 int os::connect(int fd, struct sockaddr *him, socklen_t len) {
   int _result;
-  INTERRUPTIBLE_NORESTART(::connect(fd, him, len), _result,\
-                          os::Solaris::clear_interrupted);
+  _result = ::connect(fd, him, len);
 
-  // Depending on when thread interruption is reset, _result could be
-  // one of two values when errno == EINTR
-
-  if (((_result == OS_INTRPT) || (_result == OS_ERR))
-      && (errno == EINTR)) {
+  // On Solaris, when a connect() call is interrupted, the connection
+  // can be established asynchronously (see 6343810). Subsequent calls
+  // to connect() must check the errno value which has the semantic
+  // described below (copied from the connect() man page). Handling
+  // of asynchronously established connections is required for both
+  // blocking and non-blocking sockets.
+  //     EINTR            The  connection  attempt  was   interrupted
+  //                      before  any data arrived by the delivery of
+  //                      a signal. The connection, however, will  be
+  //                      established asynchronously.
+  //
+  //     EINPROGRESS      The socket is non-blocking, and the connec-
+  //                      tion  cannot  be completed immediately.
+  //
+  //     EALREADY         The socket is non-blocking,  and a previous
+  //                      connection  attempt  has  not yet been com-
+  //                      pleted.
+  //
+  //     EISCONN          The socket is already connected.
+  if (_result == OS_ERR && errno == EINTR) {
      /* restarting a connect() changes its errno semantics */
-     INTERRUPTIBLE(::connect(fd, him, len), _result,\
-                   os::Solaris::clear_interrupted);
+     RESTARTABLE(::connect(fd, him, len), _result);
      /* undo these changes */
      if (_result == OS_ERR) {
        if (errno == EALREADY) {
@@ -6335,20 +5983,23 @@ int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
   if (fd < 0) {
     return OS_ERR;
   }
-  INTERRUPTIBLE_RETURN_INT((int)::accept(fd, him, len),\
-                           os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::accept(fd, him, len));
 }
 
 int os::recvfrom(int fd, char* buf, size_t nBytes, uint flags,
                  sockaddr* from, socklen_t* fromlen) {
-  INTERRUPTIBLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen),\
-                           os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen));
 }
 
 int os::sendto(int fd, char* buf, size_t len, uint flags,
                struct sockaddr* to, socklen_t tolen) {
-  INTERRUPTIBLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen),\
-                           os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+  RESTARTABLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen));
 }
 
 int os::socket_available(int fd, jint *pbytes) {
@@ -6363,8 +6014,9 @@ int os::socket_available(int fd, jint *pbytes) {
 }
 
 int os::bind(int fd, struct sockaddr* him, socklen_t len) {
-   INTERRUPTIBLE_RETURN_INT_NORESTART(::bind(fd, him, len),\
-                                      os::Solaris::clear_interrupted);
+  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
+          "Assumed _thread_in_native");
+   return ::bind(fd, him, len);
 }
 
 // Get the default path to the core file

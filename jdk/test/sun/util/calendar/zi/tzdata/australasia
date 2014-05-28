@@ -377,16 +377,18 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=6702&catid=71&Itemid=155
 
 # From the Fijian Government Media Center (2013-08-30) via David Wheeler:
-# Fiji will start daylight savings on Sunday 27th October, 2013 and end at 3am
-# on Sunday 19th January, 2014....  move clocks forward by one hour from 2am
+# Fiji will start daylight savings on Sunday 27th October, 2013 ...
+# move clocks forward by one hour from 2am
 # http://www.fiji.gov.fj/Media-Center/Press-Releases/DAYLIGHT-SAVING-STARTS-ON-SUNDAY,-27th-OCTOBER-201.aspx
-#
-# From Paul Eggert (2013-09-09):
+
+# From Steffen Thorsen (2013-01-10):
+# Fiji will end DST on 2014-01-19 02:00:
+# http://www.fiji.gov.fj/Media-Center/Press-Releases/DAYLIGHT-SAVINGS-TO-END-THIS-MONTH-%281%29.aspx
+
+# From Paul Eggert (2014-01-10):
 # For now, guess that Fiji springs forward the Sunday before the fourth
-# Monday in October.  This matches both recent practice and
-# timeanddate.com's current spring-forward prediction.
-# For the January 2014 transition we guessed right while timeanddate.com
-# guessed wrong, so leave the fall-back prediction alone.
+# Monday in October, and springs back the penultimate Sunday in January.
+# This is ad hoc, but matches recent practice.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	S
@@ -395,7 +397,8 @@ Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	S
 Rule	Fiji	2010	only	-	Mar	lastSun	3:00	0	-
 Rule	Fiji	2010	max	-	Oct	Sun>=21	2:00	1:00	S
 Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
-Rule	Fiji	2012	max	-	Jan	Sun>=18	3:00	0	-
+Rule	Fiji	2012	2013	-	Jan	Sun>=18	3:00	0	-
+Rule	Fiji	2014	max	-	Jan	Sun>=18	2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26	# Suva
 			12:00	Fiji	FJ%sT	# Fiji Time
@@ -783,14 +786,29 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 
 # Johnston
 #
-# From Paul Eggert (2013-09-03):
+# From Paul Eggert (2014-03-11):
+# Sometimes Johnston kept Hawaii time, and sometimes it was an hour behind.
+# Details are uncertain.  We have no data for Johnston after 1970, so
+# treat it like Hawaii for now.
+#
 # In his memoirs of June 6th to October 4, 1945
 # <http://www.315bw.org/Herb_Bach.htm> (2005), Herbert C. Bach writes,
 # "We started our letdown to Kwajalein Atoll and landed there at 5:00 AM
 # Johnston time, 1:30 AM Kwajalein time."  This was in June 1945, and
 # confirms that Johnston kept the same time as Honolulu in summer 1945.
-# We have no better information, so for now, assume this has been true
-# indefinitely into the past.
+#
+# From Lyle McElhaney (2014-03-11):
+# [W]hen JI was being used for that [atomic bomb] testing, the time being used
+# was not Hawaiian time but rather the same time being used on the ships,
+# which had a GMT offset of -11 hours.  This apparently applied to at least the
+# time from Operation Newsreel (Hardtack I/Teak shot, 1958-08-01) to the last
+# Operation Fishbowl shot (Tightrope, 1962-11-04).... [See] Herman Hoerlin,
+# "The United States High-Altitude Test Experience: A Review Emphasizing the
+# Impact on the Environment", Los Alamos LA-6405, Oct 1976
+# <http://www.fas.org/sgp/othergov/doe/lanl/docs1/00322994.pdf>.
+# See the table on page 4 where he lists GMT and local times for the tests; a
+# footnote for the JI tests reads that local time is "JI time = Hawaii Time
+# Minus One Hour".
 #
 # See 'northamerica' for Pacific/Johnston.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,74 +27,52 @@
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @author   jamieh
- * @library  ../lib/
- * @build    JavadocTester TestAnnotationTypes
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestAnnotationTypes
  */
 
 public class TestAnnotationTypes extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4973609-8015249";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",
-            "<li>Summary:&nbsp;</li>" + NL + "<li><a href=\"#annotation.type." +
-            "field.summary\">Field</a>&nbsp;|&nbsp;</li>"},
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",
-            "<li>Detail:&nbsp;</li>" + NL + "<li><a href=\"#annotation.type." +
-            "field.detail\">Field</a>&nbsp;|&nbsp;</li>"},
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",
-            "<!-- =========== ANNOTATION TYPE FIELD SUMMARY =========== -->"},
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",
-            "<h3>Field Summary</h3>"},
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",
-            "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../" +
-            "pkg/AnnotationTypeField.html#DEFAULT_NAME\">DEFAULT_NAME</a></span>" +
-            "</code>&nbsp;</td>"},
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",
-            "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->"},
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",
-            "<h4>DEFAULT_NAME</h4>" + NL + "<pre>public static final&nbsp;java." +
-            "lang.String&nbsp;DEFAULT_NAME</pre>"},
-        {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-            "<li>Summary:&nbsp;</li>" + NL + "<li>Field&nbsp;|&nbsp;</li>"},
-        {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-            "<li>Detail:&nbsp;</li>" + NL + "<li>Field&nbsp;|&nbsp;</li>"},
-    };
-    private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-            "<HR>" + NL + NL + "<P>" + NL + NL + "<P>" +
-            "<!-- ========= END OF CLASS DATA ========= -->" + "<HR>"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestAnnotationTypes tester = new TestAnnotationTypes();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg/AnnotationTypeField.html", true,
+                "<li>Summary:&nbsp;</li>\n"
+                + "<li><a href=\"#annotation.type."
+                + "field.summary\">Field</a>&nbsp;|&nbsp;</li>",
+                "<li>Detail:&nbsp;</li>\n"
+                + "<li><a href=\"#annotation.type."
+                + "field.detail\">Field</a>&nbsp;|&nbsp;</li>",
+                "<!-- =========== ANNOTATION TYPE FIELD SUMMARY =========== -->",
+                "<h3>Field Summary</h3>",
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../"
+                + "pkg/AnnotationTypeField.html#DEFAULT_NAME\">DEFAULT_NAME</a></span>"
+                + "</code>&nbsp;</td>",
+                "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->",
+                "<h4>DEFAULT_NAME</h4>\n"
+                + "<pre>public static final&nbsp;java."
+                + "lang.String&nbsp;DEFAULT_NAME</pre>");
+
+        checkOutput("pkg/AnnotationType.html", true,
+                "<li>Summary:&nbsp;</li>\n"
+                + "<li>Field&nbsp;|&nbsp;</li>",
+                "<li>Detail:&nbsp;</li>\n"
+                + "<li>Field&nbsp;|&nbsp;</li>");
+
+        checkOutput("pkg/AnnotationType.html", false,
+                "<HR>\n\n"
+                + "<P>\n\n"
+                + "<P>"
+                + "<!-- ========= END OF CLASS DATA ========= -->" + "<HR>");
     }
 }

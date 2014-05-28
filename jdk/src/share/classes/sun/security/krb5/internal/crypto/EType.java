@@ -58,8 +58,8 @@ public abstract class EType {
         boolean allowed = false;
         try {
             Config cfg = Config.getInstance();
-            String temp = cfg.get("libdefaults", "allow_weak_crypto");
-            if (temp != null && temp.equals("true")) allowed = true;
+            allowed = cfg.getBooleanObject("libdefaults", "allow_weak_crypto")
+                    == Boolean.TRUE;
         } catch (Exception exc) {
             if (DEBUG) {
                 System.out.println ("Exception in getting allow_weak_crypto, " +

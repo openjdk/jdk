@@ -29,29 +29,53 @@
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1AllocRegion.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1RemSet.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegionSet.inline.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "utilities/taskqueue.hpp"
 
 // Inline functions for G1CollectedHeap
 
-template <class T>
-inline HeapRegion*
-G1CollectedHeap::heap_region_containing(const T addr) const {
-  HeapRegion* hr = _hrs.addr_to_region((HeapWord*) addr);
-  // hr can be null if addr in perm_gen
-  if (hr != NULL && hr->continuesHumongous()) {
-    hr = hr->humongous_start_region();
-  }
-  return hr;
-}
+// Return the region with the given index. It assumes the index is valid.
+inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrs.at(index); }
 
 template <class T>
 inline HeapRegion*
 G1CollectedHeap::heap_region_containing_raw(const T addr) const {
-  assert(_g1_reserved.contains((const void*) addr), "invariant");
-  HeapRegion* res = _hrs.addr_to_region_unsafe((HeapWord*) addr);
-  return res;
+  assert(addr != NULL, "invariant");
+  assert(_g1_reserved.contains((const void*) addr),
+      err_msg("Address "PTR_FORMAT" is outside of the heap ranging from ["PTR_FORMAT" to "PTR_FORMAT")",
+          (void*)addr, _g1_reserved.start(), _g1_reserved.end()));
+  return _hrs.addr_to_region((HeapWord*) addr);
+}
+
+template <class T>
+inline HeapRegion*
+G1CollectedHeap::heap_region_containing(const T addr) const {
+  HeapRegion* hr = heap_region_containing_raw(addr);
+  if (hr->continuesHumongous()) {
+    return hr->humongous_start_region();
+  }
+  return hr;
+}
+
+inline void G1CollectedHeap::reset_gc_time_stamp() {
+  _gc_time_stamp = 0;
+  OrderAccess::fence();
+  // Clear the cached CSet starting regions and time stamps.
+  // Their validity is dependent on the GC timestamp.
+  clear_cset_start_regions();
+}
+
+inline void G1CollectedHeap::increment_gc_time_stamp() {
+  ++_gc_time_stamp;
+  OrderAccess::fence();
+}
+
+inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
+  _old_set.remove(hr);
 }
 
 inline bool G1CollectedHeap::obj_in_cs(oop obj) {
@@ -125,8 +149,7 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   // have to keep calling heap_region_containing_raw() in the
   // asserts below.
   DEBUG_ONLY(HeapRegion* containing_hr = heap_region_containing_raw(start);)
-  assert(containing_hr != NULL && start != NULL && word_size > 0,
-         "pre-condition");
+  assert(word_size > 0, "pre-condition");
   assert(containing_hr->is_in(start), "it should contain start");
   assert(containing_hr->is_young(), "it should be young");
   assert(!containing_hr->isHumongous(), "it should not be humongous");
@@ -148,6 +171,19 @@ inline bool G1CollectedHeap::isMarkedPrev(oop obj) const {
 
 inline bool G1CollectedHeap::isMarkedNext(oop obj) const {
   return _cm->nextMarkBitMap()->isMarked((HeapWord *)obj);
+}
+
+
+// This is a fast test on whether a reference points into the
+// collection set or not. Assume that the reference
+// points into the heap.
+inline bool G1CollectedHeap::in_cset_fast_test(oop obj) {
+  bool ret = _in_cset_fast_test.get_by_address((HeapWord*)obj);
+  // let's make sure the result is consistent with what the slower
+  // test returns
+  assert( ret || !obj_in_cs(obj), "sanity");
+  assert(!ret ||  obj_in_cs(obj), "sanity");
+  return ret;
 }
 
 #ifndef PRODUCT
@@ -222,5 +258,120 @@ inline void G1CollectedHeap::reset_evacuation_should_fail() {
   }
 }
 #endif  // #ifndef PRODUCT
+
+inline bool G1CollectedHeap::is_in_young(const oop obj) {
+  if (obj == NULL) {
+    return false;
+  }
+  return heap_region_containing(obj)->is_young();
+}
+
+// We don't need barriers for initializing stores to objects
+// in the young gen: for the SATB pre-barrier, there is no
+// pre-value that needs to be remembered; for the remembered-set
+// update logging post-barrier, we don't maintain remembered set
+// information for young gen objects.
+inline bool G1CollectedHeap::can_elide_initializing_store_barrier(oop new_obj) {
+  return is_in_young(new_obj);
+}
+
+inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
+  if (obj == NULL) {
+    return false;
+  }
+  return is_obj_dead(obj, heap_region_containing(obj));
+}
+
+inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
+  if (obj == NULL) {
+    return false;
+  }
+  return is_obj_ill(obj, heap_region_containing(obj));
+}
+
+template <class T> inline void G1ParScanThreadState::immediate_rs_update(HeapRegion* from, T* p, int tid) {
+  if (!from->is_survivor()) {
+    _g1_rem->par_write_ref(from, p, tid);
+  }
+}
+
+template <class T> void G1ParScanThreadState::update_rs(HeapRegion* from, T* p, int tid) {
+  if (G1DeferredRSUpdate) {
+    deferred_rs_update(from, p, tid);
+  } else {
+    immediate_rs_update(from, p, tid);
+  }
+}
+
+
+inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
+  assert(has_partial_array_mask(p), "invariant");
+  oop from_obj = clear_partial_array_mask(p);
+
+  assert(Universe::heap()->is_in_reserved(from_obj), "must be in heap.");
+  assert(from_obj->is_objArray(), "must be obj array");
+  objArrayOop from_obj_array = objArrayOop(from_obj);
+  // The from-space object contains the real length.
+  int length                 = from_obj_array->length();
+
+  assert(from_obj->is_forwarded(), "must be forwarded");
+  oop to_obj                 = from_obj->forwardee();
+  assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
+  objArrayOop to_obj_array   = objArrayOop(to_obj);
+  // We keep track of the next start index in the length field of the
+  // to-space object.
+  int next_index             = to_obj_array->length();
+  assert(0 <= next_index && next_index < length,
+         err_msg("invariant, next index: %d, length: %d", next_index, length));
+
+  int start                  = next_index;
+  int end                    = length;
+  int remainder              = end - start;
+  // We'll try not to push a range that's smaller than ParGCArrayScanChunk.
+  if (remainder > 2 * ParGCArrayScanChunk) {
+    end = start + ParGCArrayScanChunk;
+    to_obj_array->set_length(end);
+    // Push the remainder before we process the range in case another
+    // worker has run out of things to do and can steal it.
+    oop* from_obj_p = set_partial_array_mask(from_obj);
+    push_on_queue(from_obj_p);
+  } else {
+    assert(length == end, "sanity");
+    // We'll process the final range for this object. Restore the length
+    // so that the heap remains parsable in case of evacuation failure.
+    to_obj_array->set_length(end);
+  }
+  _scanner.set_region(_g1h->heap_region_containing_raw(to_obj));
+  // Process indexes [start,end). It will also process the header
+  // along with the first chunk (i.e., the chunk with start == 0).
+  // Note that at this point the length field of to_obj_array is not
+  // correct given that we are using it to keep track of the next
+  // start index. oop_iterate_range() (thankfully!) ignores the length
+  // field and only relies on the start / end parameters.  It does
+  // however return the size of the object which will be incorrect. So
+  // we have to ignore it even if we wanted to use it.
+  to_obj_array->oop_iterate_range(&_scanner, start, end);
+}
+
+template <class T> inline void G1ParScanThreadState::deal_with_reference(T* ref_to_scan) {
+  if (!has_partial_array_mask(ref_to_scan)) {
+    // Note: we can use "raw" versions of "region_containing" because
+    // "obj_to_scan" is definitely in the heap, and is not in a
+    // humongous region.
+    HeapRegion* r = _g1h->heap_region_containing_raw(ref_to_scan);
+    do_oop_evac(ref_to_scan, r);
+  } else {
+    do_oop_partial_array((oop*)ref_to_scan);
+  }
+}
+
+inline void G1ParScanThreadState::deal_with_reference(StarTask ref) {
+  assert(verify_task(ref), "sanity");
+  if (ref.is_narrow()) {
+    deal_with_reference((narrowOop*)ref);
+  } else {
+    deal_with_reference((oop*)ref);
+  }
+}
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTEDHEAP_INLINE_HPP

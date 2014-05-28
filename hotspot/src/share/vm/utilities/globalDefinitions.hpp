@@ -373,6 +373,21 @@ const uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlass
 
 // Machine dependent stuff
 
+#if defined(X86) && defined(COMPILER2) && !defined(JAVASE_EMBEDDED)
+// Include Restricted Transactional Memory lock eliding optimization
+#define INCLUDE_RTM_OPT 1
+#define RTM_OPT_ONLY(code) code
+#else
+#define INCLUDE_RTM_OPT 0
+#define RTM_OPT_ONLY(code)
+#endif
+// States of Restricted Transactional Memory usage.
+enum RTMState {
+  NoRTM      = 0x2, // Don't use RTM
+  UseRTM     = 0x1, // Use RTM
+  ProfileRTM = 0x0  // Use RTM with abort ratio calculation
+};
+
 #ifdef TARGET_ARCH_x86
 # include "globalDefinitions_x86.hpp"
 #endif
@@ -1309,10 +1324,12 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 #define PTR_FORMAT    "0x%08"  PRIxPTR
 #endif  // _LP64
 
-#define SSIZE_FORMAT          "%" PRIdPTR
-#define SIZE_FORMAT           "%" PRIuPTR
-#define SSIZE_FORMAT_W(width) "%" #width PRIdPTR
-#define SIZE_FORMAT_W(width)  "%" #width PRIuPTR
+#define SSIZE_FORMAT             "%"   PRIdPTR
+#define SIZE_FORMAT              "%"   PRIuPTR
+#define SIZE_FORMAT_HEX          "0x%" PRIxPTR
+#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
+#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
+#define SIZE_FORMAT_HEX_W(width) "0x%" #width PRIxPTR
 
 #define INTX_FORMAT           "%" PRIdPTR
 #define UINTX_FORMAT          "%" PRIuPTR

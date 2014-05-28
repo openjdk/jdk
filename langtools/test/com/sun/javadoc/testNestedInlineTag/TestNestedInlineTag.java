@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @summary Test for nested inline tags. *
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
  * @build testtaglets.UnderlineTaglet
  * @build testtaglets.BoldTaglet
  * @build testtaglets.GreenTaglet
- * @build TestNestedInlineTag
  * @run main TestNestedInlineTag
  */
 
@@ -38,7 +37,6 @@
  * This should be green, underlined and bold (Class): {@underline {@bold {@green My test}}} .
  */
 public class TestNestedInlineTag extends JavadocTester {
-
     /**
      * This should be green, underlined and bold (Field): {@underline {@bold {@green My test}}} .
      */
@@ -54,60 +52,35 @@ public class TestNestedInlineTag extends JavadocTester {
      */
     public void method(){}
 
-    private static final String BUG_ID = "no-bug-id";
-    private static final String[][] TEST = {
-        //Test nested inline tag in class description.
-        {BUG_ID + FS + "TestNestedInlineTag.html",
-         "This should be green, underlined and bold (Class): <u><b><font color=\"green\">My test</font></b></u>"
-        },
-
-        //Test nested inline tag in field description.
-        {BUG_ID + FS + "TestNestedInlineTag.html",
-         "This should be green, underlined and bold (Field): <u><b><font color=\"green\">My test</font></b></u>"
-        },
-
-        //Test nested inline tag in constructor description.
-        {BUG_ID + FS + "TestNestedInlineTag.html",
-         "This should be green, underlined and bold (Constructor): <u><b><font color=\"green\">My test</font></b></u>"
-        },
-
-        //Test nested inline tag in method description.
-        {BUG_ID + FS + "TestNestedInlineTag.html",
-         "This should be green, underlined and bold (Method): <u><b><font color=\"green\">My test</font></b></u>"
-        }
-    };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
-    private static final String[] ARGS =
-        new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            "-taglet", "testtaglets.UnderlineTaglet",
-            "-taglet", "testtaglets.BoldTaglet",
-            "-taglet", "testtaglets.GreenTaglet",
-            SRC_DIR + FS + "TestNestedInlineTag.java"
-        };
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestNestedInlineTag tester = new TestNestedInlineTag();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-taglet", "testtaglets.UnderlineTaglet",
+                "-taglet", "testtaglets.BoldTaglet",
+                "-taglet", "testtaglets.GreenTaglet",
+                testSrc("TestNestedInlineTag.java"));
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("TestNestedInlineTag.html", true,
+                //Test nested inline tag in class description.
+                "This should be green, underlined and bold (Class): <u><b><font color=\"green\">My test</font></b></u>",
+                //Test nested inline tag in field description.
+                "This should be green, underlined and bold (Field): <u><b><font color=\"green\">My test</font></b></u>",
+                //Test nested inline tag in constructor description.
+                "This should be green, underlined and bold (Constructor): <u><b><font color=\"green\">My test</font></b></u>",
+                //Test nested inline tag in method description.
+                "This should be green, underlined and bold (Method): <u><b><font color=\"green\">My test</font></b></u>"
+        );
     }
 }

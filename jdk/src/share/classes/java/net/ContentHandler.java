@@ -46,15 +46,28 @@ import java.io.IOException;
  * <p>
  * If no content handler could be found, URLConnection will
  * look for a content handler in a user-defineable set of places.
- * By default it looks in sun.net.www.content, but users can define a
- * vertical-bar delimited set of class prefixes to search through in
- * addition by defining the java.content.handler.pkgs property.
- * The class name must be of the form:
- * <pre>
- *     {package-prefix}.{major}.{minor}
- * e.g.
+ * Users can define a vertical-bar delimited set of class prefixes
+ * to search through by defining the <i>java.content.handler.pkgs</i>
+ * property. The class name must be of the form:
+ * <blockquote>
+ *     <i>{package-prefix}.{major}.{minor}</i>
+ *     <P>
+ *     where <i>{major}.{minor}</i> is formed by taking the
+ *     content-type string, replacing all slash characters with a
+ *     {@code period} ('.'), and all other non-alphanumeric characters
+ *     with the underscore character '{@code _}'. The alphanumeric
+ *     characters are specifically the 26 uppercase ASCII letters
+ *     '{@code A}' through '{@code Z}', the 26 lowercase ASCII
+ *     letters '{@code a}' through '{@code z}', and the 10 ASCII
+ *     digits '{@code 0}' through '{@code 9}'.
+ *     <p>
+ *     e.g.
  *     YoyoDyne.experimental.text.plain
- * </pre>
+ * </blockquote>
+ * If no user-defined content handler is found, then the system
+ * tries to load a specific <i>content-type</i> handler from one
+ * of the built-in handlers, if one exists.
+ * <p>
  * If the loading of the content handler class would be performed by
  * a classloader that is outside of the delegation chain of the caller,
  * the JVM will need the RuntimePermission "getClassLoader".

@@ -37,8 +37,10 @@
 #include "oops/methodData.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
+#include "utilities/resourceHash.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
@@ -459,7 +461,9 @@ void nmethod::init_defaults() {
   _scavenge_root_link      = NULL;
   _scavenge_root_state     = 0;
   _compiler                = NULL;
-
+#if INCLUDE_RTM_OPT
+  _rtm_state               = NoRTM;
+#endif
 #ifdef HAVE_DTRACE_H
   _trap_offset             = 0;
 #endif // def HAVE_DTRACE_H
@@ -747,7 +751,11 @@ nmethod::nmethod(
     _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
     code_buffer->copy_values_to(this);
-    debug_only(verify_scavenge_root_oops());
+    if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
+      CodeCache::add_scavenge_root_nmethod(this);
+      Universe::heap()->register_nmethod(this);
+    }
+    DEBUG_ONLY(verify_scavenge_root_oops();)
     CodeCache::commit(this);
   }
 
@@ -2135,7 +2143,11 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
 
- GenericHashtable<DependencySignature, ResourceObj>* table = new GenericHashtable<DependencySignature, ResourceObj>(11027);
+ typedef ResourceHashtable<DependencySignature, int, &DependencySignature::hash,
+                           &DependencySignature::equals, 11027> DepTable;
+
+ DepTable* table = new DepTable();
+
   // Iterate over live nmethods and check dependencies of all nmethods that are not
   // marked for deoptimization. A particular dependency is only checked once.
   for(nmethod* nm = CodeCache::alive_nmethod(CodeCache::first()); nm != NULL; nm = CodeCache::alive_nmethod(CodeCache::next(nm))) {
@@ -2143,9 +2155,10 @@ void nmethod::check_all_dependencies(DepChange& changes) {
       for (Dependencies::DepStream deps(nm); deps.next(); ) {
         // Construct abstraction of a dependency.
         DependencySignature* current_sig = new DependencySignature(deps);
-        // Determine if 'deps' is already checked. table->add() returns
-        // 'true' if the dependency was added (i.e., was not in the hashtable).
-        if (table->add(current_sig)) {
+
+        // Determine if dependency is already checked. table->put(...) returns
+        // 'true' if the dependency is added (i.e., was not in the hashtable).
+        if (table->put(*current_sig, 1)) {
           if (deps.check_dependency() != NULL) {
             // Dependency checking failed. Print out information about the failed
             // dependency and finally fail with an assert. We can fail here, since
@@ -2276,13 +2289,13 @@ nmethodLocker::nmethodLocker(address pc) {
 void nmethodLocker::lock_nmethod(nmethod* nm, bool zombie_ok) {
   if (nm == NULL)  return;
   Atomic::inc(&nm->_lock_count);
-  guarantee(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method");
+  assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method");
 }
 
 void nmethodLocker::unlock_nmethod(nmethod* nm) {
   if (nm == NULL)  return;
   Atomic::dec(&nm->_lock_count);
-  guarantee(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
+  assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
 }
 
 

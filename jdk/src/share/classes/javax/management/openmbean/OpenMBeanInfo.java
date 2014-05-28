@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,6 @@ public interface OpenMBeanInfo {
      * for any two <code>OpenMBeanInfo</code> instances <code>t1</code> and <code>t2</code>,
      * as required by the general contract of the method
      * {@link Object#hashCode() Object.hashCode()}.
-     * <p>
      *
      * @return  the hash code value for this <code>OpenMBeanInfo</code> instance
      */

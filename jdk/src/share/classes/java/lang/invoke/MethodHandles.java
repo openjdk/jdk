@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import sun.security.util.SecurityConstants;
  * <li>Combinator methods, which combine or transform pre-existing method handles into new ones.
  * <li>Other factory methods to create method handles that emulate other common JVM operations or control flow patterns.
  * </ul>
- * <p>
+ *
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
@@ -2070,6 +2070,7 @@ assert((int)twice.invokeExact(21) == 42);
      */
     public static
     MethodHandle permuteArguments(MethodHandle target, MethodType newType, int... reorder) {
+        reorder = reorder.clone();
         checkReorder(reorder, newType, target.type());
         return target.permuteArguments(newType, reorder);
     }
@@ -2264,6 +2265,7 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
             throw newIllegalArgumentException("no argument type to remove");
         ArrayList<Class<?>> ptypes = new ArrayList<>(oldType.parameterList());
         ptypes.addAll(pos, valueTypes);
+        if (ptypes.size() != inargs)  throw newIllegalArgumentException("valueTypes");
         MethodType newType = MethodType.methodType(oldType.returnType(), ptypes);
         return target.dropArguments(newType, pos, dropped);
     }

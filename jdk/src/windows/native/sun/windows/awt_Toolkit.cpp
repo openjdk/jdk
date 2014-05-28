@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,35 +172,22 @@ void AwtToolkit::SetBusy(BOOL busy) {
 
     if (awtAutoShutdownClass == NULL) {
         jclass awtAutoShutdownClassLocal = env->FindClass("sun/awt/AWTAutoShutdown");
-        if (!JNU_IsNull(env, safe_ExceptionOccurred(env))) {
-            env->ExceptionDescribe();
-            env->ExceptionClear();
-        }
         DASSERT(awtAutoShutdownClassLocal != NULL);
-        if (awtAutoShutdownClassLocal == NULL) {
-            return;
-        }
+        if (!awtAutoShutdownClassLocal) throw std::bad_alloc();
 
         awtAutoShutdownClass = (jclass)env->NewGlobalRef(awtAutoShutdownClassLocal);
         env->DeleteLocalRef(awtAutoShutdownClassLocal);
+        if (!awtAutoShutdownClass) throw std::bad_alloc();
 
         notifyBusyMethodID = env->GetStaticMethodID(awtAutoShutdownClass,
                                                     "notifyToolkitThreadBusy", "()V");
-        if (!JNU_IsNull(env, safe_ExceptionOccurred(env))) {
-            env->ExceptionDescribe();
-            env->ExceptionClear();
-        }
+        DASSERT(notifyBusyMethodID != NULL);
+        if (!notifyBusyMethodID) throw std::bad_alloc();
+
         notifyFreeMethodID = env->GetStaticMethodID(awtAutoShutdownClass,
                                                     "notifyToolkitThreadFree", "()V");
-        if (!JNU_IsNull(env, safe_ExceptionOccurred(env))) {
-            env->ExceptionDescribe();
-            env->ExceptionClear();
-        }
-        DASSERT(notifyBusyMethodID != NULL);
         DASSERT(notifyFreeMethodID != NULL);
-        if (notifyBusyMethodID == NULL || notifyFreeMethodID == NULL) {
-            return;
-        }
+        if (!notifyFreeMethodID) throw std::bad_alloc();
     } /* awtAutoShutdownClass == NULL*/
 
     if (busy) {
@@ -364,6 +351,7 @@ struct ToolkitThreadProc_Data {
     HANDLE hCompleted;
 
     jobject thread;
+    jobject threadGroup;
 };
 
 void ToolkitThreadProc(void *param)
@@ -376,7 +364,7 @@ void ToolkitThreadProc(void *param)
     JavaVMAttachArgs attachArgs;
     attachArgs.version  = JNI_VERSION_1_2;
     attachArgs.name     = "AWT-Windows";
-    attachArgs.group    = NULL;
+    attachArgs.group    = data->threadGroup;
 
     jint res = jvm->AttachCurrentThreadAsDaemon((void **)&env, &attachArgs);
     if (res < 0) {
@@ -415,17 +403,18 @@ void ToolkitThreadProc(void *param)
 /*
  * Class:     sun_awt_windows_WToolkit
  * Method:    startToolkitThread
- * Signature: (Ljava/lang/Runnable;)Z
+ * Signature: (Ljava/lang/Runnable;Ljava/lang/ThreadGroup)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_sun_awt_windows_WToolkit_startToolkitThread(JNIEnv *env, jclass cls, jobject thread)
+Java_sun_awt_windows_WToolkit_startToolkitThread(JNIEnv *env, jclass cls, jobject thread, jobject threadGroup)
 {
     AwtToolkit& tk = AwtToolkit::GetInstance();
 
     ToolkitThreadProc_Data data;
     data.result = false;
     data.thread = env->NewGlobalRef(thread);
-    if (data.thread == NULL) {
+    data.threadGroup = env->NewGlobalRef(threadGroup);
+    if (data.thread == NULL || data.threadGroup == NULL) {
         return JNI_FALSE;
     }
     data.hCompleted = ::CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -443,6 +432,7 @@ Java_sun_awt_windows_WToolkit_startToolkitThread(JNIEnv *env, jclass cls, jobjec
     ::CloseHandle(data.hCompleted);
 
     env->DeleteGlobalRef(data.thread);
+    env->DeleteGlobalRef(data.threadGroup);
 
     return result ? JNI_TRUE : JNI_FALSE;
 }
@@ -776,9 +766,11 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
 
           jclass systemColorClass = env->FindClass("java/awt/SystemColor");
           DASSERT(systemColorClass);
+          if (!systemColorClass) throw std::bad_alloc();
 
           jmethodID mid = env->GetStaticMethodID(systemColorClass, "updateSystemColors", "()V");
           DASSERT(mid);
+          if (!mid) throw std::bad_alloc();
 
           env->CallStaticVoidMethod(systemColorClass, mid);
 
@@ -1038,6 +1030,8 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
 
           // Notify Java side - call WToolkit.displayChanged()
           jclass clazz = env->FindClass("sun/awt/windows/WToolkit");
+          DASSERT(clazz != NULL);
+          if (!clazz) throw std::bad_alloc();
           env->CallStaticVoidMethod(clazz, AwtToolkit::displayChangeMID);
 
           GetInstance().m_displayChanged = TRUE;
@@ -2050,15 +2044,20 @@ Java_java_awt_Toolkit_initIDs(JNIEnv *env, jclass cls) {
 
     AwtToolkit::getDefaultToolkitMID =
         env->GetStaticMethodID(cls,"getDefaultToolkit","()Ljava/awt/Toolkit;");
-    AwtToolkit::getFontMetricsMID =
-        env->GetMethodID(cls, "getFontMetrics",
-                         "(Ljava/awt/Font;)Ljava/awt/FontMetrics;");
-        AwtToolkit::insetsMID =
-                env->GetMethodID(env->FindClass("java/awt/Insets"), "<init>", "(IIII)V");
-
     DASSERT(AwtToolkit::getDefaultToolkitMID != NULL);
+    CHECK_NULL(AwtToolkit::getDefaultToolkitMID);
+
+    AwtToolkit::getFontMetricsMID =
+        env->GetMethodID(cls, "getFontMetrics", "(Ljava/awt/Font;)Ljava/awt/FontMetrics;");
     DASSERT(AwtToolkit::getFontMetricsMID != NULL);
-        DASSERT(AwtToolkit::insetsMID != NULL);
+    CHECK_NULL(AwtToolkit::getFontMetricsMID);
+
+    jclass insetsClass = env->FindClass("java/awt/Insets");
+    DASSERT(insetsClass != NULL);
+    CHECK_NULL(insetsClass);
+    AwtToolkit::insetsMID = env->GetMethodID(insetsClass, "<init>", "(IIII)V");
+    DASSERT(AwtToolkit::insetsMID != NULL);
+    CHECK_NULL(AwtToolkit::insetsMID);
 
     CATCH_BAD_ALLOC;
 }
@@ -2085,10 +2084,12 @@ Java_sun_awt_windows_WToolkit_initIDs(JNIEnv *env, jclass cls)
     AwtToolkit::windowsSettingChangeMID =
         env->GetMethodID(cls, "windowsSettingChange", "()V");
     DASSERT(AwtToolkit::windowsSettingChangeMID != 0);
+    CHECK_NULL(AwtToolkit::windowsSettingChangeMID);
 
     AwtToolkit::displayChangeMID =
     env->GetStaticMethodID(cls, "displayChanged", "()V");
     DASSERT(AwtToolkit::displayChangeMID != 0);
+    CHECK_NULL(AwtToolkit::displayChangeMID);
 
     // Set various global IDs needed by JAWT code.  Note: these
     // variables cannot be set by JAWT code directly due to
@@ -2099,24 +2100,37 @@ Java_sun_awt_windows_WToolkit_initIDs(JNIEnv *env, jclass cls)
     // negligible penalty.
     jclass sDataClassLocal = env->FindClass("sun/java2d/SurfaceData");
     DASSERT(sDataClassLocal != 0);
+    CHECK_NULL(sDataClassLocal);
+
     jclass vImgClassLocal = env->FindClass("sun/awt/image/SunVolatileImage");
     DASSERT(vImgClassLocal != 0);
+    CHECK_NULL(vImgClassLocal);
+
     jclass vSMgrClassLocal =
         env->FindClass("sun/awt/image/VolatileSurfaceManager");
     DASSERT(vSMgrClassLocal != 0);
+    CHECK_NULL(vSMgrClassLocal);
+
     jclass componentClassLocal = env->FindClass("java/awt/Component");
     DASSERT(componentClassLocal != 0);
+    CHECK_NULL(componentClassLocal);
+
     jawtSMgrID = env->GetFieldID(vImgClassLocal, "volSurfaceManager",
                                  "Lsun/awt/image/VolatileSurfaceManager;");
     DASSERT(jawtSMgrID != 0);
+    CHECK_NULL(jawtSMgrID);
+
     jawtSDataID = env->GetFieldID(vSMgrClassLocal, "sdCurrent",
                                   "Lsun/java2d/SurfaceData;");
     DASSERT(jawtSDataID != 0);
+    CHECK_NULL(jawtSDataID);
+
     jawtPDataID = env->GetFieldID(sDataClassLocal, "pData", "J");
     DASSERT(jawtPDataID != 0);
-
+    CHECK_NULL(jawtPDataID);
     // Save these classes in global references for later use
     jawtVImgClass = (jclass)env->NewGlobalRef(vImgClassLocal);
+    CHECK_NULL(jawtVImgClass);
     jawtComponentClass = (jclass)env->NewGlobalRef(componentClassLocal);
 
     CATCH_BAD_ALLOC;
@@ -2377,7 +2391,11 @@ Java_sun_awt_windows_WToolkit_getScreenInsets(JNIEnv *env,
     TRY;
 
     if (AwtToolkit::GetScreenInsets(screen, &rect)) {
-        insets = env->NewObject(env->FindClass("java/awt/Insets"),
+        jclass insetsClass = env->FindClass("java/awt/Insets");
+        DASSERT(insetsClass != NULL);
+        CHECK_NULL_RETURN(insetsClass, NULL);
+
+        insets = env->NewObject(insetsClass,
                 AwtToolkit::insetsMID,
                 rect.top,
                 rect.left,

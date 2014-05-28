@@ -660,6 +660,7 @@ int InstructForm::memory_operand(FormDict &globals) const {
   int USE_of_memory  = 0;
   int DEF_of_memory  = 0;
   const char*    last_memory_DEF = NULL; // to test DEF/USE pairing in asserts
+  const char*    last_memory_USE = NULL;
   Component     *unique          = NULL;
   Component     *comp            = NULL;
   ComponentList &components      = (ComponentList &)_components;
@@ -681,7 +682,16 @@ int InstructForm::memory_operand(FormDict &globals) const {
           assert(0 == strcmp(last_memory_DEF, comp->_name), "every memory DEF is followed by a USE of the same name");
           last_memory_DEF = NULL;
         }
-        USE_of_memory++;
+        // Handles same memory being used multiple times in the case of BMI1 instructions.
+        if (last_memory_USE != NULL) {
+          if (strcmp(comp->_name, last_memory_USE) != 0) {
+            USE_of_memory++;
+          }
+        } else {
+          USE_of_memory++;
+        }
+        last_memory_USE = comp->_name;
+
         if (DEF_of_memory == 0)  // defs take precedence
           unique = comp;
       } else {

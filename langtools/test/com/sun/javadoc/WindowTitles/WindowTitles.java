@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,196 +26,62 @@
  * @bug 4530730
  * @summary stddoclet: With frames off, window titles have "()" appended
  * @author dkramer
+ * @library ../lib
+ * @build JavadocTester
  * @run main WindowTitles
  */
 
-
-import com.sun.javadoc.*;
-import java.util.*;
-import java.io.*;
-
-// If needing regular expression pattern matching,
-// see /java/pubs/dev/linkfix/src/LinkFix.java
-
 /**
  * Runs javadoc and runs regression tests on the resulting HTML.
- * It reads each file, complete with newlines, into a string to easily
- * find strings that contain newlines.
  */
-public class WindowTitles
-{
-    private static final String BUGID = "4530730";
-    private static final String BUGNAME = "WindowTitles";
-    private static final String FS = System.getProperty("file.separator");
-    private static final String PS = System.getProperty("path.separator");
-    private static final String LS = System.getProperty("line.separator");
-    private static final String TMPDIR_STRING1 = "." + FS + "docs1" + FS;
-    private static final String TMPDIR_STRING2 = "." + FS + "docs2" + FS;
+public class WindowTitles extends JavadocTester {
 
-    // Subtest number.  Needed because runResultsOnHTML is run twice, and subtestNum
-    // should increment across subtest runs.
-    public static int subtestNum = 0;
-    public static int numSubtestsPassed = 0;
+    public static void main(String... args) throws Exception {
+        WindowTitles tester = new WindowTitles();
+        tester.runTests();
+    }
 
-    // Entry point
-    public static void main(String[] args) {
-
-        // Directory that contains source files that javadoc runs on
-        String srcdir = System.getProperty("test.src", ".");
-
+    @Test
+    void test() {
         // Test for all cases except the split index page
-        runJavadoc(new String[] {"-d", TMPDIR_STRING1,
-                                 "-use",
-                                 "-sourcepath", srcdir,
-                                 "p1", "p2"});
-        runTestsOnHTML(testArray);
+        javadoc("-d", "out-1",
+                "-use",
+                "-sourcepath", testSrc,
+                "p1", "p2");
+        checkExit(Exit.OK);
 
+        checkTitle("overview-summary.html",     "Overview");
+        checkTitle("overview-tree.html",        "Class Hierarchy");
+        checkTitle("overview-frame.html",       "Overview List");
+        checkTitle("p1/package-summary.html",   "p1");
+        checkTitle("p1/package-frame.html",     "p1");
+        checkTitle("p1/package-tree.html",      "p1 Class Hierarchy");
+        checkTitle("p1/package-use.html",       "Uses of Package p1");
+        checkTitle("p1/C1.html",                "C1");
+        checkTitle("allclasses-frame.html",     "All Classes");
+        checkTitle("allclasses-noframe.html",   "All Classes");
+        checkTitle("constant-values.html",      "Constant Field Values");
+        checkTitle("deprecated-list.html",      "Deprecated List");
+        checkTitle("serialized-form.html",      "Serialized Form");
+        checkTitle("help-doc.html",             "API Help");
+        checkTitle("index-all.html",            "Index");
+        checkTitle("p1/class-use/C1.html",      "Uses of Class p1.C1");
+    }
+
+    @Test
+    void test2() {
         // Test only for the split-index case (and run on only one package)
-        System.out.println("");  // blank line
-        runJavadoc(new String[] {"-d", TMPDIR_STRING2,
-                                 "-splitindex",
-                                 "-sourcepath", System.getProperty("test.src", "."),
-                                 "p1"});
-        runTestsOnHTML(testSplitIndexArray);
+        javadoc("-d", "out-2",
+                "-splitindex",
+                "-sourcepath", testSrc,
+                "p1");
+        checkExit(Exit.OK);
 
-        printSummary();
+        checkTitle("index-files/index-1.html", "C-Index");
     }
 
-    /** Run javadoc */
-    public static void runJavadoc(String[] javadocArgs) {
-        if (com.sun.tools.javadoc.Main.execute(javadocArgs) != 0) {
-            throw new Error("Javadoc failed to execute");
-        }
+    void checkTitle(String file, String title) {
+        checkOutput(file, true, "<title>" + title + "</title>");
     }
 
-    /**
-     * Assign value for [ stringToFind, filename ]
-     * NOTE: The standard doclet uses platform-specific line separators (LS)
-     */
-    private static final String[][] testArray = {
-
-            { "<title>Overview</title>",
-                    TMPDIR_STRING1 + "overview-summary.html"                  },
-
-            { "<title>Class Hierarchy</title>",
-                    TMPDIR_STRING1 + "overview-tree.html"                     },
-
-            { "<title>Overview List</title>",
-                    TMPDIR_STRING1 + "overview-frame.html"                    },
-
-            { "<title>p1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "package-summary.html"       },
-
-            { "<title>p1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "package-frame.html"         },
-
-            { "<title>p1 Class Hierarchy</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "package-tree.html"          },
-
-            { "<title>Uses of Package p1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "package-use.html"           },
-
-            { "<title>C1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "C1.html"                    },
-
-            { "<title>All Classes</title>",
-                    TMPDIR_STRING1 + "allclasses-frame.html"                  },
-
-            { "<title>All Classes</title>",
-                    TMPDIR_STRING1 + "allclasses-noframe.html"                },
-
-            { "<title>Constant Field Values</title>",
-                    TMPDIR_STRING1 + "constant-values.html"                   },
-
-            { "<title>Deprecated List</title>",
-                    TMPDIR_STRING1 + "deprecated-list.html"                   },
-
-            { "<title>Serialized Form</title>",
-                    TMPDIR_STRING1 + "serialized-form.html"                   },
-
-            { "<title>API Help</title>",
-                    TMPDIR_STRING1 + "help-doc.html"                          },
-
-            { "<title>Index</title>",
-                    TMPDIR_STRING1 + "index-all.html"                         },
-
-            { "<title>Uses of Class p1.C1</title>",
-                    TMPDIR_STRING1 + "p1" + FS + "class-use" + FS + "C1.html" },
-        };
-
-    /**
-     * Assign value for [ stringToFind, filename ] for split index page
-     */
-    private static final String[][] testSplitIndexArray = {
-            { "<title>C-Index</title>",
-                    TMPDIR_STRING2 + "index-files" + FS + "index-1.html"       },
-        };
-
-    public static void runTestsOnHTML(String[][] testArray) {
-
-        for (int i = 0; i < testArray.length; i++) {
-
-            subtestNum += 1;
-
-            // Read contents of file into a string
-            String fileString = readFileToString(testArray[i][1]);
-
-            // Get string to find
-            String stringToFind = testArray[i][0];
-
-            // Find string in file's contents
-            if (findString(fileString, stringToFind) == -1) {
-                System.out.println("\nSub-test " + (subtestNum)
-                    + " for bug " + BUGID + " (" + BUGNAME + ") FAILED\n"
-                    + "when searching for:\n"
-                    + stringToFind);
-            } else {
-                numSubtestsPassed += 1;
-                System.out.println("\nSub-test " + (subtestNum) + " passed:\n" + stringToFind);
-            }
-        }
-    }
-
-    public static void printSummary() {
-        if ( numSubtestsPassed == subtestNum ) {
-            System.out.println("\nAll " + numSubtestsPassed + " subtests passed");
-        } else {
-            throw new Error("\n" + (subtestNum - numSubtestsPassed) + " of " + (subtestNum)
-                             + " subtests failed for bug " + BUGID + " (" + BUGNAME + ")\n");
-        }
-    }
-
-    // Read the file into a String
-    public static String readFileToString(String filename) {
-        try {
-            File file = new File(filename);
-            if ( !file.exists() ) {
-                System.out.println("\nFILE DOES NOT EXIST: " + filename);
-            }
-            BufferedReader in = new BufferedReader(new FileReader(file));
-
-            // Create an array of characters the size of the file
-            char[] allChars = new char[(int)file.length()];
-
-            // Read the characters into the allChars array
-            in.read(allChars, 0, (int)file.length());
-            in.close();
-
-            // Convert to a string
-            String allCharsString = new String(allChars);
-
-            return allCharsString;
-
-        } catch (FileNotFoundException e) {
-            System.err.println(e);
-            return "";
-        } catch (IOException e) {
-            System.err.println(e);
-            return "";
-        }
-    }
-
-    public static int findString(String fileString, String stringToFind) {
-        return fileString.indexOf(stringToFind);
-    }
 }

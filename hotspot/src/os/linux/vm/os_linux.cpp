@@ -49,6 +49,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -108,6 +109,8 @@
 #endif
 
 #define MAX_PATH    (2 * K)
+
+#define MAX_SECS 100000000
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
@@ -317,9 +320,6 @@ void os::Linux::initialize_system_info() {
 }
 
 void os::init_system_properties_values() {
-//  char arch[12];
-//  sysinfo(SI_ARCHITECTURE, arch, sizeof(arch));
-
   // The next steps are taken in the product version:
   //
   // Obtain the JAVA_HOME value from the location of libjvm.so.
@@ -346,140 +346,101 @@ void os::init_system_properties_values() {
   // Important note: if the location of libjvm.so changes this
   // code needs to be changed accordingly.
 
-  // The next few definitions allow the code to be verbatim:
-#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n), mtInternal)
-#define getenv(n) ::getenv(n)
-
-/*
- * See ld(1):
- *      The linker uses the following search paths to locate required
- *      shared libraries:
- *        1: ...
- *        ...
- *        7: The default directories, normally /lib and /usr/lib.
- */
+// See ld(1):
+//      The linker uses the following search paths to locate required
+//      shared libraries:
+//        1: ...
+//        ...
+//        7: The default directories, normally /lib and /usr/lib.
 #if defined(AMD64) || defined(_LP64) && (defined(SPARC) || defined(PPC) || defined(S390))
 #define DEFAULT_LIBPATH "/usr/lib64:/lib64:/lib:/usr/lib"
 #else
 #define DEFAULT_LIBPATH "/lib:/usr/lib"
 #endif
 
+// Base path of extensions installed on the system.
+#define SYS_EXT_DIR     "/usr/java/packages"
 #define EXTENSIONS_DIR  "/lib/ext"
 #define ENDORSED_DIR    "/lib/endorsed"
-#define REG_DIR         "/usr/java/packages"
 
+  // Buffer that fits several sprintfs.
+  // Note that the space for the colon and the trailing null are provided
+  // by the nulls included by the sizeof operator.
+  const size_t bufsize =
+    MAX3((size_t)MAXPATHLEN,  // For dll_dir & friends.
+         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + sizeof(SYS_EXT_DIR) + sizeof(EXTENSIONS_DIR), // extensions dir
+         (size_t)MAXPATHLEN + sizeof(ENDORSED_DIR)); // endorsed dir
+  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+
+  // sysclasspath, java_home, dll_dir
   {
-    /* sysclasspath, java_home, dll_dir */
-    {
-        char *home_path;
-        char *dll_path;
-        char *pslash;
-        char buf[MAXPATHLEN];
-        os::jvm_path(buf, sizeof(buf));
+    char *pslash;
+    os::jvm_path(buf, bufsize);
 
-        // Found the full path to libjvm.so.
-        // Now cut the path to <java_home>/jre if we can.
-        *(strrchr(buf, '/')) = '\0';  /* get rid of /libjvm.so */
+    // Found the full path to libjvm.so.
+    // Now cut the path to <java_home>/jre if we can.
+    *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
+    pslash = strrchr(buf, '/');
+    if (pslash != NULL) {
+      *pslash = '\0';            // Get rid of /{client|server|hotspot}.
+    }
+    Arguments::set_dll_dir(buf);
+
+    if (pslash != NULL) {
+      pslash = strrchr(buf, '/');
+      if (pslash != NULL) {
+        *pslash = '\0';          // Get rid of /<arch>.
         pslash = strrchr(buf, '/');
-        if (pslash != NULL)
-            *pslash = '\0';           /* get rid of /{client|server|hotspot} */
-        dll_path = malloc(strlen(buf) + 1);
-        if (dll_path == NULL)
-            return;
-        strcpy(dll_path, buf);
-        Arguments::set_dll_dir(dll_path);
-
         if (pslash != NULL) {
-            pslash = strrchr(buf, '/');
-            if (pslash != NULL) {
-                *pslash = '\0';       /* get rid of /<arch> */
-                pslash = strrchr(buf, '/');
-                if (pslash != NULL)
-                    *pslash = '\0';   /* get rid of /lib */
-            }
+          *pslash = '\0';        // Get rid of /lib.
         }
-
-        home_path = malloc(strlen(buf) + 1);
-        if (home_path == NULL)
-            return;
-        strcpy(home_path, buf);
-        Arguments::set_java_home(home_path);
-
-        if (!set_boot_path('/', ':'))
-            return;
+      }
     }
-
-    /*
-     * Where to look for native libraries
-     *
-     * Note: Due to a legacy implementation, most of the library path
-     * is set in the launcher.  This was to accomodate linking restrictions
-     * on legacy Linux implementations (which are no longer supported).
-     * Eventually, all the library path setting will be done here.
-     *
-     * However, to prevent the proliferation of improperly built native
-     * libraries, the new path component /usr/java/packages is added here.
-     * Eventually, all the library path setting will be done here.
-     */
-    {
-        char *ld_library_path;
-
-        /*
-         * Construct the invariant part of ld_library_path. Note that the
-         * space for the colon and the trailing null are provided by the
-         * nulls included by the sizeof operator (so actually we allocate
-         * a byte more than necessary).
-         */
-        ld_library_path = (char *) malloc(sizeof(REG_DIR) + sizeof("/lib/") +
-            strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH));
-        sprintf(ld_library_path, REG_DIR "/lib/%s:" DEFAULT_LIBPATH, cpu_arch);
-
-        /*
-         * Get the user setting of LD_LIBRARY_PATH, and prepended it.  It
-         * should always exist (until the legacy problem cited above is
-         * addressed).
-         */
-        char *v = getenv("LD_LIBRARY_PATH");
-        if (v != NULL) {
-            char *t = ld_library_path;
-            /* That's +1 for the colon and +1 for the trailing '\0' */
-            ld_library_path = (char *) malloc(strlen(v) + 1 + strlen(t) + 1);
-            sprintf(ld_library_path, "%s:%s", v, t);
-        }
-        Arguments::set_library_path(ld_library_path);
-    }
-
-    /*
-     * Extensions directories.
-     *
-     * Note that the space for the colon and the trailing null are provided
-     * by the nulls included by the sizeof operator (so actually one byte more
-     * than necessary is allocated).
-     */
-    {
-        char *buf = malloc(strlen(Arguments::get_java_home()) +
-            sizeof(EXTENSIONS_DIR) + sizeof(REG_DIR) + sizeof(EXTENSIONS_DIR));
-        sprintf(buf, "%s" EXTENSIONS_DIR ":" REG_DIR EXTENSIONS_DIR,
-            Arguments::get_java_home());
-        Arguments::set_ext_dirs(buf);
-    }
-
-    /* Endorsed standards default directory. */
-    {
-        char * buf;
-        buf = malloc(strlen(Arguments::get_java_home()) + sizeof(ENDORSED_DIR));
-        sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
-        Arguments::set_endorsed_dirs(buf);
-    }
+    Arguments::set_java_home(buf);
+    set_boot_path('/', ':');
   }
 
-#undef malloc
-#undef getenv
+  // Where to look for native libraries.
+  //
+  // Note: Due to a legacy implementation, most of the library path
+  // is set in the launcher. This was to accomodate linking restrictions
+  // on legacy Linux implementations (which are no longer supported).
+  // Eventually, all the library path setting will be done here.
+  //
+  // However, to prevent the proliferation of improperly built native
+  // libraries, the new path component /usr/java/packages is added here.
+  // Eventually, all the library path setting will be done here.
+  {
+    // Get the user setting of LD_LIBRARY_PATH, and prepended it. It
+    // should always exist (until the legacy problem cited above is
+    // addressed).
+    const char *v = ::getenv("LD_LIBRARY_PATH");
+    const char *v_colon = ":";
+    if (v == NULL) { v = ""; v_colon = ""; }
+    // That's +1 for the colon and +1 for the trailing '\0'.
+    char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char,
+                                                     strlen(v) + 1 +
+                                                     sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1,
+                                                     mtInternal);
+    sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
+    Arguments::set_library_path(ld_library_path);
+    FREE_C_HEAP_ARRAY(char, ld_library_path, mtInternal);
+  }
+
+  // Extensions directories.
+  sprintf(buf, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
+  Arguments::set_ext_dirs(buf);
+
+  // Endorsed standards default directory.
+  sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
+  Arguments::set_endorsed_dirs(buf);
+
+  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+
+#undef DEFAULT_LIBPATH
+#undef SYS_EXT_DIR
 #undef EXTENSIONS_DIR
 #undef ENDORSED_DIR
-
-  // Done
-  return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1072,9 +1033,20 @@ void os::free_thread(OSThread* osthread) {
 //////////////////////////////////////////////////////////////////////////////
 // thread local storage
 
+// Restore the thread pointer if the destructor is called. This is in case
+// someone from JNI code sets up a destructor with pthread_key_create to run
+// detachCurrentThread on thread death. Unless we restore the thread pointer we
+// will hang or crash. When detachCurrentThread is called the key will be set
+// to null and we will not be called again. If detachCurrentThread is never
+// called we could loop forever depending on the pthread implementation.
+static void restore_thread_pointer(void* p) {
+  Thread* thread = (Thread*) p;
+  os::thread_local_storage_at_put(ThreadLocalStorage::thread_index(), thread);
+}
+
 int os::allocate_thread_local_storage() {
   pthread_key_t key;
-  int rslt = pthread_key_create(&key, NULL);
+  int rslt = pthread_key_create(&key, restore_thread_pointer);
   assert(rslt == 0, "cannot allocate thread local storage");
   return (int)key;
 }
@@ -1961,7 +1933,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     {EM_SPARC32PLUS, EM_SPARC,   ELFCLASS32, ELFDATA2MSB, (char*)"Sparc 32"},
     {EM_SPARCV9,     EM_SPARCV9, ELFCLASS64, ELFDATA2MSB, (char*)"Sparc v9 64"},
     {EM_PPC,         EM_PPC,     ELFCLASS32, ELFDATA2MSB, (char*)"Power PC 32"},
+#if defined(VM_LITTLE_ENDIAN)
+    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2LSB, (char*)"Power PC 64"},
+#else
     {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64"},
+#endif
     {EM_ARM,         EM_ARM,     ELFCLASS32,   ELFDATA2LSB, (char*)"ARM"},
     {EM_S390,        EM_S390,    ELFCLASSNONE, ELFDATA2MSB, (char*)"IBM System/390"},
     {EM_ALPHA,       EM_ALPHA,   ELFCLASS64, ELFDATA2LSB, (char*)"Alpha"},
@@ -2434,7 +2410,6 @@ class Semaphore : public StackObj {
     sem_t _semaphore;
 };
 
-
 Semaphore::Semaphore() {
   sem_init(&_semaphore, 0, 0);
 }
@@ -2456,8 +2431,22 @@ bool Semaphore::trywait() {
 }
 
 bool Semaphore::timedwait(unsigned int sec, int nsec) {
+
   struct timespec ts;
-  unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
+  // Semaphore's are always associated with CLOCK_REALTIME
+  os::Linux::clock_gettime(CLOCK_REALTIME, &ts);
+  // see unpackTime for discussion on overflow checking
+  if (sec >= MAX_SECS) {
+    ts.tv_sec += MAX_SECS;
+    ts.tv_nsec = 0;
+  } else {
+    ts.tv_sec += sec;
+    ts.tv_nsec += nsec;
+    if (ts.tv_nsec >= NANOSECS_PER_SEC) {
+      ts.tv_nsec -= NANOSECS_PER_SEC;
+      ++ts.tv_sec; // note: this must be <= max_secs
+    }
+  }
 
   while (1) {
     int result = sem_timedwait(&_semaphore, &ts);
@@ -3804,16 +3793,11 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN ;}
 
-void os::yield_all(int attempts) {
+void os::yield_all() {
   // Yields to all threads, including threads with lower priorities
   // Threads on Linux are all with same priority. The Solaris style
   // os::yield_all() with nanosleep(1ms) is not necessary.
   sched_yield();
-}
-
-// Called from the tight loops to possibly influence time-sharing heuristics
-void os::loop_breaker(int attempts) {
-  os::yield_all(attempts);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4560,6 +4544,11 @@ void os::Linux::check_signal_handler(int sig) {
     tty->print_cr("  found:%s", get_signal_handler_name(thisHandler, buf, O_BUFLEN));
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
+    // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
+    if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
+      tty->print_cr("Running in non-interactive shell, %s handler is replaced by shell",
+                    exception_name(sig, buf, O_BUFLEN));
+    }
   } else if(os::Linux::get_our_sigflags(sig) != 0 && (int)act.sa_flags != os::Linux::get_our_sigflags(sig)) {
     tty->print("Warning: %s handler flags ", exception_name(sig, buf, O_BUFLEN));
     tty->print("expected:" PTR32_FORMAT, os::Linux::get_our_sigflags(sig));
@@ -5283,8 +5272,6 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 //
 
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-  static bool proc_task_unchecked = true;
-  static const char *proc_stat_path = "/proc/%d/stat";
   pid_t  tid = thread->osthread()->thread_id();
   char *s;
   char stat[2048];
@@ -5297,23 +5284,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   long ldummy;
   FILE *fp;
 
-  // The /proc/<tid>/stat aggregates per-process usage on
-  // new Linux kernels 2.6+ where NPTL is supported.
-  // The /proc/self/task/<tid>/stat still has the per-thread usage.
-  // See bug 6328462.
-  // There possibly can be cases where there is no directory
-  // /proc/self/task, so we check its availability.
-  if (proc_task_unchecked && os::Linux::is_NPTL()) {
-    // This is executed only once
-    proc_task_unchecked = false;
-    fp = fopen("/proc/self/task", "r");
-    if (fp != NULL) {
-      proc_stat_path = "/proc/self/task/%d/stat";
-      fclose(fp);
-    }
-  }
-
-  sprintf(proc_name, proc_stat_path, tid);
+  snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
   fp = fopen(proc_name, "r");
   if ( fp == NULL ) return -1;
   statlen = fread(stat, 1, 2047, fp);
@@ -5656,7 +5627,6 @@ void os::PlatformEvent::unpark() {
  * is no need to track notifications.
  */
 
-#define MAX_SECS 100000000
 /*
  * This code is common to linux and solaris and will be moved to a
  * common place in dolphin.

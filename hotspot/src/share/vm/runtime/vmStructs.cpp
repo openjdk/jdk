@@ -171,15 +171,21 @@
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/movenode.hpp"
+#include "opto/narrowptrnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/parse.hpp"
 #include "opto/regalloc.hpp"
@@ -872,7 +878,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(nmethod,             _entry_point,                                  address)                               \
   nonstatic_field(nmethod,             _verified_entry_point,                         address)                               \
   nonstatic_field(nmethod,             _osr_entry_point,                              address)                               \
-  nonstatic_field(nmethod,             _lock_count,                                   jint)                                  \
+  volatile_nonstatic_field(nmethod,    _lock_count,                                   jint)                                  \
   nonstatic_field(nmethod,             _stack_traversal_mark,                         long)                                  \
   nonstatic_field(nmethod,             _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,             _comp_level,                                   int)                                   \
@@ -1212,6 +1218,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   static_field(Abstract_VM_Version,            _s_internal_vm_info_string,                    const char*)                           \
   static_field(Abstract_VM_Version,            _vm_major_version,                             int)                                   \
   static_field(Abstract_VM_Version,            _vm_minor_version,                             int)                                   \
+  static_field(Abstract_VM_Version,            _vm_micro_version,                             int)                                   \
   static_field(Abstract_VM_Version,            _vm_build_number,                              int)                                   \
   static_field(Abstract_VM_Version,            _reserve_for_allocation_prefetch,              int)                                   \
                                                                                                                                      \
@@ -2335,6 +2342,12 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /********************************/                                      \
   /* ConstMethod anon-enum */                                             \
   /********************************/                                      \
+                                                                          \
+  declare_constant(Method::_jfr_towrite)                                  \
+  declare_constant(Method::_caller_sensitive)                             \
+  declare_constant(Method::_force_inline)                                 \
+  declare_constant(Method::_dont_inline)                                  \
+  declare_constant(Method::_hidden)                                       \
                                                                           \
   declare_constant(ConstMethod::_has_linenumber_table)                    \
   declare_constant(ConstMethod::_has_checked_exceptions)                  \

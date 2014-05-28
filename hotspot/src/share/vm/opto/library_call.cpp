@@ -30,10 +30,16 @@
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/convertnode.hpp"
+#include "opto/countbitsnode.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/mathexactnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -216,7 +222,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_subtractExactL(bool is_decrement);
   bool inline_exp();
   bool inline_pow();
-  void finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
+  Node* finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_min_max(vmIntrinsics::ID id);
   Node* generate_min_max(vmIntrinsics::ID id, Node* x, Node* y);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
@@ -614,6 +620,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms, Parse* parent_parser) {
     }
     // Push the result from the inlined method onto the stack.
     kit.push_result();
+    C->print_inlining_update(this);
     return kit.transfer_exceptions_into_jvms();
   }
 
@@ -631,6 +638,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms, Parse* parent_parser) {
     }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
+  C->print_inlining_update(this);
   return NULL;
 }
 
@@ -1678,7 +1686,7 @@ bool LibraryCallKit::inline_trig(vmIntrinsics::ID id) {
   return true;
 }
 
-void LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName) {
+Node* LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName) {
   //-------------------
   //result=(result.isNaN())? funcAddr():result;
   // Check: If isNaN() by checking result!=result? then either trap
@@ -1694,7 +1702,7 @@ void LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeFu
       uncommon_trap(Deoptimization::Reason_intrinsic,
                     Deoptimization::Action_make_not_entrant);
     }
-    set_result(result);
+    return result;
   } else {
     // If this inlining ever returned NaN in the past, we compile a call
     // to the runtime to properly handle corner cases
@@ -1724,9 +1732,10 @@ void LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeFu
 
       result_region->init_req(2, control());
       result_val->init_req(2, value);
-      set_result(result_region, result_val);
+      set_control(_gvn.transform(result_region));
+      return _gvn.transform(result_val);
     } else {
-      set_result(result);
+      return result;
     }
   }
 }
@@ -1738,7 +1747,8 @@ bool LibraryCallKit::inline_exp() {
   Node* arg = round_double_node(argument(0));
   Node* n   = _gvn.transform(new (C) ExpDNode(C, control(), arg));
 
-  finish_pow_exp(n, arg, NULL, OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
+  n = finish_pow_exp(n, arg, NULL, OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
+  set_result(n);
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
   return true;
@@ -1748,26 +1758,47 @@ bool LibraryCallKit::inline_exp() {
 // Inline power instructions, if possible.
 bool LibraryCallKit::inline_pow() {
   // Pseudocode for pow
-  // if (x <= 0.0) {
-  //   long longy = (long)y;
-  //   if ((double)longy == y) { // if y is long
-  //     if (y + 1 == y) longy = 0; // huge number: even
-  //     result = ((1&longy) == 0)?-DPow(abs(x), y):DPow(abs(x), y);
-  //   } else {
-  //     result = NaN;
-  //   }
+  // if (y == 2) {
+  //   return x * x;
   // } else {
-  //   result = DPow(x,y);
+  //   if (x <= 0.0) {
+  //     long longy = (long)y;
+  //     if ((double)longy == y) { // if y is long
+  //       if (y + 1 == y) longy = 0; // huge number: even
+  //       result = ((1&longy) == 0)?-DPow(abs(x), y):DPow(abs(x), y);
+  //     } else {
+  //       result = NaN;
+  //     }
+  //   } else {
+  //     result = DPow(x,y);
+  //   }
+  //   if (result != result)?  {
+  //     result = uncommon_trap() or runtime_call();
+  //   }
+  //   return result;
   // }
-  // if (result != result)?  {
-  //   result = uncommon_trap() or runtime_call();
-  // }
-  // return result;
 
   Node* x = round_double_node(argument(0));
   Node* y = round_double_node(argument(2));
 
   Node* result = NULL;
+
+  Node*   const_two_node = makecon(TypeD::make(2.0));
+  Node*   cmp_node       = _gvn.transform(new (C) CmpDNode(y, const_two_node));
+  Node*   bool_node      = _gvn.transform(new (C) BoolNode(cmp_node, BoolTest::eq));
+  IfNode* if_node        = create_and_xform_if(control(), bool_node, PROB_STATIC_INFREQUENT, COUNT_UNKNOWN);
+  Node*   if_true        = _gvn.transform(new (C) IfTrueNode(if_node));
+  Node*   if_false       = _gvn.transform(new (C) IfFalseNode(if_node));
+
+  RegionNode* region_node = new (C) RegionNode(3);
+  region_node->init_req(1, if_true);
+
+  Node* phi_node = new (C) PhiNode(region_node, Type::DOUBLE);
+  // special case for x^y where y == 2, we can convert it to x * x
+  phi_node->init_req(1, _gvn.transform(new (C) MulDNode(x, x)));
+
+  // set control to if_false since we will now process the false branch
+  set_control(if_false);
 
   if (!too_many_traps(Deoptimization::Reason_intrinsic)) {
     // Short form: skip the fancy tests and just check for NaN result.
@@ -1892,7 +1923,15 @@ bool LibraryCallKit::inline_pow() {
     result = _gvn.transform(phi);
   }
 
-  finish_pow_exp(result, x, y, OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow), "POW");
+  result = finish_pow_exp(result, x, y, OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow), "POW");
+
+  // control from finish_pow_exp is now input to the region node
+  region_node->set_req(2, control());
+  // the result from finish_pow_exp is now input to the phi node
+  phi_node->init_req(2, result);
+  set_control(_gvn.transform(region_node));
+  record_for_igvn(region_node);
+  set_result(_gvn.transform(phi_node));
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
   return true;
@@ -2600,7 +2639,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
     case T_ADDRESS:
       // Cast to an int type.
       p = _gvn.transform(new (C) CastP2XNode(NULL, p));
-      p = ConvX2L(p);
+      p = ConvX2UL(p);
       break;
     default:
       fatal(err_msg_res("unexpected type %d: %s", type, type2name(type)));
@@ -3180,7 +3219,8 @@ bool LibraryCallKit::inline_native_currentThread() {
 // private native boolean java.lang.Thread.isInterrupted(boolean ClearInterrupted);
 bool LibraryCallKit::inline_native_isInterrupted() {
   // Add a fast path to t.isInterrupted(clear_int):
-  //   (t == Thread.current() && (!TLS._osthread._interrupted || !clear_int))
+  //   (t == Thread.current() &&
+  //    (!TLS._osthread._interrupted || WINDOWS_ONLY(false) NOT_WINDOWS(!clear_int)))
   //   ? TLS._osthread._interrupted : /*slow path:*/ t.isInterrupted(clear_int)
   // So, in the common case that the interrupt bit is false,
   // we avoid making a call into the VM.  Even if the interrupt bit
@@ -3237,6 +3277,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   // drop through to next case
   set_control( _gvn.transform(new (C) IfTrueNode(iff_bit)));
 
+#ifndef TARGET_OS_FAMILY_windows
   // (c) Or, if interrupt bit is set and clear_int is false, use 2nd fast path.
   Node* clr_arg = argument(1);
   Node* cmp_arg = _gvn.transform(new (C) CmpINode(clr_arg, intcon(0)));
@@ -3250,6 +3291,10 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 
   // drop through to next case
   set_control( _gvn.transform(new (C) IfTrueNode(iff_arg)));
+#else
+  // To return true on Windows you must read the _interrupted field
+  // and check the the event state i.e. take the slow path.
+#endif // TARGET_OS_FAMILY_windows
 
   // (d) Otherwise, go to the slow path.
   slow_region->add_req(control());
@@ -4652,7 +4697,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
     ciKlass* src_k = NULL;
     if (!has_src) {
-      src_k = src_type->speculative_type();
+      src_k = src_type->speculative_type_not_null();
       if (src_k != NULL && src_k->is_array_klass()) {
         could_have_src = true;
       }
@@ -4660,7 +4705,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
     ciKlass* dest_k = NULL;
     if (!has_dest) {
-      dest_k = dest_type->speculative_type();
+      dest_k = dest_type->speculative_type_not_null();
       if (dest_k != NULL && dest_k->is_array_klass()) {
         could_have_dest = true;
       }
@@ -4732,13 +4777,13 @@ bool LibraryCallKit::inline_arraycopy() {
     ciKlass* src_k = top_src->klass();
     ciKlass* dest_k = top_dest->klass();
     if (!src_spec) {
-      src_k = src_type->speculative_type();
+      src_k = src_type->speculative_type_not_null();
       if (src_k != NULL && src_k->is_array_klass()) {
           could_have_src = true;
       }
     }
     if (!dest_spec) {
-      dest_k = dest_type->speculative_type();
+      dest_k = dest_type->speculative_type_not_null();
       if (dest_k != NULL && dest_k->is_array_klass()) {
         could_have_dest = true;
       }

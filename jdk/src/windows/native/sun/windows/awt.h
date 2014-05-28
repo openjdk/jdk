@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,11 @@ extern COLORREF DesktopColor2RGB(int colorIndex);
 class AwtObject;
 typedef AwtObject* PDATA;
 
+#define JNI_IS_TRUE(obj) ((obj) ? JNI_TRUE : JNI_FALSE)
+
 #define JNI_CHECK_NULL_GOTO(obj, msg, where) {                            \
     if (obj == NULL) {                                                    \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, msg);                          \
         goto where;                                                       \
     }                                                                     \
@@ -65,6 +68,7 @@ typedef AwtObject* PDATA;
 
 #define JNI_CHECK_NULL_RETURN(obj, msg) {                                 \
     if (obj == NULL) {                                                    \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, msg);                          \
         return;                                                           \
     }                                                                     \
@@ -91,6 +95,7 @@ typedef AwtObject* PDATA;
 
 #define JNI_CHECK_NULL_RETURN_NULL(obj, msg) {                            \
     if (obj == NULL) {                                                    \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, msg);                          \
         return 0;                                                         \
     }                                                                     \
@@ -98,6 +103,7 @@ typedef AwtObject* PDATA;
 
 #define JNI_CHECK_NULL_RETURN_VAL(obj, msg, val) {                        \
     if (obj == NULL) {                                                    \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, msg);                          \
         return val;                                                       \
     }                                                                     \
@@ -124,6 +130,7 @@ typedef AwtObject* PDATA;
 #define THROW_NULL_PDATA_IF_NOT_DESTROYED(peer) {                         \
     jboolean destroyed = JNI_GET_DESTROYED(peer);                         \
     if (destroyed != JNI_TRUE) {                                          \
+        env->ExceptionClear();                                            \
         JNU_ThrowNullPointerException(env, "null pData");                 \
     }                                                                     \
 }

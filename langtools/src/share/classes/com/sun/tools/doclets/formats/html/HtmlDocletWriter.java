@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,9 +524,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (configuration.createoverview) {
                 navList.addContent(getNavLinkContents());
             }
-            if (configuration.packages.length == 1) {
-                navList.addContent(getNavLinkPackage(configuration.packages[0]));
-            } else if (configuration.packages.length > 1) {
+            if (configuration.packages.size() == 1) {
+                navList.addContent(getNavLinkPackage(configuration.packages.first()));
+            } else if (configuration.packages.size() > 1) {
                 navList.addContent(getNavLinkPackage());
             }
             navList.addContent(getNavLinkClass());
@@ -916,7 +916,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return package name content
      */
     public Content getPackageName(PackageDoc packageDoc) {
-        return packageDoc == null || packageDoc.name().length() == 0 ?
+        return packageDoc == null || packageDoc.name().isEmpty() ?
             defaultPackageLabel :
             getPackageLabel(packageDoc.name());
     }
@@ -1443,7 +1443,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
             }
             if (configuration.currentcd != containing) {
-                refMemName = containing.name() + "." + refMemName;
+                refMemName = (refMem instanceof ConstructorDoc) ?
+                        refMemName : containing.name() + "." + refMemName;
             }
             if (refMem instanceof ExecutableMemberDoc) {
                 if (refMemName.indexOf('(') < 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,68 +27,46 @@
  * @summary  Make sure that you can link from one member to another using
  *           non-qualified name, furthermore, ensure the right one is linked.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestLinkTaglet
  * @run main TestLinkTaglet
  */
 
 public class TestLinkTaglet extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4732864-6280605-7064544-8014636";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", SRC_DIR + FS + "checkPkg" + FS + "B.java"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "Qualified Link: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>" + NL +
-            " Unqualified Link1: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>" + NL +
-            " Unqualified Link2: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>" + NL +
-            " Qualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(pkg.C.InnerC, pkg.C.InnerC2)</code></a>.<br/>" + NL +
-            " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>" + NL +
-            " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(InnerC, InnerC2)</code></a>.<br/>"
-        },
-        {BUG_ID + FS + "pkg" + FS + "C.InnerC.html",
-            "Link to member in outer class: <a href=\"../pkg/C.html#MEMBER\"><code>C.MEMBER</code></a> <br/>" + NL +
-            " Link to member in inner class: <a href=\"../pkg/C.InnerC2.html#MEMBER2\"><code>C.InnerC2.MEMBER2</code></a> <br/>" + NL +
-            " Link to another inner class: <a href=\"../pkg/C.InnerC2.html\" title=\"class in pkg\"><code>C.InnerC2</code></a>"
-        },
-        {BUG_ID + FS + "pkg" + FS + "C.InnerC2.html",
-            "<dl>" + NL + "<dt>Enclosing class:</dt>" + NL +
-            "<dd><a href=\"../pkg/C.html\" title=\"class in pkg\">C</a></dd>" + NL +
-            "</dl>"
-        },
-    };
-    private static final String[][] NEGATED_TEST = {
-        {WARNING_OUTPUT, "Tag @see: reference not found: A"},
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestLinkTaglet tester = new TestLinkTaglet();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-Xdoclint:none",
+                "-d", "out",
+                "-sourcepath", testSrc,
+                "pkg", testSrc("checkPkg/B.java"));
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg/C.html", true,
+                "Qualified Link: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
+                + " Unqualified Link1: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
+                + " Unqualified Link2: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
+                + " Qualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(pkg.C.InnerC, pkg.C.InnerC2)</code></a>.<br/>\n"
+                + " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>\n"
+                + " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(InnerC, InnerC2)</code></a>.<br/>");
+
+        checkOutput("pkg/C.InnerC.html", true,
+                "Link to member in outer class: <a href=\"../pkg/C.html#MEMBER\"><code>C.MEMBER</code></a> <br/>\n"
+                + " Link to member in inner class: <a href=\"../pkg/C.InnerC2.html#MEMBER2\"><code>C.InnerC2.MEMBER2</code></a> <br/>\n"
+                + " Link to another inner class: <a href=\"../pkg/C.InnerC2.html\" title=\"class in pkg\"><code>C.InnerC2</code></a>");
+
+        checkOutput("pkg/C.InnerC2.html", true,
+                "<dl>\n"
+                + "<dt>Enclosing class:</dt>\n"
+                + "<dd><a href=\"../pkg/C.html\" title=\"class in pkg\">C</a></dd>\n"
+                + "</dl>");
+
+        checkOutput(Output.WARNING, false,
+                "Tag @see: reference not found: A");
     }
 }

@@ -142,10 +142,16 @@ SplashInitPlatform(Splash * splash) {
     splash->screenFormat.byteOrder = 1 ?  BYTE_ORDER_LSBFIRST : BYTE_ORDER_MSBFIRST;
     splash->screenFormat.depthBytes = 4;
 
-    dispatch_async(dispatch_get_main_queue(), ^(void) {
-            NSApplication * app = [NSApplicationAWT sharedApplication];
-            [NSApplicationAWT runAWTLoopWithApp: app];
-    });
+    // If this property is present we are running SWT and should not start a runLoop
+    // Can't check if running SWT in webstart, so splash screen in webstart SWT
+    // applications is not supported
+    char envVar[80];
+    snprintf(envVar, sizeof(envVar), "JAVA_STARTED_ON_FIRST_THREAD_%d", getpid());
+    if (getenv(envVar) == NULL) {
+        [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^() {
+            [NSApplicationAWT runAWTLoopWithApp:[NSApplicationAWT sharedApplication]];
+        }];
+    }
 }
 
 void

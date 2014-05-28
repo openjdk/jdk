@@ -510,7 +510,8 @@ bool PSScavenge::invoke_no_policy() {
                          heap->total_collections());
 
           if (Verbose) {
-            gclog_or_tty->print("old_gen_capacity: %d young_gen_capacity: %d",
+            gclog_or_tty->print("old_gen_capacity: " SIZE_FORMAT
+              " young_gen_capacity: " SIZE_FORMAT,
               old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
           }
         }
@@ -550,7 +551,8 @@ bool PSScavenge::invoke_no_policy() {
 
        if (PrintTenuringDistribution) {
          gclog_or_tty->cr();
-         gclog_or_tty->print_cr("Desired survivor size " SIZE_FORMAT " bytes, new threshold %u (max %u)",
+         gclog_or_tty->print_cr("Desired survivor size " SIZE_FORMAT " bytes, new threshold "
+                                UINTX_FORMAT " (max threshold " UINTX_FORMAT ")",
                                 size_policy->calculated_survivor_size_in_bytes(),
                                 _tenuring_threshold, MaxTenuringThreshold);
        }
@@ -727,7 +729,7 @@ void PSScavenge::clean_up_failed_promotion() {
     young_gen->object_iterate(&unforward_closure);
 
     if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("Restoring %d marks", _preserved_oop_stack.size());
+      gclog_or_tty->print_cr("Restoring " SIZE_FORMAT " marks", _preserved_oop_stack.size());
     }
 
     // Restore any saved marks.
@@ -829,10 +831,10 @@ GCTaskManager* const PSScavenge::gc_task_manager() {
 void PSScavenge::initialize() {
   // Arguments must have been parsed
 
-  if (AlwaysTenure) {
-    _tenuring_threshold = 0;
-  } else if (NeverTenure) {
-    _tenuring_threshold = markOopDesc::max_age + 1;
+  if (AlwaysTenure || NeverTenure) {
+    assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markOopDesc::max_age + 1,
+        err_msg("MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is ", MaxTenuringThreshold));
+    _tenuring_threshold = MaxTenuringThreshold;
   } else {
     // We want to smooth out our startup times for the AdaptiveSizePolicy
     _tenuring_threshold = (UseAdaptiveSizePolicy) ? InitialTenuringThreshold :

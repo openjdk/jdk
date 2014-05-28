@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 #include <jni.h>
 #include <stdio.h>
 #include <jni_util.h>
@@ -20,10 +45,12 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_initIDs
     filenameFilterCallbackMethodID = (*env)->GetMethodID(env, cx,
             "filenameFilterCallback", "(Ljava/lang/String;)Z");
     DASSERT(filenameFilterCallbackMethodID != NULL);
+    CHECK_NULL(filenameFilterCallbackMethodID);
 
     setFileInternalMethodID = (*env)->GetMethodID(env, cx,
             "setFileInternal", "(Ljava/lang/String;[Ljava/lang/String;)V");
     DASSERT(setFileInternalMethodID != NULL);
+    CHECK_NULL(setFileInternalMethodID);
 
     widgetFieldID = (*env)->GetFieldID(env, cx, "widget", "J");
     DASSERT(widgetFieldID != NULL);
@@ -38,6 +65,7 @@ static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gp
     env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     filename = (*env)->NewStringUTF(env, filter_info->filename);
+    JNU_CHECK_EXCEPTION_RETURN(env, FALSE);
 
     return (*env)->CallBooleanMethod(env, obj, filenameFilterCallbackMethodID,
             filename);
@@ -148,13 +176,14 @@ static jobjectArray toFilenamesArray(JNIEnv *env, GSList* list)
 
     stringCls = (*env)->FindClass(env, "java/lang/String");
     if (stringCls == NULL) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowInternalError(env, "Could not get java.lang.String class");
         return NULL;
     }
 
-    array = (*env)->NewObjectArray(env, fp_gtk_g_slist_length(list), stringCls,
-            NULL);
+    array = (*env)->NewObjectArray(env, fp_gtk_g_slist_length(list), stringCls, NULL);
     if (array == NULL) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowInternalError(env, "Could not instantiate array files array");
         return NULL;
     }
@@ -164,7 +193,9 @@ static jobjectArray toFilenamesArray(JNIEnv *env, GSList* list)
         entry = (char*) iterator->data;
         entry = strrchr(entry, '/') + 1;
         str = (*env)->NewStringUTF(env, entry);
-        (*env)->SetObjectArrayElement(env, array, i, str);
+        if (str && !(*env)->ExceptionCheck(env)) {
+            (*env)->SetObjectArrayElement(env, array, i, str);
+        }
         i++;
     }
 
@@ -190,13 +221,14 @@ static jobjectArray toPathAndFilenamesArray(JNIEnv *env, GSList* list)
 
     stringCls = (*env)->FindClass(env, "java/lang/String");
     if (stringCls == NULL) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowInternalError(env, "Could not get java.lang.String class");
         return NULL;
     }
 
-    array = (*env)->NewObjectArray(env, fp_gtk_g_slist_length(list), stringCls,
-            NULL);
+    array = (*env)->NewObjectArray(env, fp_gtk_g_slist_length(list), stringCls, NULL);
     if (array == NULL) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowInternalError(env, "Could not instantiate array files array");
         return NULL;
     }
@@ -211,7 +243,9 @@ static jobjectArray toPathAndFilenamesArray(JNIEnv *env, GSList* list)
         }
 
         str = (*env)->NewStringUTF(env, entry);
-        (*env)->SetObjectArrayElement(env, array, i, str);
+        if (str && !(*env)->ExceptionCheck(env)) {
+            (*env)->SetObjectArrayElement(env, array, i, str);
+        }
         i++;
     }
 
@@ -243,16 +277,17 @@ static void handle_response(GtkWidget* aDialog, gint responseId, gpointer obj)
     if (full_path_names) {
         //This is a hack for use with "Recent Folders" in gtk where each
         //file could have its own directory.
-        jcurrent_folder = (*env)->NewStringUTF(env, "/");
         jfilenames = toPathAndFilenamesArray(env, filenames);
+        jcurrent_folder = (*env)->NewStringUTF(env, "/");
     } else {
-        jcurrent_folder = (*env)->NewStringUTF(env, current_folder);
         jfilenames = toFilenamesArray(env, filenames);
+        jcurrent_folder = (*env)->NewStringUTF(env, current_folder);
     }
-    (*env)->CallVoidMethod(env, obj, setFileInternalMethodID, jcurrent_folder,
-            jfilenames);
+    if (!(*env)->ExceptionCheck(env)) {
+        (*env)->CallVoidMethod(env, obj, setFileInternalMethodID,
+                               jcurrent_folder, jfilenames);
+    }
     fp_g_free(current_folder);
-
     quit(env, (jobject)obj, TRUE);
 }
 
@@ -271,11 +306,17 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
 
     if (jvm == NULL) {
         (*env)->GetJavaVM(env, &jvm);
+        JNU_CHECK_EXCEPTION(env);
     }
 
     fp_gdk_threads_enter();
 
     const char *title = jtitle == NULL? "": (*env)->GetStringUTFChars(env, jtitle, 0);
+    if (title == NULL) {
+        (*env)->ExceptionClear(env);
+        JNU_ThrowOutOfMemoryError(env, "Could not get title");
+        return;
+    }
 
     if (mode == java_awt_FileDialog_SAVE) {
         /* Save action */
@@ -303,6 +344,11 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
     /* Set the directory */
     if (jdir != NULL) {
         const char *dir = (*env)->GetStringUTFChars(env, jdir, 0);
+        if (dir == NULL) {
+            (*env)->ExceptionClear(env);
+            JNU_ThrowOutOfMemoryError(env, "Could not get dir");
+            return;
+        }
         fp_gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), dir);
         (*env)->ReleaseStringUTFChars(env, jdir, dir);
     }
@@ -310,6 +356,11 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
     /* Set the filename */
     if (jfile != NULL) {
         const char *filename = (*env)->GetStringUTFChars(env, jfile, 0);
+        if (filename == NULL) {
+            (*env)->ExceptionClear(env);
+            JNU_ThrowOutOfMemoryError(env, "Could not get filename");
+            return;
+        }
         if (mode == java_awt_FileDialog_SAVE) {
             fp_gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), filename);
         } else {

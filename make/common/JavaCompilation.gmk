@@ -143,6 +143,9 @@ define SetupArchive
   ifneq (,$2)
     $1_DEPS:=$2
   else
+    # Add all source roots to the find cache since we are likely going to run find 
+    # on these more than once. The cache will only be updated if necessary.
+    $$(eval $$(call FillCacheFind, $$($1_FIND_LIST)))
     $1_DEPS:=$$(filter $$(addprefix %,$$($1_SUFFIXES)), \
         $$(call CacheFind,$$($1_SRCS)))
     ifneq (,$$($1_GREP_INCLUDE_PATTERNS))
@@ -157,6 +160,10 @@ define SetupArchive
     ifeq (,$$($1_SKIP_METAINF))
       $1_DEPS+=$$(call CacheFind,$$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
     endif
+  endif
+  # The dependency list should never be empty
+  ifeq ($$(strip $$($1_DEPS)), )
+    $$(warning No dependencies found for $1)
   endif
 
   # Utility macros, to make the shell script receipt somewhat easier to decipher.
@@ -336,7 +343,21 @@ endef
 # Previously this was inconsistently done in different repositories.
 # This is the new clean standard. Though it is to be superseded by
 # a standard annotation processor from with sjavac.
-define add_file_to_copy_and_clean
+#
+# The sed expression does this:
+# 1. Add a backslash before any :, = or ! that do not have a backslash already.
+# 2. Apply the file unicode2x.sed which does a whole bunch of \u00XX to \xXX 
+#    conversions.
+# 3. Delete all lines starting with #.
+# 4. Delete empty lines.
+# 5. Append lines ending with \ with the next line.
+# 6. Remove leading and trailing white space. Note that tabs must be explicit
+#    as sed on macosx does not understand '\t'.
+# 7. Replace the first \= with just =.
+# 8. Finally it's all sorted to create a stable output.
+# 
+# It is assumed that = is the character used for separating names and values.
+define add_file_to_clean
   # param 1 = BUILD_MYPACKAGE
   # parma 2 = The source file to copy and clean.
   $2_TARGET:=$2
@@ -345,12 +366,13 @@ define add_file_to_copy_and_clean
   # Now we can setup the depency that will trigger the copying.
   $$($1_BIN)$$($2_TARGET) : $2
 	$(MKDIR) -p $$(@D)
-	$(CAT) $$< | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' -e 's/#.*/#/g' \
+	$(CAT) $$< | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' \
+	        -e 's/\([^\\]\)!/\1\\!/g' -e 's/#.*/#/g' \
 	    | $(SED) -f "$(SRC_ROOT)/make/common/support/unicode2x.sed" \
 	    | $(SED) -e '/^#/d' -e '/^$$$$/d' \
 	        -e :a -e '/\\$$$$/N; s/\\\n//; ta' \
-	        -e 's/^[ \t]*//;s/[ \t]*$$$$//' \
-	        -e 's/\\=/=/' | LANG=C $(SORT) > $$@
+	        -e 's/^[ 	]*//;s/[ 	]*$$$$//' \
+	        -e 's/\\=/=/' | LC_ALL=C $(SORT) > $$@
 	$(CHMOD) -f ug+w $$@
 
   # And do not forget this target
@@ -376,8 +398,9 @@ define SetupJavaCompilation
   #   INCLUDES:=myapp.foo means will only compile java files in myapp.foo or any of its sub-packages.
   #   EXCLUDES:=myapp.foo means will do not compile java files in myapp.foo or any of its sub-packages.
   #   COPY:=.prp means copy all prp files to the corresponding package in BIN.
-  #   CLEAN:=.properties means copy and clean all properties file to the corresponding package in BIN.
   #   COPY_FILES:=myapp/foo/setting.txt means copy this file over to the package myapp/foo
+  #   CLEAN:=.properties means copy and clean all properties file to the corresponding package in BIN.
+  #   CLEAN_FILES:=myapp/foo/setting.txt means clean this file over to the package myapp/foo
   #   SRCZIP:=Create a src.zip based on the found sources and copied files.
   #   INCLUDE_FILES:="com/sun/SolarisFoobar.java" means only compile this file!
   #   EXCLUDE_FILES:="com/sun/SolarisFoobar.java" means do not compile this particular file!
@@ -405,6 +428,9 @@ define SetupJavaCompilation
   # Make sure the dirs exist.
   $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupJavaCompilation $1 contains missing directory $$d)))
   $$(eval $$(call MakeDir,$$($1_BIN)))
+  # Add all source roots to the find cache since we are likely going to run find 
+  # on these more than once. The cache will only be updated if necessary.
+  $$(eval $$(call FillCacheFind,$$($1_SRC)))
   # Find all files in the source trees.
   $1_ALL_SRCS += $$(filter-out $(OVR_SRCS),$$(call CacheFind,$$($1_SRC)))
   # Extract the java files.
@@ -420,8 +446,8 @@ define SetupJavaCompilation
   # Now we have a list of all java files to compile: $$($1_SRCS)
 
   # Create the corresponding smart javac wrapper command line.
-  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix .*,$$(subst /,.,$$($1_EXCLUDES)))) \
-      $$(addprefix -i ,$$(addsuffix .*,$$(subst /,.,$$($1_INCLUDES)))) \
+  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix /*,$$($1_EXCLUDES))) \
+      $$(addprefix -i ,$$(addsuffix /*,$$($1_INCLUDES))) \
       $$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES))) \
       $$(addprefix -if *,$$(strip $$($1_INCLUDE_FILES))) \
       -src "$$(subst $$(SPACE),$$(PATH_SEP),$$(strip $$($1_SRC)))"
@@ -437,7 +463,7 @@ define SetupJavaCompilation
   endif
 
   # Find all files to be copied from source to bin.
-  ifneq (,$$($1_COPY))
+  ifneq (,$$($1_COPY)$$($1_COPY_FILES))
     # Search for all files to be copied.
     $1_ALL_COPIES := $$(filter $$(addprefix %,$$($1_COPY)),$$($1_ALL_SRCS))
     # Copy these explicitly
@@ -452,20 +478,22 @@ define SetupJavaCompilation
     ifneq (,$$($1_EXCLUDE_FILES))
       $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_FILES_PATTERN),$$($1_ALL_COPIES))
     endif
-    # All files below META-INF are always copied.
-    $1_ALL_COPIES += $$(filter $$(addsuffix /META-INF%,$$($1_SRC)),$$($1_ALL_SRCS))
-    ifneq (,$$($1_ALL_COPIES))
-      # Yep, there are files to be copied!
-      $1_ALL_COPY_TARGETS:=
-          $$(foreach i,$$($1_ALL_COPIES),$$(eval $$(call add_file_to_copy,$1,$$i)))
-      # Now we can depend on $$($1_ALL_COPY_TARGETS) to copy all files!
-    endif
+  endif
+  # All files below META-INF are always copied.
+  $1_ALL_COPIES += $$(filter $$(addsuffix /META-INF%,$$($1_SRC)),$$($1_ALL_SRCS))
+  ifneq (,$$($1_ALL_COPIES))
+    # Yep, there are files to be copied!
+    $1_ALL_COPY_TARGETS:=
+        $$(foreach i,$$($1_ALL_COPIES),$$(eval $$(call add_file_to_copy,$1,$$i)))
+    # Now we can depend on $$($1_ALL_COPY_TARGETS) to copy all files!
   endif
 
   # Find all property files to be copied and cleaned from source to bin.
-  ifneq (,$$($1_CLEAN))
+  ifneq (,$$($1_CLEAN)$$($1_CLEAN_FILES))
     # Search for all files to be copied.
     $1_ALL_CLEANS := $$(filter $$(addprefix %,$$($1_CLEAN)),$$($1_ALL_SRCS))
+    # Clean these explicitly
+    $1_ALL_CLEANS += $$($1_CLEAN_FILES)
     # Copy and clean must also respect filters.
     ifneq (,$$($1_INCLUDES))
       $1_ALL_CLEANS := $$(filter $$($1_SRC_INCLUDES),$$($1_ALL_CLEANS))
@@ -479,7 +507,7 @@ define SetupJavaCompilation
     ifneq (,$$($1_ALL_CLEANS))
       # Yep, there are files to be copied and cleaned!
       $1_ALL_COPY_CLEAN_TARGETS:=
-          $$(foreach i,$$($1_ALL_CLEANS),$$(eval $$(call add_file_to_copy_and_clean,$1,$$i)))
+          $$(foreach i,$$($1_ALL_CLEANS),$$(eval $$(call add_file_to_clean,$1,$$i)))
       # Now we can depend on $$($1_ALL_COPY_CLEAN_TARGETS) to copy all files!
     endif
   endif

@@ -27,6 +27,7 @@ package com.sun.tools.javadoc;
 
 import javax.tools.JavaFileObject;
 
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.Enter;
@@ -84,7 +85,9 @@ public class JavadocEnter extends Enter {
     public void visitTopLevel(JCCompilationUnit tree) {
         super.visitTopLevel(tree);
         if (tree.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE)) {
-            docenv.makePackageDoc(tree.packge, docenv.getTreePath(tree));
+            JCPackageDecl pd = tree.getPackage();
+            TreePath tp = pd == null ? docenv.getTreePath(tree) : docenv.getTreePath(tree, pd);
+            docenv.makePackageDoc(tree.packge, tp);
         }
     }
 

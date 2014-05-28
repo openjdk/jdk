@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,72 +33,46 @@
 
 public class TestPackageDeprecation extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "6492694";
+    public static void main(String... args) throws Exception {
+        TestPackageDeprecation tester = new TestPackageDeprecation();
+        tester.runTests();
+    }
 
-    //Javadoc arguments.
-    private static final String[] ARGS1 = new String[]{
-        "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR, "-use", "pkg", "pkg1",
-        SRC_DIR + FS + "C2.java", SRC_DIR + FS + "FooDepr.java"
-    };
-    private static final String[] ARGS2 = new String[]{
-        "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR, "-use", "-nodeprecated",
-        "pkg", "pkg1", SRC_DIR + FS + "C2.java", SRC_DIR + FS + "FooDepr.java"
-    };
+    @Test
+    void testDefault() {
+        javadoc("-d", "out-default",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg", "pkg1", testSrc("C2.java"), testSrc("FooDepr.java"));
+        checkExit(Exit.OK);
 
-    //Input for string search tests.
-    private static final String[][] TEST1 = {
-        {BUG_ID + "-1" + FS + "pkg1" + FS + "package-summary.html",
-            "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>" + NL +
+        checkOutput("pkg1/package-summary.html", true,
+            "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>\n" +
             "<div class=\"block\"><span class=\"deprecationComment\">This package is Deprecated." +
             "</span></div>"
-        },
-        {BUG_ID + "-1" + FS + "deprecated-list.html",
+        );
+
+        checkOutput("deprecated-list.html", true,
             "<li><a href=\"#package\">Deprecated Packages</a></li>"
-        }
-    };
-    private static final String[][] TEST2 = NO_TEST;
-    private static final String[][] NEGATED_TEST1 = NO_TEST;
-    private static final String[][] NEGATED_TEST2 = {
-        {BUG_ID + "-2" + FS + "overview-summary.html", "pkg1"},
-        {BUG_ID + "-2" + FS + "allclasses-frame.html", "FooDepr"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestPackageDeprecation tester = new TestPackageDeprecation();
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
-        if ((new java.io.File(BUG_ID + "-2" + FS + "pkg1" + FS +
-                "package-summary.html")).exists()) {
-            throw new Error("Test Fails: packages summary should not be" +
-                    "generated for deprecated package.");
-        } else {
-            System.out.println("Test passes:  package-summary.html not found.");
-        }
-        if ((new java.io.File(BUG_ID + "-2" + FS + "FooDepr.html")).exists()) {
-            throw new Error("Test Fails: FooDepr should not be" +
-                    "generated as it is deprecated.");
-        } else {
-            System.out.println("Test passes:  FooDepr.html not found.");
-        }
-        tester.printSummary();
+        );
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void testNoDeprecated() {
+        javadoc("-d", "out-nodepr",
+                "-sourcepath", testSrc,
+                "-use",
+                "-nodeprecated",
+                "pkg", "pkg1", testSrc("C2.java"), testSrc("FooDepr.java"));
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("overview-summary.html", false,
+                "pkg1");
+        checkOutput("allclasses-frame.html", false,
+                "FooDepr");
+
+        checkFiles(false,
+                "pkg1/package-summary.html",
+                "FooDepr.html");
     }
 }

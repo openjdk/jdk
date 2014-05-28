@@ -139,15 +139,17 @@ public class NTLoginModule implements LoginModule {
 
         succeeded = false; // Indicate not yet successful
 
-        ntSystem = new NTSystem(debugNative);
-        if (ntSystem == null) {
+        try {
+            ntSystem = new NTSystem(debugNative);
+        } catch (UnsatisfiedLinkError ule) {
             if (debug) {
                 System.out.println("\t\t[NTLoginModule] " +
                                    "Failed in NT login");
             }
             throw new FailedLoginException
                 ("Failed in attempt to import the " +
-                 "underlying NT system identity information");
+                 "underlying NT system identity information" +
+                 " on " + System.getProperty("os.name"));
         }
 
         if (ntSystem.getName() == null) {

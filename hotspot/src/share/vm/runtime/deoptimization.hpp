@@ -60,6 +60,8 @@ class Deoptimization : AllStatic {
     Reason_predicate,             // compiler generated predicate failed
     Reason_loop_limit_check,      // compiler generated loop limits check failed
     Reason_speculate_class_check, // saw unexpected object class from type speculation
+    Reason_speculate_null_check,  // saw unexpected null from type speculation
+    Reason_rtm_state_change,      // rtm state change detected
     Reason_LIMIT,
     // Note:  Keep this enum in sync. with _trap_reason_name.
     Reason_RECORDED_LIMIT = Reason_bimorphic  // some are not recorded per bc
@@ -314,15 +316,25 @@ class Deoptimization : AllStatic {
       return Reason_null_check;           // recorded per BCI as a null check
     else if (reason == Reason_speculate_class_check)
       return Reason_class_check;
+    else if (reason == Reason_speculate_null_check)
+      return Reason_null_check;
     else
       return Reason_none;
   }
 
   static bool reason_is_speculate(int reason) {
-    if (reason == Reason_speculate_class_check) {
+    if (reason == Reason_speculate_class_check || reason == Reason_speculate_null_check) {
       return true;
     }
     return false;
+  }
+
+  static DeoptReason reason_null_check(bool speculative) {
+    return speculative ? Deoptimization::Reason_speculate_null_check : Deoptimization::Reason_null_check;
+  }
+
+  static DeoptReason reason_class_check(bool speculative) {
+    return speculative ? Deoptimization::Reason_speculate_class_check : Deoptimization::Reason_class_check;
   }
 
   static uint per_method_trap_limit(int reason) {

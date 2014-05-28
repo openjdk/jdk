@@ -212,7 +212,6 @@ public:
 
   // Iteration functions.
   void oop_iterate(ExtendedOopClosure* cl);
-  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl);
   Space* space_containing(const void* addr) const;
@@ -454,7 +453,7 @@ public:
     // Assumes a 2-generation system; the first disjunct remembers if an
     // incremental collection failed, even when we thought (second disjunct)
     // that it would not.
-    assert(heap()->collector_policy()->is_two_generation_policy(),
+    assert(heap()->collector_policy()->is_generation_policy(),
            "the following definition may not be suitable for an n(>2)-generation system");
     return incremental_collection_failed() ||
            (consult_young && !get_gen(0)->collection_attempt_is_safe());

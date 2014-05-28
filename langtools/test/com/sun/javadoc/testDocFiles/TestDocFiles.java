@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,43 +25,26 @@
  * @test
  * @bug 8008949
  * @summary verify that doc-files get copied
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestDocFiles
  * @run main TestDocFiles
  */
 
 public class TestDocFiles extends JavadocTester {
 
-    private static final String BUG_ID = "8008949";
-    private static final String[][] TEST = {
-        {"tmp" + FS + "pkg" + FS + "doc-files" + FS + "test.txt", "test file"}};
-
-    private static final String[] ARGS =
-        new String[] {
-            "-d", "tmp", "-sourcepath", SRC_DIR, "pkg"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDocFiles tester = new TestDocFiles();
-        run(tester, ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg/doc-files/test.txt", true,
+                "test file");
     }
 }

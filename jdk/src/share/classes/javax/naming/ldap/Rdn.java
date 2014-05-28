@@ -352,7 +352,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * </ul>
      * <p>
      * If obj is null or not an instance of Rdn, false is returned.
-     * <p>
+     *
      * @param obj object to be compared for equality with this Rdn.
      * @return true if the specified object is equal to this Rdn.
      * @see #hashCode()

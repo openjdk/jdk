@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,51 +26,26 @@
  * @bug      7132631
  * @summary  Make sure that the help file is generated correctly.
  * @author   Bhavesh Patel
- * @library  ../lib/
- * @build    JavadocTester TestHelpFile
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestHelpFile
  */
 
 public class TestHelpFile extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "7132631";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            SRC_DIR + FS + "TestHelpFile.java"
-    };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "help-doc.html",
-            "<a href=\"constant-values.html\">Constant Field Values</a>"
-        },
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHelpFile tester = new TestHelpFile();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                testSrc("TestHelpFile.java"));
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("help-doc.html", true,
+            "<a href=\"constant-values.html\">Constant Field Values</a>");
     }
 }

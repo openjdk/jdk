@@ -55,6 +55,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassStatsDCmd>(full_export, true, false));
 #endif // INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RotateGCLogDCmd>(full_export, true, false));
 
   // Enhanced JMX Agent Support
   // These commands won't be exported via the DiagnosticCommandMBean until an
@@ -659,3 +660,13 @@ void VMDynamicLibrariesDCmd::execute(DCmdSource source, TRAPS) {
   os::print_dll_info(output());
   output()->cr();
 }
+
+void RotateGCLogDCmd::execute(DCmdSource source, TRAPS) {
+  if (UseGCLogFileRotation) {
+    VM_RotateGCLog rotateop(output());
+    VMThread::execute(&rotateop);
+  } else {
+    output()->print_cr("Target VM does not support GC log file rotation.");
+  }
+}
+

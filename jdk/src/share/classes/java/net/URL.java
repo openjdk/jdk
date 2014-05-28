@@ -266,10 +266,7 @@ public final class URL implements java.io.Serializable {
      *     a subclass of {@code URLStreamHandler}, then the next package
      *     in the list is tried.
      * <li>If the previous step fails to find a protocol handler, then the
-     *     constructor tries to load from a system default package.
-     *     <blockquote><pre>
-     *         &lt;<i>system default package</i>&gt;.&lt;<i>protocol</i>&gt;.Handler
-     *     </pre></blockquote>
+     *     constructor tries to load a built-in protocol handler.
      *     If this class does not exist, or if the class exists but it is not a
      *     subclass of {@code URLStreamHandler}, then a
      *     {@code MalformedURLException} is thrown.
@@ -867,7 +864,7 @@ public final class URL implements java.io.Serializable {
      * Creates an integer suitable for hash table indexing.<p>
      *
      * The hash code is based upon all the URL components relevant for URL
-     * comparison. As such, this operation is a blocking operation.<p>
+     * comparison. As such, this operation is a blocking operation.
      *
      * @return  a hash code for this {@code URL}.
      */

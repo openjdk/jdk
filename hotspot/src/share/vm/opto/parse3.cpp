@@ -28,6 +28,7 @@
 #include "memory/universe.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -233,7 +234,8 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   // Build the load.
   //
   MemNode::MemOrd mo = is_vol ? MemNode::acquire : MemNode::unordered;
-  Node* ld = make_load(NULL, adr, type, bt, adr_type, mo, is_vol);
+  bool needs_atomic_access = is_vol || AlwaysAtomicAccesses;
+  Node* ld = make_load(NULL, adr, type, bt, adr_type, mo, needs_atomic_access);
 
   // Adjust Java stack
   if (type2size[bt] == 1)
@@ -314,7 +316,8 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
     }
     store = store_oop_to_object(control(), obj, adr, adr_type, val, field_type, bt, mo);
   } else {
-    store = store_to_memory(control(), adr, val, bt, adr_type, mo, is_vol);
+    bool needs_atomic_access = is_vol || AlwaysAtomicAccesses;
+    store = store_to_memory(control(), adr, val, bt, adr_type, mo, needs_atomic_access);
   }
 
   // If reference is volatile, prevent following volatiles ops from
@@ -332,13 +335,23 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
     }
   }
 
+  if (is_field) {
+    set_wrote_fields(true);
+  }
+
   // If the field is final, the rules of Java say we are in <init> or <clinit>.
   // Note the presence of writes to final non-static fields, so that we
   // can insert a memory barrier later on to keep the writes from floating
   // out of the constructor.
   // Any method can write a @Stable field; insert memory barriers after those also.
   if (is_field && (field->is_final() || field->is_stable())) {
-    set_wrote_final(true);
+    if (field->is_final()) {
+        set_wrote_final(true);
+    }
+    if (field->is_stable()) {
+        set_wrote_stable(true);
+    }
+
     // Preserve allocation ptr to create precedent edge to it in membar
     // generated on exit from constructor.
     if (C->eliminate_boxing() &&

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,12 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.peer.SystemTrayPeer;
 
-public class WSystemTrayPeer extends WObjectPeer implements SystemTrayPeer {
+final class WSystemTrayPeer extends WObjectPeer implements SystemTrayPeer {
     WSystemTrayPeer(SystemTray target) {
         this.target = target;
     }
 
+    @Override
     public Dimension getTrayIconSize() {
         return new Dimension(WTrayIconPeer.TRAY_ICON_WIDTH, WTrayIconPeer.TRAY_ICON_HEIGHT);
     }
@@ -43,6 +44,7 @@ public class WSystemTrayPeer extends WObjectPeer implements SystemTrayPeer {
         return ((WToolkit)Toolkit.getDefaultToolkit()).isTraySupported();
     }
 
+    @Override
     protected void disposeImpl() {
     }
 }

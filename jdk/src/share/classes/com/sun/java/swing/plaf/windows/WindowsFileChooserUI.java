@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,8 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         fc.add(topPanel, BorderLayout.NORTH);
 
         // ComboBox Label
-        lookInLabel = new JLabel(lookInLabelText, JLabel.TRAILING) {
+        @SuppressWarnings("serial") // anonymous class
+        JLabel tmp1 = new JLabel(lookInLabelText, JLabel.TRAILING) {
             public Dimension getPreferredSize() {
                 return getMinimumSize();
             }
@@ -238,6 +239,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
                 return d;
             }
         };
+        lookInLabel = tmp1;
         lookInLabel.setDisplayedMnemonic(lookInLabelMnemonic);
         lookInLabel.setAlignmentX(JComponent.LEFT_ALIGNMENT);
         lookInLabel.setAlignmentY(JComponent.CENTER_ALIGNMENT);
@@ -245,7 +247,8 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         topPanel.add(Box.createRigidArea(new Dimension(8,0)));
 
         // CurrentDir ComboBox
-        directoryComboBox = new JComboBox<File>() {
+        @SuppressWarnings("serial") // anonymous class
+        JComboBox<File> tmp2 = new JComboBox<File>() {
             public Dimension getMinimumSize() {
                 Dimension d = super.getMinimumSize();
                 d.width = 60;
@@ -259,6 +262,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
                 return d;
             }
         };
+        directoryComboBox = tmp2;
         directoryComboBox.putClientProperty( "JComboBox.lightweightKeyboardNavigation", "Lightweight" );
         lookInLabel.setLabelFor(directoryComboBox);
         directoryComboBoxModel = createDirectoryComboBoxModel(fc);
@@ -416,12 +420,13 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         fileAndFilterPanel.add(Box.createRigidArea(vstrut8));
         fileAndFilterPanel.setLayout(new BoxLayout(fileAndFilterPanel, BoxLayout.Y_AXIS));
 
-
-        filenameTextField = new JTextField(35) {
+        @SuppressWarnings("serial") // anonymous class
+        JTextField tmp3 = new JTextField(35) {
             public Dimension getMaximumSize() {
                 return new Dimension(Short.MAX_VALUE, super.getPreferredSize().height);
             }
         };
+        filenameTextField = tmp3;
 
         fileNameLabel.setLabelFor(filenameTextField);
         filenameTextField.addFocusListener(
@@ -456,12 +461,14 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         // buttons
         getButtonPanel().setLayout(new BoxLayout(getButtonPanel(), BoxLayout.Y_AXIS));
 
-        approveButton = new JButton(getApproveButtonText(fc)) {
+        @SuppressWarnings("serial") // anonymous class
+        JButton tmp4 = new JButton(getApproveButtonText(fc)) {
             public Dimension getMaximumSize() {
                 return approveButton.getPreferredSize().width > cancelButton.getPreferredSize().width ?
                        approveButton.getPreferredSize() : cancelButton.getPreferredSize();
             }
         };
+        approveButton = tmp4;
         Insets buttonMargin = approveButton.getMargin();
         buttonMargin = new InsetsUIResource(buttonMargin.top,    buttonMargin.left  + 5,
                                             buttonMargin.bottom, buttonMargin.right + 5);
@@ -473,12 +480,14 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         getButtonPanel().add(approveButton);
         getButtonPanel().add(Box.createRigidArea(vstrut4));
 
-        cancelButton = new JButton(cancelButtonText) {
+        @SuppressWarnings("serial") // anonymous class
+        JButton tmp5 = new JButton(cancelButtonText) {
             public Dimension getMaximumSize() {
                 return approveButton.getPreferredSize().width > cancelButton.getPreferredSize().width ?
                        approveButton.getPreferredSize() : cancelButton.getPreferredSize();
             }
         };
+        cancelButton = tmp5;
         cancelButton.setMargin(buttonMargin);
         cancelButton.setToolTipText(cancelButtonToolTipText);
         cancelButton.addActionListener(getCancelSelectionAction());
@@ -589,6 +598,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     }
 
     // Obsolete class, not used in this version.
+    @SuppressWarnings("serial")
     protected class WindowsNewFolderAction extends NewFolderAction {
     }
 
@@ -597,6 +607,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     }
 
     // Obsolete class, not used in this version.
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileRenderer extends DefaultListCellRenderer  {
     }
 
@@ -917,6 +928,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         return new DirectoryComboBoxRenderer();
     }
 
+    @SuppressWarnings("serial") // anonymous class
     private static JButton createToolButton(Action a, Icon defaultIcon, String toolTipText, String accessibleName) {
         final JButton result = new JButton(a);
 
@@ -979,6 +991,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     //
     // Renderer for DirectoryComboBox
     //
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class DirectoryComboBoxRenderer extends DefaultListCellRenderer  {
         IndentIcon ii = new IndentIcon();
         public Component getListCellRendererComponent(JList list, Object value,
@@ -1036,6 +1049,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
         Vector<File> directories = new Vector<File>();
         int[] depths = null;
@@ -1168,6 +1182,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     /**
      * Render different type sizes and styles.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list,
             Object value, int index, boolean isSelected,
@@ -1193,9 +1208,71 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
-    protected class FilterComboBoxModel extends AbstractFilterComboBoxModel {
-        protected JFileChooser getFileChooser() {
-            return WindowsFileChooserUI.this.getFileChooser();
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
+    protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
+            PropertyChangeListener {
+        protected FileFilter[] filters;
+        protected FilterComboBoxModel() {
+            super();
+            filters = getFileChooser().getChoosableFileFilters();
+        }
+
+        public void propertyChange(PropertyChangeEvent e) {
+            String prop = e.getPropertyName();
+            if(prop == JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY) {
+                filters = (FileFilter[]) e.getNewValue();
+                fireContentsChanged(this, -1, -1);
+            } else if (prop == JFileChooser.FILE_FILTER_CHANGED_PROPERTY) {
+                fireContentsChanged(this, -1, -1);
+            }
+        }
+
+        public void setSelectedItem(Object filter) {
+            if(filter != null) {
+                getFileChooser().setFileFilter((FileFilter) filter);
+                fireContentsChanged(this, -1, -1);
+            }
+        }
+
+        public Object getSelectedItem() {
+            // Ensure that the current filter is in the list.
+            // NOTE: we shouldnt' have to do this, since JFileChooser adds
+            // the filter to the choosable filters list when the filter
+            // is set. Lets be paranoid just in case someone overrides
+            // setFileFilter in JFileChooser.
+            FileFilter currentFilter = getFileChooser().getFileFilter();
+            boolean found = false;
+            if(currentFilter != null) {
+                for (FileFilter filter : filters) {
+                    if (filter == currentFilter) {
+                        found = true;
+                    }
+                }
+                if(found == false) {
+                    getFileChooser().addChoosableFileFilter(currentFilter);
+                }
+            }
+            return getFileChooser().getFileFilter();
+        }
+
+        public int getSize() {
+            if(filters != null) {
+                return filters.length;
+            } else {
+                return 0;
+            }
+        }
+
+        public FileFilter getElementAt(int index) {
+            if(index > getSize() - 1) {
+                // This shouldn't happen. Try to recover gracefully.
+                return getFileChooser().getFileFilter();
+            }
+            if(filters != null) {
+                return filters[index];
+            } else {
+                return null;
+            }
         }
     }
 

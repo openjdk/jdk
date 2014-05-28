@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,31 +55,22 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
-#include "thread_aix.inline.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
-#ifdef TARGET_ARCH_ppc
-# include "assembler_ppc.inline.hpp"
-# include "nativeInst_ppc.hpp"
-#endif
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 // put OS-includes here (sorted alphabetically)
 #include <errno.h>
@@ -378,13 +369,14 @@ void os::Aix::query_multipage_support() {
   assert(_page_size == SIZE_4K, "surprise!");
 
 
-  // query default data page size (default page size for C-Heap, pthread stacks and .bss).
+  // Query default data page size (default page size for C-Heap, pthread stacks and .bss).
   // Default data page size is influenced either by linker options (-bdatapsize)
   // or by environment variable LDR_CNTRL (suboption DATAPSIZE). If none is given,
   // default should be 4K.
   size_t data_page_size = SIZE_4K;
   {
     void* p = ::malloc(SIZE_16M);
+    guarantee(p != NULL, "malloc failed");
     data_page_size = os::Aix::query_pagesize(p);
     ::free(p);
   }
@@ -511,85 +503,76 @@ query_multipage_support_end:
 
 } // end os::Aix::query_multipage_support()
 
-
-// The code for this method was initially derived from the version in os_linux.cpp
+// The code for this method was initially derived from the version in os_linux.cpp.
 void os::init_system_properties_values() {
-  // The next few definitions allow the code to be verbatim:
-#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n), mtInternal)
+
 #define DEFAULT_LIBPATH "/usr/lib:/lib"
 #define EXTENSIONS_DIR  "/lib/ext"
 #define ENDORSED_DIR    "/lib/endorsed"
 
+  // Buffer that fits several sprintfs.
+  // Note that the space for the trailing null is provided
+  // by the nulls included by the sizeof operator.
+  const size_t bufsize =
+    MAX3((size_t)MAXPATHLEN,  // For dll_dir & friends.
+         (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR), // extensions dir
+         (size_t)MAXPATHLEN + sizeof(ENDORSED_DIR)); // endorsed dir
+  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+
   // sysclasspath, java_home, dll_dir
-  char *home_path;
-  char *dll_path;
-  char *pslash;
-  char buf[MAXPATHLEN];
-  os::jvm_path(buf, sizeof(buf));
+  {
+    char *pslash;
+    os::jvm_path(buf, bufsize);
 
-  // Found the full path to libjvm.so.
-  // Now cut the path to <java_home>/jre if we can.
-  *(strrchr(buf, '/')) = '\0'; // get rid of /libjvm.so
-  pslash = strrchr(buf, '/');
-  if (pslash != NULL) {
-    *pslash = '\0';            // get rid of /{client|server|hotspot}
-  }
-
-  dll_path = malloc(strlen(buf) + 1);
-  strcpy(dll_path, buf);
-  Arguments::set_dll_dir(dll_path);
-
-  if (pslash != NULL) {
+    // Found the full path to libjvm.so.
+    // Now cut the path to <java_home>/jre if we can.
+    *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
     pslash = strrchr(buf, '/');
     if (pslash != NULL) {
-      *pslash = '\0';          // get rid of /<arch>
+      *pslash = '\0';            // Get rid of /{client|server|hotspot}.
+    }
+    Arguments::set_dll_dir(buf);
+
+    if (pslash != NULL) {
       pslash = strrchr(buf, '/');
       if (pslash != NULL) {
-        *pslash = '\0';        // get rid of /lib
+        *pslash = '\0';          // Get rid of /<arch>.
+        pslash = strrchr(buf, '/');
+        if (pslash != NULL) {
+          *pslash = '\0';        // Get rid of /lib.
+        }
       }
     }
+    Arguments::set_java_home(buf);
+    set_boot_path('/', ':');
   }
 
-  home_path = malloc(strlen(buf) + 1);
-  strcpy(home_path, buf);
-  Arguments::set_java_home(home_path);
+  // Where to look for native libraries.
 
-  if (!set_boot_path('/', ':')) return;
-
-  // Where to look for native libraries
-
-  // On Aix we get the user setting of LIBPATH
+  // On Aix we get the user setting of LIBPATH.
   // Eventually, all the library path setting will be done here.
-  char *ld_library_path;
+  // Get the user setting of LIBPATH.
+  const char *v = ::getenv("LIBPATH");
+  const char *v_colon = ":";
+  if (v == NULL) { v = ""; v_colon = ""; }
 
-  // Construct the invariant part of ld_library_path.
-  ld_library_path = (char *) malloc(sizeof(DEFAULT_LIBPATH));
-  sprintf(ld_library_path, DEFAULT_LIBPATH);
-
-  // Get the user setting of LIBPATH, and prepended it.
-  char *v = ::getenv("LIBPATH");
-  if (v == NULL) {
-    v = "";
-  }
-
-  char *t = ld_library_path;
-  // That's +1 for the colon and +1 for the trailing '\0'
-  ld_library_path = (char *) malloc(strlen(v) + 1 + strlen(t) + 1);
-  sprintf(ld_library_path, "%s:%s", v, t);
-
+  // Concatenate user and invariant part of ld_library_path.
+  // That's +1 for the colon and +1 for the trailing '\0'.
+  char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char, strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1, mtInternal);
+  sprintf(ld_library_path, "%s%s" DEFAULT_LIBPATH, v, v_colon);
   Arguments::set_library_path(ld_library_path);
+  FREE_C_HEAP_ARRAY(char, ld_library_path, mtInternal);
 
-  // Extensions directories
-  char* cbuf = malloc(strlen(Arguments::get_java_home()) + sizeof(EXTENSIONS_DIR));
-  sprintf(cbuf, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
-  Arguments::set_ext_dirs(cbuf);
+  // Extensions directories.
+  sprintf(buf, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
+  Arguments::set_ext_dirs(buf);
 
   // Endorsed standards default directory.
-  cbuf = malloc(strlen(Arguments::get_java_home()) + sizeof(ENDORSED_DIR));
-  sprintf(cbuf, "%s" ENDORSED_DIR, Arguments::get_java_home());
-  Arguments::set_endorsed_dirs(cbuf);
+  sprintf(buf, "%s" ENDORSED_DIR, Arguments::get_java_home());
+  Arguments::set_endorsed_dirs(buf);
 
-#undef malloc
+  FREE_C_HEAP_ARRAY(char, buf, mtInternal);
+
 #undef DEFAULT_LIBPATH
 #undef EXTENSIONS_DIR
 #undef ENDORSED_DIR
@@ -1135,15 +1118,10 @@ jlong os::javaTimeNanos() {
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  {
-    // gettimeofday - based on time in seconds since the Epoch thus does not wrap
-    info_ptr->max_value = ALL_64_BITS;
-
-    // gettimeofday is a real time clock so it skips
-    info_ptr->may_skip_backward = true;
-    info_ptr->may_skip_forward = true;
-  }
-
+  info_ptr->max_value = ALL_64_BITS;
+  // mread_real_time() is monotonic (see 'os::javaTimeNanos()')
+  info_ptr->may_skip_backward = false;
+  info_ptr->may_skip_forward = false;
   info_ptr->kind = JVMTI_TIMER_ELAPSED;    // elapsed not CPU time
 }
 
@@ -2799,105 +2777,6 @@ size_t os::read(int fd, void *buf, unsigned int nBytes) {
   return ::read(fd, buf, nBytes);
 }
 
-#define NANOSECS_PER_MILLISEC 1000000
-
-int os::sleep(Thread* thread, jlong millis, bool interruptible) {
-  assert(thread == Thread::current(), "thread consistency check");
-
-  // Prevent nasty overflow in deadline calculation
-  // by handling long sleeps similar to solaris or windows.
-  const jlong limit = INT_MAX;
-  int result;
-  while (millis > limit) {
-    if ((result = os::sleep(thread, limit, interruptible)) != OS_OK) {
-      return result;
-    }
-    millis -= limit;
-  }
-
-  ParkEvent * const slp = thread->_SleepEvent;
-  slp->reset();
-  OrderAccess::fence();
-
-  if (interruptible) {
-    jlong prevtime = javaTimeNanos();
-
-    // Prevent precision loss and too long sleeps
-    jlong deadline = prevtime + millis * NANOSECS_PER_MILLISEC;
-
-    for (;;) {
-      if (os::is_interrupted(thread, true)) {
-        return OS_INTRPT;
-      }
-
-      jlong newtime = javaTimeNanos();
-
-      assert(newtime >= prevtime, "time moving backwards");
-      // Doing prevtime and newtime in microseconds doesn't help precision,
-      // and trying to round up to avoid lost milliseconds can result in a
-      // too-short delay.
-      millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
-
-      if (millis <= 0) {
-        return OS_OK;
-      }
-
-      // Stop sleeping if we passed the deadline
-      if (newtime >= deadline) {
-        return OS_OK;
-      }
-
-      prevtime = newtime;
-
-      {
-        assert(thread->is_Java_thread(), "sanity check");
-        JavaThread *jt = (JavaThread *) thread;
-        ThreadBlockInVM tbivm(jt);
-        OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
-
-        jt->set_suspend_equivalent();
-
-        slp->park(millis);
-
-        // were we externally suspended while we were waiting?
-        jt->check_and_wait_while_suspended();
-      }
-    }
-  } else {
-    OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-    jlong prevtime = javaTimeNanos();
-
-    // Prevent precision loss and too long sleeps
-    jlong deadline = prevtime + millis * NANOSECS_PER_MILLISEC;
-
-    for (;;) {
-      // It'd be nice to avoid the back-to-back javaTimeNanos() calls on
-      // the 1st iteration ...
-      jlong newtime = javaTimeNanos();
-
-      if (newtime - prevtime < 0) {
-        // time moving backwards, should only happen if no monotonic clock
-        // not a guarantee() because JVM should not abort on kernel/glibc bugs
-        // - HS14 Commented out as not implemented.
-        // - TODO Maybe we should implement it?
-        //assert(!Aix::supports_monotonic_clock(), "time moving backwards");
-      } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
-      }
-
-      if (millis <= 0) break;
-
-      if (newtime >= deadline) {
-        break;
-      }
-
-      prevtime = newtime;
-      slp->park(millis);
-    }
-    return OS_OK;
-  }
-}
-
 void os::naked_short_sleep(jlong ms) {
   struct timespec req;
 
@@ -2933,16 +2812,11 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN; }
 
-void os::yield_all(int attempts) {
+void os::yield_all() {
   // Yields to all threads, including threads with lower priorities
   // Threads on Linux are all with same priority. The Solaris style
   // os::yield_all() with nanosleep(1ms) is not necessary.
   sched_yield();
-}
-
-// Called from the tight loops to possibly influence time-sharing heuristics
-void os::loop_breaker(int attempts) {
-  os::yield_all(attempts);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3201,7 +3075,7 @@ static bool do_suspend(OSThread* osthread) {
 
   for (int n = 0; !osthread->sr.is_suspended(); n++) {
     for (int i = 0; i < RANDOMLY_LARGE_INTEGER2 && !osthread->sr.is_suspended(); i++) {
-      os::yield_all(i);
+      os::yield_all();
     }
 
     // timeout, try to cancel the request
@@ -3235,7 +3109,7 @@ static void do_resume(OSThread* osthread) {
     if (sr_notify(osthread) == 0) {
       for (int n = 0; n < RANDOMLY_LARGE_INTEGER && !osthread->sr.is_running(); n++) {
         for (int i = 0; i < 100 && !osthread->sr.is_running(); i++) {
-          os::yield_all(i);
+          os::yield_all();
         }
       }
     } else {
@@ -3244,50 +3118,6 @@ static void do_resume(OSThread* osthread) {
   }
 
   guarantee(osthread->sr.is_running(), "Must be running!");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// interrupt support
-
-void os::interrupt(Thread* thread) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(),
-    "possibility of dangling Thread pointer");
-
-  OSThread* osthread = thread->osthread();
-
-  if (!osthread->interrupted()) {
-    osthread->set_interrupted(true);
-    // More than one thread can get here with the same value of osthread,
-    // resulting in multiple notifications.  We do, however, want the store
-    // to interrupted() to be visible to other threads before we execute unpark().
-    OrderAccess::fence();
-    ParkEvent * const slp = thread->_SleepEvent;
-    if (slp != NULL) slp->unpark();
-  }
-
-  // For JSR166. Unpark even if interrupt status already was set
-  if (thread->is_Java_thread())
-    ((JavaThread*)thread)->parker()->unpark();
-
-  ParkEvent * ev = thread->_ParkEvent;
-  if (ev != NULL) ev->unpark();
-
-}
-
-bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(),
-    "possibility of dangling Thread pointer");
-
-  OSThread* osthread = thread->osthread();
-
-  bool interrupted = osthread->interrupted();
-
-  if (interrupted && clear_interrupted) {
-    osthread->set_interrupted(false);
-    // consider thread->_SleepEvent->reset() ... optional optimization
-  }
-
-  return interrupted;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -3741,6 +3571,11 @@ void os::Aix::check_signal_handler(int sig) {
     tty->print_cr("  found:%s", get_signal_handler_name(thisHandler, buf, O_BUFLEN));
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
+    // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
+    if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
+      tty->print_cr("Running in non-interactive shell, %s handler is replaced by shell",
+                    exception_name(sig, buf, O_BUFLEN));
+    }
   } else if (os::Aix::get_our_sigflags(sig) != 0 && (int)act.sa_flags != os::Aix::get_our_sigflags(sig)) {
     tty->print("Warning: %s handler flags ", exception_name(sig, buf, O_BUFLEN));
     tty->print("expected:" PTR32_FORMAT, os::Aix::get_our_sigflags(sig));

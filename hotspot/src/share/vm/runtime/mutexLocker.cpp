@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,8 @@ Mutex*   SignatureHandlerLibrary_lock = NULL;
 Mutex*   VtableStubs_lock             = NULL;
 Mutex*   SymbolTable_lock             = NULL;
 Mutex*   StringTable_lock             = NULL;
+Monitor* StringDedupQueue_lock        = NULL;
+Mutex*   StringDedupTable_lock        = NULL;
 Mutex*   CodeCache_lock               = NULL;
 Mutex*   MethodData_lock              = NULL;
 Mutex*   RetData_lock                 = NULL;
@@ -67,7 +69,7 @@ Monitor* Safepoint_lock               = NULL;
 Monitor* SerializePage_lock           = NULL;
 Monitor* Threads_lock                 = NULL;
 Monitor* CGC_lock                     = NULL;
-Mutex*   STS_init_lock                = NULL;
+Monitor* STS_lock                     = NULL;
 Monitor* SLT_lock                     = NULL;
 Monitor* iCMS_lock                    = NULL;
 Monitor* FullGCCount_lock             = NULL;
@@ -171,7 +173,7 @@ void mutex_init() {
   def(tty_lock                     , Mutex  , event,       true ); // allow to lock in VM
 
   def(CGC_lock                   , Monitor, special,     true ); // coordinate between fore- and background GC
-  def(STS_init_lock              , Mutex,   leaf,        true );
+  def(STS_lock                   , Monitor, leaf,        true );
   if (UseConcMarkSweepGC) {
     def(iCMS_lock                  , Monitor, special,     true ); // CMS incremental mode start/stop notification
   }
@@ -196,6 +198,9 @@ void mutex_init() {
     def(MMUTracker_lock            , Mutex  , leaf     ,   true );
     def(HotCardCache_lock          , Mutex  , special  ,   true );
     def(EvacFailureStack_lock      , Mutex  , nonleaf  ,   true );
+
+    def(StringDedupQueue_lock      , Monitor, leaf,        true );
+    def(StringDedupTable_lock      , Mutex  , leaf,        true );
   }
   def(ParGCRareEvent_lock          , Mutex  , leaf     ,   true );
   def(DerivedPointerTableGC_lock   , Mutex,   leaf,        true );

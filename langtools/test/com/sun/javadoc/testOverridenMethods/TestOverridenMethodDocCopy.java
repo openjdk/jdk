@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,53 +27,32 @@
  * @summary  Inherited comment should link directly to member, not just
  *           class
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestOverridenMethodDocCopy
  * @run main TestOverridenMethodDocCopy
  */
 
 public class TestOverridenMethodDocCopy extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4368820";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1", "pkg2"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-            "<span class=\"descfrmTypeLabel\">Description copied from class:&nbsp;<code>" +
-            "<a href=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy--\">" +
-            "BaseClass</a></code></span>"
-        }
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestOverridenMethodDocCopy tester = new TestOverridenMethodDocCopy();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg1", "pkg2");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg1/SubClass.html", true,
+                "<span class=\"descfrmTypeLabel\">Description copied from class:&nbsp;<code>"
+                + "<a href=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy--\">"
+                + "BaseClass</a></code></span>");
     }
 }

@@ -39,6 +39,7 @@
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
+#include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/g1/g1YCTypes.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
@@ -55,7 +56,9 @@
 #include "memory/referenceProcessor.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
@@ -91,56 +94,54 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // Local to this file.
 
 class RefineCardTableEntryClosure: public CardTableEntryClosure {
-  SuspendibleThreadSet* _sts;
-  G1RemSet* _g1rs;
-  ConcurrentG1Refine* _cg1r;
   bool _concurrent;
 public:
-  RefineCardTableEntryClosure(SuspendibleThreadSet* sts,
-                              G1RemSet* g1rs,
-                              ConcurrentG1Refine* cg1r) :
-    _sts(sts), _g1rs(g1rs), _cg1r(cg1r), _concurrent(true)
-  {}
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    bool oops_into_cset = _g1rs->refine_card(card_ptr, worker_i, false);
+  RefineCardTableEntryClosure() : _concurrent(true) { }
+
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+    bool oops_into_cset = G1CollectedHeap::heap()->g1_rem_set()->refine_card(card_ptr, worker_i, false);
     // This path is executed by the concurrent refine or mutator threads,
     // concurrently, and so we do not care if card_ptr contains references
     // that point into the collection set.
     assert(!oops_into_cset, "should be");
 
-    if (_concurrent && _sts->should_yield()) {
+    if (_concurrent && SuspendibleThreadSet::should_yield()) {
       // Caller will actually yield.
       return false;
     }
     // Otherwise, we finished successfully; return true.
     return true;
   }
+
   void set_concurrent(bool b) { _concurrent = b; }
 };
 
 
 class ClearLoggedCardTableEntryClosure: public CardTableEntryClosure {
-  int _calls;
-  G1CollectedHeap* _g1h;
+  size_t _num_processed;
   CardTableModRefBS* _ctbs;
   int _histo[256];
-public:
+
+ public:
   ClearLoggedCardTableEntryClosure() :
-    _calls(0), _g1h(G1CollectedHeap::heap()), _ctbs(_g1h->g1_barrier_set())
+    _num_processed(0), _ctbs(G1CollectedHeap::heap()->g1_barrier_set())
   {
     for (int i = 0; i < 256; i++) _histo[i] = 0;
   }
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    if (_g1h->is_in_reserved(_ctbs->addr_for(card_ptr))) {
-      _calls++;
-      unsigned char* ujb = (unsigned char*)card_ptr;
-      int ind = (int)(*ujb);
-      _histo[ind]++;
-      *card_ptr = -1;
-    }
+
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+    unsigned char* ujb = (unsigned char*)card_ptr;
+    int ind = (int)(*ujb);
+    _histo[ind]++;
+
+    *card_ptr = (jbyte)CardTableModRefBS::clean_card_val();
+    _num_processed++;
+
     return true;
   }
-  int calls() { return _calls; }
+
+  size_t num_processed() { return _num_processed; }
+
   void print_histo() {
     gclog_or_tty->print_cr("Card table value histogram:");
     for (int i = 0; i < 256; i++) {
@@ -151,30 +152,20 @@ public:
   }
 };
 
-class RedirtyLoggedCardTableEntryClosure: public CardTableEntryClosure {
-  int _calls;
-  G1CollectedHeap* _g1h;
-  CardTableModRefBS* _ctbs;
-public:
-  RedirtyLoggedCardTableEntryClosure() :
-    _calls(0), _g1h(G1CollectedHeap::heap()), _ctbs(_g1h->g1_barrier_set()) {}
+class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
+ private:
+  size_t _num_processed;
 
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    if (_g1h->is_in_reserved(_ctbs->addr_for(card_ptr))) {
-      _calls++;
-      *card_ptr = 0;
-    }
-    return true;
-  }
-  int calls() { return _calls; }
-};
+ public:
+  RedirtyLoggedCardTableEntryClosure() : CardTableEntryClosure(), _num_processed(0) { }
 
-class RedirtyLoggedCardTableEntryFastClosure : public CardTableEntryClosure {
-public:
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     *card_ptr = CardTableModRefBS::dirty_card_val();
+    _num_processed++;
     return true;
   }
+
+  size_t num_processed() const { return _num_processed; }
 };
 
 YoungList::YoungList(G1CollectedHeap* g1h) :
@@ -438,6 +429,9 @@ HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
 void G1CollectedHeap::stop_conc_gc_threads() {
   _cg1r->stop();
   _cmThread->stop();
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::stop();
+  }
 }
 
 #ifdef ASSERT
@@ -452,24 +446,18 @@ void G1CollectedHeap::stop_conc_gc_threads() {
 // implementation of is_scavengable() for G1 will indicate that
 // all nmethods must be scanned during a partial collection.
 bool G1CollectedHeap::is_in_partial_collection(const void* p) {
-  HeapRegion* hr = heap_region_containing(p);
-  return hr != NULL && hr->in_collection_set();
+  if (p == NULL) {
+    return false;
+  }
+  return heap_region_containing(p)->in_collection_set();
 }
 #endif
 
 // Returns true if the reference points to an object that
 // can move in an incremental collection.
 bool G1CollectedHeap::is_scavengable(const void* p) {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
   HeapRegion* hr = heap_region_containing(p);
-  if (hr == NULL) {
-     // null
-     assert(p == NULL, err_msg("Not NULL " PTR_FORMAT ,p));
-     return false;
-  } else {
-    return !hr->isHumongous();
-  }
+  return !hr->isHumongous();
 }
 
 void G1CollectedHeap::check_ct_logs_at_safepoint() {
@@ -483,9 +471,8 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
 
   // First clear the logged cards.
   ClearLoggedCardTableEntryClosure clear;
-  dcqs.set_closure(&clear);
-  dcqs.apply_closure_to_all_completed_buffers();
-  dcqs.iterate_closure_all_threads(false);
+  dcqs.apply_closure_to_all_completed_buffers(&clear);
+  dcqs.iterate_closure_all_threads(&clear, false);
   clear.print_histo();
 
   // Now ensure that there's no dirty cards.
@@ -498,13 +485,13 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
   guarantee(count2.n() == 0, "Card table should be clean.");
 
   RedirtyLoggedCardTableEntryClosure redirty;
-  JavaThread::dirty_card_queue_set().set_closure(&redirty);
-  dcqs.apply_closure_to_all_completed_buffers();
-  dcqs.iterate_closure_all_threads(false);
+  dcqs.apply_closure_to_all_completed_buffers(&redirty);
+  dcqs.iterate_closure_all_threads(&redirty, false);
   gclog_or_tty->print_cr("Log entries = %d, dirty cards = %d.",
-                         clear.calls(), orig_count);
-  guarantee(redirty.calls() == clear.calls(),
-            "Or else mechanism is broken.");
+                         clear.num_processed(), orig_count);
+  guarantee(redirty.num_processed() == clear.num_processed(),
+            err_msg("Redirtied "SIZE_FORMAT" cards, bug cleared "SIZE_FORMAT,
+                    redirty.num_processed(), clear.num_processed()));
 
   CountNonCleanMemRegionClosure count3(this);
   ct_bs->mod_card_iterate(&count3);
@@ -513,8 +500,6 @@ void G1CollectedHeap::check_ct_logs_at_safepoint() {
                            orig_count, count3.n());
     guarantee(count3.n() >= orig_count, "Should have restored them all.");
   }
-
-  JavaThread::dirty_card_queue_set().set_closure(_refine_cte_cl);
 }
 
 // Private class members.
@@ -524,7 +509,7 @@ G1CollectedHeap* G1CollectedHeap::_g1h;
 // Private methods.
 
 HeapRegion*
-G1CollectedHeap::new_region_try_secondary_free_list() {
+G1CollectedHeap::new_region_try_secondary_free_list(bool is_old) {
   MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
   while (!_secondary_free_list.is_empty() || free_regions_coming()) {
     if (!_secondary_free_list.is_empty()) {
@@ -540,7 +525,7 @@ G1CollectedHeap::new_region_try_secondary_free_list() {
 
       assert(!_free_list.is_empty(), "if the secondary_free_list was not "
              "empty we should have moved at least one entry to the free_list");
-      HeapRegion* res = _free_list.remove_head();
+      HeapRegion* res = _free_list.remove_region(is_old);
       if (G1ConcRegionFreeingVerbose) {
         gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
                                "allocated "HR_FORMAT" from secondary_free_list",
@@ -562,7 +547,7 @@ G1CollectedHeap::new_region_try_secondary_free_list() {
   return NULL;
 }
 
-HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
+HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool is_old, bool do_expand) {
   assert(!isHumongous(word_size) || word_size <= HeapRegion::GrainWords,
          "the only time we use this to allocate a humongous region is "
          "when we are allocating a single humongous region");
@@ -574,19 +559,21 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
         gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
                                "forced to look at the secondary_free_list");
       }
-      res = new_region_try_secondary_free_list();
+      res = new_region_try_secondary_free_list(is_old);
       if (res != NULL) {
         return res;
       }
     }
   }
-  res = _free_list.remove_head_or_null();
+
+  res = _free_list.remove_region(is_old);
+
   if (res == NULL) {
     if (G1ConcRegionFreeingVerbose) {
       gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
                              "res == NULL, trying the secondary_free_list");
     }
-    res = new_region_try_secondary_free_list();
+    res = new_region_try_secondary_free_list(is_old);
   }
   if (res == NULL && do_expand && _expand_heap_after_alloc_failure) {
     // Currently, only attempts to allocate GC alloc regions set
@@ -603,12 +590,9 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
     if (expand(word_size * HeapWordSize)) {
       // Given that expand() succeeded in expanding the heap, and we
       // always expand the heap by an amount aligned to the heap
-      // region size, the free list should in theory not be empty. So
-      // it would probably be OK to use remove_head(). But the extra
-      // check for NULL is unlikely to be a performance issue here (we
-      // just expanded the heap!) so let's just be conservative and
-      // use remove_head_or_null().
-      res = _free_list.remove_head_or_null();
+      // region size, the free list should in theory not be empty.
+      // In either case remove_region() will check for NULL.
+      res = _free_list.remove_region(is_old);
     } else {
       _expand_heap_after_alloc_failure = false;
     }
@@ -626,7 +610,7 @@ uint G1CollectedHeap::humongous_obj_allocate_find_first(uint num_regions,
     // Only one region to allocate, no need to go through the slower
     // path. The caller will attempt the expansion if this fails, so
     // let's not try to expand here too.
-    HeapRegion* hr = new_region(word_size, false /* do_expand */);
+    HeapRegion* hr = new_region(word_size, true /* is_old */, false /* do_expand */);
     if (hr != NULL) {
       first = hr->hrs_index();
     } else {
@@ -785,6 +769,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   // match new_top.
   assert(hr == NULL ||
          (hr->end() == new_end && hr->top() == new_top), "sanity");
+  check_bitmaps("Humongous Region Allocation", first_hr);
 
   assert(first_hr->used() == word_size * HeapWordSize, "invariant");
   _summary_bytes_used += first_hr->used();
@@ -1296,9 +1281,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   print_heap_before_gc();
   trace_heap_before_gc(gc_tracer);
 
-  size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
+  size_t metadata_prev_used = MetaspaceAux::used_bytes();
 
-  HRSPhaseSetter x(HRSPhaseFullGC);
   verify_region_sets_optional();
 
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
@@ -1344,6 +1328,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       verify_before_gc();
 
+      check_bitmaps("Full GC Start");
       pre_full_gc_dump(gc_timer);
 
       COMPILER2_PRESENT(DerivedPointerTable::clear());
@@ -1517,13 +1502,22 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       verify_after_gc();
 
+      // Clear the previous marking bitmap, if needed for bitmap verification.
+      // Note we cannot do this when we clear the next marking bitmap in
+      // ConcurrentMark::abort() above since VerifyDuringGC verifies the
+      // objects marked during a full GC against the previous bitmap.
+      // But we need to clear it before calling check_bitmaps below since
+      // the full GC has compacted objects and updated TAMS but not updated
+      // the prev bitmap.
+      if (G1VerifyBitmaps) {
+        ((CMBitMap*) concurrent_mark()->prevMarkBitMap())->clearAll();
+      }
+      check_bitmaps("Full GC End");
+
       // Start a new incremental collection set for the next pause
       assert(g1_policy()->collection_set() == NULL, "must be");
       g1_policy()->start_incremental_cset_building();
 
-      // Clear the _cset_fast_test bitmap in anticipation of adding
-      // regions to the incremental collection set for the next
-      // evacuation pause.
       clear_cset_fast_test();
 
       init_mutator_alloc_region();
@@ -1928,10 +1922,10 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _g1mm(NULL),
   _refine_cte_cl(NULL),
   _full_collection(false),
-  _free_list("Master Free List"),
-  _secondary_free_list("Secondary Free List"),
-  _old_set("Old Set"),
-  _humongous_set("Master Humongous Set"),
+  _free_list("Master Free List", new MasterFreeRegionListMtSafeChecker()),
+  _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
+  _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
+  _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
   _free_regions_coming(false),
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
@@ -1943,8 +1937,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
   _concurrent_cycle_started(false),
-  _in_cset_fast_test(NULL),
-  _in_cset_fast_test_base(NULL),
+  _in_cset_fast_test(),
   _dirty_cards_region_list(NULL),
   _worker_cset_start_region(NULL),
   _worker_cset_start_region_time_stamp(NULL),
@@ -1963,7 +1956,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   int n_queues = MAX2((int)ParallelGCThreads, 1);
   _task_queues = new RefToScanQueueSet(n_queues);
 
-  int n_rem_sets = HeapRegionRemSet::num_par_rem_sets();
+  uint n_rem_sets = HeapRegionRemSet::num_par_rem_sets();
   assert(n_rem_sets > 0, "Invariant.");
 
   _worker_cset_start_region = NEW_C_HEAP_ARRAY(HeapRegion*, n_queues, mtGC);
@@ -2014,7 +2007,9 @@ jint G1CollectedHeap::initialize() {
   Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, heap_alignment, "g1 heap");
 
-  _cg1r = new ConcurrentG1Refine(this);
+  _refine_cte_cl = new RefineCardTableEntryClosure();
+
+  _cg1r = new ConcurrentG1Refine(this, _refine_cte_cl);
 
   // Reserve the maximum.
 
@@ -2079,27 +2074,14 @@ jint G1CollectedHeap::initialize() {
   guarantee(HeapRegion::CardsPerRegion < max_cards_per_region,
             "too many cards per region");
 
-  HeapRegionSet::set_unrealistically_long_length(max_regions() + 1);
+  FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
   _bot_shared = new G1BlockOffsetSharedArray(_reserved,
                                              heap_word_size(init_byte_size));
 
   _g1h = this;
 
-  _in_cset_fast_test_length = max_regions();
-  _in_cset_fast_test_base =
-                   NEW_C_HEAP_ARRAY(bool, (size_t) _in_cset_fast_test_length, mtGC);
-
-  // We're biasing _in_cset_fast_test to avoid subtracting the
-  // beginning of the heap every time we want to index; basically
-  // it's the same with what we do with the card table.
-  _in_cset_fast_test = _in_cset_fast_test_base -
-               ((uintx) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
-
-  // Clear the _cset_fast_test bitmap in anticipation of adding
-  // regions to the incremental collection set for the first
-  // evacuation pause.
-  clear_cset_fast_test();
+  _in_cset_fast_test.initialize(_g1_reserved.start(), _g1_reserved.end(), HeapRegion::GrainBytes);
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
@@ -2122,25 +2104,21 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init();
 
-  _refine_cte_cl =
-    new RefineCardTableEntryClosure(ConcurrentG1RefineThread::sts(),
-                                    g1_rem_set(),
-                                    concurrent_g1_refine());
-  JavaThread::dirty_card_queue_set().set_closure(_refine_cte_cl);
-
   JavaThread::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
                                                SATB_Q_FL_lock,
                                                G1SATBProcessCompletedThreshold,
                                                Shared_SATB_Q_lock);
 
-  JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+  JavaThread::dirty_card_queue_set().initialize(_refine_cte_cl,
+                                                DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
                                                 concurrent_g1_refine()->yellow_zone(),
                                                 concurrent_g1_refine()->red_zone(),
                                                 Shared_DirtyCardQ_lock);
 
   if (G1DeferredRSUpdate) {
-    dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+    dirty_card_queue_set().initialize(NULL, // Should never be called by the Java code
+                                      DirtyCardQ_CBL_mon,
                                       DirtyCardQ_FL_lock,
                                       -1, // never trigger processing
                                       -1, // no limit on length
@@ -2150,7 +2128,8 @@ jint G1CollectedHeap::initialize() {
 
   // Initialize the card queue set used to hold cards containing
   // references into the collection set.
-  _into_cset_dirty_card_queue_set.initialize(DirtyCardQ_CBL_mon,
+  _into_cset_dirty_card_queue_set.initialize(NULL, // Should never be called by the Java code
+                                             DirtyCardQ_CBL_mon,
                                              DirtyCardQ_FL_lock,
                                              -1, // never trigger processing
                                              -1, // no limit on length
@@ -2182,7 +2161,26 @@ jint G1CollectedHeap::initialize() {
   // values in the heap have been properly initialized.
   _g1mm = new G1MonitoringSupport(this);
 
+  G1StringDedup::initialize();
+
   return JNI_OK;
+}
+
+void G1CollectedHeap::stop() {
+#if 0
+  // Stopping concurrent worker threads is currently disabled until
+  // some bugs in concurrent mark has been resolve. Without fixing
+  // those bugs first we risk haning during VM exit when trying to
+  // stop these threads.
+
+  // Abort any ongoing concurrent root region scanning and stop all
+  // concurrent threads. We do this to make sure these threads do
+  // not continue to execute and access resources (e.g. gclog_or_tty)
+  // that are destroyed during shutdown.
+  _cm->root_regions()->abort();
+  _cm->root_regions()->wait_until_scan_finished();
+  stop_conc_gc_threads();
+#endif
 }
 
 size_t G1CollectedHeap::conservative_max_heap_alignment() {
@@ -2321,7 +2319,7 @@ void G1CollectedHeap::check_gc_time_stamps() {
 void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
                                                  DirtyCardQueue* into_cset_dcq,
                                                  bool concurrent,
-                                                 int worker_i) {
+                                                 uint worker_i) {
   // Clean cards in the hot card cache
   G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
   hot_card_cache->drain(worker_i, g1_rem_set(), into_cset_dcq);
@@ -2369,8 +2367,12 @@ public:
 };
 
 size_t G1CollectedHeap::recalculate_used() const {
+  double recalculate_used_start = os::elapsedTime();
+
   SumUsedClosure blk;
   heap_region_iterate(&blk);
+
+  g1_policy()->phase_times()->record_evac_fail_recalc_used_time((os::elapsedTime() - recalculate_used_start) * 1000.0);
   return blk.result();
 }
 
@@ -2846,7 +2848,7 @@ void G1CollectedHeap::clear_cset_start_regions() {
 
 // Given the id of a worker, obtain or calculate a suitable
 // starting region for iterating over the current collection set.
-HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
+HeapRegion* G1CollectedHeap::start_cset_region_for_worker(uint worker_i) {
   assert(get_gc_time_stamp() > 0, "should have been updated by now");
 
   HeapRegion* result = NULL;
@@ -2966,21 +2968,16 @@ CompactibleSpace* G1CollectedHeap::first_compactible_space() {
 
 
 Space* G1CollectedHeap::space_containing(const void* addr) const {
-  Space* res = heap_region_containing(addr);
-  return res;
+  return heap_region_containing(addr);
 }
 
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
   Space* sp = space_containing(addr);
-  if (sp != NULL) {
-    return sp->block_start(addr);
-  }
-  return NULL;
+  return sp->block_start(addr);
 }
 
 size_t G1CollectedHeap::block_size(const HeapWord* addr) const {
   Space* sp = space_containing(addr);
-  assert(sp != NULL, "block_size of address outside of heap");
   return sp->block_size(addr);
 }
 
@@ -3215,7 +3212,7 @@ class VerifyKlassClosure: public KlassClosure {
     _young_ref_counter_closure.reset_count();
     k->oops_do(&_young_ref_counter_closure);
     if (_young_ref_counter_closure.count() > 0) {
-      guarantee(k->has_modified_oops(), err_msg("Klass %p, has young refs but is not dirty.", k));
+      guarantee(k->has_modified_oops(), err_msg("Klass " PTR_FORMAT ", has young refs but is not dirty.", k));
     }
   }
 };
@@ -3299,7 +3296,7 @@ public:
       int *val;
       for (cur = start; cur < end; cur++) {
         val = (int *) cur;
-        gclog_or_tty->print("\t "PTR_FORMAT":"PTR_FORMAT"\n", val, *val);
+        gclog_or_tty->print("\t "PTR_FORMAT":%d\n", val, *val);
       }
     }
   }
@@ -3462,6 +3459,11 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
     if (!silent) gclog_or_tty->print("RemSet ");
     rem_set()->verify();
 
+    if (G1StringDedup::is_enabled()) {
+      if (!silent) gclog_or_tty->print("StrDedup ");
+      G1StringDedup::verify();
+    }
+
     if (failures) {
       gclog_or_tty->print_cr("Heap:");
       // It helps to have the per-region information in the output to
@@ -3479,8 +3481,13 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
     }
     guarantee(!failures, "there should not have been any failures");
   } else {
-    if (!silent)
-      gclog_or_tty->print("(SKIPPING roots, heapRegionSets, heapRegions, remset) ");
+    if (!silent) {
+      gclog_or_tty->print("(SKIPPING Roots, HeapRegionSets, HeapRegions, RemSet");
+      if (G1StringDedup::is_enabled()) {
+        gclog_or_tty->print(", StrDedup");
+      }
+      gclog_or_tty->print(") ");
+    }
   }
 }
 
@@ -3521,6 +3528,29 @@ public:
     return false;
   }
 };
+
+bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
+                                       const HeapRegion* hr,
+                                       const VerifyOption vo) const {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
+  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
+  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+  default:                            ShouldNotReachHere();
+  }
+  return false; // keep some compilers happy
+}
+
+bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
+                                       const VerifyOption vo) const {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
+  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
+  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+  default:                            ShouldNotReachHere();
+  }
+  return false; // keep some compilers happy
+}
 
 void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" %-20s", "garbage-first heap");
@@ -3573,6 +3603,9 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   st->cr();
   _cm->print_worker_threads_on(st);
   _cg1r->print_worker_threads_on(st);
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::print_worker_threads_on(st);
+  }
 }
 
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
@@ -3581,6 +3614,9 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   }
   tc->do_thread(_cmThread);
   _cg1r->threads_do(tc);
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::threads_do(tc);
+  }
 }
 
 void G1CollectedHeap::print_tracing_info() const {
@@ -3887,7 +3923,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   print_heap_before_gc();
   trace_heap_before_gc(_gc_tracer_stw);
 
-  HRSPhaseSetter x(HRSPhaseEvacuation);
   verify_region_sets_optional();
   verify_dirty_young_regions();
 
@@ -3958,6 +3993,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       increment_gc_time_stamp();
 
       verify_before_gc();
+      check_bitmaps("GC Start");
 
       COMPILER2_PRESENT(DerivedPointerTable::clear());
 
@@ -4090,9 +4126,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // Start a new incremental collection set for the next pause.
         g1_policy()->start_incremental_cset_building();
 
-        // Clear the _cset_fast_test bitmap in anticipation of adding
-        // regions to the incremental collection set for the next
-        // evacuation pause.
         clear_cset_fast_test();
 
         _young_list->reset_sampled_info();
@@ -4206,6 +4239,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         increment_gc_time_stamp();
 
         verify_after_gc();
+        check_bitmaps("GC End");
 
         assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
         ref_processor_stw()->verify_no_references_recorded();
@@ -4269,7 +4303,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     // this point does not assume that we are the only GC thread
     // running. Note: of course, the actual marking work will
     // not start until the safepoint itself is released in
-    // ConcurrentGCThread::safepoint_desynchronize().
+    // SuspendibleThreadSet::desynchronize().
     doConcurrentMark();
   }
 
@@ -4386,6 +4420,8 @@ void G1CollectedHeap::finalize_for_evac_failure() {
 void G1CollectedHeap::remove_self_forwarding_pointers() {
   assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
 
+  double remove_self_forwards_start = os::elapsedTime();
+
   G1ParRemoveSelfForwardPtrsTask rsfp_task(this);
 
   if (G1CollectedHeap::use_parallel_gc_threads()) {
@@ -4413,6 +4449,8 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   }
   _objs_with_preserved_marks.clear(true);
   _preserved_marks_of_objs.clear(true);
+
+  g1_policy()->phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }
 
 void G1CollectedHeap::push_on_evac_failure_scan_stack(oop obj) {
@@ -4532,7 +4570,7 @@ HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
 }
 
 G1ParGCAllocBuffer::G1ParGCAllocBuffer(size_t gclab_word_size) :
-  ParGCAllocBuffer(gclab_word_size), _retired(false) { }
+  ParGCAllocBuffer(gclab_word_size), _retired(true) { }
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp)
   : _g1h(g1h),
@@ -4634,9 +4672,7 @@ bool G1ParScanThreadState::verify_task(StarTask ref) const {
 #endif // ASSERT
 
 void G1ParScanThreadState::trim_queue() {
-  assert(_evac_cl != NULL, "not set");
   assert(_evac_failure_cl != NULL, "not set");
-  assert(_partial_scan_cl != NULL, "not set");
 
   StarTask ref;
   do {
@@ -4657,30 +4693,19 @@ G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1,
   _worker_id(par_scan_state->queue_num()) { }
 
 void G1ParCopyHelper::mark_object(oop obj) {
-#ifdef ASSERT
-  HeapRegion* hr = _g1->heap_region_containing(obj);
-  assert(hr != NULL, "sanity");
-  assert(!hr->in_collection_set(), "should not mark objects in the CSet");
-#endif // ASSERT
+  assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // We know that the object is not moving so it's safe to read its size.
   _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
 }
 
 void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
-#ifdef ASSERT
   assert(from_obj->is_forwarded(), "from obj should be forwarded");
   assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
   assert(from_obj != to_obj, "should not be self-forwarded");
 
-  HeapRegion* from_hr = _g1->heap_region_containing(from_obj);
-  assert(from_hr != NULL, "sanity");
-  assert(from_hr->in_collection_set(), "from obj should be in the CSet");
-
-  HeapRegion* to_hr = _g1->heap_region_containing(to_obj);
-  assert(to_hr != NULL, "sanity");
-  assert(!to_hr->in_collection_set(), "should not mark objects in the CSet");
-#endif // ASSERT
+  assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
+  assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // The object might be in the process of being copied by another
   // worker so we cannot trust that its to-space image is
@@ -4727,6 +4752,12 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
   oop forward_ptr = old->forward_to_atomic(obj);
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words((HeapWord*) old, obj_ptr, word_sz);
+
+    // alloc_purpose is just a hint to allocate() above, recheck the type of region
+    // we actually allocated from and update alloc_purpose accordingly
+    HeapRegion* to_region = _g1h->heap_region_containing_raw(obj_ptr);
+    alloc_purpose = to_region->is_young() ? GCAllocForSurvived : GCAllocForTenured;
+
     if (g1p->track_object_age(alloc_purpose)) {
       // We could simply do obj->incr_age(). However, this causes a
       // performance issue. obj->incr_age() will first check whether
@@ -4752,6 +4783,13 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
       age_table()->add(obj, word_sz);
     } else {
       obj->set_mark(m);
+    }
+
+    if (G1StringDedup::is_enabled()) {
+      G1StringDedup::enqueue_from_evacuation(from_region->is_young(),
+                                             to_region->is_young(),
+                                             queue_num(),
+                                             obj);
     }
 
     size_t* surv_young_words = surviving_young_words();
@@ -4832,55 +4870,6 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
 template void G1ParCopyClosure<G1BarrierEvac, false>::do_oop_work(oop* p);
 template void G1ParCopyClosure<G1BarrierEvac, false>::do_oop_work(narrowOop* p);
 
-template <class T> void G1ParScanPartialArrayClosure::do_oop_nv(T* p) {
-  assert(has_partial_array_mask(p), "invariant");
-  oop from_obj = clear_partial_array_mask(p);
-
-  assert(Universe::heap()->is_in_reserved(from_obj), "must be in heap.");
-  assert(from_obj->is_objArray(), "must be obj array");
-  objArrayOop from_obj_array = objArrayOop(from_obj);
-  // The from-space object contains the real length.
-  int length                 = from_obj_array->length();
-
-  assert(from_obj->is_forwarded(), "must be forwarded");
-  oop to_obj                 = from_obj->forwardee();
-  assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
-  objArrayOop to_obj_array   = objArrayOop(to_obj);
-  // We keep track of the next start index in the length field of the
-  // to-space object.
-  int next_index             = to_obj_array->length();
-  assert(0 <= next_index && next_index < length,
-         err_msg("invariant, next index: %d, length: %d", next_index, length));
-
-  int start                  = next_index;
-  int end                    = length;
-  int remainder              = end - start;
-  // We'll try not to push a range that's smaller than ParGCArrayScanChunk.
-  if (remainder > 2 * ParGCArrayScanChunk) {
-    end = start + ParGCArrayScanChunk;
-    to_obj_array->set_length(end);
-    // Push the remainder before we process the range in case another
-    // worker has run out of things to do and can steal it.
-    oop* from_obj_p = set_partial_array_mask(from_obj);
-    _par_scan_state->push_on_queue(from_obj_p);
-  } else {
-    assert(length == end, "sanity");
-    // We'll process the final range for this object. Restore the length
-    // so that the heap remains parsable in case of evacuation failure.
-    to_obj_array->set_length(end);
-  }
-  _scanner.set_region(_g1->heap_region_containing_raw(to_obj));
-  // Process indexes [start,end). It will also process the header
-  // along with the first chunk (i.e., the chunk with start == 0).
-  // Note that at this point the length field of to_obj_array is not
-  // correct given that we are using it to keep track of the next
-  // start index. oop_iterate_range() (thankfully!) ignores the length
-  // field and only relies on the start / end parameters.  It does
-  // however return the size of the object which will be incorrect. So
-  // we have to ignore it even if we wanted to use it.
-  to_obj_array->oop_iterate_range(&_scanner, start, end);
-}
-
 class G1ParEvacuateFollowersClosure : public VoidClosure {
 protected:
   G1CollectedHeap*              _g1h;
@@ -4934,8 +4923,6 @@ void G1ParEvacuateFollowersClosure::do_void() {
       pss->trim_queue();
     }
   } while (!offer_termination());
-
-  pss->retire_alloc_buffers();
 }
 
 class G1KlassScanClosure : public KlassClosure {
@@ -5022,13 +5009,9 @@ public:
       ReferenceProcessor*             rp = _g1h->ref_processor_stw();
 
       G1ParScanThreadState            pss(_g1h, worker_id, rp);
-      G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, rp);
       G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, rp);
-      G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, rp);
 
-      pss.set_evac_closure(&scan_evac_cl);
       pss.set_evac_failure_closure(&evac_failure_cl);
-      pss.set_partial_scan_closure(&partial_scan_cl);
 
       G1ParScanExtRootClosure        only_scan_root_cl(_g1h, &pss, rp);
       G1ParScanMetadataClosure       only_scan_metadata_cl(_g1h, &pss, rp);
@@ -5106,7 +5089,7 @@ g1_process_strong_roots(bool is_scavenging,
                         OopClosure* scan_non_heap_roots,
                         OopsInHeapRegionClosure* scan_rs,
                         G1KlassScanClosure* scan_klasses,
-                        int worker_i) {
+                        uint worker_i) {
 
   // First scan the strong roots
   double ext_roots_start = os::elapsedTime();
@@ -5210,10 +5193,10 @@ public:
 
   ~G1StringSymbolTableUnlinkTask() {
     guarantee(!_process_strings || !_do_in_parallel || StringTable::parallel_claimed_index() >= _initial_string_table_size,
-              err_msg("claim value "INT32_FORMAT" after unlink less than initial string table size "INT32_FORMAT,
+              err_msg("claim value %d after unlink less than initial string table size %d",
                       StringTable::parallel_claimed_index(), _initial_string_table_size));
     guarantee(!_process_symbols || !_do_in_parallel || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
-              err_msg("claim value "INT32_FORMAT" after unlink less than initial symbol table size "INT32_FORMAT,
+              err_msg("claim value %d after unlink less than initial symbol table size %d",
                       SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
   }
 
@@ -5270,6 +5253,56 @@ void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive
                            g1_unlink_task.strings_processed(), g1_unlink_task.strings_removed(),
                            g1_unlink_task.symbols_processed(), g1_unlink_task.symbols_removed());
   }
+
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::unlink(is_alive);
+  }
+}
+
+class G1RedirtyLoggedCardsTask : public AbstractGangTask {
+ private:
+  DirtyCardQueueSet* _queue;
+ public:
+  G1RedirtyLoggedCardsTask(DirtyCardQueueSet* queue) : AbstractGangTask("Redirty Cards"), _queue(queue) { }
+
+  virtual void work(uint worker_id) {
+    double start_time = os::elapsedTime();
+
+    RedirtyLoggedCardTableEntryClosure cl;
+    if (G1CollectedHeap::heap()->use_parallel_gc_threads()) {
+      _queue->par_apply_closure_to_all_completed_buffers(&cl);
+    } else {
+      _queue->apply_closure_to_all_completed_buffers(&cl);
+    }
+
+    G1GCPhaseTimes* timer = G1CollectedHeap::heap()->g1_policy()->phase_times();
+    timer->record_redirty_logged_cards_time_ms(worker_id, (os::elapsedTime() - start_time) * 1000.0);
+    timer->record_redirty_logged_cards_processed_cards(worker_id, cl.num_processed());
+  }
+};
+
+void G1CollectedHeap::redirty_logged_cards() {
+  guarantee(G1DeferredRSUpdate, "Must only be called when using deferred RS updates.");
+  double redirty_logged_cards_start = os::elapsedTime();
+
+  uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
+                   _g1h->workers()->active_workers() : 1);
+
+  G1RedirtyLoggedCardsTask redirty_task(&dirty_card_queue_set());
+  dirty_card_queue_set().reset_for_par_iteration();
+  if (use_parallel_gc_threads()) {
+    set_par_threads(n_workers);
+    workers()->run_task(&redirty_task);
+    set_par_threads(0);
+  } else {
+    redirty_task.work(0);
+  }
+
+  DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
+  dcq.merge_bufferlists(&dirty_card_queue_set());
+  assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
+
+  g1_policy()->phase_times()->record_redirty_logged_cards_time_ms((os::elapsedTime() - redirty_logged_cards_start) * 1000.0);
 }
 
 // Weak Reference Processing support
@@ -5453,14 +5486,9 @@ public:
     G1STWIsAliveClosure is_alive(_g1h);
 
     G1ParScanThreadState            pss(_g1h, worker_id, NULL);
-
-    G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, NULL);
     G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, NULL);
-    G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, NULL);
 
-    pss.set_evac_closure(&scan_evac_cl);
     pss.set_evac_failure_closure(&evac_failure_cl);
-    pss.set_partial_scan_closure(&partial_scan_cl);
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, &pss, NULL);
     G1ParScanMetadataClosure       only_copy_metadata_cl(_g1h, &pss, NULL);
@@ -5565,13 +5593,9 @@ public:
     HandleMark   hm;
 
     G1ParScanThreadState            pss(_g1h, worker_id, NULL);
-    G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, NULL);
     G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, NULL);
-    G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, NULL);
 
-    pss.set_evac_closure(&scan_evac_cl);
     pss.set_evac_failure_closure(&evac_failure_cl);
-    pss.set_partial_scan_closure(&partial_scan_cl);
 
     assert(pss.refs()->is_empty(), "both queue and overflow should be empty");
 
@@ -5695,13 +5719,9 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   // We do not embed a reference processor in the copying/scanning
   // closures while we're actually processing the discovered
   // reference objects.
-  G1ParScanHeapEvacClosure        scan_evac_cl(this, &pss, NULL);
   G1ParScanHeapEvacFailureClosure evac_failure_cl(this, &pss, NULL);
-  G1ParScanPartialArrayClosure    partial_scan_cl(this, &pss, NULL);
 
-  pss.set_evac_closure(&scan_evac_cl);
   pss.set_evac_failure_closure(&evac_failure_cl);
-  pss.set_partial_scan_closure(&partial_scan_cl);
 
   assert(pss.refs()->is_empty(), "pre-condition");
 
@@ -5751,10 +5771,8 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   }
 
   _gc_tracer_stw->report_gc_reference_stats(stats);
-  // We have completed copying any necessary live referent objects
-  // (that were not copied during the actual pause) so we can
-  // retire any active alloc buffers
-  pss.retire_alloc_buffers();
+
+  // We have completed copying any necessary live referent objects.
   assert(pss.refs()->is_empty(), "both queue and overflow should be empty");
 
   double ref_proc_time = os::elapsedTime() - ref_proc_start;
@@ -5883,6 +5901,9 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
     G1STWIsAliveClosure is_alive(this);
     G1KeepAliveClosure keep_alive(this);
     JNIHandles::weak_oops_do(&is_alive, &keep_alive);
+    if (G1StringDedup::is_enabled()) {
+      G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive);
+    }
   }
 
   release_gc_alloc_regions(n_workers, evacuation_info);
@@ -5899,6 +5920,8 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   // after we have finished the scanning/evacuation of the
   // strong code roots for a particular heap region.
   migrate_strong_code_roots();
+
+  purge_code_root_memory();
 
   if (g1_policy()->during_initial_mark_pause()) {
     // Reset the claim values set during marking the strong code roots
@@ -5926,44 +5949,23 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   enqueue_discovered_references(n_workers);
 
   if (G1DeferredRSUpdate) {
-    RedirtyLoggedCardTableEntryFastClosure redirty;
-    dirty_card_queue_set().set_closure(&redirty);
-    dirty_card_queue_set().apply_closure_to_all_completed_buffers();
-
-    DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
-    dcq.merge_bufferlists(&dirty_card_queue_set());
-    assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
+    redirty_logged_cards();
   }
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 }
 
-void G1CollectedHeap::free_region_if_empty(HeapRegion* hr,
-                                     size_t* pre_used,
-                                     FreeRegionList* free_list,
-                                     OldRegionSet* old_proxy_set,
-                                     HumongousRegionSet* humongous_proxy_set,
-                                     HRRSCleanupTask* hrrs_cleanup_task,
-                                     bool par) {
-  if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young()) {
-    if (hr->isHumongous()) {
-      assert(hr->startsHumongous(), "we should only see starts humongous");
-      free_humongous_region(hr, pre_used, free_list, humongous_proxy_set, par);
-    } else {
-      _old_set.remove_with_proxy(hr, old_proxy_set);
-      free_region(hr, pre_used, free_list, par);
-    }
-  } else {
-    hr->rem_set()->do_cleanup_work(hrrs_cleanup_task);
-  }
-}
-
 void G1CollectedHeap::free_region(HeapRegion* hr,
-                                  size_t* pre_used,
                                   FreeRegionList* free_list,
-                                  bool par) {
+                                  bool par,
+                                  bool locked) {
   assert(!hr->isHumongous(), "this is only for non-humongous regions");
   assert(!hr->is_empty(), "the region should not be empty");
   assert(free_list != NULL, "pre-condition");
+
+  if (G1VerifyBitmaps) {
+    MemRegion mr(hr->bottom(), hr->end());
+    concurrent_mark()->clearRangePrevBitmap(mr);
+  }
 
   // Clear the card counts for this region.
   // Note: we only need to do this if the region is not young
@@ -5971,70 +5973,56 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
   if (!hr->is_young()) {
     _cg1r->hot_card_cache()->reset_card_counts(hr);
   }
-  *pre_used += hr->used();
-  hr->hr_clear(par, true /* clear_space */);
-  free_list->add_as_head(hr);
+  hr->hr_clear(par, true /* clear_space */, locked /* locked */);
+  free_list->add_ordered(hr);
 }
 
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
-                                     size_t* pre_used,
                                      FreeRegionList* free_list,
-                                     HumongousRegionSet* humongous_proxy_set,
                                      bool par) {
   assert(hr->startsHumongous(), "this is only for starts humongous regions");
   assert(free_list != NULL, "pre-condition");
-  assert(humongous_proxy_set != NULL, "pre-condition");
 
-  size_t hr_used = hr->used();
   size_t hr_capacity = hr->capacity();
-  size_t hr_pre_used = 0;
-  _humongous_set.remove_with_proxy(hr, humongous_proxy_set);
   // We need to read this before we make the region non-humongous,
   // otherwise the information will be gone.
   uint last_index = hr->last_hc_index();
   hr->set_notHumongous();
-  free_region(hr, &hr_pre_used, free_list, par);
+  free_region(hr, free_list, par);
 
   uint i = hr->hrs_index() + 1;
   while (i < last_index) {
     HeapRegion* curr_hr = region_at(i);
     assert(curr_hr->continuesHumongous(), "invariant");
     curr_hr->set_notHumongous();
-    free_region(curr_hr, &hr_pre_used, free_list, par);
+    free_region(curr_hr, free_list, par);
     i += 1;
   }
-  assert(hr_pre_used == hr_used,
-         err_msg("hr_pre_used: "SIZE_FORMAT" and hr_used: "SIZE_FORMAT" "
-                 "should be the same", hr_pre_used, hr_used));
-  *pre_used += hr_pre_used;
 }
 
-void G1CollectedHeap::update_sets_after_freeing_regions(size_t pre_used,
-                                       FreeRegionList* free_list,
-                                       OldRegionSet* old_proxy_set,
-                                       HumongousRegionSet* humongous_proxy_set,
-                                       bool par) {
-  if (pre_used > 0) {
-    Mutex* lock = (par) ? ParGCRareEvent_lock : NULL;
-    MutexLockerEx x(lock, Mutex::_no_safepoint_check_flag);
-    assert(_summary_bytes_used >= pre_used,
-           err_msg("invariant: _summary_bytes_used: "SIZE_FORMAT" "
-                   "should be >= pre_used: "SIZE_FORMAT,
-                   _summary_bytes_used, pre_used));
-    _summary_bytes_used -= pre_used;
+void G1CollectedHeap::remove_from_old_sets(const HeapRegionSetCount& old_regions_removed,
+                                       const HeapRegionSetCount& humongous_regions_removed) {
+  if (old_regions_removed.length() > 0 || humongous_regions_removed.length() > 0) {
+    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
+    _old_set.bulk_remove(old_regions_removed);
+    _humongous_set.bulk_remove(humongous_regions_removed);
   }
-  if (free_list != NULL && !free_list->is_empty()) {
+
+}
+
+void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
+  assert(list != NULL, "list can't be null");
+  if (!list->is_empty()) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    _free_list.add_as_head(free_list);
+    _free_list.add_ordered(list);
   }
-  if (old_proxy_set != NULL && !old_proxy_set->is_empty()) {
-    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
-    _old_set.update_from_proxy(old_proxy_set);
-  }
-  if (humongous_proxy_set != NULL && !humongous_proxy_set->is_empty()) {
-    MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
-    _humongous_set.update_from_proxy(humongous_proxy_set);
-  }
+}
+
+void G1CollectedHeap::decrement_summary_bytes(size_t bytes) {
+  assert(_summary_bytes_used >= bytes,
+         err_msg("invariant: _summary_bytes_used: "SIZE_FORMAT" should be >= bytes: "SIZE_FORMAT,
+                  _summary_bytes_used, bytes));
+  _summary_bytes_used -= bytes;
 }
 
 class G1ParCleanupCTTask : public AbstractGangTask {
@@ -6113,7 +6101,87 @@ void G1CollectedHeap::verify_dirty_young_list(HeapRegion* head) {
 void G1CollectedHeap::verify_dirty_young_regions() {
   verify_dirty_young_list(_young_list->first_region());
 }
-#endif
+
+bool G1CollectedHeap::verify_no_bits_over_tams(const char* bitmap_name, CMBitMapRO* bitmap,
+                                               HeapWord* tams, HeapWord* end) {
+  guarantee(tams <= end,
+            err_msg("tams: "PTR_FORMAT" end: "PTR_FORMAT, tams, end));
+  HeapWord* result = bitmap->getNextMarkedWordAddress(tams, end);
+  if (result < end) {
+    gclog_or_tty->cr();
+    gclog_or_tty->print_cr("## wrong marked address on %s bitmap: "PTR_FORMAT,
+                           bitmap_name, result);
+    gclog_or_tty->print_cr("## %s tams: "PTR_FORMAT" end: "PTR_FORMAT,
+                           bitmap_name, tams, end);
+    return false;
+  }
+  return true;
+}
+
+bool G1CollectedHeap::verify_bitmaps(const char* caller, HeapRegion* hr) {
+  CMBitMapRO* prev_bitmap = concurrent_mark()->prevMarkBitMap();
+  CMBitMapRO* next_bitmap = (CMBitMapRO*) concurrent_mark()->nextMarkBitMap();
+
+  HeapWord* bottom = hr->bottom();
+  HeapWord* ptams  = hr->prev_top_at_mark_start();
+  HeapWord* ntams  = hr->next_top_at_mark_start();
+  HeapWord* end    = hr->end();
+
+  bool res_p = verify_no_bits_over_tams("prev", prev_bitmap, ptams, end);
+
+  bool res_n = true;
+  // We reset mark_in_progress() before we reset _cmThread->in_progress() and in this window
+  // we do the clearing of the next bitmap concurrently. Thus, we can not verify the bitmap
+  // if we happen to be in that state.
+  if (mark_in_progress() || !_cmThread->in_progress()) {
+    res_n = verify_no_bits_over_tams("next", next_bitmap, ntams, end);
+  }
+  if (!res_p || !res_n) {
+    gclog_or_tty->print_cr("#### Bitmap verification failed for "HR_FORMAT,
+                           HR_FORMAT_PARAMS(hr));
+    gclog_or_tty->print_cr("#### Caller: %s", caller);
+    return false;
+  }
+  return true;
+}
+
+void G1CollectedHeap::check_bitmaps(const char* caller, HeapRegion* hr) {
+  if (!G1VerifyBitmaps) return;
+
+  guarantee(verify_bitmaps(caller, hr), "bitmap verification");
+}
+
+class G1VerifyBitmapClosure : public HeapRegionClosure {
+private:
+  const char* _caller;
+  G1CollectedHeap* _g1h;
+  bool _failures;
+
+public:
+  G1VerifyBitmapClosure(const char* caller, G1CollectedHeap* g1h) :
+    _caller(caller), _g1h(g1h), _failures(false) { }
+
+  bool failures() { return _failures; }
+
+  virtual bool doHeapRegion(HeapRegion* hr) {
+    if (hr->continuesHumongous()) return false;
+
+    bool result = _g1h->verify_bitmaps(_caller, hr);
+    if (!result) {
+      _failures = true;
+    }
+    return false;
+  }
+};
+
+void G1CollectedHeap::check_bitmaps(const char* caller) {
+  if (!G1VerifyBitmaps) return;
+
+  G1VerifyBitmapClosure cl(caller, this);
+  heap_region_iterate(&cl);
+  guarantee(!cl.failures(), "bitmap verification");
+}
+#endif // PRODUCT
 
 void G1CollectedHeap::cleanUpCardTable() {
   G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();
@@ -6194,7 +6262,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
       }
     }
 
-    rs_lengths += cur->rem_set()->occupied();
+    rs_lengths += cur->rem_set()->occupied_locked();
 
     HeapRegion* next = cur->next_in_collection_set();
     assert(cur->in_collection_set(), "bad CS");
@@ -6227,7 +6295,8 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
 
       // And the region is empty.
       assert(!used_mr.is_empty(), "Should not have empty regions in a CS.");
-      free_region(cur, &pre_used, &local_free_list, false /* par */);
+      pre_used += cur->used();
+      free_region(cur, &local_free_list, false /* par */, true /* locked */);
     } else {
       cur->uninstall_surv_rate_group();
       if (cur->is_young()) {
@@ -6255,10 +6324,8 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
     young_time_ms += elapsed_ms;
   }
 
-  update_sets_after_freeing_regions(pre_used, &local_free_list,
-                                    NULL /* old_proxy_set */,
-                                    NULL /* humongous_proxy_set */,
-                                    false /* par */);
+  prepend_to_freelist(&local_free_list);
+  decrement_summary_bytes(pre_used);
   policy->phase_times()->record_young_free_cset_time_ms(young_time_ms);
   policy->phase_times()->record_non_young_free_cset_time_ms(non_young_time_ms);
 }
@@ -6370,10 +6437,10 @@ bool G1CollectedHeap::check_young_list_empty(bool check_heap, bool check_sample)
 
 class TearDownRegionSetsClosure : public HeapRegionClosure {
 private:
-  OldRegionSet *_old_set;
+  HeapRegionSet *_old_set;
 
 public:
-  TearDownRegionSetsClosure(OldRegionSet* old_set) : _old_set(old_set) { }
+  TearDownRegionSetsClosure(HeapRegionSet* old_set) : _old_set(old_set) { }
 
   bool doHeapRegion(HeapRegion* r) {
     if (r->is_empty()) {
@@ -6402,9 +6469,10 @@ void G1CollectedHeap::tear_down_region_sets(bool free_list_only) {
     TearDownRegionSetsClosure cl(&_old_set);
     heap_region_iterate(&cl);
 
-    // Need to do this after the heap iteration to be able to
-    // recognize the young regions and ignore them during the iteration.
-    _young_list->empty_list();
+    // Note that emptying the _young_list is postponed and instead done as
+    // the first step when rebuilding the regions sets again. The reason for
+    // this is that during a full GC string deduplication needs to know if
+    // a collected region was young or old when the full GC was initiated.
   }
   _free_list.remove_all();
 }
@@ -6412,13 +6480,13 @@ void G1CollectedHeap::tear_down_region_sets(bool free_list_only) {
 class RebuildRegionSetsClosure : public HeapRegionClosure {
 private:
   bool            _free_list_only;
-  OldRegionSet*   _old_set;
+  HeapRegionSet*   _old_set;
   FreeRegionList* _free_list;
   size_t          _total_used;
 
 public:
   RebuildRegionSetsClosure(bool free_list_only,
-                           OldRegionSet* old_set, FreeRegionList* free_list) :
+                           HeapRegionSet* old_set, FreeRegionList* free_list) :
     _free_list_only(free_list_only),
     _old_set(old_set), _free_list(free_list), _total_used(0) {
     assert(_free_list->is_empty(), "pre-condition");
@@ -6458,6 +6526,10 @@ public:
 void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
   assert_at_safepoint(true /* should_be_vm_thread */);
 
+  if (!free_list_only) {
+    _young_list->empty_list();
+  }
+
   RebuildRegionSetsClosure cl(free_list_only, &_old_set, &_free_list);
   heap_region_iterate(&cl);
 
@@ -6476,11 +6548,7 @@ void G1CollectedHeap::set_refine_cte_cl_concurrency(bool concurrent) {
 
 bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
   HeapRegion* hr = heap_region_containing(p);
-  if (hr == NULL) {
-    return false;
-  } else {
-    return hr->is_in(p);
-  }
+  return hr->is_in(p);
 }
 
 // Methods for the mutator alloc region
@@ -6493,10 +6561,12 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
   bool young_list_full = g1_policy()->is_young_list_full();
   if (force || !young_list_full) {
     HeapRegion* new_alloc_region = new_region(word_size,
+                                              false /* is_old */,
                                               false /* do_expand */);
     if (new_alloc_region != NULL) {
       set_region_short_lived_locked(new_alloc_region);
       _hr_printer.alloc(new_alloc_region, G1HRPrinter::Eden, young_list_full);
+      check_bitmaps("Mutator Region Allocation", new_alloc_region);
       return new_alloc_region;
     }
   }
@@ -6551,18 +6621,22 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
   assert(FreeList_lock->owned_by_self(), "pre-condition");
 
   if (count < g1_policy()->max_regions(ap)) {
+    bool survivor = (ap == GCAllocForSurvived);
     HeapRegion* new_alloc_region = new_region(word_size,
+                                              !survivor,
                                               true /* do_expand */);
     if (new_alloc_region != NULL) {
       // We really only need to do this for old regions given that we
       // should never scan survivors. But it doesn't hurt to do it
       // for survivors too.
       new_alloc_region->set_saved_mark();
-      if (ap == GCAllocForSurvived) {
+      if (survivor) {
         new_alloc_region->set_survivor();
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Survivor);
+        check_bitmaps("Survivor Region Allocation", new_alloc_region);
       } else {
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Old);
+        check_bitmaps("Old Region Allocation", new_alloc_region);
       }
       bool during_im = g1_policy()->during_initial_mark_pause();
       new_alloc_region->note_start_of_copying(during_im);
@@ -6615,23 +6689,22 @@ void OldGCAllocRegion::retire_region(HeapRegion* alloc_region,
 
 class VerifyRegionListsClosure : public HeapRegionClosure {
 private:
-  FreeRegionList*     _free_list;
-  OldRegionSet*       _old_set;
-  HumongousRegionSet* _humongous_set;
-  uint                _region_count;
+  HeapRegionSet*   _old_set;
+  HeapRegionSet*   _humongous_set;
+  FreeRegionList*  _free_list;
 
 public:
-  VerifyRegionListsClosure(OldRegionSet* old_set,
-                           HumongousRegionSet* humongous_set,
-                           FreeRegionList* free_list) :
-    _old_set(old_set), _humongous_set(humongous_set),
-    _free_list(free_list), _region_count(0) { }
+  HeapRegionSetCount _old_count;
+  HeapRegionSetCount _humongous_count;
+  HeapRegionSetCount _free_count;
 
-  uint region_count() { return _region_count; }
+  VerifyRegionListsClosure(HeapRegionSet* old_set,
+                           HeapRegionSet* humongous_set,
+                           FreeRegionList* free_list) :
+    _old_set(old_set), _humongous_set(humongous_set), _free_list(free_list),
+    _old_count(), _humongous_count(), _free_count(){ }
 
   bool doHeapRegion(HeapRegion* hr) {
-    _region_count += 1;
-
     if (hr->continuesHumongous()) {
       return false;
     }
@@ -6639,13 +6712,30 @@ public:
     if (hr->is_young()) {
       // TODO
     } else if (hr->startsHumongous()) {
-      _humongous_set->verify_next_region(hr);
+      assert(hr->containing_set() == _humongous_set, err_msg("Heap region %u is starts humongous but not in humongous set.", hr->hrs_index()));
+      _humongous_count.increment(1u, hr->capacity());
     } else if (hr->is_empty()) {
-      _free_list->verify_next_region(hr);
+      assert(hr->containing_set() == _free_list, err_msg("Heap region %u is empty but not on the free list.", hr->hrs_index()));
+      _free_count.increment(1u, hr->capacity());
     } else {
-      _old_set->verify_next_region(hr);
+      assert(hr->containing_set() == _old_set, err_msg("Heap region %u is old but not in the old set.", hr->hrs_index()));
+      _old_count.increment(1u, hr->capacity());
     }
     return false;
+  }
+
+  void verify_counts(HeapRegionSet* old_set, HeapRegionSet* humongous_set, FreeRegionList* free_list) {
+    guarantee(old_set->length() == _old_count.length(), err_msg("Old set count mismatch. Expected %u, actual %u.", old_set->length(), _old_count.length()));
+    guarantee(old_set->total_capacity_bytes() == _old_count.capacity(), err_msg("Old set capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
+        old_set->total_capacity_bytes(), _old_count.capacity()));
+
+    guarantee(humongous_set->length() == _humongous_count.length(), err_msg("Hum set count mismatch. Expected %u, actual %u.", humongous_set->length(), _humongous_count.length()));
+    guarantee(humongous_set->total_capacity_bytes() == _humongous_count.capacity(), err_msg("Hum set capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
+        humongous_set->total_capacity_bytes(), _humongous_count.capacity()));
+
+    guarantee(free_list->length() == _free_count.length(), err_msg("Free list count mismatch. Expected %u, actual %u.", free_list->length(), _free_count.length()));
+    guarantee(free_list->total_capacity_bytes() == _free_count.capacity(), err_msg("Free list capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
+        free_list->total_capacity_bytes(), _free_count.capacity()));
   }
 };
 
@@ -6662,16 +6752,14 @@ void G1CollectedHeap::verify_region_sets() {
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
 
   // First, check the explicit lists.
-  _free_list.verify();
+  _free_list.verify_list();
   {
     // Given that a concurrent operation might be adding regions to
     // the secondary free list we have to take the lock before
     // verifying it.
     MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-    _secondary_free_list.verify();
+    _secondary_free_list.verify_list();
   }
-  _old_set.verify();
-  _humongous_set.verify();
 
   // If a concurrent region freeing operation is in progress it will
   // be difficult to correctly attributed any free regions we come
@@ -6694,16 +6782,10 @@ void G1CollectedHeap::verify_region_sets() {
 
   // Finally, make sure that the region accounting in the lists is
   // consistent with what we see in the heap.
-  _old_set.verify_start();
-  _humongous_set.verify_start();
-  _free_list.verify_start();
 
   VerifyRegionListsClosure cl(&_old_set, &_humongous_set, &_free_list);
   heap_region_iterate(&cl);
-
-  _old_set.verify_end();
-  _humongous_set.verify_end();
-  _free_list.verify_end();
+  cl.verify_counts(&_old_set, &_humongous_set, &_free_list);
 }
 
 // Optimized nmethod scanning
@@ -6804,6 +6886,13 @@ void G1CollectedHeap::migrate_strong_code_roots() {
   g1_policy()->phase_times()->record_strong_code_root_migration_time(migration_time_ms);
 }
 
+void G1CollectedHeap::purge_code_root_memory() {
+  double purge_start = os::elapsedTime();
+  G1CodeRootSet::purge_chunks(G1CodeRootsChunkCacheKeepPercent);
+  double purge_time_ms = (os::elapsedTime() - purge_start) * 1000.0;
+  g1_policy()->phase_times()->record_strong_code_root_purge_time(purge_time_ms);
+}
+
 // Mark all the code roots that point into regions *not* in the
 // collection set.
 //
@@ -6874,7 +6963,7 @@ public:
       // Code roots should never be attached to a continuation of a humongous region
       assert(hrrs->strong_code_roots_list_length() == 0,
              err_msg("code roots should never be attached to continuations of humongous region "HR_FORMAT
-                     " starting at "HR_FORMAT", but has "INT32_FORMAT,
+                     " starting at "HR_FORMAT", but has "SIZE_FORMAT,
                      HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()),
                      hrrs->strong_code_roots_list_length()));
       return false;

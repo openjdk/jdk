@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ public class MotifTreeUI extends BasicTreeUI
      * version of Swing.  A future release of Swing will provide support for
      * long term persistence.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class MotifExpandedIcon implements Icon, Serializable {
         static Color bg;
         static Color fg;
@@ -139,6 +140,7 @@ public class MotifTreeUI extends BasicTreeUI
      * version of Swing.  A future release of Swing will provide support for
      * long term persistence.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class MotifCollapsedIcon extends MotifExpandedIcon {
         public static Icon createCollapsedIcon() {
             return new MotifCollapsedIcon();

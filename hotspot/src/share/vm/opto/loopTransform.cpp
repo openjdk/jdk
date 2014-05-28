@@ -28,9 +28,12 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/movenode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -617,6 +620,15 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
       case Op_AryEq: {
         return false;
       }
+#if INCLUDE_RTM_OPT
+      case Op_FastLock:
+      case Op_FastUnlock: {
+        // Don't unroll RTM locking code because it is large.
+        if (UseRTMLocking) {
+          return false;
+        }
+      }
+#endif
     } // switch
   }
 
@@ -722,6 +734,15 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
         // String intrinsics are large and have loops.
         return false;
       }
+#if INCLUDE_RTM_OPT
+      case Op_FastLock:
+      case Op_FastUnlock: {
+        // Don't unroll RTM locking code because it is large.
+        if (UseRTMLocking) {
+          return false;
+        }
+      }
+#endif
     } // switch
   }
 
@@ -1129,6 +1150,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // Now force out all loop-invariant dominating tests.  The optimizer
   // finds some, but we _know_ they are all useless.
   peeled_dom_test_elim(loop,old_new);
+  loop->record_for_igvn();
 }
 
 //------------------------------is_invariant-----------------------------

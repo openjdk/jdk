@@ -29,18 +29,14 @@
 #error "This file should only be included from thread.inline.hpp"
 #endif
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/prefetch.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #ifdef TARGET_OS_ARCH_solaris_x86
-# include "atomic_solaris_x86.inline.hpp"
-# include "orderAccess_solaris_x86.inline.hpp"
 # include "prefetch_solaris_x86.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_solaris_sparc
-# include "atomic_solaris_sparc.inline.hpp"
-# include "orderAccess_solaris_sparc.inline.hpp"
 # include "prefetch_solaris_sparc.inline.hpp"
 #endif
 

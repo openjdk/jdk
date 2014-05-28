@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,44 +27,26 @@
  * @summary Test to make sure that constant values page does not get
  * generated when doclet has nothing to document.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestConstantValuesPage
  * @run main TestConstantValuesPage
  */
 
 public class TestConstantValuesPage extends JavadocTester {
 
-    private static final String BUG_ID = "4681599";
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = {
-        {NOTICE_OUTPUT, "constant-values.html..."}
-        };
-    private static final String[] ARGS =
-        new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "foo"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestConstantValuesPage tester = new TestConstantValuesPage();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "foo");
+        checkExit(Exit.FAILED);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput(Output.NOTICE, false,
+                "constant-values.html...");
     }
 }

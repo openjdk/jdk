@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class ProtocolSourceMessage extends Message {
     }
 
     public Message copy() {
-        return sm.copy();
+        return sm.copy().copyFrom(sm);
     }
 
     public Source readEnvelopeAsSource() {

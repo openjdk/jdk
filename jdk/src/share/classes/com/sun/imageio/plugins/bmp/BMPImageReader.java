@@ -680,7 +680,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         gotHeader = true;
     }
 
-    public Iterator getImageTypes(int imageIndex)
+    public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex)
       throws IOException {
         checkIndex(imageIndex);
         try {
@@ -688,7 +688,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         } catch (IllegalArgumentException e) {
             throw new IIOException(I18N.getString("BMPImageReader6"), e);
         }
-        ArrayList list = new ArrayList(1);
+        ArrayList<ImageTypeSpecifier> list = new ArrayList<>(1);
         list.add(new ImageTypeSpecifier(originalColorModel,
                                         originalSampleModel));
         return list.iterator();
@@ -912,6 +912,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                 throw new
                     IIOException(I18N.getString("BMPImageReader1"));
             }
+            break;
 
         case VERSION_4_8_BIT:
             switch((int)compression) {

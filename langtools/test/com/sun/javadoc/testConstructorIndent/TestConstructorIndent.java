@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,53 +27,31 @@
  * @summary  The constructor comments should be surrounded by
  *           <dl></dl>.  Check for this in the output.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestConstructorIndent
  * @run main TestConstructorIndent
  */
 
 public class TestConstructorIndent extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4904037";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, SRC_DIR + FS + "C.java"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "C.html", "<div class=\"block\">" +
-                 "This is just a simple constructor.</div>" + NL +
-                 "<dl>" + NL + "<dt><span class=\"paramLabel\">Parameters:</span></dt>" + NL +
-                 "<dd><code>i</code> - a param.</dd>" + NL +"</dl>"
-        }
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestConstructorIndent tester = new TestConstructorIndent();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("C.html", true,
+                "<div class=\"block\">"
+                + "This is just a simple constructor.</div>\n"
+                + "<dl>\n"
+                + "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n"
+                + "<dd><code>i</code> - a param.</dd>\n"
+                + "</dl>");
     }
 }

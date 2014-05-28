@@ -95,7 +95,7 @@ abstract class ArrayBufferView extends ScriptObject {
     }
 
     @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE)
-    public static Object byteOffset(final Object self) {
+    public static int byteOffset(final Object self) {
         return ((ArrayBufferView)self).byteOffset;
     }
 
@@ -244,7 +244,7 @@ abstract class ArrayBufferView extends ScriptObject {
         return (int)(length & Integer.MAX_VALUE);
     }
 
-    protected static Object subarrayImpl(final Object self, final Object begin0, final Object end0) {
+    protected static ScriptObject subarrayImpl(final Object self, final Object begin0, final Object end0) {
         final ArrayBufferView arrayView       = (ArrayBufferView)self;
         final int             byteOffset      = arrayView.byteOffset;
         final int             bytesPerElement = arrayView.bytesPerElement();

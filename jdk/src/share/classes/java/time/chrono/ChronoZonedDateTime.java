@@ -132,7 +132,6 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * The underlying comparison is equivalent to comparing the epoch-second and nano-of-second.
      *
      * @return a comparator that compares in time-line order ignoring the chronology
-     *
      * @see #isAfter
      * @see #isBefore
      * @see #isEqual
@@ -292,7 +291,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @return a {@code ZoneChronoDateTime} based on this date-time with the earlier offset, not null
+     * @return a {@code ChronoZonedDateTime} based on this date-time with the earlier offset, not null
      * @throws DateTimeException if no rules can be found for the zone
      * @throws DateTimeException if no rules are valid for this date-time
      */
@@ -319,7 +318,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
     ChronoZonedDateTime<D> withLaterOffsetAtOverlap();
 
     /**
-     * Returns a copy of this ZonedDateTime with a different time-zone,
+     * Returns a copy of this date-time with a different time-zone,
      * retaining the local date-time if possible.
      * <p>
      * This method changes the time-zone and retains the local date-time.
@@ -470,7 +469,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * what the result of this method will be.
      * <p>
      * The result of this method is obtained by invoking the
-     * {@link java.time.temporal.TemporalQuery#queryFrom(TemporalAccessor)} method on the
+     * {@link TemporalQuery#queryFrom(TemporalAccessor)} method on the
      * specified query passing {@code this} as the argument.
      *
      * @param <R> the type of the result

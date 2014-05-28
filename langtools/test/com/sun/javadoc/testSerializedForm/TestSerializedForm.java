@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,9 @@
  * questions.
  */
 
-import java.lang.*;
-import java.io.*;
-
 /*
  * @test
- * @bug 4341304 4485668 4966728
+ * @bug 4341304 4485668 4966728 8032066
  * @summary Test that methods readResolve and writeReplace show
  * up in serialized-form.html the same way that readObject and writeObject do.
  * If the doclet includes readResolve and writeReplace in the serialized-form
@@ -41,26 +38,76 @@ import java.io.*;
  * @run main TestSerializedForm
  */
 
+import java.io.*;
+
 public class TestSerializedForm extends JavadocTester implements Serializable {
+    public static void main(String... args) throws Exception {
+        TestSerializedForm tester = new TestSerializedForm();
+        tester.runTests();
+//        tester.run(ARGS, TEST, NEGATED_TEST);
+//        tester.run(ARGS_PRIVATE, TEST_PRIVATE, NEGATED_TEST_PRIVATE);
+//        tester.printSummary();
+    }
 
-    private static final String BUG_ID = "4341304-4485668-4966728";
+    @Test
+    void testDefault() {
+        javadoc("-d", "out-default",
+                "-sourcepath", testSrc,
+                testSrc("TestSerializedForm.java"), "pkg1");
+        checkExit(Exit.OK);
 
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "serialized-form.html",
-            "protected&nbsp;java.lang.Object&nbsp;readResolve()"},
-        {BUG_ID + FS + "serialized-form.html",
-            "protected&nbsp;java.lang.Object&nbsp;writeReplace()"},
-        {BUG_ID + FS + "serialized-form.html",
-            "protected&nbsp;java.lang.Object&nbsp;readObjectNoData()"},
-        {BUG_ID + FS + "serialized-form.html",
-            "See Also"},
-    };
+        checkOutput("serialized-form.html", true,
+                "protected&nbsp;java.lang.Object&nbsp;readResolve()",
+                "protected&nbsp;java.lang.Object&nbsp;writeReplace()",
+                "protected&nbsp;java.lang.Object&nbsp;readObjectNoData()",
+                "See Also",
+                "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass "
+                + "extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.PrivateIncludeInnerClass.PriInnerClass extends "
+                + "java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.ProtectedInnerClass.ProInnerClass extends "
+                + "java.lang.Object implements Serializable</h3>");
 
-    private static final String[][] NEGATED_TEST = NO_TEST;
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-        SRC_DIR + FS + "TestSerializedForm.java"
-    };
+        checkOutput("serialized-form.html", false,
+                "<h3>Class <a href=\"pkg1/NestedInnerClass.InnerClass.ProNestedInnerClass.html\" "
+                + "title=\"class in pkg1\">pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass</a> "
+                + "extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/PrivateInnerClass.PriInnerClass.html\" title=\"class in pkg1\">"
+                + "pkg1.PrivateInnerClass.PriInnerClass</a> extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/ProtectedInnerClass.ProInnerClass.html\" title=\"class in pkg1\">"
+                + "pkg1.ProtectedInnerClass.ProInnerClass</a> extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.PublicExcludeInnerClass.PubInnerClass extends java.lang.Object implements "
+                + "Serializable</h3>");
+    }
+
+    @Test
+    void testPrivate() {
+        javadoc("-private",
+                "-d", "out-private",
+                "-sourcepath", testSrc,
+                testSrc("TestSerializedForm.java"), "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("serialized-form.html", true,
+                "<h3>Class <a href=\"pkg1/NestedInnerClass.InnerClass.ProNestedInnerClass.html\" "
+                + "title=\"class in pkg1\">pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass</a> "
+                + "extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/PrivateIncludeInnerClass.PriInnerClass.html\" title=\"class in pkg1\">"
+                + "pkg1.PrivateIncludeInnerClass.PriInnerClass</a> extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/ProtectedInnerClass.ProInnerClass.html\" title=\"class in pkg1\">"
+                + "pkg1.ProtectedInnerClass.ProInnerClass</a> extends java.lang.Object implements Serializable</h3>");
+
+        checkOutput("serialized-form.html", false,
+                "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass "
+                + "extends java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.PrivateInnerClass.PriInnerClass extends "
+                + "java.lang.Object implements Serializable</h3>",
+                "<h3>Class pkg1.ProtectedInnerClass.ProInnerClass extends "
+                + "java.lang.Object implements Serializable</h3>",
+                "<h3>Class <a href=\"pkg1/PublicExcludeInnerClass.PubInnerClass.html\" "
+                + "title=\"class in pkg1\">pkg1.PublicExcludeInnerClass.PubInnerClass</a> "
+                + "extends java.lang.Object implements Serializable</h3>");
+    }
 
     /**
      * @serial
@@ -72,55 +119,41 @@ public class TestSerializedForm extends JavadocTester implements Serializable {
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
-    public static void main(String[] args) {
-        TestSerializedForm tester = new TestSerializedForm();
-        int actualExitCode = run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
-    }
 
     /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
-    }
-
-    /**
+     * @param s ObjectInputStream.
      * @throws IOException when there is an I/O error.
      * @serial
      */
-    private void readObject(ObjectInputStream s) {}
+    private void readObject(ObjectInputStream s) throws IOException {}
 
     /**
+     * @param s ObjectOutputStream.
      * @throws IOException when there is an I/O error.
      * @serial
      */
-    private void writeObject(ObjectOutputStream s) {}
+    private void writeObject(ObjectOutputStream s) throws IOException {}
 
     /**
      * @throws IOException when there is an I/O error.
      * @serialData This is a serial data comment.
+     * @return an object.
      */
-    protected Object readResolve(){return null;}
+    protected Object readResolve() throws IOException {return null;}
 
     /**
      * @throws IOException when there is an I/O error.
      * @serialData This is a serial data comment.
+     * @return an object.
      */
-    protected Object writeReplace(){return null;}
+    protected Object writeReplace() throws IOException {return null;}
 
     /**
      * @throws IOException when there is an I/O error.
      * @serialData This is a serial data comment.
+     * @return an object.
      */
-    protected Object readObjectNoData() {
+    protected Object readObjectNoData() throws IOException {
         return null;
     }
 

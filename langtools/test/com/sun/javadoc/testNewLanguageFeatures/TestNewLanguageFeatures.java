@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,726 +28,612 @@
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
  * @author   jamieh
- * @library  ../lib/
- * @build    JavadocTester TestNewLanguageFeatures
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestNewLanguageFeatures
  */
 
 public class TestNewLanguageFeatures extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4789689-4905985-4927164-4827184-4993906";
+    public static void main(String... args) throws Exception {
+        TestNewLanguageFeatures tester = new TestNewLanguageFeatures();
+        tester.runTests();
+    }
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-use", "-sourcepath", SRC_DIR, "pkg", "pkg1", "pkg2"
-    };
+    @Test
+    void test() {
+        javadoc("-Xdoclint:none",
+                "-d", "out",
+                "-use", "-sourcepath",
+                testSrc,
+                "pkg", "pkg1", "pkg2");
+        checkExit(Exit.OK);
 
-    //Input for string search tests.
-    private static final String[][] TEST =
-        {
-            //=================================
-            // ENUM TESTING
-            //=================================
-            //Make sure enum header is correct.
-            {BUG_ID + FS + "pkg" + FS + "Coin.html", "Enum Coin</h2>"},
-            //Make sure enum signature is correct.
-            {BUG_ID + FS + "pkg" + FS + "Coin.html", "<pre>public enum " +
-                     "<span class=\"typeNameLabel\">Coin</span>" + NL +
-                     "extends java.lang.Enum&lt;<a href=\"../pkg/Coin.html\" " +
-                     "title=\"enum in pkg\">Coin</a>&gt;</pre>"
-            },
-            //Check for enum constant section
-            {BUG_ID + FS + "pkg" + FS + "Coin.html", "<caption><span>Enum Constants" +
-                     "</span><span class=\"tabEnd\">&nbsp;</span></caption>"},
-            //Detail for enum constant
-            {BUG_ID + FS + "pkg" + FS + "Coin.html",
-                "<span class=\"memberNameLink\"><a href=\"../pkg/Coin.html#Dime\">Dime</a></span>"},
-            //Automatically insert documentation for values() and valueOf().
-            {BUG_ID + FS + "pkg" + FS + "Coin.html",
-                "Returns an array containing the constants of this enum type,"},
-            {BUG_ID + FS + "pkg" + FS + "Coin.html",
-                "Returns the enum constant of this type with the specified name"},
-            {BUG_ID + FS + "pkg" + FS + "Coin.html", "for (Coin c : Coin.values())"},
-            {BUG_ID + FS + "pkg" + FS + "Coin.html", "Overloaded valueOf() method has correct documentation."},
-            {BUG_ID + FS + "pkg" + FS + "Coin.html", "Overloaded values method  has correct documentation."},
+        checkEnums();
+        checkTypeParameters();
+        checkVarArgs();
+        checkAnnotationTypeUsage();
+    }
 
-            //=================================
-            // TYPE PARAMETER TESTING
-            //=================================
-            //Make sure the header is correct.
-            {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "Class TypeParameters&lt;E&gt;</h2>"},
-            //Check class type parameters section.
-            {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<dt><span class=\"paramLabel\">Type Parameters:</span></dt>" + NL + "<dd><code>E</code> - " +
-                "the type parameter for this class."},
-            //Type parameters in @see/@link
-            {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<dl>" + NL + "<dt><span class=\"seeLabel\">See Also:</span></dt>" + NL + "<dd>" +
-                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
-                "<code>TypeParameters</code></a></dd>" + NL + "</dl>"},
-            //Method that uses class type parameter.
-            {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "(<a href=\"../pkg/TypeParameters.html\" title=\"type " +
-                    "parameter in TypeParameters\">E</a>&nbsp;param)"},
-            //Method type parameter section.
-            {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<span class=\"paramLabel\">Type Parameters:</span></dt>" + NL + "<dd><code>T</code> - This is the first " +
-                    "type parameter.</dd>" + NL + "<dd><code>V</code> - This is the second type " +
-                    "parameter."},
-            //Signature of method with type parameters
-            {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "public&nbsp;&lt;T extends java.util.List,V&gt;&nbsp;" +
-                "java.lang.String[]&nbsp;methodThatHasTypeParameters"},
-            //Wildcard testing.
-            {BUG_ID + FS + "pkg" + FS + "Wildcards.html",
-                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
-                "TypeParameters</a>&lt;? super java.lang.String&gt;&nbsp;a"},
-            {BUG_ID + FS + "pkg" + FS + "Wildcards.html",
-                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
-                "TypeParameters</a>&lt;? extends java.lang.StringBuffer&gt;&nbsp;b"},
-            {BUG_ID + FS + "pkg" + FS + "Wildcards.html",
-                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
-                    "TypeParameters</a>&nbsp;c"},
-            //Bad type parameter warnings.
-            {WARNING_OUTPUT, "warning - @param argument " +
-                "\"<BadClassTypeParam>\" is not a type parameter name."},
-            {WARNING_OUTPUT, "warning - @param argument " +
-                "\"<BadMethodTypeParam>\" is not a type parameter name."},
+    //=================================
+    // ENUM TESTING
+    //=================================
+    void checkEnums() {
+        checkOutput("pkg/Coin.html", true,
+                // Make sure enum header is correct.
+                "Enum Coin</h2>",
+                // Make sure enum signature is correct.
+                "<pre>public enum "
+                + "<span class=\"typeNameLabel\">Coin</span>\n"
+                + "extends java.lang.Enum&lt;<a href=\"../pkg/Coin.html\" "
+                + "title=\"enum in pkg\">Coin</a>&gt;</pre>",
+                // Check for enum constant section
+                "<caption><span>Enum Constants"
+                + "</span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                // Detail for enum constant
+                "<span class=\"memberNameLink\"><a href=\"../pkg/Coin.html#Dime\">Dime</a></span>",
+                // Automatically insert documentation for values() and valueOf().
+                "Returns an array containing the constants of this enum type,",
+                "Returns the enum constant of this type with the specified name",
+                "for (Coin c : Coin.values())",
+                "Overloaded valueOf() method has correct documentation.",
+                "Overloaded values method  has correct documentation.");
 
-            //Signature of subclass that has type parameters.
-            {BUG_ID + FS + "pkg" + FS + "TypeParameterSubClass.html",
-                "<pre>public class <span class=\"typeNameLabel\">TypeParameterSubClass&lt;T extends " +
-                "java.lang.String&gt;</span>" + NL + "extends " +
-                "<a href=\"../pkg/TypeParameterSuperClass.html\" title=\"class in pkg\">" +
-                "TypeParameterSuperClass</a>&lt;T&gt;</pre>"},
+        // NO constructor section
+        checkOutput("pkg/Coin.html", false,
+                "<h3>Constructor Summary</h3>");
+    }
 
-            //Interface generic parameter substitution
-            //Signature of subclass that has type parameters.
-            {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<dl>" + NL + "<dt>All Implemented Interfaces:</dt>" + NL +
-                "<dd><a href=\"../pkg/SubInterface.html\" title=\"interface in pkg\">" +
-                "SubInterface</a>&lt;E&gt;, <a href=\"../pkg/SuperInterface.html\" " +
-                "title=\"interface in pkg\">SuperInterface</a>&lt;E&gt;</dd>" + NL +
-                "</dl>"},
-            {BUG_ID + FS + "pkg" + FS + "SuperInterface.html",
-                "<dl>" + NL + "<dt>All Known Subinterfaces:</dt>" + NL +
-                "<dd><a href=\"../pkg/SubInterface.html\" title=\"interface in pkg\">" +
-                "SubInterface</a>&lt;V&gt;</dd>" + NL + "</dl>"},
-            {BUG_ID + FS + "pkg" + FS + "SubInterface.html",
-                "<dl>" + NL + "<dt>All Superinterfaces:</dt>" + NL +
-                "<dd><a href=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">" +
-                "SuperInterface</a>&lt;V&gt;</dd>" + NL + "</dl>"},
+    //=================================
+    // TYPE PARAMETER TESTING
+    //=================================
 
-            //=================================
-            // VAR ARG TESTING
-            //=================================
-            {BUG_ID + FS + "pkg" + FS + "VarArgs.html", "(int...&nbsp;i)"},
-            {BUG_ID + FS + "pkg" + FS + "VarArgs.html", "(int[][]...&nbsp;i)"},
-            {BUG_ID + FS + "pkg" + FS + "VarArgs.html", "-int:A...-"},
-            {BUG_ID + FS + "pkg" + FS + "VarArgs.html",
-                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
-                "TypeParameters</a>...&nbsp;t"},
+    void checkTypeParameters() {
+        checkOutput("pkg/TypeParameters.html", true,
+                // Make sure the header is correct.
+                "Class TypeParameters&lt;E&gt;</h2>",
+                // Check class type parameters section.
+                "<dt><span class=\"paramLabel\">Type Parameters:</span></dt>\n"
+                + "<dd><code>E</code> - "
+                + "the type parameter for this class.",
+                // Type parameters in @see/@link
+                "<dl>\n"
+                + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dd>"
+                + "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">"
+                + "<code>TypeParameters</code></a></dd>\n"
+                + "</dl>",
+                // Method that uses class type parameter.
+                "(<a href=\"../pkg/TypeParameters.html\" title=\"type "
+                + "parameter in TypeParameters\">E</a>&nbsp;param)",
+                // Method type parameter section.
+                "<span class=\"paramLabel\">Type Parameters:</span></dt>\n"
+                + "<dd><code>T</code> - This is the first "
+                + "type parameter.</dd>\n"
+                + "<dd><code>V</code> - This is the second type "
+                + "parameter.",
+                // Signature of method with type parameters
+                "public&nbsp;&lt;T extends java.util.List,V&gt;&nbsp;"
+                + "java.lang.String[]&nbsp;methodThatHasTypeParameters");
 
-            //=================================
-            // ANNOTATION TYPE TESTING
-            //=================================
-            //Make sure the summary links are correct.
-            {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<li>Summary:&nbsp;</li>" + NL + "<li>Field&nbsp;|&nbsp;</li>" + NL +
-                "<li><a href=\"#annotation.type.required.element.summary\">" +
-                "Required</a>&nbsp;|&nbsp;</li>" + NL + "<li>" +
-                "<a href=\"#annotation.type.optional.element.summary\">Optional</a></li>"},
-            //Make sure the detail links are correct.
-            {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<li>Detail:&nbsp;</li>" + NL + "<li>Field&nbsp;|&nbsp;</li>" + NL +
-                "<li><a href=\"#annotation.type.element.detail\">Element</a></li>"},
-            //Make sure the heading is correct.
-            {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "Annotation Type AnnotationType</h2>"},
-            //Make sure the signature is correct.
-            {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "public @interface <span class=\"memberNameLabel\">AnnotationType</span>"},
-            //Make sure member summary headings are correct.
-            {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<h3>Required Element Summary</h3>"},
-            {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<h3>Optional Element Summary</h3>"},
-            //Make sure element detail heading is correct
-            {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "Element Detail"},
-            //Make sure default annotation type value is printed when necessary.
-            {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<dl>" + NL + "<dt>Default:</dt>" + NL + "<dd>\"unknown\"</dd>" + NL +
-                "</dl>"},
+        checkOutput("pkg/Wildcards.html", true,
+                // Wildcard testing.
+                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">"
+                + "TypeParameters</a>&lt;? super java.lang.String&gt;&nbsp;a",
+                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">"
+                + "TypeParameters</a>&lt;? extends java.lang.StringBuffer&gt;&nbsp;b",
+                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">"
+                + "TypeParameters</a>&nbsp;c");
 
-            //=================================
-            // ANNOTATION TYPE USAGE TESTING
-            //=================================
+        checkOutput(Output.WARNING, true,
+                // Bad type parameter warnings.
+                "warning - @param argument "
+                + "\"<BadClassTypeParam>\" is not a type parameter name.",
+                "warning - @param argument "
+                + "\"<BadMethodTypeParam>\" is not a type parameter name.");
 
-            //PACKAGE
-            {BUG_ID + FS + "pkg" + FS + "package-summary.html",
-                "<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>=\"Package Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required--\">required</a>=1994)"},
+        // Signature of subclass that has type parameters.
+        checkOutput("pkg/TypeParameterSubClass.html", true,
+                "<pre>public class <span class=\"typeNameLabel\">TypeParameterSubClass&lt;T extends "
+                + "java.lang.String&gt;</span>\n"
+                + "extends "
+                + "<a href=\"../pkg/TypeParameterSuperClass.html\" title=\"class in pkg\">"
+                + "TypeParameterSuperClass</a>&lt;T&gt;</pre>");
 
-            //CLASS
-            {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-                "<pre><a href=\"../pkg/AnnotationType.html\" " +
-                "title=\"annotation in pkg\">@AnnotationType</a>(" +
-                "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>" +
-                "=\"Class Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required--\">" +
-                "required</a>=1994)" + NL + "public class <span class=\"typeNameLabel\">" +
-                "AnnotationTypeUsage</span>" + NL + "extends java.lang.Object</pre>"},
+        // Interface generic parameter substitution
+        // Signature of subclass that has type parameters.
+        checkOutput("pkg/TypeParameters.html", true,
+                "<dl>\n"
+                + "<dt>All Implemented Interfaces:</dt>\n"
+                + "<dd><a href=\"../pkg/SubInterface.html\" title=\"interface in pkg\">"
+                + "SubInterface</a>&lt;E&gt;, <a href=\"../pkg/SuperInterface.html\" "
+                + "title=\"interface in pkg\">SuperInterface</a>&lt;E&gt;</dd>\n"
+                + "</dl>");
 
-            //FIELD
-            {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-                "<pre><a href=\"../pkg/AnnotationType.html\" " +
-                "title=\"annotation in pkg\">@AnnotationType</a>(" +
-                "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>" +
-                "=\"Field Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required--\">" +
-                "required</a>=1994)" + NL + "public&nbsp;int field</pre>"},
+        checkOutput("pkg/SuperInterface.html", true,
+                "<dl>\n"
+                + "<dt>All Known Subinterfaces:</dt>\n"
+                + "<dd><a href=\"../pkg/SubInterface.html\" title=\"interface in pkg\">"
+                + "SubInterface</a>&lt;V&gt;</dd>\n"
+                + "</dl>");
+        checkOutput("pkg/SubInterface.html", true,
+                "<dl>\n"
+                + "<dt>All Superinterfaces:</dt>\n"
+                + "<dd><a href=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">"
+                + "SuperInterface</a>&lt;V&gt;</dd>\n"
+                + "</dl>");
 
-            //CONSTRUCTOR
-            {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-                "<pre><a href=\"../pkg/AnnotationType.html\" " +
-                "title=\"annotation in pkg\">@AnnotationType</a>(" +
-                "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>" +
-                "=\"Constructor Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required--\">" +
-                "required</a>=1994)" + NL + "public&nbsp;AnnotationTypeUsage()</pre>"},
+        //==============================================================
+        // Handle multiple bounds.
+        //==============================================================
+        checkOutput("pkg/MultiTypeParameters.html", true,
+                "public&nbsp;&lt;T extends java.lang.Number &amp; java.lang.Runnable&gt;&nbsp;T&nbsp;foo(T&nbsp;t)");
 
-            //METHOD
-            {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-                "<pre><a href=\"../pkg/AnnotationType.html\" " +
-                "title=\"annotation in pkg\">@AnnotationType</a>(" +
-                "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>" +
-                "=\"Method Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required--\">" +
-                "required</a>=1994)" + NL + "public&nbsp;void&nbsp;method()</pre>"},
+        //==============================================================
+        // Test Class-Use Documentation for Type Parameters.
+        //==============================================================
+        // ClassUseTest1: <T extends Foo & Foo2>
+        checkOutput("pkg2/class-use/Foo.html", true,
+                "<caption><span>Classes in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">"
+                + "Foo</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest1.html\" "
+                + "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends "
+                + "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo"
+                + "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">"
+                + "Foo2</a>&gt;</span></code>&nbsp;</td>",
+                "<caption><span>Methods in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/Foo.html\" title=\"class in "
+                + "pkg2\">Foo</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest1."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/"
+                + "ClassUseTest1.html#method-T-\">method</a></span>"
+                + "(T&nbsp;t)</code>&nbsp;</td>",
+                "<caption><span>Fields in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">"
+                + "Foo</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "td class=\"colFirst\"><code><a href=\"../../pkg2/"
+                + "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>"
+                + "&lt;<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\""
+                + ">Foo</a>&gt;</code></td>"
+        );
 
-            //METHOD PARAMS
-            {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-                "<pre>public&nbsp;void&nbsp;methodWithParams(" +
-                "<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">" +
-                "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">" +
-                "optional</a>=\"Parameter Annotation\",<a " +
-                "href=\"../pkg/AnnotationType.html#required--\">required</a>=1994)" + NL +
-                "                             int&nbsp;documented," + NL +
-                "                             int&nbsp;undocmented)</pre>"},
+        checkOutput("pkg2/class-use/ParamTest.html", true,
+                "<caption><span>Fields in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> declared as <a href=\"../"
+                + "../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest"
+                + "</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<td class=\"colFirst\"><code><a href=\"../../pkg2/"
+                + "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>&lt;<a "
+                + "href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</a"
+                + ">&gt;</code></td>"
+        );
 
-            //CONSTRUCTOR PARAMS
-            {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-                "<pre>public&nbsp;AnnotationTypeUsage(<a " +
-                "href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">" +
-                "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">" +
-                "optional</a>=\"Constructor Param Annotation\",<a " +
-                "href=\"../pkg/AnnotationType.html#required--\">required</a>=1994)" + NL +
-                "                           int&nbsp;documented," + NL +
-                "                           int&nbsp;undocmented)</pre>"},
+        checkOutput("pkg2/class-use/Foo2.html", true,
+                "<caption><span>Classes in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/Foo2.html\" title=\"interface "
+                + "in pkg2\">Foo2</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>",
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest1.html\" "
+                + "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends "
+                + "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo"
+                + "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">"
+                + "Foo2</a>&gt;</span></code>&nbsp;</td>",
+                "<caption><span>Methods in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/Foo2.html\" title=\"interface "
+                + "in pkg2\">Foo2</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>",
+                "<td class=\"colLast\"><span class=\"typeNameLabel\">"
+                + "ClassUseTest1.</span><code><span class=\"memberNameLink\"><a href=\"../../"
+                + "pkg2/ClassUseTest1.html#method-T-\">method</a></span>"
+                + "(T&nbsp;t)</code>&nbsp;</td>"
+        );
 
-            //=================================
-            // ANNOTATION TYPE USAGE TESTING (All Different Types).
-            //=================================
+        // ClassUseTest2: <T extends ParamTest<Foo3>>
+        checkOutput("pkg2/class-use/ParamTest.html", true,
+                "<caption><span>Classes in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/ParamTest.html\" title=\"class "
+                + "in pkg2\">ParamTest</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest2.html\" "
+                + "title=\"class in pkg2\">ClassUseTest2</a>&lt;T extends "
+                + "<a href=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">"
+                + "ParamTest</a>&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">"
+                + "Foo3</a>&gt;&gt;</span></code>&nbsp;</td>",
+                "<caption><span>Methods in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/ParamTest.html\" title=\"class "
+                + "in pkg2\">ParamTest</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest2."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/"
+                + "ClassUseTest2.html#method-T-\">method</a></span>"
+                + "(T&nbsp;t)</code>&nbsp;</td>",
+                "<caption><span>Fields in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> declared as <a href=\"../"
+                + "../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest"
+                + "</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<td class=\"colFirst\"><code><a href=\"../../pkg2/"
+                + "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>"
+                + "&lt;<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">"
+                + "Foo</a>&gt;</code></td>",
+                "<caption><span>Methods in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/ParamTest.html\" title=\"class "
+                + "in pkg2\">ParamTest</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../"
+                + "../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest"
+                + "</a>&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in "
+                + "pkg2\">Foo3</a>&gt;&gt;<br><a href=\"../../pkg2/"
+                + "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>"
+                + "&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in "
+                + "pkg2\">Foo3</a>&gt;</code></td>"
+        );
 
-            //Integer
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#d--\">d</a>=3.14,"},
+        checkOutput("pkg2/class-use/Foo3.html", true,
+                "<caption><span>Classes in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">"
+                + "Foo3</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest2.html\" "
+                + "title=\"class in pkg2\">ClassUseTest2</a>&lt;T extends "
+                + "<a href=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">"
+                + "ParamTest</a>&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">"
+                + "Foo3</a>&gt;&gt;</span></code>&nbsp;</td>",
+                "<caption><span>Methods in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/Foo3.html\" title=\"class in "
+                + "pkg2\">Foo3</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>",
+                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest2."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/"
+                + "ClassUseTest2.html#method-T-\">method</a></span>"
+                + "(T&nbsp;t)</code>&nbsp;</td>",
+                "<caption><span>Methods in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> that return types with "
+                + "arguments of type <a href=\"../../pkg2/Foo3.html\" title"
+                + "=\"class in pkg2\">Foo3</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../../"
+                + "pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</a>&lt;"
+                + "<a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3"
+                + "</a>&gt;&gt;<br><a href=\"../../pkg2/ParamTest.html\" "
+                + "title=\"class in pkg2\">ParamTest</a>&lt;<a href=\"../../pkg2/"
+                + "Foo3.html\" title=\"class in pkg2\">Foo3</a>&gt;</code></td>"
+        );
 
-            //Double
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#d--\">d</a>=3.14,"},
+        // ClassUseTest3: <T extends ParamTest2<List<? extends Foo4>>>
+        checkOutput("pkg2/class-use/ParamTest2.html", true,
+                "<caption><span>Classes in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/ParamTest2.html\" title=\"class "
+                + "in pkg2\">ParamTest2</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3.html\" "
+                + "title=\"class in pkg2\">ClassUseTest3</a>&lt;T extends "
+                + "<a href=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">"
+                + "ParamTest2</a>&lt;java.util.List&lt;? extends "
+                + "<a href=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">"
+                + "Foo4</a>&gt;&gt;&gt;</span></code>&nbsp;</td>",
+                "<caption><span>Methods in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/ParamTest2.html\" title=\"class "
+                + "in pkg2\">ParamTest2</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest3"
+                + ".</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3."
+                + "html#method-T-\">method</a></span>(T&nbsp;t)</code>&nbsp;</td>",
+                "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../"
+                + "../pkg2/ParamTest2.html\" title=\"class in pkg2\">"
+                + "ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\".."
+                + "/../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</a>&gt;"
+                + "&gt;&gt;<br><a href=\"../../pkg2/ParamTest2.html\" "
+                + "title=\"class in pkg2\">ParamTest2</a>&lt;java.util.List"
+                + "&lt;? extends <a href=\"../../pkg2/Foo4.html\" title=\""
+                + "class in pkg2\">Foo4</a>&gt;&gt;</code></td>"
+        );
 
-            //Boolean
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#b--\">b</a>=true,"},
+        checkOutput("pkg2/class-use/Foo4.html", true,
+                "<caption><span>Classes in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/Foo4.html\" title=\"class in "
+                + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>",
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3.html\" "
+                + "title=\"class in pkg2\">ClassUseTest3</a>&lt;T extends "
+                + "<a href=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">"
+                + "ParamTest2</a>&lt;java.util.List&lt;? extends "
+                + "<a href=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">"
+                + "Foo4</a>&gt;&gt;&gt;</span></code>&nbsp;</td>",
+                "<caption><span>Methods in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type parameters of "
+                + "type <a href=\"../../pkg2/Foo4.html\" title=\"class in "
+                + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest3."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3."
+                + "html#method-T-\">method</a></span>(T&nbsp;t)</code>"
+                + "&nbsp;</td>",
+                "<caption><span>Methods in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> that return types with "
+                + "arguments of type <a href=\"../../pkg2/Foo4.html\" "
+                + "title=\"class in pkg2\">Foo4</a></span><span class=\""
+                + "tabEnd\">&nbsp;</span></caption>",
+                "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../"
+                + "../pkg2/ParamTest2.html\" title=\"class in pkg2\">"
+                + "ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\".."
+                + "/../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</a>&gt;"
+                + "&gt;&gt;<br><a href=\"../../pkg2/ParamTest2.html\" "
+                + "title=\"class in pkg2\">ParamTest2</a>&lt;java.util.List"
+                + "&lt;? extends <a href=\"../../pkg2/Foo4.html\" title=\""
+                + "class in pkg2\">Foo4</a>&gt;&gt;</code></td>"
+        );
 
-            //String
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#s--\">s</a>=\"sigh\","},
+        // Type parameters in constructor and method args
+        checkOutput("pkg2/class-use/Foo4.html", true,
+                "<caption><span>Method parameters in <a href=\"../../pkg2/"
+                + "package-summary.html\">pkg2</a> with type arguments of "
+                + "type <a href=\"../../pkg2/Foo4.html\" title=\"class in "
+                + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Method and Description</th>\n"
+                + "</tr>\n"
+                + "<tbody>\n"
+                + "<tr class=\"altColor\">\n"
+                + "<td class=\"colFirst\"><code>void</code></td>\n"
+                + "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest3."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3."
+                + "html#method-java.util.Set-\">method</a></span>(java."
+                + "util.Set&lt;<a href=\"../../pkg2/Foo4.html\" title=\""
+                + "class in pkg2\">Foo4</a>&gt;&nbsp;p)</code>&nbsp;</td>\n"
+                + "</tr>\n"
+                + "</tbody>",
+                "<caption><span>Constructor parameters in <a href=\"../../"
+                + "pkg2/package-summary.html\">pkg2</a> with type arguments "
+                + "of type <a href=\"../../pkg2/Foo4.html\" title=\"class in "
+                + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>"
+        );
 
-            //Class
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#c--\">c</a>=<a href=\"../pkg2/Foo.html\" title=\"class in pkg2\">Foo.class</a>,"},
-
-            //Bounded Class
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#w--\">w</a>=<a href=\"../pkg/TypeParameterSubClass.html\" title=\"class in pkg\">TypeParameterSubClass.class</a>,"},
-
-            //Enum
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#e--\">e</a>=<a href=\"../pkg/Coin.html#Penny\">Penny</a>,"},
-
-            //Annotation Type
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#a--\">a</a>=<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>=\"foo\",<a href=\"../pkg/AnnotationType.html#required--\">required</a>=1994),"},
-
-            //String Array
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#sa--\">sa</a>={\"up\",\"down\"},"},
-
-            //Primitive
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#primitiveClassTest--\">primitiveClassTest</a>=boolean.class,"},
-
-            //XXX:  Add array test case after this if fixed:
-            //5020899: Incorrect internal representation of class-valued annotation elements
-
-            //Make sure that annotations are surrounded by <pre> and </pre>
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<pre><a href=\"../pkg1/A.html\" title=\"annotation in pkg1\">@A</a>"},
-            {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "public interface <span class=\"typeNameLabel\">B</span></pre>"},
-
-
-            //==============================================================
-            // Handle multiple bounds.
-            //==============================================================
-            {BUG_ID + FS + "pkg" + FS + "MultiTypeParameters.html",
-                "public&nbsp;&lt;T extends java.lang.Number &amp; java.lang.Runnable&gt;&nbsp;T&nbsp;foo(T&nbsp;t)"},
-
-            //==============================================================
-            // Test Class-Use Documenation for Type Parameters.
-            //==============================================================
-
-            //ClassUseTest1: <T extends Foo & Foo2>
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                     "<caption><span>Classes in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">" +
-                     "Foo</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                     "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest1.html\" " +
-                     "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends " +
-                     "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo" +
-                     "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
-                     "Foo2</a>&gt;</span></code>&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                     "<caption><span>Methods in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/Foo.html\" title=\"class in " +
-                     "pkg2\">Foo</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                     "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest1." +
-                     "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/" +
-                     "ClassUseTest1.html#method-T-\">method</a></span>" +
-                     "(T&nbsp;t)</code>&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                     "<caption><span>Fields in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">" +
-                     "Foo</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                     "td class=\"colFirst\"><code><a href=\"../../pkg2/" +
-                     "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>" +
-                     "&lt;<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\"" +
-                     ">Foo</a>&gt;</code></td>"
-            },
-
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<caption><span>Fields in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> declared as <a href=\"../" +
-                     "../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest" +
-                     "</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<td class=\"colFirst\"><code><a href=\"../../pkg2/" +
-                     "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>&lt;<a " +
-                     "href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</a" +
-                     ">&gt;</code></td>"
-            },
-
-           {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
-                    "<caption><span>Classes in <a href=\"../../pkg2/" +
-                    "package-summary.html\">pkg2</a> with type parameters of " +
-                    "type <a href=\"../../pkg2/Foo2.html\" title=\"interface " +
-                    "in pkg2\">Foo2</a></span><span class=\"tabEnd\">&nbsp;" +
-                    "</span></caption>"
-           },
-           {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
-                    "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest1.html\" " +
-                     "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends " +
-                     "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo" +
-                     "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
-                     "Foo2</a>&gt;</span></code>&nbsp;</td>"
-           },
-           {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
-                    "<caption><span>Methods in <a href=\"../../pkg2/" +
-                    "package-summary.html\">pkg2</a> with type parameters of " +
-                    "type <a href=\"../../pkg2/Foo2.html\" title=\"interface " +
-                    "in pkg2\">Foo2</a></span><span class=\"tabEnd\">&nbsp;" +
-                    "</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
-                     "<td class=\"colLast\"><span class=\"typeNameLabel\">" +
-                     "ClassUseTest1.</span><code><span class=\"memberNameLink\"><a href=\"../../" +
-                     "pkg2/ClassUseTest1.html#method-T-\">method</a></span>" +
-                     "(T&nbsp;t)</code>&nbsp;</td>"
-            },
-
-            //ClassUseTest2: <T extends ParamTest<Foo3>>
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<caption><span>Classes in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/ParamTest.html\" title=\"class " +
-                     "in pkg2\">ParamTest</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest2.html\" " +
-                     "title=\"class in pkg2\">ClassUseTest2</a>&lt;T extends " +
-                     "<a href=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">" +
-                     "ParamTest</a>&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">" +
-                     "Foo3</a>&gt;&gt;</span></code>&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<caption><span>Methods in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/ParamTest.html\" title=\"class " +
-                     "in pkg2\">ParamTest</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest2." +
-                     "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/" +
-                     "ClassUseTest2.html#method-T-\">method</a></span>" +
-                     "(T&nbsp;t)</code>&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<caption><span>Fields in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> declared as <a href=\"../" +
-                     "../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest" +
-                     "</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<td class=\"colFirst\"><code><a href=\"../../pkg2/" +
-                     "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>" +
-                     "&lt;<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">" +
-                     "Foo</a>&gt;</code></td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<caption><span>Methods in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/ParamTest.html\" title=\"class " +
-                     "in pkg2\">ParamTest</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                     "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../" +
-                     "../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest" +
-                     "</a>&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in " +
-                     "pkg2\">Foo3</a>&gt;&gt;<br><a href=\"../../pkg2/" +
-                     "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>" +
-                     "&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in " +
-                     "pkg2\">Foo3</a>&gt;</code></td>"
-            },
-
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                     "<caption><span>Classes in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">" +
-                     "Foo3</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                     "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest2.html\" " +
-                     "title=\"class in pkg2\">ClassUseTest2</a>&lt;T extends " +
-                     "<a href=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">" +
-                     "ParamTest</a>&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">" +
-                     "Foo3</a>&gt;&gt;</span></code>&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                     "<caption><span>Methods in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/Foo3.html\" title=\"class in " +
-                     "pkg2\">Foo3</a></span><span class=\"tabEnd\">&nbsp;" +
-                     "</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                     "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest2." +
-                     "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/" +
-                     "ClassUseTest2.html#method-T-\">method</a></span>" +
-                     "(T&nbsp;t)</code>&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                     "<caption><span>Methods in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> that return types with " +
-                     "arguments of type <a href=\"../../pkg2/Foo3.html\" title" +
-                     "=\"class in pkg2\">Foo3</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                     "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../../" +
-                     "pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</a>&lt;" +
-                     "<a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3" +
-                     "</a>&gt;&gt;<br><a href=\"../../pkg2/ParamTest.html\" " +
-                     "title=\"class in pkg2\">ParamTest</a>&lt;<a href=\"../../pkg2/" +
-                     "Foo3.html\" title=\"class in pkg2\">Foo3</a>&gt;</code></td>"
-            },
-
-            //ClassUseTest3: <T extends ParamTest2<List<? extends Foo4>>>
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                     "<caption><span>Classes in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/ParamTest2.html\" title=\"class " +
-                     "in pkg2\">ParamTest2</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                     "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3.html\" " +
-                     "title=\"class in pkg2\">ClassUseTest3</a>&lt;T extends " +
-                     "<a href=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">" +
-                     "ParamTest2</a>&lt;java.util.List&lt;? extends " +
-                     "<a href=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">" +
-                     "Foo4</a>&gt;&gt;&gt;</span></code>&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                     "<caption><span>Methods in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/ParamTest2.html\" title=\"class " +
-                     "in pkg2\">ParamTest2</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                     "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest3" +
-                     ".</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3." +
-                     "html#method-T-\">method</a></span>(T&nbsp;t)</code>&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                     "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../" +
-                     "../pkg2/ParamTest2.html\" title=\"class in pkg2\">" +
-                     "ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\".." +
-                     "/../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</a>&gt;" +
-                     "&gt;&gt;<br><a href=\"../../pkg2/ParamTest2.html\" " +
-                     "title=\"class in pkg2\">ParamTest2</a>&lt;java.util.List" +
-                     "&lt;? extends <a href=\"../../pkg2/Foo4.html\" title=\"" +
-                     "class in pkg2\">Foo4</a>&gt;&gt;</code></td>"
-            },
-
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                     "<caption><span>Classes in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/Foo4.html\" title=\"class in " +
-                     "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;" +
-                     "</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                     "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3.html\" " +
-                     "title=\"class in pkg2\">ClassUseTest3</a>&lt;T extends " +
-                     "<a href=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">" +
-                     "ParamTest2</a>&lt;java.util.List&lt;? extends " +
-                     "<a href=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">" +
-                     "Foo4</a>&gt;&gt;&gt;</span></code>&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                     "<caption><span>Methods in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type parameters of " +
-                     "type <a href=\"../../pkg2/Foo4.html\" title=\"class in " +
-                     "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                     "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest3." +
-                     "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3." +
-                     "html#method-T-\">method</a></span>(T&nbsp;t)</code>" +
-                     "&nbsp;</td>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                     "<caption><span>Methods in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> that return types with " +
-                     "arguments of type <a href=\"../../pkg2/Foo4.html\" " +
-                     "title=\"class in pkg2\">Foo4</a></span><span class=\"" +
-                     "tabEnd\">&nbsp;</span></caption>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                     "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../" +
-                     "../pkg2/ParamTest2.html\" title=\"class in pkg2\">" +
-                     "ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\".." +
-                     "/../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</a>&gt;" +
-                     "&gt;&gt;<br><a href=\"../../pkg2/ParamTest2.html\" " +
-                     "title=\"class in pkg2\">ParamTest2</a>&lt;java.util.List" +
-                     "&lt;? extends <a href=\"../../pkg2/Foo4.html\" title=\"" +
-                     "class in pkg2\">Foo4</a>&gt;&gt;</code></td>"
-            },
-
-            //Type parameters in constructor and method args
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                     "<caption><span>Method parameters in <a href=\"../../pkg2/" +
-                     "package-summary.html\">pkg2</a> with type arguments of " +
-                     "type <a href=\"../../pkg2/Foo4.html\" title=\"class in " +
-                     "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;" +
-                     "</span></caption>" + NL + "<tr>" + NL +
-                     "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>" + NL +
-                     "<th class=\"colLast\" scope=\"col\">Method and Description</th>" + NL +
-                     "</tr>" + NL + "<tbody>" + NL + "<tr class=\"altColor\">" + NL +
-                     "<td class=\"colFirst\"><code>void</code></td>" + NL +
-                     "<td class=\"colLast\"><span class=\"typeNameLabel\">ClassUseTest3." +
-                     "</span><code><span class=\"memberNameLink\"><a href=\"../../pkg2/ClassUseTest3." +
-                     "html#method-java.util.Set-\">method</a></span>(java." +
-                     "util.Set&lt;<a href=\"../../pkg2/Foo4.html\" title=\"" +
-                     "class in pkg2\">Foo4</a>&gt;&nbsp;p)</code>&nbsp;</td>" + NL +
-                     "</tr>" + NL + "</tbody>"
-            },
-            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                     "<caption><span>Constructor parameters in <a href=\"../../" +
-                     "pkg2/package-summary.html\">pkg2</a> with type arguments " +
-                     "of type <a href=\"../../pkg2/Foo4.html\" title=\"class in " +
-                     "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;" +
-                     "</span></caption>"
-            },
-
-            //=================================
-            // Annotatation Type Usage
-            //=================================
-            {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                     "<caption><span>Packages with annotations of type <a href=\"" +
-                     "../../pkg/AnnotationType.html\" title=\"annotation in pkg\">" +
-                     "AnnotationType</a></span><span class=\"tabEnd\">&nbsp;" +
-                     "</span></caption>"
-            },
-
-            {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                     "<caption><span>Classes in <a href=\"../../pkg/" +
-                     "package-summary.html\">pkg</a> with annotations of type " +
-                     "<a href=\"../../pkg/AnnotationType.html\" title=\"" +
-                     "annotation in pkg\">AnnotationType</a></span><span class" +
-                     "=\"tabEnd\">&nbsp;</span></caption>"
-            },
-
-            {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                     "<caption><span>Fields in <a href=\"../../pkg/" +
-                     "package-summary.html\">pkg</a> with annotations of type " +
-                     "<a href=\"../../pkg/AnnotationType.html\" title=\"annotation " +
-                     "in pkg\">AnnotationType</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-
-            {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                     "<caption><span>Methods in <a href=\"../../pkg/" +
-                     "package-summary.html\">pkg</a> with annotations of type " +
-                     "<a href=\"../../pkg/AnnotationType.html\" title=\"annotation " +
-                     "in pkg\">AnnotationType</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-
-            {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                     "<caption><span>Method parameters in <a href=\"../../pkg/" +
-                     "package-summary.html\">pkg</a> with annotations of type " +
-                     "<a href=\"../../pkg/AnnotationType.html\" title=\"annotation " +
-                     "in pkg\">AnnotationType</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-
-            {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                     "<caption><span>Constructors in <a href=\"../../pkg/" +
-                     "package-summary.html\">pkg</a> with annotations of type " +
-                     "<a href=\"../../pkg/AnnotationType.html\" title=\"annotation " +
-                     "in pkg\">AnnotationType</a></span><span class=\"tabEnd\">" +
-                     "&nbsp;</span></caption>"
-            },
-
-            {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                     "<caption><span>Constructor parameters in <a href=\"../../" +
-                     "pkg/package-summary.html\">pkg</a> with annotations of " +
-                     "type <a href=\"../../pkg/AnnotationType.html\" title=\"" +
-                     "annotation in pkg\">AnnotationType</a></span><span class=\"" +
-                     "tabEnd\">&nbsp;</span></caption>"
-            },
-
-            //=================================
-            // TYPE PARAMETER IN INDEX
-            //=================================
-            {BUG_ID + FS + "index-all.html",
-                "<span class=\"memberNameLink\"><a href=\"pkg2/Foo.html#method-java.util.Vector-\">" +
-                "method(Vector&lt;Object&gt;)</a></span>"
-            },
-            //=================================
-            // TYPE PARAMETER IN INDEX
-            //=================================
-            {BUG_ID + FS + "index-all.html",
-                "<span class=\"memberNameLink\"><a href=\"pkg2/Foo.html#method-java.util.Vector-\">" +
-                "method(Vector&lt;Object&gt;)</a></span>"
-            },
-        };
-    private static final String[][] NEGATED_TEST = {
         //=================================
-        // ENUM TESTING
+        // TYPE PARAMETER IN INDEX
         //=================================
-        //NO constructor section
-        {BUG_ID + FS + "pkg" + FS + "Coin.html", "<h3>Constructor Summary</h3>"},
+        checkOutput("index-all.html", true,
+                "<span class=\"memberNameLink\"><a href=\"pkg2/Foo.html#method-java.util.Vector-\">"
+                + "method(Vector&lt;Object&gt;)</a></span>"
+        );
+
+        // TODO: duplicate of previous case; left in delibarately for now to simplify comparison testing
         //=================================
-        // TYPE PARAMETER TESTING
+        // TYPE PARAMETER IN INDEX
         //=================================
-        //No type parameters in class frame.
-        {BUG_ID + FS + "allclasses-frame.html",
-            "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
-                    "TypeParameters</a>&lt;<a href=\"../pkg/TypeParameters.html\" " +
-                    "title=\"type parameter in TypeParameters\">E</a>&gt;"
-        },
+        checkOutput("index-all.html", true,
+                "<span class=\"memberNameLink\"><a href=\"pkg2/Foo.html#method-java.util.Vector-\">"
+                + "method(Vector&lt;Object&gt;)</a></span>"
+        );
+
+        // No type parameters in class frame.
+        checkOutput("allclasses-frame.html", false,
+                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">"
+                + "TypeParameters</a>&lt;<a href=\"../pkg/TypeParameters.html\" "
+                + "title=\"type parameter in TypeParameters\">E</a>&gt;"
+        );
+
+    }
+
+    //=================================
+    // VAR ARG TESTING
+    //=================================
+    void checkVarArgs() {
+        checkOutput("pkg/VarArgs.html", true,
+                "(int...&nbsp;i)",
+                "(int[][]...&nbsp;i)",
+                "-int:A...-",
+                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">"
+                + "TypeParameters</a>...&nbsp;t");
+    }
+
+    //=================================
+    // ANNOTATION TYPE TESTING
+    //=================================
+    void checkAnnotationTypes() {
+        checkOutput("pkg/AnnotationType.html", true,
+                // Make sure the summary links are correct.
+                "<li>Summary:&nbsp;</li>\n"
+                + "<li>Field&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#annotation.type.required.element.summary\">"
+                + "Required</a>&nbsp;|&nbsp;</li>\n"
+                + "<li>"
+                + "<a href=\"#annotation.type.optional.element.summary\">Optional</a></li>",
+                // Make sure the detail links are correct.
+                "<li>Detail:&nbsp;</li>\n"
+                + "<li>Field&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#annotation.type.element.detail\">Element</a></li>",
+                // Make sure the heading is correct.
+                "Annotation Type AnnotationType</h2>",
+                // Make sure the signature is correct.
+                "public @interface <span class=\"memberNameLabel\">AnnotationType</span>",
+                // Make sure member summary headings are correct.
+                "<h3>Required Element Summary</h3>",
+                "<h3>Optional Element Summary</h3>",
+                // Make sure element detail heading is correct
+                "Element Detail",
+                // Make sure default annotation type value is printed when necessary.
+                "<dl>\n"
+                + "<dt>Default:</dt>\n"
+                + "<dd>\"unknown\"</dd>\n"
+                + "</dl>");
+    }
+
+    //=================================
+    // ANNOTATION TYPE USAGE TESTING
+    //=================================
+    void checkAnnotationTypeUsage() {
+        checkOutput("pkg/package-summary.html", true,
+                // PACKAGE
+                "<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>=\"Package Annotation\",\n"
+                + "                <a href=\"../pkg/AnnotationType.html#required--\">required</a>=1994)");
+
+        checkOutput("pkg/AnnotationTypeUsage.html", true,
+                // CLASS
+                "<pre><a href=\"../pkg/AnnotationType.html\" "
+                + "title=\"annotation in pkg\">@AnnotationType</a>("
+                + "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>"
+                + "=\"Class Annotation\",\n"
+                + "                <a href=\"../pkg/AnnotationType.html#required--\">"
+                + "required</a>=1994)\n"
+                + "public class <span class=\"typeNameLabel\">"
+                + "AnnotationTypeUsage</span>\n"
+                + "extends java.lang.Object</pre>",
+                // FIELD
+                "<pre><a href=\"../pkg/AnnotationType.html\" "
+                + "title=\"annotation in pkg\">@AnnotationType</a>("
+                + "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>"
+                + "=\"Field Annotation\",\n"
+                + "                <a href=\"../pkg/AnnotationType.html#required--\">"
+                + "required</a>=1994)\n"
+                + "public&nbsp;int field</pre>",
+                // CONSTRUCTOR
+                "<pre><a href=\"../pkg/AnnotationType.html\" "
+                + "title=\"annotation in pkg\">@AnnotationType</a>("
+                + "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>"
+                + "=\"Constructor Annotation\",\n"
+                + "                <a href=\"../pkg/AnnotationType.html#required--\">"
+                + "required</a>=1994)\n"
+                + "public&nbsp;AnnotationTypeUsage()</pre>",
+                // METHOD
+                "<pre><a href=\"../pkg/AnnotationType.html\" "
+                + "title=\"annotation in pkg\">@AnnotationType</a>("
+                + "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>"
+                + "=\"Method Annotation\",\n"
+                + "                <a href=\"../pkg/AnnotationType.html#required--\">"
+                + "required</a>=1994)\n"
+                + "public&nbsp;void&nbsp;method()</pre>",
+                // METHOD PARAMS
+                "<pre>public&nbsp;void&nbsp;methodWithParams("
+                + "<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">"
+                + "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">"
+                + "optional</a>=\"Parameter Annotation\",<a "
+                + "href=\"../pkg/AnnotationType.html#required--\">required</a>=1994)\n"
+                + "                             int&nbsp;documented,\n"
+                + "                             int&nbsp;undocmented)</pre>",
+                // CONSTRUCTOR PARAMS
+                "<pre>public&nbsp;AnnotationTypeUsage(<a "
+                + "href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">"
+                + "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">"
+                + "optional</a>=\"Constructor Param Annotation\",<a "
+                + "href=\"../pkg/AnnotationType.html#required--\">required</a>=1994)\n"
+                + "                           int&nbsp;documented,\n"
+                + "                           int&nbsp;undocmented)</pre>");
+
+        //=================================
+        // Annotatation Type Usage
+        //=================================
+        checkOutput("pkg/class-use/AnnotationType.html", true,
+                "<caption><span>Packages with annotations of type <a href=\""
+                + "../../pkg/AnnotationType.html\" title=\"annotation in pkg\">"
+                + "AnnotationType</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>",
+                "<caption><span>Classes in <a href=\"../../pkg/"
+                + "package-summary.html\">pkg</a> with annotations of type "
+                + "<a href=\"../../pkg/AnnotationType.html\" title=\""
+                + "annotation in pkg\">AnnotationType</a></span><span class"
+                + "=\"tabEnd\">&nbsp;</span></caption>",
+                "<caption><span>Fields in <a href=\"../../pkg/"
+                + "package-summary.html\">pkg</a> with annotations of type "
+                + "<a href=\"../../pkg/AnnotationType.html\" title=\"annotation "
+                + "in pkg\">AnnotationType</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<caption><span>Methods in <a href=\"../../pkg/"
+                + "package-summary.html\">pkg</a> with annotations of type "
+                + "<a href=\"../../pkg/AnnotationType.html\" title=\"annotation "
+                + "in pkg\">AnnotationType</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<caption><span>Method parameters in <a href=\"../../pkg/"
+                + "package-summary.html\">pkg</a> with annotations of type "
+                + "<a href=\"../../pkg/AnnotationType.html\" title=\"annotation "
+                + "in pkg\">AnnotationType</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<caption><span>Constructors in <a href=\"../../pkg/"
+                + "package-summary.html\">pkg</a> with annotations of type "
+                + "<a href=\"../../pkg/AnnotationType.html\" title=\"annotation "
+                + "in pkg\">AnnotationType</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></caption>",
+                "<caption><span>Constructor parameters in <a href=\"../../"
+                + "pkg/package-summary.html\">pkg</a> with annotations of "
+                + "type <a href=\"../../pkg/AnnotationType.html\" title=\""
+                + "annotation in pkg\">AnnotationType</a></span><span class=\""
+                + "tabEnd\">&nbsp;</span></caption>"
+        );
 
         //==============================================================
         // ANNOTATION TYPE USAGE TESTING (When @Documented is omitted)
         //===============================================================
-
-        //CLASS
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-            "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Class Annotation\"," + NL +
-            "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)" + NL +
-            "public class <span class=\"typeNameLabel\">AnnotationTypeUsage</span></dt><dt>extends java.lang.Object</dt>"},
-
-        //FIELD
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-            "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Field Annotation\"," + NL +
-            "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)" + NL +
-            "public int <span class=\"memberNameLabel\">field</span>"},
-
-        //CONSTRUCTOR
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-            "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Constructor Annotation\"," + NL +
-            "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)" + NL +
-            "public <span class=\"typeNameLabel\">AnnotationTypeUsage</span>()"},
-
-        //METHOD
-        {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
-            "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Method Annotation\"," + NL +
-            "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)" + NL +
-            "public void <span class=\"memberNameLabel\">method</span>()"},
+        checkOutput("pkg/AnnotationTypeUsage.html", false,
+                // CLASS
+                "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Class Annotation\",\n"
+                + "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)\n"
+                + "public class <span class=\"typeNameLabel\">AnnotationTypeUsage</span></dt><dt>extends java.lang.Object</dt>",
+                // FIELD
+                "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Field Annotation\",\n"
+                + "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)\n"
+                + "public int <span class=\"memberNameLabel\">field</span>",
+                // CONSTRUCTOR
+                "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Constructor Annotation\",\n"
+                + "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)\n"
+                + "public <span class=\"typeNameLabel\">AnnotationTypeUsage</span>()",
+                // METHOD
+                "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Method Annotation\",\n"
+                + "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)\n"
+                + "public void <span class=\"memberNameLabel\">method</span>()");
 
         //=================================
         // Make sure annotation types do not
         // trigger this warning.
         //=================================
-        {WARNING_OUTPUT,
-            "Internal error: package sets don't match: [] with: null"
-        },
-    };
+        checkOutput(Output.WARNING, false,
+                "Internal error: package sets don't match: [] with: null");
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestNewLanguageFeatures tester = new TestNewLanguageFeatures();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        //=================================
+        // ANNOTATION TYPE USAGE TESTING (All Different Types).
+        //=================================
+        checkOutput("pkg1/B.html", true,
+                // Integer
+                "<a href=\"../pkg1/A.html#d--\">d</a>=3.14,",
+                // Double
+                "<a href=\"../pkg1/A.html#d--\">d</a>=3.14,",
+                // Boolean
+                "<a href=\"../pkg1/A.html#b--\">b</a>=true,",
+                // String
+                "<a href=\"../pkg1/A.html#s--\">s</a>=\"sigh\",",
+                // Class
+                "<a href=\"../pkg1/A.html#c--\">c</a>=<a href=\"../pkg2/Foo.html\" title=\"class in pkg2\">Foo.class</a>,",
+                // Bounded Class
+                "<a href=\"../pkg1/A.html#w--\">w</a>=<a href=\"../pkg/TypeParameterSubClass.html\" title=\"class in pkg\">TypeParameterSubClass.class</a>,",
+                // Enum
+                "<a href=\"../pkg1/A.html#e--\">e</a>=<a href=\"../pkg/Coin.html#Penny\">Penny</a>,",
+                // Annotation Type
+                "<a href=\"../pkg1/A.html#a--\">a</a>=<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>=\"foo\",<a href=\"../pkg/AnnotationType.html#required--\">required</a>=1994),",
+                // String Array
+                "<a href=\"../pkg1/A.html#sa--\">sa</a>={\"up\",\"down\"},",
+                // Primitive
+                "<a href=\"../pkg1/A.html#primitiveClassTest--\">primitiveClassTest</a>=boolean.class,");
+
+        // XXX:  Add array test case after this if fixed:
+        //5020899: Incorrect internal representation of class-valued annotation elements
+        // Make sure that annotations are surrounded by <pre> and </pre>
+        checkOutput("pkg1/B.html", true,
+                "<pre><a href=\"../pkg1/A.html\" title=\"annotation in pkg1\">@A</a>",
+                "public interface <span class=\"typeNameLabel\">B</span></pre>");
+
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
-    }
 }

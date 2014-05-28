@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
@@ -594,7 +592,13 @@ void MacroAssembler::bxx64_patchable(address dest, relocInfo::relocType rt, bool
            "can't identify emitted call");
   } else {
     // variant 1:
-
+#if defined(ABI_ELFv2)
+    nop();
+    calculate_address_from_global_toc(R12, dest, true, true, false);
+    mtctr(R12);
+    nop();
+    nop();
+#else
     mr(R0, R11);  // spill R11 -> R0.
 
     // Load the destination address into CTR,
@@ -604,6 +608,7 @@ void MacroAssembler::bxx64_patchable(address dest, relocInfo::relocType rt, bool
     mtctr(R11);
     mr(R11, R0);  // spill R11 <- R0.
     nop();
+#endif
 
     // do the call/jump
     if (link) {
@@ -912,16 +917,16 @@ void MacroAssembler::push_frame(unsigned int bytes, Register tmp) {
   }
 }
 
-// Push a frame of size `bytes' plus abi112 on top.
-void MacroAssembler::push_frame_abi112(unsigned int bytes, Register tmp) {
-  push_frame(bytes + frame::abi_112_size, tmp);
+// Push a frame of size `bytes' plus abi_reg_args on top.
+void MacroAssembler::push_frame_reg_args(unsigned int bytes, Register tmp) {
+  push_frame(bytes + frame::abi_reg_args_size, tmp);
 }
 
 // Setup up a new C frame with a spill area for non-volatile GPRs and
 // additional space for local variables.
-void MacroAssembler::push_frame_abi112_nonvolatiles(unsigned int bytes,
-                                                    Register tmp) {
-  push_frame(bytes + frame::abi_112_size + frame::spill_nonvolatiles_size, tmp);
+void MacroAssembler::push_frame_reg_args_nonvolatiles(unsigned int bytes,
+                                                      Register tmp) {
+  push_frame(bytes + frame::abi_reg_args_size + frame::spill_nonvolatiles_size, tmp);
 }
 
 // Pop current C frame.
@@ -929,6 +934,42 @@ void MacroAssembler::pop_frame() {
   ld(R1_SP, _abi(callers_sp), R1_SP);
 }
 
+#if defined(ABI_ELFv2)
+address MacroAssembler::branch_to(Register r_function_entry, bool and_link) {
+  // TODO(asmundak): make sure the caller uses R12 as function descriptor
+  // most of the times.
+  if (R12 != r_function_entry) {
+    mr(R12, r_function_entry);
+  }
+  mtctr(R12);
+  // Do a call or a branch.
+  if (and_link) {
+    bctrl();
+  } else {
+    bctr();
+  }
+  _last_calls_return_pc = pc();
+
+  return _last_calls_return_pc;
+}
+
+// Call a C function via a function descriptor and use full C
+// calling conventions. Updates and returns _last_calls_return_pc.
+address MacroAssembler::call_c(Register r_function_entry) {
+  return branch_to(r_function_entry, /*and_link=*/true);
+}
+
+// For tail calls: only branch, don't link, so callee returns to caller of this function.
+address MacroAssembler::call_c_and_return_to_caller(Register r_function_entry) {
+  return branch_to(r_function_entry, /*and_link=*/false);
+}
+
+address MacroAssembler::call_c(address function_entry, relocInfo::relocType rt) {
+  load_const(R12, function_entry, R0);
+  return branch_to(R12,  /*and_link=*/true);
+}
+
+#else
 // Generic version of a call to C function via a function descriptor
 // with variable support for C calling conventions (TOC, ENV, etc.).
 // Updates and returns _last_calls_return_pc.
@@ -1077,6 +1118,7 @@ address MacroAssembler::call_c_using_toc(const FunctionDescriptor* fd,
   }
   return _last_calls_return_pc;
 }
+#endif // ABI_ELFv2
 
 void MacroAssembler::call_VM_base(Register oop_result,
                                   Register last_java_sp,
@@ -1091,8 +1133,11 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // ARG1 must hold thread address.
   mr(R3_ARG1, R16_thread);
-
+#if defined(ABI_ELFv2)
+  address return_pc = call_c(entry_point, relocInfo::none);
+#else
   address return_pc = call_c((FunctionDescriptor*)entry_point, relocInfo::none);
+#endif
 
   reset_last_Java_frame();
 
@@ -1113,7 +1158,11 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
 void MacroAssembler::call_VM_leaf_base(address entry_point) {
   BLOCK_COMMENT("call_VM_leaf {");
+#if defined(ABI_ELFv2)
+  call_c(entry_point, relocInfo::none);
+#else
   call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, entry_point), relocInfo::none);
+#endif
   BLOCK_COMMENT("} call_VM_leaf");
 }
 
@@ -1743,7 +1792,7 @@ void MacroAssembler::biased_locking_enter(ConditionRegister cr_reg, Register obj
   cmpwi(cr_reg, temp_reg, markOopDesc::biased_lock_pattern);
   bne(cr_reg, cas_label);
 
-  load_klass_with_trap_null_check(temp_reg, obj_reg);
+  load_klass(temp_reg, obj_reg);
 
   load_const_optimized(temp2_reg, ~((int) markOopDesc::age_mask_in_place));
   ld(temp_reg, in_bytes(Klass::prototype_header_offset()), temp_reg);
@@ -1840,7 +1889,7 @@ void MacroAssembler::biased_locking_enter(ConditionRegister cr_reg, Register obj
   // the bias from one thread to another directly in this situation.
   andi(temp_reg, mark_reg, markOopDesc::age_mask_in_place);
   orr(temp_reg, R16_thread, temp_reg);
-  load_klass_with_trap_null_check(temp2_reg, obj_reg);
+  load_klass(temp2_reg, obj_reg);
   ld(temp2_reg, in_bytes(Klass::prototype_header_offset()), temp2_reg);
   orr(temp_reg, temp_reg, temp2_reg);
 
@@ -1876,7 +1925,7 @@ void MacroAssembler::biased_locking_enter(ConditionRegister cr_reg, Register obj
   // that another thread raced us for the privilege of revoking the
   // bias of this particular object, so it's okay to continue in the
   // normal locking code.
-  load_klass_with_trap_null_check(temp_reg, obj_reg);
+  load_klass(temp_reg, obj_reg);
   ld(temp_reg, in_bytes(Klass::prototype_header_offset()), temp_reg);
   andi(temp2_reg, mark_reg, markOopDesc::age_mask_in_place);
   orr(temp_reg, temp_reg, temp2_reg);
@@ -2162,8 +2211,7 @@ void MacroAssembler::card_table_write(jbyte* byte_map_base, Register Rtmp, Regis
   stbx(R0, Rtmp, Robj);
 }
 
-#ifndef SERIALGC
-
+#if INCLUDE_ALL_GCS
 // General G1 pre-barrier generator.
 // Goal: record the previous value if it is not null.
 void MacroAssembler::g1_write_barrier_pre(Register Robj, RegisterOrConstant offset, Register Rpre_val,
@@ -2227,7 +2275,7 @@ void MacroAssembler::g1_write_barrier_pre(Register Robj, RegisterOrConstant offs
   // VM call need frame to access(write) O register.
   if (needs_frame) {
     save_LR_CR(Rtmp1);
-    push_frame_abi112(0, Rtmp2);
+    push_frame_reg_args(0, Rtmp2);
   }
 
   if (Rpre_val->is_volatile() && Robj == noreg) mr(R31, Rpre_val); // Save pre_val across C call if it was preloaded.
@@ -2277,14 +2325,17 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
 
   // Get the address of the card.
   lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);
+  cmpwi(CCR0, Rtmp3, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  beq(CCR0, filtered);
 
-  assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
-  cmpwi(CCR0, Rtmp3 /* card value */, 0);
+  membar(Assembler::StoreLoad);
+  lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);  // Reload after membar.
+  cmpwi(CCR0, Rtmp3 /* card value */, CardTableModRefBS::dirty_card_val());
   beq(CCR0, filtered);
 
   // Storing a region crossing, non-NULL oop, card is clean.
   // Dirty card and log.
-  li(Rtmp3, 0); // dirty
+  li(Rtmp3, CardTableModRefBS::dirty_card_val());
   //release(); // G1: oops are allowed to get visible after dirty marking.
   stbx(Rtmp3, Rbase, Rcard_addr);
 
@@ -2311,7 +2362,7 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
 
   bind(filtered_int);
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 // Values for last_Java_pc, and last_Java_sp must comply to the rules
 // in frame_ppc64.hpp.
@@ -2361,7 +2412,8 @@ void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, R
 #ifdef CC_INTERP
   ld(tmp1/*pc*/, _top_ijava_frame_abi(frame_manager_lr), sp);
 #else
-  Unimplemented();
+  address entry = pc();
+  load_const_optimized(tmp1, entry);
 #endif
 
   set_last_Java_frame(/*sp=*/sp, /*pc=*/tmp1);
@@ -2401,7 +2453,8 @@ void MacroAssembler::get_vm_result_2(Register metadata_result) {
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided.
   if (Universe::narrow_klass_base() != 0) {
-    load_const(R0, Universe::narrow_klass_base(), (dst != current) ? dst : noreg); // Use dst as temp if it is free.
+    // Use dst as temp if it is free.
+    load_const(R0, Universe::narrow_klass_base(), (dst != current && dst != R0) ? dst : noreg);
     sub(dst, current, R0);
     current = dst;
   }
@@ -2418,6 +2471,16 @@ void MacroAssembler::store_klass(Register dst_oop, Register klass, Register ck) 
     stw(ck, oopDesc::klass_offset_in_bytes(), dst_oop);
   } else {
     std(klass, oopDesc::klass_offset_in_bytes(), dst_oop);
+  }
+}
+
+void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
+  if (UseCompressedClassPointers) {
+    if (val == noreg) {
+      val = R0;
+      li(val, 0);
+    }
+    stw(val, oopDesc::klass_gap_offset_in_bytes(), dst_oop); // klass gap if compressed
   }
 }
 
@@ -3006,13 +3069,13 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
   mr(R0, tmp);
   // kill tmp
   save_LR_CR(tmp);
-  push_frame_abi112(nbytes_save, tmp);
+  push_frame_reg_args(nbytes_save, tmp);
   // restore tmp
   mr(tmp, R0);
   save_volatile_gprs(R1_SP, 112); // except R0
-  // load FunctionDescriptor**
+  // load FunctionDescriptor** / entry_address *
   load_const(tmp, fd);
-  // load FunctionDescriptor*
+  // load FunctionDescriptor* / entry_address
   ld(tmp, 0, tmp);
   mr(R4_ARG2, oop);
   load_const(R3_ARG1, (address)msg);
@@ -3092,3 +3155,15 @@ void MacroAssembler::zap_from_to(Register low, int before, Register high, int af
 }
 
 #endif // !PRODUCT
+
+SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
+  int simm16_offset = masm->load_const_optimized(temp, (address)flag_addr, R0, true);
+  assert(sizeof(bool) == 1, "PowerPC ABI");
+  masm->lbz(temp, simm16_offset, temp);
+  masm->cmpwi(CCR0, temp, 0);
+  masm->beq(CCR0, _label);
+}
+
+SkipIfEqualZero::~SkipIfEqualZero() {
+  _masm->bind(_label);
+}

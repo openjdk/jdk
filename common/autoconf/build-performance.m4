@@ -89,7 +89,7 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
   if test "x$FOUND_MEM" = xyes; then
     AC_MSG_RESULT([$MEMORY_SIZE MB])
   else
-    AC_MSG_RESULT([could not detect memory size, defaulting to 1024 MB])
+    AC_MSG_RESULT([could not detect memory size, defaulting to $MEMORY_SIZE MB])
     AC_MSG_WARN([This might seriously impact build performance!])
   fi
 ])
@@ -169,8 +169,8 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
   if test "x$enable_ccache" = xyes; then
     AC_MSG_RESULT([yes])
     OLD_PATH="$PATH"
-    if test "x$TOOLS_DIR" != x; then
-      PATH=$TOOLS_DIR:$PATH
+    if test "x$TOOLCHAIN_PATH" != x; then
+      PATH=$TOOLCHAIN_PATH:$PATH
     fi
     BASIC_REQUIRE_PROGS(CCACHE, ccache)
     CCACHE_STATUS="enabled"

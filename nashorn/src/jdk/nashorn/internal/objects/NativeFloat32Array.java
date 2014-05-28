@@ -31,7 +31,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -174,8 +173,8 @@ public final class NativeFloat32Array extends ArrayBufferView {
      * @return new typed array
      */
     @Constructor(arity = 1)
-    public static Object constructor(final boolean newObj, final Object self, final Object... args) {
-        return constructorImpl(newObj, args, FACTORY);
+    public static NativeFloat32Array constructor(final boolean newObj, final Object self, final Object... args) {
+        return (NativeFloat32Array)constructorImpl(newObj, args, FACTORY);
     }
 
     NativeFloat32Array(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
@@ -225,8 +224,8 @@ public final class NativeFloat32Array extends ArrayBufferView {
      * @return sub array
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    protected static Object subarray(final Object self, final Object begin, final Object end) {
-        return ArrayBufferView.subarrayImpl(self, begin, end);
+    protected static NativeFloat32Array subarray(final Object self, final Object begin, final Object end) {
+        return (NativeFloat32Array)ArrayBufferView.subarrayImpl(self, begin, end);
     }
 
     @Override

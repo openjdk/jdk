@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,27 +72,6 @@ public class IndexBuilder {
     protected final Object[] elements;
 
     /**
-     * A comparator used to sort classes and members.
-     * Note:  Maybe this compare code belongs in the tool?
-     */
-    private class DocComparator implements Comparator<Doc> {
-        public int compare(Doc d1, Doc d2) {
-            String doc1 = d1.name();
-            String doc2 = d2.name();
-            int compareResult;
-            if ((compareResult = doc1.compareToIgnoreCase(doc2)) != 0) {
-                return compareResult;
-            } else if (d1 instanceof ProgramElementDoc && d2 instanceof ProgramElementDoc) {
-                 doc1 = (((ProgramElementDoc) d1).qualifiedName());
-                 doc2 = (((ProgramElementDoc) d2).qualifiedName());
-                 return doc1.compareToIgnoreCase(doc2);
-            } else {
-                return 0;
-            }
-        }
-    }
-
-    /**
      * Constructor. Build the index map.
      *
      * @param configuration the current configuration of the doclet.
@@ -133,7 +112,7 @@ public class IndexBuilder {
      */
     protected void sortIndexMap() {
         for (List<Doc> docs : indexmap.values()) {
-            Collections.sort(docs, new DocComparator());
+            Collections.sort(docs, Util.makeComparatorForIndexUse());
         }
     }
 

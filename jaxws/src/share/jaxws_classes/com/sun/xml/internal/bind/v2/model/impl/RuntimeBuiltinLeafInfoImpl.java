@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,7 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.helpers.ValidationEventImpl;
-import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeConstants;
-import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
@@ -91,6 +89,9 @@ import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
 import com.sun.xml.internal.bind.v2.util.ByteArrayOutputStreamEx;
 import com.sun.xml.internal.bind.v2.util.DataSourceSource;
+import java.util.logging.Logger;
+import com.sun.xml.internal.bind.Util;
+import java.util.logging.Level;
 
 import org.xml.sax.SAXException;
 
@@ -104,6 +105,8 @@ import org.xml.sax.SAXException;
  */
 public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<Type,Class>
     implements RuntimeBuiltinLeafInfo, Transducer<T> {
+
+    private static final Logger logger = Util.getClassLogger();
 
     private RuntimeBuiltinLeafInfoImpl(Class type, QName... typeNames) {
         super(type, typeNames);
@@ -196,6 +199,7 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
     public static final List<RuntimeBuiltinLeafInfoImpl<?>> builtinBeanInfos;
 
     public static final String MAP_ANYURI_TO_URI = "mapAnyUriToUri";
+    public static final String USE_OLD_GMONTH_MAPPING = "jaxb.ri.useOldGmonthMapping";
 
     static {
 
@@ -568,7 +572,8 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
 
                 public XMLGregorianCalendar parse(CharSequence lexical) throws SAXException {
                     try {
-                        return datatypeFactory.newXMLGregorianCalendar(lexical.toString().trim()); // (.trim() - issue 396)
+                        return DatatypeConverterImpl.getDatatypeFactory()
+                                .newXMLGregorianCalendar(lexical.toString().trim()); // (.trim() - issue 396)
                     } catch (Exception e) {
                         UnmarshallingContext.getInstance().handleError(e);
                         return null;
@@ -838,7 +843,7 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
 
                 public Duration parse(CharSequence lexical) {
                     TODO.checkSpec("JSR222 Issue #42");
-                    return datatypeFactory.newDuration(lexical.toString());
+                    return DatatypeConverterImpl.getDatatypeFactory().newDuration(lexical.toString());
                 }
             });
         primaryList.add(
@@ -876,21 +881,6 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
             return base64Data.getExact();
         } else {
             return DatatypeConverterImpl._parseBase64Binary(text.toString());
-        }
-    }
-
-
-    /**
-     * Cached instance of {@link DatatypeFactory} to create
-     * {@link XMLGregorianCalendar} and {@link Duration}.
-     */
-    private static final DatatypeFactory datatypeFactory = init();
-
-    private static DatatypeFactory init() {
-        try {
-            return DatatypeFactory.newInstance();
-        } catch (DatatypeConfigurationException e) {
-            throw new Error(Messages.FAILED_TO_INITIALE_DATATYPE_FACTORY.format(),e);
         }
     }
 
@@ -960,7 +950,14 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
         m.put(DatatypeConstants.DATETIME,   "%Y-%M-%DT%h:%m:%s"+ "%z");
         m.put(DatatypeConstants.DATE,       "%Y-%M-%D" +"%z");
         m.put(DatatypeConstants.TIME,       "%h:%m:%s"+ "%z");
-        m.put(DatatypeConstants.GMONTH,     "--%M--%z");
+        if (System.getProperty(USE_OLD_GMONTH_MAPPING) == null) {
+            m.put(DatatypeConstants.GMONTH, "--%M%z");      //  E2-12 Error. http://www.w3.org/2001/05/xmlschema-errata#e2-12
+        } else {                                            //  backw. compatibility
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Old GMonth mapping used.");
+            }
+            m.put(DatatypeConstants.GMONTH, "--%M--%z");
+        }
         m.put(DatatypeConstants.GDAY,       "---%D" + "%z");
         m.put(DatatypeConstants.GYEAR,      "%Y" + "%z");
         m.put(DatatypeConstants.GYEARMONTH, "%Y-%M" + "%z");

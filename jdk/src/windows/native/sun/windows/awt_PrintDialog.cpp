@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,28 +166,19 @@ Java_sun_awt_windows_WPrintDialog_initIDs(JNIEnv *env, jclass cls)
 }
 
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WPrintDialog_setPeer(JNIEnv *env, jobject target,
-                                          jobject peer)
-{
-    TRY;
-
-    env->SetObjectField(target, AwtComponent::peerID, peer);
-
-    CATCH_BAD_ALLOC;
-}
-
-JNIEXPORT void JNICALL
 Java_sun_awt_windows_WPrintDialogPeer_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
 
     AwtPrintDialog::parentID =
         env->GetFieldID(cls, "parent", "Lsun/awt/windows/WComponentPeer;");
+    DASSERT(AwtPrintDialog::parentID != NULL);
+    CHECK_NULL(AwtPrintDialog::parentID);
+
     AwtPrintDialog::setHWndMID =
         env->GetMethodID(cls, "setHWnd", "(J)V");
-
-    DASSERT(AwtPrintDialog::parentID != NULL);
     DASSERT(AwtPrintDialog::setHWndMID != NULL);
+    CHECK_NULL(AwtPrintDialog::setHWndMID);
 
     CATCH_BAD_ALLOC;
 }
@@ -202,11 +193,24 @@ Java_sun_awt_windows_WPrintDialogPeer__1show(JNIEnv *env, jobject peer)
     // as peer object is used later on another thread, create a global ref
     jobject peerGlobalRef = env->NewGlobalRef(peer);
     DASSERT(peerGlobalRef != NULL);
+    CHECK_NULL_RETURN(peerGlobalRef, 0);
     jobject target = env->GetObjectField(peerGlobalRef, AwtObject::targetID);
     DASSERT(target != NULL);
+    if (target == NULL) {
+        env->DeleteGlobalRef(peerGlobalRef);
+        return 0;
+    }
     jobject parent = env->GetObjectField(peerGlobalRef, AwtPrintDialog::parentID);
     jobject control = env->GetObjectField(target, AwtPrintDialog::controlID);
     DASSERT(control != NULL);
+    if (control == NULL) {
+        env->DeleteGlobalRef(peerGlobalRef);
+        env->DeleteLocalRef(target);
+        if (parent != NULL) {
+          env->DeleteLocalRef(parent);
+        }
+        return 0;
+    }
 
     AwtComponent *awtParent = (parent != NULL) ? (AwtComponent *)JNI_GET_PDATA(parent) : NULL;
     HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
@@ -215,7 +219,18 @@ Java_sun_awt_windows_WPrintDialogPeer__1show(JNIEnv *env, jobject peer)
     memset(&pd, 0, sizeof(PRINTDLG));
     pd.lStructSize = sizeof(PRINTDLG);
     pd.lCustData = (LPARAM)peerGlobalRef;
-    BOOL ret = AwtPrintControl::InitPrintDialog(env, control, pd);
+    BOOL ret;
+    try {
+        ret = AwtPrintControl::InitPrintDialog(env, control, pd);
+    } catch (std::bad_alloc&) {
+        env->DeleteGlobalRef(peerGlobalRef);
+        env->DeleteLocalRef(target);
+        if (parent != NULL) {
+          env->DeleteLocalRef(parent);
+        }
+        env->DeleteLocalRef(control);
+        throw;
+    }
     if (!ret) {
         /* Couldn't use the printer, or spooler isn't running
          * Call Page dialog with ' PD_RETURNDEFAULT' so it doesn't try

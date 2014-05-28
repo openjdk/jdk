@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import java.util.Set;
+import java.util.Collections;
 
 /**
  * This class implements server sockets. A server socket waits for
@@ -157,7 +159,6 @@ class ServerSocket implements java.io.Closeable {
      * or may choose to ignore the parameter altogther. The value provided
      * should be greater than {@code 0}. If it is less than or equal to
      * {@code 0}, then an implementation specific default will be used.
-     * <P>
      *
      * @param      port     the port number, or {@code 0} to use a port
      *                      number that is automatically allocated.
@@ -206,7 +207,7 @@ class ServerSocket implements java.io.Closeable {
      * or may choose to ignore the parameter altogther. The value provided
      * should be greater than {@code 0}. If it is less than or equal to
      * {@code 0}, then an implementation specific default will be used.
-     * <P>
+     *
      * @param port  the port number, or {@code 0} to use a port
      *              number that is automatically allocated.
      * @param backlog requested maximum length of the queue of incoming
@@ -315,7 +316,7 @@ class ServerSocket implements java.io.Closeable {
      * <p>
      * If the address is {@code null}, then the system will pick up
      * an ephemeral port and a valid local address to bind the socket.
-     * <p>
+     *
      * @param   endpoint        The IP address and port number to bind to.
      * @throws  IOException if the bind operation fails, or if the socket
      *                     is already bound.
@@ -920,4 +921,92 @@ class ServerSocket implements java.io.Closeable {
         /* Not implemented yet */
     }
 
+    /**
+     * Sets the value of a socket option.
+     *
+     * @param name The socket option
+     * @param value The value of the socket option. A value of {@code null}
+     *              may be valid for some options.
+     * @return this ServerSocket
+     *
+     * @throws UnsupportedOperationException if the server socket does not
+     *         support the option.
+     *
+     * @throws IllegalArgumentException if the value is not valid for
+     *         the option.
+     *
+     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     *
+     * @throws NullPointerException if name is {@code null}
+     *
+     * @throws SecurityException if a security manager is set and if the socket
+     *         option requires a security permission and if the caller does
+     *         not have the required permission.
+     *         {@link java.net.StandardSocketOptions StandardSocketOptions}
+     *         do not require any security permission.
+     *
+     * @since 1.9
+     */
+    public <T> ServerSocket setOption(SocketOption<T> name, T value)
+        throws IOException
+    {
+        getImpl().setOption(name, value);
+        return this;
+    }
+
+    /**
+     * Returns the value of a socket option.
+     *
+     * @param name The socket option
+     *
+     * @return The value of the socket option.
+     *
+     * @throws UnsupportedOperationException if the server socket does not
+     *         support the option.
+     *
+     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     *
+     * @throws NullPointerException if name is {@code null}
+     *
+     * @throws SecurityException if a security manager is set and if the socket
+     *         option requires a security permission and if the caller does
+     *         not have the required permission.
+     *         {@link java.net.StandardSocketOptions StandardSocketOptions}
+     *         do not require any security permission.
+     *
+     * @since 1.9
+     */
+    public <T> T getOption(SocketOption<T> name) throws IOException {
+        return getImpl().getOption(name);
+    }
+
+    private static Set<SocketOption<?>> options;
+    private static boolean optionsSet = false;
+
+    /**
+     * Returns a set of the socket options supported by this server socket.
+     *
+     * This method will continue to return the set of options even after
+     * the socket has been closed.
+     *
+     * @return A set of the socket options supported by this socket. This set
+     *         may be empty if the socket's SocketImpl cannot be created.
+     *
+     * @since 1.9
+     */
+    public Set<SocketOption<?>> supportedOptions() {
+        synchronized (ServerSocket.class) {
+            if (optionsSet) {
+                return options;
+            }
+            try {
+                SocketImpl impl = getImpl();
+                options = Collections.unmodifiableSet(impl.supportedOptions());
+            } catch (IOException e) {
+                options = Collections.emptySet();
+            }
+            optionsSet = true;
+            return options;
+        }
+    }
 }
