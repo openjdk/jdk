@@ -127,26 +127,32 @@ function runsuite(tests) {
                     assertEq(tests[n].actual(), tests[n].expected());
                 }
 
+                var times = 0;
                 if (typeof tests[n].rerun !== 'undefined' && tests[n].times > 0) {
                     pprint("rerunning " + tests[n].name + " " + tests[n].times + " times...");
-                    var times = 0;
                     var to = tests[n].times;
 
                     var elemsPerPercent = to / 100;
                     var po = 0|(to / 10);
 
-                    times = 0;
-                    for (; times < to; times++) {
+		    pprint("Doing warmup.");
+                    for (times = 0; times < to; times++) {
+                        initrandom();
+                        tests[n].rerun();
+                    }
+
+		    pprint("Doing hot runs.");
+                    for (times = 0; times < to; times++) {
                         initrandom();
                         tests[n].rerun();
                         if ((times % (po|0)) == 0) {
-                            pprint(times/to * 100 + "%");
+                            pprint("\t" + times/to * 100 + "%");
                         }
                     }
                 }
 
-                var t = new Date - dd;
-                pprint("time: " + t + " ms");
+                var t = Math.round(((new Date - dd) / (times == 0 ? 1 : times)) * 100 / 100);
+                pprint("time per iteration: " + t + " ms");
                 if (typeof tests[n].actual !== 'undefined') {
                     assertEq(tests[n].actual(), tests[n].expected());
                 }
@@ -156,7 +162,7 @@ function runsuite(tests) {
 
                 changed = true;
             } catch(e) {
-                if(runall) {
+                if (runall) {
                     print("FAIL!");
                 } else {
                     throw e;
@@ -174,7 +180,7 @@ function runsuite(tests) {
     for (var n = 0; n < tests.length; n++) {	
 	
 	var time = "" + res[n];
-	while (time.length < 4) {
+	while (time.length < 6) {
 	    time = " " + time;
 	}
 	time += " ms";
