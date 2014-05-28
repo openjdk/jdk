@@ -63,6 +63,12 @@ public abstract class DatagramSocketImpl implements SocketOptions {
         return socket;
     }
 
+    int dataAvailable() {
+        // default impl returns zero, which disables the calling
+        // functionality
+        return 0;
+    }
+
     /**
      * Creates a datagram socket.
      * @exception SocketException if there is an error in the
