@@ -740,6 +740,25 @@ class DatagramChannelImpl
 
                     // set or refresh local address
                     localAddress = Net.localAddress(fd);
+
+                    // flush any packets already received.
+                    boolean blocking = false;
+                    synchronized (blockingLock()) {
+                        try {
+                            blocking = isBlocking();
+                            ByteBuffer tmpBuf = ByteBuffer.allocate(100);
+                            if (blocking) {
+                                configureBlocking(false);
+                            }
+                            do {
+                                tmpBuf.clear();
+                            } while (read(tmpBuf) > 0);
+                        } finally {
+                            if (blocking) {
+                                configureBlocking(true);
+                            }
+                        }
+                    }
                 }
             }
         }
