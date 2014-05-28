@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
  Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -21,6 +22,7 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
+
 <project name="nashorn" default="test" basedir="..">
   <import file="build-nasgen.xml"/>
   <import file="code_coverage.xml"/>
@@ -46,7 +48,7 @@
     <available property="testng.available" file="${file.reference.testng.jar}"/>
     <!-- check if Jemmy ang testng.jar are avaiable -->
     <condition property="jemmy.jfx.testng.available" value="true">
-      <and> 
+      <and>
         <available file="${file.reference.jemmyfx.jar}"/>
         <available file="${file.reference.jemmycore.jar}"/>
         <available file="${file.reference.jemmyawtinput.jar}"/>
@@ -381,15 +383,15 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <fileset id="test.classes" dir="${build.test.classes.dir}">
        <include name="**/framework/*Test.class"/>
     </fileset>
-    
+
     <copy file="${file.reference.jfxrt.jar}" todir="dist"/>
-    
+
     <condition property="jfx.prism.order" value="-Dprism.order=j2d" else=" ">
-		<not>
+        <not>
             <os family="mac"/>
         </not>
-	</condition>
-    
+    </condition>
+
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
@@ -404,7 +406,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
       </classpath>
     </testng>
   </target>
-  
+
   <target name="testmarkdown" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <fileset id="test.classes" dir="${build.test.classes.dir}">
        <include name="**/framework/*Test.class"/>
@@ -423,7 +425,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
       </classpath>
     </testng>
   </target>
-  
+
   <target name="test262" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <fileset id="test.classes" dir="${build.test.classes.dir}">
        <include name="**/framework/*Test.class"/>
@@ -463,20 +465,18 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </java>
   </target>
 
-<!--	    classpath="${build.test.classes.dir}"-->
-
   <target name="testparallel" depends="test-parallel"/>
 
   <target name="test-parallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
       <!-- use just build.test.classes.dir to avoid referring to TestNG -->
       <java classname="${parallel.test.runner}" dir="${basedir}"
-	    failonerror="true" 
-	    fork="true">
+        failonerror="true"
+        fork="true">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
       <classpath>
           <pathelement path="${run.test.classpath}"/>
-	  <pathelement path="${build.test.classes.dir}"/>
+      <pathelement path="${build.test.classes.dir}"/>
       </classpath>
       <syspropertyset>
           <propertyref prefix="test-sys-prop."/>
@@ -593,7 +593,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <mkdir dir="${test.external.dir}/yui"/>
     <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
     <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui-min.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
-    
+
     <!-- showdown -->
     <mkdir dir="${test.external.dir}/showdown"/>
     <get src="https://raw.github.com/coreyti/showdown/master/src/showdown.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
