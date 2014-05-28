@@ -4696,7 +4696,7 @@ public class Types {
                 assembleClassSig(rawOuter
                         ? types.erasure(outer)
                         : outer);
-                append('.');
+                append(rawOuter ? '$' : '.');
                 Assert.check(c.flatname.startsWith(c.owner.enclClass().flatname));
                 append(rawOuter
                         ? c.flatname.subName(c.owner.enclClass().flatname.getByteLength() + 1, c.flatname.getByteLength())
