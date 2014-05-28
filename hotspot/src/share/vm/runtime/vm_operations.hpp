@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \
   template(RedefineClasses)                       \
+  template(UpdateForPopTopFrame)                  \
+  template(SetFramePop)                           \
   template(GetOwnedMonitorInfo)                   \
   template(GetObjectMonitorUsage)                 \
   template(GetCurrentContendedMonitor)            \
@@ -94,6 +96,8 @@
   template(JFRCheckpoint)                         \
   template(Exit)                                  \
   template(LinuxDllLoad)                          \
+  template(RotateGCLog)                           \
+  template(WhiteBoxOperation)                     \
 
 class VM_Operation: public CHeapObj<mtInternal> {
  public:
@@ -395,6 +399,17 @@ class VM_Exit: public VM_Operation {
   }
   VMOp_Type type() const { return VMOp_Exit; }
   void doit();
+};
+
+
+class VM_RotateGCLog: public VM_Operation {
+ private:
+  outputStream* _out;
+
+ public:
+  VM_RotateGCLog(outputStream* st) : _out(st) {}
+  VMOp_Type type() const { return VMOp_RotateGCLog; }
+  void doit() { gclog_or_tty->rotate_log(true, _out); }
 };
 
 #endif // SHARE_VM_RUNTIME_VM_OPERATIONS_HPP

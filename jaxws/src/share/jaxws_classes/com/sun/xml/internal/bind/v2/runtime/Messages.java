@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ enum Messages {
     FAILED_TO_GENERATE_SCHEMA, // 0 args
     ERROR_PROCESSING_SCHEMA, // 0 args
     ILLEGAL_CONTENT, // 2 args
+    FAILED_TO_INITIALE_DATATYPE_FACTORY, // 2 args
     ;
 
     private static final ResourceBundle rb = ResourceBundle.getBundle(Messages.class.getName());

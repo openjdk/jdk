@@ -192,20 +192,6 @@ static NSObject *sAttributeNamesLOCK = nil;
 
     [super dealloc];
 }
-- (void)finalize
-{
-    [self unregisterFromCocoaAXSystem];
-
-    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-
-    JNFDeleteGlobalRef(env, fAccessible);
-    fAccessible = NULL;
-
-    JNFDeleteGlobalRef(env, fComponent);
-    fComponent = NULL;
-
-    [super finalize];
-}
 
 - (void)postValueChanged
 {
@@ -256,11 +242,15 @@ static NSObject *sAttributeNamesLOCK = nil;
         jsize count = [ignoredKeys count];
 
         JNIEnv *env = [ThreadUtilities getJNIEnv];
-        jclass clazz = (*env)->FindClass(env, "java/lang/String");
-        result = (*env)->NewObjectArray(env, count, clazz, NULL); // AWT_THREADING Safe (known object)
-        (*env)->DeleteLocalRef(env, clazz);
 
-        NSUInteger i;
+        static JNF_CLASS_CACHE(jc_String, "java/lang/String");
+        result = JNFNewObjectArray(env, &jc_String, count);
+        if (!result) {
+            NSLog(@"In %s, can't create Java array of String objects", __FUNCTION__);
+            return;
+        }
+
+        NSInteger i;
         for (i = 0; i < count; i++) {
             jstring jString = JNFNSToJavaString(env, [ignoredKeys objectAtIndex:i]);
             (*env)->SetObjectArrayElement(env, result, i, jString);
@@ -295,7 +285,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     jsize arrayLen = (*env)->GetArrayLength(env, jchildrenAndRoles);
     NSMutableArray *children = [NSMutableArray arrayWithCapacity:arrayLen/2]; //childrenAndRoles array contains two elements (child, role) for each child
 
-    NSUInteger i;
+    NSInteger i;
     NSUInteger childIndex = (whichChildren >= 0) ? whichChildren : 0; // if we're getting one particular child, make sure to set its index correctly
     for(i = 0; i < arrayLen; i+=2)
     {
@@ -355,8 +345,8 @@ static NSObject *sAttributeNamesLOCK = nil;
     // must init freshly -alloc'd object
     [newChild initWithParent:parent withEnv:env withAccessible:jCAX withIndex:index withView:view withJavaRole:javaRole]; // must init new instance
 
-    // must hard CFRetain() pointer poked into Java object
-    CFRetain(newChild);
+    // must hard retain pointer poked into Java object
+    [newChild retain];
     JNFSetLongField(env, jCAX, jf_ptr, ptr_to_jlong(newChild));
 
     // return autoreleased instance
@@ -391,8 +381,13 @@ static NSObject *sAttributeNamesLOCK = nil;
     // Get all the other accessibility attributes states we need in one swell foop.
     // javaRole isn't pulled in because we need protected access to AccessibleRole.key
     jbooleanArray attributeStates = JNFCallStaticObjectMethod(env, jm_getInitialAttributeStates, fAccessible, fComponent); // AWT_THREADING Safe (AWTRunLoop)
-    if (attributeStates == NULL) return NULL;
+    if (attributeStates == NULL) return nil;
     jboolean *attributeStatesArray = (*env)->GetBooleanArrayElements(env, attributeStates, 0);
+    if (attributeStatesArray == NULL) {
+        // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
+        NSLog(@"%s failed calling GetBooleanArrayElements", __FUNCTION__);
+        return nil;
+    }
 
     // if there's a component, it can be enabled and it has a size/position
     if (attributeStatesArray[0]) {
@@ -1220,7 +1215,7 @@ JNF_COCOA_EXIT(env);
     // Go through the tabs and find selAccessible
     _numTabs = [tabs count];
     JavaComponentAccessibility *aTab;
-    NSUInteger i;
+    NSInteger i;
     for (i = 0; i < _numTabs; i++) {
         aTab = (JavaComponentAccessibility *)[tabs objectAtIndex:i];
         if ([aTab isAccessibleWithEnv:env forAccessible:selAccessible]) {
@@ -1247,7 +1242,7 @@ JNF_COCOA_EXIT(env);
 
     NSString *tabJavaRole = JNFJavaToNSString(env, JNFGetObjectField(env, jtabJavaRole, sjf_key));
 
-    NSUInteger i;
+    NSInteger i;
     NSUInteger tabIndex = (whichTabs >= 0) ? whichTabs : 0; // if we're getting one particular child, make sure to set its index correctly
     for(i = 0; i < arrayLen; i+=2) {
         jobject jtab = (*env)->GetObjectArrayElement(env, jtabsAndRoles, i);
@@ -1395,18 +1390,6 @@ static BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
     }
 
     [super dealloc];
-}
-
-- (void)finalize
-{
-    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-
-    if (fTabGroupAxContext != NULL) {
-        JNFDeleteGlobalRef(env, fTabGroupAxContext);
-        fTabGroupAxContext = NULL;
-    }
-
-    [super finalize];
 }
 
 - (id)accessibilityValueAttribute

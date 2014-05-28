@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
-#include "opto/connode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
@@ -869,7 +868,7 @@ const TypeFunc* OptoRuntime::updateBytesCRC32_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// for cipherBlockChaining calls of aescrypt encrypt/decrypt, four pointers and a length, returning void
+// for cipherBlockChaining calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
 const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   // create input type (domain)
   int num_args      = 5;
@@ -1310,6 +1309,14 @@ void OptoRuntime::print_named_counters() {
         tty->print_cr("%s", c->name());
         blc->print_on(tty);
       }
+#if INCLUDE_RTM_OPT
+    } else if (c->tag() == NamedCounter::RTMLockingCounter) {
+      RTMLockingCounters* rlc = ((RTMLockingNamedCounter*)c)->counters();
+      if (rlc->nonzero()) {
+        tty->print_cr("%s", c->name());
+        rlc->print_on(tty);
+      }
+#endif
     }
     c = c->next();
   }
@@ -1349,6 +1356,8 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   NamedCounter* c;
   if (tag == NamedCounter::BiasedLockingCounter) {
     c = new BiasedLockingNamedCounter(strdup(st.as_string()));
+  } else if (tag == NamedCounter::RTMLockingCounter) {
+    c = new RTMLockingNamedCounter(strdup(st.as_string()));
   } else {
     c = new NamedCounter(strdup(st.as_string()), tag);
   }
@@ -1357,6 +1366,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   // add counters so this is safe.
   NamedCounter* head;
   do {
+    c->set_next(NULL);
     head = _named_counters;
     c->set_next(head);
   } while (Atomic::cmpxchg_ptr(c, &_named_counters, head) != head);

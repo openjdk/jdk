@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -127,10 +127,17 @@ needs_compact3 = \
   gc/6581734/Test6581734.java \
   gc/7072527/TestFullGCCount.java \
   gc/g1/TestHumongousAllocInitialMark.java \
+  gc/g1/TestHumongousShrinkHeap.java \
   gc/arguments/TestG1HeapRegionSize.java \
   gc/metaspace/TestMetaspaceMemoryPool.java \
+  gc/arguments/TestDynMinHeapFreeRatio.java \
+  gc/arguments/TestDynMaxHeapFreeRatio.java \
+  gc/parallelScavenge/TestDynShrinkHeap.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
-  serviceability/threads/TestFalseDeadLock.java
+  serviceability/threads/TestFalseDeadLock.java \
+  compiler/tiered/NonTieredLevelsTest.java \
+  compiler/tiered/TieredLevelsTest.java \
+  compiler/intrinsics/bmi/verifycode
 
 # Compact 2 adds full VM tests
 compact2 = \

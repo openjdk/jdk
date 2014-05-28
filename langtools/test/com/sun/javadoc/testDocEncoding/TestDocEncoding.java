@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,51 +31,30 @@
  * @summary  Run tests on -docencoding to see if the value is
              used for stylesheet as well.
  * @author   jayashree viswanathan
- * @library  ../lib/
- * @build    JavadocTester TestDocEncoding
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestDocEncoding
  */
 
 public class TestDocEncoding extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "8000743";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-docencoding", "Cp930",
-        "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    private static final String[][] TEST = NO_TEST;
-
-    private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "stylesheet.css",
-            "body {" + NL + "    background-color:#ffffff;"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDocEncoding tester = new TestDocEncoding();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-docencoding", "Cp930",
+                "-sourcepath", testSrc,
+                "-notimestamp",
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("stylesheet.css", false,
+                "body {\n"
+                + "    background-color:#ffffff;");
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,42 +26,15 @@
  * @summary Test all aspects of sjavac.
  *
  * @bug 8004658
+ * @bug 8042441
+ * @bug 8042699
  * @summary Add internal smart javac wrapper to solve JEP 139
  *
  * @run main SJavacWrapper
  */
 
-import java.io.*;
-import java.lang.reflect.Method;
-import java.net.*;
-
-
-public
-class SJavacWrapper {
-
+public class SJavacWrapper {
     public static void main(String... args) throws Exception {
-        URL url = SJavacWrapper.class.getClassLoader().getResource("com/sun/tools/sjavac/Main.class");
-        if (url == null) {
-            // No sjavac in the classpath.
-            System.out.println("sjavac not available: pass by default");
-            return;
-        }
-
-        File testSrc = new File(System.getProperty("test.src"));
-        File sjavac_java = new File(testSrc, "SJavac.java");
-        File testClasses = new File(System.getProperty("test.classes"));
-        File sjavac_class = new File(testClasses, "SJavac.class");
-        if (sjavac_class.lastModified() < sjavac_java.lastModified()) {
-            String[] javac_args = { "-d", testClasses.getPath(), sjavac_java.getPath() };
-            System.err.println("Recompiling SJavac.java");
-            int rc = com.sun.tools.javac.Main.compile(javac_args);
-            if (rc != 0)
-                throw new Exception("compilation failed");
-        }
-
-        Class<?> sjavac = Class.forName("SJavac");
-        Method sjavac_main = sjavac.getMethod("main", String[].class);
-        sjavac_main.invoke(null, new Object[] { args });
+        SJavacTestUtil.runSjavacTest("SJavac", args);
     }
-
 }

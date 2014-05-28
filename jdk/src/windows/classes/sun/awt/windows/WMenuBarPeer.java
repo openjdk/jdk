@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,16 @@ package sun.awt.windows;
 import java.awt.*;
 import java.awt.peer.*;
 
-class WMenuBarPeer extends WMenuPeer implements MenuBarPeer {
+final class WMenuBarPeer extends WMenuPeer implements MenuBarPeer {
 
     // MenuBarPeer implementation
 
+    @Override
     public native void addMenu(Menu m);
+    @Override
     public native void delMenu(int index);
 
+    @Override
     public void addHelpMenu(Menu m) {
         addMenu(m);
     }

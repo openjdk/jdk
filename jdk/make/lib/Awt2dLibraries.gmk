@@ -26,9 +26,6 @@
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, jdk, lib/Awt2dLibraries.gmk))
 
-# Openwin is defined on Solaris.
-OPENWIN_LIB := $(OPENWIN_HOME)/lib
-
 WIN_AWT_LIB := $(JDK_OUTPUTDIR)/objs/libawt/awt.lib
 
 ##########################################################################################
@@ -481,7 +478,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     ASFLAGS := $(LIBAWT_ASFLAGS), \
     MAPFILE := $(LIBAWT_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_solaris := -R/usr/dt/lib$(OPENJDK_TARGET_CPU_ISADIR) -R$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR), \
     LDFLAGS_SUFFIX_linux := -ljvm $(LIBM) $(LIBDL) -ljava, \
     LDFLAGS_SUFFIX_solaris := -ljvm $(LIBM) $(LIBDL) -ljava -lc, \
     LDFLAGS_SUFFIX_aix :=-ljvm $(LIBM) $(LIBDL) -ljava -lm,\
@@ -638,14 +634,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
             $(X_CFLAGS), \
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libawt_xawt/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(X_LIBS) $(LIBAWT_XAWT_LDFLAGS), \
-        LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN) \
-            $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
-        LDFLAGS_solaris := -L$(OPENWIN_HOME)/sfw/lib$(OPENJDK_TARGET_CPU_ISADIR) \
-            -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) \
-            -R$(OPENWIN_HOME)/sfw/lib$(OPENJDK_TARGET_CPU_ISADIR) \
-            -R$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) \
-            -R/usr/dt/lib$(OPENJDK_TARGET_CPU_ISADIR) \
+            $(X_LIBS) $(LIBAWT_XAWT_LDFLAGS) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
         LDFLAGS_SUFFIX := $(LIBAWT_XAWT_LDFLAGS_SUFFIX), \
@@ -809,6 +798,10 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   BUILD_LIBFONTMANAGER_ExtensionSubtables.cpp_CXXFLAGS := -fno-strict-aliasing
 endif
 
+# Libfontmanager doesn't actually need X_LIBS to link, but if building
+# on a Solaris machine without X installed, using a devkit, linking
+# to libawt_xawt will fail without the -L parameters from X_LIBS. Filter
+# out the -R parameters since they aren't needed.
 $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     LIBRARY := fontmanager, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -827,7 +820,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_SUFFIX := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LDFLAGS_SUFFIX_linux := -lawt $(LIBM) $(LIBCXX) -ljava -ljvm -lc, \
-    LDFLAGS_SUFFIX_solaris := -lawt -lawt_xawt -lc $(LIBM) $(LIBCXX) -ljava -ljvm, \
+    LDFLAGS_SUFFIX_solaris := $(filter-out -R%, $(X_LIBS)) \
+        -lawt -lawt_xawt -lc $(LIBM) $(LIBCXX) -ljava -ljvm, \
     LDFLAGS_SUFFIX_aix := -lawt -lawt_xawt $(LIBM) $(LIBCXX) -ljava -ljvm,\
     LDFLAGS_SUFFIX_macosx := -lawt $(LIBM) $(LIBCXX) -undefined dynamic_lookup \
         -ljava -ljvm, \
@@ -976,7 +970,7 @@ else # OPENJDK_TARGET_OS not windows
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjawt/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_solaris := -L$(OPENWIN_HOME)/sfw/lib$(OPENJDK_TARGET_CPU_ISADIR) -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR), \
+      LDFLAGS_solaris := $(X_LIBS), \
       LDFLAGS_SUFFIX_linux := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX), \
       LDFLAGS_SUFFIX_aix := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX),\
       LDFLAGS_SUFFIX_solaris := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX) -lXrender, \
@@ -1074,11 +1068,11 @@ ifndef OPENJDK
             CFLAGS := $(CFLAGS_JDKLIB) \
                 -I$(JDK_TOPDIR)/src/share/javavm/export \
                 -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export \
-                -I$(OPENWIN_HOME)/include, \
+                $(X_CFLAGS), \
             MAPFILE := $(SUNWJDGA_MAPFILE), \
             LDFLAGS := $(LDFLAGS_JDKLIB) \
                 $(call SET_SHARED_LIBRARY_ORIGIN), \
-            LDFLAGS_SUFFIX := -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -R$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -ldga -lX11 $(LIBDL) -lc, \
+            LDFLAGS_SUFFIX := $(X_LIBS) -ldga -lX11 $(LIBDL) -lc, \
             OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libsunwjdga, \
             DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
@@ -1173,9 +1167,7 @@ ifeq ($(BUILD_HEADLESS), true)
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
-        LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/..) \
-            -R/usr/dt/lib$(OPENJDK_TARGET_CPU_ISADIR) \
-            -R$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR), \
+        LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
         LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN)., \
         REORDER := $(LIBAWT_HEADLESS_REORDER), \
         LDFLAGS_SUFFIX_linux := -ljvm -lawt -lm $(LIBDL) -ljava, \
@@ -1196,7 +1188,6 @@ endif
 ifndef BUILD_HEADLESS_ONLY
   LIBSPLASHSCREEN_DIRS := \
     $(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg \
-    $(JDK_TOPDIR)/src/share/native/sun/awt/libpng \
     $(JDK_TOPDIR)/src/share/native/sun/awt/splashscreen
 
   ifeq ($(USE_EXTERNAL_LIBGIF), true)
@@ -1204,6 +1195,11 @@ ifndef BUILD_HEADLESS_ONLY
   else
     LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/sun/awt/giflib
     GIFLIB_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/sun/awt/giflib
+  endif
+
+  ifeq ($(USE_EXTERNAL_LIBPNG), false)
+    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/sun/awt/libpng
+    LIBPNG_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/sun/awt/libpng
   endif
 
   ifneq ($(OPENJDK_TARGET_OS), macosx)
@@ -1232,8 +1228,6 @@ ifndef BUILD_HEADLESS_ONLY
 
   else ifeq ($(OPENJDK_TARGET_OS), windows)
     LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32
-  else ifeq ($(OPENJDK_TARGET_OS), solaris)
-    LIBSPLASHSCREEN_CFLAGS += -DWITH_X11 -I$(OPENWIN_HOME)/include -I$(OPENWIN_HOME)/include/X11/extensions
   else
     LIBSPLASHSCREEN_CFLAGS += -DWITH_X11 $(X_CFLAGS)
   endif
@@ -1254,10 +1248,7 @@ ifndef BUILD_HEADLESS_ONLY
         -framework JavaNativeFoundation
   else ifeq ($(OPENJDK_TARGET_OS), windows)
     LIBSPLASHSCREEN_LDFLAGS_SUFFIX += kernel32.lib user32.lib gdi32.lib delayimp.lib -DELAYLOAD:user32.dll
-  else ifeq ($(OPENJDK_TARGET_OS), solaris)
-    # Solaris still uses OPENWIN_LIB ..
-    LIBSPLASHSCREEN_LDFLAGS_SUFFIX += -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -lX11 -lXext $(LIBM) -lpthread
-  else	# .. all other Unixes can use X_LIBS
+  else
     LIBSPLASHSCREEN_LDFLAGS_SUFFIX += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread
   endif
 
@@ -1268,11 +1259,13 @@ ifndef BUILD_HEADLESS_ONLY
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       LANG := C, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) $(GIFLIB_CFLAGS), \
+      CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) \
+                $(GIFLIB_CFLAGS) $(PNG_CFLAGS), \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsplashscreen/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX := $(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ) $(GIFLIB_LDFLAGS), \
+      LDFLAGS_SUFFIX := $(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ) \
+                        $(GIFLIB_LDFLAGS) $(PNG_LIBS), \
       LDFLAGS_SUFFIX_solaris := -lc, \
       VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
       RC_FLAGS := $(RC_FLAGS) \
@@ -1315,6 +1308,7 @@ ifndef OPENJDK
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX := $(LIBM) $(LDFLAGS_JDKLIB_SUFFIX), \
+      LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB), \
       LDFLAGS_SUFFIX_posix := -lm, \
       VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
       RC_FLAGS := $(RC_FLAGS) \

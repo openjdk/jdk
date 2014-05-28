@@ -144,6 +144,10 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
 
+  // Only create the new resolved references array and lock if it hasn't been
+  // attempted before
+  if (resolved_references() != NULL) return;
+
   // restore the C++ vtable from the shared archive
   restore_vtable();
 
@@ -180,12 +184,12 @@ int ConstantPool::cp_to_object_index(int cp_index) {
   return (i < 0) ? _no_index_sentinel : i;
 }
 
-Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS) {
+Klass* ConstantPool::klass_at_impl(constantPoolHandle this_cp, int which, TRAPS) {
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and the entry and
   // tag is not updated atomicly.
 
-  CPSlot entry = this_oop->slot_at(which);
+  CPSlot entry = this_cp->slot_at(which);
   if (entry.is_resolved()) {
     assert(entry.get_klass()->is_klass(), "must be");
     // Already resolved - return entry.
@@ -204,88 +208,60 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
 
   Symbol* name = NULL;
   Handle       loader;
-  {  MonitorLockerEx ml(this_oop->lock());
+  {  MonitorLockerEx ml(this_cp->lock());
 
-    if (this_oop->tag_at(which).is_unresolved_klass()) {
-      if (this_oop->tag_at(which).is_unresolved_klass_in_error()) {
+    if (this_cp->tag_at(which).is_unresolved_klass()) {
+      if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
         in_error = true;
       } else {
         do_resolve = true;
-        name   = this_oop->unresolved_klass_at(which);
-        loader = Handle(THREAD, this_oop->pool_holder()->class_loader());
+        name   = this_cp->unresolved_klass_at(which);
+        loader = Handle(THREAD, this_cp->pool_holder()->class_loader());
       }
     }
   } // unlocking constantPool
 
 
   // The original attempt to resolve this constant pool entry failed so find the
-  // original error and throw it again (JVMS 5.4.3).
+  // class of the original error and throw another error of the same class (JVMS 5.4.3).
+  // If there is a detail message, pass that detail message to the error constructor.
+  // The JVMS does not strictly require us to duplicate the same detail message,
+  // or any internal exception fields such as cause or stacktrace.  But since the
+  // detail message is often a class name or other literal string, we will repeat it if
+  // we can find it in the symbol table.
   if (in_error) {
-    Symbol* error = SystemDictionary::find_resolution_error(this_oop, which);
-    guarantee(error != (Symbol*)NULL, "tag mismatch with resolution error table");
-    ResourceMark rm;
-    // exception text will be the class name
-    const char* className = this_oop->unresolved_klass_at(which)->as_C_string();
-    THROW_MSG_0(error, className);
+    throw_resolution_error(this_cp, which, CHECK_0);
   }
 
   if (do_resolve) {
-    // this_oop must be unlocked during resolve_or_fail
-    oop protection_domain = this_oop->pool_holder()->protection_domain();
+    // this_cp must be unlocked during resolve_or_fail
+    oop protection_domain = this_cp->pool_holder()->protection_domain();
     Handle h_prot (THREAD, protection_domain);
-    Klass* k_oop = SystemDictionary::resolve_or_fail(name, loader, h_prot, true, THREAD);
+    Klass* kk = SystemDictionary::resolve_or_fail(name, loader, h_prot, true, THREAD);
     KlassHandle k;
     if (!HAS_PENDING_EXCEPTION) {
-      k = KlassHandle(THREAD, k_oop);
+      k = KlassHandle(THREAD, kk);
       // preserve the resolved klass.
-      mirror_handle = Handle(THREAD, k_oop->java_mirror());
+      mirror_handle = Handle(THREAD, kk->java_mirror());
       // Do access check for klasses
-      verify_constant_pool_resolve(this_oop, k, THREAD);
+      verify_constant_pool_resolve(this_cp, k, THREAD);
     }
 
     // Failed to resolve class. We must record the errors so that subsequent attempts
     // to resolve this constant pool entry fail with the same error (JVMS 5.4.3).
     if (HAS_PENDING_EXCEPTION) {
-      ResourceMark rm;
-      Symbol* error = PENDING_EXCEPTION->klass()->name();
-
-      bool throw_orig_error = false;
-      {
-        MonitorLockerEx ml(this_oop->lock());
+        MonitorLockerEx ml(this_cp->lock());
 
         // some other thread has beaten us and has resolved the class.
-        if (this_oop->tag_at(which).is_klass()) {
+        if (this_cp->tag_at(which).is_klass()) {
           CLEAR_PENDING_EXCEPTION;
-          entry = this_oop->resolved_klass_at(which);
+          entry = this_cp->resolved_klass_at(which);
           return entry.get_klass();
         }
 
-        if (!PENDING_EXCEPTION->
-              is_a(SystemDictionary::LinkageError_klass())) {
-          // Just throw the exception and don't prevent these classes from
-          // being loaded due to virtual machine errors like StackOverflow
-          // and OutOfMemoryError, etc, or if the thread was hit by stop()
-          // Needs clarification to section 5.4.3 of the VM spec (see 6308271)
-        }
-        else if (!this_oop->tag_at(which).is_unresolved_klass_in_error()) {
-          SystemDictionary::add_resolution_error(this_oop, which, error);
-          this_oop->tag_at_put(which, JVM_CONSTANT_UnresolvedClassInError);
-        } else {
-          // some other thread has put the class in error state.
-          error = SystemDictionary::find_resolution_error(this_oop, which);
-          assert(error != NULL, "checking");
-          throw_orig_error = true;
-        }
-      } // unlocked
-
-      if (throw_orig_error) {
-        CLEAR_PENDING_EXCEPTION;
-        ResourceMark rm;
-        const char* className = this_oop->unresolved_klass_at(which)->as_C_string();
-        THROW_MSG_0(error, className);
-      }
-
-      return 0;
+        // The tag could have changed to in-error before the lock but we have to
+        // handle that here for the class case.
+        save_and_throw_exception(this_cp, which, constantTag(JVM_CONSTANT_UnresolvedClass), CHECK_0);
     }
 
     if (TraceClassResolution && !k()->oop_is_array()) {
@@ -305,32 +281,32 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
           }
         }
       }
-      if (k() != this_oop->pool_holder()) {
+      if (k() != this_cp->pool_holder()) {
         // only print something if the classes are different
         if (source_file != NULL) {
           tty->print("RESOLVE %s %s %s:%d\n",
-                     this_oop->pool_holder()->external_name(),
+                     this_cp->pool_holder()->external_name(),
                      InstanceKlass::cast(k())->external_name(), source_file, line_number);
         } else {
           tty->print("RESOLVE %s %s\n",
-                     this_oop->pool_holder()->external_name(),
+                     this_cp->pool_holder()->external_name(),
                      InstanceKlass::cast(k())->external_name());
         }
       }
       return k();
     } else {
-      MonitorLockerEx ml(this_oop->lock());
+      MonitorLockerEx ml(this_cp->lock());
       // Only updated constant pool - if it is resolved.
-      do_resolve = this_oop->tag_at(which).is_unresolved_klass();
+      do_resolve = this_cp->tag_at(which).is_unresolved_klass();
       if (do_resolve) {
-        ClassLoaderData* this_key = this_oop->pool_holder()->class_loader_data();
+        ClassLoaderData* this_key = this_cp->pool_holder()->class_loader_data();
         this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
-        this_oop->klass_at_put(which, k());
+        this_cp->klass_at_put(which, k());
       }
     }
   }
 
-  entry = this_oop->resolved_klass_at(which);
+  entry = this_cp->resolved_klass_at(which);
   assert(entry.is_resolved() && entry.get_klass()->is_klass(), "must be resolved at this point");
   return entry.get_klass();
 }
@@ -340,8 +316,8 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
 // by compiler and exception handling.  Also used to avoid classloads for
 // instanceof operations. Returns NULL if the class has not been loaded or
 // if the verification of constant pool failed
-Klass* ConstantPool::klass_at_if_loaded(constantPoolHandle this_oop, int which) {
-  CPSlot entry = this_oop->slot_at(which);
+Klass* ConstantPool::klass_at_if_loaded(constantPoolHandle this_cp, int which) {
+  CPSlot entry = this_cp->slot_at(which);
   if (entry.is_resolved()) {
     assert(entry.get_klass()->is_klass(), "must be");
     return entry.get_klass();
@@ -349,8 +325,8 @@ Klass* ConstantPool::klass_at_if_loaded(constantPoolHandle this_oop, int which) 
     assert(entry.is_unresolved(), "must be either symbol or klass");
     Thread *thread = Thread::current();
     Symbol* name = entry.get_symbol();
-    oop loader = this_oop->pool_holder()->class_loader();
-    oop protection_domain = this_oop->pool_holder()->protection_domain();
+    oop loader = this_cp->pool_holder()->class_loader();
+    oop protection_domain = this_cp->pool_holder()->protection_domain();
     Handle h_prot (thread, protection_domain);
     Handle h_loader (thread, loader);
     Klass* k = SystemDictionary::find(name, h_loader, h_prot, thread);
@@ -360,7 +336,7 @@ Klass* ConstantPool::klass_at_if_loaded(constantPoolHandle this_oop, int which) 
       EXCEPTION_MARK;
       KlassHandle klass(THREAD, k);
       // return NULL if verification fails
-      verify_constant_pool_resolve(this_oop, klass, THREAD);
+      verify_constant_pool_resolve(this_cp, klass, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;
         return NULL;
@@ -373,8 +349,8 @@ Klass* ConstantPool::klass_at_if_loaded(constantPoolHandle this_oop, int which) 
 }
 
 
-Klass* ConstantPool::klass_ref_at_if_loaded(constantPoolHandle this_oop, int which) {
-  return klass_at_if_loaded(this_oop, this_oop->klass_ref_index_at(which));
+Klass* ConstantPool::klass_ref_at_if_loaded(constantPoolHandle this_cp, int which) {
+  return klass_at_if_loaded(this_cp, this_cp->klass_ref_index_at(which));
 }
 
 
@@ -486,11 +462,11 @@ int ConstantPool::remap_instruction_operand_from_cache(int operand) {
 }
 
 
-void ConstantPool::verify_constant_pool_resolve(constantPoolHandle this_oop, KlassHandle k, TRAPS) {
+void ConstantPool::verify_constant_pool_resolve(constantPoolHandle this_cp, KlassHandle k, TRAPS) {
  if (k->oop_is_instance() || k->oop_is_objArray()) {
-    instanceKlassHandle holder (THREAD, this_oop->pool_holder());
-    Klass* elem_oop = k->oop_is_instance() ? k() : ObjArrayKlass::cast(k())->bottom_klass();
-    KlassHandle element (THREAD, elem_oop);
+    instanceKlassHandle holder (THREAD, this_cp->pool_holder());
+    Klass* elem = k->oop_is_instance() ? k() : ObjArrayKlass::cast(k())->bottom_klass();
+    KlassHandle element (THREAD, elem);
 
     // The element type could be a typeArray - we only need the access check if it is
     // an reference to another class
@@ -559,10 +535,10 @@ BasicType ConstantPool::basic_type_for_signature_at(int which) {
 }
 
 
-void ConstantPool::resolve_string_constants_impl(constantPoolHandle this_oop, TRAPS) {
-  for (int index = 1; index < this_oop->length(); index++) { // Index 0 is unused
-    if (this_oop->tag_at(index).is_string()) {
-      this_oop->string_at(index, CHECK);
+void ConstantPool::resolve_string_constants_impl(constantPoolHandle this_cp, TRAPS) {
+  for (int index = 1; index < this_cp->length(); index++) { // Index 0 is unused
+    if (this_cp->tag_at(index).is_string()) {
+      this_cp->string_at(index, CHECK);
     }
   }
 }
@@ -583,16 +559,55 @@ bool ConstantPool::resolve_class_constants(TRAPS) {
   return true;
 }
 
-// If resolution for MethodHandle or MethodType fails, save the exception
-// in the resolution error table, so that the same exception is thrown again.
-void ConstantPool::save_and_throw_exception(constantPoolHandle this_oop, int which,
-                                     int tag, TRAPS) {
-  ResourceMark rm;
-  Symbol* error = PENDING_EXCEPTION->klass()->name();
-  MonitorLockerEx ml(this_oop->lock());  // lock cpool to change tag.
+Symbol* ConstantPool::exception_message(constantPoolHandle this_cp, int which, constantTag tag, oop pending_exception) {
+  // Dig out the detailed message to reuse if possible
+  Symbol* message = NULL;
+  oop detailed_message = java_lang_Throwable::message(pending_exception);
+  if (detailed_message != NULL) {
+     message = java_lang_String::as_symbol_or_null(detailed_message);
+     if (message != NULL) {
+       return message;
+     }
+  }
 
-  int error_tag = (tag == JVM_CONSTANT_MethodHandle) ?
-           JVM_CONSTANT_MethodHandleInError : JVM_CONSTANT_MethodTypeInError;
+  // Return specific message for the tag
+  switch (tag.value()) {
+  case JVM_CONSTANT_UnresolvedClass:
+    // return the class name in the error message
+    message = this_cp->unresolved_klass_at(which);
+    break;
+  case JVM_CONSTANT_MethodHandle:
+    // return the method handle name in the error message
+    message = this_cp->method_handle_name_ref_at(which);
+    break;
+  case JVM_CONSTANT_MethodType:
+    // return the method type signature in the error message
+    message = this_cp->method_type_signature_at(which);
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+
+  return message;
+}
+
+void ConstantPool::throw_resolution_error(constantPoolHandle this_cp, int which, TRAPS) {
+  Symbol* message = NULL;
+  Symbol* error = SystemDictionary::find_resolution_error(this_cp, which, &message);
+  assert(error != NULL && message != NULL, "checking");
+  CLEAR_PENDING_EXCEPTION;
+  ResourceMark rm;
+  THROW_MSG(error, message->as_C_string());
+}
+
+// If resolution for Class, MethodHandle or MethodType fails, save the exception
+// in the resolution error table, so that the same exception is thrown again.
+void ConstantPool::save_and_throw_exception(constantPoolHandle this_cp, int which,
+                                            constantTag tag, TRAPS) {
+  assert(this_cp->lock()->is_locked(), "constant pool lock should be held");
+  Symbol* error = PENDING_EXCEPTION->klass()->name();
+
+  int error_tag = tag.error_value();
 
   if (!PENDING_EXCEPTION->
     is_a(SystemDictionary::LinkageError_klass())) {
@@ -600,24 +615,25 @@ void ConstantPool::save_and_throw_exception(constantPoolHandle this_oop, int whi
     // being loaded due to virtual machine errors like StackOverflow
     // and OutOfMemoryError, etc, or if the thread was hit by stop()
     // Needs clarification to section 5.4.3 of the VM spec (see 6308271)
-
-  } else if (this_oop->tag_at(which).value() != error_tag) {
-    SystemDictionary::add_resolution_error(this_oop, which, error);
-    this_oop->tag_at_put(which, error_tag);
+  } else if (this_cp->tag_at(which).value() != error_tag) {
+    Symbol* message = exception_message(this_cp, which, tag, PENDING_EXCEPTION);
+    SystemDictionary::add_resolution_error(this_cp, which, error, message);
+    this_cp->tag_at_put(which, error_tag);
   } else {
-    // some other thread has put the class in error state.
-    error = SystemDictionary::find_resolution_error(this_oop, which);
-    assert(error != NULL, "checking");
-    CLEAR_PENDING_EXCEPTION;
-    THROW_MSG(error, "");
+    // some other thread put this in error state
+    throw_resolution_error(this_cp, which, CHECK);
   }
+
+  // This exits with some pending exception
+  assert(HAS_PENDING_EXCEPTION, "should not be cleared");
 }
+
 
 
 // Called to resolve constants in the constant pool and return an oop.
 // Some constant pool entries cache their resolved oop. This is also
 // called to create oops from constants to use in arguments for invokedynamic
-oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_oop, int index, int cache_index, TRAPS) {
+oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_cp, int index, int cache_index, TRAPS) {
   oop result_oop = NULL;
   Handle throw_exception;
 
@@ -625,32 +641,32 @@ oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_oop, int inde
     // It is possible that this constant is one which is cached in the objects.
     // We'll do a linear search.  This should be OK because this usage is rare.
     assert(index > 0, "valid index");
-    cache_index = this_oop->cp_to_object_index(index);
+    cache_index = this_cp->cp_to_object_index(index);
   }
   assert(cache_index == _no_index_sentinel || cache_index >= 0, "");
   assert(index == _no_index_sentinel || index >= 0, "");
 
   if (cache_index >= 0) {
-    result_oop = this_oop->resolved_references()->obj_at(cache_index);
+    result_oop = this_cp->resolved_references()->obj_at(cache_index);
     if (result_oop != NULL) {
       return result_oop;
       // That was easy...
     }
-    index = this_oop->object_to_cp_index(cache_index);
+    index = this_cp->object_to_cp_index(cache_index);
   }
 
   jvalue prim_value;  // temp used only in a few cases below
 
-  int tag_value = this_oop->tag_at(index).value();
+  constantTag tag = this_cp->tag_at(index);
 
-  switch (tag_value) {
+  switch (tag.value()) {
 
   case JVM_CONSTANT_UnresolvedClass:
   case JVM_CONSTANT_UnresolvedClassInError:
   case JVM_CONSTANT_Class:
     {
       assert(cache_index == _no_index_sentinel, "should not have been set");
-      Klass* resolved = klass_at_impl(this_oop, index, CHECK_NULL);
+      Klass* resolved = klass_at_impl(this_cp, index, CHECK_NULL);
       // ldc wants the java mirror.
       result_oop = resolved->java_mirror();
       break;
@@ -658,91 +674,90 @@ oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_oop, int inde
 
   case JVM_CONSTANT_String:
     assert(cache_index != _no_index_sentinel, "should have been set");
-    if (this_oop->is_pseudo_string_at(index)) {
-      result_oop = this_oop->pseudo_string_at(index, cache_index);
+    if (this_cp->is_pseudo_string_at(index)) {
+      result_oop = this_cp->pseudo_string_at(index, cache_index);
       break;
     }
-    result_oop = string_at_impl(this_oop, index, cache_index, CHECK_NULL);
+    result_oop = string_at_impl(this_cp, index, cache_index, CHECK_NULL);
     break;
 
   case JVM_CONSTANT_MethodHandleInError:
   case JVM_CONSTANT_MethodTypeInError:
     {
-      Symbol* error = SystemDictionary::find_resolution_error(this_oop, index);
-      guarantee(error != (Symbol*)NULL, "tag mismatch with resolution error table");
-      ResourceMark rm;
-      THROW_MSG_0(error, "");
+      throw_resolution_error(this_cp, index, CHECK_NULL);
       break;
     }
 
   case JVM_CONSTANT_MethodHandle:
     {
-      int ref_kind                 = this_oop->method_handle_ref_kind_at(index);
-      int callee_index             = this_oop->method_handle_klass_index_at(index);
-      Symbol*  name =      this_oop->method_handle_name_ref_at(index);
-      Symbol*  signature = this_oop->method_handle_signature_ref_at(index);
+      int ref_kind                 = this_cp->method_handle_ref_kind_at(index);
+      int callee_index             = this_cp->method_handle_klass_index_at(index);
+      Symbol*  name =      this_cp->method_handle_name_ref_at(index);
+      Symbol*  signature = this_cp->method_handle_signature_ref_at(index);
       if (PrintMiscellaneous)
         tty->print_cr("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
-                      ref_kind, index, this_oop->method_handle_index_at(index),
+                      ref_kind, index, this_cp->method_handle_index_at(index),
                       callee_index, name->as_C_string(), signature->as_C_string());
       KlassHandle callee;
-      { Klass* k = klass_at_impl(this_oop, callee_index, CHECK_NULL);
+      { Klass* k = klass_at_impl(this_cp, callee_index, CHECK_NULL);
         callee = KlassHandle(THREAD, k);
       }
-      KlassHandle klass(THREAD, this_oop->pool_holder());
+      KlassHandle klass(THREAD, this_cp->pool_holder());
       Handle value = SystemDictionary::link_method_handle_constant(klass, ref_kind,
                                                                    callee, name, signature,
                                                                    THREAD);
       result_oop = value();
       if (HAS_PENDING_EXCEPTION) {
-        save_and_throw_exception(this_oop, index, tag_value, CHECK_NULL);
+        MonitorLockerEx ml(this_cp->lock());  // lock cpool to change tag.
+        save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
       break;
     }
 
   case JVM_CONSTANT_MethodType:
     {
-      Symbol*  signature = this_oop->method_type_signature_at(index);
+      Symbol*  signature = this_cp->method_type_signature_at(index);
       if (PrintMiscellaneous)
         tty->print_cr("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
-                      index, this_oop->method_type_index_at(index),
+                      index, this_cp->method_type_index_at(index),
                       signature->as_C_string());
-      KlassHandle klass(THREAD, this_oop->pool_holder());
+      KlassHandle klass(THREAD, this_cp->pool_holder());
       Handle value = SystemDictionary::find_method_handle_type(signature, klass, THREAD);
       result_oop = value();
       if (HAS_PENDING_EXCEPTION) {
-        save_and_throw_exception(this_oop, index, tag_value, CHECK_NULL);
+        MonitorLockerEx ml(this_cp->lock());  // lock cpool to change tag.
+        save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
       break;
     }
 
   case JVM_CONSTANT_Integer:
     assert(cache_index == _no_index_sentinel, "should not have been set");
-    prim_value.i = this_oop->int_at(index);
+    prim_value.i = this_cp->int_at(index);
     result_oop = java_lang_boxing_object::create(T_INT, &prim_value, CHECK_NULL);
     break;
 
   case JVM_CONSTANT_Float:
     assert(cache_index == _no_index_sentinel, "should not have been set");
-    prim_value.f = this_oop->float_at(index);
+    prim_value.f = this_cp->float_at(index);
     result_oop = java_lang_boxing_object::create(T_FLOAT, &prim_value, CHECK_NULL);
     break;
 
   case JVM_CONSTANT_Long:
     assert(cache_index == _no_index_sentinel, "should not have been set");
-    prim_value.j = this_oop->long_at(index);
+    prim_value.j = this_cp->long_at(index);
     result_oop = java_lang_boxing_object::create(T_LONG, &prim_value, CHECK_NULL);
     break;
 
   case JVM_CONSTANT_Double:
     assert(cache_index == _no_index_sentinel, "should not have been set");
-    prim_value.d = this_oop->double_at(index);
+    prim_value.d = this_cp->double_at(index);
     result_oop = java_lang_boxing_object::create(T_DOUBLE, &prim_value, CHECK_NULL);
     break;
 
   default:
     DEBUG_ONLY( tty->print_cr("*** %p: tag at CP[%d/%d] = %d",
-                              this_oop(), index, cache_index, tag_value) );
+                              this_cp(), index, cache_index, tag.value()));
     assert(false, "unexpected constant tag");
     break;
   }
@@ -750,15 +765,15 @@ oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_oop, int inde
   if (cache_index >= 0) {
     // Cache the oop here also.
     Handle result_handle(THREAD, result_oop);
-    MonitorLockerEx ml(this_oop->lock());  // don't know if we really need this
-    oop result = this_oop->resolved_references()->obj_at(cache_index);
+    MonitorLockerEx ml(this_cp->lock());  // don't know if we really need this
+    oop result = this_cp->resolved_references()->obj_at(cache_index);
     // Benign race condition:  resolved_references may already be filled in while we were trying to lock.
     // The important thing here is that all threads pick up the same result.
     // It doesn't matter which racing thread wins, as long as only one
     // result is used by all threads, and all future queries.
     // That result may be either a resolved constant or a failure exception.
     if (result == NULL) {
-      this_oop->resolved_references()->obj_at_put(cache_index, result_handle());
+      this_cp->resolved_references()->obj_at_put(cache_index, result_handle());
       return result_handle();
     } else {
       // Return the winning thread's result.  This can be different than
@@ -778,8 +793,8 @@ oop ConstantPool::uncached_string_at(int which, TRAPS) {
 }
 
 
-oop ConstantPool::resolve_bootstrap_specifier_at_impl(constantPoolHandle this_oop, int index, TRAPS) {
-  assert(this_oop->tag_at(index).is_invoke_dynamic(), "Corrupted constant pool");
+oop ConstantPool::resolve_bootstrap_specifier_at_impl(constantPoolHandle this_cp, int index, TRAPS) {
+  assert(this_cp->tag_at(index).is_invoke_dynamic(), "Corrupted constant pool");
 
   Handle bsm;
   int argc;
@@ -787,14 +802,14 @@ oop ConstantPool::resolve_bootstrap_specifier_at_impl(constantPoolHandle this_oo
     // JVM_CONSTANT_InvokeDynamic is an ordered pair of [bootm, name&type], plus optional arguments
     // The bootm, being a JVM_CONSTANT_MethodHandle, has its own cache entry.
     // It is accompanied by the optional arguments.
-    int bsm_index = this_oop->invoke_dynamic_bootstrap_method_ref_index_at(index);
-    oop bsm_oop = this_oop->resolve_possibly_cached_constant_at(bsm_index, CHECK_NULL);
+    int bsm_index = this_cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
+    oop bsm_oop = this_cp->resolve_possibly_cached_constant_at(bsm_index, CHECK_NULL);
     if (!java_lang_invoke_MethodHandle::is_instance(bsm_oop)) {
       THROW_MSG_NULL(vmSymbols::java_lang_LinkageError(), "BSM not an MethodHandle");
     }
 
     // Extract the optional static arguments.
-    argc = this_oop->invoke_dynamic_argument_count_at(index);
+    argc = this_cp->invoke_dynamic_argument_count_at(index);
     if (argc == 0)  return bsm_oop;
 
     bsm = Handle(THREAD, bsm_oop);
@@ -808,21 +823,21 @@ oop ConstantPool::resolve_bootstrap_specifier_at_impl(constantPoolHandle this_oo
 
   info->obj_at_put(0, bsm());
   for (int i = 0; i < argc; i++) {
-    int arg_index = this_oop->invoke_dynamic_argument_index_at(index, i);
-    oop arg_oop = this_oop->resolve_possibly_cached_constant_at(arg_index, CHECK_NULL);
+    int arg_index = this_cp->invoke_dynamic_argument_index_at(index, i);
+    oop arg_oop = this_cp->resolve_possibly_cached_constant_at(arg_index, CHECK_NULL);
     info->obj_at_put(1+i, arg_oop);
   }
 
   return info();
 }
 
-oop ConstantPool::string_at_impl(constantPoolHandle this_oop, int which, int obj_index, TRAPS) {
+oop ConstantPool::string_at_impl(constantPoolHandle this_cp, int which, int obj_index, TRAPS) {
   // If the string has already been interned, this entry will be non-null
-  oop str = this_oop->resolved_references()->obj_at(obj_index);
+  oop str = this_cp->resolved_references()->obj_at(obj_index);
   if (str != NULL) return str;
-  Symbol* sym = this_oop->unresolved_string_at(which);
+  Symbol* sym = this_cp->unresolved_string_at(which);
   str = StringTable::intern(sym, CHECK_(NULL));
-  this_oop->string_at_put(which, obj_index, str);
+  this_cp->string_at_put(which, obj_index, str);
   assert(java_lang_String::is_instance(str), "must be string");
   return str;
 }
@@ -1295,6 +1310,7 @@ void ConstantPool::copy_entry_to(constantPoolHandle from_cp, int from_i,
   } break;
 
   case JVM_CONSTANT_UnresolvedClass:
+  case JVM_CONSTANT_UnresolvedClassInError:
   {
     // Can be resolved after checking tag, so check the slot first.
     CPSlot entry = from_cp->slot_at(from_i);
@@ -1822,9 +1838,7 @@ void ConstantPool::set_on_stack(const bool value) {
 // We can't do this during classfile parsing, which is how the other indexes are
 // patched.  The other patches are applied early for some error checking
 // so only defer the pseudo_strings.
-void ConstantPool::patch_resolved_references(
-                                            GrowableArray<Handle>* cp_patches) {
-  assert(EnableInvokeDynamic, "");
+void ConstantPool::patch_resolved_references(GrowableArray<Handle>* cp_patches) {
   for (int index = 1; index < cp_patches->length(); index++) { // Index 0 is unused
     Handle patch = cp_patches->at(index);
     if (patch.not_null()) {

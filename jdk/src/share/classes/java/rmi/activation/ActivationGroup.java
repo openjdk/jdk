@@ -36,7 +36,7 @@ import java.rmi.activation.UnknownObjectException;
 import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.AccessController;
-import sun.security.action.GetIntegerAction;
+import java.security.PrivilegedAction;
 
 /**
  * An <code>ActivationGroup</code> is responsible for creating new
@@ -172,7 +172,7 @@ public abstract class ActivationGroup
      *
      * <p>This method simply informs the group's monitor that the object
      * is inactive.  It is up to the concrete subclass of ActivationGroup
-     * to fulfill the additional requirement of unexporting the object. <p>
+     * to fulfill the additional requirement of unexporting the object.
      *
      * @param id the object's activation identifier
      * @return true if the object was successfully deactivated; otherwise
@@ -446,9 +446,8 @@ public abstract class ActivationGroup
     {
         if (currSystem == null) {
             try {
-                int port = AccessController.doPrivileged(
-                    new GetIntegerAction("java.rmi.activation.port",
-                                         ActivationSystem.SYSTEM_PORT));
+                int port = AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+                    Integer.getInteger("java.rmi.activation.port", ActivationSystem.SYSTEM_PORT));
                 currSystem = (ActivationSystem)
                     Naming.lookup("//:" + port +
                                   "/java.rmi.activation.ActivationSystem");

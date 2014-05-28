@@ -587,7 +587,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
             throw new IllegalArgumentException("Unsupported format name");
         }
         try {
-            Class cls = Class.forName(formatClassName, true,
+            Class<?> cls = Class.forName(formatClassName, true,
                                       ClassLoader.getSystemClassLoader());
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);

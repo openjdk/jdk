@@ -29,17 +29,21 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
+
 
 /**
  * A container for data needed to instantiate a specific {@link ScriptFunction} at runtime.
  * Instances of this class are created during codegen and stored in script classes'
  * constants array to reduce function instantiation overhead during runtime.
  */
-public abstract class ScriptFunctionData {
+public abstract class ScriptFunctionData implements Serializable {
     static final int MAX_ARITY = LinkerCallSite.ARGLIMIT;
     static {
         // Assert it fits in a byte, as that's what we store it in. It's just a size optimization though, so if needed
@@ -52,7 +56,7 @@ public abstract class ScriptFunctionData {
 
     /** All versions of this function that have been generated to code */
     // TODO: integrate it into ScriptFunctionData; there's not much reason for this to be in its own class.
-    protected final CompiledFunctions code;
+    protected transient CompiledFunctions code;
 
     /** Function flags */
     protected int flags;
@@ -92,6 +96,8 @@ public abstract class ScriptFunctionData {
     public static final int IS_BUILTIN_CONSTRUCTOR = IS_BUILTIN | IS_CONSTRUCTOR;
     /** Flag for strict constructors */
     public static final int IS_STRICT_CONSTRUCTOR = IS_STRICT | IS_CONSTRUCTOR;
+
+    private static final long serialVersionUID = 4252901245508769114L;
 
     /**
      * Constructor
@@ -792,5 +798,10 @@ public abstract class ScriptFunctionData {
     private static final class GenericInvokers {
         volatile MethodHandle invoker;
         volatile MethodHandle constructor;
+    }
+
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        code = new CompiledFunctions(name);
     }
 }

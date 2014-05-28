@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,8 @@ extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandl
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolTable_lock;                // a lock on the symbol table
 extern Mutex*   StringTable_lock;                // a lock on the interned string table
+extern Monitor* StringDedupQueue_lock;           // a lock on the string deduplication queue
+extern Mutex*   StringDedupTable_lock;           // a lock on the string deduplication table
 extern Mutex*   CodeCache_lock;                  // a lock on the CodeCache, rank is special, use MutexLockerEx
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
@@ -77,7 +79,7 @@ extern Monitor* Threads_lock;                    // a lock on the Threads table 
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Monitor* CGC_lock;                        // used for coordination between
                                                  // fore- & background GC threads.
-extern Mutex*   STS_init_lock;                   // coordinate initialization of SuspendibleThreadSets.
+extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* SLT_lock;                        // used in CMS GC for acquiring PLL
 extern Monitor* iCMS_lock;                       // CMS incremental mode start/stop notification
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc

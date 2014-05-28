@@ -288,7 +288,7 @@ void LIR_Assembler::osr_entry() {
 
   // build frame
   ciMethod* m = compilation()->method();
-  __ build_frame(initial_frame_size_in_bytes());
+  __ build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 
   // OSR buffer is
   //
@@ -376,7 +376,7 @@ void LIR_Assembler::klass2reg_with_patching(Register reg, CodeEmitInfo* info) {
 }
 
 // This specifies the rsp decrement needed to build the frame
-int LIR_Assembler::initial_frame_size_in_bytes() {
+int LIR_Assembler::initial_frame_size_in_bytes() const {
   // if rounding, must let FrameMap know!
 
   // The frame_map records size in slots (32bit word)
@@ -604,8 +604,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
   // Note: we do not need to round double result; float result has the right precision
   // the poll sets the condition code, but no data registers
-  AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
-                              relocInfo::poll_return_type);
+  AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_return_type);
 
   if (Assembler::is_polling_page_far()) {
     __ lea(rscratch1, polling_page);
@@ -619,8 +618,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
-  AddressLiteral polling_page(os::get_polling_page() + (SafepointPollOffset % os::vm_page_size()),
-                              relocInfo::poll_type);
+  AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_type);
   guarantee(info != NULL, "Shouldn't be NULL");
   int offset = __ offset();
   if (Assembler::is_polling_page_far()) {
@@ -801,7 +799,13 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
         if (UseCompressedOops && !wide) {
           __ movl(as_Address(addr), (int32_t)NULL_WORD);
         } else {
+#ifdef _LP64
+          __ xorptr(rscratch1, rscratch1);
+          null_check_here = code_offset();
+          __ movptr(as_Address(addr), rscratch1);
+#else
           __ movptr(as_Address(addr), NULL_WORD);
+#endif
         }
       } else {
         if (is_literal_address(addr)) {

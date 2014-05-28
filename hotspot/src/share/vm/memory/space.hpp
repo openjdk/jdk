@@ -81,31 +81,6 @@ class GenRemSet;
 class CardTableRS;
 class DirtyCardToOopClosure;
 
-// An oop closure that is circumscribed by a filtering memory region.
-class SpaceMemRegionOopsIterClosure: public ExtendedOopClosure {
- private:
-  ExtendedOopClosure* _cl;
-  MemRegion   _mr;
- protected:
-  template <class T> void do_oop_work(T* p) {
-    if (_mr.contains(p)) {
-      _cl->do_oop(p);
-    }
-  }
- public:
-  SpaceMemRegionOopsIterClosure(ExtendedOopClosure* cl, MemRegion mr):
-    _cl(cl), _mr(mr) {}
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-  virtual bool do_metadata() {
-    // _cl is of type ExtendedOopClosure instead of OopClosure, so that we can check this.
-    assert(!_cl->do_metadata(), "I've checked all call paths, this shouldn't happen.");
-    return false;
-  }
-  virtual void do_klass(Klass* k)                         { ShouldNotReachHere(); }
-  virtual void do_class_loader_data(ClassLoaderData* cld) { ShouldNotReachHere(); }
-};
-
 // A Space describes a heap area. Class Space is an abstract
 // base class.
 //
@@ -145,6 +120,12 @@ class Space: public CHeapObj<mtGC> {
 
   void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
 
+  // Returns true if this object has been allocated since a
+  // generation's "save_marks" call.
+  virtual bool obj_allocated_since_save_marks(const oop obj) const {
+    return (HeapWord*)obj >= saved_mark_word();
+  }
+
   MemRegionClosure* preconsumptionDirtyCardClosure() const {
     return _preconsumptionDirtyCardClosure;
   }
@@ -152,9 +133,9 @@ class Space: public CHeapObj<mtGC> {
     _preconsumptionDirtyCardClosure = cl;
   }
 
-  // Returns a subregion of the space containing all the objects in
+  // Returns a subregion of the space containing only the allocated objects in
   // the space.
-  virtual MemRegion used_region() const { return MemRegion(bottom(), end()); }
+  virtual MemRegion used_region() const = 0;
 
   // Returns a region that is guaranteed to contain (at least) all objects
   // allocated at the time of the last call to "save_marks".  If the space
@@ -164,7 +145,7 @@ class Space: public CHeapObj<mtGC> {
   // saved mark.  Otherwise, the "obj_allocated_since_save_marks" method of
   // the space must distinguish between objects in the region allocated before
   // and after the call to save marks.
-  virtual MemRegion used_region_at_save_marks() const {
+  MemRegion used_region_at_save_marks() const {
     return MemRegion(bottom(), saved_mark_word());
   }
 
@@ -197,7 +178,9 @@ class Space: public CHeapObj<mtGC> {
   // expensive operation. To prevent performance problems
   // on account of its inadvertent use in product jvm's,
   // we restrict its use to assertion checks only.
-  virtual bool is_in(const void* p) const = 0;
+  bool is_in(const void* p) const {
+    return used_region().contains(p);
+  }
 
   // Returns true iff the given reserved memory of the space contains the
   // given address.
@@ -221,11 +204,6 @@ class Space: public CHeapObj<mtGC> {
   // applications of the closure are not included in the iteration.
   virtual void oop_iterate(ExtendedOopClosure* cl);
 
-  // Same as above, restricted to the intersection of a memory region and
-  // the space.  Fields in objects allocated by applications of the closure
-  // are not included in the iteration.
-  virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl) = 0;
-
   // Iterate over all objects in the space, calling "cl.do_object" on
   // each.  Objects allocated by applications of the closure are not
   // included in the iteration.
@@ -233,24 +211,6 @@ class Space: public CHeapObj<mtGC> {
   // Similar to object_iterate() except only iterates over
   // objects whose internal references point to objects in the space.
   virtual void safe_object_iterate(ObjectClosure* blk) = 0;
-
-  // Iterate over all objects that intersect with mr, calling "cl->do_object"
-  // on each.  There is an exception to this: if this closure has already
-  // been invoked on an object, it may skip such objects in some cases.  This is
-  // Most likely to happen in an "upwards" (ascending address) iteration of
-  // MemRegions.
-  virtual void object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl);
-
-  // Iterate over as many initialized objects in the space as possible,
-  // calling "cl.do_object_careful" on each. Return NULL if all objects
-  // in the space (at the start of the iteration) were iterated over.
-  // Return an address indicating the extent of the iteration in the
-  // event that the iteration had to return because of finding an
-  // uninitialized object in the space, or if the closure "cl"
-  // signaled early termination.
-  virtual HeapWord* object_iterate_careful(ObjectClosureCareful* cl);
-  virtual HeapWord* object_iterate_careful_m(MemRegion mr,
-                                             ObjectClosureCareful* cl);
 
   // Create and return a new dirty card to oop closure. Can be
   // overridden to return the appropriate type of closure
@@ -291,10 +251,6 @@ class Space: public CHeapObj<mtGC> {
 
   // Allocation (return NULL if full).  Enforces mutual exclusion internally.
   virtual HeapWord* par_allocate(size_t word_size) = 0;
-
-  // Returns true if this object has been allocated since a
-  // generation's "save_marks" call.
-  virtual bool obj_allocated_since_save_marks(const oop obj) const = 0;
 
   // Mark-sweep-compact support: all spaces can update pointers to objects
   // moving as a part of compaction.
@@ -427,7 +383,7 @@ public:
 
   // Perform operations on the space needed after a compaction
   // has been performed.
-  virtual void reset_after_compaction() {}
+  virtual void reset_after_compaction() = 0;
 
   // Returns the next space (in the current generation) to be compacted in
   // the global compaction order.  Also is used to select the next
@@ -492,7 +448,7 @@ protected:
   HeapWord* _end_of_live;
 
   // Minimum size of a free block.
-  virtual size_t minimum_free_block_size() const = 0;
+  virtual size_t minimum_free_block_size() const { return 0; }
 
   // This the function is invoked when an allocation of an object covering
   // "start" to "end occurs crosses the threshold; returns the next
@@ -808,7 +764,7 @@ class ContiguousSpace: public CompactibleSpace {
   HeapWord* top() const            { return _top;    }
   void set_top(HeapWord* value)    { _top = value; }
 
-  virtual void set_saved_mark()    { _saved_mark_word = top();    }
+  void set_saved_mark()            { _saved_mark_word = top();    }
   void reset_saved_mark()          { _saved_mark_word = bottom(); }
 
   WaterMark bottom_mark()     { return WaterMark(this, bottom()); }
@@ -843,36 +799,30 @@ class ContiguousSpace: public CompactibleSpace {
   size_t used() const            { return byte_size(bottom(), top()); }
   size_t free() const            { return byte_size(top(),    end()); }
 
-  // Override from space.
-  bool is_in(const void* p) const;
-
   virtual bool is_free_block(const HeapWord* p) const;
 
   // In a contiguous space we have a more obvious bound on what parts
   // contain objects.
   MemRegion used_region() const { return MemRegion(bottom(), top()); }
 
-  MemRegion used_region_at_save_marks() const {
-    return MemRegion(bottom(), saved_mark_word());
-  }
-
   // Allocation (return NULL if full)
   virtual HeapWord* allocate(size_t word_size);
   virtual HeapWord* par_allocate(size_t word_size);
 
-  virtual bool obj_allocated_since_save_marks(const oop obj) const {
-    return (HeapWord*)obj >= saved_mark_word();
-  }
-
   // Iteration
   void oop_iterate(ExtendedOopClosure* cl);
-  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* blk);
   // For contiguous spaces this method will iterate safely over objects
   // in the space (i.e., between bottom and top) when at a safepoint.
   void safe_object_iterate(ObjectClosure* blk);
-  void object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl);
-  // iterates on objects up to the safe limit
+
+  // Iterate over as many initialized objects in the space as possible,
+  // calling "cl.do_object_careful" on each. Return NULL if all objects
+  // in the space (at the start of the iteration) were iterated over.
+  // Return an address indicating the extent of the iteration in the
+  // event that the iteration had to return because of finding an
+  // uninitialized object in the space, or if the closure "cl"
+  // signaled early termination.
   HeapWord* object_iterate_careful(ObjectClosureCareful* cl);
   HeapWord* concurrent_iteration_safe_limit() {
     assert(_concurrent_iteration_safe_limit <= top(),
@@ -903,7 +853,6 @@ class ContiguousSpace: public CompactibleSpace {
     // set new iteration safe limit
     set_concurrent_iteration_safe_limit(compaction_top());
   }
-  virtual size_t minimum_free_block_size() const { return 0; }
 
   // Override.
   DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,

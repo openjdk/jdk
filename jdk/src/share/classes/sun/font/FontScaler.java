@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,23 +82,24 @@ import sun.java2d.DisposerRecord;
 public abstract class FontScaler implements DisposerRecord {
 
     private static FontScaler nullScaler = null;
-    private static Constructor<FontScaler> scalerConstructor = null;
+    private static Constructor<? extends FontScaler> scalerConstructor = null;
 
     //Find preferred font scaler
     //
     //NB: we can allow property based preferences
     //   (theoretically logic can be font type specific)
     static {
-        Class scalerClass = null;
-        Class arglst[] = new Class[] {Font2D.class, int.class,
+        Class<? extends FontScaler> scalerClass = null;
+        Class<?>[] arglst = new Class<?>[] {Font2D.class, int.class,
         boolean.class, int.class};
 
         try {
-            if (FontUtilities.isOpenJDK) {
-                scalerClass = Class.forName("sun.font.FreetypeFontScaler");
-            } else {
-                scalerClass = Class.forName("sun.font.T2KFontScaler");
-            }
+            @SuppressWarnings("unchecked")
+            Class<? extends FontScaler> tmp = (Class<? extends FontScaler>)
+                (FontUtilities.isOpenJDK ?
+                 Class.forName("sun.font.FreetypeFontScaler") :
+                 Class.forName("sun.font.T2KFontScaler"));
+            scalerClass = tmp;
         } catch (ClassNotFoundException e) {
                 scalerClass = NullFontScaler.class;
         }

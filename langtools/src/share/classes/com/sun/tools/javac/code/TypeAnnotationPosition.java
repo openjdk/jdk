@@ -151,18 +151,14 @@ public class TypeAnnotationPosition {
     public final int parameter_index;
 
     // For class extends, implements, and throws clauses
+    public final int type_index;
 
-    // This field is effectively final.  However, it needs to be
-    // modified by Gen for the time being.  Do not introduce new
-    // mutations.
-    public int type_index;
-
-    // For exception parameters, index into exception table.
-    // In com.sun.tools.javac.jvm.Gen.genCatch we first set the type_index
-    // to the catch type index - that value is only temporary.
-    // Then in com.sun.tools.javac.jvm.Code.fillExceptionParameterPositions
-    // we use that value to determine the exception table index.
-    public int exception_index = Integer.MIN_VALUE;
+    // For exception parameters, index into exception table.  In
+    // com.sun.tools.javac.jvm.Gen.genCatch, we first use this to hold
+    // the catch type index.  Then in
+    // com.sun.tools.javac.jvm.Code.fillExceptionParameterPositions we
+    // use that value to determine the exception table index.
+    private int exception_index = Integer.MIN_VALUE;
 
     // If this type annotation is within a lambda expression,
     // store a pointer to the lambda expression tree in order
@@ -307,6 +303,44 @@ public class TypeAnnotationPosition {
         offset = to;
         lvarOffset = new int[]{to};
         isValidOffset = true;
+    }
+
+    public boolean hasExceptionIndex() {
+        return exception_index >= 0;
+    }
+
+    public int getExceptionIndex() {
+        Assert.check(exception_index >= 0, "exception_index does not contain a bytecode offset");
+        return exception_index;
+    }
+
+    public void setExceptionIndex(final int exception_index) {
+        Assert.check(hasCatchType(), "exception_index already contains a bytecode offset");
+        Assert.check(exception_index >= 0, "Expected a valid bytecode offset");
+        this.exception_index = exception_index;
+    }
+
+    public boolean hasCatchType() {
+        return exception_index < 0 && exception_index != Integer.MIN_VALUE;
+    }
+
+    public int getCatchType() {
+        Assert.check(hasCatchType(),
+                     "exception_index does not contain valid catch info");
+        return ((-this.exception_index) - 1) & 0xff ;
+    }
+
+    public int getStartPos() {
+        Assert.check(hasCatchType(),
+                     "exception_index does not contain valid catch info");
+        return ((-this.exception_index) - 1) >> 8 ;
+    }
+
+    public void setCatchInfo(final int catchType, final int startPos) {
+        Assert.check(this.exception_index < 0,
+                     "exception_index already contains a bytecode index");
+        Assert.check(catchType >= 0, "Expected a valid catch type");
+        this.exception_index = -((catchType | startPos << 8) + 1);
     }
 
     /**

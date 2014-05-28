@@ -27,6 +27,8 @@ package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -34,7 +36,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
@@ -54,6 +55,7 @@ import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.options.Options;
+import jdk.nashorn.internal.scripts.JS;
 
 /**
  * This is a subclass that represents a script function that may be regenerated,
@@ -79,10 +81,14 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     // Source object.
     private final String sourceURL;
 
+    /** The line number where this function begins. */
     private final int lineNumber;
 
     /** Source from which FunctionNode was parsed. */
-    private final Source source;
+    private transient Source source;
+
+    /** Allows us to retrieve the method handle for this function once the code is compiled */
+    private MethodLocator methodLocator;
 
     /** Token of this function within the source. */
     private final long token;
@@ -91,13 +97,13 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     private final PropertyMap allocatorMap;
 
     /** Code installer used for all further recompilation/specialization of this ScriptFunction */
-    private final CodeInstaller<ScriptEnvironment> installer;
+    private transient CodeInstaller<ScriptEnvironment> installer;
 
     /** Name of class where allocator function resides */
     private final String allocatorClassName;
 
     /** lazily generated allocator */
-    private MethodHandle allocator;
+    private transient MethodHandle allocator;
 
     private final Map<Integer, RecompilableScriptFunctionData> nestedFunctions;
 
@@ -110,20 +116,19 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private final DebugLogger log;
+    private transient DebugLogger log;
 
     private final Map<String, Integer> externalScopeDepths;
 
     private final Set<String> internalSymbols;
 
-    private final Context context;
-
     private static final int GET_SET_PREFIX_LENGTH = "*et ".length();
+
+    private static final long serialVersionUID = 4914839316174633726L;
 
     /**
      * Constructor - public as scripts use it
      *
-     * @param context             context
      * @param functionNode        functionNode that represents this function code
      * @param installer           installer for code regeneration versions of this function
      * @param allocatorClassName  name of our allocator class, will be looked up dynamically if used as a constructor
@@ -134,7 +139,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @param internalSymbols     internal symbols to method, defined in its scope
      */
     public RecompilableScriptFunctionData(
-        final Context context,
         final FunctionNode functionNode,
         final CodeInstaller<ScriptEnvironment> installer,
         final String allocatorClassName,
@@ -148,7 +152,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
               Math.min(functionNode.getParameters().size(), MAX_ARITY),
               getFlags(functionNode));
 
-        this.context             = context;
         this.functionName        = functionNode.getName();
         this.lineNumber          = functionNode.getLineNumber();
         this.isDeclared          = functionNode.isDeclared();
@@ -163,14 +166,14 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         this.allocatorMap        = allocatorMap;
         this.nestedFunctions     = nestedFunctions;
         this.externalScopeDepths = externalScopeDepths;
-        this.internalSymbols     = internalSymbols;
+        this.internalSymbols     = new HashSet<>(internalSymbols);
 
         for (final RecompilableScriptFunctionData nfn : nestedFunctions.values()) {
             assert nfn.getParent() == null;
             nfn.setParent(this);
         }
 
-        this.log = initLogger(context);
+        createLogger();
     }
 
     @Override
@@ -235,6 +238,13 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         }
 
         return "function " + (name == null ? "" : name) + "() { [native code] }";
+    }
+
+    public void setCodeAndSource(final Map<String, Class<?>> code, final Source source) {
+        this.source = source;
+        if (methodLocator != null) {
+            methodLocator.setClass(code.get(methodLocator.getClassName()));
+        }
     }
 
     @Override
@@ -336,6 +346,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         final boolean isProgram = functionNodeId == FunctionNode.FIRST_FUNCTION_ID;
         // NOTE: If we aren't recompiling the top-level program, we decrease functionNodeId 'cause we'll have a synthetic program node
         final int descPosition = Token.descPosition(token);
+        final Context context = Context.getContextTrusted();
         final Parser parser = new Parser(
             context.getEnv(),
             source,
@@ -378,6 +389,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     }
 
     Compiler getCompiler(final FunctionNode functionNode, final MethodType actualCallSiteType, final ScriptObject runtimeScope, final Map<Integer, Type> ipp, final int[] cep) {
+        final Context context = Context.getContextTrusted();
         return new Compiler(
                 context,
                 context.getEnv(),
@@ -404,10 +416,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
         final FunctionNode fn = reparse();
         return getCompiler(fn, actualCallSiteType, runtimeScope).compile(fn, CompilationPhases.COMPILE_ALL);
-    }
-
-    Context getContext() {
-        return context;
     }
 
     private MethodType explicitParams(final MethodType callSiteType) {
@@ -481,6 +489,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             throw new IllegalStateException(functionNode.getName() + " id=" + functionNode.getId());
         }
         addCode(functionNode);
+        methodLocator = new MethodLocator(functionNode);
     }
 
     private CompiledFunction addCode(final MethodHandle target, final int fnFlags) {
@@ -542,7 +551,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         synchronized (code) {
             CompiledFunction existingBest = super.getBest(callSiteType, runtimeScope);
             if (existingBest == null) {
-                existingBest = addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
+                if(code.isEmpty() && methodLocator != null) {
+                    // This is a deserialized object, reconnect from method handle
+                    existingBest = addCode(methodLocator.getMethodHandle(), methodLocator.getFunctionFlags());
+                } else {
+                    existingBest = addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
+                }
             }
 
             assert existingBest != null;
@@ -652,5 +666,56 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         } while(data != null);
 
         return true;
+    }
+
+    /**
+     * Helper class that allows us to retrieve the method handle for this function once it has been generated.
+     */
+    private static class MethodLocator implements Serializable {
+        private transient Class<?> clazz;
+        private final String className;
+        private final String methodName;
+        private final MethodType methodType;
+        private final int functionFlags;
+
+        private static final long serialVersionUID = -5420835725902966692L;
+
+        MethodLocator(final FunctionNode functionNode) {
+            this.className  = functionNode.getCompileUnit().getUnitClassName();
+            this.methodName = functionNode.getName();
+            this.methodType = new FunctionSignature(functionNode).getMethodType();
+            this.functionFlags = functionNode.getFlags();
+
+            assert className != null;
+            assert methodName != null;
+        }
+
+        void setClass(final Class<?> clazz) {
+            if (!JS.class.isAssignableFrom(clazz)) {
+                throw new IllegalArgumentException();
+            }
+            this.clazz = clazz;
+        }
+
+        String getClassName() {
+            return className;
+        }
+
+        MethodHandle getMethodHandle() {
+            return MH.findStatic(LOOKUP, clazz, methodName, methodType);
+        }
+
+        int getFunctionFlags() {
+            return functionFlags;
+        }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        createLogger();
+    }
+
+    private void createLogger() {
+        log = initLogger(Context.getContextTrusted());
     }
 }

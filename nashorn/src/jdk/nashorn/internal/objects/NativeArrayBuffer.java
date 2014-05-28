@@ -95,7 +95,7 @@ public final class NativeArrayBuffer extends ScriptObject {
      * @return new NativeArrayBuffer
      */
     @Constructor(arity = 1)
-    public static Object constructor(final boolean newObj, final Object self, final Object... args) {
+    public static NativeArrayBuffer constructor(final boolean newObj, final Object self, final Object... args) {
         if (!newObj) {
             throw typeError("constructor.requires.new", "ArrayBuffer");
         }
@@ -145,7 +145,7 @@ public final class NativeArrayBuffer extends ScriptObject {
      * @return new array buffer, sliced
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object slice(final Object self, final Object begin0, final Object end0) {
+    public static NativeArrayBuffer slice(final Object self, final Object begin0, final Object end0) {
         final NativeArrayBuffer arrayBuffer = (NativeArrayBuffer)self;
         final int               byteLength  = arrayBuffer.getByteLength();
         final int               begin       = adjustIndex(JSType.toInt32(begin0), byteLength);
@@ -213,11 +213,9 @@ public final class NativeArrayBuffer extends ScriptObject {
 
     ByteBuffer getBuffer(final int offset) {
         return (ByteBuffer)nb.duplicate().position(offset);
-//        return ByteBuffer.wrap(buffer, offset, buffer.length - offset);
     }
 
     ByteBuffer getBuffer(final int offset, final int length) {
         return (ByteBuffer)getBuffer(offset).limit(length);
-        //return ByteBuffer.wrap(buffer, offset, length);
     }
 }

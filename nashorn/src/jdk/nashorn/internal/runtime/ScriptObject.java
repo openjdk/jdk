@@ -99,7 +99,7 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
  */
 
 public abstract class ScriptObject implements PropertyAccess {
-    /** __proto__ special property name */
+    /** __proto__ special property name inside object literals. ES6 draft. */
     public static final String PROTO_PROPERTY_NAME   = "__proto__";
 
     /** Search fall back routine name for "no such method" */
@@ -153,8 +153,11 @@ public abstract class ScriptObject implements PropertyAccess {
     /** Indexed array data. */
     private ArrayData arrayData;
 
-    static final MethodHandle GETPROTO           = findOwnMH_V("getProto", ScriptObject.class);
-    static final MethodHandle SETPROTOCHECK      = findOwnMH_V("setProtoCheck", void.class, Object.class);
+    /** Method handle to retrieve prototype of this object */
+    public static final MethodHandle GETPROTO      = findOwnMH_V("getProto", ScriptObject.class);
+    /** Method handle to set prototype of this object */
+    public static final MethodHandle SETPROTOCHECK = findOwnMH_V("setProtoCheck", void.class, Object.class);
+
     static final MethodHandle MEGAMORPHIC_GET    = findOwnMH_V("megamorphicGet", Object.class, String.class, boolean.class, boolean.class);
     static final MethodHandle GLOBALFILTER       = findOwnMH_S("globalFilter", Object.class, Object.class);
 
@@ -680,22 +683,16 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     /**
-     * Spec. mentions use of [[DefineOwnProperty]] for indexed properties in
-     * certain places (eg. Array.prototype.map, filter). We can not use ScriptObject.set
-     * method in such cases. This is because set method uses inherited setters (if any)
-     * from any object in proto chain such as Array.prototype, Object.prototype.
-     * This method directly sets a particular element value in the current object.
+     * Almost like defineOwnProperty(int,Object) for arrays this one does
+     * not add 'gap' elements (like the array one does).
      *
      * @param index key for property
      * @param value value to define
      */
-    public final void defineOwnProperty(final int index, final Object value) {
+    public void defineOwnProperty(final int index, final Object value) {
         assert isValidArrayIndex(index) : "invalid array index";
         final long longIndex = ArrayIndex.toLongIndex(index);
-        if (longIndex >= getArray().length()) {
-            // make array big enough to hold..
-            setArray(getArray().ensure(longIndex));
-        }
+        doesNotHaveEnsureDelete(longIndex, getArray().length(), false);
         setArray(getArray().set(index, value, false));
     }
 
@@ -1915,17 +1912,6 @@ public abstract class ScriptObject implements PropertyAccess {
         MethodHandle mh;
 
         if (find == null) {
-            if (PROTO_PROPERTY_NAME.equals(name)) {
-                return new GuardedInvocation(
-                        GETPROTO,
-                        explicitInstanceOfCheck ?
-                                getScriptObjectGuard(desc.getMethodType(), explicitInstanceOfCheck) :
-                                null,
-                        (SwitchPoint)null,
-                        explicitInstanceOfCheck ?
-                                null : ClassCastException.class);
-            }
-
             switch (operator) {
             case "getProp":
                 return noSuchProperty(desc, request);
@@ -2116,13 +2102,7 @@ public abstract class ScriptObject implements PropertyAccess {
                 return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", true);
             }
         } else {
-            if (PROTO_PROPERTY_NAME.equals(name)) {
-                return new GuardedInvocation(
-                        SETPROTOCHECK,
-                        getScriptObjectGuard(desc.getMethodType(), explicitInstanceOfCheck),
-                        (SwitchPoint)null,
-                        explicitInstanceOfCheck ? null : ClassCastException.class);
-            } else if (!isExtensible()) {
+            if (!isExtensible()) {
                 return createEmptySetMethod(desc, explicitInstanceOfCheck, "object.non.extensible", false);
             }
         }

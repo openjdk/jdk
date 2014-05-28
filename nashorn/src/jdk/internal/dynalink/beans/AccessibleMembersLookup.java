@@ -211,7 +211,8 @@ class AccessibleMembersLookup {
         if(!CheckRestrictedPackage.isRestrictedClass(clazz)) {
             searchSuperTypes = false;
             for(Method method: clazz.getMethods()) {
-                if(instance != Modifier.isStatic(method.getModifiers())) {
+                final boolean isStatic = Modifier.isStatic(method.getModifiers());
+                if(instance != isStatic) {
                     final MethodSignature sig = new MethodSignature(method);
                     if(!methods.containsKey(sig)) {
                         final Class<?> declaringClass = method.getDeclaringClass();
@@ -228,7 +229,10 @@ class AccessibleMembersLookup {
                             //generate the said synthetic delegators.
                             searchSuperTypes = true;
                         } else {
-                            methods.put(sig, method);
+                            // don't allow inherited static
+                            if (!isStatic || clazz == declaringClass) {
+                                methods.put(sig, method);
+                            }
                         }
                     }
                 }
@@ -245,7 +249,8 @@ class AccessibleMembersLookup {
             searchSuperTypes = true;
         }
 
-        if(searchSuperTypes) {
+        // don't need to search super types for static methods
+        if(instance && searchSuperTypes) {
             // If we reach here, the class is either not public, or it is in a restricted package. Alternatively, it is
             // public, but some of its methods claim that their declaring class is non-public. We'll try superclasses
             // and implemented interfaces then looking for public ones.

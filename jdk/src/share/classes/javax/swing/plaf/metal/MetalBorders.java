@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class MetalBorders {
     static Object NO_BUTTON_ROLLOVER =
         new StringUIClientPropertyKey("NoButtonRollover");
 
-
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class Flush3DBorder extends AbstractBorder implements UIResource{
         public void paintBorder(Component c, Graphics g, int x, int y,
                           int w, int h) {
@@ -73,6 +73,7 @@ public class MetalBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ButtonBorder extends AbstractBorder implements UIResource {
 
         protected static Insets borderInsets = new Insets( 3, 3, 3, 3 );
@@ -187,6 +188,7 @@ public class MetalBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InternalFrameBorder extends AbstractBorder implements UIResource {
         private static final int corner = 14;
 
@@ -248,6 +250,7 @@ public class MetalBorders {
      * Border for a Frame.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class FrameBorder extends AbstractBorder implements UIResource {
         private static final int corner = 14;
 
@@ -310,6 +313,7 @@ public class MetalBorders {
      * Border for a Frame.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class DialogBorder extends AbstractBorder implements UIResource
     {
         private static final int corner = 14;
@@ -403,6 +407,7 @@ public class MetalBorders {
      * Border for an Error Dialog.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class ErrorDialogBorder extends DialogBorder implements UIResource
     {
         protected Color getActiveBackground() {
@@ -416,6 +421,7 @@ public class MetalBorders {
      * JColorChooser..
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class QuestionDialogBorder extends DialogBorder implements UIResource
     {
         protected Color getActiveBackground() {
@@ -428,6 +434,7 @@ public class MetalBorders {
      * Border for a Warning Dialog.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class WarningDialogBorder extends DialogBorder implements UIResource
     {
         protected Color getActiveBackground() {
@@ -440,6 +447,7 @@ public class MetalBorders {
      * Border for a Palette.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class PaletteBorder extends AbstractBorder implements UIResource {
         int titleHeight = 0;
 
@@ -462,6 +470,7 @@ public class MetalBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class OptionDialogBorder extends AbstractBorder implements UIResource {
         int titleHeight = 0;
 
@@ -523,7 +532,7 @@ public class MetalBorders {
         }
     }
 
-
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MenuBarBorder extends AbstractBorder implements UIResource {
         protected static Insets borderInsets = new Insets( 1, 0, 1, 0 );
 
@@ -560,6 +569,7 @@ public class MetalBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MenuItemBorder extends AbstractBorder implements UIResource {
         protected static Insets borderInsets = new Insets( 2, 2, 2, 2 );
 
@@ -607,6 +617,7 @@ public class MetalBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class PopupMenuBorder extends AbstractBorder implements UIResource {
         protected static Insets borderInsets = new Insets( 3, 1, 2, 1 );
 
@@ -631,7 +642,7 @@ public class MetalBorders {
         }
     }
 
-
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class RolloverButtonBorder extends ButtonBorder {
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
@@ -652,6 +663,7 @@ public class MetalBorders {
      * Note: This is identical to the package private class
      * BasicBorders.RolloverMarginBorder and should probably be consolidated.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class RolloverMarginBorder extends EmptyBorder {
 
         public RolloverMarginBorder() {
@@ -681,6 +693,7 @@ public class MetalBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ToolBarBorder extends AbstractBorder implements UIResource, SwingConstants
     {
         protected MetalBumps bumps = new MetalBumps( 10, 10,
@@ -808,6 +821,7 @@ public class MetalBorders {
         return textFieldBorder;
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class TextFieldBorder extends Flush3DBorder {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
@@ -832,6 +846,7 @@ public class MetalBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ScrollPaneBorder extends AbstractBorder implements UIResource {
         public void paintBorder(Component c, Graphics g, int x, int y,
                           int w, int h) {
@@ -892,6 +907,7 @@ public class MetalBorders {
     /**
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ToggleButtonBorder extends ButtonBorder {
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
             AbstractButton button = (AbstractButton)c;
@@ -924,6 +940,7 @@ public class MetalBorders {
      * Border for a Table Header
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class TableHeaderBorder extends javax.swing.border.AbstractBorder {
         protected Insets editorBorderInsets = new Insets( 2, 2, 2, 0 );
 

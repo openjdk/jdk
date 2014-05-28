@@ -154,6 +154,10 @@ public class Enter extends JCTree.Visitor {
         return typeEnvs.get(sym);
     }
 
+    public Iterable<Env<AttrContext>> getEnvs() {
+        return typeEnvs.values();
+    }
+
     public Env<AttrContext> getClassEnv(TypeSymbol sym) {
         Env<AttrContext> localEnv = getEnv(sym);
         Env<AttrContext> lintEnv = localEnv;
@@ -284,15 +288,16 @@ public class Enter extends JCTree.Visitor {
         boolean addEnv = false;
         boolean isPkgInfo = tree.sourcefile.isNameCompatible("package-info",
                                                              JavaFileObject.Kind.SOURCE);
-        if (tree.pid != null) {
-            tree.packge = syms.enterPackage(TreeInfo.fullName(tree.pid));
-            if (tree.packageAnnotations.nonEmpty()
-                    || pkginfoOpt == PkgInfo.ALWAYS
-                    || tree.docComments != null) {
+        JCPackageDecl pd = tree.getPackage();
+        if (pd != null) {
+            tree.packge = pd.packge = syms.enterPackage(TreeInfo.fullName(pd.pid));
+            if (   pd.annotations.nonEmpty()
+                || pkginfoOpt == PkgInfo.ALWAYS
+                || tree.docComments != null) {
                 if (isPkgInfo) {
                     addEnv = true;
-                } else if (tree.packageAnnotations.nonEmpty()){
-                    log.error(tree.packageAnnotations.head.pos(),
+                } else if (pd.annotations.nonEmpty()) {
+                    log.error(pd.annotations.head.pos(),
                               "pkg.annotations.sb.in.package-info.java");
                 }
             }
@@ -301,26 +306,20 @@ public class Enter extends JCTree.Visitor {
         }
         tree.packge.complete(); // Find all classes in package.
         Env<AttrContext> topEnv = topLevelEnv(tree);
+        Env<AttrContext> packageEnv = isPkgInfo ? topEnv.dup(pd) : null;
 
         // Save environment of package-info.java file.
         if (isPkgInfo) {
             Env<AttrContext> env0 = typeEnvs.get(tree.packge);
-            if (env0 == null) {
-                typeEnvs.put(tree.packge, topEnv);
-            } else {
+            if (env0 != null) {
                 JCCompilationUnit tree0 = env0.toplevel;
                 if (!fileManager.isSameFile(tree.sourcefile, tree0.sourcefile)) {
-                    log.warning(tree.pid != null ? tree.pid.pos()
-                                                 : null,
+                    log.warning(pd != null ? pd.pid.pos() : null,
                                 "pkg-info.already.seen",
                                 tree.packge);
-                    if (addEnv || (tree0.packageAnnotations.isEmpty() &&
-                                   tree.docComments != null &&
-                                   tree.docComments.hasComment(tree))) {
-                        typeEnvs.put(tree.packge, topEnv);
-                    }
                 }
             }
+            typeEnvs.put(tree.packge, packageEnv);
 
             for (Symbol q = tree.packge; q != null && q.kind == PCK; q = q.owner)
                 q.flags_field |= EXISTS;
@@ -335,7 +334,7 @@ public class Enter extends JCTree.Visitor {
         }
         classEnter(tree.defs, topEnv);
         if (addEnv) {
-            todo.append(topEnv);
+            todo.append(packageEnv);
         }
         log.useSource(prev);
         result = null;
@@ -513,5 +512,9 @@ public class Enter extends JCTree.Visitor {
             uncompleted = prevUncompleted;
             annotate.enterDone();
         }
+    }
+
+    public void newRound() {
+        typeEnvs.clear();
     }
 }

@@ -653,6 +653,9 @@ LIBDL
 LIBM
 LIBZIP_CAN_USE_MMAP
 USE_EXTERNAL_LIBZ
+USE_EXTERNAL_LIBPNG
+PNG_LIBS
+PNG_CFLAGS
 USE_EXTERNAL_LIBGIF
 USE_EXTERNAL_LIBJPEG
 ALSA_LIBS
@@ -661,7 +664,6 @@ FREETYPE_BUNDLE_LIB_PATH
 FREETYPE_LIBS
 FREETYPE_CFLAGS
 CUPS_CFLAGS
-OPENWIN_HOME
 X_EXTRA_LIBS
 X_LIBS
 X_PRE_LIBS
@@ -670,6 +672,7 @@ XMKMF
 FIXPATH
 ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
+CFLAGS_WARNINGS_ARE_ERRORS
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
 LDFLAGS_CXX_JDK
@@ -704,6 +707,8 @@ SET_EXECUTABLE_ORIGIN
 SHARED_LIBRARY_FLAGS
 CXX_FLAG_REORDER
 C_FLAG_REORDER
+SYSROOT_LDFLAGS
+SYSROOT_CFLAGS
 RC_FLAGS
 AR_OUT_OPTION
 LD_OUT_OPTION
@@ -756,7 +761,7 @@ CXXFLAGS
 CXX
 ac_ct_PROPER_COMPILER_CXX
 PROPER_COMPILER_CXX
-TOOLS_DIR_CXX
+TOOLCHAIN_PATH_CXX
 POTENTIAL_CXX
 OBJEXT
 EXEEXT
@@ -767,11 +772,11 @@ CFLAGS
 CC
 ac_ct_PROPER_COMPILER_CC
 PROPER_COMPILER_CC
-TOOLS_DIR_CC
+TOOLCHAIN_PATH_CC
 POTENTIAL_CC
-VS_PATH
 VS_LIB
 VS_INCLUDE
+VS_PATH
 CYGWIN_LINK
 EXE_SUFFIX
 OBJ_SUFFIX
@@ -793,8 +798,9 @@ JAXWS_TOPDIR
 JAXP_TOPDIR
 CORBA_TOPDIR
 LANGTOOLS_TOPDIR
+JAVA_FLAGS_SMALL
+JAVA_FLAGS_BIG
 JAVA_FLAGS
-BOOT_JDK_JVMARGS
 JAVAC_FLAGS
 BOOT_JDK_SOURCETARGET
 JARSIGNER
@@ -882,7 +888,6 @@ SET_OPENJDK
 BUILD_LOG_WRAPPER
 BUILD_LOG_PREVIOUS
 BUILD_LOG
-SYS_ROOT
 TOPDIR
 PATH_SEP
 ZERO_ARCHDEF
@@ -1015,9 +1020,6 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_target_bits
-with_sys_root
-with_tools_dir
-with_devkit
 enable_openjdk_only
 with_custom_make_dir
 with_jdk_variant
@@ -1025,6 +1027,12 @@ with_jvm_interpreter
 with_jvm_variants
 enable_debug
 with_debug_level
+with_devkit
+with_sys_root
+with_sysroot
+with_tools_dir
+with_toolchain_path
+with_extra_path
 with_conf_name
 with_builddeps_conf
 with_builddeps_server
@@ -1071,6 +1079,7 @@ with_alsa
 with_alsa_include
 with_alsa_lib
 with_giflib
+with_libpng
 with_zlib
 with_stdc__lib
 with_msvcr_dll
@@ -1183,6 +1192,8 @@ FREETYPE_CFLAGS
 FREETYPE_LIBS
 ALSA_CFLAGS
 ALSA_LIBS
+PNG_CFLAGS
+PNG_LIBS
 LIBFFI_CFLAGS
 LIBFFI_LIBS
 CCACHE'
@@ -1840,12 +1851,6 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-target-bits      build 32-bit or 64-bit binaries (for platforms that
                           support it), e.g. --with-target-bits=32 [guessed]
-  --with-sys-root         pass this sys-root to the compilers and tools (for
-                          cross-compiling)
-  --with-tools-dir        search this directory for compilers and tools (for
-                          cross-compiling)
-  --with-devkit           use this directory as base for tools-dir and
-                          sys-root (for cross-compiling)
   --with-custom-make-dir  Deprecated. Option is kept for backwards
                           compatibility and is ignored
   --with-jdk-variant      JDK variant to build (normal) [normal]
@@ -1853,8 +1858,16 @@ Optional Packages:
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
                           client, minimal1, kernel, zero, zeroshark, core)
                           [server]
-  --with-debug-level      set the debug level (release, fastdebug, slowdebug)
-                          [release]
+  --with-debug-level      set the debug level (release, fastdebug, slowdebug,
+                          optimized (HotSpot build only)) [release]
+  --with-devkit           use this devkit for compilers, tools and resources
+  --with-sys-root         alias for --with-sysroot for backwards compatability
+  --with-sysroot          use this directory as sysroot)
+  --with-tools-dir        alias for --with-toolchain-path for backwards
+                          compatibility
+  --with-toolchain-path   prepend these directories when searching for
+                          toolchain binaries (compilers etc)
+  --with-extra-path       prepend these directories to the default path
   --with-conf-name        use this as the name of the configuration [generated
                           from important configuration options]
   --with-builddeps-conf   use this configuration file for the builddeps
@@ -1920,6 +1933,8 @@ Optional Packages:
   --with-alsa-include     specify directory for the alsa include files
   --with-alsa-lib         specify directory for the alsa library
   --with-giflib           use giflib from build system or OpenJDK source
+                          (system, bundled) [bundled]
+  --with-libpng           use libpng from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-zlib             use zlib from build system or OpenJDK source
                           (system, bundled) [bundled]
@@ -2045,6 +2060,8 @@ Some influential environment variables:
               linker flags for FREETYPE, overriding pkg-config
   ALSA_CFLAGS C compiler flags for ALSA, overriding pkg-config
   ALSA_LIBS   linker flags for ALSA, overriding pkg-config
+  PNG_CFLAGS  C compiler flags for PNG, overriding pkg-config
+  PNG_LIBS    linker flags for PNG, overriding pkg-config
   LIBFFI_CFLAGS
               C compiler flags for LIBFFI, overriding pkg-config
   LIBFFI_LIBS linker flags for LIBFFI, overriding pkg-config
@@ -3313,6 +3330,9 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # Appends a string to a path variable, only adding the : when needed.
 
 
+# Prepends a string to a path variable, only adding the : when needed.
+
+
 # This will make sure the given variable points to a full and proper
 # path. This means:
 # 1) There will be no spaces in the path. On posix platforms,
@@ -3388,6 +3408,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
+
+
 
 
 
@@ -4221,7 +4243,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1394011255
+DATE_WHEN_GENERATED=1399969244
 
 ###############################################################################
 #
@@ -13496,6 +13518,12 @@ test -n "$target_alias" &&
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
       ;;
+    powerpc64le)
+      VAR_CPU=ppc64
+      VAR_CPU_ARCH=ppc
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     s390)
       VAR_CPU=s390
       VAR_CPU_ARCH=s390
@@ -13620,6 +13648,12 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
+      ;;
+    powerpc64le)
+      VAR_CPU=ppc64
+      VAR_CPU_ARCH=ppc
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
       ;;
     s390)
       VAR_CPU=s390
@@ -14228,180 +14262,6 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
 
-  if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
-    # Add extra search paths on solaris for utilities like ar and as etc...
-    PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
-  fi
-
-  # You can force the sys-root if the sys-root encoded into the cross compiler tools
-  # is not correct.
-
-# Check whether --with-sys-root was given.
-if test "${with_sys_root+set}" = set; then :
-  withval=$with_sys_root;
-fi
-
-
-  if test "x$with_sys_root" != x; then
-    SYS_ROOT=$with_sys_root
-  else
-    SYS_ROOT=/
-  fi
-
-
-
-# Check whether --with-tools-dir was given.
-if test "${with_tools_dir+set}" = set; then :
-  withval=$with_tools_dir; TOOLS_DIR=$with_tools_dir
-
-fi
-
-
-
-# Check whether --with-devkit was given.
-if test "${with_devkit+set}" = set; then :
-  withval=$with_devkit;
-        if test "x$with_sys_root" != x; then
-          as_fn_error $? "Cannot specify both --with-devkit and --with-sys-root at the same time" "$LINENO" 5
-        fi
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$with_devkit"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_devkit, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of with_devkit" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-stile (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    with_devkit="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting with_devkit to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting with_devkit to \"$new_path\"" >&6;}
-  fi
-
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$with_devkit"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    with_devkit="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting with_devkit to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting with_devkit to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-  else
-    # We're on a posix platform. Hooray! :)
-    path="$with_devkit"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_devkit, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
-
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of with_devkit, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
-    with_devkit="`cd "$path"; $THEPWDCMD -L`"
-  fi
-
-
-  if test "x$TOOLS_DIR" = x; then
-    TOOLS_DIR="$with_devkit/bin"
-  else
-    TOOLS_DIR="$TOOLS_DIR:$with_devkit/bin"
-  fi
-
-        if test -d "$with_devkit/$host_alias/libc"; then
-          SYS_ROOT=$with_devkit/$host_alias/libc
-        elif test -d "$with_devkit/$host/sys-root"; then
-          SYS_ROOT=$with_devkit/$host/sys-root
-        fi
-
-fi
-
-
 
   # Setup default logging of stdout and stderr to build.log in the output root.
   BUILD_LOG='$(OUTPUT_ROOT)/build.log'
@@ -14636,6 +14496,7 @@ $as_echo "$with_jvm_variants" >&6; }
   #
   # Set the debug level
   #    release: no debug information, all optimizations, no asserts.
+  #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
   #    fastdebug: debug information (-g), all optimizations, all asserts
   #    slowdebug: debug information (-g), no optimizations, all asserts
   #
@@ -14668,6 +14529,7 @@ fi
 $as_echo "$DEBUG_LEVEL" >&6; }
 
   if test "x$DEBUG_LEVEL" != xrelease && \
+      test "x$DEBUG_LEVEL" != xoptimized && \
       test "x$DEBUG_LEVEL" != xfastdebug && \
       test "x$DEBUG_LEVEL" != xslowdebug; then
     as_fn_error $? "Allowed debug levels are: release, fastdebug and slowdebug" "$LINENO" 5
@@ -14704,7 +14566,29 @@ $as_echo "$DEBUG_LEVEL" >&6; }
       HOTSPOT_DEBUG_LEVEL="jvmg"
       HOTSPOT_EXPORT="debug"
       ;;
+    optimized )
+      VARIANT="OPT"
+      FASTDEBUG="false"
+      DEBUG_CLASSFILES="false"
+      BUILD_VARIANT_RELEASE="-optimized"
+      HOTSPOT_DEBUG_LEVEL="optimized"
+      HOTSPOT_EXPORT="optimized"
+      ;;
   esac
+
+  # The debug level 'optimized' is a little special because it is currently only
+  # applicable to the HotSpot build where it means to build a completely
+  # optimized version of the VM without any debugging code (like for the
+  # 'release' debug level which is called 'product' in the HotSpot build) but
+  # with the exception that it can contain additional code which is otherwise
+  # protected by '#ifndef PRODUCT' macros. These 'optimized' builds are used to
+  # test new and/or experimental features which are not intended for customer
+  # shipment. Because these new features need to be tested and benchmarked in
+  # real world scenarios, we want to build the containing JDK at the 'release'
+  # debug level.
+  if test "x$DEBUG_LEVEL" = xoptimized; then
+    DEBUG_LEVEL="release"
+  fi
 
   #####
   # Generate the legacy makefile targets for hotspot.
@@ -14762,6 +14646,291 @@ $as_echo "$DEBUG_LEVEL" >&6; }
 
 
 # With basic setup done, call the custom early hook.
+
+
+# Check if we have devkits, extra paths or sysroot set.
+
+
+# Check whether --with-devkit was given.
+if test "${with_devkit+set}" = set; then :
+  withval=$with_devkit;
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$with_devkit"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_devkit, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of with_devkit" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    with_devkit="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting with_devkit to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting with_devkit to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$with_devkit"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    with_devkit="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting with_devkit to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting with_devkit to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$with_devkit"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_devkit, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of with_devkit, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    with_devkit="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+        DEVKIT_ROOT="$with_devkit"
+        # Check for a meta data info file in the root of the devkit
+        if test -f "$DEVKIT_ROOT/devkit.info"; then
+          # This potentially sets the following:
+          # DEVKIT_NAME: A descriptive name of the devkit
+          # DEVKIT_TOOLCHAIN_PATH: Corresponds to --with-toolchain-path
+          # DEVKIT_EXTRA_PATH: Corresponds to --with-extra-path
+          # DEVKIT_SYSROOT: Corresponds to --with-sysroot
+          . $DEVKIT_ROOT/devkit.info
+        fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for devkit" >&5
+$as_echo_n "checking for devkit... " >&6; }
+        if test "x$DEVKIT_NAME" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DEVKIT_NAME in $DEVKIT_ROOT" >&5
+$as_echo "$DEVKIT_NAME in $DEVKIT_ROOT" >&6; }
+        else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DEVKIT_ROOT" >&5
+$as_echo "$DEVKIT_ROOT" >&6; }
+        fi
+
+        if test "x$DEVKIT_EXTRA_PATH" != x; then
+
+  if test "x$DEVKIT_EXTRA_PATH" != x; then
+    if test "x$EXTRA_PATH" = x; then
+      EXTRA_PATH="$DEVKIT_EXTRA_PATH"
+    else
+      EXTRA_PATH="$DEVKIT_EXTRA_PATH:$EXTRA_PATH"
+    fi
+  fi
+
+        fi
+
+        # Fallback default of just /bin if DEVKIT_PATH is not defined
+        if test "x$DEVKIT_TOOLCHAIN_PATH" = x; then
+          DEVKIT_TOOLCHAIN_PATH="$DEVKIT_ROOT/bin"
+        fi
+
+  if test "x$DEVKIT_TOOLCHAIN_PATH" != x; then
+    if test "x$TOOLCHAIN_PATH" = x; then
+      TOOLCHAIN_PATH="$DEVKIT_TOOLCHAIN_PATH"
+    else
+      TOOLCHAIN_PATH="$DEVKIT_TOOLCHAIN_PATH:$TOOLCHAIN_PATH"
+    fi
+  fi
+
+
+        # If DEVKIT_SYSROOT is set, use that, otherwise try a couple of known
+        # places for backwards compatiblity.
+        if test "x$DEVKIT_SYSROOT" != x; then
+          SYSROOT="$DEVKIT_SYSROOT"
+        elif test -d "$DEVKIT_ROOT/$host_alias/libc"; then
+          SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
+        elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
+          SYSROOT="$DEVKIT_ROOT/$host/sys-root"
+        fi
+
+
+fi
+
+
+  # You can force the sysroot if the sysroot encoded into the compiler tools
+  # is not correct.
+
+# Check whether --with-sys-root was given.
+if test "${with_sys_root+set}" = set; then :
+  withval=$with_sys_root; SYSROOT=$with_sys_root
+
+fi
+
+
+
+# Check whether --with-sysroot was given.
+if test "${with_sysroot+set}" = set; then :
+  withval=$with_sysroot; SYSROOT=$with_sysroot
+
+fi
+
+
+
+# Check whether --with-tools-dir was given.
+if test "${with_tools_dir+set}" = set; then :
+  withval=$with_tools_dir;
+  if test "x$with_tools_dir" != x; then
+    if test "x$TOOLCHAIN_PATH" = x; then
+      TOOLCHAIN_PATH="$with_tools_dir"
+    else
+      TOOLCHAIN_PATH="$with_tools_dir:$TOOLCHAIN_PATH"
+    fi
+  fi
+
+
+fi
+
+
+
+# Check whether --with-toolchain-path was given.
+if test "${with_toolchain_path+set}" = set; then :
+  withval=$with_toolchain_path;
+  if test "x$with_toolchain_path" != x; then
+    if test "x$TOOLCHAIN_PATH" = x; then
+      TOOLCHAIN_PATH="$with_toolchain_path"
+    else
+      TOOLCHAIN_PATH="$with_toolchain_path:$TOOLCHAIN_PATH"
+    fi
+  fi
+
+
+fi
+
+
+
+# Check whether --with-extra-path was given.
+if test "${with_extra_path+set}" = set; then :
+  withval=$with_extra_path;
+  if test "x$with_extra_path" != x; then
+    if test "x$EXTRA_PATH" = x; then
+      EXTRA_PATH="$with_extra_path"
+    else
+      EXTRA_PATH="$with_extra_path:$EXTRA_PATH"
+    fi
+  fi
+
+
+fi
+
+
+  # Prepend the extra path to the global path
+
+  if test "x$EXTRA_PATH" != x; then
+    if test "x$PATH" = x; then
+      PATH="$EXTRA_PATH"
+    else
+      PATH="$EXTRA_PATH:$PATH"
+    fi
+  fi
+
+
+  if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
+    # Add extra search paths on solaris for utilities like ar and as etc...
+    PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sysroot" >&5
+$as_echo_n "checking for sysroot... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SYSROOT" >&5
+$as_echo "$SYSROOT" >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for toolchain path" >&5
+$as_echo_n "checking for toolchain path... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLCHAIN_PATH" >&5
+$as_echo "$TOOLCHAIN_PATH" >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for extra path" >&5
+$as_echo_n "checking for extra path... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $EXTRA_PATH" >&5
+$as_echo "$EXTRA_PATH" >&6; }
 
 
 # To properly create a configuration name, we need to have the OpenJDK target
@@ -16071,10 +16240,10 @@ $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
     fi
 
     if test "x$FOUND_MAKE" = x; then
-      if test "x$TOOLS_DIR" != x; then
-        # We have a tools-dir, check that as well before giving up.
+      if test "x$TOOLCHAIN_PATH" != x; then
+        # We have a toolchain path, check that as well before giving up.
         OLD_PATH=$PATH
-        PATH=$TOOLS_DIR:$PATH
+        PATH=$TOOLCHAIN_PATH:$PATH
         for ac_prog in gmake
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -19727,12 +19896,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20059,12 +20228,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20253,12 +20422,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20440,12 +20609,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20626,12 +20795,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20812,12 +20981,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -20989,12 +21158,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -21307,12 +21476,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -21635,12 +21804,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -21850,12 +22019,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22030,12 +22199,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22238,12 +22407,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22418,12 +22587,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22626,12 +22795,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -22806,12 +22975,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23014,12 +23183,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23194,12 +23363,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23389,12 +23558,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23567,12 +23736,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23763,12 +23932,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -23941,12 +24110,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24136,12 +24305,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24314,12 +24483,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24510,12 +24679,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24688,12 +24857,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -24865,12 +25034,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
             if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -25835,8 +26004,8 @@ $as_echo "$tool_specified" >&6; }
 
   # Finally, set some other options...
 
-  # When compiling code to be executed by the Boot JDK, force jdk7 compatibility.
-  BOOT_JDK_SOURCETARGET="-source 7 -target 7"
+  # When compiling code to be executed by the Boot JDK, force jdk8 compatibility.
+  BOOT_JDK_SOURCETARGET="-source 8 -target 8"
 
 
 
@@ -25855,67 +26024,6 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command " >&5
 $as_echo_n "checking flags for boot jdk java command ... " >&6; }
-
-  # Starting amount of heap memory.
-
-  $ECHO "Check if jvm arg is ok: -Xms64M" >&5
-  $ECHO "Command: $JAVA -Xms64M -version" >&5
-  OUTPUT=`$JAVA -Xms64M -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -Xms64M"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  # Maximum amount of heap memory.
-  # Maximum stack size.
-  if test "x$BUILD_NUM_BITS" = x32; then
-    JVM_MAX_HEAP=1100M
-    STACK_SIZE=768
-  else
-    # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
-    # pointers are used. Apparently, we need to increase the heap and stack
-    # space for the jvm. More specifically, when running javac to build huge
-    # jdk batch
-    JVM_MAX_HEAP=1600M
-    STACK_SIZE=1536
-  fi
-
-  $ECHO "Check if jvm arg is ok: -Xmx$JVM_MAX_HEAP" >&5
-  $ECHO "Command: $JAVA -Xmx$JVM_MAX_HEAP -version" >&5
-  OUTPUT=`$JAVA -Xmx$JVM_MAX_HEAP -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -Xmx$JVM_MAX_HEAP"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  $ECHO "Check if jvm arg is ok: -XX:ThreadStackSize=$STACK_SIZE" >&5
-  $ECHO "Command: $JAVA -XX:ThreadStackSize=$STACK_SIZE -version" >&5
-  OUTPUT=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:ThreadStackSize=$STACK_SIZE"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
 
   # Disable special log output when a debug build is used as Boot JDK...
 
@@ -25957,9 +26065,133 @@ $as_echo "$boot_jdk_jvmargs" >&6; }
   # For now, general JAVA_FLAGS are the same as the boot jdk jvmargs
   JAVA_FLAGS=$boot_jdk_jvmargs
 
-  BOOT_JDK_JVMARGS=$boot_jdk_jvmargs
 
-  JAVA_FLAGS=$JAVA_FLAGS
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for big workloads" >&5
+$as_echo_n "checking flags for boot jdk java command for big workloads... " >&6; }
+
+  # Starting amount of heap memory.
+
+  $ECHO "Check if jvm arg is ok: -Xms64M" >&5
+  $ECHO "Command: $JAVA -Xms64M -version" >&5
+  OUTPUT=`$JAVA -Xms64M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -Xms64M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  # Maximum amount of heap memory.
+  # Maximum stack size.
+  if test "x$BUILD_NUM_BITS" = x32; then
+    JVM_MAX_HEAP=1100M
+    STACK_SIZE=768
+  else
+    # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
+    # pointers are used. Apparently, we need to increase the heap and stack
+    # space for the jvm. More specifically, when running javac to build huge
+    # jdk batch
+    JVM_MAX_HEAP=1600M
+    STACK_SIZE=1536
+  fi
+
+  $ECHO "Check if jvm arg is ok: -Xmx$JVM_MAX_HEAP" >&5
+  $ECHO "Command: $JAVA -Xmx$JVM_MAX_HEAP -version" >&5
+  OUTPUT=`$JAVA -Xmx$JVM_MAX_HEAP -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -Xmx$JVM_MAX_HEAP"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -XX:ThreadStackSize=$STACK_SIZE" >&5
+  $ECHO "Command: $JAVA -XX:ThreadStackSize=$STACK_SIZE -version" >&5
+  OUTPUT=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -XX:ThreadStackSize=$STACK_SIZE"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs_big" >&5
+$as_echo "$boot_jdk_jvmargs_big" >&6; }
+
+  JAVA_FLAGS_BIG=$boot_jdk_jvmargs_big
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for small workloads" >&5
+$as_echo_n "checking flags for boot jdk java command for small workloads... " >&6; }
+
+  # Use serial gc for small short lived tools if possible
+
+  $ECHO "Check if jvm arg is ok: -XX:+UseSerialGC" >&5
+  $ECHO "Command: $JAVA -XX:+UseSerialGC -version" >&5
+  OUTPUT=`$JAVA -XX:+UseSerialGC -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -XX:+UseSerialGC"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -Xms32M" >&5
+  $ECHO "Command: $JAVA -Xms32M -version" >&5
+  OUTPUT=`$JAVA -Xms32M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xms32M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -Xmx512M" >&5
+  $ECHO "Command: $JAVA -Xmx512M -version" >&5
+  OUTPUT=`$JAVA -Xmx512M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xmx512M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs_small" >&5
+$as_echo "$boot_jdk_jvmargs_small" >&6; }
+
+  JAVA_FLAGS_SMALL=$boot_jdk_jvmargs_small
 
 
 
@@ -26297,8 +26529,28 @@ fi
   # Use indirect variable referencing
   toolchain_var_name=VALID_TOOLCHAINS_$OPENJDK_BUILD_OS
   VALID_TOOLCHAINS=${!toolchain_var_name}
-  # First toolchain type in the list is the default
-  DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
+
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # On Mac OS X, default toolchain to clang after Xcode 5
+    XCODE_VERSION_OUTPUT=`xcodebuild -version 2>&1 | $HEAD -n 1`
+    $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
+    if test $? -ne 0; then
+      as_fn_error $? "Failed to determine Xcode version." "$LINENO" 5
+    fi
+    XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
+        $SED -e 's/^Xcode \([1-9][0-9.]*\)/\1/' | \
+        $CUT -f 1 -d .`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Xcode major version: $XCODE_MAJOR_VERSION" >&5
+$as_echo "$as_me: Xcode major version: $XCODE_MAJOR_VERSION" >&6;}
+    if test $XCODE_MAJOR_VERSION -ge 5; then
+        DEFAULT_TOOLCHAIN="clang"
+    else
+        DEFAULT_TOOLCHAIN="gcc"
+    fi
+  else
+    # First toolchain type in the list is the default
+    DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
+  fi
 
   if test "x$with_toolchain_type" = xlist; then
     # List all toolchains
@@ -27113,47 +27365,62 @@ $as_echo "$as_me: Rewriting VS_ENV_CMD to \"$new_complete\"" >&6;}
     # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
     { $as_echo "$as_me:${as_lineno-$LINENO}: Trying to extract Visual Studio environment variables" >&5
 $as_echo "$as_me: Trying to extract Visual Studio environment variables" >&6;}
-    cd $OUTPUT_ROOT
-    # FIXME: The code betweeen ---- was inlined from a separate script and is not properly adapted
-    # to autoconf standards.
 
-    #----
+    # We need to create a couple of temporary files.
+    VS_ENV_TMP_DIR="$OUTPUT_ROOT/vs-env"
+    $MKDIR -p $VS_ENV_TMP_DIR
 
-    # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment)
-    # but calculate the difference in Cygwin environment before/after running it and then
-    # apply the diff.
+    # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
+    # Instead create a shell script which will set the relevant variables when run.
+    WINPATH_VS_ENV_CMD="$VS_ENV_CMD"
 
-    if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then
-      _vs10varsall=`cygpath -a -m -s "$VS_ENV_CMD"`
-      _dosvs10varsall=`cygpath -a -w -s $_vs10varsall`
-      _dosbash=`cygpath -a -w -s \`which bash\`.*`
-    else
-      _dosvs10varsall=`cmd //c echo $VS_ENV_CMD`
-      _dosbash=`cmd //c echo \`which bash\``
-    fi
+  unix_path="$WINPATH_VS_ENV_CMD"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    windows_path=`$CYGPATH -m "$unix_path"`
+    WINPATH_VS_ENV_CMD="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    windows_path=`cmd //c echo $unix_path`
+    WINPATH_VS_ENV_CMD="$windows_path"
+  fi
 
-    # generate the set of exported vars before/after the vs10 setup
-    $ECHO "@echo off"                                           >  localdevenvtmp.bat
-    $ECHO "$_dosbash -c \"export -p\" > localdevenvtmp.export0" >> localdevenvtmp.bat
-    $ECHO "call $_dosvs10varsall $VS_ENV_ARGS"                  >> localdevenvtmp.bat
-    $ECHO "$_dosbash -c \"export -p\" > localdevenvtmp.export1" >> localdevenvtmp.bat
+    WINPATH_BASH="$BASH"
+
+  unix_path="$WINPATH_BASH"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    windows_path=`$CYGPATH -m "$unix_path"`
+    WINPATH_BASH="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    windows_path=`cmd //c echo $unix_path`
+    WINPATH_BASH="$windows_path"
+  fi
+
+
+    # Generate a DOS batch file which runs $VS_ENV_CMD, and then creates a shell
+    # script (executable by bash) that will setup the important variables.
+    EXTRACT_VC_ENV_BAT_FILE="$VS_ENV_TMP_DIR/extract-vs-env.bat"
+    $ECHO "@echo off" >  $EXTRACT_VC_ENV_BAT_FILE
+    # This will end up something like:
+    # call C:/progra~2/micros~2.0/vc/bin/amd64/vcvars64.bat
+    $ECHO "call $WINPATH_VS_ENV_CMD $VS_ENV_ARGS" >> $EXTRACT_VC_ENV_BAT_FILE
+    # These will end up something like:
+    # C:/CygWin/bin/bash -c 'echo VS_PATH=\"$PATH\" > localdevenv.sh
+    # The trailing space for everyone except PATH is no typo, but is needed due
+    # to trailing \ in the Windows paths. These will be stripped later.
+    $ECHO "$WINPATH_BASH -c 'echo VS_PATH="'\"$PATH\" > set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VCINSTALLDIR="'\"$VCINSTALLDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo WindowsSdkDir="'\"$WindowsSdkDir \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo WINDOWSSDKDIR="'\"$WINDOWSSDKDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
 
     # Now execute the newly created bat file.
-    # The | cat is to stop SetEnv.Cmd to mess with system colors on msys
-    cmd /c localdevenvtmp.bat | cat
-
-    # apply the diff (less some non-vs10 vars named by "!")
-    $SORT localdevenvtmp.export0 | $GREP -v "!" > localdevenvtmp.export0.sort
-    $SORT localdevenvtmp.export1 | $GREP -v "!" > localdevenvtmp.export1.sort
-    $COMM -1 -3 localdevenvtmp.export0.sort localdevenvtmp.export1.sort > localdevenv.sh
-
-    # cleanup
-    $RM localdevenvtmp*
-    #----
+    # The | cat is to stop SetEnv.Cmd to mess with system colors on msys.
+    # Change directory so we don't need to mess with Windows paths in redirects.
+    cd $VS_ENV_TMP_DIR
+    cmd /c extract-vs-env.bat | $CAT
     cd $CURDIR
-    if test ! -s $OUTPUT_ROOT/localdevenv.sh; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+
+    if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: Could not succesfully extract the envionment variables needed for the VS setup." >&5
 $as_echo "$as_me: Could not succesfully extract the envionment variables needed for the VS setup." >&6;}
       { $as_echo "$as_me:${as_lineno-$LINENO}: Try setting --with-tools-dir to the VC/bin directory within the VS installation" >&5
@@ -27167,31 +27434,37 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     # the configure script to find and run the compiler in the proper way.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Setting extracted environment variables" >&5
 $as_echo "$as_me: Setting extracted environment variables" >&6;}
-    . $OUTPUT_ROOT/localdevenv.sh
+    . $VS_ENV_TMP_DIR/set-vs-env.sh
+    # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
+    # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR.
   else
     # We did not find a vsvars bat file, let's hope we are run from a VS command prompt.
     { $as_echo "$as_me:${as_lineno-$LINENO}: Cannot locate a valid Visual Studio installation, checking current environment" >&5
 $as_echo "$as_me: Cannot locate a valid Visual Studio installation, checking current environment" >&6;}
   fi
 
-  # At this point, we should have corrent variables in the environment, or we can't continue.
+  # At this point, we should have correct variables in the environment, or we can't continue.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Visual Studio variables" >&5
 $as_echo_n "checking for Visual Studio variables... " >&6; }
 
   if test "x$VCINSTALLDIR" != x || test "x$WindowsSDKDir" != x || test "x$WINDOWSSDKDIR" != x; then
-    if test "x$INCLUDE" = x || test "x$LIB" = x; then
+    if test "x$VS_INCLUDE" = x || test "x$VS_LIB" = x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: present but broken" >&5
 $as_echo "present but broken" >&6; }
       as_fn_error $? "Your VC command prompt seems broken, INCLUDE and/or LIB is missing." "$LINENO" 5
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      # Remove any trailing \ from INCLUDE and LIB to avoid trouble in spec.gmk.
-      VS_INCLUDE=`$ECHO "$INCLUDE" | $SED 's/\\\\$//'`
-      VS_LIB=`$ECHO "$LIB" | $SED 's/\\\\$//'`
-      # Remove any paths containing # (typically F#) as that messes up make
-      PATH=`$ECHO "$PATH" | $SED 's/[^:#]*#[^:]*://g'`
-      VS_PATH="$PATH"
+      # Remove any trailing "\" and " " from the variables.
+      VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED 's/\\\\* *$//'`
+      VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\* *$//'`
+      VCINSTALLDIR=`$ECHO "$VCINSTALLDIR" | $SED 's/\\\\* *$//'`
+      WindowsSDKDir=`$ECHO "$WindowsSDKDir" | $SED 's/\\\\* *$//'`
+      WINDOWSSDKDIR=`$ECHO "$WINDOWSSDKDIR" | $SED 's/\\\\* *$//'`
+      # Remove any paths containing # (typically F#) as that messes up make. This
+      # is needed if visual studio was installed with F# support.
+      VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[^:#]*#[^:]*://g'`
+
 
 
 
@@ -27216,6 +27489,12 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
+    # Reset path to VS_PATH. It will include everything that was on PATH at the time we
+    # ran TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV.
+    PATH="$VS_PATH"
+    # The microsoft toolchain also requires INCLUDE and LIB to be set.
+    export INCLUDE="$VS_INCLUDE"
+    export LIB="$VS_LIB"
   fi
 
   # autoconf magic only relies on PATH, so update it if tools dir is specified
@@ -27229,169 +27508,11 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     PATH="/usr/ccs/bin:$PATH"
   fi
 
-  # Finally add TOOLS_DIR at the beginning, to allow --with-tools-dir to
+  # Finally add TOOLCHAIN_PATH at the beginning, to allow --with-tools-dir to
   # override all other locations.
-  if test "x$TOOLS_DIR" != x; then
-    PATH=$TOOLS_DIR:$PATH
+  if test "x$TOOLCHAIN_PATH" != x; then
+    PATH=$TOOLCHAIN_PATH:$PATH
   fi
-
-  # If a devkit is found on the builddeps server, then prepend its path to the
-  # PATH variable. If there are cross compilers available in the devkit, these
-  # will be found by AC_PROG_CC et al.
-  DEVKIT=
-
-
-  if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
-    # Source the builddeps file again, to make sure it uses the latest variables!
-    . $builddepsfile
-    # Look for a target and build machine specific resource!
-    eval resource=\${builddep_devkit_BUILD_${rewritten_build_var}_TARGET_${rewritten_target_var}}
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a target specific resource
-      eval resource=\${builddep_devkit_TARGET_${rewritten_target_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a build specific resource
-      eval resource=\${builddep_devkit_BUILD_${rewritten_build_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a generic resource
-      # (The devkit comes from M4 and not the shell, thus no need for eval here.)
-      resource=${builddep_devkit}
-    fi
-    if test "x$resource" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Using builddeps $resource for devkit" >&5
-$as_echo "$as_me: Using builddeps $resource for devkit" >&6;}
-      # If the resource in the builddeps.conf file is an existing directory,
-      # for example /java/linux/cups
-      if test -d ${resource}; then
-        depdir=${resource}
-      else
-
-  # devkit is for example mymodule
-  # $resource is for example libs/general/libmymod_1_2_3.zip
-  # $with_builddeps_server is for example ftp://mybuilddeps.myserver.com/builddeps
-  # $with_builddeps_dir is for example /localhome/builddeps
-  # depdir is the name of the variable into which we store the depdir, eg MYMOD
-  # Will download ftp://mybuilddeps.myserver.com/builddeps/libs/general/libmymod_1_2_3.zip and
-  # unzip into the directory: /localhome/builddeps/libmymod_1_2_3
-  filename=`basename $resource`
-  filebase=`echo $filename | sed 's/\.[^\.]*$//'`
-  filebase=${filename%%.*}
-  extension=${filename#*.}
-  installdir=$with_builddeps_dir/$filebase
-  if test ! -f $installdir/$filename.unpacked; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Downloading build dependency devkit from $with_builddeps_server/$resource and installing into $installdir" >&5
-$as_echo "$as_me: Downloading build dependency devkit from $with_builddeps_server/$resource and installing into $installdir" >&6;}
-    if test ! -d $installdir; then
-      mkdir -p $installdir
-    fi
-    if test ! -d $installdir; then
-      as_fn_error $? "Could not create directory $installdir" "$LINENO" 5
-    fi
-    tmpfile=`mktemp $installdir/devkit.XXXXXXXXX`
-    touch $tmpfile
-    if test ! -f $tmpfile; then
-      as_fn_error $? "Could not create files in directory $installdir" "$LINENO" 5
-    fi
-
-  # $with_builddeps_server/$resource  is the ftp://abuilddeps.server.com/libs/cups.zip
-  # $tmpfile is the local file name for the downloaded file.
-  VALID_TOOL=no
-  if test "x$BDEPS_FTP" = xwget; then
-    VALID_TOOL=yes
-    wget -O $tmpfile $with_builddeps_server/$resource
-  fi
-  if test "x$BDEPS_FTP" = xlftp; then
-    VALID_TOOL=yes
-    lftp -c "get $with_builddeps_server/$resource  -o $tmpfile"
-  fi
-  if test "x$BDEPS_FTP" = xftp; then
-    VALID_TOOL=yes
-    FTPSERVER=`echo $with_builddeps_server/$resource  | cut -f 3 -d '/'`
-    FTPPATH=`echo $with_builddeps_server/$resource  | cut -f 4- -d '/'`
-    FTPUSERPWD=${FTPSERVER%%@*}
-    if test "x$FTPSERVER" != "x$FTPUSERPWD"; then
-      FTPUSER=${userpwd%%:*}
-      FTPPWD=${userpwd#*@}
-      FTPSERVER=${FTPSERVER#*@}
-    else
-      FTPUSER=ftp
-      FTPPWD=ftp
-    fi
-    # the "pass" command does not work on some
-    # ftp clients (read ftp.exe) but if it works,
-    # passive mode is better!
-    ( \
-        echo "user $FTPUSER $FTPPWD"        ; \
-        echo "pass"                         ; \
-        echo "bin"                          ; \
-        echo "get $FTPPATH $tmpfile"              ; \
-    ) | ftp -in $FTPSERVER
-  fi
-  if test "x$VALID_TOOL" != xyes; then
-    as_fn_error $? "I do not know how to use the tool: $BDEPS_FTP" "$LINENO" 5
-  fi
-
-    mv $tmpfile $installdir/$filename
-    if test ! -s $installdir/$filename; then
-      as_fn_error $? "Could not download $with_builddeps_server/$resource" "$LINENO" 5
-    fi
-    case "$extension" in
-      zip)  echo "Unzipping $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; $BDEPS_UNZIP $installdir/$filename > /dev/null && touch $installdir/$filename.unpacked)
-        ;;
-      tar.gz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      tgz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      *) as_fn_error $? "Cannot handle build depency archive with extension $extension" "$LINENO" 5
-        ;;
-    esac
-  fi
-  if test -f $installdir/$filename.unpacked; then
-    depdir=$installdir
-  fi
-
-      fi
-      # Source the builddeps file again, because in the previous command, the depdir
-      # was updated to point at the current build dependency install directory.
-      . $builddepsfile
-      # Now extract variables from the builddeps.conf files.
-      theroot=${builddep_devkit_ROOT}
-      thecflags=${builddep_devkit_CFLAGS}
-      thelibs=${builddep_devkit_LIBS}
-      if test "x$depdir" = x; then
-        as_fn_error $? "Could not download build dependency devkit" "$LINENO" 5
-      fi
-      DEVKIT=$depdir
-      if test "x$theroot" != x; then
-        DEVKIT="$theroot"
-      fi
-      if test "x$thecflags" != x; then
-        DEVKIT_CFLAGS="$thecflags"
-      fi
-      if test "x$thelibs" != x; then
-        DEVKIT_LIBS="$thelibs"
-      fi
-
-        # Found devkit
-        PATH="$DEVKIT/bin:$PATH"
-        SYS_ROOT="$DEVKIT/${rewritten_target}/sys-root"
-        if test "x$x_includes" = "xNONE"; then
-          x_includes="$SYS_ROOT/usr/include/X11"
-        fi
-        if test "x$x_libraries" = "xNONE"; then
-          x_libraries="$SYS_ROOT/usr/lib"
-        fi
-
-
-    fi
-
-  fi
-
 
 
   #
@@ -27475,25 +27596,25 @@ done
     # used.
 
     CC=
-    # If TOOLS_DIR is set, check for all compiler names in there first
+    # If TOOLCHAIN_PATH is set, check for all compiler names in there first
     # before checking the rest of the PATH.
     # FIXME: Now that we prefix the TOOLS_DIR to the PATH in the PRE_DETECTION
     # step, this should not be necessary.
-    if test -n "$TOOLS_DIR"; then
+    if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
-      PATH="$TOOLS_DIR"
+      PATH="$TOOLCHAIN_PATH"
       for ac_prog in $SEARCH_LIST
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_TOOLS_DIR_CC+:} false; then :
+if ${ac_cv_path_TOOLCHAIN_PATH_CC+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $TOOLS_DIR_CC in
+  case $TOOLCHAIN_PATH_CC in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_TOOLS_DIR_CC="$TOOLS_DIR_CC" # Let the user override the test with a path.
+  ac_cv_path_TOOLCHAIN_PATH_CC="$TOOLCHAIN_PATH_CC" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -27503,7 +27624,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_TOOLS_DIR_CC="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_TOOLCHAIN_PATH_CC="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -27514,20 +27635,20 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-TOOLS_DIR_CC=$ac_cv_path_TOOLS_DIR_CC
-if test -n "$TOOLS_DIR_CC"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CC" >&5
-$as_echo "$TOOLS_DIR_CC" >&6; }
+TOOLCHAIN_PATH_CC=$ac_cv_path_TOOLCHAIN_PATH_CC
+if test -n "$TOOLCHAIN_PATH_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLCHAIN_PATH_CC" >&5
+$as_echo "$TOOLCHAIN_PATH_CC" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-  test -n "$TOOLS_DIR_CC" && break
+  test -n "$TOOLCHAIN_PATH_CC" && break
 done
 
-      CC=$TOOLS_DIR_CC
+      CC=$TOOLCHAIN_PATH_CC
       PATH="$PATH_save"
     fi
 
@@ -29181,25 +29302,25 @@ done
     # used.
 
     CXX=
-    # If TOOLS_DIR is set, check for all compiler names in there first
+    # If TOOLCHAIN_PATH is set, check for all compiler names in there first
     # before checking the rest of the PATH.
     # FIXME: Now that we prefix the TOOLS_DIR to the PATH in the PRE_DETECTION
     # step, this should not be necessary.
-    if test -n "$TOOLS_DIR"; then
+    if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
-      PATH="$TOOLS_DIR"
+      PATH="$TOOLCHAIN_PATH"
       for ac_prog in $SEARCH_LIST
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_TOOLS_DIR_CXX+:} false; then :
+if ${ac_cv_path_TOOLCHAIN_PATH_CXX+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $TOOLS_DIR_CXX in
+  case $TOOLCHAIN_PATH_CXX in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_TOOLS_DIR_CXX="$TOOLS_DIR_CXX" # Let the user override the test with a path.
+  ac_cv_path_TOOLCHAIN_PATH_CXX="$TOOLCHAIN_PATH_CXX" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -29209,7 +29330,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_TOOLS_DIR_CXX="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_TOOLCHAIN_PATH_CXX="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -29220,20 +29341,20 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-TOOLS_DIR_CXX=$ac_cv_path_TOOLS_DIR_CXX
-if test -n "$TOOLS_DIR_CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CXX" >&5
-$as_echo "$TOOLS_DIR_CXX" >&6; }
+TOOLCHAIN_PATH_CXX=$ac_cv_path_TOOLCHAIN_PATH_CXX
+if test -n "$TOOLCHAIN_PATH_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLCHAIN_PATH_CXX" >&5
+$as_echo "$TOOLCHAIN_PATH_CXX" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-  test -n "$TOOLS_DIR_CXX" && break
+  test -n "$TOOLCHAIN_PATH_CXX" && break
 done
 
-      CXX=$TOOLS_DIR_CXX
+      CXX=$TOOLCHAIN_PATH_CXX
       PATH="$PATH_save"
     fi
 
@@ -40641,6 +40762,32 @@ $as_echo "$tool_specified" >&6; }
     CCXXFLAGS="$CCXXFLAGS -nologo"
   fi
 
+  if test "x$SYSROOT" != "x"; then
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+        # Solaris Studio does not have a concept of sysroot. Instead we must
+        # make sure the default include and lib dirs are appended to each
+        # compile and link command line.
+        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
+        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+      SYSROOT_CFLAGS="--sysroot=\"$SYSROOT\""
+      SYSROOT_LDFLAGS="--sysroot=\"$SYSROOT\""
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\""
+      SYSROOT_LDFLAGS="-isysroot \"$SYSROOT\""
+    fi
+    # Propagate the sysroot args to hotspot
+    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
+  fi
+
+
+
 
 # FIXME: Currently we must test this after toolchain but before flags. Fix!
 
@@ -41236,6 +41383,26 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
       SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
     fi
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    PICFLAG=''
+    C_FLAG_REORDER=''
+    CXX_FLAG_REORDER=''
+
+    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      # Linking is different on MacOSX
+      SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
+      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1'
+      SET_SHARED_LIBRARY_MAPFILE=''
+    else
+      # Default works for linux, might work on other platforms as well.
+      SHARED_LIBRARY_FLAGS='-shared'
+      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN$1'
+      SET_SHARED_LIBRARY_ORIGIN="-Xlinker -z -Xlinker origin $SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
+      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
+    fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     PICFLAG="-KPIC"
     C_FLAG_REORDER='-xF'
@@ -41297,6 +41464,8 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
   # Generate make dependency files
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     C_FLAG_DEPS="-MMD -MF"
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    C_FLAG_DEPS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     C_FLAG_DEPS="-xMMD -xMF"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
@@ -41315,6 +41484,9 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       CFLAGS_DEBUG_SYMBOLS="-g"
       CXXFLAGS_DEBUG_SYMBOLS="-g"
     fi
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    CFLAGS_DEBUG_SYMBOLS="-g"
+    CXXFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     CFLAGS_DEBUG_SYMBOLS="-g -xs"
     CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
@@ -41357,6 +41529,20 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     # The remaining toolchains share opt flags between CC and CXX;
     # setup for C and duplicate afterwards.
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        # On MacOSX we optimize for size, something
+        # we should do for all platforms?
+        C_O_FLAG_HIGHEST="-Os"
+        C_O_FLAG_HI="-Os"
+        C_O_FLAG_NORM="-Os"
+        C_O_FLAG_NONE=""
+      else
+        C_O_FLAG_HIGHEST="-O3"
+        C_O_FLAG_HI="-O3"
+        C_O_FLAG_NORM="-O2"
+        C_O_FLAG_NONE="-O0"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then
         # On MacOSX we optimize for size, something
         # we should do for all platforms?
@@ -41450,9 +41636,9 @@ fi
   LDFLAGS_JDK="${LDFLAGS_JDK} $with_extra_ldflags"
 
   # Hotspot needs these set in their legacy form
-  LEGACY_EXTRA_CFLAGS=$with_extra_cflags
-  LEGACY_EXTRA_CXXFLAGS=$with_extra_cxxflags
-  LEGACY_EXTRA_LDFLAGS=$with_extra_ldflags
+  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $with_extra_cflags"
+  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $with_extra_cxxflags"
+  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $with_extra_ldflags"
 
 
 
@@ -41476,7 +41662,8 @@ fi
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
       ppc )
-        # on ppc we don't prevent gcc to omit frame pointer nor strict-aliasing
+        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
       * )
         CCXXFLAGS_JDK="$CCXXFLAGS_JDK -fno-omit-frame-pointer"
@@ -41550,7 +41737,13 @@ fi
       CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_LITTLE_ENDIAN"
     fi
   else
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN"
+    # Same goes for _BIG_ENDIAN. Do we really need to set *ENDIAN on Solaris if they
+    # are defined in the system?
+    if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN="
+    else
+      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN"
+    fi
   fi
 
   # Setup target OS define. Use OS target name but in upper case.
@@ -41856,6 +42049,22 @@ $as_echo "$supports" >&6; }
 
 
 
+  case "${TOOLCHAIN_TYPE}" in
+    microsoft)
+      CFLAGS_WARNINGS_ARE_ERRORS="/WX"
+      ;;
+    solstudio)
+      CFLAGS_WARNINGS_ARE_ERRORS="-errtags -errwarn=%all"
+      ;;
+    gcc)
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      ;;
+    clang)
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      ;;
+  esac
+
+
 
 # Setup debug symbols (need objcopy from the toolchain for that)
 
@@ -42097,21 +42306,23 @@ $as_echo "no" >&6; }
   # Check if the user has specified sysroot, but not --x-includes or --x-libraries.
   # Make a simple check for the libraries at the sysroot, and setup --x-includes and
   # --x-libraries for the sysroot, if that seems to be correct.
-  if test "x$SYS_ROOT" != "x/"; then
-    if test "x$x_includes" = xNONE; then
-      if test -f "$SYS_ROOT/usr/X11R6/include/X11/Xlib.h"; then
-        x_includes="$SYS_ROOT/usr/X11R6/include"
-      elif test -f "$SYS_ROOT/usr/include/X11/Xlib.h"; then
-        x_includes="$SYS_ROOT/usr/include"
+  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+    if test "x$SYSROOT" != "x"; then
+      if test "x$x_includes" = xNONE; then
+        if test -f "$SYSROOT/usr/X11R6/include/X11/Xlib.h"; then
+          x_includes="$SYSROOT/usr/X11R6/include"
+        elif test -f "$SYSROOT/usr/include/X11/Xlib.h"; then
+          x_includes="$SYSROOT/usr/include"
+        fi
       fi
-    fi
-    if test "x$x_libraries" = xNONE; then
-      if test -f "$SYS_ROOT/usr/X11R6/lib/libX11.so"; then
-        x_libraries="$SYS_ROOT/usr/X11R6/lib"
-      elif test "$SYS_ROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        x_libraries="$SYS_ROOT/usr/lib64"
-      elif test -f "$SYS_ROOT/usr/lib/libX11.so"; then
-        x_libraries="$SYS_ROOT/usr/lib"
+      if test "x$x_libraries" = xNONE; then
+        if test -f "$SYSROOT/usr/X11R6/lib/libX11.so"; then
+          x_libraries="$SYSROOT/usr/X11R6/lib"
+        elif test "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          x_libraries="$SYSROOT/usr/lib64"
+        elif test -f "$SYSROOT/usr/lib/libX11.so"; then
+          x_libraries="$SYSROOT/usr/lib"
+        fi
       fi
     fi
   fi
@@ -42843,9 +43054,12 @@ fi
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     OPENWIN_HOME="/usr/openwin"
+    X_CFLAGS="-I$SYSROOT$OPENWIN_HOME/include -I$SYSROOT$OPENWIN_HOME/include/X11/extensions"
+    X_LIBS="-L$SYSROOT$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
+        -L$SYSROOT$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR \
+        -R$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
+        -R$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR"
   fi
-
-
 
   #
   # Weird Sol10 something check...TODO change to try compile
@@ -43145,14 +43359,14 @@ done
       # package installation locations.
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cups headers" >&5
 $as_echo_n "checking for cups headers... " >&6; }
-      if test -s /opt/sfw/cups/include/cups/cups.h; then
+      if test -s $SYSROOT/opt/sfw/cups/include/cups/cups.h; then
         # An SFW package seems to be installed!
         CUPS_FOUND=yes
-        CUPS_CFLAGS="-I/opt/sfw/cups/include"
-      elif test -s /opt/csw/include/cups/cups.h; then
+        CUPS_CFLAGS="-I$SYSROOT/opt/sfw/cups/include"
+      elif test -s $SYSROOT/opt/csw/include/cups/cups.h; then
         # A CSW package seems to be installed!
         CUPS_FOUND=yes
-        CUPS_CFLAGS="-I/opt/csw/include"
+        CUPS_CFLAGS="-I$SYSROOT/opt/csw/include"
       fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUPS_FOUND" >&5
 $as_echo "$CUPS_FOUND" >&6; }
@@ -43291,9 +43505,10 @@ $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi
@@ -43745,9 +43960,11 @@ $as_echo "yes (using builddeps)" >&6; }
         fi
       fi
 
-      if test "x$FOUND_FREETYPE" != xyes; then
-        # Check modules using pkg-config, but only if we have it (ugly output results otherwise)
-        if test "x$PKG_CONFIG" != x; then
+      # If we have a sysroot, assume that's where we are supposed to look and skip pkg-config.
+      if test "x$SYSROOT" = x; then
+        if test "x$FOUND_FREETYPE" != xyes; then
+          # Check modules using pkg-config, but only if we have it (ugly output results otherwise)
+          if test "x$PKG_CONFIG" != x; then
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FREETYPE" >&5
@@ -43815,23 +44032,24 @@ else
 $as_echo "yes" >&6; }
 	FOUND_FREETYPE=yes
 fi
-          if test "x$FOUND_FREETYPE" = xyes; then
-            # On solaris, pkg_check adds -lz to freetype libs, which isn't necessary for us.
-            FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's/-lz//g'`
-            # 64-bit libs for Solaris x86 are installed in the amd64 subdirectory, change lib to lib/amd64
-            if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
-              FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's?/lib?/lib/amd64?g'`
-            fi
-            # BDEPS_CHECK_MODULE will set FREETYPE_CFLAGS and _LIBS, but we don't get a lib path for bundling.
-            if test "x$BUNDLE_FREETYPE" = xyes; then
-              { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype using pkg-config, but ignoring since we can not bundle that" >&5
+            if test "x$FOUND_FREETYPE" = xyes; then
+              # On solaris, pkg_check adds -lz to freetype libs, which isn't necessary for us.
+              FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's/-lz//g'`
+              # 64-bit libs for Solaris x86 are installed in the amd64 subdirectory, change lib to lib/amd64
+              if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+                FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's?/lib?/lib/amd64?g'`
+              fi
+              # BDEPS_CHECK_MODULE will set FREETYPE_CFLAGS and _LIBS, but we don't get a lib path for bundling.
+              if test "x$BUNDLE_FREETYPE" = xyes; then
+                { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype using pkg-config, but ignoring since we can not bundle that" >&5
 $as_echo "$as_me: Found freetype using pkg-config, but ignoring since we can not bundle that" >&6;}
-              FOUND_FREETYPE=no
-            else
-              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype" >&5
+                FOUND_FREETYPE=no
+              else
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype" >&5
 $as_echo_n "checking for freetype... " >&6; }
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (using pkg-config)" >&5
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (using pkg-config)" >&5
 $as_echo "yes (using pkg-config)" >&6; }
+              fi
             fi
           fi
         fi
@@ -43876,9 +44094,10 @@ $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi
@@ -44178,9 +44397,10 @@ $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi
@@ -44445,12 +44665,7 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
 
           fi
         else
-          if test "x$SYS_ROOT" = "x/"; then
-            FREETYPE_ROOT=
-          else
-            FREETYPE_ROOT="$SYS_ROOT"
-          fi
-          FREETYPE_BASE_DIR="$FREETYPE_ROOT/usr"
+          FREETYPE_BASE_DIR="$SYSROOT/usr"
 
   POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib"
@@ -44476,9 +44691,10 @@ $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi
@@ -44743,7 +44959,7 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
 
 
           if test "x$FOUND_FREETYPE" != xyes; then
-            FREETYPE_BASE_DIR="$FREETYPE_ROOT/usr/X11"
+            FREETYPE_BASE_DIR="$SYSROOT/usr/X11"
 
   POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
   POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib"
@@ -44769,9 +44985,10 @@ $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi
@@ -45037,7 +45254,302 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
           fi
 
           if test "x$FOUND_FREETYPE" != xyes; then
-            FREETYPE_BASE_DIR="$FREETYPE_ROOT/usr"
+            FREETYPE_BASE_DIR="$SYSROOT/usr/sfw"
+
+  POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
+  POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib"
+  METHOD="well-known location"
+
+  # First check if the files exists.
+  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # We found an arbitrary include file. That's a good sign.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
+$as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
+    FOUND_FREETYPE=yes
+
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
+      FOUND_FREETYPE=no
+    else
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # On Windows, we will need both .lib and .dll file.
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
+          FOUND_FREETYPE=no
+        fi
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+      fi
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_INCLUDE_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_LIB_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$POTENTIAL_FREETYPE_LIB_PATH"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+
+    FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype includes" >&5
+$as_echo_n "checking for freetype includes... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_INCLUDE_PATH" >&5
+$as_echo "$FREETYPE_INCLUDE_PATH" >&6; }
+    FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype libraries" >&5
+$as_echo_n "checking for freetype libraries... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_LIB_PATH" >&5
+$as_echo "$FREETYPE_LIB_PATH" >&6; }
+  fi
+
+          fi
+
+          if test "x$FOUND_FREETYPE" != xyes; then
+            FREETYPE_BASE_DIR="$SYSROOT/usr"
             if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
 
   POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
@@ -45064,9 +45576,10 @@ $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi
@@ -45355,9 +45868,10 @@ $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi
@@ -45646,9 +46160,10 @@ $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME
 $as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location." >&6;}
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi
@@ -46513,7 +47028,9 @@ $as_echo "$as_me: Downloading build dependency alsa from $with_builddeps_server/
   fi
 
     fi
-    if test "x$ALSA_FOUND" = xno; then
+    # Do not try pkg-config if we have a sysroot set.
+    if test "x$SYSROOT" = x; then
+      if test "x$ALSA_FOUND" = xno; then
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ALSA" >&5
@@ -46581,6 +47098,7 @@ else
 $as_echo "yes" >&6; }
 	ALSA_FOUND=yes
 fi
+      fi
     fi
     if test "x$ALSA_FOUND" = xno; then
       for ac_header in alsa/asoundlib.h
@@ -46786,6 +47304,118 @@ fi
     USE_EXTERNAL_LIBGIF=true
   else
     as_fn_error $? "Invalid value of --with-giflib: ${with_giflib}, use 'system' or 'bundled'" "$LINENO" 5
+  fi
+
+
+  ###############################################################################
+  #
+  # Check for the png library
+  #
+
+
+# Check whether --with-libpng was given.
+if test "${with_libpng+set}" = set; then :
+  withval=$with_libpng;
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which libpng to use" >&5
+$as_echo_n "checking for which libpng to use... " >&6; }
+
+  # default is bundled
+  DEFAULT_LIBPNG=bundled
+
+  #
+  # if user didn't specify, use DEFAULT_LIBPNG
+  #
+  if test "x${with_libpng}" = "x"; then
+      with_libpng=${DEFAULT_LIBPNG}
+  fi
+
+  if test "x${with_libpng}" = "xbundled"; then
+      USE_EXTERNAL_LIBPNG=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
+$as_echo "bundled" >&6; }
+  elif test "x${with_libpng}" = "xsystem"; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PNG" >&5
+$as_echo_n "checking for PNG... " >&6; }
+
+if test -n "$PNG_CFLAGS"; then
+    pkg_cv_PNG_CFLAGS="$PNG_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpng\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpng") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PNG_CFLAGS=`$PKG_CONFIG --cflags "libpng" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PNG_LIBS"; then
+    pkg_cv_PNG_LIBS="$PNG_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpng\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpng") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PNG_LIBS=`$PKG_CONFIG --libs "libpng" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PNG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libpng" 2>&1`
+        else
+	        PNG_PKG_ERRORS=`$PKG_CONFIG --print-errors "libpng" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PNG_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                 LIBPNG_FOUND=no
+elif test $pkg_failed = untried; then
+	 LIBPNG_FOUND=no
+else
+	PNG_CFLAGS=$pkg_cv_PNG_CFLAGS
+	PNG_LIBS=$pkg_cv_PNG_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	 LIBPNG_FOUND=yes
+fi
+      if test "x${LIBPNG_FOUND}" = "xyes"; then
+          USE_EXTERNAL_LIBPNG=true
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: system" >&5
+$as_echo "system" >&6; }
+      else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: system not found" >&5
+$as_echo "system not found" >&6; }
+          as_fn_error $? "--with-libpng=system specified, but no libpng found!" "$LINENO" 5
+      fi
+  else
+      as_fn_error $? "Invalid value of --with-libpng: ${with_libpng}, use 'system' or 'bundled'" "$LINENO" 5
   fi
 
 
@@ -47348,7 +47978,7 @@ fi
 
   # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
   if test "x$TOOLCHAIN_TYPE" = xsolstudio && test "x$LIBCXX" = x; then
-    LIBCXX="/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
+    LIBCXX="${SYSROOT}/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
   fi
 
   # TODO better (platform agnostic) test
@@ -47946,8 +48576,8 @@ $as_echo_n "checking for memory size... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MEMORY_SIZE MB" >&5
 $as_echo "$MEMORY_SIZE MB" >&6; }
   else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: could not detect memory size, defaulting to 1024 MB" >&5
-$as_echo "could not detect memory size, defaulting to 1024 MB" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: could not detect memory size, defaulting to $MEMORY_SIZE MB" >&5
+$as_echo "could not detect memory size, defaulting to $MEMORY_SIZE MB" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This might seriously impact build performance!" >&5
 $as_echo "$as_me: WARNING: This might seriously impact build performance!" >&2;}
   fi
@@ -48273,8 +48903,8 @@ $as_echo_n "checking is ccache enabled... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     OLD_PATH="$PATH"
-    if test "x$TOOLS_DIR" != x; then
-      PATH=$TOOLS_DIR:$PATH
+    if test "x$TOOLCHAIN_PATH" != x; then
+      PATH=$TOOLCHAIN_PATH:$PATH
     fi
 
 
@@ -49958,6 +50588,7 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
   printf "\n"
   printf "Configuration summary:\n"
   printf "* Debug level:    $DEBUG_LEVEL\n"
+  printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
   printf "* JDK variant:    $JDK_VARIANT\n"
   printf "* JVM variants:   $with_jvm_variants\n"
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"

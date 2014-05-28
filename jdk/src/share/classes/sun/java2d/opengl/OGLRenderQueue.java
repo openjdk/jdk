@@ -25,6 +25,7 @@
 
 package sun.java2d.opengl;
 
+import sun.misc.ThreadGroupUtils;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
 import static sun.java2d.pipe.BufferedOpCodes.*;
@@ -47,14 +48,8 @@ public class OGLRenderQueue extends RenderQueue {
          * The thread must be a member of a thread group
          * which will not get GCed before VM exit.
          */
-        flusher = AccessController.doPrivileged(new PrivilegedAction<QueueFlusher>() {
-            public QueueFlusher run() {
-                ThreadGroup rootThreadGroup = Thread.currentThread().getThreadGroup();
-                while (rootThreadGroup.getParent() != null) {
-                    rootThreadGroup = rootThreadGroup.getParent();
-                }
-                return new QueueFlusher(rootThreadGroup);
-            }
+        flusher = AccessController.doPrivileged((PrivilegedAction<QueueFlusher>) () -> {
+            return new QueueFlusher(ThreadGroupUtils.getRootThreadGroup());
         });
     }
 

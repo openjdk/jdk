@@ -25,10 +25,13 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.CONSTANTS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.CREATE_PROGRAM_FUNCTION;
+import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.STRICT_MODE;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +39,7 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
@@ -46,14 +50,17 @@ import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -70,8 +77,8 @@ import jdk.nashorn.internal.runtime.events.RuntimeEvent;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
-import jdk.nashorn.internal.runtime.options.Options;
 import jdk.nashorn.internal.runtime.options.LoggingOption.LoggerInfo;
+import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * This class manages the global state of execution. Context is immutable.
@@ -144,7 +151,42 @@ public final class Context {
 
         @Override
         public Class<?> install(final String className, final byte[] bytecode) {
-            return loader.installClass(className, bytecode, codeSource);
+            final String   binaryName = Compiler.binaryName(className);
+            return loader.installClass(binaryName, bytecode, codeSource);
+        }
+
+        @Override
+        public void initialize(final Collection<Class<?>> classes, final Source source, final Object[] constants) {
+            // do these in parallel, this significantly reduces class installation overhead
+            // however - it still means that every thread needs a separate doPrivileged
+            classes.parallelStream().forEach(
+                new Consumer<Class<?>>() {
+                    @Override
+                    public void accept(final Class<?> clazz) {
+                        try {
+                            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                                @Override
+                                public Void run() {
+                                    try {
+                                        //use reflection to write source and constants table to installed classes
+                                        final Field sourceField = clazz.getDeclaredField(SOURCE.symbolName());
+                                        sourceField.setAccessible(true);
+                                        sourceField.set(null, source);
+
+                                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
+                                        constantsField.setAccessible(true);
+                                        constantsField.set(null, constants);
+                                    } catch (final IllegalAccessException | NoSuchFieldException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    return null;
+                                }
+                            });
+                        } catch (final PrivilegedActionException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
         }
 
         @Override
@@ -161,6 +203,18 @@ public final class Context {
         public long getUniqueEvalId() {
             return context.getUniqueEvalId();
         }
+
+        @Override
+        public void storeCompiledScript(final Source source, final String mainClassName,
+                                        final Map<String, byte[]> classBytes, final Object[] constants) {
+            if (context.codeStore != null) {
+                try {
+                    context.codeStore.putScript(source, mainClassName, classBytes, constants);
+                } catch (final IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     /** Is Context global debug mode enabled ? */
@@ -168,8 +222,11 @@ public final class Context {
 
     private static final ThreadLocal<Global> currentGlobal = new ThreadLocal<>();
 
-    // class cache
+    // in-memory cache for loaded classes
     private ClassCache classCache;
+
+    // persistent code store
+    private CodeStore codeStore;
 
     /**
      * Get the current global scope
@@ -382,6 +439,19 @@ public final class Context {
             classCache = new ClassCache(cacheSize);
         }
 
+        if (env._persistent_cache) {
+            if (env._lazy_compilation || ScriptEnvironment.globalOptimistic()) {
+                getErr().println("Can not use persistent class caching with lazy compilation or optimistic compilation.");
+            } else {
+                try {
+                    final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
+                    codeStore = new CodeStore(cacheDir);
+                } catch (final IOException e) {
+                    throw new RuntimeException("Error initializing code cache", e);
+                }
+            }
+        }
+
         // print version info if asked.
         if (env._version) {
             getErr().println("nashorn " + Version.version());
@@ -447,6 +517,37 @@ public final class Context {
     }
 
     /**
+     * Interface to represent compiled code that can be re-used across many
+     * global scope instances
+     */
+    public static interface MultiGlobalCompiledScript {
+        /**
+         * Obtain script function object for a specific global scope object.
+         *
+         * @param newGlobal global scope for which function object is obtained
+         * @return script function for script level expressions
+         */
+        public ScriptFunction getFunction(final Global newGlobal);
+    }
+
+    /**
+     * Compile a top level script.
+     *
+     * @param source the script source
+     * @return reusable compiled script across many global scopes.
+     */
+    public MultiGlobalCompiledScript compileScript(final Source source) {
+        final Class<?> clazz = compile(source, this.errors, this._strict);
+
+        return new MultiGlobalCompiledScript() {
+            @Override
+            public ScriptFunction getFunction(final Global newGlobal) {
+                return getProgramFunction(clazz, newGlobal);
+            }
+        };
+    }
+
+    /**
      * Entry point for {@code eval}
      *
      * @param initialScope The scope of this eval call
@@ -459,7 +560,7 @@ public final class Context {
      */
     public Object eval(final ScriptObject initialScope, final String string, final Object callThis, final Object location, final boolean strict) {
         final String  file       = location == UNDEFINED || location == null ? "<eval>" : location.toString();
-        final Source  source     = new Source(file, string);
+        final Source  source     = sourceFor(file, string);
         final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
         final Global  global = Context.getGlobal();
         ScriptObject scope = initialScope;
@@ -525,7 +626,7 @@ public final class Context {
                         public Source run() {
                             try {
                                 final URL resURL = Context.class.getResource(resource);
-                                return resURL != null ? new Source(srcStr, resURL) : null;
+                                return resURL != null ? sourceFor(srcStr, resURL) : null;
                             } catch (final IOException exp) {
                                 return null;
                             }
@@ -557,7 +658,7 @@ public final class Context {
             final String srcStr = (String)src;
             if (srcStr.startsWith(LOAD_CLASSPATH)) {
                 final URL url = getResourceURL(srcStr.substring(LOAD_CLASSPATH.length()));
-                source = url != null ? new Source(url.toString(), url) : null;
+                source = url != null ? sourceFor(url.toString(), url) : null;
             } else {
                 final File file = new File(srcStr);
                 if (srcStr.indexOf(':') != -1) {
@@ -570,31 +671,31 @@ public final class Context {
                         } catch (final MalformedURLException e) {
                             url = file.toURI().toURL();
                         }
-                        source = new Source(url.toString(), url);
+                        source = sourceFor(url.toString(), url);
                     }
                 } else if (file.isFile()) {
-                    source = new Source(srcStr, file);
+                    source = sourceFor(srcStr, file);
                 }
             }
         } else if (src instanceof File && ((File)src).isFile()) {
             final File file = (File)src;
-            source = new Source(file.getName(), file);
+            source = sourceFor(file.getName(), file);
         } else if (src instanceof URL) {
             final URL url = (URL)src;
-            source = new Source(url.toString(), url);
+            source = sourceFor(url.toString(), url);
         } else if (src instanceof ScriptObject) {
             final ScriptObject sobj = (ScriptObject)src;
             if (sobj.has("script") && sobj.has("name")) {
                 final String script = JSType.toString(sobj.get("script"));
                 final String name   = JSType.toString(sobj.get("name"));
-                source = new Source(name, script);
+                source = sourceFor(name, script);
             }
         } else if (src instanceof Map) {
             final Map<?,?> map = (Map<?,?>)src;
             if (map.containsKey("script") && map.containsKey("name")) {
                 final String script = JSType.toString(map.get("script"));
                 final String name   = JSType.toString(map.get("name"));
-                source = new Source(name, script);
+                source = sourceFor(name, script);
             }
         }
 
@@ -861,6 +962,11 @@ public final class Context {
         return ((ScriptObject)Context.getGlobal()).getContext();
     }
 
+    static Context getContextTrustedOrNull() {
+        final Global global = Context.getGlobal();
+        return global == null ? null : ((ScriptObject)global).getContext();
+    }
+
     /**
      * Try to infer Context instance from the Class. If we cannot,
      * then get it from the thread local variable.
@@ -932,17 +1038,32 @@ public final class Context {
             return script;
         }
 
-        final FunctionNode functionNode = new Parser(env, source, errMan, strict, getLogger(Parser.class)).parse();
-        if (errors.hasErrors()) {
-            return null;
+        CompiledScript compiledScript = null;
+        FunctionNode functionNode = null;
+
+        if (!env._parse_only && codeStore != null) {
+            try {
+                compiledScript = codeStore.getScript(source);
+            } catch (IOException | ClassNotFoundException e) {
+                getLogger(Compiler.class).warning("Error loading ", source, " from cache: ", e);
+                // Fall back to normal compilation
+            }
         }
 
-        if (env._print_ast) {
-            getErr().println(new ASTWriter(functionNode));
-        }
+        if (compiledScript == null) {
+            functionNode = new Parser(env, source, errMan, strict, getLogger(Parser.class)).parse();
 
-        if (env._print_parse) {
-            getErr().println(new PrintVisitor(functionNode, true, false));
+            if (errors.hasErrors()) {
+                return null;
+            }
+
+            if (env._print_ast) {
+                getErr().println(new ASTWriter(functionNode));
+            }
+
+            if (env._print_parse) {
+                getErr().println(new PrintVisitor(functionNode, true, false));
+            }
         }
 
         if (env._parse_only) {
@@ -954,19 +1075,23 @@ public final class Context {
         final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
-        final CompilationPhases phases = Compiler.CompilationPhases.COMPILE_ALL;
+        if (functionNode != null) {
+            final CompilationPhases phases = Compiler.CompilationPhases.COMPILE_ALL;
 
-        final Compiler compiler = new Compiler(
-                this,
-                env,
-                installer,
-                source,
-                functionNode.getSourceURL(),
-                strict | functionNode.isStrict());
+            final Compiler compiler = new Compiler(
+                    this,
+                    env,
+                    installer,
+                    source,
+                    functionNode.getSourceURL(),
+                    strict | functionNode.isStrict());
 
-        script = compiler.compile(functionNode, phases).getRootClass();
+            script = compiler.compile(functionNode, phases).getRootClass();
+        } else {
+            script = install(compiledScript, installer);
+        }
+
         cacheClass(source, script);
-
         return script;
     }
 
@@ -986,6 +1111,45 @@ public final class Context {
 
     private long getUniqueScriptId() {
         return uniqueScriptId.getAndIncrement();
+    }
+
+
+    /**
+     * Install a previously compiled class from the code cache.
+     *
+     * @param compiledScript cached script containing class bytes and constants
+     * @return main script class
+     */
+    private static Class<?> install(final CompiledScript compiledScript, final CodeInstaller<ScriptEnvironment> installer) {
+
+        final Map<String, Class<?>> installedClasses = new HashMap<>();
+        final Source   source        = compiledScript.getSource();
+        final Object[] constants     = compiledScript.getConstants();
+        final String   rootClassName = compiledScript.getMainClassName();
+        final byte[]   rootByteCode  = compiledScript.getClassBytes().get(rootClassName);
+        final Class<?> rootClass     = installer.install(rootClassName, rootByteCode);
+
+        installedClasses.put(rootClassName, rootClass);
+
+        for (final Map.Entry<String, byte[]> entry : compiledScript.getClassBytes().entrySet()) {
+            final String className = entry.getKey();
+            if (className.equals(rootClassName)) {
+                continue;
+            }
+            final byte[] code = entry.getValue();
+
+            installedClasses.put(className, installer.install(className, code));
+        }
+
+        installer.initialize(installedClasses.values(), source, constants);
+
+        for (Object constant : constants) {
+            if (constant instanceof RecompilableScriptFunctionData) {
+                ((RecompilableScriptFunctionData) constant).setCodeAndSource(installedClasses, source);
+            }
+        }
+
+        return rootClass;
     }
 
     /**

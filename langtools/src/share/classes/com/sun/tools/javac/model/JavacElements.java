@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,11 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  */
 public class JavacElements implements Elements {
 
-    private JavaCompiler javaCompiler;
-    private Symtab syms;
-    private Names names;
-    private Types types;
-    private Enter enter;
+    private final JavaCompiler javaCompiler;
+    private final Symtab syms;
+    private final Names names;
+    private final Types types;
+    private final Enter enter;
 
     public static JavacElements instance(Context context) {
         JavacElements instance = context.get(JavacElements.class);
@@ -73,18 +73,7 @@ public class JavacElements implements Elements {
         return instance;
     }
 
-    /**
-     * Public for use only by JavacProcessingEnvironment
-     */
     protected JavacElements(Context context) {
-        setContext(context);
-    }
-
-    /**
-     * Use a new context.  May be called from outside to update
-     * internal state for a new annotation-processing round.
-     */
-    public void setContext(Context context) {
         context.put(JavacElements.class, this);
         javaCompiler = JavaCompiler.instance(context);
         syms = Symtab.instance(context);
@@ -181,8 +170,8 @@ public class JavacElements implements Elements {
         Symbol sym = cast(Symbol.class, e);
         class Vis extends JCTree.Visitor {
             List<JCAnnotation> result = null;
-            public void visitTopLevel(JCCompilationUnit tree) {
-                result = tree.packageAnnotations;
+            public void visitPackageDef(JCPackageDecl tree) {
+                result = tree.annotations;
             }
             public void visitClassDef(JCClassDecl tree) {
                 result = tree.mods.annotations;

@@ -56,6 +56,8 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
  */
 public final class UserAccessorProperty extends SpillProperty {
 
+    private static final long serialVersionUID = -5928687246526840321L;
+
     static class Accessors {
         Object getter;
         Object setter;
@@ -254,6 +256,11 @@ public final class UserAccessorProperty extends SpillProperty {
 
         assert type == Object.class;
         return getGetter(type);
+    }
+
+    @Override
+    void initMethodHandles(final Class<?> structure) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

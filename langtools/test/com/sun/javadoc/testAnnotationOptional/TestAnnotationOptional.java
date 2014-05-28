@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,52 +27,26 @@
  * @summary  Make sure that annotations types with optional elements have
  *           element headers
  * @author   Mahmood Ali
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestAnnotationOptional
  * @run main TestAnnotationOptional
  */
 
 public class TestAnnotationOptional extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "NO_BUG_ID_YET";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg" + FS + "AnnotationOptional.html",
-            "<a name=\"annotation.type.element.detail\">"
-        }
-    };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestAnnotationOptional tester = new TestAnnotationOptional();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg/AnnotationOptional.html", true,
+            "<a name=\"annotation.type.element.detail\">");
     }
 }

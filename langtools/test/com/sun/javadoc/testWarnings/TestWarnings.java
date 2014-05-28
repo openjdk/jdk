@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,71 +30,50 @@
  *           a "link unresolved" warning.
  *           Make sure error message starts with "error -".
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestWarnings
  * @run main TestWarnings
  */
 
 public class TestWarnings extends JavadocTester {
-
-    //Test information.
-    private static final String BUG_ID = "4515705-4804296-4702454-4697036";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    private static final String[] ARGS2 = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-private", "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {WARNING_OUTPUT,
-            "X.java:11: warning - Missing closing '}' character for inline tag"},
-        {ERROR_OUTPUT,
-            "package.html: error - Body tag missing from HTML"},
-
-    };
-    private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg" + FS + "X.html", "can't find m()"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "can't find X()"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "can't find f"},
-    };
-
-    private static final String[][] TEST2 = {
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>"},
-    };
-
-    private static final String[][] NEGATED_TEST2 = NO_TEST;
-
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception  {
         TestWarnings tester = new TestWarnings();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
+    @Test
+    void testDefault() {
+        javadoc("-Xdoclint:none",
+                "-d", "out-default",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.FAILED);  // TODO: investigate; suspect bad input HTML
+
+        checkOutput(Output.WARNING, true,
+                "X.java:11: warning - Missing closing '}' character for inline tag");
+        checkOutput(Output.ERROR, true,
+                "package.html: error - Body tag missing from HTML");
+
+        checkOutput("pkg/X.html", false,
+                "can't find m()");
+        checkOutput("pkg/X.html", false,
+                "can't find X()");
+        checkOutput("pkg/X.html", false,
+                "can't find f");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+    @Test
+    void testPrivate() {
+        javadoc("-Xdoclint:none",
+                "-d", "out-private",
+                "-private",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.FAILED);  // TODO: investigate; suspect bad input HTML
+
+        checkOutput("pkg/X.html", true,
+            "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>",
+            "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>",
+            "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>");
     }
 }

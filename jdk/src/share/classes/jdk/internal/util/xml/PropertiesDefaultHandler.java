@@ -123,7 +123,7 @@ public class PropertiesDefaultHandler extends DefaultHandler {
 
             writer.writeEndElement();
             writer.writeEndDocument();
-            writer.close();
+            writer.flush();
         } catch (XMLStreamException e) {
             if (e.getCause() instanceof UnsupportedEncodingException) {
                 throw (UnsupportedEncodingException) e.getCause();

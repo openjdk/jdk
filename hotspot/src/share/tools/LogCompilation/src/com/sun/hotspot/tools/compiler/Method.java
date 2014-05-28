@@ -51,15 +51,15 @@ public class Method implements Constants {
 
     String format(int osr_bci) {
         if (osr_bci >= 0) {
-            return getHolder().replace('/', '.') + "::" + getName() + " @ " + osr_bci + " (" + getBytes() + " bytes)";
+            return getHolder() + "::" + getName() + " @ " + osr_bci + " (" + getBytes() + " bytes)";
         } else {
-            return getHolder().replace('/', '.') + "::" + getName() + " (" + getBytes() + " bytes)";
+            return getHolder() + "::" + getName() + " (" + getBytes() + " bytes)";
         }
     }
 
     @Override
     public String toString() {
-        return getHolder().replace('/', '.') + "::" + getName() + " (" + getBytes() + " bytes)";
+        return getHolder() + "::" + getName() + " (" + getBytes() + " bytes)";
     }
 
     public String getHolder() {
@@ -116,5 +116,15 @@ public class Method implements Constants {
 
     public void setFlags(String flags) {
         this.flags = flags;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Method) {
+            Method other = (Method)o;
+            return holder.equals(other.holder) && name.equals(other.name) &&
+                arguments.equals(other.arguments) && returnType.equals(other.returnType);
+        }
+        return false;
     }
 }

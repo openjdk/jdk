@@ -30,7 +30,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memTracker.hpp"
@@ -592,13 +592,24 @@ void VMError::report(outputStream* st) {
              st->cr();
              // Compiled code may use EBP register on x86 so it looks like
              // non-walkable C frame. Use frame.sender() for java frames.
-             if (_thread && _thread->is_Java_thread() && fr.is_java_frame()) {
-               RegisterMap map((JavaThread*)_thread, false); // No update
-               fr = fr.sender(&map);
-               continue;
+             if (_thread && _thread->is_Java_thread()) {
+               // Catch very first native frame by using stack address.
+               // For JavaThread stack_base and stack_size should be set.
+               if (!_thread->on_local_stack((address)(fr.sender_sp() + 1))) {
+                 break;
+               }
+               if (fr.is_java_frame()) {
+                 RegisterMap map((JavaThread*)_thread, false); // No update
+                 fr = fr.sender(&map);
+               } else {
+                 fr = os::get_sender_for_C_frame(&fr);
+               }
+             } else {
+               // is_first_C_frame() does only simple checks for frame pointer,
+               // it will pass if java compiled code has a pointer in EBP.
+               if (os::is_first_C_frame(&fr)) break;
+               fr = os::get_sender_for_C_frame(&fr);
              }
-             if (os::is_first_C_frame(&fr)) break;
-             fr = os::get_sender_for_C_frame(&fr);
           }
 
           if (count > StackPrintLimit) {

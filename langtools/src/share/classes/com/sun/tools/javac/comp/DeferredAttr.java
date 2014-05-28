@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.source.tree.MemberReferenceTree;
+import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
@@ -35,9 +35,7 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
-import com.sun.tools.javac.comp.Resolve.ReferenceLookupHelper;
 import com.sun.tools.javac.tree.JCTree.*;
-
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import static com.sun.tools.javac.code.Kinds.VAL;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -75,6 +74,8 @@ public class DeferredAttr extends JCTree.Visitor {
     final Symtab syms;
     final TreeMaker make;
     final Types types;
+    final Flow flow;
+    final Names names;
 
     public static DeferredAttr instance(Context context) {
         DeferredAttr instance = context.get(deferredAttrKey);
@@ -95,7 +96,8 @@ public class DeferredAttr extends JCTree.Visitor {
         syms = Symtab.instance(context);
         make = TreeMaker.instance(context);
         types = Types.instance(context);
-        Names names = Names.instance(context);
+        flow = Flow.instance(context);
+        names = Names.instance(context);
         stuckTree = make.Ident(names.empty).setType(Type.stuckType);
         emptyDeferredAttrContext =
             new DeferredAttrContext(AttrMode.CHECK, null, MethodResolutionPhase.BOX, infer.emptyContext, null, null) {
@@ -106,6 +108,11 @@ public class DeferredAttr extends JCTree.Visitor {
                 @Override
                 void complete() {
                     Assert.error("Empty deferred context!");
+                }
+
+                @Override
+                public String toString() {
+                    return "Empty deferred context!";
                 }
             };
     }
@@ -127,15 +134,25 @@ public class DeferredAttr extends JCTree.Visitor {
         SpeculativeCache speculativeCache;
 
         DeferredType(JCExpression tree, Env<AttrContext> env) {
-            super(null);
+            super(null, noAnnotations);
             this.tree = tree;
             this.env = attr.copyEnv(env);
             this.speculativeCache = new SpeculativeCache();
         }
 
         @Override
+        public DeferredType annotatedType(List<Attribute.TypeCompound> typeAnnotations) {
+            throw new AssertionError("Cannot annotate a deferred type");
+        }
+
+        @Override
         public TypeTag getTag() {
             return DEFERRED;
+        }
+
+        @Override
+        public String toString() {
+            return "DeferredType";
         }
 
         /**
@@ -376,7 +393,9 @@ public class DeferredAttr extends JCTree.Visitor {
         }
     }
     //where
-        protected TreeScanner unenterScanner = new TreeScanner() {
+        protected UnenterScanner unenterScanner = new UnenterScanner();
+
+        class UnenterScanner extends TreeScanner {
             @Override
             public void visitClassDef(JCClassDecl tree) {
                 ClassSymbol csym = tree.sym;
@@ -389,7 +408,7 @@ public class DeferredAttr extends JCTree.Visitor {
                 syms.classes.remove(csym.flatname);
                 super.visitClassDef(tree);
             }
-        };
+        }
 
     /**
      * A deferred context is created on each method check. A deferred context is
@@ -593,19 +612,111 @@ public class DeferredAttr extends JCTree.Visitor {
             public void visitLambda(JCLambda tree) {
                 Check.CheckContext checkContext = resultInfo.checkContext;
                 Type pt = resultInfo.pt;
-                if (inferenceContext.inferencevars.contains(pt)) {
-                    //ok
-                    return;
-                } else {
+                if (!inferenceContext.inferencevars.contains(pt)) {
                     //must be a functional descriptor
+                    Type descriptorType = null;
                     try {
-                        Type desc = types.findDescriptorType(pt);
-                        if (desc.getParameterTypes().length() != tree.params.length()) {
-                            checkContext.report(tree, diags.fragment("incompatible.arg.types.in.lambda"));
-                        }
+                        descriptorType = types.findDescriptorType(pt);
                     } catch (Types.FunctionDescriptorLookupError ex) {
                         checkContext.report(null, ex.getDiagnostic());
                     }
+
+                    if (descriptorType.getParameterTypes().length() != tree.params.length()) {
+                        checkContext.report(tree,
+                                diags.fragment("incompatible.arg.types.in.lambda"));
+                    }
+
+                    Type currentReturnType = descriptorType.getReturnType();
+                    boolean returnTypeIsVoid = currentReturnType.hasTag(VOID);
+                    if (tree.getBodyKind() == BodyKind.EXPRESSION) {
+                        boolean isExpressionCompatible = !returnTypeIsVoid ||
+                            TreeInfo.isExpressionStatement((JCExpression)tree.getBody());
+                        if (!isExpressionCompatible) {
+                            resultInfo.checkContext.report(tree.pos(),
+                                diags.fragment("incompatible.ret.type.in.lambda",
+                                    diags.fragment("missing.ret.val", currentReturnType)));
+                        }
+                    } else {
+                        LambdaBodyStructChecker lambdaBodyChecker =
+                                new LambdaBodyStructChecker();
+
+                        tree.body.accept(lambdaBodyChecker);
+                        boolean isVoidCompatible = lambdaBodyChecker.isVoidCompatible;
+
+                        if (returnTypeIsVoid) {
+                            if (!isVoidCompatible) {
+                                resultInfo.checkContext.report(tree.pos(),
+                                    diags.fragment("unexpected.ret.val"));
+                            }
+                        } else {
+                            boolean isValueCompatible = lambdaBodyChecker.isPotentiallyValueCompatible
+                                && !canLambdaBodyCompleteNormally(tree);
+                            if (!isValueCompatible && !isVoidCompatible) {
+                                log.error(tree.body.pos(),
+                                    "lambda.body.neither.value.nor.void.compatible");
+                            }
+
+                            if (!isValueCompatible) {
+                                resultInfo.checkContext.report(tree.pos(),
+                                    diags.fragment("incompatible.ret.type.in.lambda",
+                                        diags.fragment("missing.ret.val", currentReturnType)));
+                            }
+                        }
+                    }
+                }
+            }
+
+            boolean canLambdaBodyCompleteNormally(JCLambda tree) {
+                JCLambda newTree = new TreeCopier<>(make).copy(tree);
+                /* attr.lambdaEnv will create a meaningful env for the
+                 * lambda expression. This is specially useful when the
+                 * lambda is used as the init of a field. But we need to
+                 * remove any added symbol.
+                 */
+                Env<AttrContext> localEnv = attr.lambdaEnv(newTree, env);
+                try {
+                    List<JCVariableDecl> tmpParams = newTree.params;
+                    while (tmpParams.nonEmpty()) {
+                        tmpParams.head.vartype = make.at(tmpParams.head).Type(syms.errType);
+                        tmpParams = tmpParams.tail;
+                    }
+
+                    attr.attribStats(newTree.params, localEnv);
+
+                    /* set pt to Type.noType to avoid generating any bound
+                     * which may happen if lambda's return type is an
+                     * inference variable
+                     */
+                    Attr.ResultInfo bodyResultInfo = attr.new ResultInfo(VAL, Type.noType);
+                    localEnv.info.returnResult = bodyResultInfo;
+
+                    // discard any log output
+                    Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
+                    try {
+                        JCBlock body = (JCBlock)newTree.body;
+                        /* we need to attribute the lambda body before
+                         * doing the aliveness analysis. This is because
+                         * constant folding occurs during attribution
+                         * and the reachability of some statements depends
+                         * on constant values, for example:
+                         *
+                         *     while (true) {...}
+                         */
+                        attr.attribStats(body.stats, localEnv);
+
+                        attr.preFlow(newTree);
+                        /* make an aliveness / reachability analysis of the lambda
+                         * to determine if it can complete normally
+                         */
+                        flow.analyzeLambda(localEnv, newTree, make, true);
+                    } finally {
+                        log.popDiagnosticHandler(diagHandler);
+                    }
+                    return newTree.canCompleteNormally;
+                } finally {
+                    JCBlock body = (JCBlock)newTree.body;
+                    unenterScanner.scan(body.stats);
+                    localEnv.info.scope.leave();
                 }
             }
 
@@ -623,10 +734,7 @@ public class DeferredAttr extends JCTree.Visitor {
             public void visitReference(JCMemberReference tree) {
                 Check.CheckContext checkContext = resultInfo.checkContext;
                 Type pt = resultInfo.pt;
-                if (inferenceContext.inferencevars.contains(pt)) {
-                    //ok
-                    return;
-                } else {
+                if (!inferenceContext.inferencevars.contains(pt)) {
                     try {
                         types.findDescriptorType(pt);
                     } catch (Types.FunctionDescriptorLookupError ex) {
@@ -653,6 +761,40 @@ public class DeferredAttr extends JCTree.Visitor {
                         case Kinds.WRONG_STATICNESS:
                            checkContext.report(tree, diags.fragment("incompatible.arg.types.in.mref"));
                     }
+                }
+            }
+        }
+
+        /* This visitor looks for return statements, its analysis will determine if
+         * a lambda body is void or value compatible. We must analyze return
+         * statements contained in the lambda body only, thus any return statement
+         * contained in an inner class or inner lambda body, should be ignored.
+         */
+        class LambdaBodyStructChecker extends TreeScanner {
+            boolean isVoidCompatible = true;
+            boolean isPotentiallyValueCompatible = true;
+
+            @Override
+            public void visitClassDef(JCClassDecl tree) {
+                // do nothing
+            }
+
+            @Override
+            public void visitLambda(JCLambda tree) {
+                // do nothing
+            }
+
+            @Override
+            public void visitNewClass(JCNewClass tree) {
+                // do nothing
+            }
+
+            @Override
+            public void visitReturn(JCReturn tree) {
+                if (tree.expr != null) {
+                    isVoidCompatible = false;
+                } else {
+                    isPotentiallyValueCompatible = false;
                 }
             }
         }
@@ -767,7 +909,7 @@ public class DeferredAttr extends JCTree.Visitor {
         /**
          * handler that is executed when a node has been discarded
          */
-        abstract void skip(JCTree tree);
+        void skip(JCTree tree) {}
     }
 
     /**
@@ -778,11 +920,6 @@ public class DeferredAttr extends JCTree.Visitor {
 
         PolyScanner() {
             super(EnumSet.of(CONDEXPR, PARENS, LAMBDA, REFERENCE));
-        }
-
-        @Override
-        void skip(JCTree tree) {
-            //do nothing
         }
     }
 
@@ -795,11 +932,6 @@ public class DeferredAttr extends JCTree.Visitor {
         LambdaReturnScanner() {
             super(EnumSet.of(BLOCK, CASE, CATCH, DOLOOP, FOREACHLOOP,
                     FORLOOP, RETURN, SYNCHRONIZED, SWITCH, TRY, WHILELOOP));
-        }
-
-        @Override
-        void skip(JCTree tree) {
-            //do nothing
         }
     }
 

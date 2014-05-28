@@ -26,50 +26,32 @@
  * @bug 6457406
  * @summary Verify that a link in single quotes copied to the class-use page as is.
  * @author Yuri Nesterenko
- * @library ../lib/
- * @build JavadocTester TestSingleQuotedLink
+ * @library ../lib
+ * @build JavadocTester
  * @run main TestSingleQuotedLink
  */
 public class TestSingleQuotedLink extends JavadocTester {
 
-    private static final String BUG_ID = "6457406";
-    // We are testing the redirection algorithm with a known scenario when a writer is not forced to ignore it: "-use".
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<a href=\'http://download.oracle.com/javase/8/docs/technotes/guides/indexC2.html\'>"
-        }
-    };
-    private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "pkg1/\'http://download.oracle.com/javase/8/docs/technotes/guides/indexC2.html\'>"
-        }
-    };
-    private static final String[] ARGS =
-            new String[]{
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-use", "pkg1"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestSingleQuotedLink tester = new TestSingleQuotedLink();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void run() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg1");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        // We are testing the redirection algorithm with a known scenario when a
+        // writer is not forced to ignore it: "-use".
+
+        checkOutput("pkg1/class-use/C1.html", true,
+            "<a href=\'http://download.oracle.com/javase/8/docs/technotes/guides/indexC2.html\'>");
+
+        checkOutput("pkg1/class-use/C1.html", false,
+            "pkg1/\'http://download.oracle.com/javase/8/docs/technotes/guides/indexC2.html\'>");
     }
 }

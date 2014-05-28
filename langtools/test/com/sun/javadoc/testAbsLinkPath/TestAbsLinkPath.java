@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,49 +26,31 @@
  * @bug 4640745
  * @summary This test verifys that the -link option handles absolute paths.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestAbsLinkPath
  * @run main TestAbsLinkPath
  */
 
 public class TestAbsLinkPath extends JavadocTester {
 
-    private static final String BUG_ID = "4640745";
-    private static final String[][] TEST = {
-        {"tmp" + FS + "pkg1" + FS + "C1.html", "C2.html"}};
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    private static final String[] ARGS1 =
-        new String[] {
-            "-d", "tmp2", "-sourcepath", SRC_DIR, "pkg2"};
-    private static final String[] ARGS2 =
-        new String[] {
-            "-d", "tmp", "-sourcepath", SRC_DIR,
-            "-link", ".." + FS + "tmp2", "pkg1"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestAbsLinkPath tester = new TestAbsLinkPath();
-        run(tester, ARGS1, NO_TEST, NO_TEST);
-        run(tester, ARGS2,  TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test1() {
+        String out1 = "out1";
+        javadoc("-d", out1, "-sourcepath", testSrc, "pkg2");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        javadoc("-d", "out2",
+                "-sourcepath", testSrc,
+                "-link", "../" + out1,
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/C1.html", true,
+                "C2.html");
     }
 }

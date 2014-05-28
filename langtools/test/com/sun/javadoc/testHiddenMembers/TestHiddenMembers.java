@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,50 +27,37 @@
  * @summary Test to make sure that hidden overriden members are not
  * documented as inherited.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestHiddenMembers
  * @run main TestHiddenMembers
  */
 
 public class TestHiddenMembers extends JavadocTester {
 
-    private static final String BUG_ID = "4492178";
-    private static final String[][] TEST = NO_TEST;
-
-    //We should not inherit any members from BaseClass because they are all overriden and hidden
-    //(declared as private).
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-            "inherited from class pkg.<A HREF=\"../pkg/BaseClass.html\">BaseClass</A>"}
+        { }
         };
     private static final String[] ARGS =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            "pkg"
+
         };
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHiddenMembers tester = new TestHiddenMembers();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        // We should not inherit any members from BaseClass because they are all overriden and hidden
+        // (declared as private).
+        // TODO: check normal case of generated tags: upper case of lower case
+        checkOutput("pkg/SubClass.html", false,
+            "inherited from class pkg.<A HREF=\"../pkg/BaseClass.html\">BaseClass</A>");
     }
 }

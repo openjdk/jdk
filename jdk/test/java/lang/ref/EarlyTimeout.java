@@ -33,11 +33,12 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CountDownLatch;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * In order to demonstrate the issue we make several threads (two appears to be sufficient)
  * to block in ReferenceQueue#remove(timeout) at the same time.
- * Then, we force a reference to be enqueued by setting its referent to null and calling System.gs().
+ * Then, we force a reference to be enqueued by setting its referent to null and calling System.gc().
  * One of the threads gets the reference returned from the remove().
  * The other threads get null:
  * 1) with bug:  this may happen before the specified timeout is elapsed,
@@ -63,7 +64,10 @@ public class EarlyTimeout extends Thread {
             threads[i] = new EarlyTimeout();
             threads[i].start();
         }
+        // The main thread waits until the threads has started and give it a chance
+        // for the threads to block on the queue.remove(TIMEOUT) call
         startedSignal.await();
+        Thread.sleep(TIMEOUT / 2);
         referent = null;
         System.gc();
         for (EarlyTimeout thread : threads) {
@@ -82,7 +86,7 @@ public class EarlyTimeout extends Thread {
                 nonNullRefCount++;
             }
         }
-        if (nonNullRefCount != 1) {
+        if (nonNullRefCount > 1) {
             throw new RuntimeException("more than one references were removed from queue");
         }
     }
@@ -90,9 +94,9 @@ public class EarlyTimeout extends Thread {
     public void run() {
         try {
             startedSignal.countDown();
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             reference = queue.remove(TIMEOUT);
-            actual = System.currentTimeMillis() - start;
+            actual = NANOSECONDS.toMillis(System.nanoTime() - start);
         } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
         }

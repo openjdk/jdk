@@ -141,24 +141,24 @@ public class Infer {
      * Main inference entry point - instantiate a generic method type
      * using given argument types and (possibly) an expected target-type.
      */
-    public Type instantiateMethod(Env<AttrContext> env,
-                                  List<Type> tvars,
-                                  MethodType mt,
-                                  Attr.ResultInfo resultInfo,
-                                  Symbol msym,
-                                  List<Type> argtypes,
-                                  boolean allowBoxing,
-                                  boolean useVarargs,
-                                  Resolve.MethodResolutionContext resolveContext,
-                                  Warner warn) throws InferenceException {
+    Type instantiateMethod( Env<AttrContext> env,
+                            List<Type> tvars,
+                            MethodType mt,
+                            Attr.ResultInfo resultInfo,
+                            MethodSymbol msym,
+                            List<Type> argtypes,
+                            boolean allowBoxing,
+                            boolean useVarargs,
+                            Resolve.MethodResolutionContext resolveContext,
+                            Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
-        final InferenceContext inferenceContext = new InferenceContext(tvars);
+        final InferenceContext inferenceContext = new InferenceContext(tvars);  //B0
         inferenceException.clear();
         try {
             DeferredAttr.DeferredAttrContext deferredAttrContext =
                         resolveContext.deferredAttrContext(msym, inferenceContext, resultInfo, warn);
 
-            resolveContext.methodCheck.argumentsAcceptable(env, deferredAttrContext,
+            resolveContext.methodCheck.argumentsAcceptable(env, deferredAttrContext,   //B2
                     argtypes, mt.getParameterTypes(), warn);
 
             if (allowGraphInference &&
@@ -166,7 +166,8 @@ public class Infer {
                     !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
                 //inject return constraints earlier
                 checkWithinBounds(inferenceContext, warn); //propagation
-                Type newRestype = generateReturnConstraints(resultInfo, mt, inferenceContext);
+                Type newRestype = generateReturnConstraints(env.tree, resultInfo,  //B3
+                        mt, inferenceContext);
                 mt = (MethodType)types.createMethodTypeWithReturn(mt, newRestype);
                 //propagate outwards if needed
                 if (resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
@@ -192,7 +193,7 @@ public class Infer {
                     inferenceContext.restvars().nonEmpty() &&
                     resultInfo != null &&
                     !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
-                generateReturnConstraints(resultInfo, mt, inferenceContext);
+                generateReturnConstraints(env.tree, resultInfo, mt, inferenceContext);
                 inferenceContext.solveLegacy(false, warn, LegacyInferenceSteps.EQ_UPPER.steps); //maximizeInst
                 mt = (MethodType)inferenceContext.asInstType(mt);
             }
@@ -209,6 +210,12 @@ public class Infer {
             } else {
                 inferenceContext.notifyChange(inferenceContext.boundedVars());
             }
+            if (resultInfo == null) {
+                /* if the is no result info then we can clear the capture types
+                 * cache without affecting any result info check
+                 */
+                inferenceContext.captureTypeCache.clear();
+            }
         }
     }
 
@@ -217,7 +224,7 @@ public class Infer {
      * call occurs in a context where a type T is expected, use the expected
      * type to derive more constraints on the generic method inference variables.
      */
-    Type generateReturnConstraints(Attr.ResultInfo resultInfo,
+    Type generateReturnConstraints(JCTree tree, Attr.ResultInfo resultInfo,
             MethodType mt, InferenceContext inferenceContext) {
         InferenceContext rsInfoInfContext = resultInfo.checkContext.inferenceContext();
         Type from = mt.getReturnType();
@@ -231,13 +238,29 @@ public class Infer {
                 }
             }
         }
-        Type qtype1 = inferenceContext.asUndetVar(from);
-        Type to = returnConstraintTarget(qtype1, resultInfo.pt);
+        Type qtype = inferenceContext.asUndetVar(from);
+        Type to = resultInfo.pt;
+
+        if (qtype.hasTag(VOID)) {
+            to = syms.voidType;
+        } else if (to.hasTag(NONE)) {
+            to = from.isPrimitive() ? from : syms.objectType;
+        } else if (qtype.hasTag(UNDETVAR)) {
+            if (resultInfo.pt.isReference()) {
+                to = generateReturnConstraintsUndetVarToReference(
+                        tree, (UndetVar)qtype, to, resultInfo, inferenceContext);
+            } else {
+                if (to.isPrimitive()) {
+                    to = generateReturnConstraintsPrimitive(tree, (UndetVar)qtype, to,
+                        resultInfo, inferenceContext);
+                }
+            }
+        }
         Assert.check(allowGraphInference || !rsInfoInfContext.free(to),
                 "legacy inference engine cannot handle constraints on both sides of a subtyping assertion");
         //we need to skip capture?
         Warner retWarn = new Warner();
-        if (!resultInfo.checkContext.compatible(qtype1, rsInfoInfContext.asUndetVar(to), retWarn) ||
+        if (!resultInfo.checkContext.compatible(qtype, rsInfoInfContext.asUndetVar(to), retWarn) ||
                 //unchecked conversion is not allowed in source 7 mode
                 (!allowGraphInference && retWarn.hasLint(Lint.LintCategory.UNCHECKED))) {
             throw inferenceException
@@ -247,30 +270,96 @@ public class Infer {
         return from;
     }
 
-    Type returnConstraintTarget(Type from, Type to) {
-        if (from.hasTag(VOID)) {
-            return syms.voidType;
-        } else if (to.hasTag(NONE)) {
-            return from.isPrimitive() ? from : syms.objectType;
-        } else if (from.hasTag(UNDETVAR) && to.isPrimitive()) {
-            if (!allowGraphInference) {
-                //if legacy, just return boxed type
-                return types.boxedClass(to).type;
+    private Type generateReturnConstraintsPrimitive(JCTree tree, UndetVar from,
+            Type to, Attr.ResultInfo resultInfo, InferenceContext inferenceContext) {
+        if (!allowGraphInference) {
+            //if legacy, just return boxed type
+            return types.boxedClass(to).type;
+        }
+        //if graph inference we need to skip conflicting boxed bounds...
+        for (Type t : from.getBounds(InferenceBound.EQ, InferenceBound.UPPER,
+                InferenceBound.LOWER)) {
+            Type boundAsPrimitive = types.unboxedType(t);
+            if (boundAsPrimitive == null || boundAsPrimitive.hasTag(NONE)) {
+                continue;
             }
-            //if graph inference we need to skip conflicting boxed bounds...
-            UndetVar uv = (UndetVar)from;
-            for (Type t : uv.getBounds(InferenceBound.EQ, InferenceBound.LOWER)) {
-                Type boundAsPrimitive = types.unboxedType(t);
-                if (boundAsPrimitive == null) continue;
-                if (types.isConvertible(boundAsPrimitive, to)) {
-                    //effectively skip return-type constraint generation (compatibility)
-                    return syms.objectType;
+            return generateReferenceToTargetConstraint(tree, from, to,
+                    resultInfo, inferenceContext);
+        }
+        return types.boxedClass(to).type;
+    }
+
+    private Type generateReturnConstraintsUndetVarToReference(JCTree tree,
+            UndetVar from, Type to, Attr.ResultInfo resultInfo,
+            InferenceContext inferenceContext) {
+        Type captureOfTo = types.capture(to);
+        /* T is a reference type, but is not a wildcard-parameterized type, and either
+         */
+        if (captureOfTo == to) { //not a wildcard parameterized type
+            /* i) B2 contains a bound of one of the forms alpha = S or S <: alpha,
+             *      where S is a wildcard-parameterized type, or
+             */
+            for (Type t : from.getBounds(InferenceBound.EQ, InferenceBound.LOWER)) {
+                Type captureOfBound = types.capture(t);
+                if (captureOfBound != t) {
+                    return generateReferenceToTargetConstraint(tree, from, to,
+                            resultInfo, inferenceContext);
                 }
             }
-            return types.boxedClass(to).type;
-        } else {
-            return to;
+
+            /* ii) B2 contains two bounds of the forms S1 <: alpha and S2 <: alpha,
+             * where S1 and S2 have supertypes that are two different
+             * parameterizations of the same generic class or interface.
+             */
+            for (Type aLowerBound : from.getBounds(InferenceBound.LOWER)) {
+                for (Type anotherLowerBound : from.getBounds(InferenceBound.LOWER)) {
+                    if (aLowerBound != anotherLowerBound &&
+                        commonSuperWithDiffParameterization(aLowerBound, anotherLowerBound)) {
+                        /* self comment check if any lower bound may be and undetVar,
+                         * in that case the result of this call may be a false positive.
+                         * Should this be restricted to non free types?
+                         */
+                        return generateReferenceToTargetConstraint(tree, from, to,
+                            resultInfo, inferenceContext);
+                    }
+                }
+            }
         }
+
+        /* T is a parameterization of a generic class or interface, G,
+         * and B2 contains a bound of one of the forms alpha = S or S <: alpha,
+         * where there exists no type of the form G<...> that is a
+         * supertype of S, but the raw type G is a supertype of S
+         */
+        if (to.isParameterized()) {
+            for (Type t : from.getBounds(InferenceBound.EQ, InferenceBound.LOWER)) {
+                Type sup = types.asSuper(t, to.tsym);
+                if (sup != null && sup.isRaw()) {
+                    return generateReferenceToTargetConstraint(tree, from, to,
+                            resultInfo, inferenceContext);
+                }
+            }
+        }
+        return to;
+    }
+
+    private boolean commonSuperWithDiffParameterization(Type t, Type s) {
+        Pair<Type, Type> supers = getParameterizedSupers(t, s);
+        return (supers != null && !types.isSameType(supers.fst, supers.snd));
+    }
+
+    private Type generateReferenceToTargetConstraint(JCTree tree, UndetVar from,
+            Type to, Attr.ResultInfo resultInfo,
+            InferenceContext inferenceContext) {
+        inferenceContext.solve(List.of(from.qtype), new Warner());
+        Type capturedType = resultInfo.checkContext.inferenceContext()
+                .cachedCapture(tree, from.inst, false);
+        if (types.isConvertible(capturedType,
+                resultInfo.checkContext.inferenceContext().asUndetVar(to))) {
+            //effectively skip additional return-type constraint generation (compatibility)
+            return syms.objectType;
+        }
+        return to;
     }
 
     /**
@@ -284,7 +373,7 @@ public class Infer {
             List<Type> upperBounds = uv.getBounds(InferenceBound.UPPER);
             if (Type.containsAny(upperBounds, vars)) {
                 TypeSymbol fresh_tvar = new TypeVariableSymbol(Flags.SYNTHETIC, uv.qtype.tsym.name, null, uv.qtype.tsym.owner);
-                fresh_tvar.type = new TypeVar(fresh_tvar, types.makeCompoundType(uv.getBounds(InferenceBound.UPPER)), null);
+                fresh_tvar.type = new TypeVar(fresh_tvar, types.makeCompoundType(uv.getBounds(InferenceBound.UPPER)), null, Type.noAnnotations);
                 todo.append(uv);
                 uv.inst = fresh_tvar.type;
             } else if (upperBounds.nonEmpty()) {
@@ -515,6 +604,32 @@ public class Infer {
     /** max number of incorporation rounds */
         static final int MAX_INCORPORATION_STEPS = 100;
 
+    /* If for two types t and s there is a least upper bound that is a
+     * parameterized type G, then there exists a supertype of 't' of the form
+     * G<T1, ..., Tn> and a supertype of 's' of the form G<S1, ..., Sn>
+     * which will be returned by this method. If no such supertypes exists then
+     * null is returned.
+     *
+     * As an example for the following input:
+     *
+     * t = java.util.ArrayList<java.lang.String>
+     * s = java.util.List<T>
+     *
+     * we get this ouput:
+     *
+     * Pair[java.util.List<java.lang.String>,java.util.List<T>]
+     */
+    private Pair<Type, Type> getParameterizedSupers(Type t, Type s) {
+        Type lubResult = types.lub(t, s);
+        if (lubResult == syms.errType || lubResult == syms.botType ||
+                !lubResult.isParameterized()) {
+            return null;
+        }
+        Type asSuperOfT = types.asSuper(t, lubResult.tsym);
+        Type asSuperOfS = types.asSuper(s, lubResult.tsym);
+        return new Pair<>(asSuperOfT, asSuperOfS);
+    }
+
     /**
      * This enumeration defines an entry point for doing inference variable
      * bound incorporation - it can be used to inject custom incorporation
@@ -679,6 +794,53 @@ public class Infer {
                 return !uv.isCaptured() &&
                         uv.getBounds(InferenceBound.EQ).nonEmpty() &&
                         uv.getBounds(InferenceBound.LOWER).nonEmpty();
+            }
+        },
+        /**
+         * Given a bound set containing {@code alpha <: P<T>} and
+         * {@code alpha <: P<S>} where P is a parameterized type,
+         * perform {@code T = S} (which could lead to new bounds).
+         */
+        CROSS_UPPER_UPPER() {
+            @Override
+            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
+                Infer infer = inferenceContext.infer();
+                List<Type> boundList = uv.getBounds(InferenceBound.UPPER);
+                List<Type> boundListTail = boundList.tail;
+                while (boundList.nonEmpty()) {
+                    List<Type> tmpTail = boundListTail;
+                    while (tmpTail.nonEmpty()) {
+                        Type b1 = boundList.head;
+                        Type b2 = tmpTail.head;
+                        if (b1 != b2) {
+                            Pair<Type, Type> commonSupers = infer.getParameterizedSupers(b1, b2);
+                            if (commonSupers != null) {
+                                List<Type> allParamsSuperBound1 = commonSupers.fst.allparams();
+                                List<Type> allParamsSuperBound2 = commonSupers.snd.allparams();
+                                while (allParamsSuperBound1.nonEmpty() && allParamsSuperBound2.nonEmpty()) {
+                                    //traverse the list of all params comparing them
+                                    if (!allParamsSuperBound1.head.hasTag(WILDCARD) &&
+                                        !allParamsSuperBound2.head.hasTag(WILDCARD)) {
+                                        isSameType(inferenceContext.asUndetVar(allParamsSuperBound1.head),
+                                            inferenceContext.asUndetVar(allParamsSuperBound2.head), infer);
+                                    }
+                                    allParamsSuperBound1 = allParamsSuperBound1.tail;
+                                    allParamsSuperBound2 = allParamsSuperBound2.tail;
+                                }
+                                Assert.check(allParamsSuperBound1.isEmpty() && allParamsSuperBound2.isEmpty());
+                            }
+                        }
+                        tmpTail = tmpTail.tail;
+                    }
+                    boundList = boundList.tail;
+                    boundListTail = boundList.tail;
+                }
+            }
+
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                return !uv.isCaptured() &&
+                        uv.getBounds(InferenceBound.UPPER).nonEmpty();
             }
         },
         /**
@@ -1296,7 +1458,7 @@ public class Infer {
             Type solve(UndetVar uv, InferenceContext inferenceContext) {
                 Infer infer = inferenceContext.infer();
                 List<Type> hibounds = filterBounds(uv, inferenceContext);
-                //note: lobounds should have at least one element
+                //note: hibounds should have at least one element
                 Type owntype = hibounds.tail.tail == null  ? hibounds.head : infer.types.glb(hibounds);
                 if (owntype.isPrimitive() || owntype.hasTag(ERROR)) {
                     throw infer.inferenceException
@@ -1343,7 +1505,9 @@ public class Infer {
                         LOWER.solve(uv, inferenceContext) :
                         infer.syms.botType;
                 CapturedType prevCaptured = (CapturedType)uv.qtype;
-                return new CapturedType(prevCaptured.tsym.name, prevCaptured.tsym.owner, upper, lower, prevCaptured.wildcard);
+                return new CapturedType(prevCaptured.tsym.name, prevCaptured.tsym.owner,
+                                        upper, lower, prevCaptured.wildcard,
+                                        Type.noAnnotations);
             }
         };
 
@@ -2059,8 +2223,10 @@ public class Infer {
          * Copy variable in this inference context to the given context
          */
         void dupTo(final InferenceContext that) {
-            that.inferencevars = that.inferencevars.appendList(inferencevars);
-            that.undetvars = that.undetvars.appendList(undetvars);
+            that.inferencevars = that.inferencevars.appendList(
+                    inferencevars.diff(that.inferencevars));
+            that.undetvars = that.undetvars.appendList(
+                    undetvars.diff(that.undetvars));
             //set up listeners to notify original inference contexts as
             //propagated vars are inferred in new context
             for (Type t : inferencevars) {
@@ -2172,6 +2338,36 @@ public class Infer {
         private Infer infer() {
             //back-door to infer
             return Infer.this;
+        }
+
+        @Override
+        public String toString() {
+            return "Inference vars: " + inferencevars + '\n' +
+                   "Undet vars: " + undetvars;
+        }
+
+        /* Method Types.capture() generates a new type every time it's applied
+         * to a wildcard parameterized type. This is intended functionality but
+         * there are some cases when what you need is not to generate a new
+         * captured type but to check that a previously generated captured type
+         * is correct. There are cases when caching a captured type for later
+         * reuse is sound. In general two captures from the same AST are equal.
+         * This is why the tree is used as the key of the map below. This map
+         * stores a Type per AST.
+         */
+        Map<JCTree, Type> captureTypeCache = new HashMap<>();
+
+        Type cachedCapture(JCTree tree, Type t, boolean readOnly) {
+            Type captured = captureTypeCache.get(tree);
+            if (captured != null) {
+                return captured;
+            }
+
+            Type result = types.capture(t);
+            if (result != t && !readOnly) { // then t is a wildcard parameterized type
+                captureTypeCache.put(tree, result);
+            }
+            return result;
         }
     }
 

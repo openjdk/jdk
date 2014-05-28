@@ -762,6 +762,10 @@ AWT_ASSERT_APPKIT_THREAD;
     return lastKeyWindow;
 }
 
+- (BOOL)windowShouldZoom:(NSWindow *)window toFrame:(NSRect)newFrame {
+    return !NSEqualSizes(self.nsWindow.frame.size, newFrame.size);
+}
+
 
 @end // AWTWindow
 
@@ -791,7 +795,7 @@ JNF_COCOA_ENTER(env);
                                                contentView:contentView];
         // the window is released is CPlatformWindow.nativeDispose()
 
-        if (window) CFRetain(window.nsWindow);
+        if (window) [window.nsWindow retain];
     }];
 
 JNF_COCOA_EXIT(env);

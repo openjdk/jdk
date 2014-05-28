@@ -47,6 +47,7 @@ import java.beans.PropertyVetoException;
   * @author David Kloba
   * @author Steve Wilson
   */
+@SuppressWarnings("serial") // No Interesting Non-Transient State
 public class DefaultDesktopManager implements DesktopManager, java.io.Serializable {
     final static String HAS_BEEN_ICONIFIED_PROPERTY = "wasIconOnce";
 
@@ -677,6 +678,11 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
 
           f.setBounds(currentBounds);
 
+          if (!floaterCollision) {
+              Rectangle r = currentBounds;
+              currentManager.notifyRepaintPerformed(parent, r.x, r.y, r.width, r.height);
+          }
+
           if(floaterCollision) {
               // since we couldn't blit we just redraw as fast as possible
               // the isDragging mucking is to avoid activating emergency
@@ -706,6 +712,8 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
           // Fix the damage
           for (int i = 0; i < dirtyRects.length; i++) {
               parent.paintImmediately(dirtyRects[i]);
+              Rectangle r = dirtyRects[i];
+              currentManager.notifyRepaintPerformed(parent, r.x, r.y, r.width, r.height);
           }
 
           // new areas of blit were exposed
@@ -716,9 +724,10 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
                   dirtyRects[i].x += newX - previousBounds.x;
                   dirtyRects[i].y += newY - previousBounds.y;
                   ((JInternalFrame)f).isDragging = false;
-
                   parent.paintImmediately(dirtyRects[i]);
                   ((JInternalFrame)f).isDragging = true;
+                  Rectangle r = dirtyRects[i];
+                  currentManager.notifyRepaintPerformed(parent, r.x, r.y, r.width, r.height);
               }
 
           }

@@ -286,7 +286,6 @@ public class ClassWriter extends ClassFile {
          */
         @Override
         public void assembleSig(Type type) {
-            type = type.unannotatedType();
             switch (type.getTag()) {
                 case UNINITIALIZED_THIS:
                 case UNINITIALIZED_OBJECT:
@@ -354,7 +353,7 @@ public class ClassWriter extends ClassFile {
         } else if (t.hasTag(ARRAY)) {
             return typeSig(types.erasure(t));
         } else {
-            throw new AssertionError("xClassName");
+            throw new AssertionError("xClassName expects class or array type, got " + t);
         }
     }
 
@@ -925,7 +924,7 @@ public class ClassWriter extends ClassFile {
             break;
         // exception parameter
         case EXCEPTION_PARAMETER:
-            databuf.appendChar(p.exception_index);
+            databuf.appendChar(p.getExceptionIndex());
             break;
         // method receiver
         case METHOD_RECEIVER:
@@ -1037,7 +1036,7 @@ public class ClassWriter extends ClassFile {
             }
             databuf.appendChar(pool.get(inner));
             databuf.appendChar(
-                inner.owner.kind == TYP ? pool.get(inner.owner) : 0);
+                inner.owner.kind == TYP && !inner.name.isEmpty() ? pool.get(inner.owner) : 0);
             databuf.appendChar(
                 !inner.name.isEmpty() ? pool.get(inner.name) : 0);
             databuf.appendChar(flags);

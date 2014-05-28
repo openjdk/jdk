@@ -1,126 +1,123 @@
-." Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jvisualvm 1 "07 May 2011"
-
-.LP
-.SH "名前"
-\f2jvisualvm\fP \- Java 仮想マシンの監視、トラブルシューティング、およびプロファイリングツール
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-パラメータ 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-使用方法 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jvisualvm
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: Javaトラブルシューティング、プロファイリング、モニタリングおよび管理ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jvisualvm" "1" "2013年11月21日" "JDK 8" "Javaトラブルシューティング、プロファイリング、モニタリン"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jvisualvm \- Javaアプリケーションを視覚的に監視、トラブルシュートおよびプロファイルします。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-        \fP\f3jvisualvm\fP [ \f2options\fP ]
-.fl
+\fIjvisualvm\fR [ \fIoptions\fR ]
 .fi
-
-.LP
-.SH "パラメータ"
-.LP
-.LP
-オプションを使用する場合、コマンド名の直後に記述してください。オプションの指定順序に決まりはありません。特定のオプションに適用されるパラメータについては、このあとの「オプション」を参照してください。
-.LP
-.SH " 説明"
-.LP
-.LP
-Java VisualVM は、指定された Java 仮想マシン (JVM(*)) で Java テクノロジベースのアプリケーション (Java アプリケーション) が実行されているときに、その Java アプリケーションに関する詳細な情報を提供する直感的なグラフィカルユーザーインタフェースです。Java VisualVM という名前は、Java VisualVM が JVM ソフトウェアに関する情報を「視覚的に」提供するという事実に由来しています。
-.LP
-.LP
-Java VisualVM は、いくつかの監視、トラブルシューティング、およびプロファイリングユーティリティーを 1 つのツールに統合します。たとえば、スタンドアロンツール \f2jmap\fP、 \f2jinfo\fP、 \f2jstat\fP 、および \f2jstack\fP で提供されている機能のほとんどが、Java VisualVM に組み込まれています。JConsole ツールによって提供される一部の機能など、ほかの機能はオプションのプラグインとして追加できます。
-.LP
+.if n \{\
+.RE
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.SH "説明"
+.PP
+Java VisualVMは、指定されたJava仮想マシン(JVM)でJavaテクノロジ・ベースのアプリケーション(Javaアプリケーション)が実行されているときに、そのJavaアプリケーションに関する詳細な情報を提供する直感的なグラフィカル・ユーザー・インタフェースです。Java VisualVMという名前は、Java VisualVMがJVMソフトウェアに関する情報を視覚的に提供するという事実に由来しています。
+.PP
+Java VisualVMは、いくつかのモニタリング、トラブルシューティングおよびプロファイリング・ユーティリティを1つのツールに統合します。たとえば、スタンドアロン・ツール\fIjmap\fR、\fIjinfo\fR、\fIjstat\fRおよび\fIjstack\fRで提供されている機能のほとんどが、Java VisualVMに組み込まれています。\fIjconsole\fRコマンドによって提供される一部の機能など、他の機能はオプションのプラグインとして追加できます。
+.PP
+Java VisualVMは、Javaアプリケーションの開発者がアプリケーションのトラブルシューティングを行ったり、アプリケーションのパフォーマンスを監視および改善したりするのに役立ちます。Java VisualVMを使用すると、開発者はヒープ・ダンプの生成および解析、メモリー・リークの特定、ガベージ・コレクションの実行および監視、およびメモリーとCPUの簡易プロファイリングの実行が可能になります。プラグインでJava VisualVMの機能を拡張できます。たとえば、\fIjconsole\fRコマンドのほとんどの機能は、「MBean」タブおよびJConsole Plug\-in Wrapperプラグインを介して使用できます。標準のJava VisualVMプラグインのカタログから選択するには、Java VisualVMメニューの\fB「ツール」\fR、\fB「プラグイン」\fRを選択します。
+.PP
+Java VisualVMを起動するには、次のコマンドを実行します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+%  jvisualvm <options>
+.fi
+.if n \{\
+.RE
+.\}
 .SH "オプション"
-.LP
-.LP
-次のオプションは、Java VisualVM を起動したときに実行可能になります。
-.LP
-.RS 3
-.TP 3
-\-J<jvm_option>\  
-この \f2<jvm_option>\fP を JVM ソフトウェアに渡します。 
+.PP
+次のオプションは、Java VisualVMを起動したときに実行可能になります。
+.PP
+\-J\fIjvm_option\fR
+.RS 4
+この\fIjvm_option\fRをJVMソフトウェアに渡します。
 .RE
-
-.LP
-.SH "使用方法"
-.LP
-.LP
-Java VisualVM は、Java アプリケーションの開発者がアプリケーションのトラブルシューティングを行なったり、アプリケーションのパフォーマンスを監視および改善したりするのに役立ちます。Java VisualVM を使用すると、開発者はヒープダンプの生成および解析、メモリーリークの特定、ガベージコレクションの実行および監視、およびメモリーと CPU の簡易プロファイリングの実行が可能になります。Java VisualVM の機能を拡張するプラグインもいくつかあります。たとえば、JConsole ツールのほとんどの機能は、MBeans タブおよび JConsole Plug\-in Wrapper プラグインを介して使用できます。標準の Java VisualVM プラグインのカタログから選択するには、Java VisualVM メニューの「ツール」>「プラグイン」を選択します。
-.LP
-.LP
-Java VisualVM を起動するには、次のコマンドを実行します。
-.LP
-.nf
-\f3
-.fl
-%  jvisualvm \fP\f4<options>\fP\f3
-.fl
-\fP
-.fi
-
-.LP
 .SH "関連項目"
-.LP
-.LP
-Java VisualVM の詳細は、次のページを参照してください。
-.LP
-.RS 3
-.TP 2
-o
-.na
-\f2Java VisualVM 開発者のサイト\fP @
-.fi
-http://visualvm.java.net 
-.TP 2
-o
-.na
-\f2Java SE プラットフォームでの Java VisualVM のドキュメント\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/visualvm/index.html 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Java VisualVM開発者のサイト
+http://visualvm\&.java\&.net/
 .RE
-
-.LP
-.LP
-\f2(* 「Java 仮想マシン」と「JVM」という用語は、Java プラットフォームの仮想マシンを意味しています。)\fP
-.LP
- 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Java SEドキュメントのJava VisualVM
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/visualvm/index\&.html)
+.RE
+.br
+'pl 8.5i
+'bp

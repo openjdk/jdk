@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,48 +26,29 @@
  * @bug 4524136
  * @summary Test to make sure label is used for inline links.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestInlineLinkLabel
  * @run main TestInlineLinkLabel
  */
 
 public class TestInlineLinkLabel extends JavadocTester {
 
-    private static final String BUG_ID = "4524136";
-    private static final String[][] TEST = {
-        //Search for the label to the package link.
-        {BUG_ID + FS + "pkg" + FS + "C1.html" , "<a href=\"../pkg/package-summary.html\"><code>Here is a link to a package</code></a>"},
-
-        //Search for the label to the class link
-        {BUG_ID + FS + "pkg" + FS + "C1.html" , "<a href=\"../pkg/C2.html\" title=\"class in pkg\"><code>Here is a link to a class</code></a>"}
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-    private static final String[] ARGS =
-        new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestInlineLinkLabel tester = new TestInlineLinkLabel();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg/C1.html", true,
+                //Search for the label to the package link.
+                "<a href=\"../pkg/package-summary.html\"><code>Here is a link to a package</code></a>",
+                //Search for the label to the class link
+                "<a href=\"../pkg/C2.html\" title=\"class in pkg\"><code>Here is a link to a class</code></a>");
     }
 }

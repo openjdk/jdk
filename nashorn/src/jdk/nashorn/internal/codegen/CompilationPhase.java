@@ -25,8 +25,6 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.CONSTANTS;
-import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.BUILTINS_TRANSFORMED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.BYTECODE_GENERATED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.BYTECODE_INSTALLED;
@@ -42,10 +40,6 @@ import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SYMBOLS_ASSI
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
 
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -53,22 +47,21 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
-import java.util.function.Consumer;
-
+import java.util.Set;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
+import jdk.nashorn.internal.ir.LexicalContext;
+import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
-import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -496,13 +489,17 @@ enum CompilationPhase {
             Class<?> rootClass = null;
             long length = 0L;
 
-            for (final Entry<String, byte[]> entry : compiler.getBytecode().entrySet()) {
+            final CodeInstaller<?> codeInstaller = compiler.getCodeInstaller();
+
+            final Map<String, byte[]> bytecode = compiler.getBytecode();
+
+            for (final Entry<String, byte[]> entry : bytecode.entrySet()) {
                 final String className = entry.getKey();
                 //assert !first || className.equals(compiler.getFirstCompileUnit().getUnitClassName()) : "first=" + first + " className=" + className + " != " + compiler.getFirstCompileUnit().getUnitClassName();
                 final byte[] code = entry.getValue();
                 length += code.length;
 
-                final Class<?> clazz = compiler.getCodeInstaller().install(Compiler.binaryName(className), code);
+                final Class<?> clazz = codeInstaller.install(className, code);
                 if (first) {
                     rootClass = clazz;
                     first = false;
@@ -514,46 +511,12 @@ enum CompilationPhase {
                 throw new CompilationException("Internal compiler error: root class not found!");
             }
 
-            // do these in parallel, this significantly reduces class installation overhead
-            // however - it still means that every thread needs a separate doPrivileged
             final Object[] constants = compiler.getConstantData().toArray();
-            installedClasses.entrySet().parallelStream().forEach(
-                new Consumer<Entry<String, Class<?>>>() {
-                    @Override
-                    public void accept(final Entry<String, Class<?>> entry) {
-                        try {
-                            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                                @Override
-                                public Void run() {
-                                    try {
-                                        final Class<?> clazz = entry.getValue();
-                                        log.fine("Initializing source for ", clazz);
-                                        //use reflection to write source and constants table to installed classes
-                                        final Field sourceField = clazz.getDeclaredField(SOURCE.symbolName());
-                                        sourceField.setAccessible(true);
-                                        sourceField.set(null, compiler.getSource());
-
-                                        log.fine("Initializing constants for ", clazz);
-                                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
-                                        constantsField.setAccessible(true);
-                                        constantsField.set(null, constants);
-                                    } catch (final IllegalAccessException | NoSuchFieldException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                    return null;
-                                }
-                            });
-                        } catch (final PrivilegedActionException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
-            log.fine("Done");
-            log.fine("Done");
+            codeInstaller.initialize(installedClasses.values(), compiler.getSource(), constants);
 
             // index recompilable script function datas in the constant pool
             final Map<RecompilableScriptFunctionData, RecompilableScriptFunctionData> rfns = new IdentityHashMap<>();
-            for (final Object constant: compiler.getConstantData().getConstants()) {
+            for (final Object constant: constants) {
                 if (constant instanceof RecompilableScriptFunctionData) {
                     final RecompilableScriptFunctionData rfn = (RecompilableScriptFunctionData)constant;
                     rfns.put(rfn, rfn);
@@ -564,6 +527,10 @@ enum CompilationPhase {
             for (final CompileUnit unit : compiler.getCompileUnits()) {
                 unit.setCode(installedClasses.get(unit.getUnitClassName()));
                 unit.initializeFunctionsCode();
+            }
+
+            if (!compiler.isOnDemandCompilation()) {
+                codeInstaller.storeCompiledScript(compiler.getSource(), compiler.getFirstCompileUnit().getUnitClassName(), bytecode, constants);
             }
 
             // remove installed bytecode from table in case compiler is reused

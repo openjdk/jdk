@@ -1436,7 +1436,7 @@ void GraphBuilder::method_return(Value x) {
 
   bool need_mem_bar = false;
   if (method()->name() == ciSymbol::object_initializer_name() &&
-      scope()->wrote_final()) {
+      (scope()->wrote_final() || (AlwaysSafeConstructors && scope()->wrote_fields()))) {
     need_mem_bar = true;
   }
 
@@ -1548,6 +1548,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
 
   if (field->is_final() && (code == Bytecodes::_putfield)) {
     scope()->set_wrote_final();
+  }
+
+  if (code == Bytecodes::_putfield) {
+    scope()->set_wrote_fields();
   }
 
   const int offset = !needs_patching ? field->offset() : -1;
@@ -1697,6 +1701,15 @@ Values* GraphBuilder::args_list_for_profiling(ciMethod* target, int& start, bool
   return NULL;
 }
 
+void GraphBuilder::check_args_for_profiling(Values* obj_args, int expected) {
+#ifdef ASSERT
+  bool ignored_will_link;
+  ciSignature* declared_signature = NULL;
+  ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
+  assert(expected == obj_args->length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
+#endif
+}
+
 // Collect arguments that we want to profile in a list
 Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver) {
   int start = 0;
@@ -1705,13 +1718,14 @@ Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target,
     return NULL;
   }
   int s = obj_args->size();
-  for (int i = start, j = 0; j < s; i++) {
+  // if called through method handle invoke, some arguments may have been popped
+  for (int i = start, j = 0; j < s && i < args->length(); i++) {
     if (args->at(i)->type()->is_object_kind()) {
       obj_args->push(args->at(i));
       j++;
     }
   }
-  assert(s == obj_args->length(), "missed on arg?");
+  check_args_for_profiling(obj_args, s);
   return obj_args;
 }
 
@@ -3767,11 +3781,14 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   }
 
   // now perform tests that are based on flag settings
-  if (callee->force_inline()) {
-    if (inline_level() > MaxForceInlineLevel) INLINE_BAILOUT("MaxForceInlineLevel");
-    print_inlining(callee, "force inline by annotation");
-  } else if (callee->should_inline()) {
-    print_inlining(callee, "force inline by CompileOracle");
+  if (callee->force_inline() || callee->should_inline()) {
+    if (inline_level() > MaxForceInlineLevel                    ) INLINE_BAILOUT("MaxForceInlineLevel");
+    if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");
+
+    const char* msg = "";
+    if (callee->force_inline())  msg = "force inline by annotation";
+    if (callee->should_inline()) msg = "force inline by CompileOracle";
+    print_inlining(callee, msg);
   } else {
     // use heuristic controls on inlining
     if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("inlining too deep");
@@ -3840,14 +3857,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
             j++;
           }
         }
-#ifdef ASSERT
-        {
-          bool ignored_will_link;
-          ciSignature* declared_signature = NULL;
-          ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
-          assert(s == obj_args->length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
-        }
-#endif
+        check_args_for_profiling(obj_args, s);
       }
       profile_call(callee, recv, holder_known ? callee->holder() : NULL, obj_args, true);
     }

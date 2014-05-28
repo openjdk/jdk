@@ -28,6 +28,27 @@ public class Platform {
     private static final String dataModel   = System.getProperty("sun.arch.data.model");
     private static final String vmVersion   = System.getProperty("java.vm.version");
     private static final String osArch      = System.getProperty("os.arch");
+    private static final String vmName      = System.getProperty("java.vm.name");
+
+    public static boolean isClient() {
+        return vmName.endsWith(" Client VM");
+    }
+
+    public static boolean isServer() {
+        return vmName.endsWith(" Server VM");
+    }
+
+    public static boolean isGraal() {
+        return vmName.endsWith(" Graal VM");
+    }
+
+    public static boolean isMinimal() {
+        return vmName.endsWith(" Minimal VM");
+    }
+
+    public static boolean isEmbedded() {
+        return vmName.contains("Embedded");
+    }
 
     public static boolean is32bit() {
         return dataModel.equals("32");

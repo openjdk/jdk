@@ -25,9 +25,9 @@
  * @test
  * @bug 8007898
  * @summary Incorrect optimization of Memory Barriers in Matcher::post_store_load_barrier().
- * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:CICompilerCount=1 -XX:+StressGCM -XX:+StressLCM DekkerTest
- * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:CICompilerCount=1 -XX:+StressGCM -XX:+StressLCM DekkerTest
- * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:CICompilerCount=1 -XX:+StressGCM -XX:+StressLCM DekkerTest
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:+StressGCM -XX:+StressLCM DekkerTest
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:+StressGCM -XX:+StressLCM DekkerTest
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:+StressGCM -XX:+StressLCM DekkerTest
  * @author Martin Doerr martin DOT doerr AT sap DOT com
  *
  * Run 3 times since the failure is intermittent.

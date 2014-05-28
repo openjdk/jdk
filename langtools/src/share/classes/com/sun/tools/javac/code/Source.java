@@ -195,6 +195,9 @@ public enum Source {
     public boolean allowObjectToPrimitiveCast() {
         return compareTo(JDK1_7) >= 0;
     }
+    public boolean enforceThisDotInit() {
+        return compareTo(JDK1_7) >= 0;
+    }
     public boolean allowPoly() {
         return compareTo(JDK1_8) >= 0;
     }
@@ -219,6 +222,9 @@ public enum Source {
     public boolean allowTypeAnnotations() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowAnnotationsAfterTypeParams() {
+        return compareTo(JDK1_8) >= 0;
+    }
     public boolean allowRepeatedAnnotations() {
         return compareTo(JDK1_8) >= 0;
     }
@@ -228,7 +234,7 @@ public enum Source {
     public boolean allowGraphInference() {
         return compareTo(JDK1_8) >= 0;
     }
-    public boolean allowStructuralMostSpecific() {
+    public boolean allowFunctionalInterfaceMostSpecific() {
         return compareTo(JDK1_8) >= 0;
     }
     public static SourceVersion toSourceVersion(Source source) {

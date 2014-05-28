@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.util.Set;
 import java.util.Map;
+
+import com.sun.tools.sjavac.options.Options;
 
 /**
  * The transform interface is used to transform content inside a package, from one form to another.
@@ -95,5 +97,5 @@ public interface Transformer
                       PrintStream err);
 
     void setExtra(String e);
-    void setExtra(String[] args);
+    void setExtra(Options args);
 }

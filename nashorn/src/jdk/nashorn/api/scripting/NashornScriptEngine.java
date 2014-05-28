@@ -27,16 +27,14 @@ package jdk.nashorn.api.scripting;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Permissions;
@@ -125,20 +123,20 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
     }
 
-    // load engine.js and return content as a char[]
-    private static char[] loadEngineJSSource() {
+    // load engine.js
+    private static Source loadEngineJSSource() {
         final String script = "resources/engine.js";
         try {
-            final InputStream is = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<InputStream>() {
+            return AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<Source>() {
                         @Override
-                        public InputStream run() throws Exception {
+                        public Source run() throws IOException {
                             final URL url = NashornScriptEngine.class.getResource(script);
-                            return url.openStream();
+                            return sourceFor(NashornException.ENGINE_SCRIPT_SOURCE_NAME, url);
                         }
-                    });
-            return Source.readFully(new InputStreamReader(is));
-        } catch (final PrivilegedActionException | IOException e) {
+                    }
+            );
+        } catch (final PrivilegedActionException e) {
             if (Context.DEBUG) {
                 e.printStackTrace();
             }
@@ -147,7 +145,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     // Source object for engine.js
-    private static final Source ENGINE_SCRIPT_SRC = new Source(NashornException.ENGINE_SCRIPT_SOURCE_NAME, loadEngineJSSource());
+    private static final Source ENGINE_SCRIPT_SRC = loadEngineJSSource();
 
     NashornScriptEngine(final NashornScriptEngineFactory factory, final ClassLoader appLoader) {
         this(factory, DEFAULT_OPTIONS, appLoader);
@@ -282,19 +280,14 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     private static Source makeSource(final Reader reader, final ScriptContext ctxt) throws ScriptException {
         try {
-            if (reader instanceof URLReader) {
-                final URL url = ((URLReader)reader).getURL();
-                final Charset cs = ((URLReader)reader).getCharset();
-                return new Source(url.toString(), url, cs);
-            }
-            return new Source(getScriptName(ctxt), Source.readFully(reader));
-        } catch (final IOException e) {
+            return sourceFor(getScriptName(ctxt), reader);
+        } catch (IOException e) {
             throw new ScriptException(e);
         }
     }
 
     private static Source makeSource(final String src, final ScriptContext ctxt) {
-        return new Source(getScriptName(ctxt), src);
+        return sourceFor(getScriptName(ctxt), src);
     }
 
     private static String getScriptName(final ScriptContext ctxt) {
@@ -532,6 +525,31 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         return evalImpl(script, ctxt, getNashornGlobalFrom(ctxt));
     }
 
+    private Object evalImpl(final Context.MultiGlobalCompiledScript mgcs, final ScriptContext ctxt, final Global ctxtGlobal) throws ScriptException {
+        final Global oldGlobal = Context.getGlobal();
+        final boolean globalChanged = (oldGlobal != ctxtGlobal);
+        try {
+            if (globalChanged) {
+                Context.setGlobal(ctxtGlobal);
+            }
+
+            final ScriptFunction script = mgcs.getFunction(ctxtGlobal);
+
+            // set ScriptContext variables if ctxt is non-null
+            if (ctxt != null) {
+                setContextVariables(ctxtGlobal, ctxt);
+            }
+            return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(ScriptRuntime.apply(script, ctxtGlobal), ctxtGlobal));
+        } catch (final Exception e) {
+            throwAsScriptException(e, ctxtGlobal);
+            throw new AssertionError("should not reach here");
+        } finally {
+            if (globalChanged) {
+                Context.setGlobal(oldGlobal);
+            }
+        }
+    }
+
     private Object evalImpl(final ScriptFunction script, final ScriptContext ctxt, final Global ctxtGlobal) throws ScriptException {
         if (script == null) {
             return null;
@@ -578,18 +596,38 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private CompiledScript asCompiledScript(final Source source) throws ScriptException {
-        final ScriptFunction func = compileImpl(source, context);
+        final Context.MultiGlobalCompiledScript mgcs;
+        final ScriptFunction func;
+        final Global oldGlobal = Context.getGlobal();
+        final Global newGlobal = getNashornGlobalFrom(context);
+        final boolean globalChanged = (oldGlobal != newGlobal);
+        try {
+            if (globalChanged) {
+                Context.setGlobal(newGlobal);
+            }
+
+            mgcs = nashornContext.compileScript(source);
+            func = mgcs.getFunction(newGlobal);
+        } catch (final Exception e) {
+            throwAsScriptException(e, newGlobal);
+            throw new AssertionError("should not reach here");
+        } finally {
+            if (globalChanged) {
+                Context.setGlobal(oldGlobal);
+            }
+        }
+
         return new CompiledScript() {
             @Override
             public Object eval(final ScriptContext ctxt) throws ScriptException {
                 final Global globalObject = getNashornGlobalFrom(ctxt);
-                // Are we running the script in the correct global?
+                // Are we running the script in the same global in which it was compiled?
                 if (func.getScope() == globalObject) {
                     return evalImpl(func, ctxt, globalObject);
                 }
-                // ScriptContext with a different global. Compile again!
-                // Note that we may still hit per-global compilation cache.
-                return evalImpl(compileImpl(source, ctxt), ctxt, globalObject);
+
+                // different global
+                return evalImpl(mgcs, ctxt, globalObject);
             }
             @Override
             public ScriptEngine getEngine() {

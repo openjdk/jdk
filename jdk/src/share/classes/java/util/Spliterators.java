@@ -384,7 +384,7 @@ public final class Spliterators {
      */
     private static void checkFromToBounds(int arrayLength, int origin, int fence) {
         if (origin > fence) {
-            throw new IllegalArgumentException(
+            throw new ArrayIndexOutOfBoundsException(
                     "origin(" + origin + ") > fence(" + fence + ")");
         }
         if (origin < 0) {

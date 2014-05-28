@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import sun.awt.AppContext;
 import sun.awt.datatransfer.DataTransferer;
 
 /**
@@ -54,7 +55,6 @@ import sun.awt.datatransfer.DataTransferer;
  * which correspond to platform-independent MIME types. This mapping is used
  * by the data transfer subsystem to transfer data between Java and native
  * applications, and between Java applications in separate VMs.
- * <p>
  *
  * @since 1.2
  */
@@ -66,10 +66,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      */
     private static String JavaMIME = "JAVA_DATAFLAVOR:";
 
-    /**
-     * System singleton which maps a thread's ClassLoader to a SystemFlavorMap.
-     */
-    private static final WeakHashMap<ClassLoader, FlavorMap> flavorMaps = new WeakHashMap<>();
+    private static final Object FLAVOR_MAP_KEY = new Object();
 
     /**
      * Copied from java.util.Properties.
@@ -184,22 +181,12 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      * @return the default FlavorMap for this thread's ClassLoader
      */
     public static FlavorMap getDefaultFlavorMap() {
-        ClassLoader contextClassLoader =
-            Thread.currentThread().getContextClassLoader();
-        if (contextClassLoader == null) {
-            contextClassLoader = ClassLoader.getSystemClassLoader();
+        AppContext context = AppContext.getAppContext();
+        FlavorMap fm = (FlavorMap) context.get(FLAVOR_MAP_KEY);
+        if (fm == null) {
+            fm = new SystemFlavorMap();
+            context.put(FLAVOR_MAP_KEY, fm);
         }
-
-        FlavorMap fm;
-
-        synchronized(flavorMaps) {
-            fm = flavorMaps.get(contextClassLoader);
-            if (fm == null) {
-                fm = new SystemFlavorMap();
-                flavorMaps.put(contextClassLoader, fm);
-            }
-        }
-
         return fm;
     }
 
@@ -240,26 +227,11 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                     }
                 });
 
-        BufferedReader flavormapURL =
+        String url =
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<BufferedReader>() {
-                    public BufferedReader run() {
-                        String url = Toolkit.getProperty("AWT.DnD.flavorMapFileURL", null);
-
-                        if (url == null) {
-                            return null;
-                        }
-
-                        try {
-                            return new BufferedReader
-                                (new InputStreamReader
-                                    (new URL(url).openStream(), "ISO-8859-1"));
-                        } catch (MalformedURLException e) {
-                            System.err.println("MalformedURLException:" + e + " while reading AWT.DnD.flavorMapFileURL:" + url);
-                        } catch (IOException e) {
-                            System.err.println("IOException:" + e + " while reading AWT.DnD.flavorMapFileURL:" + url);
-                        }
-                        return null;
+                new java.security.PrivilegedAction<String>() {
+                    public String run() {
+                        return Toolkit.getProperty("AWT.DnD.flavorMapFileURL", null);
                     }
                 });
 
@@ -268,6 +240,19 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                 parseAndStoreReader(flavormapDotProperties);
             } catch (IOException e) {
                 System.err.println("IOException:" + e + " while parsing default flavormap.properties file");
+            }
+        }
+
+        BufferedReader flavormapURL = null;
+        if (url != null) {
+            try {
+                flavormapURL = new BufferedReader(new InputStreamReader(new URL(url).openStream(), "ISO-8859-1"));
+            } catch (MalformedURLException e) {
+                System.err.println("MalformedURLException:" + e + " while reading AWT.DnD.flavorMapFileURL:" + url);
+            } catch (IOException e) {
+                System.err.println("IOException:" + e + " while reading AWT.DnD.flavorMapFileURL:" + url);
+            } catch (SecurityException e) {
+                // ignored
             }
         }
 
@@ -544,7 +529,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
             DataTransferer transferer = DataTransferer.getInstance();
             if (transferer != null) {
                 List<DataFlavor> platformFlavors =
-                    transferer.getPlatformMappingsForNative(nat);
+                        transferer.getPlatformMappingsForNative(nat);
                 if (!platformFlavors.isEmpty()) {
                     if (flavors != null) {
                         platformFlavors.removeAll(new HashSet<>(flavors));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,62 +26,44 @@
  * @bug     4496223 4496270 4618686 4720974 4812240 6253614 6253604
  * @summary <DESC>
  * @author  jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestTagInheritence
  * @run main TestTagInheritence
  */
 
+// TODO: Inheritence should be Inheritance!   fix separately as noreg-trivial
 public class TestTagInheritence extends JavadocTester {
 
-    private static final String BUG_ID = "4496223-4496270-4618686-4720974-4812240-6253614-6253604";
-    private static final String[] ARGS = new String[] {
-        "-Xdoclint:none", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", "firstSentence", "firstSentence2"
-    };
+    public static void main(String... args) throws Exception {
+        TestTagInheritence tester = new TestTagInheritence();
+        tester.runTests();
+    }
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        String[][] tests = new String[42][2];
+    @Test
+    void test() {
+        javadoc("-Xdoclint:none",
+                "-d", "out",
+                "-sourcepath", testSrc,
+                "pkg", "firstSentence", "firstSentence2");
+        checkExit(Exit.OK);
+
         //Test bad inheritDoc tag warning.
-        tests[0][0]= WARNING_OUTPUT;
-        tests[0][1] = "warning - @inheritDoc used but testBadInheritDocTag() " +
-            "does not override or implement any method.";
+        checkOutput(Output.WARNING, true,
+                "warning - @inheritDoc used but testBadInheritDocTag() "
+                + "does not override or implement any method.");
 
         //Test valid usage of inheritDoc tag.
-        for (int i = 1; i < tests.length-2; i++) {
-            tests[i][0] = BUG_ID + FS + "pkg" + FS + "TestTagInheritence.html";
-            tests[i][1] = "Test " + i + " passes";
+        for (int i = 1; i < 40; i++) {
+            checkOutput("pkg/TestTagInheritence.html", true,
+                    "Test " + i + " passes");
         }
 
         //First sentence test (6253614)
-        tests[tests.length - 2][0] =BUG_ID + FS + "firstSentence" + FS +
-            "B.html";
-        tests[tests.length - 2][1] =  "<div class=\"block\">First sentence.</div>";
+        checkOutput("firstSentence/B.html", true,
+                "<div class=\"block\">First sentence.</div>");
 
         //Another first sentence test (6253604)
-        tests[tests.length - 1][0] =BUG_ID + FS + "firstSentence2" + FS +
-            "C.html";
-        tests[tests.length - 1][1] =  "<div class=\"block\">First sentence.</div>";
-
-        TestTagInheritence tester = new TestTagInheritence();
-        run(tester, ARGS, tests, NO_TEST);
-        tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("firstSentence2/C.html", true,
+                "<div class=\"block\">First sentence.</div>");
     }
 }

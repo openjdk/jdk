@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
 
 /*
  * @test
- * @bug 6313675 6323647
+ * @bug 6313675 6323647 8028192
  * @summary Verify that all ciphersuites work in FIPS mode
  * @library ..
- * @ignore JSSE supported cipher suites are changed with CR 6916074,
- *     need to update this test case in JDK 7 soon
- * @run main/othervm ClientJSSEServerJSSE
  * @author Andreas Sterbenz
+ * @run main/manual ClientJSSEServerJSSE
+ */
+
+/*
+ * JSSE supported cipher suites are changed with CR 6916074,
+ * need to update this test case in JDK 7 soon
  */
 
 import java.security.*;
@@ -44,9 +47,13 @@ public class ClientJSSEServerJSSE extends SecmodTest {
             return;
         }
 
-        if ("sparc".equals(System.getProperty("os.arch")) == false) {
-            // we have not updated other platforms with the proper NSS libraries yet
-            System.out.println("Test currently works only on solaris-sparc, skipping");
+        String arch = System.getProperty("os.arch");
+        if (!("sparc".equals(arch) || "sparcv9".equals(arch))) {
+            // we have not updated other platforms with the proper NSS
+            // libraries yet
+            System.out.println(
+                    "Test currently works only on solaris-sparc " +
+                    "and solaris-sparcv9. Skipping on " + arch);
             return;
         }
 

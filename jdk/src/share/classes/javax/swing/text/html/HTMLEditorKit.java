@@ -26,7 +26,6 @@ package javax.swing.text.html;
 
 import sun.awt.AppContext;
 
-import java.lang.reflect.Method;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -34,12 +33,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import javax.swing.text.*;
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.event.*;
 import javax.swing.plaf.TextUI;
 import java.util.*;
 import javax.accessibility.*;
 import java.lang.ref.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * The Swing JEditorPane text component supports different kinds
@@ -160,6 +160,7 @@ import java.lang.ref.*;
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     private JEditorPane theEditor;
@@ -414,14 +415,13 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *  HTMLEditorKit class
      * @return a stream representing the resource
      */
-    static InputStream getResourceAsStream(String name) {
-        try {
-            return ResourceLoader.getResourceAsStream(name);
-        } catch (Throwable e) {
-            // If the class doesn't exist or we have some other
-            // problem we just try to call getResourceAsStream directly.
-            return HTMLEditorKit.class.getResourceAsStream(name);
-        }
+    static InputStream getResourceAsStream(final String name) {
+        return AccessController.doPrivileged(
+                new PrivilegedAction<InputStream>() {
+                    public InputStream run() {
+                        return HTMLEditorKit.class.getResourceAsStream(name);
+                    }
+                });
     }
 
     /**
@@ -640,6 +640,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * Class to watch the associated component and fire
      * hyperlink events on it when appropriate.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class LinkController extends MouseAdapter implements MouseMotionListener, Serializable {
         private Element curElem = null;
         /**
@@ -970,6 +971,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * Parse the given stream and drive the given callback
          * with the results of the parse.  This method should
          * be implemented to be thread-safe.
+         *
+         * @throws IOException if an I/O exception occurs
          */
         public abstract void parse(Reader r, ParserCallback cb, boolean ignoreCharSet) throws IOException;
 
@@ -1024,6 +1027,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * <code>flush</code>. <code>eol</code> will be one of \n, \r
          * or \r\n, which ever is encountered the most in parsing the
          * stream.
+         *
+         * @param eol value of eol
          *
          * @since 1.3
          */
@@ -1482,12 +1487,14 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * document. If you have another thread modifying the text these
      * methods may have inconsistent behavior, or return the wrong thing.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static abstract class HTMLTextAction extends StyledTextAction {
         public HTMLTextAction(String name) {
             super(name);
         }
 
         /**
+         * @param e the JEditorPane
          * @return HTMLDocument of <code>e</code>.
          */
         protected HTMLDocument getHTMLDocument(JEditorPane e) {
@@ -1499,6 +1506,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         /**
+         * @param e the JEditorPane
          * @return HTMLEditorKit for <code>e</code>.
          */
         protected HTMLEditorKit getHTMLEditorKit(JEditorPane e) {
@@ -1512,6 +1520,10 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         /**
          * Returns an array of the Elements that contain <code>offset</code>.
          * The first elements corresponds to the root.
+         *
+         * @param doc an instance of HTMLDocument
+         * @param offset value of offset
+         * @return an array of the Elements that contain <code>offset</code>
          */
         protected Element[] getElementsAt(HTMLDocument doc, int offset) {
             return getElementsAt(doc.getDefaultRootElement(), offset, 0);
@@ -1539,6 +1551,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * return -1 if no elements is found representing <code>tag</code>,
          * or 0 if the parent of the leaf at <code>offset</code> represents
          * <code>tag</code>.
+         *
+         * @param doc an instance of HTMLDocument
+         * @param offset an offset to start from
+         * @param tag tag to represent
+         * @return number of elements
          */
         protected int elementCountToTag(HTMLDocument doc, int offset,
                                         HTML.Tag tag) {
@@ -1592,6 +1609,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * addTag. These will be checked for if there is no parentTag at
      * offset.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InsertHTMLTextAction extends HTMLTextAction {
         public InsertHTMLTextAction(String name, String html,
                                     HTML.Tag parentTag, HTML.Tag addTag) {
@@ -1823,6 +1841,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * the parent HTML.Tag based on the paragraph element at the selection
      * start.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class InsertHRAction extends InsertHTMLTextAction {
         InsertHRAction() {
             super("InsertHR", "<hr>", null, HTML.Tag.IMPLIED, null, null,
@@ -1877,6 +1896,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * javax.accessibility package.  The text package should support
      * keyboard navigation of text elements directly.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class NavigateLinkAction extends TextAction implements CaretListener {
 
         private static final FocusHighlightPainter focusPainter =
@@ -2086,6 +2106,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * javax.accessibility package.  The text package should support
      * keyboard navigation of text elements directly.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class ActivateLinkAction extends TextAction {
 
         /**
@@ -2259,7 +2280,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @see DefaultEditorKit#beginAction
      * @see HTMLEditorKit#getActions
      */
-
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class BeginAction extends TextAction {
 
         /* Create this object with the appropriate identifier. */

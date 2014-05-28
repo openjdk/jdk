@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,44 +27,22 @@
  * @summary Determine if Hrefs are processed properly when they
  * appear in doc comments.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestHrefInDocComment
  * @run main TestHrefInDocComment
  */
 
 public class TestHrefInDocComment extends JavadocTester {
 
-    private static final String BUG_ID = "4638015";
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = NO_TEST;
-    private static final String[] ARGS =
-        new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"};
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHrefInDocComment tester = new TestHrefInDocComment();
-        if (run(tester, ARGS, TEST, NEGATED_TEST) != 0) {
-            throw new Error("Javadoc failed to execute properly with given source.");
-        }
-
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc, "pkg");
+        checkExit(Exit.OK);
     }
 }

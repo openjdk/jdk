@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ class FreetypeFontScaler extends FontScaler {
         initIDs(FreetypeFontScaler.class);
     }
 
-    private static native void initIDs(Class FFS);
+    private static native void initIDs(Class<?> FFS);
 
     private void invalidateScaler() throws FontScalerException {
         nativeScaler = 0;
@@ -69,7 +69,7 @@ class FreetypeFontScaler extends FontScaler {
                                         indexInCollection,
                                         supportsCJK,
                                         filesize);
-        this.font = new WeakReference(font);
+        this.font = new WeakReference<>(font);
     }
 
     synchronized StrikeMetrics getFontMetrics(long pScalerContext)

@@ -164,11 +164,6 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
             "Class file version does not support constant tag %u in class file %s",
             tag, CHECK);
         }
-        if (!EnableInvokeDynamic) {
-          classfile_parse_error(
-            "This JVM does not support constant tag %u in class file %s",
-            tag, CHECK);
-        }
         if (tag == JVM_CONSTANT_MethodHandle) {
           cfs->guarantee_more(4, CHECK);  // ref_kind, method_index, tag/access_flags
           u1 ref_kind = cfs->get_u1_fast();
@@ -187,11 +182,6 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
           if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
             classfile_parse_error(
               "Class file version does not support constant tag %u in class file %s",
-              tag, CHECK);
-          }
-          if (!EnableInvokeDynamic) {
-            classfile_parse_error(
-              "This JVM does not support constant tag %u in class file %s",
               tag, CHECK);
           }
           cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
@@ -263,7 +253,7 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
             verify_legal_utf8((unsigned char*)utf8_buffer, utf8_length, CHECK);
           }
 
-          if (EnableInvokeDynamic && has_cp_patch_at(index)) {
+          if (has_cp_patch_at(index)) {
             Handle patch = clear_cp_patch_at(index);
             guarantee_property(java_lang_String::is_instance(patch()),
                                "Illegal utf8 patch at %d in class file %s",
@@ -419,8 +409,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         {
           int ref_index = cp->method_handle_index_at(index);
           check_property(
-            valid_cp_range(ref_index, length) &&
-                EnableInvokeDynamic,
+            valid_cp_range(ref_index, length),
               "Invalid constant pool index %u in class file %s",
               ref_index, CHECK_(nullHandle));
           constantTag tag = cp->tag_at(ref_index);
@@ -466,7 +455,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
       case JVM_CONSTANT_MethodType :
         {
           int ref_index = cp->method_type_index_at(index);
-          check_property(valid_symbol_at(ref_index) && EnableInvokeDynamic,
+          check_property(valid_symbol_at(ref_index),
                  "Invalid constant pool index %u in class file %s",
                  ref_index, CHECK_(nullHandle));
         }
@@ -492,7 +481,6 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
 
   if (_cp_patches != NULL) {
     // need to treat this_class specially...
-    assert(EnableInvokeDynamic, "");
     int this_class_index;
     {
       cfs->guarantee_more(8, CHECK_(nullHandle));  // flags, this_class, super_class, infs_len
@@ -640,7 +628,6 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
 
 
 void ClassFileParser::patch_constant_pool(constantPoolHandle cp, int index, Handle patch, TRAPS) {
-  assert(EnableInvokeDynamic, "");
   BasicType patch_type = T_VOID;
 
   switch (cp->tag_at(index).value()) {
@@ -2777,6 +2764,11 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(u4 attribute_b
                      "Short length on BootstrapMethods in class file %s",
                      CHECK);
 
+  guarantee_property(attribute_byte_length > sizeof(u2),
+                     "Invalid BootstrapMethods attribute length %u in class file %s",
+                     attribute_byte_length,
+                     CHECK);
+
   // The attribute contains a counted array of counted tuples of shorts,
   // represending bootstrap specifiers:
   //    length*{bootstrap_method_index, argument_count*{argument_index}}
@@ -2826,7 +2818,6 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(u4 attribute_b
     }
   }
 
-  assert(operand_fill_index == operands->length(), "exact fill");
   assert(ConstantPool::operand_array_length(operands) == attribute_array_length, "correct decode");
 
   u1* current_end = cfs->current();
@@ -4180,8 +4171,12 @@ ClassFileParser::~ClassFileParser() {
 
   clear_class_metadata();
 
-  // deallocate the klass if already created.
-  MetadataFactory::free_metadata(_loader_data, _klass);
+  // deallocate the klass if already created.  Don't directly deallocate, but add
+  // to the deallocate list so that the klass is removed from the CLD::_klasses list
+  // at a safepoint.
+  if (_klass != NULL) {
+    _loader_data->add_to_deallocate_list(_klass);
+  }
   _klass = NULL;
 }
 

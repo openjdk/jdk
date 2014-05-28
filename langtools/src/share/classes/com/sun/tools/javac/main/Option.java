@@ -399,7 +399,6 @@ public enum Option {
         public boolean process(OptionHelper helper, String option, String arg) {
             try {
                 Log log = helper.getLog();
-                // TODO: this file should be closed at the end of compilation
                 log.setWriters(new PrintWriter(new FileWriter(arg), true));
             } catch (java.io.IOException e) {
                 helper.error("err.error.writing.file", arg, e);
@@ -416,6 +415,8 @@ public enum Option {
     XPRINTPROCESSORINFO("-XprintProcessorInfo", "opt.printProcessorInfo", EXTENDED, BASIC),
 
     XPREFER("-Xprefer:", "opt.prefer", EXTENDED, BASIC, ONEOF, "source", "newer"),
+
+    XXUSERPATHSFIRST("-XXuserPathsFirst", "opt.userpathsfirst", HIDDEN, BASIC),
 
     // see enum PkgInfo
     XPKGINFO("-Xpkginfo:", "opt.pkginfo", EXTENDED, BASIC, ONEOF, "always", "legacy", "nonempty"),

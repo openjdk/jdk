@@ -30,6 +30,7 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
@@ -266,9 +267,9 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 
   // Counted loop head must be a good RegionNode with only 3 not NULL
   // control input edges: Self, Entry, LoopBack.
-  if (x->in(LoopNode::Self) == NULL || x->req() != 3)
+  if (x->in(LoopNode::Self) == NULL || x->req() != 3 || loop->_irreducible) {
     return false;
-
+  }
   Node *init_control = x->in(LoopNode::EntryControl);
   Node *back_control = x->in(LoopNode::LoopBackControl);
   if (init_control == NULL || back_control == NULL)    // Partially dead
@@ -1522,11 +1523,11 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
 
   // If I have one hot backedge, peel off myself loop.
   // I better be the outermost loop.
-  if( _head->req() > 3 ) {
+  if (_head->req() > 3 && !_irreducible) {
     split_outer_loop( phase );
     result = true;
 
-  } else if( !_head->is_Loop() && !_irreducible ) {
+  } else if (!_head->is_Loop() && !_irreducible) {
     // Make a new LoopNode to replace the old loop head
     Node *l = new (phase->C) LoopNode( _head->in(1), _head->in(2) );
     l = igvn.register_new_node_with_optimizer(l, _head);
@@ -2938,6 +2939,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           return pre_order;
         }
       }
+      C->set_has_irreducible_loop(_has_irreducible_loops);
     }
 
     // This Node might be a decision point for loops.  It is only if
@@ -3171,17 +3173,16 @@ bool PhaseIdealLoop::verify_dominance(Node* n, Node* use, Node* LCA, Node* early
   bool had_error = false;
 #ifdef ASSERT
   if (early != C->root()) {
-    // Make sure that there's a dominance path from use to LCA
-    Node* d = use;
-    while (d != LCA) {
-      d = idom(d);
+    // Make sure that there's a dominance path from LCA to early
+    Node* d = LCA;
+    while (d != early) {
       if (d == C->root()) {
-        tty->print_cr("*** Use %d isn't dominated by def %s", use->_idx, n->_idx);
-        n->dump();
-        use->dump();
+        dump_bad_graph("Bad graph detected in compute_lca_of_uses", n, early, LCA);
+        tty->print_cr("*** Use %d isn't dominated by def %d ***", use->_idx, n->_idx);
         had_error = true;
         break;
       }
+      d = idom(d);
     }
   }
 #endif
@@ -3433,6 +3434,13 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
   if (n->req() == 2 && n->Opcode() == Op_ConvI2L && !C->major_progress() && !_verify_only) {
     _igvn._worklist.push(n);  // Maybe we'll normalize it, if no more loops.
   }
+
+#ifdef ASSERT
+  if (_verify_only && !n->is_CFG()) {
+    // Check def-use domination.
+    compute_lca_of_uses(n, get_ctrl(n), true /* verify */);
+  }
+#endif
 
   // CFG and pinned nodes already handled
   if( n->in(0) ) {

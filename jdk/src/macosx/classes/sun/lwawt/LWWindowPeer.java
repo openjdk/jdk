@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -629,6 +629,7 @@ public class LWWindowPeer
         final boolean isNewDevice = updateGraphicsDevice();
         if (resized || isNewDevice) {
             replaceSurfaceData();
+            updateMinimumSize();
         }
 
         // Third, COMPONENT_MOVED/COMPONENT_RESIZED/PAINT events
@@ -684,7 +685,7 @@ public class LWWindowPeer
     public void notifyNCMouseDown() {
         // Ungrab except for a click on a Dialog with the grabbing owner
         if (grabbingWindow != null &&
-            grabbingWindow != getOwnerFrameDialog(this))
+            !grabbingWindow.isOneOfOwnersOf(this))
         {
             grabbingWindow.ungrab();
         }
@@ -779,7 +780,7 @@ public class LWWindowPeer
 
                 // Ungrab only if this window is not an owned window of the grabbing one.
                 if (!isGrabbing() && grabbingWindow != null &&
-                    grabbingWindow != getOwnerFrameDialog(this))
+                    !grabbingWindow.isOneOfOwnersOf(this))
                 {
                     grabbingWindow.ungrab();
                 }
@@ -1046,7 +1047,9 @@ public class LWWindowPeer
 
     @Override
     public final void displayChanged() {
-        updateGraphicsDevice();
+        if (updateGraphicsDevice()) {
+            updateMinimumSize();
+        }
         // Replace surface unconditionally, because internal state of the
         // GraphicsDevice could be changed.
         replaceSurfaceData();
@@ -1232,6 +1235,17 @@ public class LWWindowPeer
         changeFocusedWindow(activate, null);
     }
 
+    private boolean isOneOfOwnersOf(LWWindowPeer peer) {
+        Window owner = (peer != null ? peer.getTarget().getOwner() : null);
+        while (owner != null) {
+            if ((LWWindowPeer)owner.getPeer() == this) {
+                return true;
+            }
+            owner = owner.getOwner();
+        }
+        return false;
+    }
+
     /*
      * Changes focused window on java level.
      */
@@ -1263,7 +1277,7 @@ public class LWWindowPeer
         // - when the opposite (gaining focus) window is an owned/owner window.
         // - for a simple window in any case.
         if (!becomesFocused &&
-            (isGrabbing() || getOwnerFrameDialog(grabbingWindow) == this))
+            (isGrabbing() || this.isOneOfOwnersOf(grabbingWindow)))
         {
             if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
                 focusLog.fine("ungrabbing on " + grabbingWindow);
@@ -1282,6 +1296,11 @@ public class LWWindowPeer
         postEvent(windowEvent);
     }
 
+    /*
+     * Retrieves the owner of the peer.
+     * Note: this method returns the owner which can be activated, (i.e. the instance
+     * of Frame or Dialog may be returned).
+     */
     static LWWindowPeer getOwnerFrameDialog(LWWindowPeer peer) {
         Window owner = (peer != null ? peer.getTarget().getOwner() : null);
         while (owner != null && !(owner instanceof Frame || owner instanceof Dialog)) {

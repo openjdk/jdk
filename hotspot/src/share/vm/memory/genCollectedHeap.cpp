@@ -197,9 +197,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
 
 void GenCollectedHeap::post_initialize() {
   SharedHeap::post_initialize();
-  TwoGenerationCollectorPolicy *policy =
-    (TwoGenerationCollectorPolicy *)collector_policy();
-  guarantee(policy->is_two_generation_policy(), "Illegal policy type");
+  GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
+  guarantee(policy->is_generation_policy(), "Illegal policy type");
   DefNewGeneration* def_new_gen = (DefNewGeneration*) get_gen(0);
   assert(def_new_gen->kind() == Generation::DefNew ||
          def_new_gen->kind() == Generation::ParNew ||
@@ -374,7 +373,7 @@ void GenCollectedHeap::do_collection(bool  full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, collector_policy());
 
-  const size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
+  const size_t metadata_prev_used = MetaspaceAux::used_bytes();
 
   print_heap_before_gc();
 
@@ -834,12 +833,6 @@ bool GenCollectedHeap::is_in_partial_collection(const void* p) {
 void GenCollectedHeap::oop_iterate(ExtendedOopClosure* cl) {
   for (int i = 0; i < _n_gens; i++) {
     _gens[i]->oop_iterate(cl);
-  }
-}
-
-void GenCollectedHeap::oop_iterate(MemRegion mr, ExtendedOopClosure* cl) {
-  for (int i = 0; i < _n_gens; i++) {
-    _gens[i]->oop_iterate(mr, cl);
   }
 }
 

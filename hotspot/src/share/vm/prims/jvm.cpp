@@ -51,6 +51,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
@@ -383,6 +384,23 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
   }
 
   return properties;
+JVM_END
+
+
+/*
+ * Return the temporary directory that the VM uses for the attach
+ * and perf data files.
+ *
+ * It is important that this directory is well-known and the
+ * same for all VM instances. It cannot be affected by configuration
+ * variables such as java.io.tmpdir.
+ */
+JVM_ENTRY(jstring, JVM_GetTemporaryDirectory(JNIEnv *env))
+  JVMWrapper("JVM_GetTemporaryDirectory");
+  HandleMark hm(THREAD);
+  const char* temp_dir = os::get_temp_directory();
+  Handle h = java_lang_String::create_from_platform_dependent_str(temp_dir, CHECK_NULL);
+  return (jstring) JNIHandles::make_local(env, h());
 JVM_END
 
 
@@ -1160,18 +1178,22 @@ static bool is_authorized(Handle context, instanceKlassHandle klass, TRAPS) {
 // and null permissions - which gives no permissions.
 oop create_dummy_access_control_context(TRAPS) {
   InstanceKlass* pd_klass = InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass());
-  // new ProtectionDomain(null,null);
-  oop null_protection_domain = pd_klass->allocate_instance(CHECK_NULL);
-  Handle null_pd(THREAD, null_protection_domain);
+  Handle obj = pd_klass->allocate_instance_handle(CHECK_NULL);
+  // Call constructor ProtectionDomain(null, null);
+  JavaValue result(T_VOID);
+  JavaCalls::call_special(&result, obj, KlassHandle(THREAD, pd_klass),
+                          vmSymbols::object_initializer_name(),
+                          vmSymbols::codesource_permissioncollection_signature(),
+                          Handle(), Handle(), CHECK_NULL);
 
   // new ProtectionDomain[] {pd};
   objArrayOop context = oopFactory::new_objArray(pd_klass, 1, CHECK_NULL);
-  context->obj_at_put(0, null_pd());
+  context->obj_at_put(0, obj());
 
   // new AccessControlContext(new ProtectionDomain[] {pd})
   objArrayHandle h_context(THREAD, context);
-  oop result = java_security_AccessControlContext::create(h_context, false, Handle(), CHECK_NULL);
-  return result;
+  oop acc = java_security_AccessControlContext::create(h_context, false, Handle(), CHECK_NULL);
+  return acc;
 }
 
 JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, jobject context, jboolean wrapException))
@@ -1211,7 +1233,8 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
   // get run() method
   Method* m_oop = object->klass()->uncached_lookup_method(
                                            vmSymbols::run_method_name(),
-                                           vmSymbols::void_object_signature());
+                                           vmSymbols::void_object_signature(),
+                                           Klass::normal);
   methodHandle m (THREAD, m_oop);
   if (m.is_null() || !m->is_method() || !m()->is_public() || m()->is_static()) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "No run method");
@@ -4360,7 +4383,7 @@ JVM_END
 
 JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t info_size))
 {
-  memset(info, 0, sizeof(info_size));
+  memset(info, 0, info_size);
 
   info->jvm_version = Abstract_VM_Version::jvm_version();
   info->update_version = 0;          /* 0 in HotSpot Express VM */

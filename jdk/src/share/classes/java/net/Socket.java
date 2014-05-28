@@ -32,6 +32,8 @@ import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedAction;
+import java.util.Set;
+import java.util.Collections;
 
 /**
  * This class implements client sockets (also called just
@@ -153,7 +155,7 @@ class Socket implements java.io.Closeable {
     /**
      * Creates an unconnected Socket with a user-specified
      * SocketImpl.
-     * <P>
+     *
      * @param impl an instance of a <B>SocketImpl</B>
      * the subclass wishes to use on the Socket.
      *
@@ -1245,7 +1247,7 @@ class Socket implements java.io.Closeable {
      * <ol>
      * <li>For sockets accepted from a ServerSocket, this must be done by calling
      * {@link ServerSocket#setReceiveBufferSize(int)} before the ServerSocket
-     * is bound to a local address.<p></li>
+     * is bound to a local address.</li>
      * <li>For client sockets, setReceiveBufferSize() must be called before
      * connecting the socket to its remote peer.</li></ol>
      * @param size the size to which to set the receive buffer
@@ -1719,5 +1721,94 @@ class Socket implements java.io.Closeable {
                                           int bandwidth)
     {
         /* Not implemented yet */
+    }
+
+
+    /**
+     * Sets the value of a socket option.
+     *
+     * @param name The socket option
+     * @param value The value of the socket option. A value of {@code null}
+     *              may be valid for some options.
+     * @return this Socket
+     *
+     * @throws UnsupportedOperationException if the socket does not support
+     *         the option.
+     *
+     * @throws IllegalArgumentException if the value is not valid for
+     *         the option.
+     *
+     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     *
+     * @throws NullPointerException if name is {@code null}
+     *
+     * @throws SecurityException if a security manager is set and if the socket
+     *         option requires a security permission and if the caller does
+     *         not have the required permission.
+     *         {@link java.net.StandardSocketOptions StandardSocketOptions}
+     *         do not require any security permission.
+     *
+     * @since 1.9
+     */
+    public <T> Socket setOption(SocketOption<T> name, T value) throws IOException {
+        getImpl().setOption(name, value);
+        return this;
+    }
+
+    /**
+     * Returns the value of a socket option.
+     *
+     * @param name The socket option
+     *
+     * @return The value of the socket option.
+     *
+     * @throws UnsupportedOperationException if the socket does not support
+     *         the option.
+     *
+     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     *
+     * @throws NullPointerException if name is {@code null}
+     *
+     * @throws SecurityException if a security manager is set and if the socket
+     *         option requires a security permission and if the caller does
+     *         not have the required permission.
+     *         {@link java.net.StandardSocketOptions StandardSocketOptions}
+     *         do not require any security permission.
+     *
+     * @since 1.9
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getOption(SocketOption<T> name) throws IOException {
+        return getImpl().getOption(name);
+    }
+
+    private static Set<SocketOption<?>> options;
+    private static boolean optionsSet = false;
+
+    /**
+     * Returns a set of the socket options supported by this socket.
+     *
+     * This method will continue to return the set of options even after
+     * the socket has been closed.
+     *
+     * @return A set of the socket options supported by this socket. This set
+     *         may be empty if the socket's SocketImpl cannot be created.
+     *
+     * @since 1.9
+     */
+    public Set<SocketOption<?>> supportedOptions() {
+        synchronized (Socket.class) {
+            if (optionsSet) {
+                return options;
+            }
+            try {
+                SocketImpl impl = getImpl();
+                options = Collections.unmodifiableSet(impl.supportedOptions());
+            } catch (IOException e) {
+                options = Collections.emptySet();
+            }
+            optionsSet = true;
+            return options;
+        }
     }
 }

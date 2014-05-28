@@ -2012,6 +2012,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
 
+    if (UseRTMLocking) {
+      // Abort RTM transaction before calling JNI
+      // because critical section will be large and will be
+      // aborted anyway. Also nmethod could be deoptimized.
+      __ xabort(0);
+    }
+
 #ifdef ASSERT
     {
       Label L;
@@ -2502,7 +2509,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (!is_critical_native) {
     // reset handle block
     __ movptr(rcx, Address(r15_thread, JavaThread::active_handles_offset()));
-    __ movptr(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
+    __ movl(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
   }
 
   // pop our frame
@@ -3477,11 +3484,15 @@ void SharedRuntime::generate_deopt_blob() {
   // restore rbp before stack bang because if stack overflow is thrown it needs to be pushed (and preserved)
   __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
 
-  // Stack bang to make sure there's enough room for these interpreter frames.
+#ifdef ASSERT
+  // Compilers generate code that bang the stack by as much as the
+  // interpreter would need. So this stack banging should never
+  // trigger a fault. Verify that it does not on non product builds.
   if (UseStackBanging) {
     __ movl(rbx, Address(rdi, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
     __ bang_stack_size(rbx, rcx);
   }
+#endif
 
   // Load address of array of frame pcs into rcx
   __ movptr(rcx, Address(rdi, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
@@ -3612,6 +3623,11 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   address start = __ pc();
 
+  if (UseRTMLocking) {
+    // Abort RTM transaction before possible nmethod deoptimization.
+    __ xabort(0);
+  }
+
   // Push self-frame.  We get here with a return address on the
   // stack, so rsp is 8-byte aligned until we allocate our frame.
   __ subptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Epilog!
@@ -3670,11 +3686,15 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // restore rbp before stack bang because if stack overflow is thrown it needs to be pushed (and preserved)
   __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
 
-  // Stack bang to make sure there's enough room for these interpreter frames.
+#ifdef ASSERT
+  // Compilers generate code that bang the stack by as much as the
+  // interpreter would need. So this stack banging should never
+  // trigger a fault. Verify that it does not on non product builds.
   if (UseStackBanging) {
     __ movl(rbx, Address(rdi ,Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
     __ bang_stack_size(rbx, rcx);
   }
+#endif
 
   // Load address of array of frame pcs into rcx (address*)
   __ movptr(rcx, Address(rdi, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
@@ -3791,6 +3811,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   int frame_size_in_words;
   bool cause_return = (poll_type == POLL_AT_RETURN);
   bool save_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
+
+  if (UseRTMLocking) {
+    // Abort RTM transaction before calling runtime
+    // because critical section will be large and will be
+    // aborted anyway. Also nmethod could be deoptimized.
+    __ xabort(0);
+  }
 
   // Make room for return address (or push it again)
   if (!cause_return) {

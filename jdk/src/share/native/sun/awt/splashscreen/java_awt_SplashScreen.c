@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
  */
 
 #include "splashscreen_impl.h"
-#include <jni.h>
 #include <jlong_md.h>
+#include <jni.h>
+#include <jni_util.h>
 #include <sizecalc.h>
 
 JNIEXPORT jint JNICALL
@@ -212,8 +213,9 @@ JNIEXPORT jboolean JNICALL Java_java_awt_SplashScreen__1setImageData
     if (!splash) {
         return JNI_FALSE;
     }
-    size = (*env)->GetArrayLength(env, data);
     pBytes = (*env)->GetByteArrayElements(env, data, NULL);
+    CHECK_NULL_RETURN(pBytes, JNI_FALSE);
+    size = (*env)->GetArrayLength(env, data);
     rc = SplashLoadMemory(pBytes, size);
     (*env)->ReleaseByteArrayElements(env, data, pBytes, JNI_ABORT);
     return rc ? JNI_TRUE : JNI_FALSE;

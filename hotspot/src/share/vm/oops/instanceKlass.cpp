@@ -55,6 +55,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
@@ -432,8 +433,8 @@ void InstanceKlass::eager_initialize(Thread *thread) {
     if (!InstanceKlass::cast(super)->is_initialized()) return;
 
     // call body to expose the this pointer
-    instanceKlassHandle this_oop(thread, this);
-    eager_initialize_impl(this_oop);
+    instanceKlassHandle this_k(thread, this);
+    eager_initialize_impl(this_k);
   }
 }
 
@@ -470,16 +471,16 @@ void InstanceKlass::fence_and_clear_init_lock() {
   assert(!is_not_initialized(), "class must be initialized now");
 }
 
-void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
+void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_k) {
   EXCEPTION_MARK;
-  oop init_lock = this_oop->init_lock();
+  oop init_lock = this_k->init_lock();
   ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
   // abort if someone beat us to the initialization
-  if (!this_oop->is_not_initialized()) return;  // note: not equivalent to is_initialized()
+  if (!this_k->is_not_initialized()) return;  // note: not equivalent to is_initialized()
 
-  ClassState old_state = this_oop->init_state();
-  link_class_impl(this_oop, true, THREAD);
+  ClassState old_state = this_k->init_state();
+  link_class_impl(this_k, true, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     // Abort if linking the class throws an exception.
@@ -487,16 +488,16 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
     // Use a test to avoid redundantly resetting the state if there's
     // no change.  Set_init_state() asserts that state changes make
     // progress, whereas here we might just be spinning in place.
-    if( old_state != this_oop->_init_state )
-      this_oop->set_init_state (old_state);
+    if( old_state != this_k->_init_state )
+      this_k->set_init_state (old_state);
   } else {
     // linking successfull, mark class as initialized
-    this_oop->set_init_state (fully_initialized);
-    this_oop->fence_and_clear_init_lock();
+    this_k->set_init_state (fully_initialized);
+    this_k->fence_and_clear_init_lock();
     // trace
     if (TraceClassInitialization) {
       ResourceMark rm(THREAD);
-      tty->print_cr("[Initialized %s without side effects]", this_oop->external_name());
+      tty->print_cr("[Initialized %s without side effects]", this_k->external_name());
     }
   }
 }
@@ -508,8 +509,8 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
 void InstanceKlass::initialize(TRAPS) {
   if (this->should_be_initialized()) {
     HandleMark hm(THREAD);
-    instanceKlassHandle this_oop(THREAD, this);
-    initialize_impl(this_oop, CHECK);
+    instanceKlassHandle this_k(THREAD, this);
+    initialize_impl(this_k, CHECK);
     // Note: at this point the class may be initialized
     //       OR it may be in the state of being initialized
     //       in case of recursive initialization!
@@ -520,11 +521,11 @@ void InstanceKlass::initialize(TRAPS) {
 
 
 bool InstanceKlass::verify_code(
-    instanceKlassHandle this_oop, bool throw_verifyerror, TRAPS) {
+    instanceKlassHandle this_k, bool throw_verifyerror, TRAPS) {
   // 1) Verify the bytecodes
   Verifier::Mode mode =
     throw_verifyerror ? Verifier::ThrowException : Verifier::NoException;
-  return Verifier::verify(this_oop, mode, this_oop->should_verify_class(), CHECK_false);
+  return Verifier::verify(this_k, mode, this_k->should_verify_class(), CHECK_false);
 }
 
 
@@ -540,8 +541,8 @@ void InstanceKlass::link_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (!is_linked()) {
     HandleMark hm(THREAD);
-    instanceKlassHandle this_oop(THREAD, this);
-    link_class_impl(this_oop, true, CHECK);
+    instanceKlassHandle this_k(THREAD, this);
+    link_class_impl(this_k, true, CHECK);
   }
 }
 
@@ -551,22 +552,22 @@ bool InstanceKlass::link_class_or_fail(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (!is_linked()) {
     HandleMark hm(THREAD);
-    instanceKlassHandle this_oop(THREAD, this);
-    link_class_impl(this_oop, false, CHECK_false);
+    instanceKlassHandle this_k(THREAD, this);
+    link_class_impl(this_k, false, CHECK_false);
   }
   return is_linked();
 }
 
 bool InstanceKlass::link_class_impl(
-    instanceKlassHandle this_oop, bool throw_verifyerror, TRAPS) {
+    instanceKlassHandle this_k, bool throw_verifyerror, TRAPS) {
   // check for error state
-  if (this_oop->is_in_error_state()) {
+  if (this_k->is_in_error_state()) {
     ResourceMark rm(THREAD);
     THROW_MSG_(vmSymbols::java_lang_NoClassDefFoundError(),
-               this_oop->external_name(), false);
+               this_k->external_name(), false);
   }
   // return if already verified
-  if (this_oop->is_linked()) {
+  if (this_k->is_linked()) {
     return true;
   }
 
@@ -576,7 +577,7 @@ bool InstanceKlass::link_class_impl(
   JavaThread* jt = (JavaThread*)THREAD;
 
   // link super class before linking this class
-  instanceKlassHandle super(THREAD, this_oop->super());
+  instanceKlassHandle super(THREAD, this_k->super());
   if (super.not_null()) {
     if (super->is_interface()) {  // check if super class is an interface
       ResourceMark rm(THREAD);
@@ -584,7 +585,7 @@ bool InstanceKlass::link_class_impl(
         THREAD_AND_LOCATION,
         vmSymbols::java_lang_IncompatibleClassChangeError(),
         "class %s has interface %s as super class",
-        this_oop->external_name(),
+        this_k->external_name(),
         super->external_name()
       );
       return false;
@@ -594,7 +595,7 @@ bool InstanceKlass::link_class_impl(
   }
 
   // link all interfaces implemented by this class before linking this class
-  Array<Klass*>* interfaces = this_oop->local_interfaces();
+  Array<Klass*>* interfaces = this_k->local_interfaces();
   int num_interfaces = interfaces->length();
   for (int index = 0; index < num_interfaces; index++) {
     HandleMark hm(THREAD);
@@ -603,7 +604,7 @@ bool InstanceKlass::link_class_impl(
   }
 
   // in case the class is linked in the process of linking its superclasses
-  if (this_oop->is_linked()) {
+  if (this_k->is_linked()) {
     return true;
   }
 
@@ -618,14 +619,14 @@ bool InstanceKlass::link_class_impl(
 
   // verification & rewriting
   {
-    oop init_lock = this_oop->init_lock();
+    oop init_lock = this_k->init_lock();
     ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
 
-    if (!this_oop->is_linked()) {
-      if (!this_oop->is_rewritten()) {
+    if (!this_k->is_linked()) {
+      if (!this_k->is_rewritten()) {
         {
           // Timer includes any side effects of class verification (resolution,
           // etc), but not recursive entry into verify_code().
@@ -635,7 +636,7 @@ bool InstanceKlass::link_class_impl(
                                    jt->get_thread_stat()->perf_recursion_counts_addr(),
                                    jt->get_thread_stat()->perf_timers_addr(),
                                    PerfClassTraceTime::CLASS_VERIFY);
-          bool verify_ok = verify_code(this_oop, throw_verifyerror, THREAD);
+          bool verify_ok = verify_code(this_k, throw_verifyerror, THREAD);
           if (!verify_ok) {
             return false;
           }
@@ -644,39 +645,39 @@ bool InstanceKlass::link_class_impl(
         // Just in case a side-effect of verify linked this class already
         // (which can sometimes happen since the verifier loads classes
         // using custom class loaders, which are free to initialize things)
-        if (this_oop->is_linked()) {
+        if (this_k->is_linked()) {
           return true;
         }
 
         // also sets rewritten
-        this_oop->rewrite_class(CHECK_false);
+        this_k->rewrite_class(CHECK_false);
       }
 
       // relocate jsrs and link methods after they are all rewritten
-      this_oop->link_methods(CHECK_false);
+      this_k->link_methods(CHECK_false);
 
       // Initialize the vtable and interface table after
       // methods have been rewritten since rewrite may
       // fabricate new Method*s.
       // also does loader constraint checking
-      if (!this_oop()->is_shared()) {
+      if (!this_k()->is_shared()) {
         ResourceMark rm(THREAD);
-        this_oop->vtable()->initialize_vtable(true, CHECK_false);
-        this_oop->itable()->initialize_itable(true, CHECK_false);
+        this_k->vtable()->initialize_vtable(true, CHECK_false);
+        this_k->itable()->initialize_itable(true, CHECK_false);
       }
 #ifdef ASSERT
       else {
         ResourceMark rm(THREAD);
-        this_oop->vtable()->verify(tty, true);
+        this_k->vtable()->verify(tty, true);
         // In case itable verification is ever added.
-        // this_oop->itable()->verify(tty, true);
+        // this_k->itable()->verify(tty, true);
       }
 #endif
-      this_oop->set_init_state(linked);
+      this_k->set_init_state(linked);
       if (JvmtiExport::should_post_class_prepare()) {
         Thread *thread = THREAD;
         assert(thread->is_Java_thread(), "thread->is_Java_thread()");
-        JvmtiExport::post_class_prepare((JavaThread *) thread, this_oop());
+        JvmtiExport::post_class_prepare((JavaThread *) thread, this_k());
       }
     }
   }
@@ -689,13 +690,13 @@ bool InstanceKlass::link_class_impl(
 // verification but before the first method of the class is executed.
 void InstanceKlass::rewrite_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
-  instanceKlassHandle this_oop(THREAD, this);
-  if (this_oop->is_rewritten()) {
-    assert(this_oop()->is_shared(), "rewriting an unshared class?");
+  instanceKlassHandle this_k(THREAD, this);
+  if (this_k->is_rewritten()) {
+    assert(this_k()->is_shared(), "rewriting an unshared class?");
     return;
   }
-  Rewriter::rewrite(this_oop, CHECK);
-  this_oop->set_rewritten();
+  Rewriter::rewrite(this_k, CHECK);
+  this_k->set_rewritten();
 }
 
 // Now relocate and link method entry points after class is rewritten.
@@ -729,19 +730,19 @@ void InstanceKlass::link_methods(TRAPS) {
 }
 
 
-void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
+void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
   // Make sure klass is linked (verified) before initialization
   // A class could already be verified, since it has been reflected upon.
-  this_oop->link_class(CHECK);
+  this_k->link_class(CHECK);
 
-  DTRACE_CLASSINIT_PROBE(required, InstanceKlass::cast(this_oop()), -1);
+  DTRACE_CLASSINIT_PROBE(required, InstanceKlass::cast(this_k()), -1);
 
   bool wait = false;
 
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    oop init_lock = this_oop->init_lock();
+    oop init_lock = this_k->init_lock();
     ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
     Thread *self = THREAD; // it's passed the current thread
@@ -750,29 +751,29 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     // If we were to use wait() instead of waitInterruptibly() then
     // we might end up throwing IE from link/symbol resolution sites
     // that aren't expected to throw.  This would wreak havoc.  See 6320309.
-    while(this_oop->is_being_initialized() && !this_oop->is_reentrant_initialization(self)) {
+    while(this_k->is_being_initialized() && !this_k->is_reentrant_initialization(self)) {
         wait = true;
       ol.waitUninterruptibly(CHECK);
     }
 
     // Step 3
-    if (this_oop->is_being_initialized() && this_oop->is_reentrant_initialization(self)) {
-      DTRACE_CLASSINIT_PROBE_WAIT(recursive, InstanceKlass::cast(this_oop()), -1,wait);
+    if (this_k->is_being_initialized() && this_k->is_reentrant_initialization(self)) {
+      DTRACE_CLASSINIT_PROBE_WAIT(recursive, InstanceKlass::cast(this_k()), -1,wait);
       return;
     }
 
     // Step 4
-    if (this_oop->is_initialized()) {
-      DTRACE_CLASSINIT_PROBE_WAIT(concurrent, InstanceKlass::cast(this_oop()), -1,wait);
+    if (this_k->is_initialized()) {
+      DTRACE_CLASSINIT_PROBE_WAIT(concurrent, InstanceKlass::cast(this_k()), -1,wait);
       return;
     }
 
     // Step 5
-    if (this_oop->is_in_error_state()) {
-      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, InstanceKlass::cast(this_oop()), -1,wait);
+    if (this_k->is_in_error_state()) {
+      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, InstanceKlass::cast(this_k()), -1,wait);
       ResourceMark rm(THREAD);
       const char* desc = "Could not initialize class ";
-      const char* className = this_oop->external_name();
+      const char* className = this_k->external_name();
       size_t msglen = strlen(desc) + strlen(className) + 1;
       char* message = NEW_RESOURCE_ARRAY(char, msglen);
       if (NULL == message) {
@@ -785,13 +786,13 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     }
 
     // Step 6
-    this_oop->set_init_state(being_initialized);
-    this_oop->set_init_thread(self);
+    this_k->set_init_state(being_initialized);
+    this_k->set_init_thread(self);
   }
 
   // Step 7
-  Klass* super_klass = this_oop->super();
-  if (super_klass != NULL && !this_oop->is_interface() && super_klass->should_be_initialized()) {
+  Klass* super_klass = this_k->super();
+  if (super_klass != NULL && !this_k->is_interface() && super_klass->should_be_initialized()) {
     super_klass->initialize(THREAD);
 
     if (HAS_PENDING_EXCEPTION) {
@@ -799,18 +800,18 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
       CLEAR_PENDING_EXCEPTION;
       {
         EXCEPTION_MARK;
-        this_oop->set_initialization_state_and_notify(initialization_error, THREAD); // Locks object, set state, and notify all waiting threads
+        this_k->set_initialization_state_and_notify(initialization_error, THREAD); // Locks object, set state, and notify all waiting threads
         CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, superclass initialization error is thrown below
       }
-      DTRACE_CLASSINIT_PROBE_WAIT(super__failed, InstanceKlass::cast(this_oop()), -1,wait);
+      DTRACE_CLASSINIT_PROBE_WAIT(super__failed, InstanceKlass::cast(this_k()), -1,wait);
       THROW_OOP(e());
     }
   }
 
-  if (this_oop->has_default_methods()) {
+  if (this_k->has_default_methods()) {
     // Step 7.5: initialize any interfaces which have default methods
-    for (int i = 0; i < this_oop->local_interfaces()->length(); ++i) {
-      Klass* iface = this_oop->local_interfaces()->at(i);
+    for (int i = 0; i < this_k->local_interfaces()->length(); ++i) {
+      Klass* iface = this_k->local_interfaces()->at(i);
       InstanceKlass* ik = InstanceKlass::cast(iface);
       if (ik->has_default_methods() && ik->should_be_initialized()) {
         ik->initialize(THREAD);
@@ -821,7 +822,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
           {
             EXCEPTION_MARK;
             // Locks object, set state, and notify all waiting threads
-            this_oop->set_initialization_state_and_notify(
+            this_k->set_initialization_state_and_notify(
                 initialization_error, THREAD);
 
             // ignore any exception thrown, superclass initialization error is
@@ -829,7 +830,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
             CLEAR_PENDING_EXCEPTION;
           }
           DTRACE_CLASSINIT_PROBE_WAIT(
-              super__failed, InstanceKlass::cast(this_oop()), -1, wait);
+              super__failed, InstanceKlass::cast(this_k()), -1, wait);
           THROW_OOP(e());
         }
       }
@@ -840,7 +841,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   {
     assert(THREAD->is_Java_thread(), "non-JavaThread in initialize_impl");
     JavaThread* jt = (JavaThread*)THREAD;
-    DTRACE_CLASSINIT_PROBE_WAIT(clinit, InstanceKlass::cast(this_oop()), -1,wait);
+    DTRACE_CLASSINIT_PROBE_WAIT(clinit, InstanceKlass::cast(this_k()), -1,wait);
     // Timer includes any side effects of class initialization (resolution,
     // etc), but not recursive entry into call_class_initializer().
     PerfClassTraceTime timer(ClassLoader::perf_class_init_time(),
@@ -849,14 +850,14 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
                              jt->get_thread_stat()->perf_recursion_counts_addr(),
                              jt->get_thread_stat()->perf_timers_addr(),
                              PerfClassTraceTime::CLASS_CLINIT);
-    this_oop->call_class_initializer(THREAD);
+    this_k->call_class_initializer(THREAD);
   }
 
   // Step 9
   if (!HAS_PENDING_EXCEPTION) {
-    this_oop->set_initialization_state_and_notify(fully_initialized, CHECK);
+    this_k->set_initialization_state_and_notify(fully_initialized, CHECK);
     { ResourceMark rm(THREAD);
-      debug_only(this_oop->vtable()->verify(tty, true);)
+      debug_only(this_k->vtable()->verify(tty, true);)
     }
   }
   else {
@@ -868,13 +869,13 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
     {
       EXCEPTION_MARK;
-      this_oop->set_initialization_state_and_notify(initialization_error, THREAD);
+      this_k->set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
       // JVMTI has already reported the pending exception
       // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
       JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
     }
-    DTRACE_CLASSINIT_PROBE_WAIT(error, InstanceKlass::cast(this_oop()), -1,wait);
+    DTRACE_CLASSINIT_PROBE_WAIT(error, InstanceKlass::cast(this_k()), -1,wait);
     if (e->is_a(SystemDictionary::Error_klass())) {
       THROW_OOP(e());
     } else {
@@ -884,7 +885,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
                 &args);
     }
   }
-  DTRACE_CLASSINIT_PROBE_WAIT(end, InstanceKlass::cast(this_oop()), -1,wait);
+  DTRACE_CLASSINIT_PROBE_WAIT(end, InstanceKlass::cast(this_k()), -1,wait);
 }
 
 
@@ -894,11 +895,11 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
   set_initialization_state_and_notify_impl(kh, state, CHECK);
 }
 
-void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_oop, ClassState state, TRAPS) {
-  oop init_lock = this_oop->init_lock();
+void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_k, ClassState state, TRAPS) {
+  oop init_lock = this_k->init_lock();
   ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
-  this_oop->set_init_state(state);
-  this_oop->fence_and_clear_init_lock();
+  this_k->set_init_state(state);
+  this_k->fence_and_clear_init_lock();
   ol.notify_all(CHECK);
 }
 
@@ -952,12 +953,11 @@ void InstanceKlass::init_implementor() {
 
 void InstanceKlass::process_interfaces(Thread *thread) {
   // link this class into the implementors list of every interface it implements
-  Klass* this_as_klass_oop = this;
   for (int i = local_interfaces()->length() - 1; i >= 0; i--) {
     assert(local_interfaces()->at(i)->is_klass(), "must be a klass");
     InstanceKlass* interf = InstanceKlass::cast(local_interfaces()->at(i));
     assert(interf->is_interface(), "expected interface");
-    interf->add_implementor(this_as_klass_oop);
+    interf->add_implementor(this);
   }
 }
 
@@ -1083,12 +1083,12 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
 }
 
 Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
-  instanceKlassHandle this_oop(THREAD, this);
-  return array_klass_impl(this_oop, or_null, n, THREAD);
+  instanceKlassHandle this_k(THREAD, this);
+  return array_klass_impl(this_k, or_null, n, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_impl(instanceKlassHandle this_oop, bool or_null, int n, TRAPS) {
-  if (this_oop->array_klasses() == NULL) {
+Klass* InstanceKlass::array_klass_impl(instanceKlassHandle this_k, bool or_null, int n, TRAPS) {
+  if (this_k->array_klasses() == NULL) {
     if (or_null) return NULL;
 
     ResourceMark rm;
@@ -1099,14 +1099,14 @@ Klass* InstanceKlass::array_klass_impl(instanceKlassHandle this_oop, bool or_nul
       MutexLocker ma(MultiArray_lock, THREAD);
 
       // Check if update has already taken place
-      if (this_oop->array_klasses() == NULL) {
-        Klass*    k = ObjArrayKlass::allocate_objArray_klass(this_oop->class_loader_data(), 1, this_oop, CHECK_NULL);
-        this_oop->set_array_klasses(k);
+      if (this_k->array_klasses() == NULL) {
+        Klass*    k = ObjArrayKlass::allocate_objArray_klass(this_k->class_loader_data(), 1, this_k, CHECK_NULL);
+        this_k->set_array_klasses(k);
       }
     }
   }
   // _this will always be set at this point
-  ObjArrayKlass* oak = (ObjArrayKlass*)this_oop->array_klasses();
+  ObjArrayKlass* oak = (ObjArrayKlass*)this_k->array_klasses();
   if (or_null) {
     return oak->array_klass_or_null(n);
   }
@@ -1133,20 +1133,20 @@ Method* InstanceKlass::class_initializer() {
   return NULL;
 }
 
-void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_oop, TRAPS) {
+void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_k, TRAPS) {
   if (ReplayCompiles &&
       (ReplaySuppressInitializers == 1 ||
-       ReplaySuppressInitializers >= 2 && this_oop->class_loader() != NULL)) {
+       ReplaySuppressInitializers >= 2 && this_k->class_loader() != NULL)) {
     // Hide the existence of the initializer for the purpose of replaying the compile
     return;
   }
 
-  methodHandle h_method(THREAD, this_oop->class_initializer());
-  assert(!this_oop->is_initialized(), "we cannot initialize twice");
+  methodHandle h_method(THREAD, this_k->class_initializer());
+  assert(!this_k->is_initialized(), "we cannot initialize twice");
   if (TraceClassInitialization) {
     tty->print("%d Initializing ", call_class_initializer_impl_counter++);
-    this_oop->name()->print_value();
-    tty->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", (address)this_oop());
+    this_k->name()->print_value();
+    tty->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", (address)this_k());
   }
   if (h_method() != NULL) {
     JavaCallArguments args; // No arguments
@@ -1290,17 +1290,18 @@ void InstanceKlass::do_local_static_fields(FieldClosure* cl) {
 }
 
 
-void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, TRAPS), TRAPS) {
+void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAPS), Handle mirror, TRAPS) {
   instanceKlassHandle h_this(THREAD, this);
-  do_local_static_fields_impl(h_this, f, CHECK);
+  do_local_static_fields_impl(h_this, f, mirror, CHECK);
 }
 
 
-void InstanceKlass::do_local_static_fields_impl(instanceKlassHandle this_oop, void f(fieldDescriptor* fd, TRAPS), TRAPS) {
-  for (JavaFieldStream fs(this_oop()); !fs.done(); fs.next()) {
+void InstanceKlass::do_local_static_fields_impl(instanceKlassHandle this_k,
+                             void f(fieldDescriptor* fd, Handle, TRAPS), Handle mirror, TRAPS) {
+  for (JavaFieldStream fs(this_k()); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static()) {
       fieldDescriptor& fd = fs.field_descriptor();
-      f(&fd, CHECK);
+      f(&fd, mirror, CHECK);
     }
   }
 }
@@ -1389,7 +1390,11 @@ static int binary_search(Array<Method*>* methods, Symbol* name) {
 
 // find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
-  return InstanceKlass::find_method(methods(), name, signature);
+  return find_method_impl(name, signature, false);
+}
+
+Method* InstanceKlass::find_method_impl(Symbol* name, Symbol* signature, bool skipping_overpass) const {
+  return InstanceKlass::find_method_impl(methods(), name, signature, skipping_overpass);
 }
 
 // find_instance_method looks up the name/signature in the local methods array
@@ -1406,40 +1411,49 @@ Method* InstanceKlass::find_instance_method(
 // find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(
     Array<Method*>* methods, Symbol* name, Symbol* signature) {
-  int hit = find_method_index(methods, name, signature);
+  return InstanceKlass::find_method_impl(methods, name, signature, false);
+}
+
+Method* InstanceKlass::find_method_impl(
+    Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass) {
+  int hit = find_method_index(methods, name, signature, skipping_overpass);
   return hit >= 0 ? methods->at(hit): NULL;
 }
 
 // Used directly for default_methods to find the index into the
 // default_vtable_indices, and indirectly by find_method
 // find_method_index looks in the local methods array to return the index
-// of the matching name/signature
+// of the matching name/signature. If, overpass methods are being ignored,
+// the search continues to find a potential non-overpass match.  This capability
+// is important during method resolution to prefer a static method, for example,
+// over an overpass method.
 int InstanceKlass::find_method_index(
-    Array<Method*>* methods, Symbol* name, Symbol* signature) {
+    Array<Method*>* methods, Symbol* name, Symbol* signature, bool skipping_overpass) {
   int hit = binary_search(methods, name);
   if (hit != -1) {
     Method* m = methods->at(hit);
     // Do linear search to find matching signature.  First, quick check
-    // for common case
-    if (m->signature() == signature) return hit;
+    // for common case, ignoring overpasses if requested.
+    if ((m->signature() == signature) && (!skipping_overpass || !m->is_overpass())) return hit;
+
     // search downwards through overloaded methods
     int i;
     for (i = hit - 1; i >= 0; --i) {
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if (m->signature() == signature) return i;
+        if ((m->signature() == signature) && (!skipping_overpass || !m->is_overpass())) return i;
     }
     // search upwards
     for (i = hit + 1; i < methods->length(); ++i) {
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if (m->signature() == signature) return i;
+        if ((m->signature() == signature) && (!skipping_overpass || !m->is_overpass())) return i;
     }
     // not found
 #ifdef ASSERT
-    int index = linear_search(methods, name, signature);
+    int index = skipping_overpass ? -1 : linear_search(methods, name, signature);
     assert(index == -1, err_msg("binary search should have found entry %d", index));
 #endif
   }
@@ -1465,16 +1479,16 @@ int InstanceKlass::find_method_by_name(
 
 // uncached_lookup_method searches both the local class methods array and all
 // superclasses methods arrays, skipping any overpass methods in superclasses.
-Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
+Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const {
+  MethodLookupMode lookup_mode = mode;
   Klass* klass = const_cast<InstanceKlass*>(this);
-  bool dont_ignore_overpasses = true;  // For the class being searched, find its overpasses.
   while (klass != NULL) {
-    Method* method = InstanceKlass::cast(klass)->find_method(name, signature);
-    if ((method != NULL) && (dont_ignore_overpasses || !method->is_overpass())) {
+    Method* method = InstanceKlass::cast(klass)->find_method_impl(name, signature, (lookup_mode == skip_overpass));
+    if (method != NULL) {
       return method;
     }
     klass = InstanceKlass::cast(klass)->super();
-    dont_ignore_overpasses = false;  // Ignore overpass methods in all superclasses.
+    lookup_mode = skip_overpass;   // Always ignore overpass methods in superclasses
   }
   return NULL;
 }
@@ -1489,7 +1503,7 @@ Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
   }
   // Look up interfaces
   if (m == NULL) {
-    m = lookup_method_in_all_interfaces(name, signature, false);
+    m = lookup_method_in_all_interfaces(name, signature, normal);
   }
   return m;
 }
@@ -1499,7 +1513,7 @@ Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
 // They should only be found in the initial InterfaceMethodRef
 Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
                                                        Symbol* signature,
-                                                       bool skip_default_methods) const {
+                                                       MethodLookupMode mode) const {
   Array<Klass*>* all_ifs = transitive_interfaces();
   int num_ifs = all_ifs->length();
   InstanceKlass *ik = NULL;
@@ -1507,7 +1521,7 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
     ik = InstanceKlass::cast(all_ifs->at(i));
     Method* m = ik->lookup_method(name, signature);
     if (m != NULL && m->is_public() && !m->is_static() &&
-        (!skip_default_methods || !m->is_default_method())) {
+        ((mode != skip_defaults) || !m->is_default_method())) {
       return m;
     }
   }
@@ -1515,14 +1529,14 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
 }
 
 /* jni_id_for_impl for jfieldIds only */
-JNIid* InstanceKlass::jni_id_for_impl(instanceKlassHandle this_oop, int offset) {
+JNIid* InstanceKlass::jni_id_for_impl(instanceKlassHandle this_k, int offset) {
   MutexLocker ml(JfieldIdCreation_lock);
   // Retry lookup after we got the lock
-  JNIid* probe = this_oop->jni_ids() == NULL ? NULL : this_oop->jni_ids()->find(offset);
+  JNIid* probe = this_k->jni_ids() == NULL ? NULL : this_k->jni_ids()->find(offset);
   if (probe == NULL) {
     // Slow case, allocate new static field identifier
-    probe = new JNIid(this_oop(), offset, this_oop->jni_ids());
-    this_oop->set_jni_ids(probe);
+    probe = new JNIid(this_k(), offset, this_k->jni_ids());
+    this_k->set_jni_ids(probe);
   }
   return probe;
 }
@@ -2241,9 +2255,7 @@ void InstanceKlass::restore_unshareable_info(TRAPS) {
   int num_methods = methods->length();
   for (int index2 = 0; index2 < num_methods; ++index2) {
     methodHandle m(THREAD, methods->at(index2));
-    m()->link_method(m, CHECK);
-    // restore method's vtable by calling a virtual function
-    m->restore_vtable();
+    m->restore_unshareable_info(CHECK);
   }
   if (JvmtiExport::has_redefined_a_class()) {
     // Reinitialize vtable because RedefineClasses may have changed some
@@ -2387,7 +2399,6 @@ const char* InstanceKlass::signature_name() const {
 
   // If this is an anonymous class, append a hash to make the name unique
   if (is_anonymous()) {
-    assert(EnableInvokeDynamic, "EnableInvokeDynamic was not set.");
     intptr_t hash = (java_mirror() != NULL) ? java_mirror()->identity_hash() : 0;
     sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
     hash_len = (int)strlen(hash_buf);
@@ -3161,8 +3172,8 @@ void InstanceKlass::verify_on(outputStream* st) {
   }
 
   // Verify first subklass
-  if (subklass_oop() != NULL) {
-    guarantee(subklass_oop()->is_klass(), "should be klass");
+  if (subklass() != NULL) {
+    guarantee(subklass()->is_klass(), "should be klass");
   }
 
   // Verify siblings
@@ -3410,6 +3421,10 @@ static void purge_previous_versions_internal(InstanceKlass* ik, int emcp_method_
               ("purge: %s(%s): prev method @%d in version @%d is alive",
               method->name()->as_C_string(),
               method->signature()->as_C_string(), j, i));
+            if (method->method_data() != NULL) {
+              // Clean out any weak method links
+              method->method_data()->clean_weak_method_links();
+            }
           }
         }
       }
@@ -3418,6 +3433,14 @@ static void purge_previous_versions_internal(InstanceKlass* ik, int emcp_method_
     RC_TRACE(0x00000200,
       ("purge: previous version stats: live=%d, deleted=%d", live_count,
       deleted_count));
+  }
+
+  Array<Method*>* methods = ik->methods();
+  int num_methods = methods->length();
+  for (int index2 = 0; index2 < num_methods; ++index2) {
+    if (methods->at(index2)->method_data() != NULL) {
+      methods->at(index2)->method_data()->clean_weak_method_links();
+    }
   }
 }
 

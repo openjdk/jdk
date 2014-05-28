@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -696,6 +696,9 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *  <pre> {@code
      * for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
      *     // operate on index i here
+     *     if (i == Integer.MAX_VALUE) {
+     *         break; // or (i+1) would overflow
+     *     }
      * }}</pre>
      *
      * @param  fromIndex the index to start checking from (inclusive)
@@ -1186,10 +1189,12 @@ public class BitSet implements Cloneable, java.io.Serializable {
         int i = nextSetBit(0);
         if (i != -1) {
             b.append(i);
-            for (i = nextSetBit(i+1); i >= 0; i = nextSetBit(i+1)) {
+            while (true) {
+                if (++i < 0) break;
+                if ((i = nextSetBit(i)) < 0) break;
                 int endOfRun = nextClearBit(i);
                 do { b.append(", ").append(i); }
-                while (++i < endOfRun);
+                while (++i != endOfRun);
             }
         }
 

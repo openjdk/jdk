@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
  * @bug 4884387
  * @summary Use ldc instruction for class literals
  * @author gafter
- *
- * @compile -source 1.5 -target 1.5 ClassLit.java
- * @run main ClassLit
  */
 
 public class ClassLit {

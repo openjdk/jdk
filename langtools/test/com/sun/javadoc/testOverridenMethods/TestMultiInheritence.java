@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,76 +27,54 @@
  * @summary  Make sure that all inherited methods from multiple extended
  *           interfaces are documented
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestMultiInheritence
  * @run main TestMultiInheritence
  */
 
+// TODO: should be TestMultiInheritance
 public class TestMultiInheritence extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4933335";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg3"
-    };
-
-    //Method foo() is inherited from BOTH I2 and I3
-    private static final String[][] TEST = {
-       {BUG_ID + FS + "pkg3" + FS + "I1.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">" +
-                "I2</a>"},
-        {BUG_ID + FS + "pkg3" + FS +"I1.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">" +
-                 "I3</a>"},
-        {BUG_ID + FS + "pkg3" + FS + "I0.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">" +
-                 "I2</a>"},
-        {BUG_ID + FS + "pkg3" + FS +"I0.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">" +
-                 "I3</a>"},
-    };
-
-    //Method foo() is NOT inherited from I4 because it is overriden by
-    //I3.
-    private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg3" + FS + "I1.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">" +
-                 "I4</a>"},
-        {BUG_ID + FS + "pkg3" + FS + "I0.html",
-        "Methods inherited from interface&nbsp;pkg3." +
-                 "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">" +
-                 "I4</a>"},
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestMultiInheritence tester = new TestMultiInheritence();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg3");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        // Method foo() is inherited from BOTH I2 and I3
+
+        checkOutput("pkg3/I1.html", true,
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">"
+                + "I2</a>",
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">"
+                + "I3</a>");
+
+        checkOutput("pkg3/I0.html", true,
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I2.html\" title=\"interface in pkg3\">"
+                + "I2</a>",
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I3.html\" title=\"interface in pkg3\">"
+                + "I3</a>");
+
+        // Method foo() is NOT inherited from I4 because it is overriden by I3.
+
+        checkOutput("pkg3/I1.html", false,
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">"
+                + "I4</a>");
+
+        checkOutput("pkg3/I0.html", false,
+                "Methods inherited from interface&nbsp;pkg3."
+                + "<a href=\"../pkg3/I4.html\" title=\"interface in pkg3\">"
+                + "I4</a>");
     }
 }

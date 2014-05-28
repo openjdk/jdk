@@ -213,7 +213,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
      * If window is showing then it uses ClientMessage, otherwise adjusts NET_WM_STATE list
      * @param window Window which NET_WM_STATE property is being modified
      * @param state State atom to be set/reset
-     * @param reset Indicates operation, 'set' if false, 'reset' if true
+     * @param set Indicates operation, 'set' if false, 'reset' if true
      */
     private void setStateHelper(XWindowPeer window, XAtom state, boolean set) {
         if (log.isLoggable(PlatformLogger.Level.FINER)) {
@@ -249,6 +249,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
     XAtom XA_UTF8_STRING = XAtom.get("UTF8_STRING");   /* like STRING but encoding is UTF-8 */
     XAtom XA_NET_SUPPORTING_WM_CHECK = XAtom.get("_NET_SUPPORTING_WM_CHECK");
     XAtom XA_NET_SUPPORTED = XAtom.get("_NET_SUPPORTED");      /* list of protocols (property of root) */
+    XAtom XA_NET_ACTIVE_WINDOW = XAtom.get("_NET_ACTIVE_WINDOW");
     XAtom XA_NET_WM_NAME = XAtom.get("_NET_WM_NAME");  /* window property */
     XAtom XA_NET_WM_STATE = XAtom.get("_NET_WM_STATE");/* both window property and request */
 
@@ -323,6 +324,32 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
     boolean doOpacityProtocol() {
         boolean res = active() && checkProtocol(XA_NET_SUPPORTED, XA_NET_WM_WINDOW_OPACITY);
         return res;
+    }
+
+    public void setActiveWindow(XWindow window) {
+        if (!active() || !checkProtocol(XA_NET_SUPPORTED, XA_NET_ACTIVE_WINDOW)) {
+            return;
+        }
+
+        XClientMessageEvent msg = new XClientMessageEvent();
+        msg.zero();
+        msg.set_type(XConstants.ClientMessage);
+        msg.set_message_type(XA_NET_ACTIVE_WINDOW.getAtom());
+        msg.set_display(XToolkit.getDisplay());
+        msg.set_window(window.getWindow());
+        msg.set_format(32);
+        msg.set_data(0, 1);
+        msg.set_data(1, XToolkit.getCurrentServerTime());
+        msg.set_data(2, 0);
+
+        XToolkit.awtLock();
+        try {
+            XlibWrapper.XSendEvent(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), false,
+                    XConstants.SubstructureRedirectMask | XConstants.SubstructureNotifyMask, msg.getPData());
+        } finally {
+            XToolkit.awtUnlock();
+            msg.dispose();
+        }
     }
 
     boolean isWMName(String name) {

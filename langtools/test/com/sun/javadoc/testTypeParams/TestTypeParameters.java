@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,84 +30,61 @@
  *           class-use pages. The class/annotation pages should check for type
  *           parameter links in the class/annotation signature section when -linksource is set.
  * @author   jamieh
- * @library  ../lib/
- * @build    JavadocTester TestTypeParameters
+ * @library  ../lib
+ * @build    JavadocTester
  * @run main TestTypeParameters
  */
 
 public class TestTypeParameters extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4927167-4974929-7010344";
+    public static void main(String... args) throws Exception {
+        TestTypeParameters tester = new TestTypeParameters();
+        tester.runTests();
+    }
 
-    //Javadoc arguments.
-    private static final String[] ARGS1 = new String[]{
-        "-d", BUG_ID, "-use", "-sourcepath", SRC_DIR,
-        "pkg"
-    };
-    private static final String[] ARGS2 = new String[]{
-        "-d", BUG_ID, "-linksource", "-sourcepath", SRC_DIR,
-        "pkg"
-    };
+    @Test
+    void test1() {
+        javadoc("-d", "out-1",
+                "-use",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    //Input for string search tests.
-    private static final String[][] TEST1 = {
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<td class=\"colFirst\"><code>&lt;W extends java.lang.String,V extends " +
-            "java.util.List&gt;<br>java.lang.Object</code></td>"
-        },
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<code>&lt;T&gt;&nbsp;java.lang.Object</code>"
-        },
-        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
-            "C</a>&lt;E extends <a href=\"../pkg/Parent.html\" " +
-            "title=\"class in pkg\">Parent</a>&gt;"
-        },
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "Foo4.html",
-            "<a href=\"../../pkg/ClassUseTest3.html\" title=\"class in pkg\">" +
-            "ClassUseTest3</a>&lt;T extends <a href=\"../../pkg/ParamTest2.html\" " +
-            "title=\"class in pkg\">ParamTest2</a>&lt;java.util.List&lt;? extends " +
-            "<a href=\"../../pkg/Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;"
-        },
-        //Nested type parameters
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<a name=\"formatDetails-java.util.Collection-java.util.Collection-\">" + NL +
-            "<!--   -->" + NL +
-            "</a>"
-        },
-    };
-    private static final String[][] TEST2 = {
-        {BUG_ID + FS + "pkg" + FS + "ClassUseTest3.html",
+        checkOutput("pkg/C.html", true,
+                "<td class=\"colFirst\"><code>&lt;W extends java.lang.String,V extends "
+                + "java.util.List&gt;<br>java.lang.Object</code></td>",
+                "<code>&lt;T&gt;&nbsp;java.lang.Object</code>");
+
+        checkOutput("pkg/package-summary.html", true,
+                "C</a>&lt;E extends <a href=\"../pkg/Parent.html\" "
+                + "title=\"class in pkg\">Parent</a>&gt;");
+
+        checkOutput("pkg/class-use/Foo4.html", true,
+                "<a href=\"../../pkg/ClassUseTest3.html\" title=\"class in pkg\">"
+                + "ClassUseTest3</a>&lt;T extends <a href=\"../../pkg/ParamTest2.html\" "
+                + "title=\"class in pkg\">ParamTest2</a>&lt;java.util.List&lt;? extends "
+                + "<a href=\"../../pkg/Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;");
+
+        // Nested type parameters
+        checkOutput("pkg/C.html", true,
+                "<a name=\"formatDetails-java.util.Collection-java.util.Collection-\">\n"
+                + "<!--   -->\n"
+                + "</a>");
+    }
+
+
+    @Test
+    void test2() {
+        javadoc("-d", "out-2",
+                "-linksource",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/ClassUseTest3.html", true,
             "public class <a href=\"../src-html/pkg/ClassUseTest3.html#line.28\">" +
             "ClassUseTest3</a>&lt;T extends <a href=\"../pkg/ParamTest2.html\" " +
             "title=\"class in pkg\">ParamTest2</a>&lt;java.util.List&lt;? extends " +
-            "<a href=\"../pkg/Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;"
-        }
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        TestTypeParameters tester = new TestTypeParameters();
-        run(tester, ARGS1, TEST1, NEGATED_TEST);
-        run(tester, ARGS2, TEST2, NEGATED_TEST);
-        tester.printSummary();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+            "<a href=\"../pkg/Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,98 +23,69 @@
 
 /*
  * @test
- * @bug 8025524
+ * @bug 8025524 8031625
  * @summary Test for constructor name which should be a non-qualified name.
  * @author Bhavesh Patel
- * @library ../lib/
- * @build JavadocTester TestConstructors
+ * @library ../lib
+ * @build JavadocTester
  * @run main TestConstructors
  */
 
 public class TestConstructors extends JavadocTester {
 
-    private static final String BUG_ID = "8025524";
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
-            "<a href=\"../pkg1/Outer.html#Outer--\">Outer</a></span>()"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
-            "<a name=\"Outer--\">"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
-            "<a href=\"../pkg1/Outer.html#Outer-int-\">Outer</a></span>(int&nbsp;i)"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.html",
-            "<a name=\"Outer-int-\">"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.html",
-            "<a href=\"../pkg1/Outer.Inner.html#Inner--\">Inner</a></span>()"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.html",
-            "<a name=\"Inner--\">"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.html",
-            "<a href=\"../pkg1/Outer.Inner.html#Inner-int-\">Inner</a></span>(int&nbsp;i)"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.html",
-            "<a name=\"Inner-int-\">"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.NestedInner.html",
-            "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner--\">NestedInner</a></span>()"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.NestedInner.html",
-            "<a name=\"NestedInner--\">"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.NestedInner.html",
-            "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\">NestedInner</a></span>(int&nbsp;i)"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.NestedInner.html",
-            "<a name=\"NestedInner-int-\">"
-        }
-    };
-
-    private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.html",
-            "Outer.Inner--"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.html",
-            "Outer.Inner-int-"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.NestedInner.html",
-            "Outer.Inner.NestedInner--"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "Outer.Inner.NestedInner.html",
-            "Outer.Inner.NestedInner-int-"
-        }
-    };
-
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) throws Exception {
+    public static void main(String... args) throws Exception {
         TestConstructors tester = new TestConstructors();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg1");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg1/Outer.html", true,
+                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dd><a href=\"../pkg1/Outer.Inner.html#Inner--\"><code>Inner()</code></a>, \n"
+                + "<a href=\"../pkg1/Outer.Inner.html#Inner-int-\"><code>Inner(int)</code></a>, \n"
+                + "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner--\"><code>NestedInner()</code></a>, \n"
+                + "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\"><code>NestedInner(int)</code></a>, \n"
+                + "<a href=\"../pkg1/Outer.html#Outer--\"><code>Outer()</code></a>, \n"
+                + "<a href=\"../pkg1/Outer.html#Outer-int-\"><code>Outer(int)</code></a>",
+                "Link: <a href=\"../pkg1/Outer.Inner.html#Inner--\"><code>Inner()</code></a>, "
+                + "<a href=\"../pkg1/Outer.html#Outer-int-\"><code>Outer(int)</code></a>, "
+                + "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\"><code>"
+                + "NestedInner(int)</code></a>",
+                "<a href=\"../pkg1/Outer.html#Outer--\">Outer</a></span>()",
+                "<a name=\"Outer--\">",
+                "<a href=\"../pkg1/Outer.html#Outer-int-\">Outer</a></span>(int&nbsp;i)",
+                "<a name=\"Outer-int-\">");
+
+        checkOutput("pkg1/Outer.Inner.html", true,
+                "<a href=\"../pkg1/Outer.Inner.html#Inner--\">Inner</a></span>()",
+                "<a name=\"Inner--\">",
+                "<a href=\"../pkg1/Outer.Inner.html#Inner-int-\">Inner</a></span>(int&nbsp;i)",
+                "<a name=\"Inner-int-\">");
+
+        checkOutput("pkg1/Outer.Inner.NestedInner.html", true,
+                "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner--\">NestedInner</a></span>()",
+                "<a name=\"NestedInner--\">",
+                "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\">NestedInner</a></span>(int&nbsp;i)",
+                "<a name=\"NestedInner-int-\">");
+
+        checkOutput("pkg1/Outer.Inner.html", false,
+                "Outer.Inner--",
+                "Outer.Inner-int-");
+
+        checkOutput("pkg1/Outer.Inner.NestedInner.html", false,
+                "Outer.Inner.NestedInner--",
+                "Outer.Inner.NestedInner-int-");
+
+        checkOutput("pkg1/Outer.html", false,
+                "<a href=\"../pkg1/Outer.Inner.html#Outer.Inner--\"><code>Outer.Inner()</code></a>",
+                "<a href=\"../pkg1/Outer.Inner.html#Outer.Inner-int-\"><code>Outer.Inner(int)</code></a>",
+                "<a href=\"../pkg1/Outer.Inner.NestedInner.html#Outer.Inner.NestedInner--\"><code>Outer.Inner.NestedInner()</code></a>",
+                "<a href=\"../pkg1/Outer.Inner.NestedInner.html#Outer.Inner.NestedInner-int-\"><code>Outer.Inner.NestedInner(int)</code></a>");
     }
 }

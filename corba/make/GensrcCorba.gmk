@@ -39,9 +39,6 @@ $(eval $(call SetupJavaCompilation,BUILD_TOOLS, \
     SRC := $(CORBA_TOPDIR)/make/src/classes, \
     BIN := $(CORBA_OUTPUTDIR)/tools_classes))
 
-TOOL_STRIPPROP_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/tools_classes \
-    build.tools.stripproperties.StripPropertiesCorba
-
 TOOL_LOGUTIL_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/tools_classes \
     build.tools.logutil.MC
 
@@ -230,27 +227,14 @@ $(eval $(call SetupIdlCompilation,BUILD_IDLS, \
 $(BUILD_IDLS): $(BUILD_IDLJ)
 
 ################################################################################
-# Run stripproperties on all sunorb resource files.
+# zh_HK is just a copy of zh_TW
 
-STRIP_PROP_SRC_FILES := $(shell $(FIND) $(CORBA_TOPDIR)/src/share/classes -name "sunorb*.properties")
-STRIP_PROP_FILES := $(patsubst $(CORBA_TOPDIR)/src/share/classes/%, $(CORBA_OUTPUTDIR)/classes/%, \
-    $(STRIP_PROP_SRC_FILES))
-# Simple delivery of zh_HK properties files just copies zh_TW properties files
-STRIP_PROP_SRC_FILE_ZH_TW := $(shell $(FIND) $(CORBA_TOPDIR)/src/share/classes -name "sunorb_zh_TW.properties")
-STRIP_PROP_SRC_FILES += $(STRIP_PROP_SRC_FILE_ZH_TW)
-STRIP_PROP_FILES += $(patsubst $(CORBA_TOPDIR)/src/share/classes/%_zh_TW.properties, \
-    $(CORBA_OUTPUTDIR)/classes/%_zh_HK.properties, $(STRIP_PROP_SRC_FILE_ZH_TW))
-STRIP_PROP_CMDLINE := $(subst _SPACE_, $(SPACE), \
-    $(join $(addprefix -clean_SPACE_, $(STRIP_PROP_SRC_FILES)), \
-    $(addprefix _SPACE_, $(STRIP_PROP_FILES))))
-
-$(CORBA_OUTPUTDIR)/_the.stripped_properties: $(STRIP_PROP_SRC_FILES) \
-    $(BUILD_TOOLS)
-	$(MKDIR) -p $(sort $(dir $(STRIP_PROP_FILES)))
-	$(call ListPathsSafely,STRIP_PROP_CMDLINE,\n, >> $(CORBA_OUTPUTDIR)/_the.strip_prop.cmdline)
-	$(TOOL_STRIPPROP_CMD) @$(CORBA_OUTPUTDIR)/_the.strip_prop.cmdline
-	$(TOUCH) $@
+$(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_HK.properties: \
+    $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_TW.properties
+	$(install-file)
 
 ################################################################################
 
-all: $(BUILD_IDLS) $(CORBA_OUTPUTDIR)/_the.stripped_properties $(LOGWRAPPER_TARGETS)
+all: $(BUILD_IDLS) $(LOGWRAPPER_TARGETS) \
+    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_HK.properties
+

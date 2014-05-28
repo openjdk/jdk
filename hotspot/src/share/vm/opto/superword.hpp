@@ -24,7 +24,6 @@
 #ifndef SHARE_VM_OPTO_SUPERWORD_HPP
 #define SHARE_VM_OPTO_SUPERWORD_HPP
 
-#include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/node.hpp"
 #include "opto/phaseX.hpp"

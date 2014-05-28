@@ -31,11 +31,13 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
 
@@ -306,33 +308,16 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     int alias_idx = phase->C->get_alias_index(t_adr->is_ptr());
   }
 
-#ifdef ASSERT
   Node* base = NULL;
-  if (address->is_AddP())
+  if (address->is_AddP()) {
     base = address->in(AddPNode::Base);
+  }
   if (base != NULL && phase->type(base)->higher_equal(TypePtr::NULL_PTR) &&
       !t_adr->isa_rawptr()) {
     // Note: raw address has TOP base and top->higher_equal(TypePtr::NULL_PTR) is true.
-    Compile* C = phase->C;
-    tty->cr();
-    tty->print_cr("===== NULL+offs not RAW address =====");
-    if (C->is_dead_node(this->_idx))    tty->print_cr("'this' is dead");
-    if ((ctl != NULL) && C->is_dead_node(ctl->_idx)) tty->print_cr("'ctl' is dead");
-    if (C->is_dead_node(mem->_idx))     tty->print_cr("'mem' is dead");
-    if (C->is_dead_node(address->_idx)) tty->print_cr("'address' is dead");
-    if (C->is_dead_node(base->_idx))    tty->print_cr("'base' is dead");
-    tty->cr();
-    base->dump(1);
-    tty->cr();
-    this->dump(2);
-    tty->print("this->adr_type():     "); adr_type()->dump(); tty->cr();
-    tty->print("phase->type(address): "); t_adr->dump(); tty->cr();
-    tty->print("phase->type(base):    "); phase->type(address)->dump(); tty->cr();
-    tty->cr();
+    // Skip this node optimization if its address has TOP base.
+    return NodeSentinel; // caller will return NULL
   }
-  assert(base == NULL || t_adr->isa_rawptr() ||
-        !phase->type(base)->higher_equal(TypePtr::NULL_PTR), "NULL+offs not RAW address?");
-#endif
 
   // Avoid independent memory operations
   Node* old_mem = mem;
@@ -953,6 +938,10 @@ LoadLNode* LoadLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, c
   return new (C) LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, require_atomic);
 }
 
+LoadDNode* LoadDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
+  bool require_atomic = true;
+  return new (C) LoadDNode(ctl, mem, adr, adr_type, rt, mo, require_atomic);
+}
 
 
 
@@ -1593,35 +1582,33 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
 
 // Try to constant-fold a stable array element.
 static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicType loadbt) {
+  assert(ary->const_oop(), "array should be constant");
   assert(ary->is_stable(), "array should be stable");
 
-  if (ary->const_oop() != NULL) {
-    // Decode the results of GraphKit::array_element_address.
-    ciArray* aobj = ary->const_oop()->as_array();
-    ciConstant con = aobj->element_value_by_offset(off);
+  // Decode the results of GraphKit::array_element_address.
+  ciArray* aobj = ary->const_oop()->as_array();
+  ciConstant con = aobj->element_value_by_offset(off);
 
-    if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
-      const Type* con_type = Type::make_from_constant(con);
-      if (con_type != NULL) {
-        if (con_type->isa_aryptr()) {
-          // Join with the array element type, in case it is also stable.
-          int dim = ary->stable_dimension();
-          con_type = con_type->is_aryptr()->cast_to_stable(true, dim-1);
-        }
-        if (loadbt == T_NARROWOOP && con_type->isa_oopptr()) {
-          con_type = con_type->make_narrowoop();
-        }
-#ifndef PRODUCT
-        if (TraceIterativeGVN) {
-          tty->print("FoldStableValues: array element [off=%d]: con_type=", off);
-          con_type->dump(); tty->cr();
-        }
-#endif //PRODUCT
-        return con_type;
+  if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
+    const Type* con_type = Type::make_from_constant(con);
+    if (con_type != NULL) {
+      if (con_type->isa_aryptr()) {
+        // Join with the array element type, in case it is also stable.
+        int dim = ary->stable_dimension();
+        con_type = con_type->is_aryptr()->cast_to_stable(true, dim-1);
       }
+      if (loadbt == T_NARROWOOP && con_type->isa_oopptr()) {
+        con_type = con_type->make_narrowoop();
+      }
+#ifndef PRODUCT
+      if (TraceIterativeGVN) {
+        tty->print("FoldStableValues: array element [off=%d]: con_type=", off);
+        con_type->dump(); tty->cr();
+      }
+#endif //PRODUCT
+      return con_type;
     }
   }
-
   return NULL;
 }
 
@@ -1641,7 +1628,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
   // Try to guess loaded type from pointer type
   if (tp->isa_aryptr()) {
     const TypeAryPtr* ary = tp->is_aryptr();
-    const Type *t = ary->elem();
+    const Type* t = ary->elem();
 
     // Determine whether the reference is beyond the header or not, by comparing
     // the offset against the offset of the start of the array's data.
@@ -1653,10 +1640,9 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
     const bool off_beyond_header = ((uint)off >= (uint)min_base_off);
 
     // Try to constant-fold a stable array element.
-    if (FoldStableValues && ary->is_stable()) {
-      // Make sure the reference is not into the header
-      if (off_beyond_header && off != Type::OffsetBot) {
-        assert(adr->is_AddP() && adr->in(AddPNode::Offset)->is_Con(), "offset is a constant");
+    if (FoldStableValues && ary->is_stable() && ary->const_oop() != NULL) {
+      // Make sure the reference is not into the header and the offset is constant
+      if (off_beyond_header && adr->is_AddP() && off != Type::OffsetBot) {
         const Type* con_type = fold_stable_ary_elem(ary, off, memory_type());
         if (con_type != NULL) {
           return con_type;
@@ -2398,6 +2384,11 @@ StoreLNode* StoreLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr,
   return new (C) StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
 }
 
+StoreDNode* StoreDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
+  bool require_atomic = true;
+  return new (C) StoreDNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
+}
+
 
 //--------------------------bottom_type----------------------------------------
 const Type *StoreNode::bottom_type() const {
@@ -2904,59 +2895,6 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   }
   assert(done_offset == end_offset, "");
   return mem;
-}
-
-//=============================================================================
-// Do not match memory edge.
-uint StrIntrinsicNode::match_edge(uint idx) const {
-  return idx == 2 || idx == 3;
-}
-
-//------------------------------Ideal------------------------------------------
-// Return a node which is more "ideal" than the current node.  Strip out
-// control copies
-Node *StrIntrinsicNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (remove_dead_region(phase, can_reshape)) return this;
-  // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return NULL;
-
-  if (can_reshape) {
-    Node* mem = phase->transform(in(MemNode::Memory));
-    // If transformed to a MergeMem, get the desired slice
-    uint alias_idx = phase->C->get_alias_index(adr_type());
-    mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
-    if (mem != in(MemNode::Memory)) {
-      set_req(MemNode::Memory, mem);
-      return this;
-    }
-  }
-  return NULL;
-}
-
-//------------------------------Value------------------------------------------
-const Type *StrIntrinsicNode::Value( PhaseTransform *phase ) const {
-  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
-  return bottom_type();
-}
-
-//=============================================================================
-//------------------------------match_edge-------------------------------------
-// Do not match memory edge
-uint EncodeISOArrayNode::match_edge(uint idx) const {
-  return idx == 2 || idx == 3; // EncodeISOArray src (Binary dst len)
-}
-
-//------------------------------Ideal------------------------------------------
-// Return a node which is more "ideal" than the current node.  Strip out
-// control copies
-Node *EncodeISOArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
-}
-
-//------------------------------Value------------------------------------------
-const Type *EncodeISOArrayNode::Value(PhaseTransform *phase) const {
-  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
-  return bottom_type();
 }
 
 //=============================================================================

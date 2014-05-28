@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,45 +26,28 @@
  * @bug 4525364
  * @summary Determine if duplicate throws tags can be used.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestDupThrowsTags
  * @run main TestDupThrowsTags
  */
 public class TestDupThrowsTags extends JavadocTester {
 
-    private static final String BUG_ID = "4525364";
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, SRC_DIR + FS + "TestDupThrowsTags.java"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        String[][] tests = new String[4][2];
-        for (int i = 0; i < tests.length; i++) {
-            tests[i][0] = BUG_ID + FS + "TestDupThrowsTags.html";
-            tests[i][1] = "Test "+(i+1)+" passes";
-        }
+    public static void main(String... args) throws Exception {
         TestDupThrowsTags tester = new TestDupThrowsTags();
-        run(tester, ARGS, tests, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                testSrc("TestDupThrowsTags.java"));
+        checkExit(Exit.FAILED);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("TestDupThrowsTags.html", true,
+                "Test 1 passes",
+                "Test 2 passes",
+                "Test 3 passes",
+                "Test 4 passes");
     }
 
     /**
@@ -73,6 +56,6 @@ public class TestDupThrowsTags extends JavadocTester {
      * @throws java.lang.NullPointerException Test 3 passes
      * @throws java.io.IOException Test 4 passes
      */
-    public void method(){}
+    public void method() {}
 
 }

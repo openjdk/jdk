@@ -42,17 +42,11 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/xmlstream.hpp"
 
-extern uint size_exception_handler();
-extern uint size_deopt_handler();
-
 #ifndef PRODUCT
 #define DEBUG_ARG(x) , x
 #else
 #define DEBUG_ARG(x)
 #endif
-
-extern int emit_exception_handler(CodeBuffer &cbuf);
-extern int emit_deopt_handler(CodeBuffer &cbuf);
 
 // Convert Nodes to instruction bits and pass off to the VM
 void Compile::Output() {
@@ -171,8 +165,13 @@ bool Compile::need_stack_bang(int frame_size_in_bytes) const {
   // Determine if we need to generate a stack overflow check.
   // Do it if the method is not a stub function and
   // has java calls or has frame size > vm_page_size/8.
+  // The debug VM checks that deoptimization doesn't trigger an
+  // unexpected stack overflow (compiled method stack banging should
+  // guarantee it doesn't happen) so we always need the stack bang in
+  // a debug VM.
   return (UseStackBanging && stub_function() == NULL &&
-          (has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3));
+          (has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3
+           DEBUG_ONLY(|| true)));
 }
 
 bool Compile::need_register_stack_bang() const {
@@ -394,6 +393,11 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
         if (mach->is_MachCall()) {
+          // add size information for trampoline stub
+          // class CallStubImpl is platform-specific and defined in the *.ad files.
+          stub_size  += CallStubImpl::size_call_trampoline();
+          reloc_size += CallStubImpl::reloc_call_trampoline();
+
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
 
@@ -412,7 +416,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
             blk_size += nop_size;
           }
         }
-        if (mach->avoid_back_to_back()) {
+        if (mach->avoid_back_to_back(MachNode::AVOID_BEFORE)) {
           // Nop is inserted between "avoid back to back" instructions.
           // ScheduleAndBundle() can rearrange nodes in a block,
           // check for all offsets inside this block.
@@ -440,7 +444,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         last_call_adr = blk_starts[i]+blk_size;
       }
       // Remember end of avoid_back_to_back offset
-      if (nj->is_Mach() && nj->as_Mach()->avoid_back_to_back()) {
+      if (nj->is_Mach() && nj->as_Mach()->avoid_back_to_back(MachNode::AVOID_AFTER)) {
         last_avoid_back_to_back_adr = blk_starts[i]+blk_size;
       }
     }
@@ -526,11 +530,11 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
           int new_size = replacement->size(_regalloc);
           int diff     = br_size - new_size;
           assert(diff >= (int)nop_size, "short_branch size should be smaller");
-          // Conservatively take into accound padding between
+          // Conservatively take into account padding between
           // avoid_back_to_back branches. Previous branch could be
           // converted into avoid_back_to_back branch during next
           // rounds.
-          if (needs_padding && replacement->avoid_back_to_back()) {
+          if (needs_padding && replacement->avoid_back_to_back(MachNode::AVOID_BEFORE)) {
             jmp_offset[i] += nop_size;
             diff -= nop_size;
           }
@@ -549,7 +553,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         }
       } // (mach->may_be_short_branch())
       if (mach != NULL && (mach->may_be_short_branch() ||
-                           mach->avoid_back_to_back())) {
+                           mach->avoid_back_to_back(MachNode::AVOID_AFTER))) {
         last_may_be_short_branch_adr = blk_starts[i] + jmp_offset[i] + jmp_size[i];
       }
       blk_starts[i+1] -= adjust_block_start;
@@ -1133,10 +1137,9 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
   shorten_branches(blk_starts, code_req, locs_req, stub_req);
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
-  int exception_handler_req = size_exception_handler();
-  int deopt_handler_req = size_deopt_handler();
-  exception_handler_req += MAX_stubs_size; // add marginal slop for handler
-  deopt_handler_req += MAX_stubs_size; // add marginal slop for handler
+  // class HandlerImpl is platform-specific and defined in the *.ad files.
+  int exception_handler_req = HandlerImpl::size_exception_handler() + MAX_stubs_size; // add marginal slop for handler
+  int deopt_handler_req     = HandlerImpl::size_deopt_handler()     + MAX_stubs_size; // add marginal slop for handler
   stub_req += MAX_stubs_size;   // ensure per-stub margin
   code_req += MAX_inst_size;    // ensure per-instruction margin
 
@@ -1315,7 +1318,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
         if (is_sfn && !is_mcall && padding == 0 && current_offset == last_call_offset) {
           padding = nop_size;
         }
-        if (padding == 0 && mach->avoid_back_to_back() &&
+        if (padding == 0 && mach->avoid_back_to_back(MachNode::AVOID_BEFORE) &&
             current_offset == last_avoid_back_to_back_offset) {
           // Avoid back to back some instructions.
           padding = nop_size;
@@ -1409,7 +1412,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
               int new_size = replacement->size(_regalloc);
               assert((br_size - new_size) >= (int)nop_size, "short_branch size should be smaller");
               // Insert padding between avoid_back_to_back branches.
-              if (needs_padding && replacement->avoid_back_to_back()) {
+              if (needs_padding && replacement->avoid_back_to_back(MachNode::AVOID_BEFORE)) {
                 MachNode *nop = new (this) MachNopNode();
                 block->insert_node(nop, j++);
                 _cfg->map_node_to_block(nop, block);
@@ -1517,7 +1520,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
         last_call_offset = current_offset;
       }
 
-      if (n->is_Mach() && n->as_Mach()->avoid_back_to_back()) {
+      if (n->is_Mach() && n->as_Mach()->avoid_back_to_back(MachNode::AVOID_AFTER)) {
         // Avoid back to back some instructions.
         last_avoid_back_to_back_offset = current_offset;
       }
@@ -1622,17 +1625,18 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   FillExceptionTables(inct_cnt, call_returns, inct_starts, blk_labels);
 
   // Only java methods have exception handlers and deopt handlers
+  // class HandlerImpl is platform-specific and defined in the *.ad files.
   if (_method) {
     // Emit the exception handler code.
-    _code_offsets.set_value(CodeOffsets::Exceptions, emit_exception_handler(*cb));
+    _code_offsets.set_value(CodeOffsets::Exceptions, HandlerImpl::emit_exception_handler(*cb));
     // Emit the deopt handler code.
-    _code_offsets.set_value(CodeOffsets::Deopt, emit_deopt_handler(*cb));
+    _code_offsets.set_value(CodeOffsets::Deopt, HandlerImpl::emit_deopt_handler(*cb));
 
     // Emit the MethodHandle deopt handler code (if required).
     if (has_method_handle_invokes()) {
       // We can use the same code as for the normal deopt handler, we
       // just need a different entry point address.
-      _code_offsets.set_value(CodeOffsets::DeoptMH, emit_deopt_handler(*cb));
+      _code_offsets.set_value(CodeOffsets::DeoptMH, HandlerImpl::emit_deopt_handler(*cb));
     }
   }
 

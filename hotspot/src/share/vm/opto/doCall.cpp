@@ -31,6 +31,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
@@ -102,6 +103,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       if (profile.has_receiver(1)) {
         log->print(" receiver2='%d' receiver2_count='%d'", r2id, profile.receiver_count(1));
       }
+    }
+    if (callee->is_method_handle_intrinsic()) {
+      log->print(" method_handle_intrinsic='1'");
     }
     log->end_elem();
   }
@@ -249,8 +253,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           }
           CallGenerator* miss_cg;
           Deoptimization::DeoptReason reason = morphism == 2 ?
-                                    Deoptimization::Reason_bimorphic :
-                                    (speculative_receiver_type == NULL ? Deoptimization::Reason_class_check : Deoptimization::Reason_speculate_class_check);
+            Deoptimization::Reason_bimorphic : Deoptimization::reason_class_check(speculative_receiver_type != NULL);
           if ((morphism == 1 || (morphism == 2 && next_hit_cg != NULL)) &&
               !too_many_traps(jvms->method(), jvms->bci(), reason)
              ) {
@@ -294,6 +297,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // There was no special inlining tactic, or it bailed out.
   // Use a more generic tactic, like a simple call.
   if (call_does_dispatch) {
+    const char* msg = "virtual call";
+    if (PrintInlining) print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+    C->log_inline_failure(msg);
     return CallGenerator::for_virtual_call(callee, vtable_index);
   } else {
     // Class Hierarchy Analysis or Type Profile reveals a unique target,
@@ -395,6 +401,8 @@ void Parse::do_call() {
   // Also, if we inline a guy who eventually needs debug info for this JVMS,
   // our contribution to it is cleaned up right here.
   kill_dead_locals();
+
+  C->print_inlining_assert_ready();
 
   // Set frequently used booleans
   const bool is_virtual = bc() == Bytecodes::_invokevirtual;
@@ -531,7 +539,8 @@ void Parse::do_call() {
     // intrinsic was expecting to optimize. Should always be possible to
     // get a normal java call that may inline in that case
     cg = C->call_generator(cg->method(), vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type, /* allow_intrinsics= */ false);
-    if ((new_jvms = cg->generate(jvms, this)) == NULL) {
+    new_jvms = cg->generate(jvms, this);
+    if (new_jvms == NULL) {
       guarantee(failing(), "call failed to generate:  calls should work");
       return;
     }
@@ -631,13 +640,7 @@ void Parse::do_call() {
     }
     BasicType ct = ctype->basic_type();
     if (ct == T_OBJECT || ct == T_ARRAY) {
-      ciKlass* better_type = method()->return_profiled_type(bci());
-      if (UseTypeSpeculation && better_type != NULL) {
-        // If profiling reports a single type for the return value,
-        // feed it to the type system so it can propagate it as a
-        // speculative type
-        record_profile_for_speculation(stack(sp()-1), better_type);
-      }
+      record_profiled_return_for_speculation();
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,13 @@ import javax.swing.JEditorPane;
  * A kit can safely store editing state as an instance
  * of the kit will be dedicated to a text component.
  * New kits will normally be created by cloning a
- * prototype kit.  The kit will have it's
+ * prototype kit.  The kit will have its
  * <code>setComponent</code> method called to establish
- * it's relationship with a JTextComponent.
+ * its relationship with a JTextComponent.
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public abstract class EditorKit implements Cloneable, Serializable {
 
     /**

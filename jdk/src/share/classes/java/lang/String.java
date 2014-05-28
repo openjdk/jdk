@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2583,6 +2583,9 @@ public final class String
             if (cp == '\u03A3') {                       // GREEK CAPITAL LETTER SIGMA
                 return toLowerCaseEx(result, i, locale, false);
             }
+            if (cp == '\u0130') {                       // LATIN CAPITAL LETTER I WITH DOT ABOVE
+                return toLowerCaseEx(result, i, locale, true);
+            }
             cp = Character.toLowerCase(cp);
             if (!Character.isBmpCodePoint(cp)) {
                 return toLowerCaseEx(result, i, locale, false);
@@ -2650,7 +2653,7 @@ public final class String
      * LATIN SMALL LETTER DOTLESS I character.
      * To obtain correct results for locale insensitive strings, use
      * {@code toLowerCase(Locale.ROOT)}.
-     * <p>
+     *
      * @return  the {@code String}, converted to lowercase.
      * @see     java.lang.String#toLowerCase(Locale)
      */
@@ -2812,7 +2815,7 @@ public final class String
      * LATIN CAPITAL LETTER I WITH DOT ABOVE character.
      * To obtain correct results for locale insensitive strings, use
      * {@code toUpperCase(Locale.ROOT)}.
-     * <p>
+     *
      * @return  the {@code String}, converted to uppercase.
      * @see     java.lang.String#toUpperCase(Locale)
      */

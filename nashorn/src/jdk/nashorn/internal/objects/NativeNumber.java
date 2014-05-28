@@ -156,7 +156,7 @@ public final class NativeNumber extends ScriptObject {
      * @return number in decimal fixed point notation
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toFixed(final Object self, final Object fractionDigits) {
+    public static String toFixed(final Object self, final Object fractionDigits) {
         return toFixed(self, JSType.toInteger(fractionDigits));
     }
 
@@ -169,7 +169,7 @@ public final class NativeNumber extends ScriptObject {
      * @return number in decimal fixed point notation
      */
     @SpecializedFunction
-    public static Object toFixed(final Object self, final int fractionDigits) {
+    public static String toFixed(final Object self, final int fractionDigits) {
         if (fractionDigits < 0 || fractionDigits > 20) {
             throw rangeError("invalid.fraction.digits", "toFixed");
         }
@@ -200,7 +200,7 @@ public final class NativeNumber extends ScriptObject {
      * @return number in decimal exponential notation
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toExponential(final Object self, final Object fractionDigits) {
+    public static String toExponential(final Object self, final Object fractionDigits) {
         final double  x         = getNumberValue(self);
         final boolean trimZeros = fractionDigits == UNDEFINED;
         final int     f         = trimZeros ? 16 : JSType.toInteger(fractionDigits);
@@ -228,7 +228,7 @@ public final class NativeNumber extends ScriptObject {
      * @return number in decimal exponentiation notation or decimal fixed notation depending on {@code precision}
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toPrecision(final Object self, final Object precision) {
+    public static String toPrecision(final Object self, final Object precision) {
         final double x = getNumberValue(self);
         if (precision == UNDEFINED) {
             return JSType.toString(x);
@@ -245,11 +245,11 @@ public final class NativeNumber extends ScriptObject {
      * @return number in decimal exponentiation notation or decimal fixed notation depending on {@code precision}
      */
     @SpecializedFunction
-    public static Object toPrecision(Object self, final int precision) {
+    public static String toPrecision(Object self, final int precision) {
         return toPrecision(getNumberValue(self), precision);
     }
 
-    private static Object toPrecision(final double x, final int p) {
+    private static String toPrecision(final double x, final int p) {
         if (Double.isNaN(x)) {
             return "NaN";
         } else if (Double.isInfinite(x)) {
@@ -276,7 +276,7 @@ public final class NativeNumber extends ScriptObject {
      * @return string representation of this Number in the given radix
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toString(final Object self, final Object radix) {
+    public static String toString(final Object self, final Object radix) {
         if (radix != UNDEFINED) {
             final int intRadix = JSType.toInteger(radix);
             if (intRadix != 10) {
@@ -297,7 +297,7 @@ public final class NativeNumber extends ScriptObject {
      * @return localized string for this Number
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toLocaleString(final Object self) {
+    public static String toLocaleString(final Object self) {
         return JSType.toString(getNumberValue(self));
     }
 
@@ -306,10 +306,10 @@ public final class NativeNumber extends ScriptObject {
      * ECMA 15.7.4.4 Number.prototype.valueOf ( )
      *
      * @param self self reference
-     * @return boxed number value for this Number
+     * @return number value for this Number
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object valueOf(final Object self) {
+    public static double valueOf(final Object self) {
         return getNumberValue(self);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >::get_better_list(
   // chunk.
 
   TreeList<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* curTL = this;
-  if (surplus() <= 0) {
+  if (curTL->surplus() <= 0) {
     /* Use the hint to find a size with a surplus, and reset the hint. */
     TreeList<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* hintTL = this;
     while (hintTL->hint() != 0) {
@@ -1205,13 +1205,13 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::report_statistics() const {
          "------------------------------------\n");
   size_t total_size = total_chunk_size(debug_only(NULL));
   size_t    free_blocks = num_free_blocks();
-  gclog_or_tty->print("Total Free Space: %d\n", total_size);
-  gclog_or_tty->print("Max   Chunk Size: %d\n", max_chunk_size());
-  gclog_or_tty->print("Number of Blocks: %d\n", free_blocks);
+  gclog_or_tty->print("Total Free Space: " SIZE_FORMAT "\n", total_size);
+  gclog_or_tty->print("Max   Chunk Size: " SIZE_FORMAT "\n", max_chunk_size());
+  gclog_or_tty->print("Number of Blocks: " SIZE_FORMAT "\n", free_blocks);
   if (free_blocks > 0) {
-    gclog_or_tty->print("Av.  Block  Size: %d\n", total_size/free_blocks);
+    gclog_or_tty->print("Av.  Block  Size: " SIZE_FORMAT "\n", total_size/free_blocks);
   }
-  gclog_or_tty->print("Tree      Height: %d\n", tree_height());
+  gclog_or_tty->print("Tree      Height: " SIZE_FORMAT "\n", tree_height());
 }
 
 // Print census information - counts, births, deaths, etc.

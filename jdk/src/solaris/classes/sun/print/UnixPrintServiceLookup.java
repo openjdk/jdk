@@ -273,9 +273,25 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         String[] printers = null; // array of printer names
         String[] printerURIs = null; //array of printer URIs
 
-        getDefaultPrintService();
+        try {
+            getDefaultPrintService();
+        } catch (Throwable t) {
+            IPPPrintService.debug_println(debugPrefix+
+              "Exception getting default printer : " + t);
+        }
         if (CUPSPrinter.isCupsRunning()) {
-            printerURIs = CUPSPrinter.getAllPrinters();
+            try {
+                printerURIs = CUPSPrinter.getAllPrinters();
+                IPPPrintService.debug_println("CUPS URIs = " + printerURIs);
+                if (printerURIs != null) {
+                    for (int p = 0; p < printerURIs.length; p++) {
+                       IPPPrintService.debug_println("URI="+printerURIs[p]);
+                    }
+                }
+            } catch (Throwable t) {
+            IPPPrintService.debug_println(debugPrefix+
+              "Exception getting all CUPS printers : " + t);
+            }
             if ((printerURIs != null) && (printerURIs.length > 0)) {
                 printers = new String[printerURIs.length];
                 for (int i=0; i<printerURIs.length; i++) {
@@ -632,8 +648,10 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                                       (CUPSPrinter.isCupsRunning()));
         if (CUPSPrinter.isCupsRunning()) {
             String[] printerInfo = CUPSPrinter.getDefaultPrinter();
-            defaultPrinter = printerInfo[0];
-            psuri = printerInfo[1];
+            if (printerInfo != null && printerInfo.length >= 2) {
+                defaultPrinter = printerInfo[0];
+                psuri = printerInfo[1];
+            }
         } else {
             if (isMac() || isSysV()) {
                 defaultPrinter = getDefaultPrinterNameSysV();

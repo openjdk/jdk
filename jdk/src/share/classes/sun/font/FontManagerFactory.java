@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public final class FontManagerFactory {
             return instance;
         }
 
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
 
             public Object run() {
                 try {
@@ -79,7 +79,7 @@ public final class FontManagerFactory {
                             System.getProperty("sun.font.fontmanager",
                                                DEFAULT_CLASS);
                     ClassLoader cl = ClassLoader.getSystemClassLoader();
-                    Class fmClass = Class.forName(fmClassName, true, cl);
+                    Class<?> fmClass = Class.forName(fmClassName, true, cl);
                     instance = (FontManager) fmClass.newInstance();
                 } catch (ClassNotFoundException |
                          InstantiationException |

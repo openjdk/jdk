@@ -31,9 +31,6 @@ import java.security.Provider;
 import java.util.HashMap;
 import java.util.Map;
 
-import sun.security.action.PutAllAction;
-
-
 /**
  * A Cryptographic Service Provider for the Microsoft Crypto API.
  *
@@ -140,7 +137,12 @@ public final class SunMSCAPI extends Provider {
         map.put("Cipher.RSA SupportedKeyClasses", "sun.security.mscapi.Key");
 
         if (map != this) {
-            AccessController.doPrivileged(new PutAllAction(this, map));
+            final Provider provider = this;
+            PrivilegedAction<Void> putAllAction = () -> {
+                provider.putAll(map);
+                return null;
+            };
+            AccessController.doPrivileged(putAllAction);
         }
     }
 }

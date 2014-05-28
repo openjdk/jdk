@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,56 +26,35 @@
  * @bug 4714257
  * @summary Test to make sure that the title attribute shows up in links.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestTitleInHref
  * @run main TestTitleInHref
  */
 
 public class TestTitleInHref extends JavadocTester {
 
-    private static final String BUG_ID = "4714257";
-
-    private static final String[][] TEST = {
-        //Test to make sure that the title shows up in a class link.
-        {BUG_ID + FS + "pkg" + FS + "Links.html", "<a href=\"../pkg/Class.html\" title=\"class in pkg\">"},
-
-        //Test to make sure that the title shows up in an interface link.
-        {BUG_ID + FS + "pkg" + FS + "Links.html", "<a href=\"../pkg/Interface.html\" title=\"interface in pkg\">"},
-
-        //Test to make sure that the title shows up in cross link shows up
-        {BUG_ID + FS + "pkg" + FS + "Links.html", "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/io/File.html?is-external=true\" title=\"class or interface in java.io\"><code>This is a cross link to class File</code></a>"},
-
-    };
-
-    private static final String[][] NEGATED_TEST = NO_TEST;
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-        "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api",
-        SRC_DIR, "pkg"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestTitleInHref tester = new TestTitleInHref();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        String uri = "http://java.sun.com/j2se/1.4/docs/api";
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-linkoffline", uri, testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("pkg/Links.html", true,
+                //Test to make sure that the title shows up in a class link.
+                "<a href=\"../pkg/Class.html\" title=\"class in pkg\">",
+                //Test to make sure that the title shows up in an interface link.
+                "<a href=\"../pkg/Interface.html\" title=\"interface in pkg\">",
+                //Test to make sure that the title shows up in cross link shows up
+                "<a href=\"" + uri + "/java/io/File.html?is-external=true\" "
+                + "title=\"class or interface in java.io\">"
+                + "<code>This is a cross link to class File</code></a>");
     }
 }

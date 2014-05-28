@@ -152,7 +152,7 @@ LIR_Opr LIR_Assembler::osrBufferPointer() {
 }
 
 
-int LIR_Assembler::initial_frame_size_in_bytes() {
+int LIR_Assembler::initial_frame_size_in_bytes() const {
   return in_bytes(frame_map()->framesize_in_bytes());
 }
 
@@ -182,7 +182,7 @@ void LIR_Assembler::osr_entry() {
   int number_of_locks = entry_state->locks_size();
 
   // Create a frame for the compiled activation.
-  __ build_frame(initial_frame_size_in_bytes());
+  __ build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 
   // OSR buffer is
   //
@@ -3320,7 +3320,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
 
   // if tmp is invalid, then the function being called doesn't destroy the thread
   if (tmp->is_valid()) {
-    __ save_thread(tmp->as_register());
+    __ save_thread(tmp->as_pointer_register());
   }
   __ call(dest, relocInfo::runtime_call_type);
   __ delayed()->nop();
@@ -3328,7 +3328,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
     add_call_info_here(info);
   }
   if (tmp->is_valid()) {
-    __ restore_thread(tmp->as_register());
+    __ restore_thread(tmp->as_pointer_register());
   }
 
 #ifdef ASSERT

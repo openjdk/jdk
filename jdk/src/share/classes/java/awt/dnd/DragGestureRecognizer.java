@@ -29,6 +29,8 @@ import java.awt.event.InputEvent;
 import java.awt.Component;
 import java.awt.Point;
 
+import java.io.InvalidObjectException;
+import java.util.Collections;
 import java.util.TooManyListenersException;
 import java.util.ArrayList;
 
@@ -74,7 +76,7 @@ import java.io.Serializable;
  * for causing the associated
  * <code>DragSource</code> to start the Drag and Drop operation (if
  * appropriate).
- * <P>
+ *
  * @author Laurence P. G. Cable
  * @see java.awt.dnd.DragGestureListener
  * @see java.awt.dnd.DragGestureEvent
@@ -94,7 +96,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * for this Drag and Drop operation, and the
      * <code>DragGestureListener</code> to notify
      * once a drag initiating gesture has been detected.
-     * <P>
+     *
      * @param ds  the <code>DragSource</code> this
      * <code>DragGestureRecognizer</code>
      * will use to process the Drag and Drop operation
@@ -113,7 +115,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      *
      * @param dgl the <code>DragGestureRecognizer</code>
      * to notify when a drag gesture is detected
-     * <P>
+     *
      * @throws IllegalArgumentException
      * if ds is <code>null</code>.
      */
@@ -142,7 +144,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * <code>DragGestureRecognizer</code> should "observe"
      * for drag initiating gestures, and the action(s)
      * supported for this Drag and Drop operation.
-     * <P>
+     *
      * @param ds  the <code>DragSource</code> this
      * <code>DragGestureRecognizer</code> will use to
      * process the Drag and Drop operation
@@ -156,7 +158,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      *
      * @param sa the set (logical OR) of the <code>DnDConstants</code>
      * that this Drag and Drop operation will support
-     * <P>
+     *
      * @throws IllegalArgumentException
      * if ds is <code>null</code>.
      */
@@ -172,7 +174,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * the <code>Component</code> this
      * <code>DragGestureRecognizer</code>
      * should "observe" for drag initiating gestures.
-     * <P>
+     *
      * @param ds the <code>DragSource</code> this
      * <code>DragGestureRecognizer</code>
      * will use to process the Drag and Drop operation
@@ -184,7 +186,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * If this value is <code>null</code>,
      * the <code>DragGestureRecognizer</code>
      * is not associated with any <code>Component</code>.
-     * <P>
+     *
      * @throws IllegalArgumentException
      * if ds is <code>null</code>.
      */
@@ -197,11 +199,11 @@ public abstract class DragGestureRecognizer implements Serializable {
      * Construct a new <code>DragGestureRecognizer</code>
      * given the <code>DragSource</code> to be used in this
      * Drag and Drop operation.
-     * <P>
+     *
      * @param ds the <code>DragSource</code> this
      * <code>DragGestureRecognizer</code> will
      * use to process the Drag and Drop operation
-     * <P>
+     *
      * @throws IllegalArgumentException
      * if ds is <code>null</code>.
      */
@@ -231,7 +233,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * this <code>DragGestureRecognizer</code>
      * will use in order to process the Drag and Drop
      * operation.
-     * <P>
+     *
      * @return the DragSource
      */
 
@@ -242,7 +244,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * that is to be "observed" by the
      * <code>DragGestureRecognizer</code>
      * for drag initiating gestures.
-     * <P>
+     *
      * @return The Component this DragGestureRecognizer
      * is associated with
      */
@@ -254,7 +256,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      *
      * registerListeners() and unregisterListeners() are called as a side
      * effect as appropriate.
-     * <P>
+     *
      * @param c The <code>Component</code> or <code>null</code>
      */
 
@@ -272,7 +274,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * This method returns an int representing the
      * type of action(s) this Drag and Drop
      * operation will support.
-     * <P>
+     *
      * @return the currently permitted source action(s)
      */
 
@@ -281,7 +283,7 @@ public abstract class DragGestureRecognizer implements Serializable {
     /**
      * This method sets the permitted source drag action(s)
      * for this Drag and Drop operation.
-     * <P>
+     *
      * @param actions the permitted source drag action(s)
      */
 
@@ -293,7 +295,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * This method returns the first event in the
      * series of events that initiated
      * the Drag and Drop operation.
-     * <P>
+     *
      * @return the initial event that triggered the drag gesture
      */
 
@@ -308,10 +310,10 @@ public abstract class DragGestureRecognizer implements Serializable {
 
     /**
      * Register a new <code>DragGestureListener</code>.
-     * <P>
+     *
      * @param dgl the <code>DragGestureListener</code> to register
      * with this <code>DragGestureRecognizer</code>.
-     * <P>
+     *
      * @throws java.util.TooManyListenersException if a
      * <code>DragGestureListener</code> has already been added.
      */
@@ -328,10 +330,10 @@ public abstract class DragGestureRecognizer implements Serializable {
 
     /**
      * unregister the current DragGestureListener
-     * <P>
+     *
      * @param dgl the <code>DragGestureListener</code> to unregister
      * from this <code>DragGestureRecognizer</code>
-     * <P>
+     *
      * @throws IllegalArgumentException if
      * dgl is not (equal to) the currently registered <code>DragGestureListener</code>.
      */
@@ -349,7 +351,7 @@ public abstract class DragGestureRecognizer implements Serializable {
     /**
      * Notify the DragGestureListener that a Drag and Drop initiating
      * gesture has occurred. Then reset the state of the Recognizer.
-     * <P>
+     *
      * @param dragAction The action initially selected by the users gesture
      * @param p          The point (in Component coords) where the gesture originated
      */
@@ -367,14 +369,14 @@ public abstract class DragGestureRecognizer implements Serializable {
      * Listeners registered on the Component by this Recognizer shall record
      * all Events that are recognized as part of the series of Events that go
      * to comprise a Drag and Drop initiating gesture via this API.
-     *<P>
+     * <P>
      * This method is used by a <code>DragGestureRecognizer</code>
      * implementation to add an <code>InputEvent</code>
      * subclass (that it believes is one in a series
      * of events that comprise a Drag and Drop operation)
      * to the array of events that this
      * <code>DragGestureRecognizer</code> maintains internally.
-     * <P>
+     *
      * @param awtie the <code>InputEvent</code>
      * to add to this <code>DragGestureRecognizer</code>'s
      * internal array of events. Note that <code>null</code>
@@ -411,10 +413,21 @@ public abstract class DragGestureRecognizer implements Serializable {
      *
      * @since 1.4
      */
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        DragSource newDragSource = (DragSource)f.get("dragSource", null);
+        if (newDragSource == null) {
+            throw new InvalidObjectException("null DragSource");
+        }
+        dragSource = newDragSource;
+
+        component = (Component)f.get("component", null);
+        sourceActions = f.get("sourceActions", 0) & (DnDConstants.ACTION_COPY_OR_MOVE | DnDConstants.ACTION_LINK);
+        events = (ArrayList<InputEvent>)f.get("events", new ArrayList<>(1));
 
         dragGestureListener = (DragGestureListener)s.readObject();
     }

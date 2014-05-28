@@ -189,52 +189,71 @@ public class Annotate {
      * This context contains all the information needed to synthesize new
      * annotations trees by the completer for repeating annotations.
      */
-    public class AnnotateRepeatedContext<T extends Attribute.Compound> {
+    private class AnnotationContext<T extends Attribute.Compound> {
         public final Env<AttrContext> env;
         public final Map<Symbol.TypeSymbol, ListBuffer<T>> annotated;
         public final Map<T, JCDiagnostic.DiagnosticPosition> pos;
-        public final Log log;
         public final boolean isTypeCompound;
 
-        public AnnotateRepeatedContext(Env<AttrContext> env,
-                                       Map<Symbol.TypeSymbol, ListBuffer<T>> annotated,
-                                       Map<T, JCDiagnostic.DiagnosticPosition> pos,
-                                       Log log,
-                                       boolean isTypeCompound) {
+        public AnnotationContext(Env<AttrContext> env,
+                                 Map<Symbol.TypeSymbol, ListBuffer<T>> annotated,
+                                 Map<T, JCDiagnostic.DiagnosticPosition> pos,
+                                 boolean isTypeCompound) {
             Assert.checkNonNull(env);
             Assert.checkNonNull(annotated);
             Assert.checkNonNull(pos);
-            Assert.checkNonNull(log);
 
             this.env = env;
             this.annotated = annotated;
             this.pos = pos;
-            this.log = log;
             this.isTypeCompound = isTypeCompound;
         }
 
-        /**
-         * Process a list of repeating annotations returning a new
-         * Attribute.Compound that is the attribute for the synthesized tree
-         * for the container.
-         *
-         * @param repeatingAnnotations a List of repeating annotations
-         * @return a new Attribute.Compound that is the container for the repeatingAnnotations
-         */
-        public T processRepeatedAnnotations(List<T> repeatingAnnotations, Symbol sym) {
-            return Annotate.this.processRepeatedAnnotations(repeatingAnnotations, this, sym);
-        }
-
-        /**
-         * Queue the Worker a on the repeating annotations queue of the
-         * Annotate instance this context belongs to.
-         *
-         * @param a the Worker to enqueue for repeating annotation annotating
-         */
-        public void annotateRepeated(Worker a) {
-            Annotate.this.repeated(a);
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("RepeatedContext[");
+            for (Map.Entry<Symbol.TypeSymbol, ListBuffer<T>> entry :
+                     annotated.entrySet()) {
+                sb.append(" ");
+                sb.append(entry.getKey());
+                sb.append(" = { ");
+                sb.append(entry.getValue());
+                sb.append(" }");
+            }
+            sb.append(" ]");
+            return sb.toString();
         }
     }
+
+    private static class Placeholder<T extends Attribute.Compound> extends Attribute.Compound {
+
+        private final Annotate.AnnotationContext<T> ctx;
+        private final List<T> placeholderFor;
+        private final Symbol on;
+
+        public Placeholder(Annotate.AnnotationContext<T> ctx,
+                           List<T> placeholderFor, Symbol on) {
+            super(on.type, List.<Pair<Symbol.MethodSymbol, Attribute>>nil(),
+                  placeholderFor.head.position);
+            this.ctx = ctx;
+            this.placeholderFor = placeholderFor;
+            this.on = on;
+        }
+
+        @Override
+        public String toString() {
+            return "<placeholder: " + placeholderFor + " on: " + on + ">";
+    }
+
+        public List<T> getPlaceholderFor() {
+            return placeholderFor;
+        }
+
+        public Annotate.AnnotationContext<T> getRepeatedContext() {
+            return ctx;
+        }
+    }
+
 
 /* ********************************************************************
  * Compute an attribute from its annotation.
@@ -247,24 +266,44 @@ public class Annotate {
     Attribute.Compound enterAnnotation(JCAnnotation a,
                                        Type expected,
                                        Env<AttrContext> env) {
-        return enterAnnotation(a, expected, env, false);
+        List<Pair<MethodSymbol,Attribute>> elems =
+            enterAttributeValues(a, expected, env);
+        Attribute.Compound ac = new Attribute.Compound(a.type, elems);
+        a.attribute = ac;
+
+        return ac;
     }
 
     Attribute.TypeCompound enterTypeAnnotation(JCAnnotation a,
-            Type expected,
-            Env<AttrContext> env) {
-        return (Attribute.TypeCompound) enterAnnotation(a, expected, env, true);
+                                               Type expected,
+                                               Env<AttrContext> env) {
+        List<Pair<MethodSymbol,Attribute>> elems =
+            enterAttributeValues(a, expected, env);
+
+        if (a.attribute == null || !(a.attribute instanceof Attribute.TypeCompound)) {
+            // Create a new TypeCompound
+
+            Attribute.TypeCompound tc =
+                new Attribute.TypeCompound(a.type, elems,
+                // TODO: Eventually, we will get rid of this use of
+                // unknown, because we'll get a position from
+                // MemberEnter (task 8027262).
+                                           TypeAnnotationPosition.unknown);
+            a.attribute = tc;
+            return tc;
+        } else {
+            // Use an existing TypeCompound
+            return (Attribute.TypeCompound)a.attribute;
+        }
     }
 
-    // boolean typeAnnotation determines whether the method returns
-    // a Compound (false) or TypeCompound (true).
-    Attribute.Compound enterAnnotation(JCAnnotation a,
-            Type expected,
-            Env<AttrContext> env,
-            boolean typeAnnotation) {
-        // The annotation might have had its type attributed (but not checked)
-        // by attr.attribAnnotationTypes during MemberEnter, in which case we do not
-        // need to do it again.
+    private List<Pair<MethodSymbol,Attribute>>
+            enterAttributeValues(JCAnnotation a,
+                                 Type expected,
+                                 Env<AttrContext> env) {
+        // The annotation might have had its type attributed (but not
+        // checked) by attr.attribAnnotationTypes during MemberEnter,
+        // in which case we do not need to do it again.
         Type at = (a.annotationType.type != null ? a.annotationType.type
                   : attr.attribType(a.annotationType, env));
         a.type = chk.checkType(a.annotationType.pos(), at, expected);
@@ -312,27 +351,7 @@ public class Annotate {
                 buf.append(new Pair<>((MethodSymbol)method, value));
             t.type = result;
         }
-        if (typeAnnotation) {
-            if (a.attribute == null || !(a.attribute instanceof Attribute.TypeCompound)) {
-                // Create a new TypeCompound
-
-                Attribute.TypeCompound tc =
-                    new Attribute.TypeCompound(a.type, buf.toList(),
-                // TODO: Eventually, we will get rid of this use of
-                // unknown, because we'll get a position from
-                // MemberEnter (task 8027262).
-                                               TypeAnnotationPosition.unknown);
-                a.attribute = tc;
-                return tc;
-            } else {
-                // Use an existing TypeCompound
-                return a.attribute;
-            }
-        } else {
-            Attribute.Compound ac = new Attribute.Compound(a.type, buf.toList());
-            a.attribute = ac;
-            return ac;
-        }
+        return buf.toList();
     }
 
     Attribute enterAttributeValue(Type expected,
@@ -459,7 +478,7 @@ public class Annotate {
      * annotation are invalid.  This method reports errors/warnings.
      */
     private <T extends Attribute.Compound> T processRepeatedAnnotations(List<T> annotations,
-            AnnotateRepeatedContext<T> ctx,
+            AnnotationContext<T> ctx,
             Symbol on) {
         T firstOccurrence = annotations.head;
         List<Attribute> repeated = List.nil();
@@ -686,6 +705,172 @@ public class Annotate {
         return fatalError ? null : containerValueSymbol;
     }
 
+    private <T extends Attribute.Compound> AnnotationContext<T>
+            prepareEnterAnnotations(List<JCAnnotation> annotations,
+                                    Env<AttrContext> env,
+                                    Symbol sym,
+                                    AttributeCreator<T> creator,
+                                    boolean isTypeCompound) {
+        Map<TypeSymbol, ListBuffer<T>> annotated = new LinkedHashMap<>();
+        Map<T, DiagnosticPosition> pos = new HashMap<>();
+
+        for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
+            JCAnnotation a = al.head;
+            T c = creator.create(a, syms.annotationType, env);
+
+            Assert.checkNonNull(c, "Failed to create annotation");
+
+            if (annotated.containsKey(a.type.tsym)) {
+                if (!allowRepeatedAnnos) {
+                    log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
+                    allowRepeatedAnnos = true;
+                }
+                ListBuffer<T> l = annotated.get(a.type.tsym);
+                l = l.append(c);
+                annotated.put(a.type.tsym, l);
+                pos.put(c, a.pos());
+            } else {
+                annotated.put(a.type.tsym, ListBuffer.of(c));
+                pos.put(c, a.pos());
+            }
+
+            // Note: @Deprecated has no effect on local variables and parameters
+            if (!c.type.isErroneous()
+                && sym.owner.kind != MTH
+                && types.isSameType(c.type, syms.deprecatedType)) {
+                sym.flags_field |= Flags.DEPRECATED;
+            }
+        }
+
+        return new AnnotationContext<>(env, annotated, pos,
+                                             isTypeCompound);
+    }
+
+    // Gather up annotations into a map from type symbols to lists of
+    // Compound attributes, then continue on with repeating
+    // annotations processing
+    private <T extends Attribute.Compound>
+            void attachAttributesLater(final List<JCAnnotation> annotations,
+                                       final Env<AttrContext> env,
+                                       final Symbol sym,
+                                       final boolean isTypeCompound,
+                                       final AttributeCreator<T> creator,
+                                       final AttributeAttacher<T> attacher) {
+        final AnnotationContext<T> ctx =
+            prepareEnterAnnotations(annotations, env, sym, creator, isTypeCompound);
+        final Map<Symbol.TypeSymbol, ListBuffer<T>> annotated =
+            ctx.annotated;
+        boolean hasRepeated = false;
+
+        List<T> buf = List.<T>nil();
+        for (ListBuffer<T> lb : annotated.values()) {
+            if (lb.size() == 1) {
+                buf = buf.prepend(lb.first());
+            } else {
+                @SuppressWarnings("unchecked")
+                T res = (T) new Placeholder<>(ctx, lb.toList(), sym);
+                buf = buf.prepend(res);
+                hasRepeated = true;
+            }
+        }
+
+        final List<T> attrs = buf.reverse();
+
+        if (!isTypeCompound) {
+            // Attach declaration attributes early, so
+            // that @Repeatable and other annotations get attached.
+            // Since the attacher uses setDeclarationAttributes, this
+            // will be overwritten later.
+            attacher.attach(sym, attrs);
+        }
+        if (hasRepeated) {
+            repeated(new Annotate.Worker() {
+                    @Override
+                    public String toString() {
+                        return "repeated annotation pass of: " + sym + " in: " + sym.owner;
+                    }
+
+                    @Override
+                    public void run() {
+                        JavaFileObject oldSource =
+                            log.useSource(env.toplevel.sourcefile);
+                        try {
+                            attacher.attach(sym, replacePlaceholders(attrs, ctx, sym));
+                        } finally {
+                            log.useSource(oldSource);
+                        }
+                    }
+                });
+        } else {
+            attacher.attach(sym, attrs);
+        }
+    }
+
+    private interface AttributeAttacher<T extends Attribute.Compound> {
+        public void attach(Symbol sym, List<T> attrs);
+    }
+
+    private final AttributeAttacher<Attribute.Compound> declAnnotationsAttacher =
+        new AttributeAttacher<Attribute.Compound>() {
+            @Override
+            public void attach(Symbol sym, List<Attribute.Compound> attrs) {
+                sym.resetAnnotations();
+                sym.setDeclarationAttributes(attrs);
+            }
+        };
+
+    private final AttributeAttacher<Attribute.TypeCompound> typeAnnotationsAttacher =
+        new AttributeAttacher<Attribute.TypeCompound>() {
+            @Override
+            public void attach(Symbol sym, List<Attribute.TypeCompound> attrs) {
+                sym.appendUniqueTypeAttributes(attrs);
+            }
+        };
+
+    private <T extends Attribute.Compound> List<T>
+            replacePlaceholders(List<T> buf,
+                                Annotate.AnnotationContext<T> ctx,
+                                Symbol sym) {
+        List<T> result = List.nil();
+        for (T a : buf) {
+            if (a instanceof Placeholder) {
+                @SuppressWarnings("unchecked")
+                    T replacement = replaceOne((Placeholder<T>) a, ctx, sym);
+
+                if (null != replacement) {
+                    result = result.prepend(replacement);
+                }
+            } else {
+                result = result.prepend(a);
+            }
+        }
+
+        return result.reverse();
+    }
+
+    private <T extends Attribute.Compound> T replaceOne(Placeholder<T> placeholder,
+                                                        Annotate.AnnotationContext<T> ctx,
+                                                        Symbol sym) {
+        // Process repeated annotations
+        T validRepeated =
+            processRepeatedAnnotations(placeholder.getPlaceholderFor(),
+                                       ctx, sym);
+
+        if (validRepeated != null) {
+            // Check that the container isn't manually
+            // present along with repeated instances of
+            // its contained annotation.
+            ListBuffer<T> manualContainer = ctx.annotated.get(validRepeated.type.tsym);
+            if (manualContainer != null) {
+                log.error(ctx.pos.get(manualContainer.first()), "invalid.repeatable.annotation.repeated.and.container.present",
+                        manualContainer.first().type.tsym);
+            }
+        }
+
+        // A null return will delete the Placeholder
+        return validRepeated;
+    }
+
 /* ********************************************************************
  * Annotation processing
  *********************************************************************/
@@ -745,44 +930,39 @@ public class Annotate {
         });
     }
 
+    private interface AttributeCreator<T extends Attribute.Compound> {
+        public T create(JCAnnotation a, Type expected, Env<AttrContext> env);
+    }
+
+    // TODO: When SE8 features can be used, these can go away and be
+    // replaced by method refs.
+    private final AttributeCreator<Attribute.Compound> enterAnnotationsCreator =
+        new AttributeCreator<Attribute.Compound>() {
+        @Override
+        public Attribute.Compound create(JCAnnotation a,
+                                         Type expected,
+                                         Env<AttrContext> env) {
+            return enterAnnotation(a, syms.annotationType, env);
+        }
+    };
+    private final AttributeCreator<Attribute.TypeCompound> enterTypeAnnotationsCreator =
+        new AttributeCreator<Attribute.TypeCompound>() {
+        @Override
+        public Attribute.TypeCompound create(JCAnnotation a,
+                                             Type expected,
+                                             Env<AttrContext> env) {
+            return enterTypeAnnotation(a, syms.annotationType, env);
+        }
+    };
+
     /** Enter a set of annotations. */
     private void actualEnterAnnotations(List<JCAnnotation> annotations,
                                         Env<AttrContext> env,
                                         Symbol s) {
-        Map<TypeSymbol, ListBuffer<Attribute.Compound>> annotated = new LinkedHashMap<>();
-        Map<Attribute.Compound, DiagnosticPosition> pos = new HashMap<>();
-
-        for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
-            JCAnnotation a = al.head;
-            Attribute.Compound c = enterAnnotation(a, syms.annotationType, env);
-            if (c == null) {
-                continue;
-            }
-
-            if (annotated.containsKey(a.type.tsym)) {
-                if (!allowRepeatedAnnos) {
-                    log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
-                    allowRepeatedAnnos = true;
-                }
-                ListBuffer<Attribute.Compound> l = annotated.get(a.type.tsym);
-                l = l.append(c);
-                annotated.put(a.type.tsym, l);
-                pos.put(c, a.pos());
-            } else {
-                annotated.put(a.type.tsym, ListBuffer.of(c));
-                pos.put(c, a.pos());
-            }
-
-            // Note: @Deprecated has no effect on local variables and parameters
-            if (!c.type.isErroneous()
-                && s.owner.kind != MTH
-                && types.isSameType(c.type, syms.deprecatedType)) {
-                s.flags_field |= Flags.DEPRECATED;
-            }
-        }
-
-        s.setDeclarationAttributesWithCompletion(
-            new AnnotateRepeatedContext<>(env, annotated, pos, log, false));
+        Assert.checkNonNull(s, "Symbol argument to actualEnterAnnotations is null");
+        attachAttributesLater(annotations, env, s, false,
+                              enterAnnotationsCreator,
+                              declAnnotationsAttacher);
     }
 
     /*
@@ -792,9 +972,7 @@ public class Annotate {
                                             final Env<AttrContext> env,
                                             final Symbol s,
                                             final DiagnosticPosition deferPos) {
-        Map<TypeSymbol, ListBuffer<Attribute.TypeCompound>> annotated = new LinkedHashMap<>();
-        Map<Attribute.TypeCompound, DiagnosticPosition> pos = new HashMap<>();
-
+        Assert.checkNonNull(s, "Symbol argument to actualEnterTypeAnnotations is nul/");
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
         DiagnosticPosition prevLintPos = null;
 
@@ -802,35 +980,9 @@ public class Annotate {
             prevLintPos = deferredLintHandler.setPos(deferPos);
         }
         try {
-
-            for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
-                JCAnnotation a = al.head;
-                Attribute.TypeCompound tc =
-                    enterTypeAnnotation(a, syms.annotationType, env);
-
-                if (tc == null) {
-                    continue;
-                }
-
-                if (annotated.containsKey(a.type.tsym)) {
-                    if (!allowRepeatedAnnos) {
-                        log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
-                        allowRepeatedAnnos = true;
-                    }
-                    ListBuffer<Attribute.TypeCompound> l = annotated.get(a.type.tsym);
-                    l = l.append(tc);
-                    annotated.put(a.type.tsym, l);
-                    pos.put(tc, a.pos());
-                } else {
-                    annotated.put(a.type.tsym, ListBuffer.of(tc));
-                    pos.put(tc, a.pos());
-                }
-            }
-
-            if (s != null) {
-                s.appendTypeAttributesWithCompletion(
-                    new AnnotateRepeatedContext<>(env, annotated, pos, log, true));
-            }
+            attachAttributesLater(annotations, env, s, true,
+                                  enterTypeAnnotationsCreator,
+                                  typeAnnotationsAttacher);
         } finally {
             if (prevLintPos != null)
                 deferredLintHandler.setPos(prevLintPos);

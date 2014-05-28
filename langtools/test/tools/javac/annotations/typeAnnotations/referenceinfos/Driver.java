@@ -42,7 +42,7 @@ import com.sun.tools.classfile.TypeAnnotation.TargetType;
 
 public class Driver {
 
-    private static final PrintStream out = System.out;
+    private static final PrintStream out = System.err;
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0 || args.length > 1)
@@ -180,7 +180,6 @@ public class Driver {
 
     protected File compileTestFile(File f, String testClass, String... extraParams) {
         List<String> options = new ArrayList<>();
-        options.addAll(Arrays.asList("-source", "1.8"));
         options.addAll(Arrays.asList(extraParams));
         options.add(f.getPath());
         int rc = com.sun.tools.javac.Main.compile(options.toArray(new String[options.size()]));

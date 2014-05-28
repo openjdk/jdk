@@ -64,6 +64,30 @@ void GCTracer::send_reference_stats_event(ReferenceType type, size_t count) cons
   }
 }
 
+void GCTracer::send_metaspace_chunk_free_list_summary(GCWhen::Type when, Metaspace::MetadataType mdtype,
+                                                      const MetaspaceChunkFreeListSummary& summary) const {
+  EventMetaspaceChunkFreeListSummary e;
+  if (e.should_commit()) {
+    e.set_gcId(_shared_gc_info.id());
+    e.set_when(when);
+    e.set_metadataType(mdtype);
+
+    e.set_specializedChunks(summary.num_specialized_chunks());
+    e.set_specializedChunksTotalSize(summary.specialized_chunks_size_in_bytes());
+
+    e.set_smallChunks(summary.num_small_chunks());
+    e.set_smallChunksTotalSize(summary.small_chunks_size_in_bytes());
+
+    e.set_mediumChunks(summary.num_medium_chunks());
+    e.set_mediumChunksTotalSize(summary.medium_chunks_size_in_bytes());
+
+    e.set_humongousChunks(summary.num_humongous_chunks());
+    e.set_humongousChunksTotalSize(summary.humongous_chunks_size_in_bytes());
+
+    e.commit();
+  }
+}
+
 void ParallelOldTracer::send_parallel_old_event() const {
   EventGCParallelOld e(UNTIMED);
   if (e.should_commit()) {
@@ -234,7 +258,7 @@ void GCTracer::send_gc_heap_summary_event(GCWhen::Type when, const GCHeapSummary
 static TraceStructMetaspaceSizes to_trace_struct(const MetaspaceSizes& sizes) {
   TraceStructMetaspaceSizes meta_sizes;
 
-  meta_sizes.set_capacity(sizes.capacity());
+  meta_sizes.set_committed(sizes.committed());
   meta_sizes.set_used(sizes.used());
   meta_sizes.set_reserved(sizes.reserved());
 
@@ -246,6 +270,7 @@ void GCTracer::send_meta_space_summary_event(GCWhen::Type when, const MetaspaceS
   if (e.should_commit()) {
     e.set_gcId(_shared_gc_info.id());
     e.set_when((u1) when);
+    e.set_gcThreshold(meta_space_summary.capacity_until_GC());
     e.set_metaspace(to_trace_struct(meta_space_summary.meta_space()));
     e.set_dataSpace(to_trace_struct(meta_space_summary.data_space()));
     e.set_classSpace(to_trace_struct(meta_space_summary.class_space()));

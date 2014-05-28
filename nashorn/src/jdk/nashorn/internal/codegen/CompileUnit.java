@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
-
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 
@@ -38,7 +37,7 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
  */
 public final class CompileUnit implements Comparable<CompileUnit> {
     /** Current class name */
-    private String className;
+    private final String className;
 
     /** Current class generator */
     private ClassEmitter classEmitter;
@@ -171,14 +170,6 @@ public final class CompileUnit implements Comparable<CompileUnit> {
      */
     public String getUnitClassName() {
         return className;
-    }
-
-    /**
-     * Reset the class name for this compile unit
-     * @param className new class name
-     */
-    public void setUnitClassName(final String className) {
-        this.className = className;
     }
 
     private static String shortName(final String name) {

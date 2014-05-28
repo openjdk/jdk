@@ -665,7 +665,9 @@ public class HttpClient extends NetworkClient {
                     // try once more
                     openServer();
                     if (needsTunneling()) {
+                        MessageHeader origRequests = requests;
                         httpuc.doTunneling();
+                        requests = origRequests;
                     }
                     afterConnect();
                     writeRequests(requests, poster);
@@ -776,7 +778,9 @@ public class HttpClient extends NetworkClient {
                         cachedHttpClient = false;
                         openServer();
                         if (needsTunneling()) {
+                            MessageHeader origRequests = requests;
                             httpuc.doTunneling();
+                            requests = origRequests;
                         }
                         afterConnect();
                         writeRequests(requests, poster);

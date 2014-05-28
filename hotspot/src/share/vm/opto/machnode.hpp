@@ -53,6 +53,7 @@ class MachSpillCopyNode;
 class Matcher;
 class PhaseRegAlloc;
 class RegMask;
+class RTMLockingCounters;
 class State;
 
 //---------------------------MachOper------------------------------------------
@@ -209,7 +210,14 @@ public:
   bool may_be_short_branch() const { return (flags() & Flag_may_be_short_branch) != 0; }
 
   // Avoid back to back some instructions on some CPUs.
-  bool avoid_back_to_back() const { return (flags() & Flag_avoid_back_to_back) != 0; }
+  enum AvoidBackToBackFlag { AVOID_NONE = 0,
+                             AVOID_BEFORE = Flag_avoid_back_to_back_before,
+                             AVOID_AFTER = Flag_avoid_back_to_back_after,
+                             AVOID_BEFORE_AND_AFTER = AVOID_BEFORE | AVOID_AFTER };
+
+  bool avoid_back_to_back(AvoidBackToBackFlag flag_value) const {
+    return (flags() & flag_value) == flag_value;
+  }
 
   // instruction implemented with a call
   bool has_call() const { return (flags() & Flag_has_call) != 0; }
@@ -714,8 +722,9 @@ public:
 class MachFastLockNode : public MachNode {
   virtual uint size_of() const { return sizeof(*this); } // Size is bigger
 public:
-  BiasedLockingCounters* _counters;
-
+  BiasedLockingCounters*        _counters;
+  RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
+  RTMLockingCounters* _stack_rtm_counters; // RTM lock counters for stack locks
   MachFastLockNode() : MachNode() {}
 };
 

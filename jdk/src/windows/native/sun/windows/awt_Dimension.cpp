@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,10 @@ Java_java_awt_Dimension_initIDs(JNIEnv *env, jclass cls) {
     TRY;
 
     AwtDimension::widthID = env->GetFieldID(cls, "width", "I");
-    AwtDimension::heightID = env->GetFieldID(cls, "height", "I");
-
     DASSERT(AwtDimension::widthID != NULL);
+    CHECK_NULL(AwtDimension::widthID);
+
+    AwtDimension::heightID = env->GetFieldID(cls, "height", "I");
     DASSERT(AwtDimension::heightID != NULL);
 
     CATCH_BAD_ALLOC;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,50 +26,32 @@
  * @bug 4625883
  * @summary Make sure that bad -link arguments trigger warnings.
  * @author jamieh
- * @library ../lib/
+ * @library ../lib
  * @build JavadocTester
- * @build TestBadLinkOption
  * @run main TestBadLinkOption
  */
 
 public class TestBadLinkOption extends JavadocTester {
 
-    private static final String BUG_ID = "4720957";
-
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-        "-link", BUG_ID, "pkg"
-    };
-
-    private static final String[][] TEST = {
-        {WARNING_OUTPUT, "Error reading file:"}
-    };
-
-    private static final String[][] NEG_TEST = {
-        {ERROR_OUTPUT, "Error reading file:"}
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestBadLinkOption tester = new TestBadLinkOption();
-        run(tester, ARGS, TEST, NEG_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        String out = "out";
+        javadoc("-d", out,
+                "-sourcepath", testSrc,
+                "-link", out,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        // TODO: the file it is trying to read, out/out/package-list, warrants investigation
+        checkOutput(Output.WARNING, true,
+                "Error reading file:");
+
+        checkOutput(Output.ERROR, false,
+                "Error reading file:");
     }
 }

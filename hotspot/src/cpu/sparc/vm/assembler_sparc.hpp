@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,8 +123,13 @@ class Assembler : public AbstractAssembler  {
     fpop2_op3    = 0x35,
     impdep1_op3  = 0x36,
     aes3_op3     = 0x36,
+    alignaddr_op3  = 0x36,
+    faligndata_op3 = 0x36,
     flog3_op3    = 0x36,
+    edge_op3     = 0x36,
+    fsrc_op3     = 0x36,
     impdep2_op3  = 0x37,
+    stpartialf_op3 = 0x37,
     jmpl_op3     = 0x38,
     rett_op3     = 0x39,
     trap_op3     = 0x3a,
@@ -175,16 +180,22 @@ class Assembler : public AbstractAssembler  {
 
   enum opfs {
     // selected opfs
+    edge8n_opf         = 0x01,
+
     fmovs_opf          = 0x01,
     fmovd_opf          = 0x02,
 
     fnegs_opf          = 0x05,
     fnegd_opf          = 0x06,
 
+    alignaddr_opf      = 0x18,
+
     fadds_opf          = 0x41,
     faddd_opf          = 0x42,
     fsubs_opf          = 0x45,
     fsubd_opf          = 0x46,
+
+    faligndata_opf     = 0x48,
 
     fmuls_opf          = 0x49,
     fmuld_opf          = 0x4a,
@@ -348,6 +359,8 @@ class Assembler : public AbstractAssembler  {
     ASI_PRIMARY            = 0x80,
     ASI_PRIMARY_NOFAULT    = 0x82,
     ASI_PRIMARY_LITTLE     = 0x88,
+    // 8x8-bit partial store
+    ASI_PST8_PRIMARY       = 0xC0,
     // Block initializing store
     ASI_ST_BLKINIT_PRIMARY = 0xE2,
     // Most-Recently-Used (MRU) BIS variant
@@ -585,6 +598,9 @@ class Assembler : public AbstractAssembler  {
   // instruction only in VIS1
   static void vis1_only() { assert( VM_Version::has_vis1(), "This instruction only works on SPARC with VIS1"); }
 
+  // instruction only in VIS2
+  static void vis2_only() { assert( VM_Version::has_vis2(), "This instruction only works on SPARC with VIS2"); }
+
   // instruction only in VIS3
   static void vis3_only() { assert( VM_Version::has_vis3(), "This instruction only works on SPARC with VIS3"); }
 
@@ -630,11 +646,20 @@ class Assembler : public AbstractAssembler  {
   }
 
  protected:
+  // Insert a nop if the previous is cbcond
+  void insert_nop_after_cbcond() {
+    if (UseCBCond && cbcond_before()) {
+      nop();
+    }
+  }
   // Delay slot helpers
   // cti is called when emitting control-transfer instruction,
   // BEFORE doing the emitting.
   // Only effective when assertion-checking is enabled.
   void cti() {
+    // A cbcond instruction immediately followed by a CTI
+    // instruction introduces pipeline stalls, we need to avoid that.
+    no_cbcond_before();
 #ifdef CHECK_DELAY
     assert_not_delayed("cti should not be in delay slot");
 #endif
@@ -658,7 +683,6 @@ class Assembler : public AbstractAssembler  {
   void no_cbcond_before() {
     assert(offset() == 0 || !cbcond_before(), "cbcond should not follow an other cbcond");
   }
-
 public:
 
   bool use_cbcond(Label& L) {
@@ -1155,6 +1179,20 @@ public:
                                                u_field(3, 29, 25) | immed(true) | simm(simm13a, 13)); }
   inline void wrfprs( Register d) { v9_only(); emit_int32( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(6, 29, 25)); }
 
+
+  //  VIS1 instructions
+
+  void alignaddr( Register s1, Register s2, Register d ) { vis1_only(); emit_int32( op(arith_op) | rd(d) | op3(alignaddr_op3) | rs1(s1) | opf(alignaddr_opf) | rs2(s2)); }
+
+  void faligndata( FloatRegister s1, FloatRegister s2, FloatRegister d ) { vis1_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(faligndata_op3) | fs1(s1, FloatRegisterImpl::D) | opf(faligndata_opf) | fs2(s2, FloatRegisterImpl::D)); }
+
+  void fsrc2( FloatRegisterImpl::Width w, FloatRegister s2, FloatRegister d ) { vis1_only(); emit_int32( op(arith_op) | fd(d, w) | op3(fsrc_op3) | opf(0x7A - w) | fs2(s2, w)); }
+
+  void stpartialf( Register s1, Register s2, FloatRegister d, int ia = -1 ) { vis1_only(); emit_int32( op(ldst_op) | fd(d, FloatRegisterImpl::D) | op3(stpartialf_op3) | rs1(s1) | imm_asi(ia) | rs2(s2)); }
+
+  //  VIS2 instructions
+
+  void edge8n( Register s1, Register s2, Register d ) { vis2_only(); emit_int32( op(arith_op) | rd(d) | op3(edge_op3) | rs1(s1) | opf(edge8n_opf) | rs2(s2)); }
 
   // VIS3 instructions
 

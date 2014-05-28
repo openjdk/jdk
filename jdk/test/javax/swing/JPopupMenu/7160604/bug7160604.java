@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,24 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
-import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import static java.awt.GraphicsDevice.WindowTranslucency.*;
 
 public class bug7160604 extends JApplet {
 
     public void init() {
         SwingUtilities.invokeLater(() -> {
+            if (!GraphicsEnvironment
+                    .getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice()
+                    .isWindowTranslucencySupported(PERPIXEL_TRANSLUCENT)) {
+                // Tested translucency is not supported. Test passed
+                return;
+            }
+
             final JWindow window = new JWindow();
             window.setLocation(200, 200);
             window.setSize(300, 300);

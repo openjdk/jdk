@@ -42,6 +42,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
@@ -269,7 +270,7 @@ template <class T> void ObjArrayKlass::do_copy(arrayOop s, T* src,
         if (element_is_null ||
             (new_val->klass())->is_subtype_of(bound)) {
           bs->write_ref_field_pre(p, new_val);
-          *p = *from;
+          *p = element;
         } else {
           // We must do a barrier to cover the partial copy.
           const size_t pd = pointer_delta(p, dst, (size_t)heapOopSize);

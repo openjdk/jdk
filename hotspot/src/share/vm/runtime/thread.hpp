@@ -249,9 +249,6 @@ class Thread: public ThreadShadow {
   // Used by SkipGCALot class.
   NOT_PRODUCT(bool _skip_gcalot;)               // Should we elide gc-a-lot?
 
-  // Record when GC is locked out via the GC_locker mechanism
-  CHECK_UNHANDLED_OOPS_ONLY(int _gc_locked_out_count;)
-
   friend class No_Alloc_Verifier;
   friend class No_Safepoint_Verifier;
   friend class Pause_No_Safepoint_Verifier;
@@ -397,7 +394,6 @@ class Thread: public ThreadShadow {
   void clear_unhandled_oops() {
     if (CheckUnhandledOops) unhandled_oops()->clear_unhandled_oops();
   }
-  bool is_gc_locked_out() { return _gc_locked_out_count > 0; }
 #endif // CHECK_UNHANDLED_OOPS
 
 #ifndef PRODUCT
@@ -440,18 +436,7 @@ class Thread: public ThreadShadow {
   jlong allocated_bytes()               { return _allocated_bytes; }
   void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
   void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
-  jlong cooked_allocated_bytes() {
-    jlong allocated_bytes = OrderAccess::load_acquire(&_allocated_bytes);
-    if (UseTLAB) {
-      size_t used_bytes = tlab().used_bytes();
-      if ((ssize_t)used_bytes > 0) {
-        // More-or-less valid tlab.  The load_acquire above should ensure
-        // that the result of the add is <= the instantaneous value
-        return allocated_bytes + used_bytes;
-      }
-    }
-    return allocated_bytes;
-  }
+  inline jlong cooked_allocated_bytes();
 
   TRACE_DATA* trace_data()              { return &_trace_data; }
 
@@ -570,7 +555,7 @@ public:
   void    set_lgrp_id(int value) { _lgrp_id = value; }
 
   // Printing
-  void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
 
@@ -704,6 +689,7 @@ class NamedThread: public Thread {
   virtual char* name() const { return _name == NULL ? (char*)"Unknown Thread" : _name; }
   JavaThread *processed_thread() { return _processed_thread; }
   void set_processed_thread(JavaThread *thread) { _processed_thread = thread; }
+  virtual void print_on(outputStream* st) const;
 };
 
 // Worker threads are named and have an id of an assigned work.
@@ -750,7 +736,6 @@ class WatcherThread: public Thread {
   // Printing
   char* name() const { return (char*)"VM Periodic Task Thread"; }
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
   void unpark();
 
   // Returns the single instance of WatcherThread
@@ -1050,12 +1035,8 @@ class JavaThread: public Thread {
 #else
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
-  JavaThreadState thread_state() const           {
-    return (JavaThreadState) OrderAccess::load_acquire((volatile jint*)&_thread_state);
-  }
-  void set_thread_state(JavaThreadState s)       {
-    OrderAccess::release_store((volatile jint*)&_thread_state, (jint)s);
-  }
+  inline JavaThreadState thread_state() const;
+  inline void set_thread_state(JavaThreadState s);
 #endif
   ThreadSafepointState *safepoint_state() const  { return _safepoint_state; }
   void set_safepoint_state(ThreadSafepointState *state) { _safepoint_state = state; }
@@ -1463,7 +1444,6 @@ class JavaThread: public Thread {
   // Misc. operations
   char* name() const { return (char*)get_thread_name(); }
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
   void print_value();
   void print_thread_state_on(outputStream* ) const      PRODUCT_RETURN;
   void print_thread_state() const                       PRODUCT_RETURN;
@@ -1779,15 +1759,15 @@ public:
   // clearing/querying jni attach status
   bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
   bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }
-  void set_done_attaching_via_jni() { _jni_attach_state = _attached_via_jni; OrderAccess::fence(); }
+  inline void set_done_attaching_via_jni();
 private:
   // This field is used to determine if a thread has claimed
-  // a par_id: it is -1 if the thread has not claimed a par_id;
+  // a par_id: it is UINT_MAX if the thread has not claimed a par_id;
   // otherwise its value is the par_id that has been claimed.
-  int _claimed_par_id;
+  uint _claimed_par_id;
 public:
-  int get_claimed_par_id() { return _claimed_par_id; }
-  void set_claimed_par_id(int id) { _claimed_par_id = id;}
+  uint get_claimed_par_id() { return _claimed_par_id; }
+  void set_claimed_par_id(uint id) { _claimed_par_id = id;}
 };
 
 // Inline implementation of JavaThread::current

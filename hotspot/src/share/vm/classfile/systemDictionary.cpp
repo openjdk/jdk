@@ -52,6 +52,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/signature.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
@@ -172,12 +173,14 @@ Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader
   if (HAS_PENDING_EXCEPTION || klass == NULL) {
     KlassHandle k_h(THREAD, klass);
     // can return a null klass
-    klass = handle_resolution_exception(class_name, class_loader, protection_domain, throw_error, k_h, THREAD);
+    klass = handle_resolution_exception(class_name, throw_error, k_h, THREAD);
   }
   return klass;
 }
 
-Klass* SystemDictionary::handle_resolution_exception(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, KlassHandle klass_h, TRAPS) {
+Klass* SystemDictionary::handle_resolution_exception(Symbol* class_name,
+                                                     bool throw_error,
+                                                     KlassHandle klass_h, TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     // If we have a pending exception we forward it to the caller, unless throw_error is true,
     // in which case we have to check whether the pending exception is a ClassNotFoundException,
@@ -385,7 +388,7 @@ Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
   }
   if (HAS_PENDING_EXCEPTION || superk_h() == NULL) {
     // can null superk
-    superk_h = KlassHandle(THREAD, handle_resolution_exception(class_name, class_loader, protection_domain, true, superk_h, THREAD));
+    superk_h = KlassHandle(THREAD, handle_resolution_exception(class_name, true, superk_h, THREAD));
   }
 
   return superk_h();
@@ -826,47 +829,6 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
       }
     } // load_instance_class loop
 
-    if (HAS_PENDING_EXCEPTION) {
-      // An exception, such as OOM could have happened at various places inside
-      // load_instance_class. We might have partially initialized a shared class
-      // and need to clean it up.
-      if (class_loader.is_null()) {
-        // In some cases k may be null. Let's find the shared class again.
-        instanceKlassHandle ik(THREAD, find_shared_class(name));
-        if (ik.not_null()) {
-          if (ik->class_loader_data() == NULL) {
-            // We didn't go as far as Klass::restore_unshareable_info(),
-            // so nothing to clean up.
-          } else {
-            Klass *kk;
-            {
-              MutexLocker mu(SystemDictionary_lock, THREAD);
-              kk = find_class(d_index, d_hash, name, ik->class_loader_data());
-            }
-            if (kk != NULL) {
-              // No clean up is needed if the shared class has been entered
-              // into system dictionary, as load_shared_class() won't be called
-              // again.
-            } else {
-              // This must be done outside of the SystemDictionary_lock to
-              // avoid deadlock.
-              //
-              // Note that Klass::restore_unshareable_info (called via
-              // load_instance_class above) is also called outside
-              // of SystemDictionary_lock. Other threads are blocked from
-              // loading this class because they are waiting on the
-              // SystemDictionary_lock until this thread removes
-              // the placeholder below.
-              //
-              // This need to be re-thought when parallel-capable non-boot
-              // classloaders are supported by CDS (today they're not).
-              clean_up_shared_class(ik, class_loader, THREAD);
-            }
-          }
-        }
-      }
-    }
-
     if (load_instance_added == true) {
       // clean up placeholder entries for LOAD_INSTANCE success or error
       // This brackets the SystemDictionary updates for both defining
@@ -1012,7 +974,6 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
   if (host_klass.not_null()) {
     // Create a new CLD for anonymous class, that uses the same class loader
     // as the host_klass
-    assert(EnableInvokeDynamic, "");
     guarantee(host_klass->class_loader() == class_loader(), "should be the same");
     loader_data = ClassLoaderData::anonymous_class_loader_data(class_loader(), CHECK_NULL);
     loader_data->record_dependency(host_klass(), CHECK_NULL);
@@ -1037,7 +998,6 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
 
 
   if (host_klass.not_null() && k.not_null()) {
-    assert(EnableInvokeDynamic, "");
     k->set_host_klass(host_klass());
     // If it's anonymous, initialize it now, since nobody else will.
 
@@ -1272,19 +1232,6 @@ instanceKlassHandle SystemDictionary::load_shared_class(
   return ik;
 }
 
-void SystemDictionary::clean_up_shared_class(instanceKlassHandle ik, Handle class_loader, TRAPS) {
-  // Updating methods must be done under a lock so multiple
-  // threads don't update these in parallel
-  // Shared classes are all currently loaded by the bootstrap
-  // classloader, so this will never cause a deadlock on
-  // a custom class loader lock.
-  {
-    Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
-    check_loader_lock_contention(lockObject, THREAD);
-    ObjectLocker ol(lockObject, THREAD, true);
-    ik->remove_unshareable_info();
-  }
-}
 
 instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
@@ -1931,13 +1878,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   WKID jsr292_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
   WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(VolatileCallSite_klass);
   initialize_wk_klasses_until(jsr292_group_start, scan, CHECK);
-  if (EnableInvokeDynamic) {
-    initialize_wk_klasses_through(jsr292_group_end, scan, CHECK);
-  } else {
-    // Skip the JSR 292 classes, if not enabled.
-    scan = WKID(jsr292_group_end + 1);
-  }
-
+  initialize_wk_klasses_through(jsr292_group_end, scan, CHECK);
   initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
 
   _box_klasses[T_BOOLEAN] = WK_KLASS(Boolean_klass);
@@ -2173,12 +2114,13 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
 
 // Add entry to resolution error table to record the error when the first
 // attempt to resolve a reference to a class has failed.
-void SystemDictionary::add_resolution_error(constantPoolHandle pool, int which, Symbol* error) {
+void SystemDictionary::add_resolution_error(constantPoolHandle pool, int which,
+                                            Symbol* error, Symbol* message) {
   unsigned int hash = resolution_errors()->compute_hash(pool, which);
   int index = resolution_errors()->hash_to_index(hash);
   {
     MutexLocker ml(SystemDictionary_lock, Thread::current());
-    resolution_errors()->add_entry(index, hash, pool, which, error);
+    resolution_errors()->add_entry(index, hash, pool, which, error, message);
   }
 }
 
@@ -2188,13 +2130,19 @@ void SystemDictionary::delete_resolution_error(ConstantPool* pool) {
 }
 
 // Lookup resolution error table. Returns error if found, otherwise NULL.
-Symbol* SystemDictionary::find_resolution_error(constantPoolHandle pool, int which) {
+Symbol* SystemDictionary::find_resolution_error(constantPoolHandle pool, int which,
+                                                Symbol** message) {
   unsigned int hash = resolution_errors()->compute_hash(pool, which);
   int index = resolution_errors()->hash_to_index(hash);
   {
     MutexLocker ml(SystemDictionary_lock, Thread::current());
     ResolutionErrorEntry* entry = resolution_errors()->find_entry(index, hash, pool, which);
-    return (entry != NULL) ? entry->error() : (Symbol*)NULL;
+    if (entry != NULL) {
+      *message = entry->message();
+      return entry->error();
+    } else {
+      return NULL;
+    }
   }
 }
 
@@ -2275,7 +2223,6 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
                                                             Symbol* signature,
                                                             TRAPS) {
   methodHandle empty;
-  assert(EnableInvokeDynamic, "");
   assert(MethodHandles::is_signature_polymorphic(iid) &&
          MethodHandles::is_signature_polymorphic_intrinsic(iid) &&
          iid != vmIntrinsics::_invokeGeneric,
@@ -2349,7 +2296,6 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
                                                           Handle *method_type_result,
                                                           TRAPS) {
   methodHandle empty;
-  assert(EnableInvokeDynamic, "");
   assert(!THREAD->is_Compiler_thread(), "");
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_(empty));

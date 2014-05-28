@@ -51,6 +51,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -130,6 +131,13 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
     case DLL_PROCESS_DETACH:
       if(ForceTimeHighResolution)
         timeEndPeriod(1L);
+
+      // Workaround for issue when a custom launcher doesn't call
+      // DestroyJavaVM and NMT is trying to track memory when free is
+      // called from a static destructor
+      if (MemTracker::is_on()) {
+          MemTracker::shutdown(MemTracker::NMT_normal);
+      }
       break;
     default:
       break;
@@ -2425,6 +2433,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
   }
 
+  if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
+      VM_Version::is_cpuinfo_segv_addr(pc)) {
+    // Verify that OS save/restore AVX registers.
+    return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
+  }
+
   if (t != NULL && t->is_Java_thread()) {
     JavaThread* thread = (JavaThread*) t;
     bool in_java = thread->thread_state() == _thread_in_Java;
@@ -2696,7 +2710,6 @@ address os::win32::fast_jni_accessor_wrapper(BasicType type) {
 }
 #endif
 
-#ifndef PRODUCT
 void os::win32::call_test_func_with_wrapper(void (*funcPtr)(void)) {
   // Install a win32 structured exception handler around the test
   // function call so the VM can generate an error dump if needed.
@@ -2707,7 +2720,6 @@ void os::win32::call_test_func_with_wrapper(void (*funcPtr)(void)) {
     // Nothing to do.
   }
 }
-#endif
 
 // Virtual Memory
 
@@ -3514,7 +3526,7 @@ os::YieldResult os::NakedYield() {
 
 void os::yield() {  os::NakedYield(); }
 
-void os::yield_all(int attempts) {
+void os::yield_all() {
   // Yields to all threads, including threads with lower priorities
   Sleep(1);
 }
@@ -3619,13 +3631,14 @@ bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
          "possibility of dangling Thread pointer");
 
   OSThread* osthread = thread->osthread();
-  bool interrupted = osthread->interrupted();
   // There is no synchronization between the setting of the interrupt
   // and it being cleared here. It is critical - see 6535709 - that
   // we only clear the interrupt state, and reset the interrupt event,
   // if we are going to report that we were indeed interrupted - else
   // an interrupt can be "lost", leading to spurious wakeups or lost wakeups
-  // depending on the timing
+  // depending on the timing. By checking thread interrupt event to see
+  // if the thread gets real interrupt thus prevent spurious wakeup.
+  bool interrupted = osthread->interrupted() && (WaitForSingleObject(osthread->interrupt_event(), 0) == WAIT_OBJECT_0);
   if (interrupted && clear_interrupted) {
     osthread->set_interrupted(false);
     ResetEvent(osthread->interrupt_event());
@@ -3859,12 +3872,6 @@ void os::init(void) {
   win32::setmode_streams();
   init_page_sizes((size_t) win32::vm_page_size());
 
-  // For better scalability on MP systems (must be called after initialize_system_info)
-#ifndef PRODUCT
-  if (is_MP()) {
-    NoYieldsInMicrolock = true;
-  }
-#endif
   // This may be overridden later when argument processing is done.
   FLAG_SET_ERGO(bool, UseLargePagesIndividualAllocation,
     os::win32::is_windows_2003());

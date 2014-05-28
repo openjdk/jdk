@@ -1089,6 +1089,21 @@ void Assembler::andl(Register dst, Register src) {
   emit_arith(0x23, 0xC0, dst, src);
 }
 
+void Assembler::andnl(Register dst, Register src1, Register src2) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode(dst, src1, src2);
+  emit_int8((unsigned char)0xF2);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::andnl(Register dst, Register src1, Address src2) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38(dst, src1, src2);
+  emit_int8((unsigned char)0xF2);
+  emit_operand(dst, src2);
+}
+
 void Assembler::bsfl(Register dst, Register src) {
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
@@ -1097,7 +1112,6 @@ void Assembler::bsfl(Register dst, Register src) {
 }
 
 void Assembler::bsrl(Register dst, Register src) {
-  assert(!VM_Version::supports_lzcnt(), "encoding is treated as LZCNT");
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)0xBD);
@@ -1108,6 +1122,51 @@ void Assembler::bswapl(Register reg) { // bswap
   int encode = prefix_and_encode(reg->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)(0xC8 | encode));
+}
+
+void Assembler::blsil(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode(rbx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsil(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38(rbx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rbx, src);
+}
+
+void Assembler::blsmskl(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode(rdx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsmskl(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38(rdx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rdx, src);
+}
+
+void Assembler::blsrl(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode(rcx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsrl(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38(rcx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rcx, src);
 }
 
 void Assembler::call(Label& L, relocInfo::relocType rtype) {
@@ -1707,7 +1766,7 @@ void Assembler::movdqu(Address dst, XMMRegister src) {
 
 // Move Unaligned 256bit Vector
 void Assembler::vmovdqu(XMMRegister dst, XMMRegister src) {
-  assert(UseAVX, "");
+  assert(UseAVX > 0, "");
   bool vector256 = true;
   int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_F3, vector256);
   emit_int8(0x6F);
@@ -1715,7 +1774,7 @@ void Assembler::vmovdqu(XMMRegister dst, XMMRegister src) {
 }
 
 void Assembler::vmovdqu(XMMRegister dst, Address src) {
-  assert(UseAVX, "");
+  assert(UseAVX > 0, "");
   InstructionMark im(this);
   bool vector256 = true;
   vex_prefix(dst, xnoreg, src, VEX_SIMD_F3, vector256);
@@ -1724,7 +1783,7 @@ void Assembler::vmovdqu(XMMRegister dst, Address src) {
 }
 
 void Assembler::vmovdqu(Address dst, XMMRegister src) {
-  assert(UseAVX, "");
+  assert(UseAVX > 0, "");
   InstructionMark im(this);
   bool vector256 = true;
   // swap src<->dst for encoding
@@ -2283,6 +2342,11 @@ void Assembler::vpermq(XMMRegister dst, XMMRegister src, int imm8, bool vector25
   emit_int8(imm8);
 }
 
+void Assembler::pause() {
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)0x90);
+}
+
 void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
   assert(VM_Version::supports_sse4_2(), "");
   InstructionMark im(this);
@@ -2607,6 +2671,11 @@ void Assembler::rcll(Register dst, int imm8) {
   }
 }
 
+void Assembler::rdtsc() {
+  emit_int8((unsigned char)0x0F);
+  emit_int8((unsigned char)0x31);
+}
+
 // copies data from [esi] to [edi] using rcx pointer sized words
 // generic
 void Assembler::rep_mov() {
@@ -2878,6 +2947,24 @@ void Assembler::testl(Register dst, Address  src) {
   emit_operand(dst, src);
 }
 
+void Assembler::tzcntl(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  emit_int8((unsigned char)0xF3);
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_int8(0x0F);
+  emit_int8((unsigned char)0xBC);
+  emit_int8((unsigned char)0xC0 | encode);
+}
+
+void Assembler::tzcntq(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  emit_int8((unsigned char)0xF3);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_int8(0x0F);
+  emit_int8((unsigned char)0xBC);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::ucomisd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   emit_simd_arith_nonds(0x2E, dst, src, VEX_SIMD_66);
@@ -2898,6 +2985,11 @@ void Assembler::ucomiss(XMMRegister dst, XMMRegister src) {
   emit_simd_arith_nonds(0x2E, dst, src, VEX_SIMD_NONE);
 }
 
+void Assembler::xabort(int8_t imm8) {
+  emit_int8((unsigned char)0xC6);
+  emit_int8((unsigned char)0xF8);
+  emit_int8((unsigned char)(imm8 & 0xFF));
+}
 
 void Assembler::xaddl(Address dst, Register src) {
   InstructionMark im(this);
@@ -2905,6 +2997,24 @@ void Assembler::xaddl(Address dst, Register src) {
   emit_int8(0x0F);
   emit_int8((unsigned char)0xC1);
   emit_operand(src, dst);
+}
+
+void Assembler::xbegin(Label& abort, relocInfo::relocType rtype) {
+  InstructionMark im(this);
+  relocate(rtype);
+  if (abort.is_bound()) {
+    address entry = target(abort);
+    assert(entry != NULL, "abort entry NULL");
+    intptr_t offset = entry - pc();
+    emit_int8((unsigned char)0xC7);
+    emit_int8((unsigned char)0xF8);
+    emit_int32(offset - 6); // 2 opcode + 4 address
+  } else {
+    abort.add_patch_at(code(), locator());
+    emit_int8((unsigned char)0xC7);
+    emit_int8((unsigned char)0xF8);
+    emit_int32(0);
+  }
 }
 
 void Assembler::xchgl(Register dst, Address src) { // xchg
@@ -2918,6 +3028,12 @@ void Assembler::xchgl(Register dst, Register src) {
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
   emit_int8((unsigned char)0x87);
   emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::xend() {
+  emit_int8((unsigned char)0x0F);
+  emit_int8((unsigned char)0x01);
+  emit_int8((unsigned char)0xD5);
 }
 
 void Assembler::xgetbv() {
@@ -4837,6 +4953,21 @@ void Assembler::andq(Register dst, Register src) {
   emit_arith(0x23, 0xC0, dst, src);
 }
 
+void Assembler::andnq(Register dst, Register src1, Register src2) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode_q(dst, src1, src2);
+  emit_int8((unsigned char)0xF2);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::andnq(Register dst, Register src1, Address src2) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38_q(dst, src1, src2);
+  emit_int8((unsigned char)0xF2);
+  emit_operand(dst, src2);
+}
+
 void Assembler::bsfq(Register dst, Register src) {
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
@@ -4845,7 +4976,6 @@ void Assembler::bsfq(Register dst, Register src) {
 }
 
 void Assembler::bsrq(Register dst, Register src) {
-  assert(!VM_Version::supports_lzcnt(), "encoding is treated as LZCNT");
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)0xBD);
@@ -4856,6 +4986,51 @@ void Assembler::bswapq(Register reg) {
   int encode = prefixq_and_encode(reg->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)(0xC8 | encode));
+}
+
+void Assembler::blsiq(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode_q(rbx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsiq(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38_q(rbx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rbx, src);
+}
+
+void Assembler::blsmskq(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode_q(rdx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsmskq(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38_q(rdx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rdx, src);
+}
+
+void Assembler::blsrq(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode_q(rcx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsrq(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38_q(rcx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rcx, src);
 }
 
 void Assembler::cdqq() {

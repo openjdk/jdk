@@ -60,10 +60,6 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   static void makeSurrogateLockerThread(TRAPS);
   static SurrogateLockerThread* slt() { return _slt; }
 
-  // Printing
-  void print_on(outputStream* st) const;
-  void print() const;
-
   // Total virtual time so far.
   double vtime_accum();
   // Marking virtual time so far
@@ -88,9 +84,6 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   // as the CM thread might take some time to wake up before noticing
   // that started() is set and set in_progress().
   bool during_cycle()      { return started() || in_progress(); }
-
-  // Yield for GC
-  void            yield();
 
   // shutdown
   void stop();

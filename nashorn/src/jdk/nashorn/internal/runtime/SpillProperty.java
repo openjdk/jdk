@@ -25,16 +25,18 @@
 
 package jdk.nashorn.internal.runtime;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Spill property
  */
 public class SpillProperty extends AccessorProperty {
+    private static final long serialVersionUID = 3028496245198669460L;
+
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     private static final MethodHandle PARRAY_GETTER = MH.asType(MH.getter(LOOKUP, ScriptObject.class, "primitiveSpill",  long[].class), MH.type(long[].class, Object.class));

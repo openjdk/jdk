@@ -255,7 +255,7 @@ class ObjectIdentifier implements Serializable
                 + " (tag = " +  type_id + ")"
                 );
 
-        encoding = new byte[in.getLength()];
+        encoding = new byte[in.getDefiniteLength()];
         in.getBytes(encoding);
         check(encoding);
     }

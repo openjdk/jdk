@@ -51,6 +51,7 @@
 #include "opto/mathexactnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/output.hpp"
@@ -439,6 +440,14 @@ int Compile::frame_size_in_words() const {
   return words;
 }
 
+// To bang the stack of this compiled method we use the stack size
+// that the interpreter would need in case of a deoptimization. This
+// removes the need to bang the stack in the deoptimization blob which
+// in turn simplifies stack overflow handling.
+int Compile::bang_size_in_bytes() const {
+  return MAX2(_interpreter_frame_size, frame_size_in_bytes());
+}
+
 // ============================================================================
 //------------------------------CompileWrapper---------------------------------
 class CompileWrapper : public StackObj {
@@ -661,8 +670,10 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _print_inlining_list(NULL),
+                  _print_inlining_stream(NULL),
                   _print_inlining_idx(0),
-                  _preserve_jvm_state(0) {
+                  _preserve_jvm_state(0),
+                  _interpreter_frame_size(0) {
   C = this;
 
   CompileWrapper cw(this);
@@ -693,10 +704,12 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 #endif
   set_print_inlining(PrintInlining || method()->has_option("PrintInlining") NOT_PRODUCT( || PrintOptoInlining));
   set_print_intrinsics(PrintIntrinsics || method()->has_option("PrintIntrinsics"));
+  set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if (ProfileTraps) {
+  if (ProfileTraps RTM_OPT_ONLY( || UseRTMLocking )) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
+    // Need MDO to record RTM code generation state.
     method()->ensure_method_data();
   }
 
@@ -721,9 +734,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   PhaseGVN gvn(node_arena(), estimated_size);
   set_initial_gvn(&gvn);
 
-  if (print_inlining() || print_intrinsics()) {
-    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
-  }
+  print_inlining_init();
   { // Scope for timing the parser
     TracePhase t3("parse", &_t_parser, true);
 
@@ -907,7 +918,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                            compiler,
                            env()->comp_level(),
                            has_unsafe_access(),
-                           SharedRuntime::is_wide_vector(max_vector_size())
+                           SharedRuntime::is_wide_vector(max_vector_size()),
+                           rtm_state()
                            );
 
     if (log() != NULL) // Print code cache state into compiler log
@@ -964,9 +976,11 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_progress(false),
     _inlining_incrementally(false),
     _print_inlining_list(NULL),
+    _print_inlining_stream(NULL),
     _print_inlining_idx(0),
     _preserve_jvm_state(0),
-    _allowed_reasons(0) {
+    _allowed_reasons(0),
+    _interpreter_frame_size(0) {
   C = this;
 
 #ifndef PRODUCT
@@ -975,6 +989,8 @@ Compile::Compile( ciEnv* ci_env,
   set_print_assembly(PrintFrameConverterAssembly);
   set_parsed_irreducible_loop(false);
 #endif
+  set_has_irreducible_loop(false); // no loops
+
   CompileWrapper cw(this);
   Init(/*AliasLevel=*/ 0);
   init_tf((*generator)());
@@ -1073,7 +1089,23 @@ void Compile::Init(int aliaslevel) {
   set_do_scheduling(OptoScheduling);
   set_do_count_invocations(false);
   set_do_method_data_update(false);
-
+  set_rtm_state(NoRTM); // No RTM lock eliding by default
+#if INCLUDE_RTM_OPT
+  if (UseRTMLocking && has_method() && (method()->method_data_or_null() != NULL)) {
+    int rtm_state = method()->method_data()->rtm_state();
+    if (method_has_option("NoRTMLockEliding") || ((rtm_state & NoRTM) != 0)) {
+      // Don't generate RTM lock eliding code.
+      set_rtm_state(NoRTM);
+    } else if (method_has_option("UseRTMLockEliding") || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
+      // Generate RTM lock eliding code without abort ratio calculation code.
+      set_rtm_state(UseRTM);
+    } else if (UseRTMDeopt) {
+      // Generate RTM lock eliding code and include abort ratio calculation
+      // code if UseRTMDeopt is on.
+      set_rtm_state(ProfileRTM);
+    }
+  }
+#endif
   if (debug_info()->recording_non_safepoints()) {
     set_node_note_array(new(comp_arena()) GrowableArray<Node_Notes*>
                         (comp_arena(), 8, 0, NULL));
@@ -1129,7 +1161,7 @@ StartNode* Compile::start() const {
     if( start->is_Start() )
       return start->as_Start();
   }
-  ShouldNotReachHere();
+  fatal("Did not find Start node!");
   return NULL;
 }
 
@@ -2004,6 +2036,8 @@ void Compile::Optimize() {
   ResourceMark rm;
   int          loop_opts_cnt;
 
+  print_inlining_reinit();
+
   NOT_PRODUCT( verify_graph_edges(); )
 
   print_method(PHASE_AFTER_PARSING);
@@ -2581,6 +2615,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
   case Op_Opaque2:              // Remove Opaque Nodes before matching
+  case Op_Opaque3:
     n->subsume_by(n->in(1), this);
     break;
   case Op_CallStaticJava:
@@ -3056,8 +3091,12 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
       Node* m = n->in(i);
       ++i;
       if (m != NULL && !frc._visited.test_set(m->_idx)) {
-        if (m->is_SafePoint() && m->as_SafePoint()->jvms() != NULL)
+        if (m->is_SafePoint() && m->as_SafePoint()->jvms() != NULL) {
+          // compute worst case interpreter size in case of a deoptimization
+          update_interpreter_frame_size(m->as_SafePoint()->jvms()->interpreter_frame_size());
+
           sfpt.push(m);
+        }
         cnt = m->req();
         nstack.push(n, i); // put on stack parent and next input's index
         n = m;
@@ -3735,35 +3774,162 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
   }
 }
 
-void Compile::dump_inlining() {
+// The message about the current inlining is accumulated in
+// _print_inlining_stream and transfered into the _print_inlining_list
+// once we know whether inlining succeeds or not. For regular
+// inlining, messages are appended to the buffer pointed by
+// _print_inlining_idx in the _print_inlining_list. For late inlining,
+// a new buffer is added after _print_inlining_idx in the list. This
+// way we can update the inlining message for late inlining call site
+// when the inlining is attempted again.
+void Compile::print_inlining_init() {
   if (print_inlining() || print_intrinsics()) {
+    _print_inlining_stream = new stringStream();
+    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
+  }
+}
+
+void Compile::print_inlining_reinit() {
+  if (print_inlining() || print_intrinsics()) {
+    // Re allocate buffer when we change ResourceMark
+    _print_inlining_stream = new stringStream();
+  }
+}
+
+void Compile::print_inlining_reset() {
+  _print_inlining_stream->reset();
+}
+
+void Compile::print_inlining_commit() {
+  assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
+  // Transfer the message from _print_inlining_stream to the current
+  // _print_inlining_list buffer and clear _print_inlining_stream.
+  _print_inlining_list->at(_print_inlining_idx).ss()->write(_print_inlining_stream->as_string(), _print_inlining_stream->size());
+  print_inlining_reset();
+}
+
+void Compile::print_inlining_push() {
+  // Add new buffer to the _print_inlining_list at current position
+  _print_inlining_idx++;
+  _print_inlining_list->insert_before(_print_inlining_idx, PrintInliningBuffer());
+}
+
+Compile::PrintInliningBuffer& Compile::print_inlining_current() {
+  return _print_inlining_list->at(_print_inlining_idx);
+}
+
+void Compile::print_inlining_update(CallGenerator* cg) {
+  if (print_inlining() || print_intrinsics()) {
+    if (!cg->is_late_inline()) {
+      if (print_inlining_current().cg() != NULL) {
+        print_inlining_push();
+      }
+      print_inlining_commit();
+    } else {
+      if (print_inlining_current().cg() != cg &&
+          (print_inlining_current().cg() != NULL ||
+           print_inlining_current().ss()->size() != 0)) {
+        print_inlining_push();
+      }
+      print_inlining_commit();
+      print_inlining_current().set_cg(cg);
+    }
+  }
+}
+
+void Compile::print_inlining_move_to(CallGenerator* cg) {
+  // We resume inlining at a late inlining call site. Locate the
+  // corresponding inlining buffer so that we can update it.
+  if (print_inlining()) {
+    for (int i = 0; i < _print_inlining_list->length(); i++) {
+      if (_print_inlining_list->adr_at(i)->cg() == cg) {
+        _print_inlining_idx = i;
+        return;
+      }
+    }
+    ShouldNotReachHere();
+  }
+}
+
+void Compile::print_inlining_update_delayed(CallGenerator* cg) {
+  if (print_inlining()) {
+    assert(_print_inlining_stream->size() > 0, "missing inlining msg");
+    assert(print_inlining_current().cg() == cg, "wrong entry");
+    // replace message with new message
+    _print_inlining_list->at_put(_print_inlining_idx, PrintInliningBuffer());
+    print_inlining_commit();
+    print_inlining_current().set_cg(cg);
+  }
+}
+
+void Compile::print_inlining_assert_ready() {
+  assert(!_print_inlining || _print_inlining_stream->size() == 0, "loosing data");
+}
+
+void Compile::dump_inlining() {
+  bool do_print_inlining = print_inlining() || print_intrinsics();
+  if (do_print_inlining || log() != NULL) {
     // Print inlining message for candidates that we couldn't inline
-    // for lack of space or non constant receiver
+    // for lack of space
     for (int i = 0; i < _late_inlines.length(); i++) {
       CallGenerator* cg = _late_inlines.at(i);
-      cg->print_inlining_late("live nodes > LiveNodeCountInliningCutoff");
-    }
-    Unique_Node_List useful;
-    useful.push(root());
-    for (uint next = 0; next < useful.size(); ++next) {
-      Node* n  = useful.at(next);
-      if (n->is_Call() && n->as_Call()->generator() != NULL && n->as_Call()->generator()->call_node() == n) {
-        CallNode* call = n->as_Call();
-        CallGenerator* cg = call->generator();
-        cg->print_inlining_late("receiver not constant");
-      }
-      uint max = n->len();
-      for ( uint i = 0; i < max; ++i ) {
-        Node *m = n->in(i);
-        if ( m == NULL ) continue;
-        useful.push(m);
+      if (!cg->is_mh_late_inline()) {
+        const char* msg = "live nodes > LiveNodeCountInliningCutoff";
+        if (do_print_inlining) {
+          cg->print_inlining_late(msg);
+        }
+        log_late_inline_failure(cg, msg);
       }
     }
+  }
+  if (do_print_inlining) {
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       tty->print(_print_inlining_list->adr_at(i)->ss()->as_string());
     }
   }
 }
+
+void Compile::log_late_inline(CallGenerator* cg) {
+  if (log() != NULL) {
+    log()->head("late_inline method='%d'  inline_id='" JLONG_FORMAT "'", log()->identify(cg->method()),
+                cg->unique_id());
+    JVMState* p = cg->call_node()->jvms();
+    while (p != NULL) {
+      log()->elem("jvms bci='%d' method='%d'", p->bci(), log()->identify(p->method()));
+      p = p->caller();
+    }
+    log()->tail("late_inline");
+  }
+}
+
+void Compile::log_late_inline_failure(CallGenerator* cg, const char* msg) {
+  log_late_inline(cg);
+  if (log() != NULL) {
+    log()->inline_fail(msg);
+  }
+}
+
+void Compile::log_inline_id(CallGenerator* cg) {
+  if (log() != NULL) {
+    // The LogCompilation tool needs a unique way to identify late
+    // inline call sites. This id must be unique for this call site in
+    // this compilation. Try to have it unique across compilations as
+    // well because it can be convenient when grepping through the log
+    // file.
+    // Distinguish OSR compilations from others in case CICountOSR is
+    // on.
+    jlong id = ((jlong)unique()) + (((jlong)compile_id()) << 33) + (CICountOSR && is_osr_compilation() ? ((jlong)1) << 32 : 0);
+    cg->set_unique_id(id);
+    log()->elem("inline_id id='" JLONG_FORMAT "'", id);
+  }
+}
+
+void Compile::log_inline_failure(const char* msg) {
+  if (C->log() != NULL) {
+    C->log()->inline_fail(msg);
+  }
+}
+
 
 // Dump inlining replay data to the stream.
 // Don't change thread state and acquire any locks.
@@ -3942,8 +4108,8 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     worklist.push(root());
     for (uint next = 0; next < worklist.size(); ++next) {
       Node *n  = worklist.at(next);
-      const Type* t = igvn.type(n);
-      assert(t == t->remove_speculative(), "no more speculative types");
+      const Type* t = igvn.type_or_null(n);
+      assert((t == NULL) || (t == t->remove_speculative()), "no more speculative types");
       if (n->is_Type()) {
         t = n->as_Type()->type();
         assert(t == t->remove_speculative(), "no more speculative types");

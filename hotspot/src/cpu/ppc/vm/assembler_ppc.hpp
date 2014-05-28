@@ -124,6 +124,7 @@ class Argument VALUE_OBJ_CLASS_SPEC {
   }
 };
 
+#if !defined(ABI_ELFv2)
 // A ppc64 function descriptor.
 struct FunctionDescriptor VALUE_OBJ_CLASS_SPEC {
  private:
@@ -161,6 +162,7 @@ struct FunctionDescriptor VALUE_OBJ_CLASS_SPEC {
     _env   = (address) 0xbad;
   }
 };
+#endif
 
 class Assembler : public AbstractAssembler {
  protected:
@@ -1023,15 +1025,14 @@ class Assembler : public AbstractAssembler {
   }
 
   static void set_imm(int* instr, short s) {
-    short* p = ((short *)instr) + 1;
-    *p = s;
+    // imm is always in the lower 16 bits of the instruction,
+    // so this is endian-neutral. Same for the get_imm below.
+    uint32_t w = *(uint32_t *)instr;
+    *instr = (int)((w & ~0x0000FFFF) | (s & 0x0000FFFF));
   }
 
   static int get_imm(address a, int instruction_number) {
-    short imm;
-    short *p =((short *)a)+2*instruction_number+1;
-    imm = *p;
-    return (int)imm;
+    return (short)((int *)a)[instruction_number];
   }
 
   static inline int hi16_signed(  int x) { return (int)(int16_t)(x >> 16); }
@@ -1067,6 +1068,7 @@ class Assembler : public AbstractAssembler {
   // Emit an address.
   inline address emit_addr(const address addr = NULL);
 
+#if !defined(ABI_ELFv2)
   // Emit a function descriptor with the specified entry point, TOC,
   // and ENV. If the entry point is NULL, the descriptor will point
   // just past the descriptor.
@@ -1074,6 +1076,7 @@ class Assembler : public AbstractAssembler {
   inline address emit_fd(address entry = NULL,
                          address toc = (address) FunctionDescriptor::friend_toc,
                          address env = (address) FunctionDescriptor::friend_env);
+#endif
 
   /////////////////////////////////////////////////////////////////////////////////////
   // PPC instructions

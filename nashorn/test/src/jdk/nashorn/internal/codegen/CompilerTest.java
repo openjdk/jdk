@@ -25,6 +25,9 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.runtime.Source.readFully;
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -32,7 +35,6 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.ScriptFunction;
-import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.testng.Assert;
@@ -69,6 +71,7 @@ public class CompilerTest {
         options.set("print.ast", true);
         options.set("print.parse", true);
         options.set("scripting", true);
+        options.set("const.as.var", true);
 
         final ErrorManager errors = new ErrorManager() {
             @Override
@@ -151,7 +154,7 @@ public class CompilerTest {
         final boolean globalChanged = (oldGlobal != global);
 
         try {
-            final char[] buffer = Source.readFully(file);
+            final char[] buffer = readFully(file);
             boolean excluded = false;
 
             if (filter != null) {
@@ -170,7 +173,7 @@ public class CompilerTest {
             if (globalChanged) {
                 Context.setGlobal(global);
             }
-            final Source source = new Source(file.getAbsolutePath(), buffer);
+            final Source source = sourceFor(file.getAbsolutePath(), buffer);
             final ScriptFunction script = context.compileScript(source, global);
             if (script == null || context.getErrorManager().getNumberOfErrors() > 0) {
                 log("Compile failed: " + file.getAbsolutePath());
@@ -180,9 +183,9 @@ public class CompilerTest {
             }
         } catch (final Throwable t) {
             log("Compile failed: " + file.getAbsolutePath() + " : " + t);
-        //            if (VERBOSE) {
+            if (VERBOSE) {
                 t.printStackTrace(System.out);
-        //}
+            }
             failed++;
         } finally {
             if (globalChanged) {

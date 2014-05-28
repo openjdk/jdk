@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
-#include "gc_implementation/g1/heapRegionSets.hpp"
+#include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "memory/allocation.hpp"
 
@@ -240,7 +240,6 @@ void HeapRegionSeq::verify_optional() {
       // Asserts will fire if i is >= _length
       HeapWord* addr = hr->bottom();
       guarantee(addr_to_region(addr) == hr, "sanity");
-      guarantee(addr_to_region_unsafe(addr) == hr, "sanity");
     } else {
       guarantee(hr->is_empty(), "sanity");
       guarantee(!hr->isHumongous(), "sanity");

@@ -27,6 +27,7 @@
 #include "compiler/oopMap.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
@@ -605,6 +606,39 @@ void JVMState::adapt_position(int delta) {
     jvms->set_scloff(jvms->scloff() + delta);
     jvms->set_endoff(jvms->endoff() + delta);
   }
+}
+
+// Mirror the stack size calculation in the deopt code
+// How much stack space would we need at this point in the program in
+// case of deoptimization?
+int JVMState::interpreter_frame_size() const {
+  const JVMState* jvms = this;
+  int size = 0;
+  int callee_parameters = 0;
+  int callee_locals = 0;
+  int extra_args = method()->max_stack() - stk_size();
+
+  while (jvms != NULL) {
+    int locks = jvms->nof_monitors();
+    int temps = jvms->stk_size();
+    bool is_top_frame = (jvms == this);
+    ciMethod* method = jvms->method();
+
+    int frame_size = BytesPerWord * Interpreter::size_activation(method->max_stack(),
+                                                                 temps + callee_parameters,
+                                                                 extra_args,
+                                                                 locks,
+                                                                 callee_parameters,
+                                                                 callee_locals,
+                                                                 is_top_frame);
+    size += frame_size;
+
+    callee_parameters = method->size_of_parameters();
+    callee_locals = method->max_locals();
+    extra_args = 0;
+    jvms = jvms->caller();
+  }
+  return size + Deoptimization::last_frame_adjust(0, callee_locals) * BytesPerWord;
 }
 
 //=============================================================================

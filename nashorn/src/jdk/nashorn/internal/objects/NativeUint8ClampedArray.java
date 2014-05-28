@@ -25,14 +25,13 @@
 
 package jdk.nashorn.internal.objects;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
-
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -82,6 +81,7 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
         private static final MethodHandle GET_ELEM = specialCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "getElem", int.class, int.class).methodHandle();
         private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
         private static final MethodHandle RINT     = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "rint", double.class, double.class).methodHandle();
+        private static final MethodHandle CLAMP_LONG = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "clampLong", long.class, long.class).methodHandle();
 
         private Uint8ClampedArrayData(final ByteBuffer nb, final int start, final int end) {
             super(((ByteBuffer)nb.position(start).limit(end)).slice(), end - start);
@@ -108,8 +108,12 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
         @Override
         public MethodHandle getElementSetter(final Class<?> elementType) {
             final MethodHandle setter = super.getElementSetter(elementType); //getContinuousElementSetter(getClass(), setElem(), elementType);
-            if (setter != null && elementType == double.class) {
-                return MH.filterArguments(setter, 2, RINT);
+            if (setter != null) {
+                if (elementType == double.class) {
+                    return MH.filterArguments(setter, 2, RINT);
+                } else if (elementType == long.class) {
+                    return MH.filterArguments(setter, 2, CLAMP_LONG);
+                }
             }
             return setter;
         }
@@ -186,6 +190,15 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
             return (int)Math.rint(rint);
         }
 
+        @SuppressWarnings("unused")
+        private static long clampLong(final long l) {
+            if(l < 0L) {
+                return 0L;
+            } else if(l > 0xffL) {
+                return 0xffL;
+            }
+            return l;
+        }
     }
 
     /**
@@ -198,8 +211,8 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
      * @return new typed array
      */
     @Constructor(arity = 1)
-    public static Object constructor(final boolean newObj, final Object self, final Object... args) {
-        return constructorImpl(newObj, args, FACTORY);
+    public static NativeUint8ClampedArray constructor(final boolean newObj, final Object self, final Object... args) {
+        return (NativeUint8ClampedArray)constructorImpl(newObj, args, FACTORY);
     }
 
     NativeUint8ClampedArray(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
@@ -244,8 +257,8 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
      * @return sub array
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    protected static Object subarray(final Object self, final Object begin, final Object end) {
-        return ArrayBufferView.subarrayImpl(self, begin, end);
+    protected static NativeUint8ClampedArray subarray(final Object self, final Object begin, final Object end) {
+        return (NativeUint8ClampedArray)ArrayBufferView.subarrayImpl(self, begin, end);
     }
 
     @Override

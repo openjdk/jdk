@@ -29,6 +29,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memPtr.hpp"
 #include "services/memReporter.hpp"
@@ -785,7 +786,7 @@ void MemTracker::Tracker::record(address old_addr, address new_addr, size_t size
   MEMFLAGS flags, address pc) {
   assert(old_addr != NULL && new_addr != NULL, "Sanity check");
   assert(_op == Realloc || _op == NoOp, "Wrong call");
-  if (MemTracker::is_on() && NMT_CAN_TRACK(flags) && _op != NoOp) {
+  if (MemTracker::is_on() && NMT_CAN_TRACK(flags) && _op != NoOp && !MemTracker::shutdown_in_progress()) {
     assert(_seq > 0, "Need pre-reserve sequence number");
     if (_need_thread_critical_lock) {
       ThreadCritical tc;
@@ -811,7 +812,7 @@ void MemTracker::Tracker::record(address addr, size_t size, MEMFLAGS flags, addr
   // OOM already?
   if (addr == NULL) return;
 
-  if (MemTracker::is_on() && NMT_CAN_TRACK(flags) && _op != NoOp) {
+  if (MemTracker::is_on() && NMT_CAN_TRACK(flags) && _op != NoOp && !MemTracker::shutdown_in_progress()) {
     bool pre_reserved_seq = (_seq != 0);
     address  pc = CALLER_CALLER_PC;
     MEMFLAGS orig_flags = flags;

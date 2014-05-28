@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,8 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         topPanel.add(lookInLabel, BorderLayout.BEFORE_LINE_BEGINS);
 
         // CurrentDir ComboBox
-        directoryComboBox = new JComboBox() {
+        @SuppressWarnings("serial") // anonymous class
+        JComboBox tmp1 = new JComboBox() {
             public Dimension getPreferredSize() {
                 Dimension d = super.getPreferredSize();
                 // Must be small enough to not affect total width.
@@ -242,6 +243,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
                 return d;
             }
         };
+        directoryComboBox = tmp1;
         directoryComboBox.putClientProperty(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY,
                                             lookInLabelText);
         directoryComboBox.putClientProperty( "JComboBox.isTableCellEditor", Boolean.TRUE );
@@ -380,11 +382,13 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         populateFileNameLabel();
         fileNamePanel.add(fileNameLabel);
 
-        fileNameTextField = new JTextField(35) {
+        @SuppressWarnings("serial") // anonymous class
+        JTextField tmp2 = new JTextField(35) {
             public Dimension getMaximumSize() {
                 return new Dimension(Short.MAX_VALUE, super.getPreferredSize().height);
             }
         };
+        fileNameTextField = tmp2;
         fileNamePanel.add(fileNameTextField);
         fileNameLabel.setLabelFor(fileNameTextField);
         fileNameTextField.addFocusListener(
@@ -534,6 +538,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     }
 
     // Obsolete class, not used in this version.
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileRenderer extends DefaultListCellRenderer  {
     }
 
@@ -853,6 +858,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     //
     // Renderer for DirectoryComboBox
     //
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class DirectoryComboBoxRenderer extends DefaultListCellRenderer  {
         IndentIcon ii = new IndentIcon();
         public Component getListCellRendererComponent(JList list, Object value,
@@ -910,6 +916,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryComboBoxModel extends AbstractListModel<Object> implements ComboBoxModel<Object> {
         Vector<File> directories = new Vector<File>();
         int[] depths = null;
@@ -1042,6 +1049,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     /**
      * Render different type sizes and styles.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list,
             Object value, int index, boolean isSelected,
@@ -1067,9 +1075,70 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
-    protected class FilterComboBoxModel extends AbstractFilterComboBoxModel {
-        protected JFileChooser getFileChooser() {
-            return MetalFileChooserUI.this.getFileChooser();
+    @SuppressWarnings("serial") // Same-version serialization only
+    protected class FilterComboBoxModel extends AbstractListModel<Object> implements ComboBoxModel<Object>, PropertyChangeListener {
+        protected FileFilter[] filters;
+        protected FilterComboBoxModel() {
+            super();
+            filters = getFileChooser().getChoosableFileFilters();
+        }
+
+        public void propertyChange(PropertyChangeEvent e) {
+            String prop = e.getPropertyName();
+            if(prop == JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY) {
+                filters = (FileFilter[]) e.getNewValue();
+                fireContentsChanged(this, -1, -1);
+            } else if (prop == JFileChooser.FILE_FILTER_CHANGED_PROPERTY) {
+                fireContentsChanged(this, -1, -1);
+            }
+        }
+
+        public void setSelectedItem(Object filter) {
+            if(filter != null) {
+                getFileChooser().setFileFilter((FileFilter) filter);
+                fireContentsChanged(this, -1, -1);
+            }
+        }
+
+        public Object getSelectedItem() {
+            // Ensure that the current filter is in the list.
+            // NOTE: we shouldnt' have to do this, since JFileChooser adds
+            // the filter to the choosable filters list when the filter
+            // is set. Lets be paranoid just in case someone overrides
+            // setFileFilter in JFileChooser.
+            FileFilter currentFilter = getFileChooser().getFileFilter();
+            boolean found = false;
+            if(currentFilter != null) {
+                for (FileFilter filter : filters) {
+                    if (filter == currentFilter) {
+                        found = true;
+                    }
+                }
+                if(found == false) {
+                    getFileChooser().addChoosableFileFilter(currentFilter);
+                }
+            }
+            return getFileChooser().getFileFilter();
+        }
+
+        public int getSize() {
+            if(filters != null) {
+                return filters.length;
+            } else {
+                return 0;
+            }
+        }
+
+        public Object getElementAt(int index) {
+            if(index > getSize() - 1) {
+                // This shouldn't happen. Try to recover gracefully.
+                return getFileChooser().getFileFilter();
+            }
+            if(filters != null) {
+                return filters[index];
+            } else {
+                return null;
+            }
         }
     }
 
@@ -1084,6 +1153,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     /**
      * Acts when DirectoryComboBox has changed the selected item.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryComboBoxAction extends AbstractAction {
         protected DirectoryComboBoxAction() {
             super("DirectoryComboBoxAction");
@@ -1184,6 +1254,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class AlignedLabel extends JLabel {
         private AlignedLabel[] group;
         private int maxWidth = 0;

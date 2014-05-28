@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -120,9 +120,6 @@
 
 # jdk_lang
 
-# 8029415
-java/lang/reflect/Method/invoke/TestPrivateInterfaceMethodReflect.java generic-all
-
 ############################################################################
 
 # jdk_management
@@ -150,9 +147,6 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 ############################################################################
 
 # jdk_net
-
-# Filed 7052625
-com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
 
 # 7148829
 sun/net/InetAddress/nameservice/simple/CacheTest.java		generic-all
@@ -221,15 +215,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
 
-# 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
-sun/security/krb5/auto/MaxRetries.java                          solaris-sparcv9
-
-# 8006690: sun/security/krb5/auto/BadKdc1.java fails intermittently
-sun/security/krb5/auto/BadKdc1.java                             solaris-sparcv9
-sun/security/krb5/auto/BadKdc2.java                             solaris-sparcv9
-sun/security/krb5/auto/BadKdc3.java                             solaris-sparcv9
-sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
-
 ############################################################################
 
 # jdk_sound
@@ -264,9 +249,28 @@ tools/launcher/FXLauncherTest.java                              linux-all
 
 # jdk_jdi
 
+# 6983531
+com/sun/jdi/BadHandshakeTest.java                               linux-all, windows-all
+
+# 8004127
+com/sun/jdi/RedefineImplementor.sh                              generic-all
+
+# 8031555
+com/sun/jdi/JdbMethodExitTest.sh                                generic-all
+
+# 8041934
+com/sun/jdi/RepStep.java                                        generic-all
+
 ############################################################################
 
 # jdk_util
+
+############################################################################
+
+# jdk_instrument
+
+# 8037082
+java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
 
 ############################################################################
 
@@ -274,5 +278,14 @@ tools/launcher/FXLauncherTest.java                              linux-all
 
 # 8031482
 sun/tools/jcmd/TestJcmdSanity.java				windows-all
+
+# 8033104
+sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
+
+# 8041989
+sun/tools/jstatd/TestJstatdDefaults.java                        generic-all
+
+# 8037285
+sun/tools/jstatd/TestJstatdServer.java                          generic-all
 
 ############################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,100 +27,79 @@
  * @summary  Make sure that the -help option works properly.  Make sure
  *           the help link appears in the documentation.
  * @author   jamieh
- * @library  ../lib/
+ * @library ../lib
  * @build    JavadocTester TestHelpOption
  * @run main TestHelpOption
  */
 
 public class TestHelpOption extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4934778-4777599-6553182";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-help",
-            SRC_DIR + FS + "TestHelpOption.java"
-    };
-
-    private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            SRC_DIR + FS + "TestHelpOption.java"
-    };
-
-    private static final String[][] TEST = {
-        {STANDARD_OUTPUT, "-d "},
-        {STANDARD_OUTPUT, "-use "},
-        {STANDARD_OUTPUT, "-version "},
-        {STANDARD_OUTPUT, "-author "},
-        {STANDARD_OUTPUT, "-docfilessubdirs "},
-        {STANDARD_OUTPUT, "-splitindex "},
-        {STANDARD_OUTPUT, "-windowtitle "},
-        {STANDARD_OUTPUT, "-doctitle "},
-        {STANDARD_OUTPUT, "-header "},
-        {STANDARD_OUTPUT, "-footer "},
-        {STANDARD_OUTPUT, "-bottom "},
-        {STANDARD_OUTPUT, "-link "},
-        {STANDARD_OUTPUT, "-linkoffline "},
-        {STANDARD_OUTPUT, "-excludedocfilessubdir "},
-        {STANDARD_OUTPUT, "-group "},
-        {STANDARD_OUTPUT, "-nocomment "},
-        {STANDARD_OUTPUT, "-nodeprecated "},
-        {STANDARD_OUTPUT, "-noqualifier "},
-        {STANDARD_OUTPUT, "-nosince "},
-        {STANDARD_OUTPUT, "-notimestamp "},
-        {STANDARD_OUTPUT, "-nodeprecatedlist "},
-        {STANDARD_OUTPUT, "-notree "},
-        {STANDARD_OUTPUT, "-noindex "},
-        {STANDARD_OUTPUT, "-nohelp "},
-        {STANDARD_OUTPUT, "-nonavbar "},
-        {STANDARD_OUTPUT, "-serialwarn "},
-        {STANDARD_OUTPUT, "-tag "},
-        {STANDARD_OUTPUT, "-taglet "},
-        {STANDARD_OUTPUT, "-tagletpath "},
-        {STANDARD_OUTPUT, "-charset "},
-        {STANDARD_OUTPUT, "-helpfile "},
-        {STANDARD_OUTPUT, "-linksource "},
-        {STANDARD_OUTPUT, "-sourcetab "},
-        {STANDARD_OUTPUT, "-keywords "},
-        {STANDARD_OUTPUT, "-stylesheetfile "},
-        {STANDARD_OUTPUT, "-docencoding "},
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    private static final String[][] TEST2 = {
-        {BUG_ID + FS + "TestHelpOption.html",
-            "<li><a href=\"help-doc.html\">Help</a></li>"
-        },
-    };
-    private static final String[][] NEGATED_TEST2 = NO_TEST;
-
-    //The help option should not crash the doclet.
-    private static final int EXPECTED_EXIT_CODE = 0;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestHelpOption tester = new TestHelpOption();
-        int actualExitCode = run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.checkExitCode(EXPECTED_EXIT_CODE, actualExitCode);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
+    @Test
+    void testWithOption() {
+        javadoc("-d", "out1",
+                "-sourcepath", testSrc,
+                "-help",
+                testSrc("TestHelpOption.java"));
+        checkExit(Exit.OK);
+
+        checkOutput(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+    @Test
+    void testWithoutOption() {
+        javadoc("-d", "out2",
+                "-sourcepath", testSrc,
+                testSrc("TestHelpOption.java"));
+        checkExit(Exit.OK);
+
+        checkOutput(false);
+    }
+
+    private void checkOutput(boolean withOption) {
+        checkOutput(Output.STDOUT, withOption,
+                "-d ",
+                "-use ",
+                "-version ",
+                "-author ",
+                "-docfilessubdirs ",
+                "-splitindex ",
+                "-windowtitle ",
+                "-doctitle ",
+                "-header ",
+                "-footer ",
+                "-bottom ",
+                "-link ",
+                "-linkoffline ",
+                "-excludedocfilessubdir ",
+                "-group ",
+                "-nocomment ",
+                "-nodeprecated ",
+                "-noqualifier ",
+                "-nosince ",
+                "-notimestamp ",
+                "-nodeprecatedlist ",
+                "-notree ",
+                "-noindex ",
+                "-nohelp ",
+                "-nonavbar ",
+                "-serialwarn ",
+                "-tag ",
+                "-taglet ",
+                "-tagletpath ",
+                "-charset ",
+                "-helpfile ",
+                "-linksource ",
+                "-sourcetab ",
+                "-keywords ",
+                "-stylesheetfile ",
+                "-docencoding ");
+
+        checkOutput("TestHelpOption.html", !withOption,
+                "<li><a href=\"help-doc.html\">Help</a></li>");
     }
 }

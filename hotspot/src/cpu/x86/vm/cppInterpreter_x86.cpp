@@ -574,7 +574,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
                 MethodCounters::invocation_counter_offset() +
                 InvocationCounter::counter_offset());
   const Address backedge_counter  (rax,
-                MethodCounter::backedge_counter_offset() +
+                MethodCounters::backedge_counter_offset() +
                 InvocationCounter::counter_offset());
 
   __ get_method_counters(rbx, rax, done);
@@ -982,16 +982,18 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   //      to save/restore.
   address entry_point = __ pc();
 
-  const Address constMethod       (rbx, Method::const_offset());
   const Address access_flags      (rbx, Method::access_flags_offset());
-  const Address size_of_parameters(rcx, ConstMethod::size_of_parameters_offset());
 
   // rsi/r13 == state/locals rdi == prevstate
   const Register locals = rdi;
 
   // get parameter size (always needed)
-  __ movptr(rcx, constMethod);
-  __ load_unsigned_short(rcx, size_of_parameters);
+  {
+    const Address constMethod       (rbx, Method::const_offset());
+    const Address size_of_parameters(rcx, ConstMethod::size_of_parameters_offset());
+    __ movptr(rcx, constMethod);
+    __ load_unsigned_short(rcx, size_of_parameters);
+  }
 
   // rbx: Method*
   // rcx: size of parameters
@@ -1111,14 +1113,16 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   const Register method = rbx;
   const Register thread = LP64_ONLY(r15_thread) NOT_LP64(rdi);
   const Register t      = InterpreterRuntime::SignatureHandlerGenerator::temp();    // rcx|rscratch1
-  const Address constMethod       (method, Method::const_offset());
-  const Address size_of_parameters(t, ConstMethod::size_of_parameters_offset());
 
-  // allocate space for parameters
+ // allocate space for parameters
   __ movptr(method, STATE(_method));
   __ verify_method_ptr(method);
-  __ movptr(t, constMethod);
-  __ load_unsigned_short(t, size_of_parameters);
+  {
+    const Address constMethod       (method, Method::const_offset());
+    const Address size_of_parameters(t, ConstMethod::size_of_parameters_offset());
+    __ movptr(t, constMethod);
+    __ load_unsigned_short(t, size_of_parameters);
+  }
   __ shll(t, 2);
 #ifdef _LP64
   __ subptr(rsp, t);
@@ -1354,7 +1358,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
-  __ movptr(Address(t, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
+  __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
 
   // If result was an oop then unbox and save it in the frame
   { Label L;
@@ -2221,7 +2225,6 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::empty                  : entry_point = ((InterpreterGenerator*)this)->generate_empty_entry();        break;
     case Interpreter::accessor               : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();     break;
     case Interpreter::abstract               : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();     break;
-    case Interpreter::method_handle          : entry_point = ((InterpreterGenerator*)this)->generate_method_handle_entry(); break;
 
     case Interpreter::java_lang_math_sin     : // fall thru
     case Interpreter::java_lang_math_cos     : // fall thru
@@ -2229,7 +2232,10 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::java_lang_math_abs     : // fall thru
     case Interpreter::java_lang_math_log     : // fall thru
     case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    : entry_point = ((InterpreterGenerator*)this)->generate_math_entry(kind);     break;
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     : // fall thru
+      entry_point = ((InterpreterGenerator*)this)->generate_math_entry(kind);     break;
     case Interpreter::java_lang_ref_reference_get
                                              : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
     default                                  : ShouldNotReachHere();                                                       break;
@@ -2336,29 +2342,42 @@ void BytecodeInterpreter::layout_interpreterState(interpreterState to_fill,
          "Stack top out of range");
 }
 
-int AbstractInterpreter::layout_activation(Method* method,
-                                           int tempcount,  //
-                                           int popframe_extra_args,
-                                           int moncount,
-                                           int caller_actual_parameters,
-                                           int callee_param_count,
-                                           int callee_locals,
-                                           frame* caller,
-                                           frame* interpreter_frame,
-                                           bool is_top_frame,
-                                           bool is_bottom_frame) {
 
-  assert(popframe_extra_args == 0, "FIX ME");
-  // NOTE this code must exactly mimic what InterpreterGenerator::generate_compute_interpreter_state()
-  // does as far as allocating an interpreter frame.
-  // If interpreter_frame!=NULL, set up the method, locals, and monitors.
-  // The frame interpreter_frame, if not NULL, is guaranteed to be the right size,
-  // as determined by a previous call to this method.
-  // It is also guaranteed to be walkable even though it is in a skeletal state
+static int frame_size_helper(int max_stack,
+                             int tempcount,
+                             int moncount,
+                             int callee_param_count,
+                             int callee_locals,
+                             bool is_top_frame,
+                             int& monitor_size,
+                             int& full_frame_size) {
+  int extra_locals_size = (callee_locals - callee_param_count) * BytesPerWord;
+  monitor_size = sizeof(BasicObjectLock) * moncount;
+
+  // First calculate the frame size without any java expression stack
+  int short_frame_size = size_activation_helper(extra_locals_size,
+                                                monitor_size);
+
+  // Now with full size expression stack
+  full_frame_size = short_frame_size + max_stack * BytesPerWord;
+
+  // and now with only live portion of the expression stack
+  short_frame_size = short_frame_size + tempcount * BytesPerWord;
+
+  // the size the activation is right now. Only top frame is full size
+  int frame_size = (is_top_frame ? full_frame_size : short_frame_size);
+  return frame_size;
+}
+
+int AbstractInterpreter::size_activation(int max_stack,
+                                         int tempcount,
+                                         int extra_args,
+                                         int moncount,
+                                         int callee_param_count,
+                                         int callee_locals,
+                                         bool is_top_frame) {
+  assert(extra_args == 0, "FIX ME");
   // NOTE: return size is in words not bytes
-  // NOTE: tempcount is the current size of the java expression stack. For top most
-  //       frames we will allocate a full sized expression stack and not the curback
-  //       version that non-top frames have.
 
   // Calculate the amount our frame will be adjust by the callee. For top frame
   // this is zero.
@@ -2368,87 +2387,120 @@ int AbstractInterpreter::layout_activation(Method* method,
   // to it. So it ignores last_frame_adjust value. Seems suspicious as far
   // as getting sender_sp correct.
 
-  int extra_locals_size = (callee_locals - callee_param_count) * BytesPerWord;
-  int monitor_size = sizeof(BasicObjectLock) * moncount;
+  int unused_monitor_size = 0;
+  int unused_full_frame_size = 0;
+  return frame_size_helper(max_stack, tempcount, moncount, callee_param_count, callee_locals,
+                           is_top_frame, unused_monitor_size, unused_full_frame_size)/BytesPerWord;
+}
 
-  // First calculate the frame size without any java expression stack
-  int short_frame_size = size_activation_helper(extra_locals_size,
-                                                monitor_size);
+void AbstractInterpreter::layout_activation(Method* method,
+                                            int tempcount,  //
+                                            int popframe_extra_args,
+                                            int moncount,
+                                            int caller_actual_parameters,
+                                            int callee_param_count,
+                                            int callee_locals,
+                                            frame* caller,
+                                            frame* interpreter_frame,
+                                            bool is_top_frame,
+                                            bool is_bottom_frame) {
 
-  // Now with full size expression stack
-  int full_frame_size = short_frame_size + method->max_stack() * BytesPerWord;
+  assert(popframe_extra_args == 0, "FIX ME");
+  // NOTE this code must exactly mimic what InterpreterGenerator::generate_compute_interpreter_state()
+  // does as far as allocating an interpreter frame.
+  // Set up the method, locals, and monitors.
+  // The frame interpreter_frame is guaranteed to be the right size,
+  // as determined by a previous call to the size_activation() method.
+  // It is also guaranteed to be walkable even though it is in a skeletal state
+  // NOTE: tempcount is the current size of the java expression stack. For top most
+  //       frames we will allocate a full sized expression stack and not the curback
+  //       version that non-top frames have.
 
-  // and now with only live portion of the expression stack
-  short_frame_size = short_frame_size + tempcount * BytesPerWord;
+  int monitor_size = 0;
+  int full_frame_size = 0;
+  int frame_size = frame_size_helper(method->max_stack(), tempcount, moncount, callee_param_count, callee_locals,
+                                     is_top_frame, monitor_size, full_frame_size);
 
-  // the size the activation is right now. Only top frame is full size
-  int frame_size = (is_top_frame ? full_frame_size : short_frame_size);
-
-  if (interpreter_frame != NULL) {
 #ifdef ASSERT
-    assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
+  assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
 #endif
 
-    // MUCHO HACK
+  // MUCHO HACK
 
-    intptr_t* frame_bottom = (intptr_t*) ((intptr_t)interpreter_frame->sp() - (full_frame_size - frame_size));
+  intptr_t* frame_bottom = (intptr_t*) ((intptr_t)interpreter_frame->sp() - (full_frame_size - frame_size));
 
-    /* Now fillin the interpreterState object */
+  /* Now fillin the interpreterState object */
 
-    // The state object is the first thing on the frame and easily located
+  // The state object is the first thing on the frame and easily located
 
-    interpreterState cur_state = (interpreterState) ((intptr_t)interpreter_frame->fp() - sizeof(BytecodeInterpreter));
+  interpreterState cur_state = (interpreterState) ((intptr_t)interpreter_frame->fp() - sizeof(BytecodeInterpreter));
 
 
-    // Find the locals pointer. This is rather simple on x86 because there is no
-    // confusing rounding at the callee to account for. We can trivially locate
-    // our locals based on the current fp().
-    // Note: the + 2 is for handling the "static long no_params() method" issue.
-    // (too bad I don't really remember that issue well...)
+  // Find the locals pointer. This is rather simple on x86 because there is no
+  // confusing rounding at the callee to account for. We can trivially locate
+  // our locals based on the current fp().
+  // Note: the + 2 is for handling the "static long no_params() method" issue.
+  // (too bad I don't really remember that issue well...)
 
-    intptr_t* locals;
-    // If the caller is interpreted we need to make sure that locals points to the first
-    // argument that the caller passed and not in an area where the stack might have been extended.
-    // because the stack to stack to converter needs a proper locals value in order to remove the
-    // arguments from the caller and place the result in the proper location. Hmm maybe it'd be
-    // simpler if we simply stored the result in the BytecodeInterpreter object and let the c++ code
-    // adjust the stack?? HMMM QQQ
-    //
-    if (caller->is_interpreted_frame()) {
-      // locals must agree with the caller because it will be used to set the
-      // caller's tos when we return.
-      interpreterState prev  = caller->get_interpreterState();
-      // stack() is prepushed.
-      locals = prev->stack() + method->size_of_parameters();
-      // locals = caller->unextended_sp() + (method->size_of_parameters() - 1);
-      if (locals != interpreter_frame->fp() + frame::sender_sp_offset + (method->max_locals() - 1) + 2) {
-        // os::breakpoint();
-      }
-    } else {
-      // this is where a c2i would have placed locals (except for the +2)
-      locals = interpreter_frame->fp() + frame::sender_sp_offset + (method->max_locals() - 1) + 2;
+  intptr_t* locals;
+  // If the caller is interpreted we need to make sure that locals points to the first
+  // argument that the caller passed and not in an area where the stack might have been extended.
+  // because the stack to stack to converter needs a proper locals value in order to remove the
+  // arguments from the caller and place the result in the proper location. Hmm maybe it'd be
+  // simpler if we simply stored the result in the BytecodeInterpreter object and let the c++ code
+  // adjust the stack?? HMMM QQQ
+  //
+  if (caller->is_interpreted_frame()) {
+    // locals must agree with the caller because it will be used to set the
+    // caller's tos when we return.
+    interpreterState prev  = caller->get_interpreterState();
+    // stack() is prepushed.
+    locals = prev->stack() + method->size_of_parameters();
+    // locals = caller->unextended_sp() + (method->size_of_parameters() - 1);
+    if (locals != interpreter_frame->fp() + frame::sender_sp_offset + (method->max_locals() - 1) + 2) {
+      // os::breakpoint();
     }
-
-    intptr_t* monitor_base = (intptr_t*) cur_state;
-    intptr_t* stack_base = (intptr_t*) ((intptr_t) monitor_base - monitor_size);
-    /* +1 because stack is always prepushed */
-    intptr_t* stack = (intptr_t*) ((intptr_t) stack_base - (tempcount + 1) * BytesPerWord);
-
-
-    BytecodeInterpreter::layout_interpreterState(cur_state,
-                                          caller,
-                                          interpreter_frame,
-                                          method,
-                                          locals,
-                                          stack,
-                                          stack_base,
-                                          monitor_base,
-                                          frame_bottom,
-                                          is_top_frame);
-
-    // BytecodeInterpreter::pd_layout_interpreterState(cur_state, interpreter_return_address, interpreter_frame->fp());
+  } else {
+    // this is where a c2i would have placed locals (except for the +2)
+    locals = interpreter_frame->fp() + frame::sender_sp_offset + (method->max_locals() - 1) + 2;
   }
-  return frame_size/BytesPerWord;
+
+  intptr_t* monitor_base = (intptr_t*) cur_state;
+  intptr_t* stack_base = (intptr_t*) ((intptr_t) monitor_base - monitor_size);
+  /* +1 because stack is always prepushed */
+  intptr_t* stack = (intptr_t*) ((intptr_t) stack_base - (tempcount + 1) * BytesPerWord);
+
+
+  BytecodeInterpreter::layout_interpreterState(cur_state,
+                                               caller,
+                                               interpreter_frame,
+                                               method,
+                                               locals,
+                                               stack,
+                                               stack_base,
+                                               monitor_base,
+                                               frame_bottom,
+                                               is_top_frame);
+
+  // BytecodeInterpreter::pd_layout_interpreterState(cur_state, interpreter_return_address, interpreter_frame->fp());
 }
+
+bool AbstractInterpreter::can_be_compiled(methodHandle m) {
+  switch (method_kind(m)) {
+    case Interpreter::java_lang_math_sin     : // fall thru
+    case Interpreter::java_lang_math_cos     : // fall thru
+    case Interpreter::java_lang_math_tan     : // fall thru
+    case Interpreter::java_lang_math_abs     : // fall thru
+    case Interpreter::java_lang_math_log     : // fall thru
+    case Interpreter::java_lang_math_log10   : // fall thru
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     :
+      return false;
+    default:
+      return true;
+  }
+}
+
 
 #endif // CC_INTERP (all)

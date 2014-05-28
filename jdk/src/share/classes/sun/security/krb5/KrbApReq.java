@@ -284,7 +284,7 @@ public class KrbApReq {
 
         if (dkey == null) {
             throw new KrbException(Krb5.API_INVALID_ARG,
-                "Cannot find key of appropriate type to decrypt AP REP - " +
+                "Cannot find key of appropriate type to decrypt AP-REQ - " +
                                    EType.toString(encPartKeyType));
         }
 
@@ -380,7 +380,7 @@ public class KrbApReq {
 
     /**
      * Returns the credentials that are contained in the ticket that
-     * is part of this this AP-REP.
+     * is part of this AP-REQ.
      */
     public Credentials getCreds() {
         return creds;

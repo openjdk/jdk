@@ -37,13 +37,11 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "runtime/java.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-void SpaceMemRegionOopsIterClosure::do_oop(oop* p)       { SpaceMemRegionOopsIterClosure::do_oop_work(p); }
-void SpaceMemRegionOopsIterClosure::do_oop(narrowOop* p) { SpaceMemRegionOopsIterClosure::do_oop_work(p); }
 
 HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
@@ -305,10 +303,6 @@ void ContiguousSpace::clear(bool mangle_space) {
   CompactibleSpace::clear(mangle_space);
 }
 
-bool ContiguousSpace::is_in(const void* p) const {
-  return _bottom <= p && p < _top;
-}
-
 bool ContiguousSpace::is_free_block(const HeapWord* p) const {
   return p >= _top;
 }
@@ -550,113 +544,9 @@ void Space::oop_iterate(ExtendedOopClosure* blk) {
   object_iterate(&blk2);
 }
 
-HeapWord* Space::object_iterate_careful(ObjectClosureCareful* cl) {
-  guarantee(false, "NYI");
-  return bottom();
-}
-
-HeapWord* Space::object_iterate_careful_m(MemRegion mr,
-                                          ObjectClosureCareful* cl) {
-  guarantee(false, "NYI");
-  return bottom();
-}
-
-
-void Space::object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl) {
-  assert(!mr.is_empty(), "Should be non-empty");
-  // We use MemRegion(bottom(), end()) rather than used_region() below
-  // because the two are not necessarily equal for some kinds of
-  // spaces, in particular, certain kinds of free list spaces.
-  // We could use the more complicated but more precise:
-  // MemRegion(used_region().start(), round_to(used_region().end(), CardSize))
-  // but the slight imprecision seems acceptable in the assertion check.
-  assert(MemRegion(bottom(), end()).contains(mr),
-         "Should be within used space");
-  HeapWord* prev = cl->previous();   // max address from last time
-  if (prev >= mr.end()) { // nothing to do
-    return;
-  }
-  // This assert will not work when we go from cms space to perm
-  // space, and use same closure. Easy fix deferred for later. XXX YSR
-  // assert(prev == NULL || contains(prev), "Should be within space");
-
-  bool last_was_obj_array = false;
-  HeapWord *blk_start_addr, *region_start_addr;
-  if (prev > mr.start()) {
-    region_start_addr = prev;
-    blk_start_addr    = prev;
-    // The previous invocation may have pushed "prev" beyond the
-    // last allocated block yet there may be still be blocks
-    // in this region due to a particular coalescing policy.
-    // Relax the assertion so that the case where the unallocated
-    // block is maintained and "prev" is beyond the unallocated
-    // block does not cause the assertion to fire.
-    assert((BlockOffsetArrayUseUnallocatedBlock &&
-            (!is_in(prev))) ||
-           (blk_start_addr == block_start(region_start_addr)), "invariant");
-  } else {
-    region_start_addr = mr.start();
-    blk_start_addr    = block_start(region_start_addr);
-  }
-  HeapWord* region_end_addr = mr.end();
-  MemRegion derived_mr(region_start_addr, region_end_addr);
-  while (blk_start_addr < region_end_addr) {
-    const size_t size = block_size(blk_start_addr);
-    if (block_is_obj(blk_start_addr)) {
-      last_was_obj_array = cl->do_object_bm(oop(blk_start_addr), derived_mr);
-    } else {
-      last_was_obj_array = false;
-    }
-    blk_start_addr += size;
-  }
-  if (!last_was_obj_array) {
-    assert((bottom() <= blk_start_addr) && (blk_start_addr <= end()),
-           "Should be within (closed) used space");
-    assert(blk_start_addr > prev, "Invariant");
-    cl->set_previous(blk_start_addr); // min address for next time
-  }
-}
-
 bool Space::obj_is_alive(const HeapWord* p) const {
   assert (block_is_obj(p), "The address should point to an object");
   return true;
-}
-
-void ContiguousSpace::object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl) {
-  assert(!mr.is_empty(), "Should be non-empty");
-  assert(used_region().contains(mr), "Should be within used space");
-  HeapWord* prev = cl->previous();   // max address from last time
-  if (prev >= mr.end()) { // nothing to do
-    return;
-  }
-  // See comment above (in more general method above) in case you
-  // happen to use this method.
-  assert(prev == NULL || is_in_reserved(prev), "Should be within space");
-
-  bool last_was_obj_array = false;
-  HeapWord *obj_start_addr, *region_start_addr;
-  if (prev > mr.start()) {
-    region_start_addr = prev;
-    obj_start_addr    = prev;
-    assert(obj_start_addr == block_start(region_start_addr), "invariant");
-  } else {
-    region_start_addr = mr.start();
-    obj_start_addr    = block_start(region_start_addr);
-  }
-  HeapWord* region_end_addr = mr.end();
-  MemRegion derived_mr(region_start_addr, region_end_addr);
-  while (obj_start_addr < region_end_addr) {
-    oop obj = oop(obj_start_addr);
-    const size_t size = obj->size();
-    last_was_obj_array = cl->do_object_bm(obj, derived_mr);
-    obj_start_addr += size;
-  }
-  if (!last_was_obj_array) {
-    assert((bottom() <= obj_start_addr)  && (obj_start_addr <= end()),
-           "Should be within (closed) used space");
-    assert(obj_start_addr > prev, "Invariant");
-    cl->set_previous(obj_start_addr); // min address for next time
-  }
 }
 
 #if INCLUDE_ALL_GCS
@@ -684,43 +574,6 @@ void ContiguousSpace::oop_iterate(ExtendedOopClosure* blk) {
   while (obj_addr < t) {
     obj_addr += oop(obj_addr)->oop_iterate(blk);
   }
-}
-
-void ContiguousSpace::oop_iterate(MemRegion mr, ExtendedOopClosure* blk) {
-  if (is_empty()) {
-    return;
-  }
-  MemRegion cur = MemRegion(bottom(), top());
-  mr = mr.intersection(cur);
-  if (mr.is_empty()) {
-    return;
-  }
-  if (mr.equals(cur)) {
-    oop_iterate(blk);
-    return;
-  }
-  assert(mr.end() <= top(), "just took an intersection above");
-  HeapWord* obj_addr = block_start(mr.start());
-  HeapWord* t = mr.end();
-
-  // Handle first object specially.
-  oop obj = oop(obj_addr);
-  SpaceMemRegionOopsIterClosure smr_blk(blk, mr);
-  obj_addr += obj->oop_iterate(&smr_blk);
-  while (obj_addr < t) {
-    oop obj = oop(obj_addr);
-    assert(obj->is_oop(), "expected an oop");
-    obj_addr += obj->size();
-    // If "obj_addr" is not greater than top, then the
-    // entire object "obj" is within the region.
-    if (obj_addr <= t) {
-      obj->oop_iterate(blk);
-    } else {
-      // "obj" extends beyond end of region
-      obj->oop_iterate(&smr_blk);
-      break;
-    }
-  };
 }
 
 void ContiguousSpace::object_iterate(ObjectClosure* blk) {

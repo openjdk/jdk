@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 #ifndef CPU_PPC_VM_FRAME_PPC_INLINE_HPP
 #define CPU_PPC_VM_FRAME_PPC_INLINE_HPP
 
-#ifndef CC_INTERP
-#error "CC_INTERP must be defined on PPC64"
-#endif
+#include "code/codeCache.hpp"
 
 // Inline functions for ppc64 frames:
 
@@ -199,6 +197,75 @@ inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
   interpreterState istate = get_interpreterState();
   return &istate->_constants;
 }
+
+#else // !CC_INTERP
+
+// Template Interpreter frame value accessors.
+
+inline frame::ijava_state* frame::get_ijava_state() const {
+  return (ijava_state*) ((uintptr_t)fp() - ijava_state_size);
+}
+
+inline intptr_t** frame::interpreter_frame_locals_addr() const {
+  return (intptr_t**) &(get_ijava_state()->locals);
+}
+inline intptr_t* frame::interpreter_frame_bcx_addr() const {
+  return (intptr_t*) &(get_ijava_state()->bcp);
+}
+inline intptr_t* frame::interpreter_frame_mdx_addr() const {
+  return (intptr_t*) &(get_ijava_state()->mdx);
+}
+// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
+inline BasicObjectLock* frame::interpreter_frame_monitor_end() const {
+  return (BasicObjectLock *) get_ijava_state()->monitors;
+}
+
+inline BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
+  return (BasicObjectLock *) get_ijava_state();
+}
+
+// SAPJVM ASc 2012-11-21. Return register stack slot addr at which currently interpreted method is found
+inline Method** frame::interpreter_frame_method_addr() const {
+  return (Method**) &(get_ijava_state()->method);
+}
+inline ConstantPoolCache** frame::interpreter_frame_cpoolcache_addr() const {
+  return (ConstantPoolCache**) &(get_ijava_state()->cpoolCache);
+}
+inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
+  return (ConstantPoolCache**) &(get_ijava_state()->cpoolCache);
+}
+
+inline oop* frame::interpreter_frame_temp_oop_addr() const {
+  return (oop *) &(get_ijava_state()->oop_tmp);
+}
+inline intptr_t* frame::interpreter_frame_esp() const {
+  return (intptr_t*) get_ijava_state()->esp;
+}
+
+// Convenient setters
+inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* end)    { get_ijava_state()->monitors = (intptr_t) end;}
+inline void frame::interpreter_frame_set_cpcache(ConstantPoolCache* cp)       { *frame::interpreter_frame_cpoolcache_addr() = cp; }
+inline void frame::interpreter_frame_set_esp(intptr_t* esp)                   { get_ijava_state()->esp = (intptr_t) esp; }
+inline void frame::interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp) { get_ijava_state()->top_frame_sp = (intptr_t) top_frame_sp; }
+inline void frame::interpreter_frame_set_sender_sp(intptr_t* sender_sp)       { get_ijava_state()->sender_sp = (intptr_t) sender_sp; }
+
+inline intptr_t* frame::interpreter_frame_expression_stack() const {
+  return (intptr_t*)interpreter_frame_monitor_end() - 1;
+}
+
+inline jint frame::interpreter_frame_expression_stack_direction() {
+  return -1;
+}
+
+// top of expression stack
+inline intptr_t* frame::interpreter_frame_tos_address() const {
+  return ((intptr_t*) get_ijava_state()->esp) + Interpreter::stackElementWords;
+}
+
+inline intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
+  return &interpreter_frame_tos_address()[offset];
+}
+
 #endif // CC_INTERP
 
 inline int frame::interpreter_frame_monitor_size() {

@@ -189,7 +189,11 @@ putRGBADither(rgbquad_t value, void *ptr, ImageFormat * format,
             PUT(rgbquad_t, ptr, value);
             break;
         case 3:                /* not supported, LSB or MSB should always be specified */
-            *(int *) 0 = 0;    /* crash */
+            PUT(byte_t, ptr, 0xff); /* Put a stub value */
+            INCP(byte_t, ptr);
+            PUT(byte_t, ptr, 0xff);
+            INCP(byte_t, ptr);
+            PUT(byte_t, ptr, 0xff);
             break;
         case 2:
             PUT(word_t, ptr, value);
@@ -253,7 +257,7 @@ getRGBA(void *ptr, ImageFormat * format)
             value = GET(rgbquad_t, ptr);
             break;
         case 3:                /* not supported, LSB or MSB should always be specified */
-            *(int *) 0 = 0;
+            value = 0xFFFFFFFF; /*return a stub value */
             break;
         case 2:
             value = (rgbquad_t) GET(word_t, ptr);

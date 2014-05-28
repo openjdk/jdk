@@ -131,7 +131,7 @@ public class DragSourceEvent extends EventObject {
     /**
      * This method returns the <code>DragSourceContext</code> that
      * originated the event.
-     * <P>
+     *
      * @return the <code>DragSourceContext</code> that originated the event
      */
 

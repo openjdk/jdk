@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public class AquaNativeResources {
     }
 
     // TODO: removing CColorPaint for now
+    @SuppressWarnings("serial") // JDK implementation class
     static class CColorPaintUIResource extends Color/*CColorPaint*/ implements UIResource {
         // The color passed to this MUST be a retained NSColor, and the CColorPaintUIResource
         //  takes ownership of that retain.

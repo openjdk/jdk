@@ -30,9 +30,15 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.internal.codegen.DumpBytecode;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 
 /**
  * This class encapsulates the bytecode of the adapter class and can be used to load it into the JVM as an actual Class.
@@ -44,6 +50,8 @@ import jdk.nashorn.internal.runtime.Context;
 final class JavaAdapterClassLoader {
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
     private static final AccessControlContext GET_CONTEXT_ACC_CTXT = ClassAndLoader.createPermAccCtxt(Context.NASHORN_GET_CONTEXT);
+    private static final Collection<String> VISIBLE_INTERNAL_CLASS_NAMES = Collections.unmodifiableCollection(new HashSet<>(
+            Arrays.asList(JavaAdapterServices.class.getName(), ScriptFunction.class.getName(), JSType.class.getName())));
 
     private final String className;
     private final byte[] classBytes;
@@ -87,13 +95,14 @@ final class JavaAdapterClassLoader {
             @Override
             public Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
                 try {
+                    Context.checkPackageAccess(name);
                     return super.loadClass(name, resolve);
                 } catch (final SecurityException se) {
                     // we may be implementing an interface or extending a class that was
                     // loaded by a loader that prevents package.access. If so, it'd throw
                     // SecurityException for nashorn's classes!. For adapter's to work, we
-                    // should be able to refer to nashorn classes.
-                    if (name.startsWith("jdk.nashorn.internal.")) {
+                    // should be able to refer to the few classes it needs in its implementation.
+                    if(VISIBLE_INTERNAL_CLASS_NAMES.contains(name)) {
                         return myLoader.loadClass(name);
                     }
                     throw se;

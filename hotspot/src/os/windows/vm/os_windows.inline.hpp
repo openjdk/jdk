@@ -26,11 +26,8 @@
 #define OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
 
 #include "runtime/atomic.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
-
-#ifdef TARGET_OS_ARCH_windows_x86
-# include "orderAccess_windows_x86.inline.hpp"
-#endif
 
 inline const char* os::file_separator()                { return "\\"; }
 inline const char* os::line_separator()                { return "\r\n"; }
@@ -51,9 +48,6 @@ inline void  os::dll_unload(void *lib) {
 inline void* os::dll_lookup(void *lib, const char *name) {
   return (void*)::GetProcAddress((HMODULE)lib, name);
 }
-
-// Used to improve time-sharing on some systems
-inline void os::loop_breaker(int attempts) {}
 
 inline bool os::obsolete_option(const JavaVMOption *option) {
   return false;
@@ -111,9 +105,7 @@ inline bool os::supports_monotonic_clock() {
   return win32::_has_performance_count;
 }
 
-#ifndef PRODUCT
-  #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) \
-            os::win32::call_test_func_with_wrapper(f)
-#endif
+#define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) \
+        os::win32::call_test_func_with_wrapper(f)
 
 #endif // OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP

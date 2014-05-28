@@ -37,20 +37,9 @@
 
 int  ConcurrentGCThread::_CGC_flag            = CGC_nil;
 
-SuspendibleThreadSet ConcurrentGCThread::_sts;
-
 ConcurrentGCThread::ConcurrentGCThread() :
   _should_terminate(false), _has_terminated(false) {
-  _sts.initialize();
 };
-
-void ConcurrentGCThread::safepoint_synchronize() {
-  _sts.suspend_all();
-}
-
-void ConcurrentGCThread::safepoint_desynchronize() {
-  _sts.resume_all();
-}
 
 void ConcurrentGCThread::create_and_start() {
   if (os::create_thread(this, os::cgc_thread)) {
@@ -90,78 +79,6 @@ void ConcurrentGCThread::terminate() {
 
   // Thread destructor usually does this..
   ThreadLocalStorage::set_thread(NULL);
-}
-
-
-void SuspendibleThreadSet::initialize_work() {
-  MutexLocker x(STS_init_lock);
-  if (!_initialized) {
-    _m             = new Monitor(Mutex::leaf,
-                                 "SuspendibleThreadSetLock", true);
-    _async         = 0;
-    _async_stop    = false;
-    _async_stopped = 0;
-    _initialized   = true;
-  }
-}
-
-void SuspendibleThreadSet::join() {
-  initialize();
-  MutexLockerEx x(_m, Mutex::_no_safepoint_check_flag);
-  while (_async_stop) _m->wait(Mutex::_no_safepoint_check_flag);
-  _async++;
-  assert(_async > 0, "Huh.");
-}
-
-void SuspendibleThreadSet::leave() {
-  assert(_initialized, "Must be initialized.");
-  MutexLockerEx x(_m, Mutex::_no_safepoint_check_flag);
-  _async--;
-  assert(_async >= 0, "Huh.");
-  if (_async_stop) _m->notify_all();
-}
-
-void SuspendibleThreadSet::yield(const char* id) {
-  assert(_initialized, "Must be initialized.");
-  if (_async_stop) {
-    MutexLockerEx x(_m, Mutex::_no_safepoint_check_flag);
-    if (_async_stop) {
-      _async_stopped++;
-      assert(_async_stopped > 0, "Huh.");
-      if (_async_stopped == _async) {
-        if (ConcGCYieldTimeout > 0) {
-          double now = os::elapsedTime();
-          guarantee((now - _suspend_all_start) * 1000.0 <
-                    (double)ConcGCYieldTimeout,
-                    "Long delay; whodunit?");
-        }
-      }
-      _m->notify_all();
-      while (_async_stop) _m->wait(Mutex::_no_safepoint_check_flag);
-      _async_stopped--;
-      assert(_async >= 0, "Huh");
-      _m->notify_all();
-    }
-  }
-}
-
-void SuspendibleThreadSet::suspend_all() {
-  initialize();  // If necessary.
-  if (ConcGCYieldTimeout > 0) {
-    _suspend_all_start = os::elapsedTime();
-  }
-  MutexLockerEx x(_m, Mutex::_no_safepoint_check_flag);
-  assert(!_async_stop, "Only one at a time.");
-  _async_stop = true;
-  while (_async_stopped < _async) _m->wait(Mutex::_no_safepoint_check_flag);
-}
-
-void SuspendibleThreadSet::resume_all() {
-  assert(_initialized, "Must be initialized.");
-  MutexLockerEx x(_m, Mutex::_no_safepoint_check_flag);
-  assert(_async_stopped == _async, "Huh.");
-  _async_stop = false;
-  _m->notify_all();
 }
 
 static void _sltLoop(JavaThread* thread, TRAPS) {
@@ -282,31 +199,4 @@ void SurrogateLockerThread::loop() {
     }
   }
   assert(!_monitor.owned_by_self(), "Should unlock before exit.");
-}
-
-
-// ===== STS Access From Outside CGCT =====
-
-void ConcurrentGCThread::stsYield(const char* id) {
-  assert( Thread::current()->is_ConcurrentGC_thread(),
-          "only a conc GC thread can call this" );
-  _sts.yield(id);
-}
-
-bool ConcurrentGCThread::stsShouldYield() {
-  assert( Thread::current()->is_ConcurrentGC_thread(),
-          "only a conc GC thread can call this" );
-  return _sts.should_yield();
-}
-
-void ConcurrentGCThread::stsJoin() {
-  assert( Thread::current()->is_ConcurrentGC_thread(),
-          "only a conc GC thread can call this" );
-  _sts.join();
-}
-
-void ConcurrentGCThread::stsLeave() {
-  assert( Thread::current()->is_ConcurrentGC_thread(),
-          "only a conc GC thread can call this" );
-  _sts.leave();
 }

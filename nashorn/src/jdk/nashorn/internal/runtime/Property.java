@@ -29,10 +29,10 @@ import static jdk.nashorn.internal.runtime.PropertyDescriptor.CONFIGURABLE;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.ENUMERABLE;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
 
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SwitchPoint;
 import java.util.Objects;
-
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
@@ -44,7 +44,7 @@ import jdk.nashorn.internal.codegen.ObjectClassGenerator;
  * @see AccessorProperty
  * @see UserAccessorProperty
  */
-public abstract class Property {
+public abstract class Property implements Serializable {
     /*
      * ECMA 8.6.1 Property Attributes
      *
@@ -99,6 +99,8 @@ public abstract class Property {
 
     /** SwitchPoint that is invalidated when property is changed, optional */
     protected SwitchPoint changeCallback;
+
+    private static final long serialVersionUID = 2099814273074501176L;
 
     /**
      * Constructor
@@ -392,6 +394,13 @@ public abstract class Property {
      * @return getter
      */
     public abstract MethodHandle getOptimisticGetter(final Class<?> type, final int programPoint);
+
+    /**
+     * Hook to initialize method handles after deserialization.
+     *
+     * @param structure the structure class
+     */
+    abstract void initMethodHandles(final Class<?> structure);
 
     /**
      * Get the key for this property. This key is an ordinary string. The "name".

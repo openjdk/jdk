@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import sun.awt.SunToolkit;
  * like the Windows Pluggable Look-and-Feel can better adapt
  * itself when running on a Windows platform.
  */
-class WDesktopProperties {
+final class WDesktopProperties {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.windows.WDesktopProperties");
     private static final String PREFIX = "win.";
     private static final String FILE_PREFIX = "awt.file.";
@@ -210,6 +210,7 @@ class WDesktopProperties {
             this.winEventName = winEventName;
         }
 
+        @Override
         public void run() {
             WDesktopProperties.this.playWindowsSound(winEventName);
         }

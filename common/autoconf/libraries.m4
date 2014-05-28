@@ -110,21 +110,23 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
   # Check if the user has specified sysroot, but not --x-includes or --x-libraries.
   # Make a simple check for the libraries at the sysroot, and setup --x-includes and
   # --x-libraries for the sysroot, if that seems to be correct.
-  if test "x$SYS_ROOT" != "x/"; then
-    if test "x$x_includes" = xNONE; then
-      if test -f "$SYS_ROOT/usr/X11R6/include/X11/Xlib.h"; then
-        x_includes="$SYS_ROOT/usr/X11R6/include"
-      elif test -f "$SYS_ROOT/usr/include/X11/Xlib.h"; then
-        x_includes="$SYS_ROOT/usr/include"
+  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+    if test "x$SYSROOT" != "x"; then
+      if test "x$x_includes" = xNONE; then
+        if test -f "$SYSROOT/usr/X11R6/include/X11/Xlib.h"; then
+          x_includes="$SYSROOT/usr/X11R6/include"
+        elif test -f "$SYSROOT/usr/include/X11/Xlib.h"; then
+          x_includes="$SYSROOT/usr/include"
+        fi
       fi
-    fi
-    if test "x$x_libraries" = xNONE; then
-      if test -f "$SYS_ROOT/usr/X11R6/lib/libX11.so"; then
-        x_libraries="$SYS_ROOT/usr/X11R6/lib"
-      elif test "$SYS_ROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        x_libraries="$SYS_ROOT/usr/lib64"
-      elif test -f "$SYS_ROOT/usr/lib/libX11.so"; then
-        x_libraries="$SYS_ROOT/usr/lib"
+      if test "x$x_libraries" = xNONE; then
+        if test -f "$SYSROOT/usr/X11R6/lib/libX11.so"; then
+          x_libraries="$SYSROOT/usr/X11R6/lib"
+        elif test "$SYSROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          x_libraries="$SYSROOT/usr/lib64"
+        elif test -f "$SYSROOT/usr/lib/libX11.so"; then
+          x_libraries="$SYSROOT/usr/lib"
+        fi
       fi
     fi
   fi
@@ -146,9 +148,12 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     OPENWIN_HOME="/usr/openwin"
+    X_CFLAGS="-I$SYSROOT$OPENWIN_HOME/include -I$SYSROOT$OPENWIN_HOME/include/X11/extensions"
+    X_LIBS="-L$SYSROOT$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
+        -L$SYSROOT$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR \
+        -R$OPENWIN_HOME/sfw/lib$OPENJDK_TARGET_CPU_ISADIR \
+        -R$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR"
   fi
-  AC_SUBST(OPENWIN_HOME)
-
 
   #
   # Weird Sol10 something check...TODO change to try compile
@@ -237,14 +242,14 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
       # Getting nervous now? Lets poke around for standard Solaris third-party
       # package installation locations.
       AC_MSG_CHECKING([for cups headers])
-      if test -s /opt/sfw/cups/include/cups/cups.h; then
+      if test -s $SYSROOT/opt/sfw/cups/include/cups/cups.h; then
         # An SFW package seems to be installed!
         CUPS_FOUND=yes
-        CUPS_CFLAGS="-I/opt/sfw/cups/include"
-      elif test -s /opt/csw/include/cups/cups.h; then
+        CUPS_CFLAGS="-I$SYSROOT/opt/sfw/cups/include"
+      elif test -s $SYSROOT/opt/csw/include/cups/cups.h; then
         # A CSW package seems to be installed!
         CUPS_FOUND=yes
-        CUPS_CFLAGS="-I/opt/csw/include"
+        CUPS_CFLAGS="-I$SYSROOT/opt/csw/include"
       fi
       AC_MSG_RESULT([$CUPS_FOUND])
     fi
@@ -281,9 +286,10 @@ AC_DEFUN([LIB_CHECK_POTENTIAL_FREETYPE],
           AC_MSG_NOTICE([Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location.])
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi
@@ -398,24 +404,27 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
         fi
       fi
 
-      if test "x$FOUND_FREETYPE" != xyes; then
-        # Check modules using pkg-config, but only if we have it (ugly output results otherwise)
-        if test "x$PKG_CONFIG" != x; then
-          PKG_CHECK_MODULES(FREETYPE, freetype2, [FOUND_FREETYPE=yes], [FOUND_FREETYPE=no])
-          if test "x$FOUND_FREETYPE" = xyes; then
-            # On solaris, pkg_check adds -lz to freetype libs, which isn't necessary for us.
-            FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's/-lz//g'`
-            # 64-bit libs for Solaris x86 are installed in the amd64 subdirectory, change lib to lib/amd64
-            if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
-              FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's?/lib?/lib/amd64?g'`
-            fi
-            # BDEPS_CHECK_MODULE will set FREETYPE_CFLAGS and _LIBS, but we don't get a lib path for bundling.
-            if test "x$BUNDLE_FREETYPE" = xyes; then
-              AC_MSG_NOTICE([Found freetype using pkg-config, but ignoring since we can not bundle that])
-              FOUND_FREETYPE=no
-            else
-              AC_MSG_CHECKING([for freetype])
-              AC_MSG_RESULT([yes (using pkg-config)])
+      # If we have a sysroot, assume that's where we are supposed to look and skip pkg-config.
+      if test "x$SYSROOT" = x; then
+        if test "x$FOUND_FREETYPE" != xyes; then
+          # Check modules using pkg-config, but only if we have it (ugly output results otherwise)
+          if test "x$PKG_CONFIG" != x; then
+            PKG_CHECK_MODULES(FREETYPE, freetype2, [FOUND_FREETYPE=yes], [FOUND_FREETYPE=no])
+            if test "x$FOUND_FREETYPE" = xyes; then
+              # On solaris, pkg_check adds -lz to freetype libs, which isn't necessary for us.
+              FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's/-lz//g'`
+              # 64-bit libs for Solaris x86 are installed in the amd64 subdirectory, change lib to lib/amd64
+              if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+                FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's?/lib?/lib/amd64?g'`
+              fi
+              # BDEPS_CHECK_MODULE will set FREETYPE_CFLAGS and _LIBS, but we don't get a lib path for bundling.
+              if test "x$BUNDLE_FREETYPE" = xyes; then
+                AC_MSG_NOTICE([Found freetype using pkg-config, but ignoring since we can not bundle that])
+                FOUND_FREETYPE=no
+              else
+                AC_MSG_CHECKING([for freetype])
+                AC_MSG_RESULT([yes (using pkg-config)])
+              fi
             fi
           fi
         fi
@@ -433,21 +442,21 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
             LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
           fi
         else
-          if test "x$SYS_ROOT" = "x/"; then
-            FREETYPE_ROOT=
-          else
-            FREETYPE_ROOT="$SYS_ROOT"
-          fi
-          FREETYPE_BASE_DIR="$FREETYPE_ROOT/usr"
+          FREETYPE_BASE_DIR="$SYSROOT/usr"
           LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
 
           if test "x$FOUND_FREETYPE" != xyes; then
-            FREETYPE_BASE_DIR="$FREETYPE_ROOT/usr/X11"
+            FREETYPE_BASE_DIR="$SYSROOT/usr/X11"
             LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
           fi
 
           if test "x$FOUND_FREETYPE" != xyes; then
-            FREETYPE_BASE_DIR="$FREETYPE_ROOT/usr"
+            FREETYPE_BASE_DIR="$SYSROOT/usr/sfw"
+            LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
+          fi
+
+          if test "x$FOUND_FREETYPE" != xyes; then
+            FREETYPE_BASE_DIR="$SYSROOT/usr"
             if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
               LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib/x86_64-linux-gnu], [well-known location])
             else
@@ -577,8 +586,11 @@ AC_DEFUN_ONCE([LIB_SETUP_ALSA],
     if test "x$ALSA_FOUND" = xno; then
       BDEPS_CHECK_MODULE(ALSA, alsa, xxx, [ALSA_FOUND=yes], [ALSA_FOUND=no])
     fi
-    if test "x$ALSA_FOUND" = xno; then
-      PKG_CHECK_MODULES(ALSA, alsa, [ALSA_FOUND=yes], [ALSA_FOUND=no])
+    # Do not try pkg-config if we have a sysroot set.
+    if test "x$SYSROOT" = x; then
+      if test "x$ALSA_FOUND" = xno; then
+        PKG_CHECK_MODULES(ALSA, alsa, [ALSA_FOUND=yes], [ALSA_FOUND=no])
+      fi
     fi
     if test "x$ALSA_FOUND" = xno; then
       AC_CHECK_HEADERS([alsa/asoundlib.h],
@@ -651,6 +663,46 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
     AC_MSG_ERROR([Invalid value of --with-giflib: ${with_giflib}, use 'system' or 'bundled'])
   fi
   AC_SUBST(USE_EXTERNAL_LIBGIF)
+
+  ###############################################################################
+  #
+  # Check for the png library
+  #
+
+  AC_ARG_WITH(libpng, [AS_HELP_STRING([--with-libpng],
+     [use libpng from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
+
+
+  AC_MSG_CHECKING([for which libpng to use])
+
+  # default is bundled
+  DEFAULT_LIBPNG=bundled
+
+  #
+  # if user didn't specify, use DEFAULT_LIBPNG
+  #
+  if test "x${with_libpng}" = "x"; then
+      with_libpng=${DEFAULT_LIBPNG}
+  fi
+
+  if test "x${with_libpng}" = "xbundled"; then
+      USE_EXTERNAL_LIBPNG=false
+      AC_MSG_RESULT([bundled])
+  elif test "x${with_libpng}" = "xsystem"; then
+      PKG_CHECK_MODULES(PNG, libpng,
+                   [ LIBPNG_FOUND=yes ],
+                   [ LIBPNG_FOUND=no ])
+      if test "x${LIBPNG_FOUND}" = "xyes"; then
+          USE_EXTERNAL_LIBPNG=true
+          AC_MSG_RESULT([system])
+      else
+          AC_MSG_RESULT([system not found])
+          AC_MSG_ERROR([--with-libpng=system specified, but no libpng found!])
+      fi
+  else
+      AC_MSG_ERROR([Invalid value of --with-libpng: ${with_libpng}, use 'system' or 'bundled'])
+  fi
+  AC_SUBST(USE_EXTERNAL_LIBPNG)
 
   ###############################################################################
   #
@@ -877,7 +929,7 @@ AC_DEFUN_ONCE([LIB_SETUP_STATIC_LINK_LIBSTDCPP],
 
   # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
   if test "x$TOOLCHAIN_TYPE" = xsolstudio && test "x$LIBCXX" = x; then
-    LIBCXX="/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
+    LIBCXX="${SYSROOT}/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
   fi
 
   # TODO better (platform agnostic) test

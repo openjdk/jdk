@@ -61,6 +61,7 @@ import java.awt.FontMetrics;
 import java.awt.Rectangle;
 import java.text.AttributedCharacterIterator;
 import java.awt.Font;
+import java.awt.Point;
 import java.awt.image.ImageObserver;
 import java.awt.Transparency;
 import java.awt.font.GlyphVector;
@@ -93,6 +94,13 @@ import java.util.Iterator;
 import sun.misc.PerformanceLogger;
 
 import java.lang.annotation.Native;
+import sun.awt.image.MultiResolutionImage;
+
+import static java.awt.geom.AffineTransform.TYPE_FLIP;
+import static java.awt.geom.AffineTransform.TYPE_MASK_SCALE;
+import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
+import sun.awt.image.MultiResolutionToolkitImage;
+import sun.awt.image.ToolkitImage;
 
 /**
  * This is a the master Graphics2D superclass for all of the Sun
@@ -237,6 +245,7 @@ public final class SunGraphics2D
     protected Region devClip;           // Actual physical drawable in pixels
 
     private final int devScale;         // Actual physical scale factor
+    private int resolutionVariantHint;
 
     // cached state for text rendering
     private boolean validFontInfo;
@@ -274,6 +283,7 @@ public final class SunGraphics2D
         lcdTextContrast = lcdTextContrastDefaultValue;
         interpolationHint = -1;
         strokeHint = SunHints.INTVAL_STROKE_DEFAULT;
+        resolutionVariantHint = SunHints.INTVAL_RESOLUTION_VARIANT_DEFAULT;
 
         interpolationType = AffineTransformOp.TYPE_NEAREST_NEIGHBOR;
 
@@ -1249,6 +1259,10 @@ public final class SunGraphics2D
                 stateChanged = (strokeHint != newHint);
                 strokeHint = newHint;
                 break;
+            case SunHints.INTKEY_RESOLUTION_VARIANT:
+                stateChanged = (resolutionVariantHint != newHint);
+                resolutionVariantHint = newHint;
+                break;
             default:
                 recognized = false;
                 stateChanged = false;
@@ -1322,6 +1336,9 @@ public final class SunGraphics2D
         case SunHints.INTKEY_STROKE_CONTROL:
             return SunHints.Value.get(SunHints.INTKEY_STROKE_CONTROL,
                                       strokeHint);
+        case SunHints.INTKEY_RESOLUTION_VARIANT:
+            return SunHints.Value.get(SunHints.INTKEY_RESOLUTION_VARIANT,
+                                      resolutionVariantHint);
         }
         return null;
     }
@@ -2413,6 +2430,8 @@ public final class SunGraphics2D
                 surfaceData = NullSurfaceData.theInstance;
             }
 
+            invalidatePipe();
+
             // this will recalculate the composite clip
             setDevClip(surfaceData.getBounds());
 
@@ -3050,18 +3069,58 @@ public final class SunGraphics2D
     }
 // end of text rendering methods
 
-    private static boolean isHiDPIImage(final Image img) {
-        return SurfaceManager.getImageScale(img) != 1;
+    private boolean isHiDPIImage(final Image img) {
+        return (SurfaceManager.getImageScale(img) != 1) ||
+               (resolutionVariantHint != SunHints.INTVAL_RESOLUTION_VARIANT_OFF
+                    && img instanceof MultiResolutionImage);
     }
 
     private boolean drawHiDPIImage(Image img, int dx1, int dy1, int dx2,
                                    int dy2, int sx1, int sy1, int sx2, int sy2,
                                    Color bgcolor, ImageObserver observer) {
-        final int scale = SurfaceManager.getImageScale(img);
-        sx1 = Region.clipScale(sx1, scale);
-        sx2 = Region.clipScale(sx2, scale);
-        sy1 = Region.clipScale(sy1, scale);
-        sy2 = Region.clipScale(sy2, scale);
+
+        if (SurfaceManager.getImageScale(img) != 1) {  // Volatile Image
+            final int scale = SurfaceManager.getImageScale(img);
+            sx1 = Region.clipScale(sx1, scale);
+            sx2 = Region.clipScale(sx2, scale);
+            sy1 = Region.clipScale(sy1, scale);
+            sy2 = Region.clipScale(sy2, scale);
+        } else if (img instanceof MultiResolutionImage) {
+            // get scaled destination image size
+
+            int width = img.getWidth(observer);
+            int height = img.getHeight(observer);
+
+            Image resolutionVariant = getResolutionVariant(
+                    (MultiResolutionImage) img, width, height,
+                    dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2);
+
+            if (resolutionVariant != img && resolutionVariant != null) {
+                // recalculate source region for the resolution variant
+
+                ImageObserver rvObserver = MultiResolutionToolkitImage.
+                        getResolutionVariantObserver(img, observer,
+                                width, height, -1, -1);
+
+                int rvWidth = resolutionVariant.getWidth(rvObserver);
+                int rvHeight = resolutionVariant.getHeight(rvObserver);
+
+                if (0 < width && 0 < height && 0 < rvWidth && 0 < rvHeight) {
+
+                    float widthScale = ((float) rvWidth) / width;
+                    float heightScale = ((float) rvHeight) / height;
+
+                    sx1 = Region.clipScale(sx1, widthScale);
+                    sy1 = Region.clipScale(sy1, heightScale);
+                    sx2 = Region.clipScale(sx2, widthScale);
+                    sy2 = Region.clipScale(sy2, heightScale);
+
+                    observer = rvObserver;
+                    img = resolutionVariant;
+                }
+            }
+        }
+
         try {
             return imagepipe.scaleImage(this, img, dx1, dy1, dx2, dy2, sx1, sy1,
                                         sx2, sy2, bgcolor, observer);
@@ -3079,6 +3138,54 @@ public final class SunGraphics2D
         } finally {
             surfaceData.markDirty();
         }
+    }
+
+    private Image getResolutionVariant(MultiResolutionImage img,
+            int srcWidth, int srcHeight, int dx1, int dy1, int dx2, int dy2,
+            int sx1, int sy1, int sx2, int sy2) {
+
+        if (srcWidth <= 0 || srcHeight <= 0) {
+            return null;
+        }
+
+        int sw = sx2 - sx1;
+        int sh = sy2 - sy1;
+
+        if (sw == 0 || sh == 0) {
+            return null;
+        }
+
+        int type = transform.getType();
+        int dw = dx2 - dx1;
+        int dh = dy2 - dy1;
+        double destRegionWidth;
+        double destRegionHeight;
+
+        if ((type & ~(TYPE_TRANSLATION | TYPE_FLIP)) == 0) {
+            destRegionWidth = dw;
+            destRegionHeight = dh;
+        } else if ((type & ~(TYPE_TRANSLATION | TYPE_FLIP | TYPE_MASK_SCALE)) == 0) {
+            destRegionWidth = dw * transform.getScaleX();
+            destRegionHeight = dh * transform.getScaleY();
+        } else {
+            destRegionWidth = dw * Math.hypot(
+                    transform.getScaleX(), transform.getShearY());
+            destRegionHeight = dh * Math.hypot(
+                    transform.getShearX(), transform.getScaleY());
+        }
+
+        int destImageWidth = (int) Math.abs(srcWidth * destRegionWidth / sw);
+        int destImageHeight = (int) Math.abs(srcHeight * destRegionHeight / sh);
+
+        Image resolutionVariant
+                = img.getResolutionVariant(destImageWidth, destImageHeight);
+
+        if (resolutionVariant instanceof ToolkitImage
+                && ((ToolkitImage) resolutionVariant).hasError()) {
+            return null;
+        }
+
+        return resolutionVariant;
     }
 
     /**

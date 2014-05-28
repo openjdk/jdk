@@ -70,6 +70,7 @@ import javax.swing.UIManager;
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class DefaultEditorKit extends EditorKit {
 
     /**
@@ -317,9 +318,7 @@ public class DefaultEditorKit extends EditorKit {
         int offs = pos;
         Object endOfLineProperty = doc.getProperty(EndOfLineStringProperty);
         if (endOfLineProperty == null) {
-            try {
-                endOfLineProperty = System.getProperty("line.separator");
-            } catch (SecurityException se) { }
+            endOfLineProperty = System.lineSeparator();
         }
         String endOfLine;
         if (endOfLineProperty instanceof String) {
@@ -1032,6 +1031,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#deletePrevCharAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class DeletePrevCharAction extends TextAction {
 
         /**
@@ -1090,6 +1090,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#deleteNextCharAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class DeleteNextCharAction extends TextAction {
 
         /* Create this object with the appropriate identifier. */
@@ -1141,6 +1142,7 @@ public class DefaultEditorKit extends EditorKit {
      * Deletes the word that precedes/follows the beginning of the selection.
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class DeleteWordAction extends TextAction {
         DeleteWordAction(String name) {
             super(name);
@@ -1215,6 +1217,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#readOnlyAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class ReadOnlyAction extends TextAction {
 
         /* Create this object with the appropriate identifier. */
@@ -1240,6 +1243,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#writableAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class WritableAction extends TextAction {
 
         /* Create this object with the appropriate identifier. */
@@ -1414,6 +1418,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#pageDownAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class VerticalPageAction extends TextAction {
 
         /** Create this object with the appropriate identifier. */
@@ -1573,6 +1578,7 @@ public class DefaultEditorKit extends EditorKit {
     /**
      * Pages one view to the left or right.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class PageAction extends TextAction {
 
         /** Create this object with the appropriate identifier. */
@@ -1627,6 +1633,7 @@ public class DefaultEditorKit extends EditorKit {
         private boolean left;
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class DumpModelAction extends TextAction {
 
         DumpModelAction() {
@@ -1649,6 +1656,7 @@ public class DefaultEditorKit extends EditorKit {
      * getNextVisualPositionFrom method. Constructor indicates direction
      * to use.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class NextVisualPositionAction extends TextAction {
 
         /**
@@ -1736,6 +1744,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#selectBeginWordAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class BeginWordAction extends TextAction {
 
         /**
@@ -1776,6 +1785,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#selectEndWordAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class EndWordAction extends TextAction {
 
         /**
@@ -1816,6 +1826,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#selectPreviousWordAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class PreviousWordAction extends TextAction {
 
         /**
@@ -1875,6 +1886,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#selectNextWordAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class NextWordAction extends TextAction {
 
         /**
@@ -1940,6 +1952,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#selectBeginLineAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class BeginLineAction extends TextAction {
 
         /**
@@ -1980,6 +1993,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#selectEndLineAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class EndLineAction extends TextAction {
 
         /**
@@ -2020,6 +2034,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#selectBeginParagraphAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class BeginParagraphAction extends TextAction {
 
         /**
@@ -2057,6 +2072,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#selectEndParagraphAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class EndParagraphAction extends TextAction {
 
         /**
@@ -2094,6 +2110,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#beginAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class BeginAction extends TextAction {
 
         /* Create this object with the appropriate identifier. */
@@ -2122,6 +2139,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#endAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class EndAction extends TextAction {
 
         /* Create this object with the appropriate identifier. */
@@ -2152,6 +2170,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#endAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class SelectWordAction extends TextAction {
 
         /**
@@ -2181,6 +2200,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#endAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class SelectLineAction extends TextAction {
 
         /**
@@ -2210,6 +2230,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#endAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class SelectParagraphAction extends TextAction {
 
         /**
@@ -2239,6 +2260,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#endAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class SelectAllAction extends TextAction {
 
         /**
@@ -2268,6 +2290,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#unselectAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class UnselectAction extends TextAction {
 
         /**
@@ -2292,6 +2315,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#toggleComponentOrientationAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class ToggleComponentOrientationAction extends TextAction {
 
         /**

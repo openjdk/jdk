@@ -42,11 +42,13 @@ import java.util.Set;
 import java.util.HashSet;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
+import java.lang.ref.SoftReference;
 import sun.util.logging.PlatformLogger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
  * The AppContext is a table referenced by ThreadGroup which stores
@@ -882,6 +884,23 @@ public final class AppContext {
             }
 
         });
+    }
+
+    public static <T> T getSoftReferenceValue(Object key,
+            Supplier<T> supplier) {
+
+        final AppContext appContext = AppContext.getAppContext();
+        SoftReference<T> ref = (SoftReference<T>) appContext.get(key);
+        if (ref != null) {
+            final T object = ref.get();
+            if (object != null) {
+                return object;
+            }
+        }
+        final T object = supplier.get();
+        ref = new SoftReference<>(object);
+        appContext.put(key, ref);
+        return object;
     }
 }
 

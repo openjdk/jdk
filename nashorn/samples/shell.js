@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,50 +29,53 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * This is a simple shell tool in JavaScript.
+// Usage: jjs shell.js
+
+/* This is a simple shell tool in JavaScript.
  *
  * Runs any operating system command using Java "exec". When "eval" command is
  * used, evaluates argument(s) as JavaScript code.
  */
 
-var imports = new JavaImporter(java.io, java.lang, java.util);
+(function() {
+    // Java classes used
+    var Arrays = Java.type("java.util.Arrays");
+    var BufferedReader = Java.type("java.io.BufferedReader");
+    var InputStreamReader = Java.type("java.io.InputStreamReader");
+    var ProcessBuilder = Java.type("java.lang.ProcessBuilder");
+    var System = Java.type("java.lang.System");
 
-function prompt() {
-    java.lang.System.out.print(">");
-}
+    // print prompt
+    function prompt() {
+        System.out.print("> ");
+    }
 
-with (imports) {
-    var reader = new BufferedReader(new InputStreamReader(System["in"]));
-    var line = null;
+    var reader = new BufferedReader(new InputStreamReader(System.in));
     prompt();
-    while ((line = reader.readLine()) != null) {
-        if (line != "") {
-            var args = line.split(" ");
+    // read and evaluate each line from stdin
+    reader.lines().forEach(function(line) {
+        if (! line.isEmpty()) {
+            var args = line.split(' ');
             try {
-                if (args[0] == "eval") {
-                    var code = line.substring("eval".length);
+                // special 'eval' command to evaluate JS code
+                if (args[0] == 'eval') {
+                    var code = line.substring('eval'.length);
                     var res = eval(code);
                     if (res != undefined) {
                         print(res);
                     }
                 } else {
-                    var argList = new ArrayList();
-                    for (i in args) { argList.add(args[i]); }                
-                    var procBuilder = new ProcessBuilder(argList);
-                    procBuilder.redirectErrorStream();
-                    var proc = procBuilder.start();
-                    var out = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-                    var line = null;
-                    while ((line = out.readLine()) != null) {
-                        System.out.println(line);
-                    }
-                    proc.waitFor();
+                    // build child process and start it!
+                    new ProcessBuilder(Arrays.asList(args))
+                        .inheritIO()
+                        .start()
+                        .waitFor();
                 }
             } catch (e) {
+                // print exception, if any
                 print(e);
             }
         }
         prompt();
-    }
-}
+    })
+})()

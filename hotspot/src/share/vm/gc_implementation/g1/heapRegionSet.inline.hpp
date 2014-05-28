@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,116 +27,110 @@
 
 #include "gc_implementation/g1/heapRegionSet.hpp"
 
-//////////////////// HeapRegionSetBase ////////////////////
+inline void HeapRegionSetBase::add(HeapRegion* hr) {
+  check_mt_safety();
+  assert(hr->containing_set() == NULL, hrs_ext_msg(this, "should not already have a containing set %u"));
+  assert(hr->next() == NULL && hr->prev() == NULL, hrs_ext_msg(this, "should not already be linked"));
 
-inline void HeapRegionSetBase::update_for_addition(HeapRegion* hr) {
-  // Assumes the caller has already verified the region.
-
-  _length           += 1;
-  _region_num       += hr->region_num();
-  _total_used_bytes += hr->used();
-}
-
-inline void HeapRegionSetBase::add_internal(HeapRegion* hr) {
-  hrs_assert_region_ok(this, hr, NULL);
-  assert(hr->next() == NULL, hrs_ext_msg(this, "should not already be linked"));
-
-  update_for_addition(hr);
+  _count.increment(1u, hr->capacity());
   hr->set_containing_set(this);
+  verify_region(hr);
 }
 
-inline void HeapRegionSetBase::update_for_removal(HeapRegion* hr) {
-  // Assumes the caller has already verified the region.
-  assert(_length > 0, hrs_ext_msg(this, "pre-condition"));
-  _length -= 1;
-
-  uint region_num_diff = hr->region_num();
-  assert(region_num_diff <= _region_num,
-         hrs_err_msg("[%s] region's region num: %u "
-                     "should be <= region num: %u",
-                     name(), region_num_diff, _region_num));
-  _region_num -= region_num_diff;
-
-  size_t used_bytes = hr->used();
-  assert(used_bytes <= _total_used_bytes,
-         hrs_err_msg("[%s] region's used bytes: "SIZE_FORMAT" "
-                     "should be <= used bytes: "SIZE_FORMAT,
-                     name(), used_bytes, _total_used_bytes));
-  _total_used_bytes -= used_bytes;
-}
-
-inline void HeapRegionSetBase::remove_internal(HeapRegion* hr) {
-  hrs_assert_region_ok(this, hr, this);
-  assert(hr->next() == NULL, hrs_ext_msg(this, "should already be unlinked"));
+inline void HeapRegionSetBase::remove(HeapRegion* hr) {
+  check_mt_safety();
+  verify_region(hr);
+  assert(hr->next() == NULL && hr->prev() == NULL, hrs_ext_msg(this, "should already be unlinked"));
 
   hr->set_containing_set(NULL);
-  update_for_removal(hr);
+  assert(_count.length() > 0, hrs_ext_msg(this, "pre-condition"));
+  _count.decrement(1u, hr->capacity());
 }
 
-//////////////////// HeapRegionSet ////////////////////
-
-inline void HeapRegionSet::add(HeapRegion* hr) {
-  hrs_assert_mt_safety_ok(this);
-  // add_internal() will verify the region.
-  add_internal(hr);
-}
-
-inline void HeapRegionSet::remove(HeapRegion* hr) {
-  hrs_assert_mt_safety_ok(this);
-  // remove_internal() will verify the region.
-  remove_internal(hr);
-}
-
-inline void HeapRegionSet::remove_with_proxy(HeapRegion* hr,
-                                             HeapRegionSet* proxy_set) {
-  // No need to fo the MT safety check here given that this method
-  // does not update the contents of the set but instead accumulates
-  // the changes in proxy_set which is assumed to be thread-local.
-  hrs_assert_sets_match(this, proxy_set);
-  hrs_assert_region_ok(this, hr, this);
-
-  hr->set_containing_set(NULL);
-  proxy_set->update_for_addition(hr);
-}
-
-//////////////////// HeapRegionLinkedList ////////////////////
-
-inline void HeapRegionLinkedList::add_as_head(HeapRegion* hr) {
-  hrs_assert_mt_safety_ok(this);
+inline void FreeRegionList::add_ordered(HeapRegion* hr) {
+  check_mt_safety();
   assert((length() == 0 && _head == NULL && _tail == NULL) ||
          (length() >  0 && _head != NULL && _tail != NULL),
          hrs_ext_msg(this, "invariant"));
-  // add_internal() will verify the region.
-  add_internal(hr);
+  // add() will verify the region and check mt safety.
+  add(hr);
+
+  // Now link the region
+  if (_head != NULL) {
+    HeapRegion* curr;
+
+    if (_last != NULL && _last->hrs_index() < hr->hrs_index()) {
+      curr = _last;
+    } else {
+      curr = _head;
+    }
+
+    // Find first entry with a Region Index larger than entry to insert.
+    while (curr != NULL && curr->hrs_index() < hr->hrs_index()) {
+      curr = curr->next();
+    }
+
+    hr->set_next(curr);
+
+    if (curr == NULL) {
+      // Adding at the end
+      hr->set_prev(_tail);
+      _tail->set_next(hr);
+      _tail = hr;
+    } else if (curr->prev() == NULL) {
+      // Adding at the beginning
+      hr->set_prev(NULL);
+      _head = hr;
+      curr->set_prev(hr);
+    } else {
+      hr->set_prev(curr->prev());
+      hr->prev()->set_next(hr);
+      curr->set_prev(hr);
+    }
+  } else {
+    // The list was empty
+    _tail = hr;
+    _head = hr;
+  }
+  _last = hr;
+}
+
+inline void FreeRegionList::add_as_head(HeapRegion* hr) {
+  assert((length() == 0 && _head == NULL && _tail == NULL) ||
+         (length() >  0 && _head != NULL && _tail != NULL),
+         hrs_ext_msg(this, "invariant"));
+  // add() will verify the region and check mt safety.
+  add(hr);
 
   // Now link the region.
   if (_head != NULL) {
     hr->set_next(_head);
+    _head->set_prev(hr);
   } else {
     _tail = hr;
   }
   _head = hr;
 }
 
-inline void HeapRegionLinkedList::add_as_tail(HeapRegion* hr) {
-  hrs_assert_mt_safety_ok(this);
+inline void FreeRegionList::add_as_tail(HeapRegion* hr) {
+  check_mt_safety();
   assert((length() == 0 && _head == NULL && _tail == NULL) ||
          (length() >  0 && _head != NULL && _tail != NULL),
          hrs_ext_msg(this, "invariant"));
-  // add_internal() will verify the region.
-  add_internal(hr);
+  // add() will verify the region and check mt safety.
+  add(hr);
 
   // Now link the region.
   if (_tail != NULL) {
     _tail->set_next(hr);
+    hr->set_prev(_tail);
   } else {
     _head = hr;
   }
   _tail = hr;
 }
 
-inline HeapRegion* HeapRegionLinkedList::remove_head() {
-  hrs_assert_mt_safety_ok(this);
+inline HeapRegion* FreeRegionList::remove_head() {
   assert(!is_empty(), hrs_ext_msg(this, "the list should not be empty"));
   assert(length() > 0 && _head != NULL && _tail != NULL,
          hrs_ext_msg(this, "invariant"));
@@ -146,21 +140,69 @@ inline HeapRegion* HeapRegionLinkedList::remove_head() {
   _head = hr->next();
   if (_head == NULL) {
     _tail = NULL;
+  } else {
+    _head->set_prev(NULL);
   }
   hr->set_next(NULL);
 
-  // remove_internal() will verify the region.
-  remove_internal(hr);
+  if (_last == hr) {
+    _last = NULL;
+  }
+
+  // remove() will verify the region and check mt safety.
+  remove(hr);
   return hr;
 }
 
-inline HeapRegion* HeapRegionLinkedList::remove_head_or_null() {
-  hrs_assert_mt_safety_ok(this);
-
+inline HeapRegion* FreeRegionList::remove_head_or_null() {
+  check_mt_safety();
   if (!is_empty()) {
     return remove_head();
   } else {
     return NULL;
+  }
+}
+
+inline HeapRegion* FreeRegionList::remove_tail() {
+  assert(!is_empty(), hrs_ext_msg(this, "The list should not be empty"));
+  assert(length() > 0 && _head != NULL && _tail != NULL,
+         hrs_ext_msg(this, "invariant"));
+
+  // We need to unlink it first
+  HeapRegion* hr = _tail;
+
+  _tail = hr->prev();
+  if (_tail == NULL) {
+    _head = NULL;
+  } else {
+    _tail->set_next(NULL);
+  }
+  hr->set_prev(NULL);
+
+  if (_last == hr) {
+    _last = NULL;
+  }
+
+  // remove() will verify the region and check mt safety.
+  remove(hr);
+  return hr;
+}
+
+inline HeapRegion* FreeRegionList::remove_tail_or_null() {
+  check_mt_safety();
+
+  if (!is_empty()) {
+    return remove_tail();
+  } else {
+    return NULL;
+  }
+}
+
+inline HeapRegion* FreeRegionList::remove_region(bool from_head) {
+  if (from_head) {
+    return remove_head_or_null();
+  } else {
+    return remove_tail_or_null();
   }
 }
 

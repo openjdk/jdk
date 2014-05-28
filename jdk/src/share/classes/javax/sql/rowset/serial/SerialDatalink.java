@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class SerialDatalink implements Serializable, Cloneable {
     /**
       * Constructs a new <code>SerialDatalink</code> object from the given
       * <code>java.net.URL</code> object.
-      * <P>
+      *
       * @param url the {@code URL} to create the {@code SerialDataLink} from
       * @throws SerialException if url parameter is a null
       */

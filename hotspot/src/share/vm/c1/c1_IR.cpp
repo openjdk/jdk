@@ -142,6 +142,7 @@ IRScope::IRScope(Compilation* compilation, IRScope* caller, int caller_bci, ciMe
   _number_of_locks    = 0;
   _monitor_pairing_ok = method->has_balanced_monitors();
   _wrote_final        = false;
+  _wrote_fields       = false;
   _start              = NULL;
 
   if (osr_bci == -1) {
@@ -226,14 +227,43 @@ void CodeEmitInfo::add_register_oop(LIR_Opr opr) {
   _oop_map->set_oop(name);
 }
 
+// Mirror the stack size calculation in the deopt code
+// How much stack space would we need at this point in the program in
+// case of deoptimization?
+int CodeEmitInfo::interpreter_frame_size() const {
+  ValueStack* state = _stack;
+  int size = 0;
+  int callee_parameters = 0;
+  int callee_locals = 0;
+  int extra_args = state->scope()->method()->max_stack() - state->stack_size();
 
+  while (state != NULL) {
+    int locks = state->locks_size();
+    int temps = state->stack_size();
+    bool is_top_frame = (state == _stack);
+    ciMethod* method = state->scope()->method();
 
+    int frame_size = BytesPerWord * Interpreter::size_activation(method->max_stack(),
+                                                                 temps + callee_parameters,
+                                                                 extra_args,
+                                                                 locks,
+                                                                 callee_parameters,
+                                                                 callee_locals,
+                                                                 is_top_frame);
+    size += frame_size;
+
+    callee_parameters = method->size_of_parameters();
+    callee_locals = method->max_locals();
+    extra_args = 0;
+    state = state->caller_state();
+  }
+  return size + Deoptimization::last_frame_adjust(0, callee_locals) * BytesPerWord;
+}
 
 // Implementation of IR
 
 IR::IR(Compilation* compilation, ciMethod* method, int osr_bci) :
-    _locals_size(in_WordSize(-1))
-  , _num_loops(0) {
+  _num_loops(0) {
   // setup IR fields
   _compilation = compilation;
   _top_scope   = new IRScope(compilation, NULL, -1, method, osr_bci, true);

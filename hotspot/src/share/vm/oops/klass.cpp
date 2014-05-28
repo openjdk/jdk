@@ -36,7 +36,8 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline2.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/stack.hpp"
 #include "utilities/macros.hpp"
@@ -129,7 +130,7 @@ bool Klass::compute_is_subtype_of(Klass* k) {
 }
 
 
-Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
+Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const {
 #ifdef ASSERT
   tty->print_cr("Error: uncached_lookup_method called on a klass oop."
                 " Likely error: reflection method does not correctly"
@@ -334,17 +335,9 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots) {
 }
 
 
-Klass* Klass::subklass() const {
-  return _subklass == NULL ? NULL : _subklass;
-}
-
 InstanceKlass* Klass::superklass() const {
   assert(super() == NULL || super()->oop_is_instance(), "must be instance klass");
   return _super == NULL ? NULL : InstanceKlass::cast(_super);
-}
-
-Klass* Klass::next_sibling() const {
-  return _next_sibling == NULL ? NULL : _next_sibling;
 }
 
 void Klass::set_subklass(Klass* s) {
@@ -365,7 +358,7 @@ void Klass::append_to_sibling_list() {
   assert((!super->is_interface()    // interfaces cannot be supers
           && (super->superklass() == NULL || !is_interface())),
          "an interface can only be a subklass of Object");
-  Klass* prev_first_subklass = super->subklass_oop();
+  Klass* prev_first_subklass = super->subklass();
   if (prev_first_subklass != NULL) {
     // set our sibling to be the superklass' previous first subklass
     set_next_sibling(prev_first_subklass);
@@ -405,7 +398,7 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
     assert(current->is_loader_alive(is_alive), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass_oop();
+    Klass* sub = current->subklass();
     while (sub != NULL && !sub->is_loader_alive(is_alive)) {
 #ifndef PRODUCT
       if (TraceClassUnloading && WizardMode) {
@@ -413,7 +406,7 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
         tty->print_cr("[Unlinking class (subclass) %s]", sub->external_name());
       }
 #endif
-      sub = sub->next_sibling_oop();
+      sub = sub->next_sibling();
     }
     current->set_subklass(sub);
     if (sub != NULL) {
@@ -421,13 +414,13 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
     }
 
     // Find and set the first alive sibling
-    Klass* sibling = current->next_sibling_oop();
+    Klass* sibling = current->next_sibling();
     while (sibling != NULL && !sibling->is_loader_alive(is_alive)) {
       if (TraceClassUnloading && WizardMode) {
         ResourceMark rm;
         tty->print_cr("[Unlinking class (sibling) %s]", sibling->external_name());
       }
-      sibling = sibling->next_sibling_oop();
+      sibling = sibling->next_sibling();
     }
     current->set_next_sibling(sibling);
     if (sibling != NULL) {
@@ -483,12 +476,8 @@ void Klass::oops_do(OopClosure* cl) {
 }
 
 void Klass::remove_unshareable_info() {
-  if (!DumpSharedSpaces) {
-    // Clean up after OOM during class loading
-    if (class_loader_data() != NULL) {
-      class_loader_data()->remove_class(this);
-    }
-  }
+  assert (DumpSharedSpaces, "only called for DumpSharedSpaces");
+
   set_subklass(NULL);
   set_next_sibling(NULL);
   // Clear the java mirror
@@ -500,17 +489,27 @@ void Klass::remove_unshareable_info() {
 }
 
 void Klass::restore_unshareable_info(TRAPS) {
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  // Restore class_loader_data to the null class loader data
-  set_class_loader_data(loader_data);
+  TRACE_INIT_ID(this);
+  // If an exception happened during CDS restore, some of these fields may already be
+  // set.  We leave the class on the CLD list, even if incomplete so that we don't
+  // modify the CLD list outside a safepoint.
+  if (class_loader_data() == NULL) {
+    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+    // Restore class_loader_data to the null class loader data
+    set_class_loader_data(loader_data);
 
-  // Add to null class loader list first before creating the mirror
-  // (same order as class file parsing)
-  loader_data->add_class(this);
+    // Add to null class loader list first before creating the mirror
+    // (same order as class file parsing)
+    loader_data->add_class(this);
+  }
 
   // Recreate the class mirror.  The protection_domain is always null for
   // boot loader, for now.
-  java_lang_Class::create_mirror(this, Handle(NULL), CHECK);
+  // Only recreate it if not present.  A previous attempt to restore may have
+  // gotten an OOM later but keep the mirror if it was created.
+  if (java_mirror() == NULL) {
+    java_lang_Class::create_mirror(this, Handle(NULL), CHECK);
+  }
 }
 
 Klass* Klass::array_klass_or_null(int rank) {
@@ -546,7 +545,6 @@ const char* Klass::external_name() const {
   if (oop_is_instance()) {
     InstanceKlass* ik = (InstanceKlass*) this;
     if (ik->is_anonymous()) {
-      assert(EnableInvokeDynamic, "");
       intptr_t hash = 0;
       if (ik->java_mirror() != NULL) {
         // java_mirror might not be created yet, return 0 as hash.

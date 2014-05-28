@@ -43,9 +43,9 @@ import javax.imageio.IIOException;
  */
 public abstract class ImageInputStreamImpl implements ImageInputStream {
 
-    private Stack markByteStack = new Stack();
+    private Stack<Long> markByteStack = new Stack<>();
 
-    private Stack markBitStack = new Stack();
+    private Stack<Integer> markBitStack = new Stack<>();
 
     private boolean isClosed = false;
 
@@ -798,14 +798,14 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
             return;
         }
 
-        long pos = ((Long)markByteStack.pop()).longValue();
+        long pos = markByteStack.pop().longValue();
         if (pos < flushedPos) {
             throw new IIOException
                 ("Previous marked position has been discarded!");
         }
         seek(pos);
 
-        int offset = ((Integer)markBitStack.pop()).intValue();
+        int offset = markBitStack.pop().intValue();
         setBitOffset(offset);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.swing;
 import sun.misc.Unsafe;
 
 import java.awt.Point;
+import javax.swing.RepaintManager;
 
 import javax.swing.text.JTextComponent;
 import javax.swing.TransferHandler;
@@ -82,6 +83,14 @@ public final class SwingAccessor {
     }
 
     /**
+     * An accessor for the RepaintManager class.
+     */
+    public interface RepaintManagerAccessor {
+        void addRepaintListener(RepaintManager rm, SwingUtilities2.RepaintListener l);
+        void removeRepaintListener(RepaintManager rm, SwingUtilities2.RepaintListener l);
+    }
+
+    /**
      * The javax.swing.text.JTextComponent class accessor object.
      */
     private static JTextComponentAccessor jtextComponentAccessor;
@@ -120,6 +129,31 @@ public final class SwingAccessor {
      * Retrieve the accessor object for the JLightweightFrame class
      */
     public static JLightweightFrameAccessor getJLightweightFrameAccessor() {
+        if (jLightweightFrameAccessor == null) {
+            unsafe.ensureClassInitialized(JLightweightFrame.class);
+        }
         return jLightweightFrameAccessor;
+    }
+
+    /**
+     * The RepaintManager class accessor object.
+     */
+    private static RepaintManagerAccessor repaintManagerAccessor;
+
+    /**
+     * Set an accessor object for the RepaintManager class.
+     */
+    public static void setRepaintManagerAccessor(RepaintManagerAccessor accessor) {
+        repaintManagerAccessor = accessor;
+    }
+
+    /**
+     * Retrieve the accessor object for the RepaintManager class.
+     */
+    public static RepaintManagerAccessor getRepaintManagerAccessor() {
+        if (repaintManagerAccessor == null) {
+            unsafe.ensureClassInitialized(RepaintManager.class);
+        }
+        return repaintManagerAccessor;
     }
 }

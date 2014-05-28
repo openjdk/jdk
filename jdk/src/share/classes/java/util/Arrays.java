@@ -28,6 +28,7 @@ package java.util;
 import java.lang.reflect.Array;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntFunction;
@@ -35,6 +36,7 @@ import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongBinaryOperator;
+import java.util.function.UnaryOperator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -2559,7 +2561,7 @@ public class Arrays {
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.<p>
+     * two array references are considered equal if both are <tt>null</tt>.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
@@ -2588,7 +2590,7 @@ public class Arrays {
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.<p>
+     * two array references are considered equal if both are <tt>null</tt>.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
@@ -2617,7 +2619,7 @@ public class Arrays {
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.<p>
+     * two array references are considered equal if both are <tt>null</tt>.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
@@ -2646,7 +2648,7 @@ public class Arrays {
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.<p>
+     * two array references are considered equal if both are <tt>null</tt>.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
@@ -2675,7 +2677,7 @@ public class Arrays {
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.<p>
+     * two array references are considered equal if both are <tt>null</tt>.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
@@ -2704,7 +2706,7 @@ public class Arrays {
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.<p>
+     * two array references are considered equal if both are <tt>null</tt>.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
@@ -2733,7 +2735,7 @@ public class Arrays {
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.<p>
+     * two array references are considered equal if both are <tt>null</tt>.
      *
      * Two doubles <tt>d1</tt> and <tt>d2</tt> are considered equal if:
      * <pre>    <tt>new Double(d1).equals(new Double(d2))</tt></pre>
@@ -2768,7 +2770,7 @@ public class Arrays {
      * arrays contain the same number of elements, and all corresponding pairs
      * of elements in the two arrays are equal.  In other words, two arrays
      * are equal if they contain the same elements in the same order.  Also,
-     * two array references are considered equal if both are <tt>null</tt>.<p>
+     * two array references are considered equal if both are <tt>null</tt>.
      *
      * Two floats <tt>f1</tt> and <tt>f2</tt> are considered equal if:
      * <pre>    <tt>new Float(f1).equals(new Float(f2))</tt></pre>
@@ -2805,7 +2807,7 @@ public class Arrays {
      * and <tt>e2</tt> are considered <i>equal</i> if <tt>(e1==null ? e2==null
      * : e1.equals(e2))</tt>.  In other words, the two arrays are equal if
      * they contain the same elements in the same order.  Also, two array
-     * references are considered equal if both are <tt>null</tt>.<p>
+     * references are considered equal if both are <tt>null</tt>.
      *
      * @param a one array to be tested for equality
      * @param a2 the other array to be tested for equality
@@ -3848,12 +3850,13 @@ public class Arrays {
 
         @Override
         public int indexOf(Object o) {
-            if (o==null) {
-                for (int i=0; i<a.length; i++)
-                    if (a[i]==null)
+            E[] a = this.a;
+            if (o == null) {
+                for (int i = 0; i < a.length; i++)
+                    if (a[i] == null)
                         return i;
             } else {
-                for (int i=0; i<a.length; i++)
+                for (int i = 0; i < a.length; i++)
                     if (o.equals(a[i]))
                         return i;
             }
@@ -3868,6 +3871,28 @@ public class Arrays {
         @Override
         public Spliterator<E> spliterator() {
             return Spliterators.spliterator(a, Spliterator.ORDERED);
+        }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+            for (E e : a) {
+                action.accept(e);
+            }
+        }
+
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            Objects.requireNonNull(operator);
+            E[] a = this.a;
+            for (int i = 0; i < a.length; i++) {
+                a[i] = operator.apply(a[i]);
+            }
+        }
+
+        @Override
+        public void sort(Comparator<? super E> c) {
+            Arrays.sort(a, c);
         }
     }
 

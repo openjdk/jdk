@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.test.framework;
 
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
 import static jdk.nashorn.tools.Shell.COMPILATION_ERROR;
 import static jdk.nashorn.tools.Shell.RUNTIME_ERROR;
 import static jdk.nashorn.tools.Shell.SUCCESS;
@@ -39,7 +40,6 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -125,7 +125,7 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
                     continue;
                 }
                 final File file = new File(fileName);
-                ScriptFunction script = context.compileScript(new Source(fileName, file.toURI().toURL()), global);
+                ScriptFunction script = context.compileScript(sourceFor(fileName, file.toURI().toURL()), global);
 
                 if (script == null || errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;

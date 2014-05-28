@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,120 +26,78 @@
  * @bug 6553182 8025416 8029504
  * @summary This test verifies the -Xdocrootparent option.
  * @author Bhavesh Patel
- * @library ../lib/
- * @build JavadocTester TestDocRootLink
+ * @library ../lib
+ * @build JavadocTester
  * @run main TestDocRootLink
  */
 public class TestDocRootLink extends JavadocTester {
 
-    private static final String BUG_ID = "6553182";
-    private static final String[][] TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "Refer <a href=\"../../technotes/guides/index.html\">Here</a>"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "This <a href=\"../pkg2/C2.html\">Here</a> should not be replaced" + NL +
-            " with an absolute link."
-        },
-        {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "Testing <a href=\"../technotes/guides/index.html\">Link 1</a> and" + NL +
-            " <a href=\"../pkg2/C2.html\">Link 2</a>."
-        },
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<a href=\"../../technotes/guides/index.html\">" + NL +
-            "            Test document 1</a>"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<a href=\"../pkg2/C2.html\">" + NL +
-            "            Another Test document 1</a>"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<a href=\"../technotes/guides/index.html\">" + NL +
-            "            Another Test document 2.</a>"
-        }
-    };
-    private static final String[][] NEGATED_TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<a href=\"http://download.oracle.com/javase/7/docs/pkg2/C2.html\">"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">"
-        },
-        {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<a href=\"http://download.oracle.com/javase/7/docs/pkg2/C2.html\">"
-        }
-    };
-    private static final String[][] TEST2 = {
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "C2.html",
-            "Refer <a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">Here</a>"
-        },
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "C2.html",
-            "This <a href=\"../pkg1/C1.html\">Here</a> should not be replaced" + NL +
-            " with an absolute link."
-        },
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "C2.html",
-            "Testing <a href=\"../technotes/guides/index.html\">Link 1</a> and" + NL +
-            " <a href=\"../pkg1/C1.html\">Link 2</a>."
-        },
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "package-summary.html",
-            "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">" + NL +
-            "            Test document 1</a>"
-        },
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "package-summary.html",
-            "<a href=\"../pkg1/C1.html\">" + NL + "            Another Test document 1</a>"
-        },
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "package-summary.html",
-            "<a href=\"../technotes/guides/index.html\">" + NL + "            Another Test document 2.</a>"
-        }
-    };
-    private static final String[][] NEGATED_TEST2 = {
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "C2.html",
-            "<a href=\"../../technotes/guides/index.html\">"
-        },
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "C2.html",
-            "<a href=\"http://download.oracle.com/javase/7/docs/pkg1/C1.html\">"
-        },
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "package-summary.html",
-            "<a href=\"../../technotes/guides/index.html\">"
-        },
-        {BUG_ID + "-1" + FS + "pkg2" + FS + "package-summary.html",
-            "<a href=\"http://download.oracle.com/javase/7/docs/pkg1/C1.html\">"
-        }
-    };
-    private static final String[] ARGS1 =
-            new String[]{
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1", "pkg2"
-    };
-    private static final String[] ARGS2 =
-            new String[]{
-        "-d", BUG_ID + "-1", "-Xdocrootparent", "http://download.oracle.com/javase/7/docs", "-sourcepath", SRC_DIR, "pkg1", "pkg2"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestDocRootLink tester = new TestDocRootLink();
-        run(tester, ARGS1, TEST1, NEGATED_TEST1);
-        run(tester, ARGS2, TEST2, NEGATED_TEST2);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
+    @Test
+    void test1() {
+        javadoc("-d", "out-1",
+                "-sourcepath", testSrc,
+                "pkg1", "pkg2");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/C1.html", true,
+            "Refer <a href=\"../../technotes/guides/index.html\">Here</a>",
+            "This <a href=\"../pkg2/C2.html\">Here</a> should not be replaced\n" +
+            " with an absolute link.",
+            "Testing <a href=\"../technotes/guides/index.html\">Link 1</a> and\n" +
+            " <a href=\"../pkg2/C2.html\">Link 2</a>.");
+
+        checkOutput("pkg1/package-summary.html", true,
+            "<a href=\"../../technotes/guides/index.html\">\n" +
+            "            Test document 1</a>",
+            "<a href=\"../pkg2/C2.html\">\n" +
+            "            Another Test document 1</a>",
+            "<a href=\"../technotes/guides/index.html\">\n" +
+            "            Another Test document 2.</a>");
+
+        // TODO: should this check *any* reference to http://download.oracle.com/
+        checkOutput("pkg1/C1.html", false,
+            "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">",
+            "<a href=\"http://download.oracle.com/javase/7/docs/pkg2/C2.html\">");
+
+        checkOutput("pkg1/package-summary.html", false,
+            "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">",
+            "<a href=\"http://download.oracle.com/javase/7/docs/pkg2/C2.html\">");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+    @Test
+    void test2() {
+        javadoc("-d", "out-2",
+                "-Xdocrootparent", "http://download.oracle.com/javase/7/docs",
+                "-sourcepath", testSrc,
+                "pkg1", "pkg2");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg2/C2.html", true,
+            "Refer <a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">Here</a>",
+            "This <a href=\"../pkg1/C1.html\">Here</a> should not be replaced\n" +
+            " with an absolute link.",
+            "Testing <a href=\"../technotes/guides/index.html\">Link 1</a> and\n" +
+            " <a href=\"../pkg1/C1.html\">Link 2</a>.");
+
+        checkOutput("pkg2/package-summary.html", true,
+            "<a href=\"http://download.oracle.com/javase/7/docs/technotes/guides/index.html\">\n" +
+            "            Test document 1</a>",
+            "<a href=\"../pkg1/C1.html\">\n" +
+            "            Another Test document 1</a>",
+            "<a href=\"../technotes/guides/index.html\">\n" +
+            "            Another Test document 2.</a>");
+
+        checkOutput("pkg2/C2.html", false,
+            "<a href=\"../../technotes/guides/index.html\">",
+            "<a href=\"http://download.oracle.com/javase/7/docs/pkg1/C1.html\">");
+
+        checkOutput("pkg2/package-summary.html", false,
+            "<a href=\"../../technotes/guides/index.html\">",
+            "<a href=\"http://download.oracle.com/javase/7/docs/pkg1/C1.html\">");
     }
 }

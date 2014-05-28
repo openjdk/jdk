@@ -928,7 +928,7 @@ public class Code {
         if (o instanceof Pool.MethodHandle) return syms.methodHandleType;
         if (o instanceof UniqueType) return typeForPool(((UniqueType)o).type);
         if (o instanceof Type) {
-            Type ty = ((Type)o).unannotatedType();
+            Type ty = (Type) o;
 
             if (ty instanceof Type.ArrayType) return syms.classType;
             if (ty instanceof Type.MethodType) return syms.methodTypeType;
@@ -1579,8 +1579,8 @@ public class Code {
 
     /** Add a catch clause to code.
      */
-    public void addCatch(
-        char startPc, char endPc, char handlerPc, char catchType) {
+    public void addCatch(char startPc, char endPc,
+                         char handlerPc, char catchType) {
             catchInfo.append(new char[]{startPc, endPc, handlerPc, catchType});
         }
 
@@ -2148,34 +2148,28 @@ public class Code {
 
             for (Attribute.TypeCompound ta : lv.sym.getRawTypeAttributes()) {
                 TypeAnnotationPosition p = ta.position;
-                // At this point p.type_index contains the catch type index.
-                // Use that index to determine the exception table index.
-                // We can afterwards discard the type_index.
-                // A TA position is shared for all type annotations in the
-                // same location; updating one is enough.
-                // Use -666 as a marker that the exception_index was already updated.
-                if (p.type_index != -666) {
-                    p.exception_index = findExceptionIndex(p.type_index);
-                    p.type_index = -666;
+                if (p.hasCatchType()) {
+                    final int idx = findExceptionIndex(p);
+                    if (idx == -1)
+                        Assert.error("Could not find exception index for type annotation " +
+                                     ta + " on exception parameter");
+                    p.setExceptionIndex(idx);
                 }
             }
         }
     }
 
-    private int findExceptionIndex(int catchType) {
-        if (catchType == Integer.MIN_VALUE) {
-            // We didn't set the catch type index correctly.
-            // This shouldn't happen.
-            // TODO: issue error?
-            return -1;
-        }
+    private int findExceptionIndex(TypeAnnotationPosition p) {
+        final int catchType = p.getCatchType();
+        final int startPos = p.getStartPos();
+        final int len = catchInfo.length();
         List<char[]> iter = catchInfo.toList();
-        int len = catchInfo.length();
         for (int i = 0; i < len; ++i) {
             char[] catchEntry = iter.head;
             iter = iter.tail;
-            char ct = catchEntry[3];
-            if (catchType == ct) {
+            int ct = catchEntry[3];
+            int sp = catchEntry[0];
+            if (catchType == ct && sp == startPos) {
                 return i;
             }
         }

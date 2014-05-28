@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,101 +27,64 @@
  * @summary  Test to make sure that relative paths are redirected in the
  *           output so that they are not broken.
  * @author   jamieh
- * @library  ../lib/
+ * @library  ../lib
  * @build    JavadocTester
- * @build    TestRelativeLinks
  * @run main TestRelativeLinks
  */
 
 public class TestRelativeLinks extends JavadocTester {
 
-    //Test information.
-    private static final String BUG_ID = "4460354-8014636";
-
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-use", "-sourcepath", SRC_DIR, "pkg", "pkg2"
-    };
-
-    //Input for string search tests.
-    private static final String[][] TEST = {
-        //These relative paths should stay relative because they appear
-        //in the right places.
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<a href=\"relative-class-link.html\">relative class link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<a href=\"relative-field-link.html\">relative field link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<a href=\"relative-method-link.html\">relative method link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
-            "<a href=\"relative-package-link.html\">relative package link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "C.html",
-            " <a" + NL +
-            " href=\"relative-multi-line-link.html\">relative-multi-line-link</a>."},
-
-        //These relative paths should be redirected because they are in different
-        //places.
-
-        //INDEX PAGE
-        {BUG_ID + FS + "index-all.html",
-            "<a href=\"./pkg/relative-class-link.html\">relative class link</a>"},
-        {BUG_ID + FS + "index-all.html",
-            "<a href=\"./pkg/relative-field-link.html\">relative field link</a>"},
-        {BUG_ID + FS + "index-all.html",
-            "<a href=\"./pkg/relative-method-link.html\">relative method link</a>"},
-        {BUG_ID + FS + "index-all.html",
-            "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
-        {BUG_ID + FS + "index-all.html",
-            " <a" + NL +
-            " href=\"./pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
-
-
-        //PACKAGE USE
-        {BUG_ID + FS + "pkg" + FS + "package-use.html",
-            "<a href=\"../pkg/relative-package-link.html\">relative package link</a>."},
-        {BUG_ID + FS + "pkg" + FS + "package-use.html",
-            "<a href=\"../pkg/relative-class-link.html\">relative class link</a>"},
-
-        //CLASS_USE
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
-            "<a href=\"../../pkg/relative-field-link.html\">relative field link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
-            "<a href=\"../../pkg/relative-method-link.html\">relative method link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
-            "<a href=\"../../pkg/relative-package-link.html\">relative package link</a>"},
-        {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
-            " <a" + NL +
-            " href=\"../../pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
-
-        //PACKAGE OVERVIEW
-        {BUG_ID + FS + "overview-summary.html",
-            "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
-
-
-    };
-    private static final String[][] NEGATED_TEST = NO_TEST;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestRelativeLinks tester = new TestRelativeLinks();
-        run(tester, ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-use",
+                "-sourcepath", testSrc,
+                "pkg", "pkg2");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        // These relative paths should stay relative because they appear
+        // in the right places.
+        checkOutput("pkg/C.html", true,
+            "<a href=\"relative-class-link.html\">relative class link</a>",
+            "<a href=\"relative-field-link.html\">relative field link</a>",
+            "<a href=\"relative-method-link.html\">relative method link</a>",
+            " <a\n" +
+            " href=\"relative-multi-line-link.html\">relative-multi-line-link</a>.");
+        checkOutput("pkg/package-summary.html", true,
+            "<a href=\"relative-package-link.html\">relative package link</a>");
+
+        // These relative paths should be redirected because they are in different
+        // places.
+
+        // INDEX PAGE
+        checkOutput("index-all.html", true,
+            "<a href=\"./pkg/relative-class-link.html\">relative class link</a>",
+            "<a href=\"./pkg/relative-field-link.html\">relative field link</a>",
+            "<a href=\"./pkg/relative-method-link.html\">relative method link</a>",
+            "<a href=\"./pkg/relative-package-link.html\">relative package link</a>",
+            " <a\n" +
+            " href=\"./pkg/relative-multi-line-link.html\">relative-multi-line-link</a>.");
+
+        // PACKAGE USE
+        checkOutput("pkg/package-use.html", true,
+            "<a href=\"../pkg/relative-package-link.html\">relative package link</a>.",
+            "<a href=\"../pkg/relative-class-link.html\">relative class link</a>");
+
+        // CLASS_USE
+        checkOutput("pkg/class-use/C.html", true,
+            "<a href=\"../../pkg/relative-field-link.html\">relative field link</a>",
+            "<a href=\"../../pkg/relative-method-link.html\">relative method link</a>",
+            "<a href=\"../../pkg/relative-package-link.html\">relative package link</a>",
+            " <a\n" +
+            " href=\"../../pkg/relative-multi-line-link.html\">relative-multi-line-link</a>.");
+
+        // PACKAGE OVERVIEW
+        checkOutput("overview-summary.html", true,
+            "<a href=\"./pkg/relative-package-link.html\">relative package link</a>");
     }
 }

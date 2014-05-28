@@ -131,6 +131,12 @@ public class ClassReader {
     public boolean preferSource;
 
     /**
+     * Switch: Search classpath and sourcepath for classes before the
+     * bootclasspath
+     */
+    public boolean userPathsFirst;
+
+    /**
      * The currently selected profile.
      */
     public final Profile profile;
@@ -270,6 +276,7 @@ public class ClassReader {
         saveParameterNames = options.isSet("save-parameter-names");
         cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
+        userPathsFirst = options.isSet(XXUSERPATHSFIRST);
 
         profile = Profile.instance(context);
 
@@ -475,14 +482,14 @@ public class ClassReader {
             break;
         case CONSTANT_Fieldref: {
             ClassSymbol owner = readClassSymbol(getChar(index + 1));
-            NameAndType nt = (NameAndType)readPool(getChar(index + 3));
+            NameAndType nt = readNameAndType(getChar(index + 3));
             poolObj[i] = new VarSymbol(0, nt.name, nt.uniqueType.type, owner);
             break;
         }
         case CONSTANT_Methodref:
         case CONSTANT_InterfaceMethodref: {
             ClassSymbol owner = readClassSymbol(getChar(index + 1));
-            NameAndType nt = (NameAndType)readPool(getChar(index + 3));
+            NameAndType nt = readNameAndType(getChar(index + 3));
             poolObj[i] = new MethodSymbol(0, nt.name, nt.uniqueType.type, owner);
             break;
         }
@@ -551,13 +558,34 @@ public class ClassReader {
     /** Read class entry.
      */
     ClassSymbol readClassSymbol(int i) {
-        return (ClassSymbol) (readPool(i));
+        Object obj = readPool(i);
+        if (obj != null && !(obj instanceof ClassSymbol))
+            throw badClassFile("bad.const.pool.entry",
+                               currentClassFile.toString(),
+                               "CONSTANT_Class_info", i);
+        return (ClassSymbol)obj;
     }
 
     /** Read name.
      */
     Name readName(int i) {
-        return (Name) (readPool(i));
+        Object obj = readPool(i);
+        if (obj != null && !(obj instanceof Name))
+            throw badClassFile("bad.const.pool.entry",
+                               currentClassFile.toString(),
+                               "CONSTANT_Utf8_info or CONSTANT_String_info", i);
+        return (Name)obj;
+    }
+
+    /** Read name and type.
+     */
+    NameAndType readNameAndType(int i) {
+        Object obj = readPool(i);
+        if (obj != null && !(obj instanceof NameAndType))
+            throw badClassFile("bad.const.pool.entry",
+                               currentClassFile.toString(),
+                               "CONSTANT_NameAndType_info", i);
+        return (NameAndType)obj;
     }
 
 /************************************************************************
@@ -596,18 +624,18 @@ public class ClassReader {
         case '+': {
             sigp++;
             Type t = sigToType();
-            return new WildcardType(t, BoundKind.EXTENDS,
-                                    syms.boundClass);
+            return new WildcardType(t, BoundKind.EXTENDS, syms.boundClass,
+                                    Type.noAnnotations);
         }
         case '*':
             sigp++;
             return new WildcardType(syms.objectType, BoundKind.UNBOUND,
-                                    syms.boundClass);
+                                    syms.boundClass, Type.noAnnotations);
         case '-': {
             sigp++;
             Type t = sigToType();
-            return new WildcardType(t, BoundKind.SUPER,
-                                    syms.boundClass);
+            return new WildcardType(t, BoundKind.SUPER, syms.boundClass,
+                                    Type.noAnnotations);
         }
         case 'B':
             sigp++;
@@ -652,7 +680,8 @@ public class ClassReader {
             return syms.booleanType;
         case '[':
             sigp++;
-            return new ArrayType(sigToType(), syms.arrayClass);
+            return new ArrayType(sigToType(), syms.arrayClass,
+                                 Type.noAnnotations);
         case '(':
             sigp++;
             List<Type> argtypes = sigToTypes(')');
@@ -707,7 +736,8 @@ public class ClassReader {
                 try {
                     return (outer == Type.noType) ?
                             t.erasure(types) :
-                            new ClassType(outer, List.<Type>nil(), t);
+                        new ClassType(outer, List.<Type>nil(), t,
+                                      Type.noAnnotations);
                 } finally {
                     sbp = startSbp;
                 }
@@ -717,7 +747,8 @@ public class ClassReader {
                 ClassSymbol t = syms.enterClass(names.fromUtf(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
-                outer = new ClassType(outer, sigToTypes('>'), t) {
+                outer = new ClassType(outer, sigToTypes('>'), t,
+                                      Type.noAnnotations) {
                         boolean completed = false;
                         @Override
                         public Type getEnclosingType() {
@@ -780,7 +811,8 @@ public class ClassReader {
                     t = syms.enterClass(names.fromUtf(signatureBuffer,
                                                  startSbp,
                                                  sbp - startSbp));
-                    outer = new ClassType(outer, List.<Type>nil(), t);
+                    outer = new ClassType(outer, List.<Type>nil(), t,
+                                          Type.noAnnotations);
                 }
                 signatureBuffer[sbp++] = (byte)'$';
                 continue;
@@ -843,7 +875,8 @@ public class ClassReader {
         Name name = names.fromUtf(signature, start, sigp - start);
         TypeVar tvar;
         if (sigEnterPhase) {
-            tvar = new TypeVar(name, currentOwner, syms.botType);
+            tvar = new TypeVar(name, currentOwner, syms.botType,
+                               Type.noAnnotations);
             typevars.enter(tvar.tsym);
         } else {
             tvar = (TypeVar)findTypeVar(name);
@@ -882,7 +915,8 @@ public class ClassReader {
                 // we don't know for sure if this owner is correct.  It could
                 // be a method and there is no way to tell before reading the
                 // enclosing method attribute.
-                TypeVar t = new TypeVar(name, currentOwner, syms.botType);
+                TypeVar t = new TypeVar(name, currentOwner, syms.botType,
+                                        Type.noAnnotations);
                 missingTypeVariables = missingTypeVariables.prepend(t);
                 // System.err.println("Missing type var " + name);
                 return t;
@@ -1209,7 +1243,7 @@ public class ClassReader {
         sym.owner.members().remove(sym);
         ClassSymbol self = (ClassSymbol)sym;
         ClassSymbol c = readClassSymbol(nextChar());
-        NameAndType nt = (NameAndType)readPool(nextChar());
+        NameAndType nt = readNameAndType(nextChar());
 
         if (c.members_field == null)
             throw badClassFile("bad.enclosing.class", self, c);
@@ -1506,35 +1540,41 @@ public class ClassReader {
         // local variable
         case LOCAL_VARIABLE: {
             final int table_length = nextChar();
-            final TypeAnnotationPosition position =
-                TypeAnnotationPosition.localVariable(readTypePath());
-
-            position.lvarOffset = new int[table_length];
-            position.lvarLength = new int[table_length];
-            position.lvarIndex = new int[table_length];
+            final int[] newLvarOffset = new int[table_length];
+            final int[] newLvarLength = new int[table_length];
+            final int[] newLvarIndex = new int[table_length];
 
             for (int i = 0; i < table_length; ++i) {
-                position.lvarOffset[i] = nextChar();
-                position.lvarLength[i] = nextChar();
-                position.lvarIndex[i] = nextChar();
+                newLvarOffset[i] = nextChar();
+                newLvarLength[i] = nextChar();
+                newLvarIndex[i] = nextChar();
             }
+
+            final TypeAnnotationPosition position =
+                    TypeAnnotationPosition.localVariable(readTypePath());
+            position.lvarOffset = newLvarOffset;
+            position.lvarLength = newLvarLength;
+            position.lvarIndex = newLvarIndex;
             return position;
         }
         // resource variable
         case RESOURCE_VARIABLE: {
             final int table_length = nextChar();
-            final TypeAnnotationPosition position =
-                TypeAnnotationPosition.resourceVariable(readTypePath());
-
-            position.lvarOffset = new int[table_length];
-            position.lvarLength = new int[table_length];
-            position.lvarIndex = new int[table_length];
+            final int[] newLvarOffset = new int[table_length];
+            final int[] newLvarLength = new int[table_length];
+            final int[] newLvarIndex = new int[table_length];
 
             for (int i = 0; i < table_length; ++i) {
-                position.lvarOffset[i] = nextChar();
-                position.lvarLength[i] = nextChar();
-                position.lvarIndex[i] = nextChar();
+                newLvarOffset[i] = nextChar();
+                newLvarLength[i] = nextChar();
+                newLvarIndex[i] = nextChar();
             }
+
+            final TypeAnnotationPosition position =
+                    TypeAnnotationPosition.resourceVariable(readTypePath());
+            position.lvarOffset = newLvarOffset;
+            position.lvarLength = newLvarLength;
+            position.lvarIndex = newLvarIndex;
             return position;
         }
         // exception parameter
@@ -1542,7 +1582,7 @@ public class ClassReader {
             final int exception_index = nextChar();
             final TypeAnnotationPosition position =
                 TypeAnnotationPosition.exceptionParameter(readTypePath());
-            position.exception_index = exception_index;
+            position.setExceptionIndex(exception_index);
             return position;
         }
         // method receiver
@@ -2501,6 +2541,8 @@ public class ClassReader {
                 return;
             } catch (IOException ex) {
                 throw badClassFile("unable.to.access.file", ex.getMessage());
+            } catch (ArrayIndexOutOfBoundsException ex) {
+                throw badClassFile("bad.class.file", c.flatname);
             } finally {
                 currentClassFile = previousClassFile;
             }
@@ -2626,7 +2668,7 @@ public class ClassReader {
                 if (c.owner == p)  // it might be an inner class
                     p.members_field.enter(c);
             }
-        } else if (c.classfile != null && (c.flags_field & seen) == 0) {
+        } else if (!preferCurrent && c.classfile != null && (c.flags_field & seen) == 0) {
             // if c.classfile == null, we are currently compiling this class
             // and no further action is necessary.
             // if (c.flags_field & seen) != 0, we have already encountered
@@ -2672,19 +2714,32 @@ public class ClassReader {
 
     private boolean verbosePath = true;
 
+    // Set to true when the currently selected file should be kept
+    private boolean preferCurrent;
+
     /** Load directory of package into members scope.
      */
     private void fillIn(PackageSymbol p) throws IOException {
-        if (p.members_field == null) p.members_field = new Scope(p);
-        String packageName = p.fullname.toString();
+        if (p.members_field == null)
+            p.members_field = new Scope(p);
 
+        preferCurrent = false;
+        if (userPathsFirst) {
+            scanUserPaths(p);
+            preferCurrent = true;
+            scanPlatformPath(p);
+        } else {
+            scanPlatformPath(p);
+            scanUserPaths(p);
+        }
+        verbosePath = false;
+    }
+
+    /**
+     * Scans class path and source path for files in given package.
+     */
+    private void scanUserPaths(PackageSymbol p) throws IOException {
         Set<JavaFileObject.Kind> kinds = getPackageFileKinds();
-
-        fillIn(p, PLATFORM_CLASS_PATH,
-               fileManager.list(PLATFORM_CLASS_PATH,
-                                packageName,
-                                EnumSet.of(JavaFileObject.Kind.CLASS),
-                                false));
 
         Set<JavaFileObject.Kind> classKinds = EnumSet.copyOf(kinds);
         classKinds.remove(JavaFileObject.Kind.SOURCE);
@@ -2725,6 +2780,7 @@ public class ClassReader {
             }
         }
 
+        String packageName = p.fullname.toString();
         if (wantSourceFiles && !haveSourcePath) {
             fillIn(p, CLASS_PATH,
                    fileManager.list(CLASS_PATH,
@@ -2745,7 +2801,17 @@ public class ClassReader {
                                         sourceKinds,
                                         false));
         }
-        verbosePath = false;
+    }
+
+    /**
+     * Scans platform class path for files in given package.
+     */
+    private void scanPlatformPath(PackageSymbol p) throws IOException {
+        fillIn(p, PLATFORM_CLASS_PATH,
+               fileManager.list(PLATFORM_CLASS_PATH,
+                                p.fullname.toString(),
+                                EnumSet.of(JavaFileObject.Kind.CLASS),
+                                false));
     }
     // where
         private void fillIn(PackageSymbol p,

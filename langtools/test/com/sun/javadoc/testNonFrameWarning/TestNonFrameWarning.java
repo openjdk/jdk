@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,46 +26,28 @@
  * @bug 7001086
  * @summary Test Non-frame warning.
  * @author Bhavesh Patel
- * @library ../lib/
- * @build JavadocTester TestNonFrameWarning
+ * @library ../lib
+ * @build JavadocTester
  * @run main TestNonFrameWarning
  */
 
 public class TestNonFrameWarning extends JavadocTester {
 
-    private static final String BUG_ID = "7001086";
-    private static final String[][] TEST = {
-        {BUG_ID + FS + "index.html",
-            "<p>This document is designed to be viewed using the frames feature. " +
-            "If you see this message, you are using a non-frame-capable web client. " +
-            "Link to <a href=\"pkg/package-summary.html\">Non-frame version</a>.</p>"
-        }
-    };
-    private static final String[] ARGS = new String[]{
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
-    };
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
+    public static void main(String... args) throws Exception {
         TestNonFrameWarning tester = new TestNonFrameWarning();
-        run(tester, ARGS, TEST, NO_TEST);
-        tester.printSummary();
+        tester.runTests();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugId() {
-        return BUG_ID;
-    }
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBugName() {
-        return getClass().getName();
+        checkOutput("index.html", true,
+                "<p>This document is designed to be viewed using the frames feature. "
+                + "If you see this message, you are using a non-frame-capable web client. "
+                + "Link to <a href=\"pkg/package-summary.html\">Non-frame version</a>.</p>");
     }
 }

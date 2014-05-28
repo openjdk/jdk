@@ -70,16 +70,7 @@ public class Jstat {
                 logSamples();
             }
         } catch (MonitorException e) {
-            if (e.getMessage() != null) {
-                System.err.println(e.getMessage());
-            } else {
-                Throwable cause = e.getCause();
-                if ((cause != null) && (cause.getMessage() != null)) {
-                    System.err.println(cause.getMessage());
-                } else {
-                    e.printStackTrace();
-                }
-            }
+            e.printStackTrace();
             System.exit(1);
         }
         System.exit(0);

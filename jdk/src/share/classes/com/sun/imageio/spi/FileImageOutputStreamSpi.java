@@ -37,7 +37,7 @@ public class FileImageOutputStreamSpi extends ImageOutputStreamSpi {
 
     private static final String version = "1.0";
 
-    private static final Class outputClass = File.class;
+    private static final Class<?> outputClass = File.class;
 
     public FileImageOutputStreamSpi() {
         super(vendorName, version, outputClass);

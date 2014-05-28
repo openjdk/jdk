@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ class ArchDesc;
 // This class defines a nicely behaved buffer of text.  Entire file of text
 // is read into buffer at creation, with sentinels at start and end.
 class FileBuff {
-  friend class FileBuffRegion;
  private:
   long  _bufferSize;            // Size of text holding buffer.
   long  _offset;                // Expected filepointer offset.
@@ -82,29 +81,4 @@ class FileBuff {
   // when the pointer is valid (i.e. just obtained from getline()).
   long getoff(const char* s) { return _bufoff + (long)(s - _buf); }
 };
-
-//------------------------------FileBuffRegion---------------------------------
-// A buffer region is really a region of some file, specified as a linked list
-// of offsets and lengths.  These regions can be merged; overlapping regions
-// will coalesce.
-class FileBuffRegion {
- public:                        // Workaround dev-studio friend/private bug
-  FileBuffRegion *_next;        // Linked list of regions sorted by offset.
- private:
-  FileBuff       *_bfr;         // The Buffer of the file
-  int _offset, _length;         // The file area
-  int             _sol;         // Start of line where the file area starts
-  int             _line;        // First line of region
-
- public:
-  FileBuffRegion(FileBuff*, int sol, int line, int offset, int len);
-  ~FileBuffRegion();
-
-  FileBuffRegion *copy();                   // Deep copy
-  FileBuffRegion *merge(FileBuffRegion*); // Merge 2 regions; delete input
-
-  void print(ostream&);
-  friend ostream& operator<< (ostream&, FileBuffRegion&);
-};
-
 #endif // SHARE_VM_ADLC_FILEBUFF_HPP
