@@ -122,35 +122,28 @@ JNIEXPORT jlong JNICALL Java_sun_security_smartcardio_PCSC_SCardEstablishContext
 /**
  * Convert a multi string to a java string array,
  */
-jobjectArray pcsc_multi2jstring(JNIEnv *env, char *spec) {
+jobjectArray pcsc_multi2jstring(JNIEnv *env, char *spec, DWORD size) {
     jobjectArray result;
     jclass stringClass;
-    char *cp, **tab;
+    char* tab[PCSCLITE_MAX_READERS_CONTEXTS];
     jstring js;
     int cnt = 0;
+    DWORD i;
 
-    cp = spec;
-    while (*cp != 0) {
-        cp += (strlen(cp) + 1);
-        ++cnt;
-    }
-
-    tab = (char **)malloc(cnt * sizeof(char *));
-    if (tab == NULL) {
-        throwOutOfMemoryError(env, NULL);
-        return NULL;
-    }
-
-    cnt = 0;
-    cp = spec;
-    while (*cp != 0) {
-        tab[cnt++] = cp;
-        cp += (strlen(cp) + 1);
+    if (spec && size) {
+        spec[size - 1] = 0;
+        for (i = 0; i < size && spec[i]; ++i) {
+            tab[cnt++] = spec + i;
+            if (cnt == PCSCLITE_MAX_READERS_CONTEXTS) {
+                break;
+            }
+            for (++i; i < size && spec[i]; ++i) {
+            }
+        }
     }
 
     stringClass = (*env)->FindClass(env, "java/lang/String");
     if (stringClass == NULL) {
-        free(tab);
         return NULL;
     }
 
@@ -159,18 +152,15 @@ jobjectArray pcsc_multi2jstring(JNIEnv *env, char *spec) {
         while (cnt-- > 0) {
             js = (*env)->NewStringUTF(env, tab[cnt]);
             if ((*env)->ExceptionCheck(env)) {
-                free(tab);
                 return NULL;
             }
             (*env)->SetObjectArrayElement(env, result, cnt, js);
             if ((*env)->ExceptionCheck(env)) {
-                free(tab);
                 return NULL;
             }
             (*env)->DeleteLocalRef(env, js);
         }
     }
-    free(tab);
     return result;
 }
 
@@ -179,7 +169,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_security_smartcardio_PCSC_SCardListReade
 {
     SCARDCONTEXT context = (SCARDCONTEXT)jContext;
     LONG rv;
-    LPTSTR mszReaders;
+    LPTSTR mszReaders = NULL;
     DWORD size = 0;
     jobjectArray result;
 
@@ -190,20 +180,22 @@ JNIEXPORT jobjectArray JNICALL Java_sun_security_smartcardio_PCSC_SCardListReade
     }
     dprintf1("-size: %d\n", size);
 
-    mszReaders = malloc(size);
-    if (mszReaders == NULL) {
-        throwOutOfMemoryError(env, NULL);
-        return NULL;
+    if (size) {
+        mszReaders = malloc(size);
+        if (mszReaders == NULL) {
+            throwOutOfMemoryError(env, NULL);
+            return NULL;
+        }
+
+        rv = CALL_SCardListReaders(context, NULL, mszReaders, &size);
+        if (handleRV(env, rv)) {
+            free(mszReaders);
+            return NULL;
+        }
+        dprintf1("-String: %s\n", mszReaders);
     }
 
-    rv = CALL_SCardListReaders(context, NULL, mszReaders, &size);
-    if (handleRV(env, rv)) {
-        free(mszReaders);
-        return NULL;
-    }
-    dprintf1("-String: %s\n", mszReaders);
-
-    result = pcsc_multi2jstring(env, mszReaders);
+    result = pcsc_multi2jstring(env, mszReaders, size);
     free(mszReaders);
     return result;
 }
@@ -336,7 +328,7 @@ JNIEXPORT jintArray JNICALL Java_sun_security_smartcardio_PCSC_SCardGetStatusCha
     const char *readerName;
 
     readerState = calloc(readers, sizeof(SCARD_READERSTATE));
-    if (readerState == NULL) {
+    if (readerState == NULL && readers > 0) {
         throwOutOfMemoryError(env, NULL);
         return NULL;
     }
@@ -345,6 +337,10 @@ JNIEXPORT jintArray JNICALL Java_sun_security_smartcardio_PCSC_SCardGetStatusCha
     if (currentState == NULL) {
         free(readerState);
         return NULL;
+    }
+
+    for (i = 0; i < readers; i++) {
+        readerState[i].szReader = NULL;
     }
 
     for (i = 0; i < readers; i++) {
@@ -369,9 +365,11 @@ JNIEXPORT jintArray JNICALL Java_sun_security_smartcardio_PCSC_SCardGetStatusCha
         (*env)->DeleteLocalRef(env, jReaderName);
     }
 
-    rv = CALL_SCardGetStatusChange(context, (DWORD)jTimeout, readerState, readers);
-    if (handleRV(env, rv)) {
-        goto cleanup;
+    if (readers > 0) {
+        rv = CALL_SCardGetStatusChange(context, (DWORD)jTimeout, readerState, readers);
+        if (handleRV(env, rv)) {
+            goto cleanup;
+        }
     }
 
     jEventState = (*env)->NewIntArray(env, readers);
