@@ -1800,8 +1800,7 @@ public class Gen extends JCTree.Visitor {
             genStat(tree.thenpart, env, CRT_STATEMENT | CRT_FLOW_TARGET);
             thenExit = code.branch(goto_);
             if (varDebugInfo && lvtRanges.containsKey(code.meth, tree.thenpart)) {
-                code.closeAliveRanges(tree.thenpart,
-                        thenExit != null && tree.elsepart == null ? thenExit.pc : code.cp);
+                code.closeAliveRanges(tree.thenpart, code.cp);
             }
         }
         if (elseChain != null) {
