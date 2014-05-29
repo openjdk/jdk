@@ -1434,7 +1434,7 @@ void JavaThread::initialize() {
   _in_deopt_handler = 0;
   _doing_unsafe_access = false;
   _stack_guard_state = stack_guard_unused;
-  (void)const_cast<oop&>(_exception_oop = NULL);
+  (void)const_cast<oop&>(_exception_oop = oop(NULL));
   _exception_pc  = 0;
   _exception_handler_pc = 0;
   _is_method_handle_return = 0;
