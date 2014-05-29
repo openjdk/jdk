@@ -1267,8 +1267,10 @@ IRT_END
 // This is a support of the JVMTI PopFrame interface.
 // Make sure it is an invokestatic of a polymorphic intrinsic that has a member_name argument
 // and return it as a vm_result so that it can be reloaded in the list of invokestatic parameters.
-// The dmh argument is a reference to a DirectMethoHandle that has a member name field.
-IRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* thread, address dmh,
+// The member_name argument is a saved reference (in local#0) to the member_name.
+// For backward compatibility with some JDK versions (7, 8) it can also be a direct method handle.
+// FIXME: remove DMH case after j.l.i.InvokerBytecodeGenerator code shape is updated.
+IRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* thread, address member_name,
                                                             Method* method, address bcp))
   Bytecodes::Code code = Bytecodes::code_at(method, bcp);
   if (code != Bytecodes::_invokestatic) {
@@ -1280,8 +1282,12 @@ IRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* thread, 
   Symbol* mname = cpool->name_ref_at(cp_index);
 
   if (MethodHandles::has_member_arg(cname, mname)) {
-    oop member_name = java_lang_invoke_DirectMethodHandle::member((oop)dmh);
-    thread->set_vm_result(member_name);
+    oop member_name_oop = (oop) member_name;
+    if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
+      // FIXME: remove after j.l.i.InvokerBytecodeGenerator code shape is updated.
+      member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
+    }
+    thread->set_vm_result(member_name_oop);
   }
 IRT_END
 #endif // INCLUDE_JVMTI
