@@ -78,7 +78,7 @@ void NativeInstruction::verify() {
 }
 
 void NativeInstruction::print() {
-  tty->print_cr(INTPTR_FORMAT ": 0x%x", addr_at(0), long_at(0));
+  tty->print_cr(INTPTR_FORMAT ": 0x%x", p2i(addr_at(0)), long_at(0));
 }
 
 void NativeInstruction::set_long_at(int offset, int i) {
@@ -142,7 +142,7 @@ void NativeCall::verify() {
 }
 
 void NativeCall::print() {
-  tty->print_cr(INTPTR_FORMAT ": call " INTPTR_FORMAT, instruction_address(), destination());
+  tty->print_cr(INTPTR_FORMAT ": call " INTPTR_FORMAT, p2i(instruction_address()), p2i(destination()));
 }
 
 
@@ -271,7 +271,7 @@ bool NativeFarCall::is_call_at(address instr) {
 }
 
 void NativeFarCall::print() {
-  tty->print_cr(INTPTR_FORMAT ": call " INTPTR_FORMAT, instruction_address(), destination());
+  tty->print_cr(INTPTR_FORMAT ": call " INTPTR_FORMAT, p2i(instruction_address()), p2i(destination()));
 }
 
 bool NativeFarCall::destination_is_compiled_verified_entry_point() {
@@ -324,7 +324,7 @@ void NativeMovConstReg::verify() {
 
 
 void NativeMovConstReg::print() {
-  tty->print_cr(INTPTR_FORMAT ": mov reg, " INTPTR_FORMAT, instruction_address(), data());
+  tty->print_cr(INTPTR_FORMAT ": mov reg, " INTPTR_FORMAT, p2i(instruction_address()), data());
 }
 
 
@@ -446,7 +446,7 @@ void NativeMovConstRegPatching::verify() {
 
 
 void NativeMovConstRegPatching::print() {
-  tty->print_cr(INTPTR_FORMAT ": mov reg, " INTPTR_FORMAT, instruction_address(), data());
+  tty->print_cr(INTPTR_FORMAT ": mov reg, 0x%x", p2i(instruction_address()), data());
 }
 
 
@@ -585,9 +585,10 @@ void NativeMovRegMem::verify() {
 
 void NativeMovRegMem::print() {
   if (is_immediate()) {
-    tty->print_cr(INTPTR_FORMAT ": mov reg, [reg + %x]", instruction_address(), offset());
+    // offset is a signed 13-bit immediate, so casting it to int will not lose significant bits
+    tty->print_cr(INTPTR_FORMAT ": mov reg, [reg + %d]", p2i(instruction_address()), (int)offset());
   } else {
-    tty->print_cr(INTPTR_FORMAT ": mov reg, [reg + reg]", instruction_address());
+    tty->print_cr(INTPTR_FORMAT ": mov reg, [reg + reg]", p2i(instruction_address()));
   }
 }
 
@@ -730,9 +731,9 @@ void NativeMovRegMemPatching::verify() {
 
 void NativeMovRegMemPatching::print() {
   if (is_immediate()) {
-    tty->print_cr(INTPTR_FORMAT ": mov reg, [reg + %x]", instruction_address(), offset());
+    tty->print_cr(INTPTR_FORMAT ": mov reg, [reg + %d]", p2i(instruction_address()), offset());
   } else {
-    tty->print_cr(INTPTR_FORMAT ": mov reg, [reg + reg]", instruction_address());
+    tty->print_cr(INTPTR_FORMAT ": mov reg, [reg + reg]", p2i(instruction_address()));
   }
 }
 
@@ -863,7 +864,7 @@ void NativeJump::verify() {
 
 
 void NativeJump::print() {
-  tty->print_cr(INTPTR_FORMAT ": jmpl reg, " INTPTR_FORMAT, instruction_address(), jump_destination());
+  tty->print_cr(INTPTR_FORMAT ": jmpl reg, " INTPTR_FORMAT, p2i(instruction_address()), p2i(jump_destination()));
 }
 
 
