@@ -395,6 +395,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             compile.setEnd(Double.parseDouble(search(atts, "stamp")));
             if (Integer.parseInt(search(atts, "success")) == 0) {
                 compile.setFailureReason(failureReason);
+                failureReason = null;
             }
         } else if (qname.equals("make_not_entrant")) {
             String id = makeId(atts);
@@ -451,6 +452,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             nmethods.put(id, nm);
             events.add(nm);
         } else if (qname.equals("parse")) {
+            if (failureReason != null && scopes.size() == 0 && !lateInlining) {
+                failureReason = null;
+                compile.reset();
+                site = compile.getCall();
+            }
+
             if (methodHandleSite != null) {
                 throw new InternalError("method handle site should have been replaced");
             }
@@ -529,6 +536,18 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
 
             site = compile.getCall().findCallSite(thisCallScopes);
             if (site == null) {
+                System.out.println("call scopes:");
+                for (CallSite c : thisCallScopes) {
+                    System.out.println(c.getMethod() + " " + c.getBci() + " " + c.getInlineId());
+                }
+                CallSite c = thisCallScopes.getLast();
+                if (c.getInlineId() != 0) {
+                    System.out.println("Looking for call site in entire tree:");
+                    ArrayDeque<CallSite> stack = compile.getCall().findCallSite2(c);
+                    for (CallSite c2 : stack) {
+                        System.out.println(c2.getMethod() + " " + c2.getBci() + " " + c2.getInlineId());
+                    }
+                }
                 System.out.println(caller.getMethod() + " bci: " + bci);
                 throw new InternalError("couldn't find call site");
             }

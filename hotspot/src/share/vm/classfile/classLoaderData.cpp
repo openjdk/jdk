@@ -274,6 +274,8 @@ void ClassLoaderData::add_class(Klass* k) {
   MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
   Klass* old_value = _klasses;
   k->set_next_link(old_value);
+  // Make sure linked class is stable, since the class list is walked without a lock
+  OrderAccess::storestore();
   // link the new item into the list
   _klasses = k;
 
