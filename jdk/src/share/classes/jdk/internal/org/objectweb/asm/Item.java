@@ -237,9 +237,10 @@ final class Item {
         this.strVal2 = strVal2;
         this.strVal3 = strVal3;
         switch (type) {
+        case ClassWriter.CLASS:
+            this.intVal = 0;     // intVal of a class must be zero, see visitInnerClass
         case ClassWriter.UTF8:
         case ClassWriter.STR:
-        case ClassWriter.CLASS:
         case ClassWriter.MTYPE:
         case ClassWriter.TYPE_NORMAL:
             hashCode = 0x7FFFFFFF & (type + strVal1.hashCode());
