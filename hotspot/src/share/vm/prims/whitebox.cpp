@@ -503,6 +503,159 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   }
 WB_END
 
+template <typename T>
+static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, bool (*TAt)(const char*, T*)) {
+  if (name == NULL) {
+    return false;
+  }
+  ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  const char* flag_name = env->GetStringUTFChars(name, NULL);
+  bool result = (*TAt)(flag_name, value);
+  env->ReleaseStringUTFChars(name, flag_name);
+  return result;
+}
+
+template <typename T>
+static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, bool (*TAtPut)(const char*, T*, Flag::Flags)) {
+  if (name == NULL) {
+    return false;
+  }
+  ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  const char* flag_name = env->GetStringUTFChars(name, NULL);
+  bool result = (*TAtPut)(flag_name, value, Flag::INTERNAL);
+  env->ReleaseStringUTFChars(name, flag_name);
+  return result;
+}
+
+template <typename T>
+static jobject box(JavaThread* thread, JNIEnv* env, Symbol* name, Symbol* sig, T value) {
+  ResourceMark rm(thread);
+  jclass clazz = env->FindClass(name->as_C_string());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  jmethodID methodID = env->GetStaticMethodID(clazz,
+        vmSymbols::valueOf_name()->as_C_string(),
+        sig->as_C_string());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  jobject result = env->CallStaticObjectMethod(clazz, methodID, value);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  return result;
+}
+
+static jobject booleanBox(JavaThread* thread, JNIEnv* env, jboolean value) {
+  return box(thread, env, vmSymbols::java_lang_Boolean(), vmSymbols::Boolean_valueOf_signature(), value);
+}
+static jobject integerBox(JavaThread* thread, JNIEnv* env, jint value) {
+  return box(thread, env, vmSymbols::java_lang_Integer(), vmSymbols::Integer_valueOf_signature(), value);
+}
+static jobject longBox(JavaThread* thread, JNIEnv* env, jlong value) {
+  return box(thread, env, vmSymbols::java_lang_Long(), vmSymbols::Long_valueOf_signature(), value);
+}
+/* static jobject floatBox(JavaThread* thread, JNIEnv* env, jfloat value) {
+  return box(thread, env, vmSymbols::java_lang_Float(), vmSymbols::Float_valueOf_signature(), value);
+}*/
+static jobject doubleBox(JavaThread* thread, JNIEnv* env, jdouble value) {
+  return box(thread, env, vmSymbols::java_lang_Double(), vmSymbols::Double_valueOf_signature(), value);
+}
+
+WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
+  bool result;
+  if (GetVMFlag <bool> (thread, env, name, &result, &CommandLineFlags::boolAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return booleanBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetIntxVMFlag(JNIEnv* env, jobject o, jstring name))
+  intx result;
+  if (GetVMFlag <intx> (thread, env, name, &result, &CommandLineFlags::intxAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetUintxVMFlag(JNIEnv* env, jobject o, jstring name))
+  uintx result;
+  if (GetVMFlag <uintx> (thread, env, name, &result, &CommandLineFlags::uintxAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
+  uint64_t result;
+  if (GetVMFlag <uint64_t> (thread, env, name, &result, &CommandLineFlags::uint64_tAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))
+  double result;
+  if (GetVMFlag <double> (thread, env, name, &result, &CommandLineFlags::doubleAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return doubleBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(jstring, WB_GetStringVMFlag(JNIEnv* env, jobject o, jstring name))
+  ccstr ccstrResult;
+  if (GetVMFlag <ccstr> (thread, env, name, &ccstrResult, &CommandLineFlags::ccstrAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    jstring result = env->NewStringUTF(ccstrResult);
+    CHECK_JNI_EXCEPTION_(env, NULL);
+    return result;
+  }
+  return NULL;
+WB_END
+
+WB_ENTRY(void, WB_SetBooleanVMFlag(JNIEnv* env, jobject o, jstring name, jboolean value))
+  bool result = value == JNI_TRUE ? true : false;
+  SetVMFlag <bool> (thread, env, name, &result, &CommandLineFlags::boolAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetIntxVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
+  intx result = value;
+  SetVMFlag <intx> (thread, env, name, &result, &CommandLineFlags::intxAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetUintxVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
+  uintx result = value;
+  SetVMFlag <uintx> (thread, env, name, &result, &CommandLineFlags::uintxAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetUint64VMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
+  uint64_t result = value;
+  SetVMFlag <uint64_t> (thread, env, name, &result, &CommandLineFlags::uint64_tAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetDoubleVMFlag(JNIEnv* env, jobject o, jstring name, jdouble value))
+  double result = value;
+  SetVMFlag <double> (thread, env, name, &result, &CommandLineFlags::doubleAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring value))
+  ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  const char* ccstrValue = (value == NULL) ? NULL : env->GetStringUTFChars(value, NULL);
+  ccstr ccstrResult = ccstrValue;
+  bool needFree;
+  {
+    ThreadInVMfromNative ttvfn(thread); // back to VM
+    needFree = SetVMFlag <ccstr> (thread, env, name, &ccstrResult, &CommandLineFlags::ccstrAtPut);
+  }
+  if (value != NULL) {
+    env->ReleaseStringUTFChars(value, ccstrValue);
+  }
+  if (needFree) {
+    FREE_C_HEAP_ARRAY(char, ccstrResult, mtInternal);
+  }
+WB_END
+
+
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
   ResourceMark rm(THREAD);
   int len;
@@ -561,11 +714,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
     return result;
   }
 
-  clazz = env->FindClass(vmSymbols::java_lang_Integer()->as_C_string());
-  CHECK_JNI_EXCEPTION_(env, NULL);
-  jmethodID constructor = env->GetMethodID(clazz, vmSymbols::object_initializer_name()->as_C_string(), vmSymbols::int_void_signature()->as_C_string());
-  CHECK_JNI_EXCEPTION_(env, NULL);
-  jobject obj = env->NewObject(clazz, constructor, code->comp_level());
+  jobject obj = integerBox(thread, env, code->comp_level());
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 0, obj);
 
@@ -695,7 +844,26 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/reflect/Executable;II)Z",        (void*)&WB_EnqueueMethodForCompilation},
   {CC"clearMethodState",
       CC"(Ljava/lang/reflect/Executable;)V",          (void*)&WB_ClearMethodState},
-  {CC"isInStringTable",   CC"(Ljava/lang/String;)Z",  (void*)&WB_IsInStringTable  },
+  {CC"setBooleanVMFlag",   CC"(Ljava/lang/String;Z)V",(void*)&WB_SetBooleanVMFlag},
+  {CC"setIntxVMFlag",      CC"(Ljava/lang/String;J)V",(void*)&WB_SetIntxVMFlag},
+  {CC"setUintxVMFlag",     CC"(Ljava/lang/String;J)V",(void*)&WB_SetUintxVMFlag},
+  {CC"setUint64VMFlag",    CC"(Ljava/lang/String;J)V",(void*)&WB_SetUint64VMFlag},
+  {CC"setDoubleVMFlag",    CC"(Ljava/lang/String;D)V",(void*)&WB_SetDoubleVMFlag},
+  {CC"setStringVMFlag",    CC"(Ljava/lang/String;Ljava/lang/String;)V",
+                                                      (void*)&WB_SetStringVMFlag},
+  {CC"getBooleanVMFlag",   CC"(Ljava/lang/String;)Ljava/lang/Boolean;",
+                                                      (void*)&WB_GetBooleanVMFlag},
+  {CC"getIntxVMFlag",      CC"(Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetIntxVMFlag},
+  {CC"getUintxVMFlag",     CC"(Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetUintxVMFlag},
+  {CC"getUint64VMFlag",    CC"(Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetUint64VMFlag},
+  {CC"getDoubleVMFlag",    CC"(Ljava/lang/String;)Ljava/lang/Double;",
+                                                      (void*)&WB_GetDoubleVMFlag},
+  {CC"getStringVMFlag",    CC"(Ljava/lang/String;)Ljava/lang/String;",
+                                                      (void*)&WB_GetStringVMFlag},
+  {CC"isInStringTable",    CC"(Ljava/lang/String;)Z", (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
