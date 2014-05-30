@@ -3985,8 +3985,11 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
 }
 
 
-//------------------------------inline_native_hashcode--------------------
-// Build special case code for calls to hashCode on an object.
+/**
+ * Build special case code for calls to hashCode on an object. This call may
+ * be virtual (invokevirtual) or bound (invokespecial). For each case we generate
+ * slightly different code.
+ */
 bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   assert(is_static == callee()->is_static(), "correct intrinsic selection");
   assert(!(is_virtual && is_static), "either virtual, special, or static");
@@ -3994,11 +3997,9 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   enum { _slow_path = 1, _fast_path, _null_path, PATH_LIMIT };
 
   RegionNode* result_reg = new(C) RegionNode(PATH_LIMIT);
-  PhiNode*    result_val = new(C) PhiNode(result_reg,
-                                          TypeInt::INT);
+  PhiNode*    result_val = new(C) PhiNode(result_reg, TypeInt::INT);
   PhiNode*    result_io  = new(C) PhiNode(result_reg, Type::ABIO);
-  PhiNode*    result_mem = new(C) PhiNode(result_reg, Type::MEMORY,
-                                          TypePtr::BOTTOM);
+  PhiNode*    result_mem = new(C) PhiNode(result_reg, Type::MEMORY, TypePtr::BOTTOM);
   Node* obj = NULL;
   if (!is_static) {
     // Check for hashing null object
@@ -4024,12 +4025,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     return true;
   }
 
-  // After null check, get the object's klass.
-  Node* obj_klass = load_object_klass(obj);
-
-  // This call may be virtual (invokevirtual) or bound (invokespecial).
-  // For each case we generate slightly different code.
-
   // We only go to the fast case code if we pass a number of guards.  The
   // paths which do not pass are accumulated in the slow_region.
   RegionNode* slow_region = new (C) RegionNode(1);
@@ -4042,19 +4037,24 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   // guard for non-virtual calls -- the caller is known to be the native
   // Object hashCode().
   if (is_virtual) {
+    // After null check, get the object's klass.
+    Node* obj_klass = load_object_klass(obj);
     generate_virtual_guard(obj_klass, slow_region);
   }
 
   // Get the header out of the object, use LoadMarkNode when available
   Node* header_addr = basic_plus_adr(obj, oopDesc::mark_offset_in_bytes());
-  Node* header = make_load(control(), header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+  // The control of the load must be NULL. Otherwise, the load can move before
+  // the null check after castPP removal.
+  Node* no_ctrl = NULL;
+  Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
   // Test the header to see if it is unlocked.
-  Node *lock_mask      = _gvn.MakeConX(markOopDesc::biased_lock_mask_in_place);
-  Node *lmasked_header = _gvn.transform(new (C) AndXNode(header, lock_mask));
-  Node *unlocked_val   = _gvn.MakeConX(markOopDesc::unlocked_value);
-  Node *chk_unlocked   = _gvn.transform(new (C) CmpXNode( lmasked_header, unlocked_val));
-  Node *test_unlocked  = _gvn.transform(new (C) BoolNode( chk_unlocked, BoolTest::ne));
+  Node* lock_mask      = _gvn.MakeConX(markOopDesc::biased_lock_mask_in_place);
+  Node* lmasked_header = _gvn.transform(new (C) AndXNode(header, lock_mask));
+  Node* unlocked_val   = _gvn.MakeConX(markOopDesc::unlocked_value);
+  Node* chk_unlocked   = _gvn.transform(new (C) CmpXNode( lmasked_header, unlocked_val));
+  Node* test_unlocked  = _gvn.transform(new (C) BoolNode( chk_unlocked, BoolTest::ne));
 
   generate_slow_guard(test_unlocked, slow_region);
 
@@ -4062,19 +4062,19 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   // We depend on hash_mask being at most 32 bits and avoid the use of
   // hash_mask_in_place because it could be larger than 32 bits in a 64-bit
   // vm: see markOop.hpp.
-  Node *hash_mask      = _gvn.intcon(markOopDesc::hash_mask);
-  Node *hash_shift     = _gvn.intcon(markOopDesc::hash_shift);
-  Node *hshifted_header= _gvn.transform(new (C) URShiftXNode(header, hash_shift));
+  Node* hash_mask      = _gvn.intcon(markOopDesc::hash_mask);
+  Node* hash_shift     = _gvn.intcon(markOopDesc::hash_shift);
+  Node* hshifted_header= _gvn.transform(new (C) URShiftXNode(header, hash_shift));
   // This hack lets the hash bits live anywhere in the mark object now, as long
   // as the shift drops the relevant bits into the low 32 bits.  Note that
   // Java spec says that HashCode is an int so there's no point in capturing
   // an 'X'-sized hashcode (32 in 32-bit build or 64 in 64-bit build).
   hshifted_header      = ConvX2I(hshifted_header);
-  Node *hash_val       = _gvn.transform(new (C) AndINode(hshifted_header, hash_mask));
+  Node* hash_val       = _gvn.transform(new (C) AndINode(hshifted_header, hash_mask));
 
-  Node *no_hash_val    = _gvn.intcon(markOopDesc::no_hash);
-  Node *chk_assigned   = _gvn.transform(new (C) CmpINode( hash_val, no_hash_val));
-  Node *test_assigned  = _gvn.transform(new (C) BoolNode( chk_assigned, BoolTest::eq));
+  Node* no_hash_val    = _gvn.intcon(markOopDesc::no_hash);
+  Node* chk_assigned   = _gvn.transform(new (C) CmpINode( hash_val, no_hash_val));
+  Node* test_assigned  = _gvn.transform(new (C) BoolNode( chk_assigned, BoolTest::eq));
 
   generate_slow_guard(test_assigned, slow_region);
 
