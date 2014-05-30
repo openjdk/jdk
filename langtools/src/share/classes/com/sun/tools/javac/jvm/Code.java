@@ -1925,6 +1925,13 @@ public class Code {
             return aliveRanges.isEmpty() ? null : aliveRanges.get(aliveRanges.size() - 1);
         }
 
+        void removeLastRange() {
+            Range lastRange = lastRange();
+            if (lastRange != null) {
+                aliveRanges.remove(lastRange);
+            }
+        }
+
         @Override
         public String toString() {
             if (aliveRanges == null) {
@@ -1955,9 +1962,7 @@ public class Code {
                     }
                 }
             } else {
-                if (!aliveRanges.isEmpty()) {
-                    aliveRanges.remove(aliveRanges.size() - 1);
-                }
+                removeLastRange();
             }
         }
 
@@ -1965,16 +1970,14 @@ public class Code {
             if (aliveRanges.isEmpty()) {
                 return false;
             }
-            Range range = lastRange();
-            return range.length == Character.MAX_VALUE;
+            return lastRange().length == Character.MAX_VALUE;
         }
 
         public boolean isLastRangeInitialized() {
             if (aliveRanges.isEmpty()) {
                 return false;
             }
-            Range range = lastRange();
-            return range.start_pc != Character.MAX_VALUE;
+            return lastRange().start_pc != Character.MAX_VALUE;
         }
 
         public Range getWidestRange() {
@@ -2095,7 +2098,7 @@ public class Code {
                 v.closeRange(length);
                 putVar(v);
             } else {
-                v.lastRange().start_pc = Character.MAX_VALUE;
+                v.removeLastRange();
             }
         }
     }
