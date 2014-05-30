@@ -25,7 +25,6 @@
 /**
  * @test
  * @bug 7005594
- * @ignore 7117034
  * @summary Array overflow not handled correctly with loop optimzations
  *
  * @run shell Test7005594.sh

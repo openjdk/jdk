@@ -49,6 +49,12 @@ public class Compilation implements LogEvent {
         this.id = id;
     }
 
+    void reset() {
+        call = new CallSite();
+        lateInlineCall = new CallSite();
+        phases = new ArrayList<Phase>(4);
+    }
+
     Phase getPhase(String s) {
         for (Phase p : getPhases()) {
             if (p.getName().equals(s)) {
@@ -212,10 +218,6 @@ public class Compilation implements LogEvent {
         return phases;
     }
 
-    public void setPhases(ArrayList<Phase> phases) {
-        this.setPhases(phases);
-    }
-
     public String getFailureReason() {
         return failureReason;
     }
@@ -238,10 +240,6 @@ public class Compilation implements LogEvent {
 
     public CallSite getCall() {
         return call;
-    }
-
-    public void setCall(CallSite call) {
-        this.call = call;
     }
 
     public CallSite getLateInlineCall() {
