@@ -59,7 +59,7 @@ public class VMOptionCompositeData extends LazyCompositeData {
         final Object[] vmOptionItemValues = {
             option.getName(),
             option.getValue(),
-            new Boolean(option.isWriteable()),
+            option.isWriteable(),
             option.getOrigin().toString(),
         };
 

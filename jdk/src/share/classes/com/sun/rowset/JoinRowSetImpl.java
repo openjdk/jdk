@@ -910,7 +910,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
 
         // now remove the last ","
         strWhereClause = strWhereClause.substring
-             (0, strWhereClause.lastIndexOf(","));
+             (0, strWhereClause.lastIndexOf(','));
 
         // Add from clause
         strWhereClause = strWhereClause.concat(" from ");
@@ -920,7 +920,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
 
         //Remove the last ","
         strWhereClause = strWhereClause.substring
-             (0, strWhereClause.lastIndexOf(","));
+             (0, strWhereClause.lastIndexOf(','));
 
         // Add the where clause
         strWhereClause = strWhereClause.concat(" where ");

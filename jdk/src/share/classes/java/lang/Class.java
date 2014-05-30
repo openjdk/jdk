@@ -1296,7 +1296,7 @@ public final class Class<T> implements java.io.Serializable,
         String simpleName = getSimpleBinaryName();
         if (simpleName == null) { // top level class
             simpleName = getName();
-            return simpleName.substring(simpleName.lastIndexOf(".")+1); // strip the package name
+            return simpleName.substring(simpleName.lastIndexOf('.')+1); // strip the package name
         }
         // According to JLS3 "Binary Compatibility" (13.1) the binary
         // name of non-package classes (not top level) is the binary

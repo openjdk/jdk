@@ -934,7 +934,7 @@ public class RequiredModelMBean
         String opMethodName;
 
         // Parse for class name and method
-        int opSplitter = opName.lastIndexOf(".");
+        int opSplitter = opName.lastIndexOf('.');
         if (opSplitter > 0) {
             opClassName = opName.substring(0,opSplitter);
             opMethodName = opName.substring(opSplitter+1);
@@ -943,7 +943,7 @@ public class RequiredModelMBean
 
         /* Ignore anything after a left paren.  We keep this for
            compatibility but it isn't specified.  */
-        opSplitter = opMethodName.indexOf("(");
+        opSplitter = opMethodName.indexOf('(');
         if (opSplitter > 0)
             opMethodName = opMethodName.substring(0,opSplitter);
 

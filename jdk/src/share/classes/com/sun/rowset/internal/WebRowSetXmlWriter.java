@@ -240,7 +240,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
             // Remove the string after "@xxxx"
             // before writing it to the xml file.
             String strProviderInstance = (caller.getSyncProvider()).toString();
-            String strProvider = strProviderInstance.substring(0, (caller.getSyncProvider()).toString().indexOf("@"));
+            String strProvider = strProviderInstance.substring(0, (caller.getSyncProvider()).toString().indexOf('@'));
 
             propString("sync-provider-name", strProvider);
             propString("sync-provider-vendor", "Oracle Corporation");

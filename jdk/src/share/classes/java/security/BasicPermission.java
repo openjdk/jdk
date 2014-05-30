@@ -430,7 +430,7 @@ final class BasicPermissionCollection
 
         offset = path.length()-1;
 
-        while ((last = path.lastIndexOf(".", offset)) != -1) {
+        while ((last = path.lastIndexOf('.', offset)) != -1) {
 
             path = path.substring(0, last+1) + "*";
             //System.out.println("check "+path);
