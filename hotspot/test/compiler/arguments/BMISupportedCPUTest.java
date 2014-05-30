@@ -28,6 +28,12 @@ import com.oracle.java.testlibrary.cli.*;
  * Test on bit manipulation related command line options,
  * that should be executed on CPU that supports all required
  * features.
+ *
+ * Note that this test intended to verify that VM could be launched with
+ * specific options and that values of these options processed correctly.
+ * In order to do that test launch a new VM with tested options, the same
+ * flavor-specific flag as one that was used for parent VM (-client, -server,
+ * -minimal, -graal) and '-version'.
  */
 public class BMISupportedCPUTest extends BMICommandLineOptionTestBase {
 
@@ -49,24 +55,38 @@ public class BMISupportedCPUTest extends BMICommandLineOptionTestBase {
 
     @Override
     public void runTestCases() throws Throwable {
-        // verify that VM will succesfully start up whithout warnings
-        CommandLineOptionTest.
-            verifyJVMStartup("-XX:+" + optionName,
-                             null, new String[] { warningMessage },
-                             ExitCode.OK);
+        /*
+          Verify that VM will successfully start up without warnings.
+          VM will be launched with following flags:
+          -XX:+<tested option> -version
+        */
+        CommandLineOptionTest.verifySameJVMStartup(null,
+                new String[] { warningMessage }, ExitCode.OK,
+                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
-        // verify that VM will succesfully start up whithout warnings
-        CommandLineOptionTest.
-            verifyJVMStartup("-XX:-" + optionName,
-                             null, new String[] { warningMessage },
-                             ExitCode.OK);
+        /*
+          Verify that VM will successfully start up without warnings.
+          VM will be launched with following flags:
+          -XX:-<tested option> -version
+        */
+        CommandLineOptionTest.verifySameJVMStartup(null,
+                new String[] { warningMessage }, ExitCode.OK,
+                CommandLineOptionTest.prepareBooleanFlag(optionName, false));
 
-        // verify that on appropriate CPU option in on by default
-        CommandLineOptionTest.verifyOptionValue(optionName, "true");
+        /*
+          Verify that on appropriate CPU option in on by default.
+          VM will be launched with following flags:
+          -version
+        */
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true");
 
-        // verify that option could be explicitly turned off
-        CommandLineOptionTest.verifyOptionValue(optionName, "false",
-                                                "-XX:-" + optionName);
+        /*
+          Verify that option could be explicitly turned off.
+          VM will be launched with following flags:
+          -XX:-<tested option> -version
+        */
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 }
 
