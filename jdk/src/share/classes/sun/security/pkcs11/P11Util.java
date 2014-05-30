@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ public final class P11Util {
         if (b == null) {
             return "(null)";
         }
-        StringBuffer sb = new StringBuffer(b.length * 3);
+        StringBuilder sb = new StringBuilder(b.length * 3);
         for (int i = 0; i < b.length; i++) {
             int k = b[i] & 0xff;
             if (i != 0) {

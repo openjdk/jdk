@@ -656,6 +656,9 @@ USE_EXTERNAL_LIBZ
 USE_EXTERNAL_LIBPNG
 PNG_LIBS
 PNG_CFLAGS
+USE_EXTERNAL_LCMS
+LCMS_LIBS
+LCMS_CFLAGS
 USE_EXTERNAL_LIBGIF
 USE_EXTERNAL_LIBJPEG
 ALSA_LIBS
@@ -1079,6 +1082,7 @@ with_alsa
 with_alsa_include
 with_alsa_lib
 with_giflib
+with_lcms
 with_libpng
 with_zlib
 with_stdc__lib
@@ -1192,6 +1196,8 @@ FREETYPE_CFLAGS
 FREETYPE_LIBS
 ALSA_CFLAGS
 ALSA_LIBS
+LCMS_CFLAGS
+LCMS_LIBS
 PNG_CFLAGS
 PNG_LIBS
 LIBFFI_CFLAGS
@@ -1934,6 +1940,8 @@ Optional Packages:
   --with-alsa-lib         specify directory for the alsa library
   --with-giflib           use giflib from build system or OpenJDK source
                           (system, bundled) [bundled]
+  --with-lcms             use lcms2 from build system or OpenJDK source
+                          (system, bundled) [bundled]
   --with-libpng           use libpng from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-zlib             use zlib from build system or OpenJDK source
@@ -2060,6 +2068,8 @@ Some influential environment variables:
               linker flags for FREETYPE, overriding pkg-config
   ALSA_CFLAGS C compiler flags for ALSA, overriding pkg-config
   ALSA_LIBS   linker flags for ALSA, overriding pkg-config
+  LCMS_CFLAGS C compiler flags for LCMS, overriding pkg-config
+  LCMS_LIBS   linker flags for LCMS, overriding pkg-config
   PNG_CFLAGS  C compiler flags for PNG, overriding pkg-config
   PNG_LIBS    linker flags for PNG, overriding pkg-config
   LIBFFI_CFLAGS
@@ -47305,6 +47315,115 @@ fi
   else
     as_fn_error $? "Invalid value of --with-giflib: ${with_giflib}, use 'system' or 'bundled'" "$LINENO" 5
   fi
+
+
+  ###############################################################################
+  #
+  # Check for the lcms2 library
+  #
+
+
+# Check whether --with-lcms was given.
+if test "${with_lcms+set}" = set; then :
+  withval=$with_lcms;
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which lcms to use" >&5
+$as_echo_n "checking for which lcms to use... " >&6; }
+
+  DEFAULT_LCMS=bundled
+
+  #
+  # If user didn't specify, use DEFAULT_LCMS
+  #
+  if test "x${with_lcms}" = "x"; then
+      with_lcms=${DEFAULT_LCMS}
+  fi
+
+  if test "x${with_lcms}" = "xbundled"; then
+    USE_EXTERNAL_LCMS=false
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
+$as_echo "bundled" >&6; }
+  elif test "x${with_lcms}" = "xsystem"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: system" >&5
+$as_echo "system" >&6; }
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LCMS" >&5
+$as_echo_n "checking for LCMS... " >&6; }
+
+if test -n "$LCMS_CFLAGS"; then
+    pkg_cv_LCMS_CFLAGS="$LCMS_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lcms2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lcms2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LCMS_CFLAGS=`$PKG_CONFIG --cflags "lcms2" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LCMS_LIBS"; then
+    pkg_cv_LCMS_LIBS="$LCMS_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lcms2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lcms2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LCMS_LIBS=`$PKG_CONFIG --libs "lcms2" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LCMS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "lcms2" 2>&1`
+        else
+	        LCMS_PKG_ERRORS=`$PKG_CONFIG --print-errors "lcms2" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LCMS_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                LCMS_FOUND=no
+elif test $pkg_failed = untried; then
+	LCMS_FOUND=no
+else
+	LCMS_CFLAGS=$pkg_cv_LCMS_CFLAGS
+	LCMS_LIBS=$pkg_cv_LCMS_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	LCMS_FOUND=yes
+fi
+    if test "x${LCMS_FOUND}" = "xyes"; then
+      USE_EXTERNAL_LCMS=true
+    else
+      as_fn_error $? "--with-lcms=system specified, but no lcms found!" "$LINENO" 5
+    fi
+  else
+    as_fn_error $? "Invalid value for --with-lcms: ${with_lcms}, use 'system' or 'bundled'" "$LINENO" 5
+  fi
+
 
 
   ###############################################################################

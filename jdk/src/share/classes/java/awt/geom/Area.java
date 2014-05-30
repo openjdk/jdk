@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,9 @@ import sun.awt.geom.AreaOp;
  * @since 1.2
  */
 public class Area implements Shape, Cloneable {
-    private static Vector EmptyCurves = new Vector();
+    private static Vector<Curve> EmptyCurves = new Vector<>();
 
-    private Vector curves;
+    private Vector<Curve> curves;
 
     /**
      * Default constructor which creates an empty area.
@@ -127,8 +127,8 @@ public class Area implements Shape, Cloneable {
         }
     }
 
-    private static Vector pathToCurves(PathIterator pi) {
-        Vector curves = new Vector();
+    private static Vector<Curve> pathToCurves(PathIterator pi) {
+        Vector<Curve> curves = new Vector<>();
         int windingRule = pi.getWindingRule();
         // coords array is big enough for holding:
         //     coordinates returned from currentSegment (6)
@@ -334,7 +334,7 @@ public class Area implements Shape, Cloneable {
      * @since 1.2
      */
     public void reset() {
-        curves = new Vector();
+        curves = new Vector<>();
         invalidateBounds();
     }
 
@@ -357,9 +357,9 @@ public class Area implements Shape, Cloneable {
      * @since 1.2
      */
     public boolean isPolygonal() {
-        Enumeration enum_ = curves.elements();
+        Enumeration<Curve> enum_ = curves.elements();
         while (enum_.hasMoreElements()) {
-            if (((Curve) enum_.nextElement()).getOrder() > 1) {
+            if (enum_.nextElement().getOrder() > 1) {
                 return false;
             }
         }
@@ -381,8 +381,8 @@ public class Area implements Shape, Cloneable {
         if (size > 3) {
             return false;
         }
-        Curve c1 = (Curve) curves.get(1);
-        Curve c2 = (Curve) curves.get(2);
+        Curve c1 = curves.get(1);
+        Curve c2 = curves.get(2);
         if (c1.getOrder() != 1 || c2.getOrder() != 1) {
             return false;
         }
@@ -411,10 +411,10 @@ public class Area implements Shape, Cloneable {
         if (curves.size() < 3) {
             return true;
         }
-        Enumeration enum_ = curves.elements();
+        Enumeration<Curve> enum_ = curves.elements();
         enum_.nextElement(); // First Order0 "moveto"
         while (enum_.hasMoreElements()) {
-            if (((Curve) enum_.nextElement()).getOrder() == 0) {
+            if (enum_.nextElement().getOrder() == 0) {
                 return false;
             }
         }
@@ -431,11 +431,11 @@ public class Area implements Shape, Cloneable {
         }
         Rectangle2D r = new Rectangle2D.Double();
         if (curves.size() > 0) {
-            Curve c = (Curve) curves.get(0);
+            Curve c = curves.get(0);
             // First point is always an order 0 curve (moveto)
             r.setRect(c.getX0(), c.getY0(), 0, 0);
             for (int i = 1; i < curves.size(); i++) {
-                ((Curve) curves.get(i)).enlarge(r);
+                curves.get(i).enlarge(r);
             }
         }
         return (cachedBounds = r);
@@ -507,7 +507,7 @@ public class Area implements Shape, Cloneable {
         if (other == null) {
             return false;
         }
-        Vector c = new AreaOp.XorOp().calculate(this.curves, other.curves);
+        Vector<Curve> c = new AreaOp.XorOp().calculate(this.curves, other.curves);
         return c.isEmpty();
     }
 
@@ -555,10 +555,10 @@ public class Area implements Shape, Cloneable {
         if (!getCachedBounds().contains(x, y)) {
             return false;
         }
-        Enumeration enum_ = curves.elements();
+        Enumeration<Curve> enum_ = curves.elements();
         int crossings = 0;
         while (enum_.hasMoreElements()) {
-            Curve c = (Curve) enum_.nextElement();
+            Curve c = enum_.nextElement();
             crossings += c.crossingsFor(x, y);
         }
         return ((crossings & 1) == 1);
@@ -658,16 +658,16 @@ public class Area implements Shape, Cloneable {
 
 class AreaIterator implements PathIterator {
     private AffineTransform transform;
-    private Vector curves;
+    private Vector<Curve> curves;
     private int index;
     private Curve prevcurve;
     private Curve thiscurve;
 
-    public AreaIterator(Vector curves, AffineTransform at) {
+    public AreaIterator(Vector<Curve> curves, AffineTransform at) {
         this.curves = curves;
         this.transform = at;
         if (curves.size() >= 1) {
-            thiscurve = (Curve) curves.get(0);
+            thiscurve = curves.get(0);
         }
     }
 
@@ -689,7 +689,7 @@ class AreaIterator implements PathIterator {
             prevcurve = thiscurve;
             index++;
             if (index < curves.size()) {
-                thiscurve = (Curve) curves.get(index);
+                thiscurve = curves.get(index);
                 if (thiscurve.getOrder() != 0 &&
                     prevcurve.getX1() == thiscurve.getX0() &&
                     prevcurve.getY1() == thiscurve.getY0())

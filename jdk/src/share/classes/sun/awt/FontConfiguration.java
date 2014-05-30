@@ -64,7 +64,7 @@ public abstract class FontConfiguration {
     protected static String osName;
     protected static String encoding; // canonical name of default nio charset
     protected static Locale startupLocale = null;
-    protected static Hashtable localeMap = null;
+    protected static Hashtable<String, String> localeMap = null;
     private static FontConfiguration fontConfig;
     private static PlatformLogger logger;
     protected static boolean isProperties = true;
@@ -159,15 +159,15 @@ public abstract class FontConfiguration {
         short fontNameID = compFontNameIDs[0][0][0];
         short fileNameID = getComponentFileID(fontNameID);
         final String fileName = mapFileName(getComponentFileName(fileNameID));
-        Boolean exists = (Boolean)java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                 public Object run() {
+        Boolean exists = java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Boolean>() {
+                 public Boolean run() {
                      try {
                          File f = new File(fileName);
                          return Boolean.valueOf(f.exists());
                      }
                      catch (Exception e) {
-                         return false;
+                         return Boolean.FALSE;
                      }
                  }
                 });
@@ -534,11 +534,11 @@ public abstract class FontConfiguration {
    private short remapLocaleMap(int fontIndex, int styleIndex, short scriptID, short fontID) {
         String scriptName = getString(table_scriptIDs[scriptID]);
 
-        String value = (String)localeMap.get(scriptName);
+        String value = localeMap.get(scriptName);
         if (value == null) {
             String fontName = fontNames[fontIndex];
             String styleName = styleNames[styleIndex];
-            value = (String)localeMap.get(fontName + "." + styleName + "." + scriptName);
+            value = localeMap.get(fontName + "." + styleName + "." + scriptName);
         }
         if (value == null) {
             return fontID;
@@ -746,7 +746,7 @@ public abstract class FontConfiguration {
     /* Mappings from file encoding to font config name for font supporting
      * the corresponding language. This is filled in by initReorderMap()
      */
-    protected HashMap reorderMap = null;
+    protected HashMap<String, Object> reorderMap = null;
 
     /* Platform-specific mappings */
     protected abstract void initReorderMap();
@@ -777,7 +777,7 @@ public abstract class FontConfiguration {
         if (fontConfig.reorderMap == null) {
              fontConfig.initReorderMap();
         }
-        HashMap reorderMap = fontConfig.reorderMap;
+        HashMap<String, Object> reorderMap = fontConfig.reorderMap;
 
         /* Find the most specific mapping */
         String language = startupLocale.getLanguage();
@@ -817,9 +817,9 @@ public abstract class FontConfiguration {
         }
     }
 
-    private static Vector splitSequence(String sequence) {
+    private static Vector<String> splitSequence(String sequence) {
         //String.split would be more convenient, but incurs big performance penalty
-        Vector parts = new Vector();
+        Vector<String> parts = new Vector<>();
         int start = 0;
         int end;
         while ((end = sequence.indexOf(',', start)) >= 0) {
@@ -833,14 +833,14 @@ public abstract class FontConfiguration {
     }
 
     protected String[] split(String sequence) {
-        Vector v = splitSequence(sequence);
-        return (String[])v.toArray(new String[0]);
+        Vector<String> v = splitSequence(sequence);
+        return v.toArray(new String[0]);
     }
 
     ////////////////////////////////////////////////////////////////////////
     // Methods for extracting information from the fontconfig data for AWT//
     ////////////////////////////////////////////////////////////////////////
-    private Hashtable charsetRegistry = new Hashtable(5);
+    private Hashtable<String, Charset> charsetRegistry = new Hashtable<>(5);
 
     /**
      * Returns FontDescriptors describing the physical fonts used for the
@@ -932,9 +932,9 @@ public abstract class FontConfiguration {
 
         Charset fc = null;
         if (charsetName.equals("default")) {
-            fc = (Charset) charsetRegistry.get(fontName);
+            fc = charsetRegistry.get(fontName);
         } else {
-            fc = (Charset) charsetRegistry.get(charsetName);
+            fc = charsetRegistry.get(charsetName);
         }
         if (fc != null) {
             return fc.newEncoder();
@@ -943,8 +943,8 @@ public abstract class FontConfiguration {
         if (!charsetName.startsWith("sun.awt.") && !charsetName.equals("default")) {
             fc = Charset.forName(charsetName);
         } else {
-            Class fcc = (Class) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
+            Class<?> fcc = AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
+                    public Class<?> run() {
                         try {
                             return Class.forName(charsetName, true,
                                                  ClassLoader.getSystemClassLoader());
@@ -1377,9 +1377,9 @@ public abstract class FontConfiguration {
 
         //This method will only be called during build time, do we
         //need do PrivilegedAction?
-        String osName = (String)java.security.AccessController.doPrivileged(
-                            new java.security.PrivilegedAction() {
-            public Object run() {
+        String osName = java.security.AccessController.doPrivileged(
+                            new java.security.PrivilegedAction<String>() {
+            public String run() {
                 return System.getProperty("os.name");
             }
         });
@@ -2139,7 +2139,7 @@ public abstract class FontConfiguration {
                 boolean has1252 = false;
 
                 //get the scriptID list
-                String[] ss = (String[])splitSequence(value).toArray(EMPTY_STRING_ARRAY);
+                String[] ss = splitSequence(value).toArray(EMPTY_STRING_ARRAY);
                 short [] sa = new short[ss.length];
                 for (int i = 0; i < ss.length; i++) {
                     if ("alphabetic/default".equals(ss[i])) {

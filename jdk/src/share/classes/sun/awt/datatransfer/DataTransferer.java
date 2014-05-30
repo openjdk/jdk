@@ -57,6 +57,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 
 import java.lang.reflect.Constructor;
@@ -70,22 +71,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.Set;
-import java.util.Stack;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 import sun.util.logging.PlatformLogger;
 
@@ -164,7 +150,7 @@ public abstract class DataTransferer {
             tempSet.add("UTF-16BE");
             tempSet.add("UTF-16LE");
             tempSet.add("UTF-16");
-            tempSet.add(getDefaultTextCharset());
+            tempSet.add(Charset.defaultCharset().name());
             return Collections.unmodifiableSortedSet(tempSet);
         }
     }
@@ -176,12 +162,6 @@ public abstract class DataTransferer {
      * entries may be added during the life of the JRE for text/<other> types.
      */
     private static final Map<String, Boolean> textMIMESubtypeCharsetSupport;
-
-    /**
-     * Cache of the platform default encoding as specified in the
-     * "file.encoding" system property.
-     */
-    private static String defaultEncoding;
 
     /**
      * A collection of all natives listed in flavormap.properties with
@@ -281,17 +261,7 @@ public abstract class DataTransferer {
 
         String encoding = flavor.getParameter("charset");
 
-        return (encoding != null) ? encoding : getDefaultTextCharset();
-    }
-
-    /**
-     * Returns the platform's default character encoding.
-     */
-    public static String getDefaultTextCharset() {
-        if (defaultEncoding != null) {
-            return defaultEncoding;
-        }
-        return defaultEncoding = Charset.defaultCharset().name();
+        return (encoding != null) ? encoding : Charset.defaultCharset().name();
     }
 
     /**
@@ -354,7 +324,7 @@ public abstract class DataTransferer {
             return false;
         }
 
-        Class rep_class = flavor.getRepresentationClass();
+        Class<?> rep_class = flavor.getRepresentationClass();
 
         if (flavor.isRepresentationClassReader() ||
             String.class.equals(rep_class) ||
@@ -485,7 +455,7 @@ public abstract class DataTransferer {
 
         textNatives.add(format);
         nativeCharsets.put(format, (charset != null && charset.length() != 0)
-                ? charset : getDefaultTextCharset());
+                ? charset : Charset.defaultCharset().name());
         if (eoln != null && eoln.length() != 0 && !eoln.equals("\n")) {
             nativeEOLNs.put(format, eoln);
         }
@@ -726,7 +696,7 @@ public abstract class DataTransferer {
      *            DataFlavors and data formats
      * @throws NullPointerException if formats or map is <code>null</code>
      */
-    public Set getFlavorsForFormatsAsSet(long[] formats, FlavorTable map) {
+    public Set<DataFlavor> getFlavorsForFormatsAsSet(long[] formats, FlavorTable map) {
         Set<DataFlavor> flavorSet = new HashSet<>(formats.length);
 
         for (long format : formats) {
@@ -786,19 +756,17 @@ public abstract class DataTransferer {
      * clipboard string encoding/decoding, basing on clipboard
      * format and localeTransferable(on decoding, if available)
      */
-    private String getBestCharsetForTextFormat(Long lFormat,
+    protected String getBestCharsetForTextFormat(Long lFormat,
         Transferable localeTransferable) throws IOException
     {
         String charset = null;
         if (localeTransferable != null &&
             isLocaleDependentTextFormat(lFormat) &&
-            localeTransferable.isDataFlavorSupported(javaTextEncodingFlavor))
-        {
+            localeTransferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
             try {
-                charset = new String(
-                    (byte[])localeTransferable.getTransferData(javaTextEncodingFlavor),
-                    "UTF-8"
-                );
+                byte[] charsetNameBytes = (byte[])localeTransferable
+                        .getTransferData(javaTextEncodingFlavor);
+                charset = new String(charsetNameBytes, StandardCharsets.UTF_8);
             } catch (UnsupportedFlavorException cannotHappen) {
             }
         } else {
@@ -806,7 +774,7 @@ public abstract class DataTransferer {
         }
         if (charset == null) {
             // Only happens when we have a custom text type.
-            charset = getDefaultTextCharset();
+            charset = Charset.defaultCharset().name();
         }
         return charset;
     }
@@ -1117,7 +1085,7 @@ search:
                 throw new IOException("data translation failed");
             }
 
-            final List list = (List)obj;
+            final List<?> list = (List<?>)obj;
 
             final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
 
@@ -1145,7 +1113,7 @@ search:
             if (targetCharset == null) {
                 targetCharset = "UTF-8";
             }
-            final List list = (List)obj;
+            final List<?> list = (List<?>)obj;
             final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
             final ArrayList<String> fileList = castToFiles(list, userProtectionDomain);
             final ArrayList<String> uriList = new ArrayList<>(fileList.size());
@@ -1290,7 +1258,7 @@ search:
         return true;
     }
 
-    private ArrayList<String> castToFiles(final List files,
+    private ArrayList<String> castToFiles(final List<?> files,
                                           final ProtectionDomain userProtectionDomain) throws IOException {
         try {
             return AccessController.doPrivileged((PrivilegedExceptionAction<ArrayList<String>>) () -> {
@@ -1668,7 +1636,7 @@ search:
      * instance of the Class as its sole parameter.
      */
     private Object constructFlavoredObject(Object arg, DataFlavor flavor,
-                                           Class clazz)
+                                           Class<?> clazz)
         throws IOException
     {
         final Class<?> dfrc = flavor.getRepresentationClass();
@@ -1676,19 +1644,19 @@ search:
         if (clazz.equals(dfrc)) {
             return arg; // simple case
         } else {
-            Constructor[] constructors;
+            Constructor<?>[] constructors;
 
             try {
                 constructors = AccessController.doPrivileged(
-                        (PrivilegedAction<Constructor[]>) dfrc::getConstructors);
+                        (PrivilegedAction<Constructor<?>[]>) dfrc::getConstructors);
             } catch (SecurityException se) {
                 throw new IOException(se.getMessage());
             }
 
-            Constructor constructor = Stream.of(constructors)
+            Constructor<?> constructor = Stream.of(constructors)
                     .filter(c -> Modifier.isPublic(c.getModifiers()))
                     .filter(c -> {
-                        Class[] ptypes = c.getParameterTypes();
+                        Class<?>[] ptypes = c.getParameterTypes();
                         return ptypes != null
                                 && ptypes.length == 1
                                 && clazz.equals(ptypes[0]);
@@ -1731,28 +1699,8 @@ search:
         {
             Long lFormat = format;
 
-            String sourceEncoding = null;
-            if (isLocaleDependentTextFormat(format) &&
-                localeTransferable != null &&
-                localeTransferable.
-                    isDataFlavorSupported(javaTextEncodingFlavor))
-            {
-                try {
-                    sourceEncoding = new String((byte[])localeTransferable.
-                                       getTransferData(javaTextEncodingFlavor),
-                                       "UTF-8");
-                } catch (UnsupportedFlavorException cannotHappen) {
-                }
-            } else {
-                sourceEncoding = getCharsetForTextFormat(lFormat);
-            }
-
-            if (sourceEncoding == null) {
-                // Only happens when we have a custom text type.
-                sourceEncoding = getDefaultTextCharset();
-            }
-            wrapped = new BufferedReader
-                (new InputStreamReader(bytestream, sourceEncoding));
+            String sourceEncoding = getBestCharsetForTextFormat(format, localeTransferable);
+            wrapped = new BufferedReader(new InputStreamReader(bytestream, sourceEncoding));
 
             if (targetEncoding == null) {
                 // Throw NullPointerException for compatibility with the former
@@ -1917,7 +1865,8 @@ search:
         byte[] bytes, String mimeType) throws IOException
     {
 
-        Iterator readerIterator = ImageIO.getImageReadersByMIMEType(mimeType);
+        Iterator<ImageReader> readerIterator =
+            ImageIO.getImageReadersByMIMEType(mimeType);
 
         if (!readerIterator.hasNext()) {
             throw new IOException("No registered service provider can decode " +
@@ -1927,7 +1876,7 @@ search:
         IOException ioe = null;
 
         while (readerIterator.hasNext()) {
-            ImageReader imageReader = (ImageReader)readerIterator.next();
+            ImageReader imageReader = readerIterator.next();
             try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
                 try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(bais)) {
                     ImageReadParam param = imageReader.getDefaultReadParam();
@@ -1970,7 +1919,8 @@ search:
       throws IOException {
         IOException originalIOE = null;
 
-        Iterator writerIterator = ImageIO.getImageWritersByMIMEType(mimeType);
+        Iterator<ImageWriter> writerIterator =
+            ImageIO.getImageWritersByMIMEType(mimeType);
 
         if (!writerIterator.hasNext()) {
             throw new IOException("No registered service provider can encode " +
@@ -2029,7 +1979,8 @@ search:
                                               String mimeType)
         throws IOException {
 
-        Iterator writerIterator = ImageIO.getImageWritersByMIMEType(mimeType);
+        Iterator<ImageWriter> writerIterator =
+            ImageIO.getImageWritersByMIMEType(mimeType);
 
         ImageTypeSpecifier typeSpecifier =
             new ImageTypeSpecifier(renderedImage);
@@ -2038,7 +1989,7 @@ search:
         IOException ioe = null;
 
         while (writerIterator.hasNext()) {
-            ImageWriter imageWriter = (ImageWriter)writerIterator.next();
+            ImageWriter imageWriter = writerIterator.next();
             ImageWriterSpi writerSpi = imageWriter.getOriginatingProvider();
 
             if (!writerSpi.canEncodeImage(typeSpecifier)) {
@@ -2122,7 +2073,7 @@ search:
     public byte[] convertData(final Object source,
                               final Transferable contents,
                               final long format,
-                              final Map formatMap,
+                              final Map<Long, DataFlavor> formatMap,
                               final boolean isToolkitThread)
         throws IOException
     {
@@ -2145,7 +2096,7 @@ search:
                     }
                     byte[] data = null;
                     try {
-                        DataFlavor flavor = (DataFlavor)formatMap.get(format);
+                        DataFlavor flavor = formatMap.get(format);
                         if (flavor != null) {
                             data = translateTransferable(contents, flavor, format);
                         }
@@ -2186,7 +2137,7 @@ search:
         } finally {
             getToolkitThreadBlockedHandler().unlock();
         } else {
-            DataFlavor flavor = (DataFlavor)formatMap.get(format);
+            DataFlavor flavor = formatMap.get(format);
             if (flavor != null) {
                 ret = translateTransferable(contents, flavor, format);
             }
@@ -2235,7 +2186,7 @@ search:
      * Helper function to convert a Set of DataFlavors to a sorted array.
      * The array will be sorted according to <code>DataFlavorComparator</code>.
      */
-    public static DataFlavor[] setToSortedDataFlavorArray(Set flavorsSet) {
+    public static DataFlavor[] setToSortedDataFlavorArray(Set<DataFlavor> flavorsSet) {
         DataFlavor[] flavors = new DataFlavor[flavorsSet.size()];
         flavorsSet.toArray(flavors);
         final Comparator<DataFlavor> comparator =
@@ -2267,8 +2218,8 @@ search:
      * If there are no platform-specific mappings for this native, the method
      * returns an empty <code>List</code>.
      */
-    public List<DataFlavor> getPlatformMappingsForNative(String nat) {
-        return new ArrayList<>();
+    public LinkedHashSet<DataFlavor> getPlatformMappingsForNative(String nat) {
+        return new LinkedHashSet<>();
     }
 
     /**
@@ -2276,8 +2227,8 @@ search:
      * If there are no platform-specific mappings for this flavor, the method
      * returns an empty <code>List</code>.
      */
-    public List<String> getPlatformMappingsForFlavor(DataFlavor df) {
-        return new ArrayList<>();
+    public LinkedHashSet<String> getPlatformMappingsForFlavor(DataFlavor df) {
+        return new LinkedHashSet<>();
     }
 
     /**
@@ -2333,7 +2284,6 @@ search:
      */
     public static class CharsetComparator extends IndexedComparator<String> {
         private static final Map<String, Integer> charsets;
-        private static final String defaultEncoding;
 
         private static final Integer DEFAULT_CHARSET_INDEX = 2;
         private static final Integer OTHER_CHARSET_INDEX = 1;
@@ -2354,8 +2304,7 @@ search:
             // US-ASCII is the worst charset supported
             charsetsMap.put(canonicalName("US-ASCII"), WORST_CHARSET_INDEX);
 
-            defaultEncoding = DataTransferer.canonicalName(DataTransferer.getDefaultTextCharset());
-            charsetsMap.putIfAbsent(defaultEncoding, DEFAULT_CHARSET_INDEX);
+            charsetsMap.putIfAbsent(Charset.defaultCharset().name(), DEFAULT_CHARSET_INDEX);
 
             charsetsMap.put(UNSUPPORTED_CHARSET, UNSUPPORTED_CHARSET_INDEX);
 
@@ -2598,12 +2547,12 @@ search:
             String primaryType1 = flavor1.getPrimaryType();
             String subType1 = flavor1.getSubType();
             String mimeType1 = primaryType1 + "/" + subType1;
-            Class class1 = flavor1.getRepresentationClass();
+            Class<?> class1 = flavor1.getRepresentationClass();
 
             String primaryType2 = flavor2.getPrimaryType();
             String subType2 = flavor2.getSubType();
             String mimeType2 = primaryType2 + "/" + subType2;
-            Class class2 = flavor2.getRepresentationClass();
+            Class<?> class2 = flavor2.getRepresentationClass();
 
             if (flavor1.isFlavorTextType() && flavor2.isFlavorTextType()) {
                 // First, compare MIME types

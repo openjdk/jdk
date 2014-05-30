@@ -93,41 +93,78 @@ public final class EncodingHelper {
        return s;
     }
 
-    public static int mbcToCode(byte[] bytes, int p, int end) {
-        int code = 0;
-        for (int i = p; i < end; i++) {
-            code = (code << 8) | (bytes[i] & 0xff);
-        }
-        return code;
-    }
-
     public static int mbcodeStartPosition() {
         return 0x80;
     }
 
     public static char[] caseFoldCodesByString(int flag, char c) {
-        if (Character.isUpperCase(c)) {
-            return new char[] {Character.toLowerCase(c)};
-        } else if (Character.isLowerCase(c)) {
-            return new char[] {Character.toUpperCase(c)};
-        } else {
-            return EMPTYCHARS;
+        char[] codes = EMPTYCHARS;
+        final char upper = toUpperCase(c);
+
+        if (upper != toLowerCase(upper)) {
+            int count = 0;
+            char ch = 0;
+
+            do {
+                final char u = toUpperCase(ch);
+                if (u == upper && ch != c) {
+                    // Almost all characters will return array of length 1, very few 2 or 3, so growing by one is fine.
+                    codes = count == 0 ? new char[1] : Arrays.copyOf(codes, count + 1);
+                    codes[count++] = ch;
+                }
+            } while (ch++ < 0xffff);
         }
+        return codes;
     }
 
     public static void applyAllCaseFold(int flag, ApplyCaseFold fun, Object arg) {
-        int[] code = new int[1];
-
         for (int c = 0; c < 0xffff; c++) {
-            if (Character.getType(c) == Character.LOWERCASE_LETTER) {
+            if (Character.isLowerCase(c)) {
+                final int upper = toUpperCase(c);
 
-                int upper = code[0] = Character.toUpperCase(c);
-                fun.apply(c, code, 1, arg);
-
-                code[0] = c;
-                fun.apply(upper, code, 1, arg);
+                if (upper != c) {
+                    fun.apply(c, upper, arg);
+                }
             }
         }
+
+        // Some characters have multiple lower case variants, hence we need to do a second run
+        for (int c = 0; c < 0xffff; c++) {
+            if (Character.isLowerCase(c)) {
+                final int upper = toUpperCase(c);
+
+                if (upper != c) {
+                    fun.apply(upper, c, arg);
+                }
+            }
+        }
+    }
+
+    public static char toLowerCase(char c) {
+        return (char)toLowerCase((int)c);
+    }
+
+    public static int toLowerCase(int c) {
+        if (c < 128) {
+            return ('A' <= c && c <= 'Z') ? (c + ('a' - 'A')) : c;
+        }
+        // Do not convert non-ASCII upper case character to ASCII lower case.
+        int lower = Character.toLowerCase(c);
+        return (lower < 128) ? c : lower;
+
+    }
+
+    public static char toUpperCase(char c) {
+        return (char)toUpperCase((int)c);
+    }
+
+    public static int toUpperCase(int c) {
+        if (c < 128) {
+            return ('a' <= c && c <= 'z') ? c + ('A' - 'a') : c;
+        }
+        // Do not convert non-ASCII lower case character to ASCII upper case.
+        int upper = Character.toUpperCase(c);
+        return (upper < 128) ? c : upper;
     }
 
     public static int[] ctypeCodeRange(int ctype, IntHolder sbOut) {

@@ -32,7 +32,6 @@ import java.awt.geom.AffineTransform;
 
 import java.security.PrivilegedAction;
 import java.security.AccessController;
-import java.util.ServiceLoader;
 import sun.security.action.GetPropertyAction;
 
 import sun.awt.geom.PathConsumer2D;
@@ -97,12 +96,9 @@ public abstract class RenderingEngine {
      * </pre>
      *
      * If no specific {@code RenderingEngine} is specified on the command
-     * or Ductus renderer is specified, it will attempt loading the
-     * sun.dc.DuctusRenderingEngine class using Class.forName as a fastpath;
-     * if not found, use the ServiceLoader.
-     * If no specific {@code RenderingEngine} is specified on the command
-     * line then the last one returned by enumerating all subclasses of
-     * {@code RenderingEngine} known to the ServiceLoader is used.
+     * or Ductus renderer is specified, it will first attempt loading the
+     * sun.dc.DuctusRenderingEngine class using Class.forName, if that
+     * is not found, then it will look for Pisces.
      * <p>
      * Runtime tracing of the actions of the {@code RenderingEngine}
      * can be enabled by specifying the runtime flag:
@@ -117,42 +113,30 @@ public abstract class RenderingEngine {
             return reImpl;
         }
 
-        reImpl =
-            AccessController.doPrivileged(new PrivilegedAction<RenderingEngine>() {
-                public RenderingEngine run() {
-                    final String ductusREClass = "sun.dc.DuctusRenderingEngine";
-                    String reClass =
-                        System.getProperty("sun.java2d.renderer", ductusREClass);
-                    if (reClass.equals(ductusREClass)) {
-                        try {
-                            Class<?> cls = Class.forName(ductusREClass);
-                            return (RenderingEngine) cls.newInstance();
-                        } catch (ReflectiveOperationException ignored) {
-                            // not found
-                        }
-                    }
-
-                    ServiceLoader<RenderingEngine> reLoader =
-                        ServiceLoader.loadInstalled(RenderingEngine.class);
-
-                    RenderingEngine service = null;
-
-                    for (RenderingEngine re : reLoader) {
-                        service = re;
-                        if (re.getClass().getName().equals(reClass)) {
-                            break;
-                        }
-                    }
-                    return service;
-                }
-            });
+        /* Look first for ductus or an app-override renderer,
+         * if not specified or present, then look for pisces.
+         */
+        final String ductusREClass = "sun.dc.DuctusRenderingEngine";
+        final String piscesREClass = "sun.java2d.pisces.PiscesRenderingEngine";
+        GetPropertyAction gpa =
+            new GetPropertyAction("sun.java2d.renderer", ductusREClass);
+        String reClass = AccessController.doPrivileged(gpa);
+        try {
+            Class<?> cls = Class.forName(reClass);
+            reImpl = (RenderingEngine) cls.newInstance();
+        } catch (ReflectiveOperationException ignored0) {
+            try {
+                Class<?> cls = Class.forName(piscesREClass);
+                reImpl = (RenderingEngine) cls.newInstance();
+            } catch (ReflectiveOperationException ignored1) {
+            }
+        }
 
         if (reImpl == null) {
             throw new InternalError("No RenderingEngine module found");
         }
 
-        GetPropertyAction gpa =
-            new GetPropertyAction("sun.java2d.renderer.trace");
+        gpa = new GetPropertyAction("sun.java2d.renderer.trace");
         String reTrace = AccessController.doPrivileged(gpa);
         if (reTrace != null) {
             reImpl = new Tracer(reImpl);

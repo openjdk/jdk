@@ -83,7 +83,7 @@ public abstract class ImageDecoder {
         return count;
     }
 
-    protected int setProperties(Hashtable props) {
+    protected int setProperties(Hashtable<?,?> props) {
         ImageConsumerQueue cq = null;
         int count = 0;
         while ((cq = nextConsumer(cq)) != null) {
@@ -164,7 +164,7 @@ public abstract class ImageDecoder {
         source.doneDecoding(this);
         close();
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
+            new java.security.PrivilegedAction<Object>() {
             public Object run() {
                 feeder.interrupt();
                 return null;
