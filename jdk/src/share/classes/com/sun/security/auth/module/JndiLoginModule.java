@@ -694,7 +694,7 @@ public class JndiLoginModule implements LoginModule {
             throw new LoginException("Error: no CallbackHandler available " +
                 "to garner authentication information from the user");
 
-        String protocol = userProvider.substring(0, userProvider.indexOf(":"));
+        String protocol = userProvider.substring(0, userProvider.indexOf(':'));
 
         Callback[] callbacks = new Callback[2];
         callbacks[0] = new NameCallback(protocol + " "
