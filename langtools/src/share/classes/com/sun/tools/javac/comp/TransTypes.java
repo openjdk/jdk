@@ -253,7 +253,7 @@ public class TransTypes extends TreeTranslator {
 
         // Create a bridge method symbol and a bridge definition without a body.
         Type bridgeType = meth.erasure(types);
-        long flags = impl.flags() & AccessFlags | SYNTHETIC | BRIDGE |
+        long flags = impl.flags() & BridgeMethodMask | SYNTHETIC | BRIDGE |
                 (origin.isInterface() ? DEFAULT : 0);
         if (hypothetical) flags |= HYPOTHETICAL;
         MethodSymbol bridge = new MethodSymbol(flags,
@@ -931,7 +931,7 @@ public class TransTypes extends TreeTranslator {
                                     ClassSymbol c,
                                     ListBuffer<JCTree> bridges) {
         Type implErasure = impl.erasure(types);
-        long flags = (impl.flags() & AccessFlags) | SYNTHETIC | BRIDGE | OVERRIDE_BRIDGE;
+        long flags = impl.flags() & BridgeMethodMask | SYNTHETIC | BRIDGE | OVERRIDE_BRIDGE;
         member = new MethodSymbol(flags, member.name, member.type, c);
         JCMethodDecl md = make.MethodDef(member, null);
         JCExpression receiver = make.Super(types.supertype(c.type).tsym.erasure(types), c);
