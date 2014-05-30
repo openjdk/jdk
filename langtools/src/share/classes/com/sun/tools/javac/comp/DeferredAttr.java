@@ -1221,25 +1221,102 @@ public class DeferredAttr extends JCTree.Visitor {
             }
 
             //slow path
+            Symbol sym = quicklyResolveMethod(env, tree);
+
+            if (sym == null) {
+                result = ArgumentExpressionKind.POLY;
+                return;
+            }
+
+            result = analyzeCandidateMethods(sym, ArgumentExpressionKind.PRIMITIVE,
+                    argumentKindAnalyzer);
+        }
+        //where
+            private boolean isSimpleReceiver(JCTree rec) {
+                switch (rec.getTag()) {
+                    case IDENT:
+                        return true;
+                    case SELECT:
+                        return isSimpleReceiver(((JCFieldAccess)rec).selected);
+                    case TYPEAPPLY:
+                    case TYPEARRAY:
+                        return true;
+                    case ANNOTATED_TYPE:
+                        return isSimpleReceiver(((JCAnnotatedType)rec).underlyingType);
+                    case APPLY:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+            private ArgumentExpressionKind reduce(ArgumentExpressionKind kind) {
+                return argumentKindAnalyzer.reduce(result, kind);
+            }
+            MethodAnalyzer<ArgumentExpressionKind> argumentKindAnalyzer =
+                    new MethodAnalyzer<ArgumentExpressionKind>() {
+                @Override
+                public ArgumentExpressionKind process(MethodSymbol ms) {
+                    return ArgumentExpressionKind.methodKind(ms, types);
+                }
+                @Override
+                public ArgumentExpressionKind reduce(ArgumentExpressionKind kind1,
+                                                     ArgumentExpressionKind kind2) {
+                    switch (kind1) {
+                        case PRIMITIVE: return kind2;
+                        case NO_POLY: return kind2.isPoly() ? kind2 : kind1;
+                        case POLY: return kind1;
+                        default:
+                            Assert.error();
+                            return null;
+                    }
+                }
+                @Override
+                public boolean shouldStop(ArgumentExpressionKind result) {
+                    return result.isPoly();
+                }
+            };
+
+        @Override
+        public void visitLiteral(JCLiteral tree) {
+            Type litType = attr.litType(tree.typetag);
+            result = ArgumentExpressionKind.standaloneKind(litType, types);
+        }
+
+        @Override
+        void skip(JCTree tree) {
+            result = ArgumentExpressionKind.NO_POLY;
+        }
+
+        private Symbol quicklyResolveMethod(Env<AttrContext> env, final JCMethodInvocation tree) {
             final JCExpression rec = tree.meth.hasTag(SELECT) ?
                     ((JCFieldAccess)tree.meth).selected :
                     null;
 
             if (rec != null && !isSimpleReceiver(rec)) {
-                //give up if receiver is too complex (to cut down analysis time)
-                result = ArgumentExpressionKind.POLY;
-                return;
+                return null;
             }
 
-            Type site = rec != null ?
-                    attribSpeculative(rec, env, attr.unknownTypeExprInfo).type :
-                    env.enclClass.sym.type;
+            Type site;
 
-            while (site.hasTag(TYPEVAR)) {
-                site = site.getUpperBound();
+            if (rec != null) {
+                if (rec.hasTag(APPLY)) {
+                    Symbol recSym = quicklyResolveMethod(env, (JCMethodInvocation) rec);
+                    if (recSym == null)
+                        return null;
+                    Symbol resolvedReturnType =
+                            analyzeCandidateMethods(recSym, syms.errSymbol, returnSymbolAnalyzer);
+                    if (resolvedReturnType == null)
+                        return null;
+                    site = resolvedReturnType.type;
+                } else {
+                    site = attribSpeculative(rec, env, attr.unknownTypeExprInfo).type;
+                }
+            } else {
+                site = env.enclClass.sym.type;
             }
 
             List<Type> args = rs.dummyArgs(tree.args.length());
+            Name name = TreeInfo.name(tree.meth);
 
             Resolve.LookupHelper lh = rs.new LookupHelper(name, site, args, List.<Type>nil(), MethodResolutionPhase.VARARITY) {
                 @Override
@@ -1254,61 +1331,60 @@ public class DeferredAttr extends JCTree.Visitor {
                 }
             };
 
-            Symbol sym = rs.lookupMethod(env, tree, site.tsym, rs.arityMethodCheck, lh);
+            return rs.lookupMethod(env, tree, site.tsym, rs.arityMethodCheck, lh);
+        }
+        //where:
+            MethodAnalyzer<Symbol> returnSymbolAnalyzer = new MethodAnalyzer<Symbol>() {
+                @Override
+                public Symbol process(MethodSymbol ms) {
+                    ArgumentExpressionKind kind = ArgumentExpressionKind.methodKind(ms, types);
+                    return kind != ArgumentExpressionKind.POLY ? ms.getReturnType().tsym : null;
+                }
+                @Override
+                public Symbol reduce(Symbol s1, Symbol s2) {
+                    return s1 == syms.errSymbol ? s2 : s1 == s2 ? s1 : null;
+                }
+                @Override
+                public boolean shouldStop(Symbol result) {
+                    return result == null;
+                }
+            };
 
-            if (sym.kind == Kinds.AMBIGUOUS) {
-                Resolve.AmbiguityError err = (Resolve.AmbiguityError)sym.baseSymbol();
-                result = ArgumentExpressionKind.PRIMITIVE;
-                for (Symbol s : err.ambiguousSyms) {
-                    if (result.isPoly()) break;
-                    if (s.kind == Kinds.MTH) {
-                        result = reduce(ArgumentExpressionKind.methodKind(s, types));
+        /**
+         * Process the result of Resolve.lookupMethod. If sym is a method symbol, the result of
+         * MethodAnalyzer.process is returned. If sym is an ambiguous symbol, all the candidate
+         * methods are inspected one by one, using MethodAnalyzer.process. The outcomes are
+         * reduced using MethodAnalyzer.reduce (using defaultValue as the first value over which
+         * the reduction runs). MethodAnalyzer.shouldStop can be used to stop the inspection early.
+         */
+        <E> E analyzeCandidateMethods(Symbol sym, E defaultValue, MethodAnalyzer<E> analyzer) {
+            switch (sym.kind) {
+                case Kinds.MTH:
+                    return analyzer.process((MethodSymbol) sym);
+                case Kinds.AMBIGUOUS:
+                    Resolve.AmbiguityError err = (Resolve.AmbiguityError)sym.baseSymbol();
+                    E res = defaultValue;
+                    for (Symbol s : err.ambiguousSyms) {
+                        if (s.kind == Kinds.MTH) {
+                            res = analyzer.reduce(res, analyzer.process((MethodSymbol) s));
+                            if (analyzer.shouldStop(res))
+                                return res;
+                        }
                     }
-                }
-            } else {
-                result = (sym.kind == Kinds.MTH) ?
-                    ArgumentExpressionKind.methodKind(sym, types) :
-                    ArgumentExpressionKind.NO_POLY;
+                    return res;
+                default:
+                    return defaultValue;
             }
-        }
-        //where
-            private boolean isSimpleReceiver(JCTree rec) {
-                switch (rec.getTag()) {
-                    case IDENT:
-                        return true;
-                    case SELECT:
-                        return isSimpleReceiver(((JCFieldAccess)rec).selected);
-                    case TYPEAPPLY:
-                    case TYPEARRAY:
-                        return true;
-                    case ANNOTATED_TYPE:
-                        return isSimpleReceiver(((JCAnnotatedType)rec).underlyingType);
-                    default:
-                        return false;
-                }
-            }
-            private ArgumentExpressionKind reduce(ArgumentExpressionKind kind) {
-                switch (result) {
-                    case PRIMITIVE: return kind;
-                    case NO_POLY: return kind.isPoly() ? kind : result;
-                    case POLY: return result;
-                    default:
-                        Assert.error();
-                        return null;
-                }
-            }
-
-        @Override
-        public void visitLiteral(JCLiteral tree) {
-            Type litType = attr.litType(tree.typetag);
-            result = ArgumentExpressionKind.standaloneKind(litType, types);
-        }
-
-        @Override
-        void skip(JCTree tree) {
-            result = ArgumentExpressionKind.NO_POLY;
         }
     }
+
+    /** Analyzer for methods - used by analyzeCandidateMethods. */
+    interface MethodAnalyzer<E> {
+        E process(MethodSymbol ms);
+        E reduce(E e1, E e2);
+        boolean shouldStop(E result);
+    }
+
     //where
     private EnumSet<JCTree.Tag> deferredCheckerTags =
             EnumSet.of(LAMBDA, REFERENCE, PARENS, TYPECAST,
