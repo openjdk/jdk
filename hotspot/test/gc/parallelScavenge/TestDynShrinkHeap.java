@@ -26,7 +26,7 @@
  * @bug 8016479
  * @summary Verify that the heap shrinks after full GC according to the current values of the Min/MaxHeapFreeRatio flags
  * @library /testlibrary
- * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -verbose:gc TestDynShrinkHeap
+ * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc TestDynShrinkHeap
  */
 import com.oracle.java.testlibrary.DynamicVMOption;
 import java.lang.management.ManagementFactory;
@@ -41,7 +41,7 @@ public class TestDynShrinkHeap {
     public static final String MAX_FREE_RATIO_FLAG_NAME = "MaxHeapFreeRatio";
 
     private static ArrayList<byte[]> list = new ArrayList<>(0);
-    private static final int M = 1024 * 1024; // to make heap more manageable by test code
+    private static final int LEN = 512 * 1024 + 1;
 
     public TestDynShrinkHeap() {
     }
@@ -69,12 +69,12 @@ public class TestDynShrinkHeap {
     }
 
     private void eat() {
-        for (int i = 0; i < M; i++) {
+        for (int i = 0; i < LEN; i++) {
             list.add(new byte[1024]);
         }
-        MemoryUsagePrinter.printMemoryUsage("allocated " + M + " arrays");
+        MemoryUsagePrinter.printMemoryUsage("allocated " + LEN + " arrays");
 
-        list.subList(0, M / 2).clear();
+        list.subList(0, LEN / 2).clear();
         System.gc();
         MemoryUsagePrinter.printMemoryUsage("array halved");
     }

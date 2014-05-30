@@ -1,13 +1,10 @@
 #!/bin/sh
 
-##
-## @test Test6929067.sh
-## @bug 6929067
-## @bug 8021296
-## @bug 8025519
-## @summary Stack guard pages should be removed when thread is detached
-## @run shell Test6929067.sh
-##
+#
+# @test testme.sh
+# @summary Stack guard pages should be installed correctly and removed when thread is detached
+# @run shell testme.sh
+#
 
 if [ "${TESTSRC}" = "" ]
 then
@@ -32,11 +29,8 @@ fi
 
 CFLAGS=-m${VM_BITS}
 
-LD_LIBRARY_PATH=.:${TESTJAVA}/jre/lib/${VM_CPU}/${VM_TYPE}:/usr/lib:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH=.:${TESTJAVA}/jre/lib/${VM_CPU}/${VM_TYPE}:${TESTJAVA}/lib/${VM_CPU}/${VM_TYPE}:/usr/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
-
-cp ${TESTSRC}/*.java ${THIS_DIR}
-${COMPILEJAVA}/bin/javac *.java
 
 echo "Architecture: ${VM_CPU}"
 echo "Compilation flag: ${CFLAGS}"
@@ -47,10 +41,20 @@ echo "LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
 # Check to ensure you have a /usr/lib/libpthread.so if you don't please look
 # for /usr/lib/`uname -m`-linux-gnu version ensure to add that path to below compilation.
 
-$gcc_cmd -DLINUX ${CFLAGS} -o invoke \
+cp ${TESTSRC}/DoOverflow.java .
+${COMPILEJAVA}/bin/javac DoOverflow.java
+
+$gcc_cmd -DLINUX -g3 ${CFLAGS} -o invoke \
     -I${TESTJAVA}/include -I${TESTJAVA}/include/linux \
     -L${TESTJAVA}/jre/lib/${VM_CPU}/${VM_TYPE} \
+    -L${TESTJAVA}/lib/${VM_CPU}/${VM_TYPE} \
      ${TESTSRC}/invoke.c -ljvm -lpthread
 
-./invoke
+if [ $? -ne 0 ] ; then
+    echo "Compile failed, Ignoring failed compilation and forcing the test to pass"
+    exit 0
+fi
+
+./invoke test_java_overflow
+./invoke test_native_overflow
 exit $?
