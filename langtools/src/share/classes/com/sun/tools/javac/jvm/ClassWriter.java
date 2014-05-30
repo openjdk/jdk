@@ -459,11 +459,11 @@ public class ClassWriter extends ClassFile {
                 poolbuf.appendChar(pool.put(names.fromString((String)value)));
             } else if (value instanceof UniqueType) {
                 Type type = ((UniqueType)value).type;
-                if (type instanceof MethodType) {
+                if (type.hasTag(METHOD)) {
                     poolbuf.appendByte(CONSTANT_MethodType);
                     poolbuf.appendChar(pool.put(typeSig((MethodType)type)));
                 } else {
-                    if (type.hasTag(CLASS)) enterInner((ClassSymbol)type.tsym);
+                    Assert.check(type.hasTag(ARRAY));
                     poolbuf.appendByte(CONSTANT_Class);
                     poolbuf.appendChar(pool.put(xClassName(type)));
                 }

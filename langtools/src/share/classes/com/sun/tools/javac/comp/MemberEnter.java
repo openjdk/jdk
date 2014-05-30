@@ -25,10 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 
 import javax.tools.JavaFileObject;
@@ -49,6 +46,7 @@ import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.ERROR;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
@@ -75,7 +73,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Attr attr;
     private final Symtab syms;
     private final TreeMaker make;
-    private final ClassReader reader;
     private final Todo todo;
     private final Annotate annotate;
     private final TypeAnnotations typeAnnotations;
@@ -102,7 +99,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         attr = Attr.instance(context);
         syms = Symtab.instance(context);
         make = TreeMaker.instance(context);
-        reader = ClassReader.instance(context);
         todo = Todo.instance(context);
         annotate = Annotate.instance(context);
         typeAnnotations = TypeAnnotations.instance(context);

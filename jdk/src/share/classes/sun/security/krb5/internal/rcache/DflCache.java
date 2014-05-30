@@ -39,7 +39,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.security.AccessController;
 import java.util.*;
 
-import com.sun.security.auth.module.UnixSystem;
 import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.KerberosTime;
 import sun.security.krb5.internal.Krb5;
@@ -61,8 +60,7 @@ import sun.security.krb5.internal.ReplayCache;
  *
  *    service_euid
  *
- * Java does not have a method to get euid, so uid is used instead. This
- * should normally to be since a Java program is seldom used as a setuid app.
+ * in which euid is available as sun.misc.VM.geteuid().
  *
  * The file has a header:
  *
@@ -108,14 +106,8 @@ public class DflCache extends ReplayCache {
 
     private static long uid;
     static {
-        try {
-            // Available on Solaris, Linux and Mac. Otherwise, no _euid suffix
-            UnixSystem us = new com.sun.security.auth.module.UnixSystem();
-            uid = us.getUid();
-        } catch (Throwable e) {
-            // Cannot be only Exception, might be UnsatisfiedLinkError
-            uid = -1;
-        }
+        // Available on Solaris, Linux and Mac. Otherwise, -1 and no _euid suffix
+        uid = sun.misc.VM.geteuid();
     }
 
     public DflCache (String source) {

@@ -320,8 +320,10 @@ public class TreePath extends Object implements Serializable {
      * plus <code>child</code>. <code>child</code> is the last element
      * of the newly created {@code TreePath}.
      *
-     * @param child the path element to add
-     * @throws NullPointerException if {@code child} is {@code null}
+     * @param   child   the path element to add
+     * @throws          NullPointerException if {@code child} is {@code null}
+     * @return          a new path containing all the elements of this path
+     *                  plus {@code child}
      */
     public TreePath pathByAddingChild(Object child) {
         if(child == null)

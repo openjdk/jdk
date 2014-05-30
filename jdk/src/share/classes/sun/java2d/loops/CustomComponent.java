@@ -50,7 +50,7 @@ public final class CustomComponent {
     public static void register() {
         // REMIND: This does not work for all destinations yet since
         // the screen SurfaceData objects do not implement getRaster
-        Class owner = CustomComponent.class;
+        Class<?> owner = CustomComponent.class;
         GraphicsPrimitive[] primitives = {
             new GraphicsPrimitiveProxy(owner, "OpaqueCopyAnyToArgb",
                                        Blit.methodSignature,

@@ -317,9 +317,9 @@ public class Names {
     protected Name.Table createTable(Options options) {
         boolean useUnsharedTable = options.isSet("useUnsharedTable");
         if (useUnsharedTable)
-            return new UnsharedNameTable(this);
+            return UnsharedNameTable.create(this);
         else
-            return new SharedNameTable(this);
+            return SharedNameTable.create(this);
     }
 
     public void dispose() {

@@ -435,7 +435,7 @@ JNF_COCOA_ENTER(env);
         forceEmbeddedMode = YES;
     }
     JNIEnv* env = [ThreadUtilities getJNIEnvUncached];
-    jclass jc_ThreadGroupUtils = (*env)->FindClass(env, "sun/misc/ThreadGroupUtils");
+    jclass jc_ThreadGroupUtils = (*env)->FindClass(env, "sun/awt/util/ThreadGroupUtils");
     jmethodID sjm_getRootThreadGroup = (*env)->GetStaticMethodID(env, jc_ThreadGroupUtils, "getRootThreadGroup", "()Ljava/lang/ThreadGroup;");
     jobject rootThreadGroup = (*env)->CallStaticObjectMethod(env, jc_ThreadGroupUtils, sjm_getRootThreadGroup);
     [ThreadUtilities setAppkitThreadGroup:(*env)->NewGlobalRef(env, rootThreadGroup)];

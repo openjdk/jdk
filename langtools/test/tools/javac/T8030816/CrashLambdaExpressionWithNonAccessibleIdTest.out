@@ -1,3 +1,2 @@
-CrashLambdaExpressionWithNonAccessibleIdTest.java:15:35: compiler.err.missing.ret.stmt
 CrashLambdaExpressionWithNonAccessibleIdTest.java:14:17: compiler.err.cant.resolve.location: kindname.class, A, , , (compiler.misc.location: kindname.class, CrashLambdaExpressionWithNonAccessibleIdTest, null)
-2 errors
+1 error

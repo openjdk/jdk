@@ -40,15 +40,15 @@ public class OffScreenImageSource implements ImageProducer {
     BufferedImage image;
     int width;
     int height;
-    Hashtable properties;
+    Hashtable<?, ?> properties;
 
     public OffScreenImageSource(BufferedImage image,
-                                Hashtable properties) {
+                                Hashtable<?, ?> properties) {
         this.image = image;
         if (properties != null) {
             this.properties = properties;
         } else {
-            this.properties = new Hashtable();
+            this.properties = new Hashtable<String, Object>();
         }
         width  = image.getWidth();
         height = image.getHeight();

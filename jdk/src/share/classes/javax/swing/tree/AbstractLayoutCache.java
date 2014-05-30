@@ -149,6 +149,8 @@ public abstract class AbstractLayoutCache implements RowMapper {
      * Returns the height of each row.  If the returned value is less than
      * or equal to 0 the height for each row is determined by the
      * renderer.
+     *
+     * @return the height of each row
      */
     public int getRowHeight() {
         return rowHeight;
@@ -263,6 +265,9 @@ public abstract class AbstractLayoutCache implements RowMapper {
 
     /**
       * Returns true if the value identified by row is currently expanded.
+      *
+      * @param path TreePath to check
+      * @return whether TreePath is expanded
       */
     public abstract boolean isExpanded(TreePath path);
 
@@ -496,6 +501,8 @@ public abstract class AbstractLayoutCache implements RowMapper {
 
     /**
       * Returns true if the height of each row is a fixed size.
+      *
+      * @return whether the height of each row is a fixed size
       */
     protected boolean isFixedRowHeight() {
         return (rowHeight > 0);

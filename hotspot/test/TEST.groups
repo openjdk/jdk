@@ -83,6 +83,7 @@ needs_jdk = \
   runtime/RedefineObject/TestRedefineObject.java \
   runtime/XCheckJniJsig/XCheckJSig.java \
   serviceability/attach/AttachWithStalePidFile.java \
+  serviceability/jvmti/8036666/GetObjectLockCount.java \
   serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java \
   serviceability/dcmd/DynLibDcmdTest.java
 
@@ -134,6 +135,8 @@ needs_compact3 = \
   gc/parallelScavenge/TestDynShrinkHeap.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   serviceability/threads/TestFalseDeadLock.java \
+  serviceability/jvmti/GetObjectSizeOverflow.java \
+  serviceability/jvmti/TestRedefineWithUnresolvedClass.java \
   compiler/tiered/NonTieredLevelsTest.java \
   compiler/tiered/TieredLevelsTest.java \
   compiler/intrinsics/bmi/verifycode \

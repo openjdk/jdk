@@ -51,7 +51,7 @@ public class BufImgSurfaceData extends SurfaceData {
     private BufferedImageGraphicsConfig graphicsConfig;
     RenderLoops solidloops;
 
-    private static native void initIDs(Class ICM, Class ICMColorData);
+    private static native void initIDs(Class<?> ICM, Class<?> ICMColorData);
 
     private static final int DCM_RGBX_RED_MASK   = 0xff000000;
     private static final int DCM_RGBX_GREEN_MASK = 0x00ff0000;

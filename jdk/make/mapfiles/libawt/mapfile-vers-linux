@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -152,13 +152,6 @@ SUNWprivate_1.1 {
                 # Evidently CDE needs this for backward compatability.
 		Java_sun_awt_motif_XsessionWMcommand;
 
-		# Java Plugin
-                # This is in awt_LoadLibrary.c and falls through to libmawt.
-                # Evidently plugin needs this for backward compatability.
-		getAwtLockFunctions;
-		getAwtData;
-		getAwtDisplay;
-
 		# libfontmanager entry points
 		AWTIsHeadless;
 		GrPrim_Sg2dGetCompInfo;
@@ -282,11 +275,6 @@ SUNWprivate_1.1 {
 
 		# CDE private entry point
 		Java_sun_awt_motif_XsessionWMcommand;
-
-		# Java Plugin
-		getAwtLockFunctions;
-		getAwtData;
-		getAwtDisplay;
 
 		# libfontmanager entry points
 		AWTIsHeadless;

@@ -111,9 +111,9 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
     }
 
     protected void annotateClass(final Class<?> cl) throws IOException {
-        ClassLoader classLoader =
-            (ClassLoader)AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        ClassLoader classLoader = AccessController.doPrivileged(
+            new PrivilegedAction<ClassLoader>() {
+                public ClassLoader run() {
                     return cl.getClassLoader();
                 }
             });
@@ -124,14 +124,14 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
         map.put(s, classLoader);
     }
     protected void annotateProxyClass(final Class<?> cl) throws IOException {
-        ClassLoader classLoader =
-            (ClassLoader)AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        ClassLoader classLoader = AccessController.doPrivileged(
+            new PrivilegedAction<ClassLoader>() {
+                public ClassLoader run() {
                     return cl.getClassLoader();
                 }
             });
 
-        Class[] interfaces = cl.getInterfaces();
+        Class<?>[] interfaces = cl.getInterfaces();
         Set<String> s = new HashSet<String>(interfaces.length);
         for (int i = 0; i < interfaces.length; i++) {
             s.add(interfaces[i].getName());
@@ -141,7 +141,7 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
     }
 
     Map<Set<String>, ClassLoader> getClassLoaderMap() {
-        return new HashMap(map);
+        return new HashMap<>(map);
     }
 }
 
@@ -191,9 +191,9 @@ final class ClassLoaderObjectInputStream extends ObjectInputStream {
         boolean hasNonPublicInterface = false;
 
         // define proxy in class loader of non-public interface(s), if any
-        Class[] classObjs = new Class[interfaces.length];
+        Class<?>[] classObjs = new Class<?>[interfaces.length];
         for (int i = 0; i < interfaces.length; i++) {
-            Class cl = Class.forName(interfaces[i], false, classLoader);
+            Class<?> cl = Class.forName(interfaces[i], false, classLoader);
             if ((cl.getModifiers() & Modifier.PUBLIC) == 0) {
                 if (hasNonPublicInterface) {
                     if (nonPublicLoader != cl.getClassLoader()) {

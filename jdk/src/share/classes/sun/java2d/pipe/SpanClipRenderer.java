@@ -39,14 +39,14 @@ public class SpanClipRenderer implements CompositePipe
 {
     CompositePipe outpipe;
 
-    static Class RegionClass = Region.class;
-    static Class RegionIteratorClass = RegionIterator.class;
+    static Class<?> RegionClass = Region.class;
+    static Class<?> RegionIteratorClass = RegionIterator.class;
 
     static {
         initIDs(RegionClass, RegionIteratorClass);
     }
 
-    static native void initIDs(Class rc, Class ric);
+    static native void initIDs(Class<?> rc, Class<?> ric);
 
     public SpanClipRenderer(CompositePipe pipe) {
         outpipe = pipe;
