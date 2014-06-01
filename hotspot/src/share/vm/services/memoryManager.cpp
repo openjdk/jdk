@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 
 MemoryManager::MemoryManager() {
   _num_pools = 0;
-  (void)const_cast<instanceOop&>(_memory_mgr_obj = NULL);
+  (void)const_cast<instanceOop&>(_memory_mgr_obj = instanceOop(NULL));
 }
 
 void MemoryManager::add_pool(MemoryPool* pool) {

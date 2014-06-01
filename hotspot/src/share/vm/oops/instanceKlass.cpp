@@ -1501,6 +1501,21 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, M
   return NULL;
 }
 
+#ifdef ASSERT
+// search through class hierarchy and return true if this class or
+// one of the superclasses was redefined
+bool InstanceKlass::has_redefined_this_or_super() const {
+  const InstanceKlass* klass = this;
+  while (klass != NULL) {
+    if (klass->has_been_redefined()) {
+      return true;
+    }
+    klass = InstanceKlass::cast(klass->super());
+  }
+  return false;
+}
+#endif
+
 // lookup a method in the default methods list then in all transitive interfaces
 // Do NOT return private or static methods
 Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
