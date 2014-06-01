@@ -21,29 +21,14 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8042885
- * @summary Make sure there is no error using hexadecimal format in vm options
- * @author Yumin Qi
- * @library /testlibrary
- */
-
-import java.io.File;
-import com.oracle.java.testlibrary.*;
-
-public class TestHexArguments {
-    public static void main(String args[]) throws Exception {
-      String[] javaArgs = {"-XX:SharedBaseAddress=0x1D000000", "-version"};
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs);
-
-      OutputAnalyzer output = new OutputAnalyzer(pb.start());
-      output.shouldNotContain("Could not create the Java Virtual Machine");
-      output.shouldHaveExitValue(0);
-
-      String[] javaArgs1 = {"-XX:SharedBaseAddress=1D000000", "-version"};
-      pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
-      output = new OutputAnalyzer(pb.start());
-      output.shouldContain("Could not create the Java Virtual Machine");
-  }
+public class Main {
+    public static void main(String[] args) {
+      try {
+          MartyrSon m = new MartyrSon();
+          System.out.println(m.getName());
+          System.runFinalization();
+      } catch (Throwable e) {
+          e.printStackTrace();
+      }
+    }
 }
