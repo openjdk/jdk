@@ -68,6 +68,7 @@ class ciMethod : public ciMetadata {
   int _max_locals;
   vmIntrinsics::ID _intrinsic_id;
   int _handler_count;
+  int _nmethod_age;
   int _interpreter_invocation_count;
   int _interpreter_throwout_count;
   int _instructions_size;
@@ -168,6 +169,10 @@ class ciMethod : public ciMetadata {
   int interpreter_invocation_count() const       { check_is_loaded(); return _interpreter_invocation_count; }
   int interpreter_throwout_count() const         { check_is_loaded(); return _interpreter_throwout_count; }
   int size_of_parameters() const                 { check_is_loaded(); return _size_of_parameters; }
+  int nmethod_age() const                        { check_is_loaded(); return _nmethod_age; }
+
+  // Should the method be compiled with an age counter?
+  bool profile_aging() const;
 
   // Code size for inlining decisions.
   int code_size_for_inlining();

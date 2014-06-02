@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/stringTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"

@@ -50,7 +50,6 @@ import com.sun.tools.javac.code.Type.JCVoidType;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Type.UnknownType;
 import com.sun.tools.javac.jvm.ByteCodes;
-import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
@@ -470,8 +469,8 @@ public class Symtab {
         Scope scope = new Scope(predefClass);
         predefClass.members_field = scope;
 
-        // Get the initial completer for Symbols from the ClassReader
-        initialCompleter = ClassReader.instance(context).getCompleter();
+        // Get the initial completer for Symbols from the ClassFinder
+        initialCompleter = ClassFinder.instance(context).getCompleter();
         rootPackage.completer = initialCompleter;
         unnamedPackage.completer = initialCompleter;
 

@@ -33,7 +33,7 @@
  * @author  Mandy Chung
  *
  * @library /lib/testlibrary/
- * @build ResetPeakMemoryUsage MemoryUtil RunUtil
+ * @build jdk.testlibrary.* ResetPeakMemoryUsage MemoryUtil RunUtil
  * @run main ResetPeakMemoryUsage
  */
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -13424,10 +13424,10 @@
             <state stateKeys="Selected">
                 <style>
                    <textForeground>
-                      <matte red="255" green="255" blue="255" alpha="255" uiDefaultParentName="nimbusLightBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0" uiResource="false"/>
+                      <matte red="255" green="255" blue="255" alpha="255" uiDefaultParentName="nimbusLightBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                    </textForeground>
                    <textBackground>
-                      <matte red="57" green="105" blue="138" alpha="255" uiDefaultParentName="nimbusSelectionBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0" uiResource="false"/>
+                      <matte red="57" green="105" blue="138" alpha="255" uiDefaultParentName="nimbusSelectionBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                    </textBackground>
                    <background/>
                    <inherit-textForeground>false</inherit-textForeground>
@@ -13453,7 +13453,7 @@
                 <style>
                    <textForeground/>
                    <textBackground>
-                       <matte red="57" green="105" blue="138" alpha="255" uiDefaultParentName="nimbusSelectionBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0" uiResource="false"/>
+                       <matte red="57" green="105" blue="138" alpha="255" uiDefaultParentName="nimbusSelectionBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                    </textBackground>
                    <background/>
                    <inherit-textBackground>false</inherit-textBackground>
@@ -13477,7 +13477,7 @@
             <state stateKeys="Disabled">
                 <style>
                    <textForeground>
-                      <matte red="142" green="143" blue="145" alpha="255" uiDefaultParentName="nimbusDisabledText" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0" uiResource="false"/>
+                      <matte red="142" green="143" blue="145" alpha="255" uiDefaultParentName="nimbusDisabledText" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                    </textForeground>
                    <textBackground/>
                    <background/>
@@ -13520,7 +13520,7 @@
                         </textForeground>
                         <textBackground/>
                         <background>
-                           <matte red="57" green="105" blue="138" alpha="255" uiDefaultParentName="nimbusSelectionBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0" uiResource="false"/>
+                           <matte red="57" green="105" blue="138" alpha="255" uiDefaultParentName="nimbusSelectionBackground" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
                         </background>
                         <inherit-textForeground>false</inherit-textForeground>
                         <inherit-background>false</inherit-background>

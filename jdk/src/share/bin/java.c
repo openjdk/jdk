@@ -739,6 +739,9 @@ SetClassPath(const char *s)
     if (s == NULL)
         return;
     s = JLI_WildcardExpandClasspath(s);
+    if (sizeof(format) - 2 + JLI_StrLen(s) < JLI_StrLen(s))
+        // s is became corrupted after expanding wildcards
+        return;
     def = JLI_MemAlloc(sizeof(format)
                        - 2 /* strlen("%s") */
                        + JLI_StrLen(s));
@@ -1358,9 +1361,11 @@ AddApplicationOptions(int cpathc, const char **cpathv)
         if (s) {
             s = (char *) JLI_WildcardExpandClasspath(s);
             /* 40 for -Denv.class.path= */
-            envcp = (char *)JLI_MemAlloc(JLI_StrLen(s) + 40);
-            sprintf(envcp, "-Denv.class.path=%s", s);
-            AddOption(envcp, NULL);
+            if (JLI_StrLen(s) + 40 > JLI_StrLen(s)) { // Safeguard from overflow
+                envcp = (char *)JLI_MemAlloc(JLI_StrLen(s) + 40);
+                sprintf(envcp, "-Denv.class.path=%s", s);
+                AddOption(envcp, NULL);
+            }
         }
     }
 

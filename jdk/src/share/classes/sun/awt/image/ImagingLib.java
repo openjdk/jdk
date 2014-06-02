@@ -61,7 +61,7 @@ public class ImagingLib {
     private static final int AFFINE_OP   = 1;
     private static final int CONVOLVE_OP = 2;
 
-    private static Class[] nativeOpClass = new Class[NUM_NATIVE_OPS];
+    private static Class<?>[] nativeOpClass = new Class<?>[NUM_NATIVE_OPS];
 
     /**
      * Returned value indicates whether the library initailization was
@@ -134,7 +134,7 @@ public class ImagingLib {
 
     }
 
-    private static int getNativeOpIndex(Class opClass) {
+    private static int getNativeOpIndex(Class<?> opClass) {
         //
         // Search for this class in cached list of
         // classes supplying native acceleration

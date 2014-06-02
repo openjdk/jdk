@@ -75,11 +75,14 @@ void AdvancedThresholdPolicy::initialize() {
 
 // update_rate() is called from select_task() while holding a compile queue lock.
 void AdvancedThresholdPolicy::update_rate(jlong t, Method* m) {
-  JavaThread* THREAD = JavaThread::current();
+  // Skip update if counters are absent.
+  // Can't allocate them since we are holding compile queue lock.
+  if (m->method_counters() == NULL)  return;
+
   if (is_old(m)) {
     // We don't remove old methods from the queue,
     // so we can just zero the rate.
-    m->set_rate(0, THREAD);
+    m->set_rate(0);
     return;
   }
 
@@ -95,14 +98,15 @@ void AdvancedThresholdPolicy::update_rate(jlong t, Method* m) {
   if (delta_s >= TieredRateUpdateMinTime) {
     // And we must've taken the previous point at least 1ms before.
     if (delta_t >= TieredRateUpdateMinTime && delta_e > 0) {
-      m->set_prev_time(t, THREAD);
-      m->set_prev_event_count(event_count, THREAD);
-      m->set_rate((float)delta_e / (float)delta_t, THREAD); // Rate is events per millisecond
-    } else
+      m->set_prev_time(t);
+      m->set_prev_event_count(event_count);
+      m->set_rate((float)delta_e / (float)delta_t); // Rate is events per millisecond
+    } else {
       if (delta_t > TieredRateUpdateMaxTime && delta_e == 0) {
         // If nothing happened for 25ms, zero the rate. Don't modify prev values.
-        m->set_rate(0, THREAD);
+        m->set_rate(0);
       }
+    }
   }
 }
 
@@ -164,7 +168,6 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
   for (CompileTask* task = compile_queue->first(); task != NULL;) {
     CompileTask* next_task = task->next();
     Method* method = task->method();
-    MethodData* mdo = method->method_data();
     update_rate(t, method);
     if (max_task == NULL) {
       max_task = task;
@@ -175,8 +178,7 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
         if (PrintTieredEvents) {
           print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
         }
-        CompileTaskWrapper ctw(task); // Frees the task
-        compile_queue->remove(task);
+        compile_queue->remove_and_mark_stale(task);
         method->clear_queued_for_compilation();
         task = next_task;
         continue;

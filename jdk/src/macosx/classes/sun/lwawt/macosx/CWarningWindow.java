@@ -309,6 +309,10 @@ public final class CWarningWindow extends CPlatformWindow
     @Override
     public void dispose() {
         cancelTasks();
+        SurfaceData surfaceData = contentView.getSurfaceData();
+        if (surfaceData != null) {
+            surfaceData.invalidate();
+        }
         super.dispose();
     }
 

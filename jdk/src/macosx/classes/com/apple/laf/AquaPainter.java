@@ -174,11 +174,7 @@ abstract class AquaPainter <T extends JRSUIState> {
                                                         bounds, controlState);
             Image img = cache.getImage(key);
             if (img == null) {
-
-                Image baseImage = createImage(imgX, imgY, imgW, imgH, bounds,
-                                              control, controlState);
-
-                img = new MultiResolutionBufferedImage(baseImage,
+                img = new MultiResolutionCachedImage(imgW, imgH,
                         (rvWidth, rvHeight) -> createImage(imgX, imgY,
                          rvWidth, rvHeight, bounds, control, controlState));
 

@@ -32,6 +32,7 @@
 #include "gc_implementation/shared/markSweep.inline.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/prefetch.inline.hpp"
 
 PSMarkSweepDecorator* PSMarkSweepDecorator::_destination_decorator = NULL;
 

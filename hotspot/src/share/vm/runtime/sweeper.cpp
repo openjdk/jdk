@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@
 #include "utilities/events.hpp"
 #include "utilities/ticks.inline.hpp"
 #include "utilities/xmlstream.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #ifdef ASSERT
 
@@ -571,43 +573,100 @@ int NMethodSweeper::process_nmethod(nmethod *nm) {
       SWEEP(nm);
     }
   } else {
-    if (UseCodeCacheFlushing) {
-      if (!nm->is_locked_by_vm() && !nm->is_osr_method() && !nm->is_native_method()) {
-        // Do not make native methods and OSR-methods not-entrant
-        nm->dec_hotness_counter();
-        // Get the initial value of the hotness counter. This value depends on the
-        // ReservedCodeCacheSize
-        int reset_val = hotness_counter_reset_val();
-        int time_since_reset = reset_val - nm->hotness_counter();
-        double threshold = -reset_val + (CodeCache::reverse_free_ratio() * NmethodSweepActivity);
-        // The less free space in the code cache we have - the bigger reverse_free_ratio() is.
-        // I.e., 'threshold' increases with lower available space in the code cache and a higher
-        // NmethodSweepActivity. If the current hotness counter - which decreases from its initial
-        // value until it is reset by stack walking - is smaller than the computed threshold, the
-        // corresponding nmethod is considered for removal.
-        if ((NmethodSweepActivity > 0) && (nm->hotness_counter() < threshold) && (time_since_reset > 10)) {
-          // A method is marked as not-entrant if the method is
-          // 1) 'old enough': nm->hotness_counter() < threshold
-          // 2) The method was in_use for a minimum amount of time: (time_since_reset > 10)
-          //    The second condition is necessary if we are dealing with very small code cache
-          //    sizes (e.g., <10m) and the code cache size is too small to hold all hot methods.
-          //    The second condition ensures that methods are not immediately made not-entrant
-          //    after compilation.
-          nm->make_not_entrant();
-          // Code cache state change is tracked in make_not_entrant()
-          if (PrintMethodFlushing && Verbose) {
-            tty->print_cr("### Nmethod %d/" PTR_FORMAT "made not-entrant: hotness counter %d/%d threshold %f",
-                          nm->compile_id(), nm, nm->hotness_counter(), reset_val, threshold);
-          }
-        }
-      }
-    }
+    possibly_flush(nm);
     // Clean-up all inline caches that point to zombie/non-reentrant methods
     MutexLocker cl(CompiledIC_lock);
     nm->cleanup_inline_caches();
     SWEEP(nm);
   }
   return freed_memory;
+}
+
+
+void NMethodSweeper::possibly_flush(nmethod* nm) {
+  if (UseCodeCacheFlushing) {
+    if (!nm->is_locked_by_vm() && !nm->is_osr_method() && !nm->is_native_method()) {
+      bool make_not_entrant = false;
+
+      // Do not make native methods and OSR-methods not-entrant
+      nm->dec_hotness_counter();
+      // Get the initial value of the hotness counter. This value depends on the
+      // ReservedCodeCacheSize
+      int reset_val = hotness_counter_reset_val();
+      int time_since_reset = reset_val - nm->hotness_counter();
+      double threshold = -reset_val + (CodeCache::reverse_free_ratio() * NmethodSweepActivity);
+      // The less free space in the code cache we have - the bigger reverse_free_ratio() is.
+      // I.e., 'threshold' increases with lower available space in the code cache and a higher
+      // NmethodSweepActivity. If the current hotness counter - which decreases from its initial
+      // value until it is reset by stack walking - is smaller than the computed threshold, the
+      // corresponding nmethod is considered for removal.
+      if ((NmethodSweepActivity > 0) && (nm->hotness_counter() < threshold) && (time_since_reset > MinPassesBeforeFlush)) {
+        // A method is marked as not-entrant if the method is
+        // 1) 'old enough': nm->hotness_counter() < threshold
+        // 2) The method was in_use for a minimum amount of time: (time_since_reset > MinPassesBeforeFlush)
+        //    The second condition is necessary if we are dealing with very small code cache
+        //    sizes (e.g., <10m) and the code cache size is too small to hold all hot methods.
+        //    The second condition ensures that methods are not immediately made not-entrant
+        //    after compilation.
+        make_not_entrant = true;
+      }
+
+      // The stack-scanning low-cost detection may not see the method was used (which can happen for
+      // flat profiles). Check the age counter for possible data.
+      if (UseCodeAging && make_not_entrant && (nm->is_compiled_by_c2() || nm->is_compiled_by_c1())) {
+        MethodCounters* mc = nm->method()->method_counters();
+        if (mc == NULL) {
+          // Sometimes we can get here without MethodCounters. For example if we run with -Xcomp.
+          // Try to allocate them.
+          mc = Method::build_method_counters(nm->method(), Thread::current());
+        }
+        if (mc != NULL) {
+          // Snapshot the value as it's changed concurrently
+          int age = mc->nmethod_age();
+          if (MethodCounters::is_nmethod_hot(age)) {
+            // The method has gone through flushing, and it became relatively hot that it deopted
+            // before we could take a look at it. Give it more time to appear in the stack traces,
+            // proportional to the number of deopts.
+            MethodData* md = nm->method()->method_data();
+            if (md != NULL && time_since_reset > (int)(MinPassesBeforeFlush * (md->tenure_traps() + 1))) {
+              // It's been long enough, we still haven't seen it on stack.
+              // Try to flush it, but enable counters the next time.
+              mc->reset_nmethod_age();
+            } else {
+              make_not_entrant = false;
+            }
+          } else if (MethodCounters::is_nmethod_warm(age)) {
+            // Method has counters enabled, and the method was used within
+            // previous MinPassesBeforeFlush sweeps. Reset the counter. Stay in the existing
+            // compiled state.
+            mc->reset_nmethod_age();
+            // delay the next check
+            nm->set_hotness_counter(NMethodSweeper::hotness_counter_reset_val());
+            make_not_entrant = false;
+          } else if (MethodCounters::is_nmethod_age_unset(age)) {
+            // No counters were used before. Set the counters to the detection
+            // limit value. If the method is going to be used again it will be compiled
+            // with counters that we're going to use for analysis the the next time.
+            mc->reset_nmethod_age();
+          } else {
+            // Method was totally idle for 10 sweeps
+            // The counter already has the initial value, flush it and may be recompile
+            // later with counters
+          }
+        }
+      }
+
+      if (make_not_entrant) {
+        nm->make_not_entrant();
+
+        // Code cache state change is tracked in make_not_entrant()
+        if (PrintMethodFlushing && Verbose) {
+          tty->print_cr("### Nmethod %d/" PTR_FORMAT "made not-entrant: hotness counter %d/%d threshold %f",
+              nm->compile_id(), nm, nm->hotness_counter(), reset_val, threshold);
+        }
+      }
+    }
+  }
 }
 
 // Print out some state information about the current sweep and the
@@ -627,7 +686,7 @@ void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
       tty->vprint(format, ap);
       va_end(ap);
     }
-    tty->print_cr(s.as_string());
+    tty->print_cr("%s", s.as_string());
   }
 
   if (LogCompilation && (xtty != NULL)) {
@@ -644,7 +703,7 @@ void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
       xtty->vprint(format, ap);
       va_end(ap);
     }
-    xtty->print(s.as_string());
+    xtty->print("%s", s.as_string());
     xtty->stamp();
     xtty->end_elem();
   }

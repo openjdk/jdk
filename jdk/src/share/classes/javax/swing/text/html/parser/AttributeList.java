@@ -59,6 +59,8 @@ class AttributeList implements DTDConstants, Serializable {
 
     /**
      * Create an attribute list element.
+     *
+     * @param name  the attribute name
      */
     public AttributeList(String name) {
         this.name = name;
@@ -66,6 +68,13 @@ class AttributeList implements DTDConstants, Serializable {
 
     /**
      * Create an attribute list element.
+     *
+     * @param name      the attribute name
+     * @param type      the attribute type
+     * @param modifier  the attribute modifier
+     * @param value     the default attribute value
+     * @param values    the possible attribute values
+     * @param next      the next attribute in the list
      */
     public AttributeList(String name, int type, int modifier, String value, Vector<?> values, AttributeList next) {
         this.name = name;

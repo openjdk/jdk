@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef __clang_major__
+// FIXME, formats have issues.  Disable this macro definition, compile, and study warnings for more information.
+#define ATTRIBUTE_PRINTF(x,y)
+#endif
 
 #include "precompiled.hpp"
 #include "gc_implementation/g1/concurrentG1Refine.hpp"
@@ -965,7 +970,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
 
 #ifndef PRODUCT
   if (G1YoungSurvRateVerbose) {
-    gclog_or_tty->print_cr("");
+    gclog_or_tty->cr();
     _short_lived_surv_rate_group->print();
     // do that for any other surv rate groups too
   }
@@ -2222,11 +2227,11 @@ void TraceGen0TimeData::print() const {
 
   gclog_or_tty->print_cr("ALL PAUSES");
   print_summary_sd("   Total", &_total);
-  gclog_or_tty->print_cr("");
-  gclog_or_tty->print_cr("");
+  gclog_or_tty->cr();
+  gclog_or_tty->cr();
   gclog_or_tty->print_cr("   Young GC Pauses: %8d", _young_pause_num);
   gclog_or_tty->print_cr("   Mixed GC Pauses: %8d", _mixed_pause_num);
-  gclog_or_tty->print_cr("");
+  gclog_or_tty->cr();
 
   gclog_or_tty->print_cr("EVACUATION PAUSES");
 
@@ -2246,7 +2251,7 @@ void TraceGen0TimeData::print() const {
     print_summary("      Clear CT", &_clear_ct);
     print_summary("      Other", &_other);
   }
-  gclog_or_tty->print_cr("");
+  gclog_or_tty->cr();
 
   gclog_or_tty->print_cr("MISC");
   print_summary_sd("   Stop World", &_all_stop_world_times_ms);

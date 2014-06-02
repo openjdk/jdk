@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,7 +420,6 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     return NULL;
 
   case vmIntrinsics::_getCallerClass:
-    if (!UseNewReflection)  return NULL;
     if (!InlineReflectionGetCallerClass)  return NULL;
     if (SystemDictionary::reflect_CallerSensitive_klass() == NULL)  return NULL;
     break;

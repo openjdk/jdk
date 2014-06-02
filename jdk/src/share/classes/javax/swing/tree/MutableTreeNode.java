@@ -42,22 +42,31 @@ public interface MutableTreeNode extends TreeNode
     /**
      * Adds <code>child</code> to the receiver at <code>index</code>.
      * <code>child</code> will be messaged with <code>setParent</code>.
+     *
+     * @param child node to be added
+     * @param index index of the receiver
      */
     void insert(MutableTreeNode child, int index);
 
     /**
      * Removes the child at <code>index</code> from the receiver.
+     *
+     * @param index index of child to be removed
      */
     void remove(int index);
 
     /**
      * Removes <code>node</code> from the receiver. <code>setParent</code>
      * will be messaged on <code>node</code>.
+     *
+     * @param node node to be removed from the receiver
      */
     void remove(MutableTreeNode node);
 
     /**
      * Resets the user object of the receiver to <code>object</code>.
+     *
+     * @param object object to be set as a receiver
      */
     void setUserObject(Object object);
 
@@ -68,6 +77,8 @@ public interface MutableTreeNode extends TreeNode
 
     /**
      * Sets the parent of the receiver to <code>newParent</code>.
+     *
+     * @param newParent node to be set as parent of the receiver
      */
     void setParent(MutableTreeNode newParent);
 }

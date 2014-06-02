@@ -200,10 +200,11 @@ class Method : public Metadata {
   // Tracking number of breakpoints, for fullspeed debugging.
   // Only mutated by VM thread.
   u2   number_of_breakpoints()             const {
-    if (method_counters() == NULL) {
+    MethodCounters* mcs = method_counters();
+    if (mcs == NULL) {
       return 0;
     } else {
-      return method_counters()->number_of_breakpoints();
+      return mcs->number_of_breakpoints();
     }
   }
   void incr_number_of_breakpoints(TRAPS)         {
@@ -220,8 +221,9 @@ class Method : public Metadata {
   }
   // Initialization only
   void clear_number_of_breakpoints()             {
-    if (method_counters() != NULL) {
-      method_counters()->clear_number_of_breakpoints();
+    MethodCounters* mcs = method_counters();
+    if (mcs != NULL) {
+      mcs->clear_number_of_breakpoints();
     }
   }
 
@@ -268,10 +270,11 @@ class Method : public Metadata {
   }
 
   int  interpreter_throwout_count() const        {
-    if (method_counters() == NULL) {
+    MethodCounters* mcs = method_counters();
+    if (mcs == NULL) {
       return 0;
     } else {
-      return method_counters()->interpreter_throwout_count();
+      return mcs->interpreter_throwout_count();
     }
   }
 
@@ -346,31 +349,40 @@ class Method : public Metadata {
       return method_counters()->interpreter_invocation_count();
     }
   }
-  void set_prev_event_count(int count, TRAPS)    {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void set_prev_event_count(int count) {
+    MethodCounters* mcs = method_counters();
     if (mcs != NULL) {
       mcs->set_interpreter_invocation_count(count);
     }
   }
   jlong prev_time() const                        {
-    return method_counters() == NULL ? 0 : method_counters()->prev_time();
+    MethodCounters* mcs = method_counters();
+    return mcs == NULL ? 0 : mcs->prev_time();
   }
-  void set_prev_time(jlong time, TRAPS)          {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void set_prev_time(jlong time) {
+    MethodCounters* mcs = method_counters();
     if (mcs != NULL) {
       mcs->set_prev_time(time);
     }
   }
   float rate() const                             {
-    return method_counters() == NULL ? 0 : method_counters()->rate();
+    MethodCounters* mcs = method_counters();
+    return mcs == NULL ? 0 : mcs->rate();
   }
-  void set_rate(float rate, TRAPS) {
-    MethodCounters* mcs = get_method_counters(CHECK);
+  void set_rate(float rate) {
+    MethodCounters* mcs = method_counters();
     if (mcs != NULL) {
       mcs->set_rate(rate);
     }
   }
 #endif
+  int nmethod_age() const {
+    if (method_counters() == NULL) {
+      return INT_MAX;
+    } else {
+      return method_counters()->nmethod_age();
+    }
+  }
 
   int invocation_count();
   int backedge_count();
@@ -383,9 +395,12 @@ class Method : public Metadata {
   static MethodCounters* build_method_counters(Method* m, TRAPS);
 
   int interpreter_invocation_count() {
-    if (TieredCompilation) return invocation_count();
-    else return (method_counters() == NULL) ? 0 :
-                 method_counters()->interpreter_invocation_count();
+    if (TieredCompilation) {
+      return invocation_count();
+    } else {
+      MethodCounters* mcs = method_counters();
+      return (mcs == NULL) ? 0 : mcs->interpreter_invocation_count();
+    }
   }
   int increment_interpreter_invocation_count(TRAPS) {
     if (TieredCompilation) ShouldNotReachHere();
@@ -669,6 +684,8 @@ class Method : public Metadata {
   void set_is_old()                                 { _access_flags.set_is_old(); }
   bool is_obsolete() const                          { return access_flags().is_obsolete(); }
   void set_is_obsolete()                            { _access_flags.set_is_obsolete(); }
+  bool is_deleted() const                           { return access_flags().is_deleted(); }
+  void set_is_deleted()                             { _access_flags.set_is_deleted(); }
   bool on_stack() const                             { return access_flags().on_stack(); }
   void set_on_stack(const bool value);
 
@@ -861,6 +878,7 @@ class Method : public Metadata {
   const char* internal_name() const { return "{method}"; }
 
   // Check for valid method pointer
+  static bool has_method_vptr(const void* ptr);
   bool is_valid_method() const;
 
   // Verify

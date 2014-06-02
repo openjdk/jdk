@@ -326,6 +326,7 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
      * Undoes all changes from the index of the next edit to
      * <code>edit</code>, updating the index of the next edit appropriately.
      *
+     * @param edit the edit to be undo to
      * @throws CannotUndoException if one of the edits throws
      *         <code>CannotUndoException</code>
      */
@@ -342,6 +343,7 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
      * Redoes all changes from the index of the next edit to
      * <code>edit</code>, updating the index of the next edit appropriately.
      *
+     * @param edit the edit to be redo to
      * @throws CannotRedoException if one of the edits throws
      *         <code>CannotRedoException</code>
      */

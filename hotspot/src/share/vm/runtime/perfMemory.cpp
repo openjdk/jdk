@@ -35,6 +35,8 @@
 #include "runtime/statSampler.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 // Prefix of performance data file.
 const char               PERFDATA_NAME[] = "hsperfdata";
 

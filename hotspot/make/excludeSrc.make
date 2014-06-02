@@ -77,30 +77,40 @@ ifeq ($(INCLUDE_ALL_GCS), false)
       CXXFLAGS += -DINCLUDE_ALL_GCS=0
       CFLAGS += -DINCLUDE_ALL_GCS=0
 
-      Src_Files_EXCLUDE += \
-	cmsAdaptiveSizePolicy.cpp cmsCollectorPolicy.cpp \
-	cmsGCAdaptivePolicyCounters.cpp cmsLockVerifier.cpp compactibleFreeListSpace.cpp \
-	concurrentMarkSweepGeneration.cpp concurrentMarkSweepThread.cpp \
-	freeChunk.cpp adaptiveFreeList.cpp promotionInfo.cpp vmCMSOperations.cpp \
-	collectionSetChooser.cpp concurrentG1Refine.cpp concurrentG1RefineThread.cpp \
-	concurrentMark.cpp concurrentMarkThread.cpp dirtyCardQueue.cpp g1AllocRegion.cpp \
-	g1BlockOffsetTable.cpp g1CardCounts.cpp g1CollectedHeap.cpp g1CollectorPolicy.cpp \
-	g1ErgoVerbose.cpp g1GCPhaseTimes.cpp g1HRPrinter.cpp g1HotCardCache.cpp g1Log.cpp \
-	g1MMUTracker.cpp g1MarkSweep.cpp g1MemoryPool.cpp g1MonitoringSupport.cpp g1OopClosures.cpp \
-	g1RemSet.cpp g1RemSetSummary.cpp g1SATBCardTableModRefBS.cpp g1StringDedup.cpp g1StringDedupStat.cpp \
-	g1StringDedupTable.cpp g1StringDedupThread.cpp g1StringDedupQueue.cpp g1_globals.cpp heapRegion.cpp \
-	g1BiasedArray.cpp heapRegionRemSet.cpp heapRegionSeq.cpp heapRegionSet.cpp heapRegionSets.cpp \
-	ptrQueue.cpp satbQueue.cpp sparsePRT.cpp survRateGroup.cpp vm_operations_g1.cpp g1CodeCacheRemSet.cpp \
-	adjoiningGenerations.cpp adjoiningVirtualSpaces.cpp asPSOldGen.cpp asPSYoungGen.cpp \
-	cardTableExtension.cpp gcTaskManager.cpp gcTaskThread.cpp objectStartArray.cpp \
-	parallelScavengeHeap.cpp parMarkBitMap.cpp pcTasks.cpp psAdaptiveSizePolicy.cpp \
-	psCompactionManager.cpp psGCAdaptivePolicyCounters.cpp psGenerationCounters.cpp \
-	psMarkSweep.cpp psMarkSweepDecorator.cpp psMemoryPool.cpp psOldGen.cpp \
-	psParallelCompact.cpp psPromotionLAB.cpp psPromotionManager.cpp psScavenge.cpp \
-	psTasks.cpp psVirtualspace.cpp psYoungGen.cpp vmPSOperations.cpp asParNewGeneration.cpp \
-	parCardTableModRefBS.cpp parGCAllocBuffer.cpp parNewGeneration.cpp mutableSpace.cpp \
-	gSpaceCounters.cpp allocationStats.cpp spaceCounters.cpp gcAdaptivePolicyCounters.cpp \
-	mutableNUMASpace.cpp immutableSpace.cpp yieldingWorkGroup.cpp hSpaceCounters.cpp
+      gc_impl := $(GAMMADIR)/src/share/vm/gc_implementation
+      gc_exclude :=							\
+	$(notdir $(wildcard $(gc_impl)/concurrentMarkSweep/*.cpp))	\
+	$(notdir $(wildcard $(gc_impl)/g1/*.cpp))			\
+	$(notdir $(wildcard $(gc_impl)/parallelScavenge/*.cpp))		\
+	$(notdir $(wildcard $(gc_impl)/parNew/*.cpp))
+      Src_Files_EXCLUDE += $(gc_exclude)
+
+      # Exclude everything in $(gc_impl)/shared except the files listed
+      # in $(gc_shared_keep).
+      gc_shared_all := $(notdir $(wildcard $(gc_impl)/shared/*.cpp))
+      gc_shared_keep :=							\
+	adaptiveSizePolicy.cpp						\
+	ageTable.cpp							\
+	collectorCounters.cpp						\
+	cSpaceCounters.cpp						\
+	gcPolicyCounters.cpp						\
+	gcStats.cpp							\
+	gcTimer.cpp							\
+	gcTrace.cpp							\
+	gcTraceSend.cpp							\
+	gcTraceTime.cpp							\
+	gcUtil.cpp							\
+	generationCounters.cpp						\
+	markSweep.cpp							\
+	objectCountEventSender.cpp					\
+	spaceDecorator.cpp						\
+	vmGCOperations.cpp
+      Src_Files_EXCLUDE += $(filter-out $(gc_shared_keep),$(gc_shared_all))
+
+      # src/share/vm/services
+      Src_Files_EXCLUDE +=						\
+	g1MemoryPool.cpp						\
+	psMemoryPool.cpp
 endif
 
 ifeq ($(INCLUDE_NMT), false)

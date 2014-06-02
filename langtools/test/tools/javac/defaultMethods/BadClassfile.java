@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 
 import com.sun.tools.classfile.*;
 import com.sun.tools.javac.api.JavacTaskImpl;
+import com.sun.tools.javac.code.ClassFinder.BadClassFile;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.jvm.ClassReader.BadClassFile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.JCDiagnostic;

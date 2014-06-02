@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4460354 8014636
+ * @bug      4460354 8014636 8043186
  * @summary  Test to make sure that relative paths are redirected in the
  *           output so that they are not broken.
  * @author   jamieh
