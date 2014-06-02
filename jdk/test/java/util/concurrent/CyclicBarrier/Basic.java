@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,8 @@ public class Basic {
         equal(barrier.getNumberWaiting(), 0);
 
         THROWS(BrokenBarrierException.class,
-               new Fun() { public void f() throws Throwable {
-                   barrier.await(); }},
-               new Fun() { public void f() throws Throwable {
-                   barrier.await(100, MILLISECONDS); }});
+               () -> barrier.await(),
+               () -> barrier.await(100, MILLISECONDS));
     }
 
     private static void reset(CyclicBarrier barrier) {
@@ -417,7 +415,7 @@ public class Basic {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    abstract static class Fun { abstract void f() throws Throwable; }
+    interface Fun {void f() throws Throwable;}
     private static void THROWS(Class<? extends Throwable> k, Fun... fs) {
         for (Fun f : fs)
             try { f.f(); fail("Expected " + k.getName() + " not thrown"); }
