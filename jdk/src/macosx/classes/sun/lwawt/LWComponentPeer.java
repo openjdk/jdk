@@ -63,8 +63,6 @@ import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import javax.swing.RepaintManager;
 
-import sun.lwawt.macosx.CDropTarget;
-
 import com.sun.java.swing.SwingUtilities3;
 
 public abstract class LWComponentPeer<T extends Component, D extends JComponent>
@@ -137,7 +135,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     private final Object dropTargetLock = new Object();
 
     private int fNumDropTargets = 0;
-    private CDropTarget fDropTarget = null;
+    private PlatformDropTarget fDropTarget = null;
 
     private final PlatformComponent platformComponent;
 
@@ -1063,11 +1061,11 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                 // if it's the first (or last) one for the component. Otherwise this call is a no-op.
                 if (++fNumDropTargets == 1) {
                     // Having a non-null drop target would be an error but let's check just in case:
-                    if (fDropTarget != null)
-                        System.err.println("CComponent.addDropTarget(): current drop target is non-null.");
-
+                    if (fDropTarget != null) {
+                        throw new IllegalStateException("Current drop target is not null");
+                    }
                     // Create a new drop target:
-                    fDropTarget = CDropTarget.createDropTarget(dt, target, this);
+                    fDropTarget = LWToolkit.getLWToolkit().createDropTarget(dt, target, this);
                 }
             }
         }

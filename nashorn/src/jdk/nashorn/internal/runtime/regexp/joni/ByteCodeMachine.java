@@ -58,8 +58,8 @@ class ByteCodeMachine extends StackMachine {
         int end1 = s1 + mbLen;
 
         while (s1 < end1) {
-            char c1 = Character.toLowerCase(chars[s1++]);
-            char c2 = Character.toLowerCase(chars[s2++]);
+            char c1 = EncodingHelper.toLowerCase(chars[s1++]);
+            char c2 = EncodingHelper.toLowerCase(chars[s2++]);
 
             if (c1 != c2) {
                 return false;
@@ -367,7 +367,7 @@ class ByteCodeMachine extends StackMachine {
     }
 
     private void opExact1IC() {
-        if (s >= range || code[ip] != Character.toLowerCase(chars[s++])) {opFail(); return;}
+        if (s >= range || code[ip] != EncodingHelper.toLowerCase(chars[s++])) {opFail(); return;}
         ip++;
         sprev = sbegin; // break;
     }
@@ -380,10 +380,10 @@ class ByteCodeMachine extends StackMachine {
             char[] bs = regex.templates[code[ip++]];
             int ps = code[ip++];
 
-            while (tlen-- > 0) if (bs[ps++] != Character.toLowerCase(chars[s++])) {opFail(); return;}
+            while (tlen-- > 0) if (bs[ps++] != EncodingHelper.toLowerCase(chars[s++])) {opFail(); return;}
         } else {
 
-            while (tlen-- > 0) if (code[ip++] != Character.toLowerCase(chars[s++])) {opFail(); return;}
+            while (tlen-- > 0) if (code[ip++] != EncodingHelper.toLowerCase(chars[s++])) {opFail(); return;}
         }
         sprev = s - 1;
     }

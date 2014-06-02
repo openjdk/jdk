@@ -109,6 +109,7 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         cmap = CMap.theNullCmap;
     }
 
+    @SuppressWarnings("fallthrough")
     private final char remapJAChar(char unicode) {
         switch (unicode) {
         case REVERSE_SOLIDUS:
@@ -123,6 +124,7 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         default: return unicode;
         }
     }
+    @SuppressWarnings("fallthrough")
     private final int remapJAIntChar(int unicode) {
         switch (unicode) {
         case REVERSE_SOLIDUS:

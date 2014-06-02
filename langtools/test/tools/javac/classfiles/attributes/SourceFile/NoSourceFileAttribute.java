@@ -24,10 +24,11 @@
 /*
  * @test
  * @summary sourcefile attribute test for file compiled without debug information.
+ * @bug 8040129
  * @library /tools/javac/lib ../lib
  * @build SourceFileTestBase TestBase InMemoryFileManager ToolBox
  * @compile -g:none NoSourceFileAttribute.java
- * @run main  NoSourceFileAttribute
+ * @run main NoSourceFileAttribute
  */
 
 import com.sun.tools.classfile.Attribute;

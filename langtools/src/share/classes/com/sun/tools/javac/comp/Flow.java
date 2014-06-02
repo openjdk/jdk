@@ -231,7 +231,8 @@ public class Flow {
         }
     }
 
-    public List<Type> analyzeLambdaThrownTypes(Env<AttrContext> env, JCLambda that, TreeMaker make) {
+    public List<Type> analyzeLambdaThrownTypes(final Env<AttrContext> env,
+            JCLambda that, TreeMaker make) {
         //we need to disable diagnostics temporarily; the problem is that if
         //a lambda expression contains e.g. an unreachable statement, an error
         //message will be reported and will cause compilation to skip the flow analyis
@@ -239,7 +240,13 @@ public class Flow {
         //related errors, which will allow for more errors to be detected
         Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
-            new AssignAnalyzer(log, syms, lint, names, enforceThisDotInit).analyzeTree(env);
+            new AssignAnalyzer(log, syms, lint, names, enforceThisDotInit) {
+                @Override
+                protected boolean trackable(VarSymbol sym) {
+                    return !env.info.scope.includes(sym) &&
+                           sym.owner.kind == MTH;
+                }
+            }.analyzeTree(env);
             LambdaFlowAnalyzer flowAnalyzer = new LambdaFlowAnalyzer();
             flowAnalyzer.analyzeTree(env, that, make);
             return flowAnalyzer.inferredThrownTypes;

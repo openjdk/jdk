@@ -98,6 +98,9 @@ public class EmptyBorder extends AbstractBorder implements Serializable
 
     /**
      * Returns the insets of the border.
+     *
+     * @return an {@code Insets} object containing the insets from top, left,
+     *         bottom and right
      * @since 1.3
      */
     public Insets getBorderInsets() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8029800
+ * @bug 8029800 8043186
  * @summary Unit test StringUtils
  * @run main StringUtilsTest
  */
@@ -44,12 +44,14 @@ public class StringUtilsTest {
         assertEquals("\u0131", "I".toLowerCase());
         assertEquals("\u0130", "i".toUpperCase());
 
-        //verify the StringUtils does what it should
+        //verify the StringUtils.toLowerCase/toUpperCase do what they should:
         assertEquals("i", StringUtils.toLowerCase("I"));
         assertEquals("I", StringUtils.toUpperCase("i"));
 
-        //verify we can use index from indexOf of toLowerCase String in the original:
-        assertEquals(2, StringUtils.toLowerCase("\u0130\u0130lookFor").indexOf("lookfor"));
+        //verify StringUtils.caseInsensitiveIndexOf works:
+        assertEquals(2, StringUtils.indexOfIgnoreCase("  lookFor", "lookfor"));
+        assertEquals(11, StringUtils.indexOfIgnoreCase("  lookFor  LOOKfor", "lookfor", 11));
+        assertEquals(2, StringUtils.indexOfIgnoreCase("\u0130\u0130lookFor", "lookfor"));
     }
 
     void assertEquals(String expected, String actual) {

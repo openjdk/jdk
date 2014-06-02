@@ -105,6 +105,9 @@ public class DefaultTreeModel implements Serializable, TreeModel {
       * Sets whether or not to test leafness by asking getAllowsChildren()
       * or isLeaf() to the TreeNodes.  If newvalue is true, getAllowsChildren()
       * is messaged, otherwise isLeaf() is messaged.
+      *
+      * @param newValue if true, getAllowsChildren() is messaged, otherwise
+      *                 isLeaf() is messaged
       */
     public void setAsksAllowsChildren(boolean newValue) {
         asksAllowsChildren = newValue;
@@ -125,6 +128,8 @@ public class DefaultTreeModel implements Serializable, TreeModel {
     /**
      * Sets the root to <code>root</code>. A null <code>root</code> implies
      * the tree is to display nothing, and is legal.
+     *
+     * @param root new value of tree root
      */
     public void setRoot(TreeNode root) {
         Object oldRoot = this.root;
@@ -231,6 +236,10 @@ public class DefaultTreeModel implements Serializable, TreeModel {
      * This will then message nodesWereInserted to create the appropriate
      * event. This is the preferred way to add children as it will create
      * the appropriate event.
+     *
+     * @param newChild  child node to be inserted
+     * @param parent    node to which children new node will be added
+     * @param index     index of parent's children
      */
     public void insertNodeInto(MutableTreeNode newChild,
                                MutableTreeNode parent, int index){
@@ -247,6 +256,8 @@ public class DefaultTreeModel implements Serializable, TreeModel {
      * nodesWereRemoved to create the appropriate event. This is the
      * preferred way to remove a node as it handles the event creation
      * for you.
+     *
+     * @param node the node to be removed from it's parrent
      */
     public void removeNodeFromParent(MutableTreeNode node) {
         MutableTreeNode         parent = (MutableTreeNode)node.getParent();
@@ -266,6 +277,8 @@ public class DefaultTreeModel implements Serializable, TreeModel {
     /**
       * Invoke this method after you've changed how node is to be
       * represented in the tree.
+      *
+      * @param node the changed node
       */
     public void nodeChanged(TreeNode node) {
         if(listenerList != null && node != null) {
@@ -303,6 +316,9 @@ public class DefaultTreeModel implements Serializable, TreeModel {
       * Invoke this method after you've inserted some TreeNodes into
       * node.  childIndices should be the index of the new elements and
       * must be sorted in ascending order.
+      *
+      * @param node         parent node which children count been incremented
+      * @param childIndices indexes of inserted children
       */
     public void nodesWereInserted(TreeNode node, int[] childIndices) {
         if(listenerList != null && node != null && childIndices != null
@@ -322,6 +338,10 @@ public class DefaultTreeModel implements Serializable, TreeModel {
       * node.  childIndices should be the index of the removed elements and
       * must be sorted in ascending order. And removedChildren should be
       * the array of the children objects that were removed.
+      *
+      * @param node             parent node which childred were removed
+      * @param childIndices     indexes of removed childs
+      * @param removedChildren  array of the children objects that were removed
       */
     public void nodesWereRemoved(TreeNode node, int[] childIndices,
                                  Object[] removedChildren) {
@@ -334,6 +354,9 @@ public class DefaultTreeModel implements Serializable, TreeModel {
     /**
       * Invoke this method after you've changed how the children identified by
       * childIndicies are to be represented in the tree.
+      *
+      * @param node         changed node
+      * @param childIndices indexes of changed children
       */
     public void nodesChanged(TreeNode node, int[] childIndices) {
         if(node != null) {
@@ -360,6 +383,8 @@ public class DefaultTreeModel implements Serializable, TreeModel {
       * Invoke this method if you've totally changed the children of
       * node and its children's children...  This will post a
       * treeStructureChanged event.
+      *
+      * @param node changed node
       */
     public void nodeStructureChanged(TreeNode node) {
         if(node != null) {
@@ -374,6 +399,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
      * tree.
      *
      * @param aNode the TreeNode to get the path for
+     * @return an array of TreeNodes giving the path from the root
      */
     public TreeNode[] getPathToRoot(TreeNode aNode) {
         return getPathToRoot(aNode, 0);

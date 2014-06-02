@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import sun.util.logging.PlatformLogger;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 
 /**
  * This class is to let AWT shutdown automatically when a user is done

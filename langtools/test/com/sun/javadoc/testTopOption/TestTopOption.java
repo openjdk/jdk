@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6227616
+ * @bug      6227616 8043186
  * @summary  Test the new -top option.
  * @author   jamieh
  * @library  ../lib
@@ -43,7 +43,30 @@ public class TestTopOption extends JavadocTester {
         javadoc("-overview", testSrc("overview.html"),
                 "-use",
                 "-top", "TOP TEXT",
-                "-d", "out",
+                "-d", "out-1",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkTopText(
+                "pkg/AnnotationType.html",
+                "pkg/class-use/AnnotationType.html",
+                "pkg/Cl.html",
+                "pkg/class-use/Cl.html",
+                "pkg/package-summary.html",
+                "pkg/package-use.html",
+                "overview-summary.html",
+                "overview-tree.html",
+                "constant-values.html",
+                "help-doc.html");
+    }
+
+    @Test
+    void testDocRootRewrite() {
+        javadoc("-overview", testSrc("overview.html"),
+                "-use",
+                "-top", "\u0130{@docroot}TOP TEXT",
+                "-d", "out-2",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

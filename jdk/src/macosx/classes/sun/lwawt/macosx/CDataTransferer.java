@@ -31,6 +31,7 @@ import sun.awt.image.ImageRepresentation;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.*;
@@ -126,7 +127,7 @@ public class CDataTransferer extends DataTransferer {
 
             if (format == CF_URL && URL.class.equals(flavor.getRepresentationClass()))
             {
-                String charset = getDefaultTextCharset();
+                String charset = Charset.defaultCharset().name();
                 if (transferable != null && transferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
                     try {
                         charset = new String((byte[])transferable.getTransferData(javaTextEncodingFlavor), "UTF-8");

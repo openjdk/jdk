@@ -100,7 +100,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
     private boolean   isLastTemporary = false;
     private boolean   isActive = false;
     private boolean   isActiveClient = false;
-    private static Map[] highlightStyles;
+    private static Map<TextAttribute, ?>[] highlightStyles;
     private boolean disposed = false;
 
     //reset the XIC if necessary
@@ -136,31 +136,29 @@ public abstract class X11InputMethod extends InputMethodAdapter {
 
     // Initialize highlight mapping table
     static {
-        Map styles[] = new Map[4];
-        HashMap map;
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Map<TextAttribute, ?> styles[] = new Map[4];
+        HashMap<TextAttribute, Object> map;
 
         // UNSELECTED_RAW_TEXT_HIGHLIGHT
-        map = new HashMap(1);
-        map.put(TextAttribute.WEIGHT,
-                  TextAttribute.WEIGHT_BOLD);
+        map = new HashMap<>(1);
+        map.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
         styles[0] = Collections.unmodifiableMap(map);
 
         // SELECTED_RAW_TEXT_HIGHLIGHT
-        map = new HashMap(1);
-        map.put(TextAttribute.SWAP_COLORS,
-                  TextAttribute.SWAP_COLORS_ON);
+        map = new HashMap<>(1);
+        map.put(TextAttribute.SWAP_COLORS, TextAttribute.SWAP_COLORS_ON);
         styles[1] = Collections.unmodifiableMap(map);
 
         // UNSELECTED_CONVERTED_TEXT_HIGHLIGHT
-        map = new HashMap(1);
+        map = new HashMap<>(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE,
-                  TextAttribute.UNDERLINE_LOW_ONE_PIXEL);
+                TextAttribute.UNDERLINE_LOW_ONE_PIXEL);
         styles[2] = Collections.unmodifiableMap(map);
 
         // SELECTED_CONVERTED_TEXT_HIGHLIGHT
-        map = new HashMap(1);
-        map.put(TextAttribute.SWAP_COLORS,
-                  TextAttribute.SWAP_COLORS_ON);
+        map = new HashMap<>(1);
+        map.put(TextAttribute.SWAP_COLORS, TextAttribute.SWAP_COLORS_ON);
         styles[3] = Collections.unmodifiableMap(map);
 
         highlightStyles = styles;
@@ -433,7 +431,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
     /**
      * @see java.awt.Toolkit#mapInputMethodHighlight
      */
-    public static Map mapInputMethodHighlight(InputMethodHighlight highlight) {
+    public static Map<TextAttribute, ?> mapInputMethodHighlight(InputMethodHighlight highlight) {
         int index;
         int state = highlight.getState();
         if (state == InputMethodHighlight.RAW_TEXT) {

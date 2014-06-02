@@ -2409,6 +2409,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
     // Windows LayoutStyle.  From:
     // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnwue/html/ch14e.asp
+    @SuppressWarnings("fallthrough")
     private class WindowsLayoutStyle extends DefaultLayoutStyle {
         @Override
         public int getPreferredGap(JComponent component1,
