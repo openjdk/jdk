@@ -58,7 +58,7 @@ public:
 
   // Factory method:
   static ConINode* make( Compile* C, int con ) {
-    return new (C) ConINode( TypeInt::make(con) );
+    return new ConINode( TypeInt::make(con) );
   }
 
 };
@@ -73,9 +73,9 @@ public:
   // Factory methods:
   static ConPNode* make( Compile *C ,address con ) {
     if (con == NULL)
-      return new (C) ConPNode( TypePtr::NULL_PTR ) ;
+      return new ConPNode( TypePtr::NULL_PTR ) ;
     else
-      return new (C) ConPNode( TypeRawPtr::make(con) );
+      return new ConPNode( TypeRawPtr::make(con) );
   }
 };
 
@@ -106,7 +106,7 @@ public:
 
   // Factory method:
   static ConLNode* make( Compile *C ,jlong con ) {
-    return new (C) ConLNode( TypeLong::make(con) );
+    return new ConLNode( TypeLong::make(con) );
   }
 
 };
@@ -120,7 +120,7 @@ public:
 
   // Factory method:
   static ConFNode* make( Compile *C, float con  ) {
-    return new (C) ConFNode( TypeF::make(con) );
+    return new ConFNode( TypeF::make(con) );
   }
 
 };
@@ -134,7 +134,7 @@ public:
 
   // Factory method:
   static ConDNode* make( Compile *C, double con ) {
-    return new (C) ConDNode( TypeD::make(con) );
+    return new ConDNode( TypeD::make(con) );
   }
 
 };

@@ -238,10 +238,10 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   Node* predicate_x = NULL;
   bool counted_loop = r->is_CountedLoop();
 
-  Node *region_c = new (igvn->C) RegionNode(req_c + 1);
+  Node *region_c = new RegionNode(req_c + 1);
   Node *phi_c    = con1;
   uint  len      = r->req();
-  Node *region_x = new (igvn->C) RegionNode(len - req_c);
+  Node *region_x = new RegionNode(len - req_c);
   Node *phi_x    = PhiNode::make_blank(region_x, phi);
   for (uint i = 1, i_c = 1, i_x = 1; i < len; i++) {
     if (phi->in(i) == con1) {
@@ -272,7 +272,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // Prevent the untimely death of phi_x.  Currently he has no uses.  He is
   // about to get one.  If this only use goes away, then phi_x will look dead.
   // However, he will be picking up some more uses down below.
-  Node *hook = new (igvn->C) Node(4);
+  Node *hook = new Node(4);
   hook->init_req(0, phi_x);
   hook->init_req(1, phi_c);
   phi_x = phase->transform( phi_x );
@@ -284,30 +284,30 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   cmp_x->set_req(2,con2);
   cmp_x = phase->transform(cmp_x);
   // Make the bool
-  Node *b_c = phase->transform(new (igvn->C) BoolNode(cmp_c,b->_test._test));
-  Node *b_x = phase->transform(new (igvn->C) BoolNode(cmp_x,b->_test._test));
+  Node *b_c = phase->transform(new BoolNode(cmp_c,b->_test._test));
+  Node *b_x = phase->transform(new BoolNode(cmp_x,b->_test._test));
   // Make the IfNode
-  IfNode *iff_c = new (igvn->C) IfNode(region_c,b_c,iff->_prob,iff->_fcnt);
+  IfNode *iff_c = new IfNode(region_c,b_c,iff->_prob,iff->_fcnt);
   igvn->set_type_bottom(iff_c);
   igvn->_worklist.push(iff_c);
   hook->init_req(2, iff_c);
 
-  IfNode *iff_x = new (igvn->C) IfNode(region_x,b_x,iff->_prob, iff->_fcnt);
+  IfNode *iff_x = new IfNode(region_x,b_x,iff->_prob, iff->_fcnt);
   igvn->set_type_bottom(iff_x);
   igvn->_worklist.push(iff_x);
   hook->init_req(3, iff_x);
 
   // Make the true/false arms
-  Node *iff_c_t = phase->transform(new (igvn->C) IfTrueNode (iff_c));
-  Node *iff_c_f = phase->transform(new (igvn->C) IfFalseNode(iff_c));
+  Node *iff_c_t = phase->transform(new IfTrueNode (iff_c));
+  Node *iff_c_f = phase->transform(new IfFalseNode(iff_c));
   if (predicate_c != NULL) {
     assert(predicate_x == NULL, "only one predicate entry expected");
     // Clone loop predicates to each path
     iff_c_t = igvn->clone_loop_predicates(predicate_c, iff_c_t, !counted_loop);
     iff_c_f = igvn->clone_loop_predicates(predicate_c, iff_c_f, !counted_loop);
   }
-  Node *iff_x_t = phase->transform(new (igvn->C) IfTrueNode (iff_x));
-  Node *iff_x_f = phase->transform(new (igvn->C) IfFalseNode(iff_x));
+  Node *iff_x_t = phase->transform(new IfTrueNode (iff_x));
+  Node *iff_x_f = phase->transform(new IfFalseNode(iff_x));
   if (predicate_x != NULL) {
     assert(predicate_c == NULL, "only one predicate entry expected");
     // Clone loop predicates to each path
@@ -316,14 +316,14 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   }
 
   // Merge the TRUE paths
-  Node *region_s = new (igvn->C) RegionNode(3);
+  Node *region_s = new RegionNode(3);
   igvn->_worklist.push(region_s);
   region_s->init_req(1, iff_c_t);
   region_s->init_req(2, iff_x_t);
   igvn->register_new_node_with_optimizer( region_s );
 
   // Merge the FALSE paths
-  Node *region_f = new (igvn->C) RegionNode(3);
+  Node *region_f = new RegionNode(3);
   igvn->_worklist.push(region_f);
   region_f->init_req(1, iff_c_f);
   region_f->init_req(2, iff_x_f);
@@ -438,7 +438,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
-  return new (igvn->C) ConINode(TypeInt::ZERO);
+  return new ConINode(TypeInt::ZERO);
 }
 
 //------------------------------is_range_check---------------------------------
@@ -541,16 +541,16 @@ static void adjust_check(Node* proj, Node* range, Node* index,
   // Compute a new check
   Node *new_add = gvn->intcon(off_lo);
   if( index ) {
-    new_add = off_lo ? gvn->transform(new (gvn->C) AddINode( index, new_add )) : index;
+    new_add = off_lo ? gvn->transform(new AddINode( index, new_add )) : index;
   }
   Node *new_cmp = (flip == 1)
-    ? new (gvn->C) CmpUNode( new_add, range )
-    : new (gvn->C) CmpUNode( range, new_add );
+    ? new CmpUNode( new_add, range )
+    : new CmpUNode( range, new_add );
   new_cmp = gvn->transform(new_cmp);
   // See if no need to adjust the existing check
   if( new_cmp == cmp ) return;
   // Else, adjust existing check
-  Node *new_bol = gvn->transform( new (gvn->C) BoolNode( new_cmp, bol->as_Bool()->_test._test ) );
+  Node *new_bol = gvn->transform( new BoolNode( new_cmp, bol->as_Bool()->_test._test ) );
   igvn->rehash_node_delayed( iff );
   iff->set_req_X( 1, new_bol, igvn );
 }
@@ -728,9 +728,9 @@ Node* IfNode::fold_compares(PhaseGVN* phase) {
             if (failtype->_hi != max_jint && failtype->_lo != min_jint && bound > 1) {
               // Merge the two compares into a single unsigned compare by building  (CmpU (n - lo) hi)
               BoolTest::mask cond = fail->as_Proj()->_con ? BoolTest::lt : BoolTest::ge;
-              Node* adjusted = phase->transform(new (phase->C) SubINode(n, phase->intcon(failtype->_lo)));
-              Node* newcmp = phase->transform(new (phase->C) CmpUNode(adjusted, phase->intcon(bound)));
-              Node* newbool = phase->transform(new (phase->C) BoolNode(newcmp, cond));
+              Node* adjusted = phase->transform(new SubINode(n, phase->intcon(failtype->_lo)));
+              Node* newcmp = phase->transform(new CmpUNode(adjusted, phase->intcon(bound)));
+              Node* newbool = phase->transform(new BoolNode(newcmp, cond));
               phase->is_IterGVN()->replace_input_of(dom_iff, 1, phase->intcon(ctrl->as_Proj()->_con));
               phase->hash_delete(this);
               set_req(1, newbool);
@@ -1003,7 +1003,7 @@ Node *IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
-  return new (phase->C) ConINode(TypeInt::ZERO);
+  return new ConINode(TypeInt::ZERO);
 }
 
 //------------------------------dominated_by-----------------------------------
@@ -1099,7 +1099,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
 
   // Flip test to be canonical.  Requires flipping the IfFalse/IfTrue and
   // cloning the IfNode.
-  Node* new_b = phase->transform( new (phase->C) BoolNode(b->in(1), bt.negate()) );
+  Node* new_b = phase->transform( new BoolNode(b->in(1), bt.negate()) );
   if( !new_b->is_Bool() ) return NULL;
   b = new_b->as_Bool();
 
@@ -1107,7 +1107,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   assert( igvn, "Test is not canonical in parser?" );
 
   // The IF node never really changes, but it needs to be cloned
-  iff = new (phase->C) IfNode( iff->in(0), b, 1.0-iff->_prob, iff->_fcnt);
+  iff = new IfNode( iff->in(0), b, 1.0-iff->_prob, iff->_fcnt);
 
   Node *prior = igvn->hash_find_insert(iff);
   if( prior ) {
@@ -1120,8 +1120,8 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   igvn->_worklist.push(iff);
 
   // Now handle projections.  Cloning not required.
-  Node* new_if_f = (Node*)(new (phase->C) IfFalseNode( iff ));
-  Node* new_if_t = (Node*)(new (phase->C) IfTrueNode ( iff ));
+  Node* new_if_f = (Node*)(new IfFalseNode( iff ));
+  Node* new_if_t = (Node*)(new IfTrueNode ( iff ));
 
   igvn->register_new_node_with_optimizer(new_if_f);
   igvn->register_new_node_with_optimizer(new_if_t);
