@@ -22,6 +22,7 @@
  */
 
 /**
+ * @ignore 8042051
  * @test TestDynShrinkHeap
  * @bug 8016479
  * @summary Verify that the heap shrinks after full GC according to the current values of the Min/MaxHeapFreeRatio flags
