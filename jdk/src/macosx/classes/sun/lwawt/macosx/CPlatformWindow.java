@@ -119,6 +119,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     static final int NONACTIVATING = 1 << 24;
     static final int IS_DIALOG = 1 << 25;
     static final int IS_MODAL = 1 << 26;
+    static final int IS_POPUP = 1 << 27;
 
     static final int _STYLE_PROP_BITMASK = DECORATED | TEXTURED | UNIFIED | UTILITY | HUD | SHEET | CLOSEABLE | MINIMIZABLE | RESIZABLE;
 
@@ -318,6 +319,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             styleBits = SET(styleBits, TEXTURED, false);
             // Popups in applets don't activate applet's process
             styleBits = SET(styleBits, NONACTIVATING, true);
+            styleBits = SET(styleBits, IS_POPUP, true);
         }
 
         if (Window.Type.UTILITY.equals(target.getType())) {
