@@ -21,14 +21,34 @@
  * questions.
  */
 
-public class Main {
-    public static void main(String[] args) {
-      try {
-          MartyrSon m = new MartyrSon();
-          System.out.println(m.getName());
-          System.runFinalization();
-      } catch (Throwable e) {
-          e.printStackTrace();
-      }
+/*
+ * @test
+ * @library /testlibrary
+ * @summary Proof of concept test for RedefineClassHelper
+ * @build RedefineClassHelper
+ * @run main RedefineClassHelper
+ * @run main/othervm -javaagent:redefineagent.jar RedefineClassTest
+ */
+
+import static com.oracle.java.testlibrary.Asserts.*;
+import com.oracle.java.testlibrary.*;
+
+/*
+ * Proof of concept test for the test utility class RedefineClassHelper
+ */
+public class RedefineClassTest {
+
+    public static String newClass = "class RedefineClassTest$A { public int Method() { return 2; } }";
+    public static void main(String[] args) throws Exception {
+        A a = new A();
+        assertTrue(a.Method() == 1);
+        RedefineClassHelper.redefineClass(A.class, newClass);
+        assertTrue(a.Method() == 2);
+    }
+
+    static class A {
+        public int Method() {
+            return 1;
+        }
     }
 }
