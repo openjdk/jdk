@@ -252,46 +252,46 @@ VectorNode* VectorNode::make(Compile* C, int opc, Node* n1, Node* n2, uint vlen,
   guarantee(vopc > 0, err_msg_res("Vector for '%s' is not implemented", NodeClassNames[opc]));
 
   switch (vopc) {
-  case Op_AddVB: return new (C) AddVBNode(n1, n2, vt);
-  case Op_AddVS: return new (C) AddVSNode(n1, n2, vt);
-  case Op_AddVI: return new (C) AddVINode(n1, n2, vt);
-  case Op_AddVL: return new (C) AddVLNode(n1, n2, vt);
-  case Op_AddVF: return new (C) AddVFNode(n1, n2, vt);
-  case Op_AddVD: return new (C) AddVDNode(n1, n2, vt);
+  case Op_AddVB: return new AddVBNode(n1, n2, vt);
+  case Op_AddVS: return new AddVSNode(n1, n2, vt);
+  case Op_AddVI: return new AddVINode(n1, n2, vt);
+  case Op_AddVL: return new AddVLNode(n1, n2, vt);
+  case Op_AddVF: return new AddVFNode(n1, n2, vt);
+  case Op_AddVD: return new AddVDNode(n1, n2, vt);
 
-  case Op_SubVB: return new (C) SubVBNode(n1, n2, vt);
-  case Op_SubVS: return new (C) SubVSNode(n1, n2, vt);
-  case Op_SubVI: return new (C) SubVINode(n1, n2, vt);
-  case Op_SubVL: return new (C) SubVLNode(n1, n2, vt);
-  case Op_SubVF: return new (C) SubVFNode(n1, n2, vt);
-  case Op_SubVD: return new (C) SubVDNode(n1, n2, vt);
+  case Op_SubVB: return new SubVBNode(n1, n2, vt);
+  case Op_SubVS: return new SubVSNode(n1, n2, vt);
+  case Op_SubVI: return new SubVINode(n1, n2, vt);
+  case Op_SubVL: return new SubVLNode(n1, n2, vt);
+  case Op_SubVF: return new SubVFNode(n1, n2, vt);
+  case Op_SubVD: return new SubVDNode(n1, n2, vt);
 
-  case Op_MulVS: return new (C) MulVSNode(n1, n2, vt);
-  case Op_MulVI: return new (C) MulVINode(n1, n2, vt);
-  case Op_MulVF: return new (C) MulVFNode(n1, n2, vt);
-  case Op_MulVD: return new (C) MulVDNode(n1, n2, vt);
+  case Op_MulVS: return new MulVSNode(n1, n2, vt);
+  case Op_MulVI: return new MulVINode(n1, n2, vt);
+  case Op_MulVF: return new MulVFNode(n1, n2, vt);
+  case Op_MulVD: return new MulVDNode(n1, n2, vt);
 
-  case Op_DivVF: return new (C) DivVFNode(n1, n2, vt);
-  case Op_DivVD: return new (C) DivVDNode(n1, n2, vt);
+  case Op_DivVF: return new DivVFNode(n1, n2, vt);
+  case Op_DivVD: return new DivVDNode(n1, n2, vt);
 
-  case Op_LShiftVB: return new (C) LShiftVBNode(n1, n2, vt);
-  case Op_LShiftVS: return new (C) LShiftVSNode(n1, n2, vt);
-  case Op_LShiftVI: return new (C) LShiftVINode(n1, n2, vt);
-  case Op_LShiftVL: return new (C) LShiftVLNode(n1, n2, vt);
+  case Op_LShiftVB: return new LShiftVBNode(n1, n2, vt);
+  case Op_LShiftVS: return new LShiftVSNode(n1, n2, vt);
+  case Op_LShiftVI: return new LShiftVINode(n1, n2, vt);
+  case Op_LShiftVL: return new LShiftVLNode(n1, n2, vt);
 
-  case Op_RShiftVB: return new (C) RShiftVBNode(n1, n2, vt);
-  case Op_RShiftVS: return new (C) RShiftVSNode(n1, n2, vt);
-  case Op_RShiftVI: return new (C) RShiftVINode(n1, n2, vt);
-  case Op_RShiftVL: return new (C) RShiftVLNode(n1, n2, vt);
+  case Op_RShiftVB: return new RShiftVBNode(n1, n2, vt);
+  case Op_RShiftVS: return new RShiftVSNode(n1, n2, vt);
+  case Op_RShiftVI: return new RShiftVINode(n1, n2, vt);
+  case Op_RShiftVL: return new RShiftVLNode(n1, n2, vt);
 
-  case Op_URShiftVB: return new (C) URShiftVBNode(n1, n2, vt);
-  case Op_URShiftVS: return new (C) URShiftVSNode(n1, n2, vt);
-  case Op_URShiftVI: return new (C) URShiftVINode(n1, n2, vt);
-  case Op_URShiftVL: return new (C) URShiftVLNode(n1, n2, vt);
+  case Op_URShiftVB: return new URShiftVBNode(n1, n2, vt);
+  case Op_URShiftVS: return new URShiftVSNode(n1, n2, vt);
+  case Op_URShiftVI: return new URShiftVINode(n1, n2, vt);
+  case Op_URShiftVL: return new URShiftVLNode(n1, n2, vt);
 
-  case Op_AndV: return new (C) AndVNode(n1, n2, vt);
-  case Op_OrV:  return new (C) OrVNode (n1, n2, vt);
-  case Op_XorV: return new (C) XorVNode(n1, n2, vt);
+  case Op_AndV: return new AndVNode(n1, n2, vt);
+  case Op_OrV:  return new OrVNode (n1, n2, vt);
+  case Op_XorV: return new XorVNode(n1, n2, vt);
   }
   fatal(err_msg_res("Missed vector creation for '%s'", NodeClassNames[vopc]));
   return NULL;
@@ -306,18 +306,18 @@ VectorNode* VectorNode::scalar2vector(Compile* C, Node* s, uint vlen, const Type
   switch (bt) {
   case T_BOOLEAN:
   case T_BYTE:
-    return new (C) ReplicateBNode(s, vt);
+    return new ReplicateBNode(s, vt);
   case T_CHAR:
   case T_SHORT:
-    return new (C) ReplicateSNode(s, vt);
+    return new ReplicateSNode(s, vt);
   case T_INT:
-    return new (C) ReplicateINode(s, vt);
+    return new ReplicateINode(s, vt);
   case T_LONG:
-    return new (C) ReplicateLNode(s, vt);
+    return new ReplicateLNode(s, vt);
   case T_FLOAT:
-    return new (C) ReplicateFNode(s, vt);
+    return new ReplicateFNode(s, vt);
   case T_DOUBLE:
-    return new (C) ReplicateDNode(s, vt);
+    return new ReplicateDNode(s, vt);
   }
   fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   return NULL;
@@ -330,12 +330,12 @@ VectorNode* VectorNode::shift_count(Compile* C, Node* shift, Node* cnt, uint vle
   switch (shift->Opcode()) {
   case Op_LShiftI:
   case Op_LShiftL:
-    return new (C) LShiftCntVNode(cnt, vt);
+    return new LShiftCntVNode(cnt, vt);
   case Op_RShiftI:
   case Op_RShiftL:
   case Op_URShiftI:
   case Op_URShiftL:
-    return new (C) RShiftCntVNode(cnt, vt);
+    return new RShiftCntVNode(cnt, vt);
   }
   fatal(err_msg_res("Missed vector creation for '%s'", NodeClassNames[shift->Opcode()]));
   return NULL;
@@ -347,18 +347,18 @@ PackNode* PackNode::make(Compile* C, Node* s, uint vlen, BasicType bt) {
   switch (bt) {
   case T_BOOLEAN:
   case T_BYTE:
-    return new (C) PackBNode(s, vt);
+    return new PackBNode(s, vt);
   case T_CHAR:
   case T_SHORT:
-    return new (C) PackSNode(s, vt);
+    return new PackSNode(s, vt);
   case T_INT:
-    return new (C) PackINode(s, vt);
+    return new PackINode(s, vt);
   case T_LONG:
-    return new (C) PackLNode(s, vt);
+    return new PackLNode(s, vt);
   case T_FLOAT:
-    return new (C) PackFNode(s, vt);
+    return new PackFNode(s, vt);
   case T_DOUBLE:
-    return new (C) PackDNode(s, vt);
+    return new PackDNode(s, vt);
   }
   fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   return NULL;
@@ -383,18 +383,18 @@ PackNode* PackNode::binary_tree_pack(Compile* C, int lo, int hi) {
     switch (bt) {
     case T_BOOLEAN:
     case T_BYTE:
-      return new (C) PackSNode(n1, n2, TypeVect::make(T_SHORT, 2));
+      return new PackSNode(n1, n2, TypeVect::make(T_SHORT, 2));
     case T_CHAR:
     case T_SHORT:
-      return new (C) PackINode(n1, n2, TypeVect::make(T_INT, 2));
+      return new PackINode(n1, n2, TypeVect::make(T_INT, 2));
     case T_INT:
-      return new (C) PackLNode(n1, n2, TypeVect::make(T_LONG, 2));
+      return new PackLNode(n1, n2, TypeVect::make(T_LONG, 2));
     case T_LONG:
-      return new (C) Pack2LNode(n1, n2, TypeVect::make(T_LONG, 2));
+      return new Pack2LNode(n1, n2, TypeVect::make(T_LONG, 2));
     case T_FLOAT:
-      return new (C) PackDNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
+      return new PackDNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
     case T_DOUBLE:
-      return new (C) Pack2DNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
+      return new Pack2DNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
     }
     fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   }
@@ -405,14 +405,14 @@ PackNode* PackNode::binary_tree_pack(Compile* C, int lo, int hi) {
 LoadVectorNode* LoadVectorNode::make(Compile* C, int opc, Node* ctl, Node* mem,
                                      Node* adr, const TypePtr* atyp, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
-  return new (C) LoadVectorNode(ctl, mem, adr, atyp, vt);
+  return new LoadVectorNode(ctl, mem, adr, atyp, vt);
 }
 
 // Return the vector version of a scalar store node.
 StoreVectorNode* StoreVectorNode::make(Compile* C, int opc, Node* ctl, Node* mem,
                                        Node* adr, const TypePtr* atyp, Node* val,
                                        uint vlen) {
-  return new (C) StoreVectorNode(ctl, mem, adr, atyp, val);
+  return new StoreVectorNode(ctl, mem, adr, atyp, val);
 }
 
 // Extract a scalar element of vector.
@@ -421,21 +421,21 @@ Node* ExtractNode::make(Compile* C, Node* v, uint position, BasicType bt) {
   ConINode* pos = ConINode::make(C, (int)position);
   switch (bt) {
   case T_BOOLEAN:
-    return new (C) ExtractUBNode(v, pos);
+    return new ExtractUBNode(v, pos);
   case T_BYTE:
-    return new (C) ExtractBNode(v, pos);
+    return new ExtractBNode(v, pos);
   case T_CHAR:
-    return new (C) ExtractCNode(v, pos);
+    return new ExtractCNode(v, pos);
   case T_SHORT:
-    return new (C) ExtractSNode(v, pos);
+    return new ExtractSNode(v, pos);
   case T_INT:
-    return new (C) ExtractINode(v, pos);
+    return new ExtractINode(v, pos);
   case T_LONG:
-    return new (C) ExtractLNode(v, pos);
+    return new ExtractLNode(v, pos);
   case T_FLOAT:
-    return new (C) ExtractFNode(v, pos);
+    return new ExtractFNode(v, pos);
   case T_DOUBLE:
-    return new (C) ExtractDNode(v, pos);
+    return new ExtractDNode(v, pos);
   }
   fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   return NULL;

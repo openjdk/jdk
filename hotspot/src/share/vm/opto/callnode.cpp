@@ -74,20 +74,20 @@ Node *StartNode::match( const ProjNode *proj, const Matcher *match ) {
   case TypeFunc::Control:
   case TypeFunc::I_O:
   case TypeFunc::Memory:
-    return new (match->C) MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
+    return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
   case TypeFunc::FramePtr:
-    return new (match->C) MachProjNode(this,proj->_con,Matcher::c_frame_ptr_mask, Op_RegP);
+    return new MachProjNode(this,proj->_con,Matcher::c_frame_ptr_mask, Op_RegP);
   case TypeFunc::ReturnAdr:
-    return new (match->C) MachProjNode(this,proj->_con,match->_return_addr_mask,Op_RegP);
+    return new MachProjNode(this,proj->_con,match->_return_addr_mask,Op_RegP);
   case TypeFunc::Parms:
   default: {
       uint parm_num = proj->_con - TypeFunc::Parms;
       const Type *t = _domain->field_at(proj->_con);
       if (t->base() == Type::Half)  // 2nd half of Longs and Doubles
-        return new (match->C) ConNode(Type::TOP);
+        return new ConNode(Type::TOP);
       uint ideal_reg = t->ideal_reg();
       RegMask &rm = match->_calling_convention_mask[parm_num];
-      return new (match->C) MachProjNode(this,proj->_con,rm,ideal_reg);
+      return new MachProjNode(this,proj->_con,rm,ideal_reg);
     }
   }
   return NULL;
@@ -685,12 +685,12 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
   case TypeFunc::Control:
   case TypeFunc::I_O:
   case TypeFunc::Memory:
-    return new (match->C) MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
+    return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
 
   case TypeFunc::Parms+1:       // For LONG & DOUBLE returns
     assert(tf()->_range->field_at(TypeFunc::Parms+1) == Type::HALF, "");
     // 2nd half of doubles and longs
-    return new (match->C) MachProjNode(this,proj->_con, RegMask::Empty, (uint)OptoReg::Bad);
+    return new MachProjNode(this,proj->_con, RegMask::Empty, (uint)OptoReg::Bad);
 
   case TypeFunc::Parms: {       // Normal returns
     uint ideal_reg = tf()->range()->field_at(TypeFunc::Parms)->ideal_reg();
@@ -700,7 +700,7 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
     RegMask rm = RegMask(regs.first());
     if( OptoReg::is_valid(regs.second()) )
       rm.Insert( regs.second() );
-    return new (match->C) MachProjNode(this,proj->_con,rm,ideal_reg);
+    return new MachProjNode(this,proj->_con,rm,ideal_reg);
   }
 
   case TypeFunc::ReturnAdr:
@@ -1288,10 +1288,10 @@ Node* AllocateArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         Node* nproj = catchproj->clone();
         igvn->register_new_node_with_optimizer(nproj);
 
-        Node *frame = new (phase->C) ParmNode( phase->C->start(), TypeFunc::FramePtr );
+        Node *frame = new ParmNode( phase->C->start(), TypeFunc::FramePtr );
         frame = phase->transform(frame);
         // Halt & Catch Fire
-        Node *halt = new (phase->C) HaltNode( nproj, frame );
+        Node *halt = new HaltNode( nproj, frame );
         phase->C->root()->add_req(halt);
         phase->transform(halt);
 
@@ -1333,7 +1333,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
       if (!allow_new_nodes) return NULL;
       // Create a cast which is control dependent on the initialization to
       // propagate the fact that the array length must be positive.
-      length = new (phase->C) CastIINode(length, narrow_length_type);
+      length = new CastIINode(length, narrow_length_type);
       length->set_req(0, initialization()->proj_out(0));
     }
   }

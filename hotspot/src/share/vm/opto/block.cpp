@@ -373,7 +373,7 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
   // I'll need a few machine-specific GotoNodes.  Make an Ideal GotoNode,
   // then Match it into a machine-specific Node.  Then clone the machine
   // Node on demand.
-  Node *x = new (C) GotoNode(NULL);
+  Node *x = new GotoNode(NULL);
   x->init_req(0, x);
   _goto = matcher.match_tree(x);
   assert(_goto != NULL, "");
@@ -426,7 +426,7 @@ uint PhaseCFG::build_cfg() {
                !p->is_block_start() );
       // Make the block begin with one of Region or StartNode.
       if( !p->is_block_start() ) {
-        RegionNode *r = new (C) RegionNode( 2 );
+        RegionNode *r = new RegionNode( 2 );
         r->init_req(1, p);         // Insert RegionNode in the way
         proj->set_req(0, r);        // Insert RegionNode in the way
         p = r;
@@ -501,7 +501,7 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   // get ProjNode corresponding to the succ_no'th successor of the in block
   ProjNode* proj = in->get_node(in->number_of_nodes() - in->_num_succs + succ_no)->as_Proj();
   // create region for basic block
-  RegionNode* region = new (C) RegionNode(2);
+  RegionNode* region = new RegionNode(2);
   region->init_req(1, proj);
   // setup corresponding basic block
   Block* block = new (_block_arena) Block(_block_arena, region);
