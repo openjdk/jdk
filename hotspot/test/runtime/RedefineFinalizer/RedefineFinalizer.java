@@ -21,8 +21,44 @@
  * questions.
  */
 
-class MartyrSon extends Martyr {
-    public String getName() {
-      return super.getName();
+/*
+ * @test
+ * @bug 6904403
+ * @summary Don't assert if we redefine finalize method
+ * @library /testlibrary
+ * @build RedefineClassHelper
+ * @run main RedefineClassHelper
+ * @run main/othervm -javaagent:redefineagent.jar RedefineFinalizer
+ */
+
+/*
+ * Regression test for hitting:
+ *
+ * assert(f == k->has_finalizer()) failed: inconsistent has_finalizer
+ *
+ * when redefining finalizer method
+ */
+public class RedefineFinalizer {
+
+    public static String newB =
+                "class RedefineFinalizer$B {" +
+                "   protected void finalize() { " +
+                "       System.out.println(\"Finalizer called\");" +
+                "   }" +
+                "}";
+
+    public static void main(String[] args) throws Exception {
+        RedefineClassHelper.redefineClass(B.class, newB);
+
+        A a = new A();
+    }
+
+    static class A extends B {
+    }
+
+    static class B {
+        protected void finalize() {
+            // should be empty
+        }
     }
 }
